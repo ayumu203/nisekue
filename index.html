@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="main.css" type="text/css" href="css/style.css?ver=1.0.1"/>
+    <title>ゲーム画面サンプル</title>
+</head>
+<body>
+    <div id="lapper">
+        <img id="stage_img" src="img/back/kaidou0331_800b.jpg" width="700px" height="466px">
+        <div id="head_display">
+            <img id="stage_icon" src="img/chara/rabbit.png" width="60px" height="60px">
+            <p>勇者ぶっころｓゾーン　０F</p>
+        </div>
+        <div class="main_display">        
+            <div class="command_box">
+                <button class="command_button"><p class="command_battle">攻撃/決定</p></button>
+                <button class="command_button"><p class="command_battle">撤退</p></button>
+                <button class="command_button"><p class="command_battle">隊列変更</p></button>
+                <button class="command_button"><p class="command_battle">アイテム</p></button>
+                <button class="command_button"><p class="command_battle">技・魔法</p></button>
+            </div>
+        
+            <div class="wait_box">
+                <buttom id="wait_button" onClick="buttonColorChange()"><p class="command_wait">仲間を待つ</p></buttom>
+            </div>
+            <div class="chara_box">
+                <img src="img/chara/brave.png" width="187px" height="150px">
+                <img src="img/chara/heishi_3.png" width="180px" height="150px">
+            </div>
+            <div class="enemy_box">
+                <img src="img/chara/Cthylla_3L.png" width="280px" height="200px">
+            </div>
+        </div>
+    
+        </div>
+    </div>
+    <script>
+        const buttonColorChange = () =>{
+            let btn = document.getElementById('wait_button');
+            btn.style.backgroundColor='lightgreen'; 
+        }
+    </script>
+</body>
+</html>
+
+<!-- file://wsl.localhost/Ubuntu/home/cs23017/gameApp/nisekue/index.html -->
