@@ -8,14 +8,14 @@ on:
       - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
-  permissions:
-    contents: read
-    pages: write
-    id-token: write
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
-    concurrency:
-      group: 'deploy-frontend'
-      cancel-in-progress: true
+concurrency:
+  group: 'deploy-frontend'
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name Setup Node
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
