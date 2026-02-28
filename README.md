@@ -27,3 +27,26 @@
 - GitHub Pages(フロントエンド公開先)
 - Azure App Service(バックエンド公開先)
 
+## 実行方法
+
+## フロントエンド
+
+- 以下バージョンは参考.
+```bash
+$ node -v
+v25.7.0
+$ npm -v
+11.10.1
+```
+- 以下でフロントエンドを起動.
+```bash
+pnpm dev
+```
+
+## バックエンドサーバ
+
+- `.NET Core 10.0` で動作.
+
+```bash
+$ dotnet run --project ./server/server.csproj 
+```
