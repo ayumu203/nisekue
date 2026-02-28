@@ -8,7 +8,7 @@
 
 ## システムのアーキテクチャ構成
 
-### フロントエン
+### フロントエンド
 - React + Vite
 - MUI(Material UI)
 - ![Tech Stack](https://skillicons.dev/icons?i=react,vite,mui,nodejs)
