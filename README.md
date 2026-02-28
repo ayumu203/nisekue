@@ -12,6 +12,7 @@
 
 - React + Vite
 - MUI(Material UI)
+- ![Tech Stack](https://skillicons.dev/icons?i=react,vite,mui,nodejs)
 - ゲームの処理等はHTTPによるリクエストとレスポンスで行う.
 - 基本的にはuseSWRを利用.
 
@@ -20,12 +21,14 @@
 - .NET(Minimal API)
 - EF Core(Entity Framework Core)
 - SignalR ※ もしリアルタイム性が必要になれば.
+- ![Tech Stack](https://skillicons.dev/icons?i=cs,dotnet)
 
 ### インフラ
 
 - Supabase(DB・認証)
 - GitHub Pages(フロントエンド公開先)
 - Azure App Service(バックエンド公開先)
+- ![Tech Stack](https://skillicons.dev/icons?i=azure,github,supabase)
 
 ## 実行方法
 
