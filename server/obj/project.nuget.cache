@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "jVMRcuM0Rwc=",
+  "success": true,
+  "projectFilePath": "/home/ayumu/Dev/Nisekue/server/server.csproj",
+  "expectedPackageFiles": [
+    "/home/ayumu/.nuget/packages/microsoft.aspnetcore.diagnostics.entityframeworkcore/10.0.3/microsoft.aspnetcore.diagnostics.entityframeworkcore.10.0.3.nupkg.sha512",
+    "/home/ayumu/.nuget/packages/microsoft.entityframeworkcore/10.0.3/microsoft.entityframeworkcore.10.0.3.nupkg.sha512",
+    "/home/ayumu/.nuget/packages/microsoft.entityframeworkcore.abstractions/10.0.3/microsoft.entityframeworkcore.abstractions.10.0.3.nupkg.sha512",
+    "/home/ayumu/.nuget/packages/microsoft.entityframeworkcore.analyzers/10.0.3/microsoft.entityframeworkcore.analyzers.10.0.3.nupkg.sha512",
+    "/home/ayumu/.nuget/packages/microsoft.entityframeworkcore.inmemory/10.0.3/microsoft.entityframeworkcore.inmemory.10.0.3.nupkg.sha512",
+    "/home/ayumu/.nuget/packages/microsoft.entityframeworkcore.relational/10.0.3/microsoft.entityframeworkcore.relational.10.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}
