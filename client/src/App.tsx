@@ -6,7 +6,7 @@ function App() {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
   useEffect(() => {
-    fetch(`${apiBaseUrl}/test-message`)
+    fetch(`${apiBaseUrl}/`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`)

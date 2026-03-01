@@ -45,7 +45,7 @@ app.UseAuthorization();
 
 app.UseCors("ClientCors");
 
-app.MapGet("/", () => "Hello World!");
+app.MapGet("/", () => Results.Ok(new { message = "Hello World!" }));
 app.MapGet("/player", (ClaimsPrincipal user) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
