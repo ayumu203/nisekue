@@ -49,7 +49,7 @@ app.MapGet("/", () => "Hello World!");
 app.MapGet("/player", (ClaimsPrincipal user) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
-        ?? user.FindFirstValue("sub"); 
+        ?? user.FindFirstValue("sub");
     return Results.Ok(new { userId });
 }).RequireAuthorization();
 
