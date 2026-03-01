@@ -7,7 +7,9 @@
       "launchBrowser": true,
       "applicationUrl": "http://localhost:5068",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Supabase__ProjectUrl": "http://127.0.0.1:54321/",
+        "Supabase__JwtAudience": "authenticated"
       }
     },
     "https": {
@@ -16,7 +18,10 @@
       "launchBrowser": true,
       "applicationUrl": "https://localhost:7129;http://localhost:5068",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Supabase__ProjectUrl": "http://127.0.0.1:54321/",
+        "Supabase__JwtAudience": "authenticated"
+
       }
     }
   }
