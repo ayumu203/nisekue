@@ -11,7 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         var player = modelBuilder.Entity<PlayerEntity>();
-        player.ToTable("players");
+        player.ToTable("players", "internal");
         player.HasKey(x => x.Id);
         player.Property(x => x.Id).HasColumnName("id");
         player.Property(x => x.Name)

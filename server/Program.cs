@@ -47,7 +47,10 @@ var supabaseConnectionString = builder.Configuration.GetConnectionString("Supaba
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(supabaseConnectionString);
+    options.UseNpgsql(supabaseConnectionString, npgsqlOptions =>
+    {
+        npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "internal");
+    });
 });
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
 
