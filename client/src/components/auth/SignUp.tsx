@@ -2,12 +2,14 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material'
 import { supabase } from '../../lib/supabase'
+import { createPlayer } from '../../api/player'
 
 type SignUpProps = {
   onMessage?: (message: string) => void
 }
 
 function SignUp({ onMessage }: SignUpProps) {
+  const [userName, setUserName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -18,7 +20,7 @@ function SignUp({ onMessage }: SignUpProps) {
     setIsSubmitting(true)
     setError(null)
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     })
@@ -30,7 +32,24 @@ function SignUp({ onMessage }: SignUpProps) {
       return
     }
 
-    onMessage?.('ユーザー登録が完了しました。確認メールを確認してください。')
+    const accessToken = data.session?.access_token
+
+    if (!accessToken) {
+      onMessage?.('ユーザー登録が完了しました。ログイン後にユーザー名を登録してください。')
+      setIsSubmitting(false)
+      return
+    }
+
+    try {
+      await createPlayer({ userName }, accessToken)
+      onMessage?.('ユーザー登録とユーザー名登録が完了しました。')
+    } catch (createPlayerError) {
+      const message =
+        createPlayerError instanceof Error ? createPlayerError.message : 'ユーザー名の登録に失敗しました'
+      setError(message)
+      onMessage?.('ユーザー登録後のユーザー名登録に失敗しました。')
+    }
+
     setIsSubmitting(false)
   }
 
@@ -38,6 +57,15 @@ function SignUp({ onMessage }: SignUpProps) {
     <Box component="form" onSubmit={handleSubmit} noValidate>
       <Stack spacing={2}>
         <Typography variant="h6">Sign Up</Typography>
+        <TextField
+          id="sign-up-user-name"
+          label="User Name"
+          autoComplete="username"
+          value={userName}
+          onChange={(event) => setUserName(event.target.value)}
+          required
+          fullWidth
+        />
         <TextField
           id="sign-up-email"
           label="Email"

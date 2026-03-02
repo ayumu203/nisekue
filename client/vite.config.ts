@@ -12,6 +12,7 @@ export default defineConfig({
           react: ['react', 'react-dom', 'react/jsx-runtime'],
           mui: ['@mui/material', '@emotion/react', '@emotion/styled'],
           supabase: ['@supabase/supabase-js'],
+          swr: ['swr'],
           validation: ['zod'],
         },
       },
