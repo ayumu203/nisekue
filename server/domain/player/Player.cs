@@ -1,7 +1,7 @@
 namespace server.domain.player;
 
-class Player(string id, string name)
+public class Player(PlayerId id, string name)
 {
-    public string Id { get; } = id;
+    public PlayerId Id { get; } = id;
     public string Name { get; set; } = name;
 }
