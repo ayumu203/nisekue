@@ -54,6 +54,38 @@ pnpm dev
 $ dotnet run --project ./server/server.csproj
 ```
 
+## DB マイグレーション (EF Core)
+
+- 開発環境では手動で実行.
+- CI/CD では GitHub Actions (`.github/workflows/db-migrate.yml`) で実行.
+
+### 開発環境での手動適用
+
+```bash
+# 初回のみ (dotnet-ef の導入)
+dotnet tool install --global dotnet-ef --version 10.0.3
+
+# PATH 反映後に migration 適用
+dotnet ef database update \
+  --project server/server.csproj \
+  --startup-project server/server.csproj
+```
+
+### 新しい migration を作る場合
+
+```bash
+dotnet ef migrations add <MigrationName> \
+  --project server/server.csproj \
+  --startup-project server/server.csproj \
+  --output-dir infrastructure/migrations
+```
+
+### CI/CD で必要な Secret
+
+- `SUPABASE_DB_CONNECTION_STRING`
+  - 例: `Host=127.0.0.1;Port=54322;Database=postgres;Username=postgres;Password=postgres`
+  - ワークフロー内で `ConnectionStrings__Supabase` として注入.
+
 ## Supabase
 
 - 起動関連
