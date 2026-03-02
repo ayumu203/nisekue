@@ -71,7 +71,7 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
     {
         return Results.NotFound(new
         {
-            message = "player not found",
+            message = "プレイヤーが見つかりません。",
             userId = playerId.Value.Value
         });
     }
@@ -97,7 +97,7 @@ app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request,
         await playerRepository.SaveAsync(player);
         return Results.Ok(new
         {
-            message = "created",
+            message = "プレイヤーを作成しました。",
             userId = player.Id.Value,
             userName = player.Name
         });

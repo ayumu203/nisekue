@@ -1,17 +1,11 @@
 namespace server.domain.player;
 
-public class Player
+public class Player(PlayerId id, string name)
 {
     public const int NameMaxLength = 20;
 
-    public Player(PlayerId id, string name)
-    {
-        Id = id;
-        Name = ValidateName(name);
-    }
-
-    public PlayerId Id { get; }
-    public string Name { get; private set; }
+    public PlayerId Id { get; } = id;
+    public string Name { get; private set; } = ValidateName(name);
 
     public void UpdateName(string name)
     {

@@ -45,11 +45,11 @@ public class SupabasePlayerRepository(AppDbContext dbContext) : IPlayerRepositor
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == PostgresErrorCodes.UniqueViolation)
         {
-            throw new InvalidOperationException("A player with the same identifier already exists.", ex);
+            throw new InvalidOperationException("同じIDのプレイヤーがすでに存在します。", ex);
         }
         catch (DbUpdateException ex)
         {
-            throw new InvalidOperationException("Failed to persist player data.", ex);
+            throw new InvalidOperationException("プレイヤー情報の保存に失敗しました。", ex);
         }
     }
 
