@@ -1,5 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using server.domain.player;
+using server.infrastructure;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,25 +41,85 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     options.RequireHttpsMetadata = false;
 });
 builder.Services.AddAuthorization();
+
+var supabaseConnectionString = builder.Configuration.GetConnectionString("Supabase")
+    ?? throw new InvalidOperationException("Connection string 'Supabase' is not configured.");
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseNpgsql(supabaseConnectionString);
+});
+builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
+
 var app = builder.Build();
 
+app.UseCors("ClientCors");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseCors("ClientCors");
-
 app.MapGet("/", () => Results.Ok(new { message = "Hello World!" }));
-app.MapGet("/player", (ClaimsPrincipal user) =>
+app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepository) =>
 {
-    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
-        ?? user.FindFirstValue("sub");
-    return Results.Ok(new { userId });
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var player = await playerRepository.GetPlayerAsync(playerId.Value);
+    if (player is null)
+    {
+        return Results.NotFound(new
+        {
+            message = "player not found",
+            userId = playerId.Value.Value
+        });
+    }
+
+    return Results.Ok(new
+    {
+        userId = player.Id.Value,
+        userName = player.Name
+    });
 }).RequireAuthorization();
 
-app.MapPost("/player", (ClaimsPrincipal user) =>
+app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request, IPlayerRepository playerRepository) =>
 {
-    var userId = user.FindFirstValue("sub");
-    return Results.Ok(new { message = "created", userId });
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    try
+    {
+        var player = new Player(playerId.Value, request.UserName);
+        await playerRepository.SaveAsync(player);
+        return Results.Ok(new
+        {
+            message = "created",
+            userId = player.Id.Value,
+            userName = player.Name
+        });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
 }).RequireAuthorization();
 
 app.Run();
+
+static PlayerId? TryGetPlayerId(ClaimsPrincipal user)
+{
+    var subject = user.FindFirstValue(ClaimTypes.NameIdentifier)
+        ?? user.FindFirstValue("sub");
+
+    return Guid.TryParse(subject, out var guid) ? new PlayerId(guid) : null;
+}
+
+public record CreatePlayerRequest(string UserName);
