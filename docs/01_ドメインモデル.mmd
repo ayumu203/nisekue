@@ -1,0 +1,57 @@
+%% classDiagram
+%%     direction LR
+
+%%     class Entity {
+%%       +Id id
+%%       +string name
+%%       +validate()
+%%     }
+
+%%     class ValueObject {
+%%       +string value
+%%       +equals(other)
+%%     }
+
+%%     class Repository {
+%%       <<interface>>
+%%       +findById(id) Entity
+%%       +save(entity) void
+%%     }
+
+%%     class Service {
+%%       +execute(input) Result
+%%     }
+
+%%     class Result {
+%%       +Boolean success
+%%       +string message
+%%     }
+
+%%     Entity *-- ValueObject : has
+%%     Service ..> Repository : uses
+%%     Service --> Result : returns
+
+classDiagram
+  direction LR
+
+  class Player {
+    <<Entity>>
+    +PlayerId Id
+    +string Name
+    +UpdateName(name: string) name
+    -ValidateName(name: string) name 
+  }
+
+  class PlayerId {
+    <<Value Object>>
+    +Guid Id
+  }
+
+  class PlayerRepository {
+    +Task~Player?~ GetPlayerAsync(id: PlayerId)
+    +Task SaveAsync(player: Player)
+  }
+    Player *-- PlayerId : has
+    PlayerRepository ..> Player : stores/loads
+
+  
