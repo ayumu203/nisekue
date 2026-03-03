@@ -4,14 +4,11 @@ using Microsoft.IdentityModel.Tokens;
 using server.domain.player;
 using server.infrastructure;
 using System.Security.Claims;
+using server.infrastructure.player;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var supabaseProjectUrl = builder.Configuration["Supabase:ProjectUrl"];
-
-var issuer = $"{supabaseProjectUrl?.TrimEnd('/')}/auth/v1";
-var supabaseAudience = "authenticated";
-
+// CORS の設定
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ClientCors", policy =>
@@ -23,6 +20,12 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Supabase 周りの定義
+var supabaseProjectUrl = builder.Configuration["Supabase:ProjectUrl"];
+var issuer = $"{supabaseProjectUrl?.TrimEnd('/')}/auth/v1";
+var supabaseAudience = "authenticated";
+
+// 認証の設定
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.MetadataAddress = $"{issuer}/.well-known/openid-configuration";
@@ -42,6 +45,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 builder.Services.AddAuthorization();
 
+// Supabase の接続設定
 var supabaseConnectionString = builder.Configuration.GetConnectionString("Supabase")
     ?? throw new InvalidOperationException("Connection string 'Supabase' is not configured.");
 
@@ -52,6 +56,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "internal");
     });
 });
+
+// DI
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
 
 var app = builder.Build();

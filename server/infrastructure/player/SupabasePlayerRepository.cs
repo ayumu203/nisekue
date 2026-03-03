@@ -1,58 +1,58 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using server.domain.player;
-using server.infrastructure.player;
 
-namespace server.infrastructure;
-
-public class SupabasePlayerRepository(AppDbContext dbContext) : IPlayerRepository
+namespace server.infrastructure.player
 {
-    public async Task<Player?> GetPlayerAsync(PlayerId id)
+    public class SupabasePlayerRepository(AppDbContext dbContext) : IPlayerRepository
     {
-        var entity = await dbContext.Players
-            .AsNoTracking()
-            .SingleOrDefaultAsync(x => x.Id == id.Value);
-
-        if (entity is null)
+        public async Task<Player?> GetPlayerAsync(PlayerId id)
         {
-            return null;
-        }
+            var entity = await dbContext.Players
+                .AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == id.Value);
 
-        return MapToDomain(entity);
-    }
-
-    public async Task SaveAsync(Player player)
-    {
-        var existing = await dbContext.Players
-            .SingleOrDefaultAsync(x => x.Id == player.Id.Value);
-
-        if (existing is null)
-        {
-            dbContext.Players.Add(new PlayerEntity
+            if (entity is null)
             {
-                Id = player.Id.Value,
-                Name = player.Name,
-            });
-        }
-        else
-        {
-            existing.Name = player.Name;
+                return null;
+            }
+
+            return MapToDomain(entity);
         }
 
-        try
+        public async Task SaveAsync(Player player)
         {
-            await dbContext.SaveChangesAsync();
+            var existing = await dbContext.Players
+                .SingleOrDefaultAsync(x => x.Id == player.Id.Value);
+
+            if (existing is null)
+            {
+                dbContext.Players.Add(new PlayerEntity
+                {
+                    Id = player.Id.Value,
+                    Name = player.Name,
+                });
+            }
+            else
+            {
+                existing.Name = player.Name;
+            }
+
+            try
+            {
+                await dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == PostgresErrorCodes.UniqueViolation)
+            {
+                throw new InvalidOperationException("同じIDのプレイヤーがすでに存在します。", ex);
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException("プレイヤー情報の保存に失敗しました。", ex);
+            }
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == PostgresErrorCodes.UniqueViolation)
-        {
-            throw new InvalidOperationException("同じIDのプレイヤーがすでに存在します。", ex);
-        }
-        catch (DbUpdateException ex)
-        {
-            throw new InvalidOperationException("プレイヤー情報の保存に失敗しました。", ex);
-        }
+
+        private static Player MapToDomain(PlayerEntity entity) =>
+            new(new PlayerId(entity.Id), entity.Name);
     }
-
-    private static Player MapToDomain(PlayerEntity entity) =>
-        new(new PlayerId(entity.Id), entity.Name);
 }
