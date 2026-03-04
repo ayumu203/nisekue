@@ -2,13 +2,13 @@ erDiagram
     PLAYERS {
         uuid id PK "internal.players.id"
         varchar(20) name "NOT NULL"
-        int level
-        int exp
-        int max_hp
-        int max_mp
-        int strength
-        int defense
-        int intelligence
-        int luck
-        int speed
+        int level "NOT NULL, DEFAULT 1"
+        int exp "NOT NULL, DEFAULT 0"
+        int max_hp "NOT NULL, DEFAULT 1"
+        int max_mp "NOT NULL, DEFAULT 0"
+        int strength "NOT NULL, DEFAULT 0"
+        int defense "NOT NULL, DEFAULT 0"
+        int intelligence "NOT NULL, DEFAULT 0"
+        int luck "NOT NULL, DEFAULT 0"
+        int speed "NOT NULL, DEFAULT 0"
     }

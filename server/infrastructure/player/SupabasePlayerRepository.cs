@@ -31,11 +31,29 @@ namespace server.infrastructure.player
                 {
                     Id = player.Id.Value,
                     Name = player.Name,
+                    Level = player.Level,
+                    Exp = player.Exp,
+                    MaxHp = player.Status.MaxHp,
+                    MaxMp = player.Status.MaxMp,
+                    Strength = player.Status.Strength,
+                    Defense = player.Status.Defense,
+                    Intelligence = player.Status.Intelligence,
+                    Luck = player.Status.Luck,
+                    Speed = player.Status.Speed,
                 });
             }
             else
             {
                 existing.Name = player.Name;
+                existing.Level = player.Level;
+                existing.Exp = player.Exp;
+                existing.MaxHp = player.Status.MaxHp;
+                existing.MaxMp = player.Status.MaxMp;
+                existing.Strength = player.Status.Strength;
+                existing.Defense = player.Status.Defense;
+                existing.Intelligence = player.Status.Intelligence;
+                existing.Luck = player.Status.Luck;
+                existing.Speed = player.Status.Speed;
             }
 
             try
@@ -56,8 +74,15 @@ namespace server.infrastructure.player
             new(
                 new PlayerId(entity.Id),
                 entity.Name,
-                level: 1,
-                exp: 0,
-                status: new BaseStatus(maxHp: 1, maxMp: 0, strength: 0, defense: 0, intelligence: 0, luck: 0, speed: 0));
+                level: entity.Level,
+                exp: entity.Exp,
+                status: new BaseStatus(
+                    maxHp: entity.MaxHp,
+                    maxMp: entity.MaxMp,
+                    strength: entity.Strength,
+                    defense: entity.Defense,
+                    intelligence: entity.Intelligence,
+                    luck: entity.Luck,
+                    speed: entity.Speed));
     }
 }
