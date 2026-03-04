@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Stack, TextField } from '@mui/material'
 import { supabase } from '../../lib/supabase'
+import locale from '../../../locale/auth/SignIn.json'
 
 type SignInProps = {
   onMessage?: (message: string) => void
@@ -24,23 +25,23 @@ function SignIn({ onMessage }: SignInProps) {
     })
 
     if (signInError) {
-      setError(signInError.message)
-      onMessage?.('ログインに失敗しました')
+      const normalized = signInError.message.trim().toLowerCase()
+      setError(locale.errorMessages[normalized as keyof typeof locale.errorMessages] ?? locale.defaultError)
+      onMessage?.(locale.toastFailed)
       setIsSubmitting(false)
       return
     }
 
-    onMessage?.('ログインしました')
+    onMessage?.(locale.toastSuccess)
     setIsSubmitting(false)
   }
 
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate>
       <Stack spacing={2}>
-        <Typography variant="h6">Sign In</Typography>
         <TextField
           id="sign-in-email"
-          label="Email"
+          label={locale.emailLabel}
           type="email"
           autoComplete="email"
           value={email}
@@ -50,7 +51,7 @@ function SignIn({ onMessage }: SignInProps) {
         />
         <TextField
           id="sign-in-password"
-          label="Password"
+          label={locale.passwordLabel}
           type="password"
           autoComplete="current-password"
           value={password}
@@ -59,7 +60,7 @@ function SignIn({ onMessage }: SignInProps) {
           fullWidth
         />
         <Button type="submit" variant="contained" disabled={isSubmitting}>
-          {isSubmitting ? 'Signing in...' : 'Sign in'}
+          {isSubmitting ? locale.submitting : locale.submit}
         </Button>
         {error ? <Alert severity="error">{error}</Alert> : null}
       </Stack>

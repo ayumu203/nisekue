@@ -1,0 +1,17 @@
+{
+  "title": "ログイン",
+  "emailLabel": "メールアドレス",
+  "passwordLabel": "パスワード",
+  "submit": "ログイン",
+  "submitting": "ログイン中...",
+  "toastFailed": "ログインに失敗しました",
+  "toastSuccess": "ログインしました",
+  "defaultError": "ログインに失敗しました。入力内容を確認してください。",
+  "switchLink": "新規登録はこちら",
+  "errorMessages": {
+    "invalid login credentials": "メールアドレスまたはパスワードが正しくありません。",
+    "email not confirmed": "メールアドレスの確認が完了していません。確認メールのリンクを開いてください。",
+    "unable to validate email address: invalid format": "メールアドレスの形式が正しくありません。",
+    "user not found": "ユーザーが見つかりません。"
+  }
+}

@@ -3,6 +3,7 @@ import useSWR from 'swr'
 import SignOut from '../components/auth/SignOut'
 import { createPlayer, getPlayer } from '../api/player'
 import { useAuth } from '../contexts/useAuth'
+import locale from '../../locale/home/Home.json'
 
 function toDefaultUserName(email: string | undefined): string {
   const fallback = 'player'
@@ -42,7 +43,7 @@ function Home() {
       <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
         <Stack direction="row" spacing={1} alignItems="center">
           <CircularProgress size={20} />
-          <Typography>Loading auth state...</Typography>
+          <Typography>{locale.authLoading}</Typography>
         </Stack>
       </Box>
     )
@@ -52,36 +53,38 @@ function Home() {
     <Container maxWidth="sm" sx={{ py: 8 }}>
       <Paper elevation={2} sx={{ p: 4 }}>
         <Stack spacing={2}>
-          <Typography variant="h4">Player</Typography>
-          <Alert severity="success">Signed in as: {user?.email}</Alert>
+          <Typography variant="h4">{locale.title}</Typography>
+          <Alert severity="success">
+            {locale.signedInAs}: {user?.email}
+          </Alert>
           {isPlayerLoading ? (
             <Stack direction="row" spacing={1} alignItems="center">
               <CircularProgress size={16} />
-              <Typography variant="body2">Loading player profile...</Typography>
+              <Typography variant="body2">{locale.playerLoading}</Typography>
             </Stack>
           ) : playerError ? (
             <Alert severity="warning">{playerError.message}</Alert>
           ) : (
             <Alert severity="info">
-              User Name: {player?.userName ?? '未設定'}
+              {locale.labels.userName}: {player?.userName ?? locale.notSet}
               <br />
-              Level: {player?.level ?? '-'}
+              {locale.labels.level}: {player?.level ?? locale.unknownValue}
               <br />
-              Exp: {player?.exp ?? '-'}
+              {locale.labels.exp}: {player?.exp ?? locale.unknownValue}
               <br />
-              MaxHp: {player?.status.maxHp ?? '-'}
+              {locale.labels.maxHp}: {player?.status.maxHp ?? locale.unknownValue}
               <br />
-              MaxMp: {player?.status.maxMp ?? '-'}
+              {locale.labels.maxMp}: {player?.status.maxMp ?? locale.unknownValue}
               <br />
-              Strength: {player?.status.strength ?? '-'}
+              {locale.labels.strength}: {player?.status.strength ?? locale.unknownValue}
               <br />
-              Defense: {player?.status.defense ?? '-'}
+              {locale.labels.defense}: {player?.status.defense ?? locale.unknownValue}
               <br />
-              Intelligence: {player?.status.intelligence ?? '-'}
+              {locale.labels.intelligence}: {player?.status.intelligence ?? locale.unknownValue}
               <br />
-              Luck: {player?.status.luck ?? '-'}
+              {locale.labels.luck}: {player?.status.luck ?? locale.unknownValue}
               <br />
-              Speed: {player?.status.speed ?? '-'}
+              {locale.labels.speed}: {player?.status.speed ?? locale.unknownValue}
             </Alert>
           )}
           <SignOut />
