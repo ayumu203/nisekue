@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace server.domain.player;
 
 public class Player(PlayerId id, string name, int level, int exp, BaseStatus status)
