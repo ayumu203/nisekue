@@ -1,8 +1,19 @@
 import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import useSWR from 'swr'
 import SignOut from '../components/auth/SignOut'
-import { getPlayer } from '../api/player'
+import { createPlayer, getPlayer } from '../api/player'
 import { useAuth } from '../contexts/useAuth'
+
+function toDefaultUserName(email: string | undefined): string {
+  const fallback = 'player'
+  if (!email) {
+    return fallback
+  }
+
+  const local = email.split('@')[0]?.trim() ?? ''
+  const normalized = local.replace(/\s+/g, '').slice(0, 20)
+  return normalized.length > 0 ? normalized : fallback
+}
 
 function Home() {
   const { session, user, isLoading } = useAuth()
@@ -12,7 +23,18 @@ function Home() {
       throw new Error('セッションが無効です')
     }
 
-    return getPlayer(session.access_token)
+    try {
+      return await getPlayer(session.access_token)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ''
+
+      if (!message.includes('プレイヤーが見つかりません')) {
+        throw error
+      }
+
+      await createPlayer({ userName: toDefaultUserName(user?.email) }, session.access_token)
+      return getPlayer(session.access_token)
+    }
   })
 
   if (isLoading) {
