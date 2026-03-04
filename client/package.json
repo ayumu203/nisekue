@@ -16,6 +16,7 @@
     "@supabase/supabase-js": "^2.98.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.5",
     "swr": "^2.3.3",
     "zod": "^3.24.2"
   },
