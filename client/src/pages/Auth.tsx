@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom'
 import SignIn from '../components/auth/SignIn'
 import SignUp from '../components/auth/SignUp'
 import { useAuth } from '../contexts/useAuth'
+import commonLocale from '../../locale/auth/Common.json'
 import signInLocale from '../../locale/auth/SignIn.json'
 import signUpLocale from '../../locale/auth/SignUp.json'
 
@@ -17,7 +18,7 @@ function Auth() {
       <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
         <Stack direction="row" spacing={1} alignItems="center">
           <CircularProgress size={20} />
-          <Typography>認証状態を確認中...</Typography>
+          <Typography>{commonLocale.authLoading}</Typography>
         </Stack>
       </Box>
     )
