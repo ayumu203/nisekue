@@ -23,7 +23,7 @@ builder.Services.AddCors(options =>
 // Supabase 周りの定義
 var supabaseProjectUrl = builder.Configuration["Supabase:ProjectUrl"];
 var issuer = $"{supabaseProjectUrl?.TrimEnd('/')}/auth/v1";
-var supabaseAudience = "authenticated";
+var supabaseAudience = builder.Configuration["Supabase:JwtAudience"] ?? "authenticated";
 
 // 認証の設定
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
@@ -41,7 +41,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateIssuerSigningKey = true
     };
 
-    options.RequireHttpsMetadata = false;
+    if (builder.Environment.IsDevelopment())
+    {
+        options.RequireHttpsMetadata = false;
+    }
 });
 builder.Services.AddAuthorization();
 
