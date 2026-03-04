@@ -35,5 +35,16 @@ jobs:
       - name: Restore
         run: dotnet restore server/server.csproj
 
+      - name: Validate DB connection string
+        run: |
+          if [ -z "${ConnectionStrings__Supabase}" ]; then
+            echo "::error::GitHub secret SUPABASE_DB_CONNECTION_STRING is empty or unavailable."
+            echo "::error::Set it in Repository Settings > Secrets and variables > Actions > Secrets."
+            exit 1
+          fi
+
+      - name: Build
+        run: dotnet build server/server.csproj -c Release --no-restore
+
       - name: Apply migrations
-        run: dotnet ef database update --project server/server.csproj --startup-project server/server.csproj
+        run: dotnet ef database update --project server/server.csproj --startup-project server/server.csproj --no-build
