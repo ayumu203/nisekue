@@ -1,26 +1,22 @@
-import { useEffect, useState } from 'react'
 import './App.css'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import Auth from './pages/Auth'
+import Home from './pages/Home'
+import { useAuth } from './contexts/useAuth'
 
 function App() {
-  const [ message, setMessage ] = useState('')
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api'
+  const { isLoading, user } = useAuth()
 
-  useEffect(() => {
-    fetch(`${apiBaseUrl}/test-message`)
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`)
-        }
-        return res.json()
-      })
-      .then(data => setMessage(data.message))
-      .catch(() => setMessage('メッセージ取得に失敗しました'))
-  }, [])
+  if (isLoading) {
+    return null
+  }
 
   return (
-    <>
-      <div>{message}</div>
-    </>
+    <Routes>
+      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+      <Route path="/" element={user ? <Home /> : <Navigate to="/auth" replace />} />
+      <Route path="*" element={<Navigate to={user ? '/' : '/auth'} replace />} />
+    </Routes>
   )
 }
 

@@ -1,0 +1,41 @@
+classDiagram
+    %% Player の基本情報
+    class Player {
+        <<Aggregate Root>>
+        +PlayerId Id
+        +string Name
+        +int Level
+        +int Exp
+        +BaseStatus Status
+        +UpdateName(name: string) name
+        +UpdateStatus(status: BaseStatus) void
+        -ValidateName(name: string) name 
+        +GainExp(exp: int) void
+        +LevelUp() bool
+    }
+
+    class PlayerId {
+        <<Value Object>>
+        +Guid Id
+    }
+
+    class PlayerRepository {
+        +Task~Player?~ GetPlayerAsync(id: PlayerId)
+        +Task SaveAsync(player: Player)
+    }
+    Player *-- PlayerId : has
+    PlayerRepository ..> Player : stores/loads
+
+    %% Player の基本ステータス
+    class BaseStatus {
+        <<Value Object>>
+        +int MaxHp
+        +int MaxMp
+        +int Strength
+        +int Defense
+        +int Intelligence
+        +int Luck
+        +int Speed
+    }
+
+    Player *-- BaseStatus : has

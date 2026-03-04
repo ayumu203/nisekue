@@ -1,0 +1,88 @@
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using server.domain.player;
+
+namespace server.infrastructure.player
+{
+    public class SupabasePlayerRepository(AppDbContext dbContext) : IPlayerRepository
+    {
+        public async Task<Player?> GetPlayerAsync(PlayerId id)
+        {
+            var entity = await dbContext.Players
+                .AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == id.Value);
+
+            if (entity is null)
+            {
+                return null;
+            }
+
+            return MapToDomain(entity);
+        }
+
+        public async Task SaveAsync(Player player)
+        {
+            var existing = await dbContext.Players
+                .SingleOrDefaultAsync(x => x.Id == player.Id.Value);
+
+            if (existing is null)
+            {
+                dbContext.Players.Add(new PlayerEntity
+                {
+                    Id = player.Id.Value,
+                    Name = player.Name,
+                    Level = player.Level,
+                    Exp = player.Exp,
+                    MaxHp = player.Status.MaxHp,
+                    MaxMp = player.Status.MaxMp,
+                    Strength = player.Status.Strength,
+                    Defense = player.Status.Defense,
+                    Intelligence = player.Status.Intelligence,
+                    Luck = player.Status.Luck,
+                    Speed = player.Status.Speed,
+                });
+            }
+            else
+            {
+                existing.Name = player.Name;
+                existing.Level = player.Level;
+                existing.Exp = player.Exp;
+                existing.MaxHp = player.Status.MaxHp;
+                existing.MaxMp = player.Status.MaxMp;
+                existing.Strength = player.Status.Strength;
+                existing.Defense = player.Status.Defense;
+                existing.Intelligence = player.Status.Intelligence;
+                existing.Luck = player.Status.Luck;
+                existing.Speed = player.Status.Speed;
+            }
+
+            try
+            {
+                await dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == PostgresErrorCodes.UniqueViolation)
+            {
+                throw new InvalidOperationException("同じIDのプレイヤーがすでに存在します。", ex);
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException("プレイヤー情報の保存に失敗しました。", ex);
+            }
+        }
+
+        private static Player MapToDomain(PlayerEntity entity) =>
+            new(
+                new PlayerId(entity.Id),
+                entity.Name,
+                level: entity.Level,
+                exp: entity.Exp,
+                status: new BaseStatus(
+                    maxHp: entity.MaxHp,
+                    maxMp: entity.MaxMp,
+                    strength: entity.Strength,
+                    defense: entity.Defense,
+                    intelligence: entity.Intelligence,
+                    luck: entity.Luck,
+                    speed: entity.Speed));
+    }
+}
