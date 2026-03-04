@@ -102,7 +102,12 @@ app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request,
 
     try
     {
-        var player = new Player(playerId.Value, request.UserName);
+        var player = new Player(
+            playerId.Value,
+            request.UserName,
+            level: 1,
+            exp: 0,
+            status: new BaseStatus(maxHp: 1, maxMp: 0, strength: 0, defense: 0, intelligence: 0, luck: 0, speed: 0));
         await playerRepository.SaveAsync(player);
         return Results.Ok(new
         {

@@ -5,11 +5,13 @@ classDiagram
         +PlayerId Id
         +string Name
         +int Level
-        +int exp
+        +int Exp
+        +BaseStatus Status
         +UpdateName(name: string) name
+        +UpdateStatus(status: BaseStatus) void
         -ValidateName(name: string) name 
         +GainExp(exp: int) void
-        -LevelUp() bool
+        +LevelUp() bool
     }
 
     class PlayerId {
