@@ -80,12 +80,6 @@ dotnet ef migrations add <MigrationName> \
   --output-dir infrastructure/migrations
 ```
 
-### CI/CD で必要な Secret
-
-- `SUPABASE_DB_CONNECTION_STRING`
-  - 例: `Host=127.0.0.1;Port=54322;Database=postgres;Username=postgres;Password=postgres`
-  - ワークフロー内で `ConnectionStrings__Supabase` として注入.
-
 ## Supabase
 
 - 起動関連

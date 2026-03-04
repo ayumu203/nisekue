@@ -1,1 +1,0 @@
-SELECT "MigrationId" FROM internal."__EFMigrationsHistory" ORDER BY "MigrationId";
