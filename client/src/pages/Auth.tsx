@@ -1,20 +1,23 @@
 import { useState } from 'react'
-import { Alert, Box, CircularProgress, Container, Divider, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { Navigate } from 'react-router-dom'
 import SignIn from '../components/auth/SignIn'
 import SignUp from '../components/auth/SignUp'
 import { useAuth } from '../contexts/useAuth'
+import signInLocale from '../../locale/auth/SignIn.json'
+import signUpLocale from '../../locale/auth/SignUp.json'
 
 function Auth() {
   const { user, isLoading } = useAuth()
   const [message, setMessage] = useState<string | null>(null)
+  const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn')
 
   if (isLoading) {
     return (
       <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
         <Stack direction="row" spacing={1} alignItems="center">
           <CircularProgress size={20} />
-          <Typography>Loading auth state...</Typography>
+          <Typography>認証状態を確認中...</Typography>
         </Stack>
       </Box>
     )
@@ -28,13 +31,21 @@ function Auth() {
     <Container maxWidth="sm" sx={{ py: 8 }}>
       <Paper elevation={2} sx={{ p: 4 }}>
         <Stack spacing={3}>
-          <Typography variant="h4">Authentication</Typography>
+          <Typography variant="h4">{mode === 'signIn' ? signInLocale.title : signUpLocale.title}</Typography>
           {message ? <Alert severity="info">{message}</Alert> : null}
-          <Stack spacing={3}>
-            <SignUp onMessage={setMessage} />
-            <Divider />
-            <SignIn onMessage={setMessage} />
-          </Stack>
+
+          {mode === 'signIn' ? <SignIn onMessage={setMessage} /> : <SignUp onMessage={setMessage} />}
+
+          <Button
+            variant="text"
+            onClick={() => {
+              setMessage(null)
+              setMode((current) => (current === 'signIn' ? 'signUp' : 'signIn'))
+            }}
+            sx={{ alignSelf: 'flex-start', p: 0 }}
+          >
+            {mode === 'signIn' ? signInLocale.switchLink : signUpLocale.switchLink}
+          </Button>
         </Stack>
       </Paper>
     </Container>

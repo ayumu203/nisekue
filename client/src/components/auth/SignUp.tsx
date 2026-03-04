@@ -1,15 +1,14 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Stack, TextField } from '@mui/material'
 import { supabase } from '../../lib/supabase'
-import { createPlayer } from '../../api/player'
+import locale from '../../../locale/auth/SignUp.json'
 
 type SignUpProps = {
   onMessage?: (message: string) => void
 }
 
 function SignUp({ onMessage }: SignUpProps) {
-  const [userName, setUserName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -31,29 +30,20 @@ function SignUp({ onMessage }: SignUpProps) {
     })
 
     if (signUpError) {
-      setError(signUpError.message)
-      onMessage?.('ユーザー登録に失敗しました')
+      const normalized = signUpError.message.trim().toLowerCase()
+      setError(locale.errorMessages[normalized as keyof typeof locale.errorMessages] ?? locale.defaultError)
+      onMessage?.(locale.toastFailed)
       setIsSubmitting(false)
       return
     }
 
-    const accessToken = data.session?.access_token
-
-    if (!accessToken) {
-      onMessage?.('ユーザー登録が完了しました。ログイン後にユーザー名を登録してください。')
+    if (!data.session?.access_token) {
+      onMessage?.(locale.toastNeedsEmailConfirm)
       setIsSubmitting(false)
       return
     }
 
-    try {
-      await createPlayer({ userName }, accessToken)
-      onMessage?.('ユーザー登録とユーザー名登録が完了しました。')
-    } catch (createPlayerError) {
-      const message =
-        createPlayerError instanceof Error ? createPlayerError.message : 'ユーザー名の登録に失敗しました'
-      setError(message)
-      onMessage?.('ユーザー登録後のユーザー名登録に失敗しました。')
-    }
+    onMessage?.(locale.toastSuccess)
 
     setIsSubmitting(false)
   }
@@ -61,19 +51,9 @@ function SignUp({ onMessage }: SignUpProps) {
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate>
       <Stack spacing={2}>
-        <Typography variant="h6">Sign Up</Typography>
-        <TextField
-          id="sign-up-user-name"
-          label="User Name"
-          autoComplete="username"
-          value={userName}
-          onChange={(event) => setUserName(event.target.value)}
-          required
-          fullWidth
-        />
         <TextField
           id="sign-up-email"
-          label="Email"
+          label={locale.emailLabel}
           type="email"
           autoComplete="email"
           value={email}
@@ -83,7 +63,7 @@ function SignUp({ onMessage }: SignUpProps) {
         />
         <TextField
           id="sign-up-password"
-          label="Password"
+          label={locale.passwordLabel}
           type="password"
           autoComplete="new-password"
           value={password}
@@ -92,7 +72,7 @@ function SignUp({ onMessage }: SignUpProps) {
           fullWidth
         />
         <Button type="submit" variant="contained" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating...' : 'Create account'}
+          {isSubmitting ? locale.submitting : locale.submit}
         </Button>
         {error ? <Alert severity="error">{error}</Alert> : null}
       </Stack>
