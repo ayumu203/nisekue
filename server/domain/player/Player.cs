@@ -32,13 +32,13 @@ public class Player(PlayerId id, string name, int level, int exp, BaseStatus sta
     }
     public void GainExp(int exp)
     {
-        if(exp < 0)exp = 0;
+        if (exp < 0) exp = 0;
         Exp += exp;
     }
     public bool LevelUp()
     {
         bool flag = false;
-        while(Exp >= Level * 10)
+        while (Exp >= Level * 10)
         {
             Exp -= Level * 10;
             Level++;

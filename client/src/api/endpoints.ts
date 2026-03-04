@@ -1,9 +1,5 @@
 import { getPlayerResponseSchema, createPlayerRequestSchema, createPlayerResponseSchema } from '../schema/player'
-export type {
-  GetPlayerResponse,
-  CreatePlayerRequest,
-  CreatePlayerResponse,
-} from '../schema/player'
+export type { GetPlayerResponse, CreatePlayerRequest, CreatePlayerResponse } from '../schema/player'
 
 export const endpoints = {
   player: {

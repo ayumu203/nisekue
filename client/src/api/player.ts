@@ -1,5 +1,5 @@
 import { endpoints } from './endpoints'
-import type { GetPlayerResponse, CreatePlayerRequest, CreatePlayerResponse } from '../schema/player'
+import type { CreatePlayerRequest, CreatePlayerResponse, GetPlayerResponse } from '../schema/player'
 
 export async function getPlayer(accessToken: string): Promise<GetPlayerResponse> {
   const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
@@ -15,10 +15,7 @@ export async function getPlayer(accessToken: string): Promise<GetPlayerResponse>
 
   if (!response.ok) {
     const message =
-      typeof json === 'object' &&
-      json !== null &&
-      'message' in json &&
-      typeof json.message === 'string'
+      typeof json === 'object' && json !== null && 'message' in json && typeof json.message === 'string'
         ? json.message
         : 'ユーザー情報の取得に失敗しました'
     throw new Error(message)
@@ -27,10 +24,7 @@ export async function getPlayer(accessToken: string): Promise<GetPlayerResponse>
   return endpoints.player.get.responseSchema.parse(json)
 }
 
-export async function createPlayer(
-  input: CreatePlayerRequest,
-  accessToken: string,
-): Promise<CreatePlayerResponse> {
+export async function createPlayer(input: CreatePlayerRequest, accessToken: string): Promise<CreatePlayerResponse> {
   const payload = endpoints.player.create.requestSchema.parse(input)
   const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
 
@@ -47,10 +41,7 @@ export async function createPlayer(
 
   if (!response.ok) {
     const message =
-      typeof json === 'object' &&
-      json !== null &&
-      'message' in json &&
-      typeof json.message === 'string'
+      typeof json === 'object' && json !== null && 'message' in json && typeof json.message === 'string'
         ? json.message
         : 'ユーザー名の登録に失敗しました'
     throw new Error(message)

@@ -19,7 +19,11 @@ function toDefaultUserName(email: string | undefined): string {
 function Home() {
   const { session, user, isLoading } = useAuth()
   const playerSWRKey = session?.user.id ? (['player', session.user.id] as const) : null
-  const { data: player, error: playerError, isLoading: isPlayerLoading } = useSWR(playerSWRKey, async () => {
+  const {
+    data: player,
+    error: playerError,
+    isLoading: isPlayerLoading,
+  } = useSWR(playerSWRKey, async () => {
     if (!session?.access_token) {
       throw new Error('セッションが無効です')
     }

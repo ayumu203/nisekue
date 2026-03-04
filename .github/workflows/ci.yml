@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'server/**'
+      - 'client/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'server/**'
+      - 'client/**'
+      - '.github/workflows/ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (format/lint/build)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore server/server.csproj
+
+      - name: Format check
+        run: dotnet format server/server.csproj whitespace --verify-no-changes --no-restore
+
+      - name: Lint check
+        run: dotnet format server/server.csproj analyzers --verify-no-changes --no-restore
+
+      - name: Build
+        run: dotnet build server/server.csproj -c Release --no-restore -warnaserror
+
+  frontend:
+    name: Frontend (format/lint/build)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: client/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: client
+
+      - name: Format check
+        run: pnpm run format:check
+        working-directory: client
+
+      - name: Lint
+        run: pnpm run lint
+        working-directory: client
+
+      - name: Build
+        run: pnpm run build
+        working-directory: client
