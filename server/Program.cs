@@ -88,7 +88,19 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
     return Results.Ok(new
     {
         userId = player.Id.Value,
-        userName = player.Name
+        userName = player.Name,
+        level = player.Level,
+        exp = player.Exp,
+        status = new
+        {
+            maxHp = player.Status.MaxHp,
+            maxMp = player.Status.MaxMp,
+            strength = player.Status.Strength,
+            defense = player.Status.Defense,
+            intelligence = player.Status.Intelligence,
+            luck = player.Status.Luck,
+            speed = player.Status.Speed
+        }
     });
 }).RequireAuthorization();
 
