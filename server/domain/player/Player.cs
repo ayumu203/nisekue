@@ -27,7 +27,7 @@ public class Player(PlayerId id, string name, int level, int exp, BaseStatus sta
         var normalized = name?.Trim() ?? string.Empty;
         if (normalized.Length is < 1 or > NameMaxLength)
         {
-            throw new ArgumentException($"プレイヤー名は1文字から${NameMaxLength}文字以内です.", nameof(name));
+            throw new ArgumentException($"プレイヤー名は1文字から{NameMaxLength}文字以内です.", nameof(name));
         }
 
         return normalized;
