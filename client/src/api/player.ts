@@ -2,7 +2,7 @@ import { endpoints } from './endpoints'
 import type { GetPlayerResponse, CreatePlayerRequest, CreatePlayerResponse } from '../schema/player'
 
 export async function getPlayer(accessToken: string): Promise<GetPlayerResponse> {
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api'
+  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
 
   const response = await fetch(`${apiBaseUrl}${endpoints.player.get.path}`, {
     method: endpoints.player.get.method,
@@ -32,7 +32,7 @@ export async function createPlayer(
   accessToken: string,
 ): Promise<CreatePlayerResponse> {
   const payload = endpoints.player.create.requestSchema.parse(input)
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api'
+  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
 
   const response = await fetch(`${apiBaseUrl}${endpoints.player.create.path}`, {
     method: endpoints.player.create.method,
