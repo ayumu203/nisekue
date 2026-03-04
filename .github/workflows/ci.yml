@@ -69,7 +69,7 @@ jobs:
         working-directory: client
 
       - name: Format check
-        run: pnpm dlx prettier@3.6.2 --check "src/**/*.{ts,tsx,css}" "locale/**/*.json"
+        run: pnpm run format:check
         working-directory: client
 
       - name: Lint
