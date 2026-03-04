@@ -11,6 +11,17 @@ export const playerUserNameSchema = z
 export const getPlayerResponseSchema = z.object({
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
+  level: z.number().int().min(1, 'レベルは1以上である必要があります'),
+  exp: z.number().int().min(0, '経験値は0以上である必要があります'),
+  status: z.object({
+    maxHp: z.number().int().min(1, '最大HPは1以上である必要があります'),
+    maxMp: z.number().int().min(0, '最大MPは0以上である必要があります'),
+    strength: z.number().int().min(0, 'Strengthは0以上である必要があります'),
+    defense: z.number().int().min(0, 'Defenseは0以上である必要があります'),
+    intelligence: z.number().int().min(0, 'Intelligenceは0以上である必要があります'),
+    luck: z.number().int().min(0, 'Luckは0以上である必要があります'),
+    speed: z.number().int().min(0, 'Speedは0以上である必要があります'),
+  }),
 })
 
 export const createPlayerRequestSchema = z.object({
