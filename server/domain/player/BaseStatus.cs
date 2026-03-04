@@ -14,7 +14,7 @@ public class BaseStatus(int maxHp, int maxMp, int strength, int defense, int int
     {
         if (value <= 0)
         {
-            throw new ArgumentOutOfRangeException(paramName, "ステータス値に0未満の値は代入できないです.");
+            throw new ArgumentOutOfRangeException(paramName, "ステータス値に0以下の値は代入できないです.");
         }
 
         return value;
