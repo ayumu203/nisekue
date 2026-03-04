@@ -47,4 +47,4 @@ jobs:
         run: dotnet build server/server.csproj -c Release --no-restore
 
       - name: Apply migrations
-        run: dotnet ef database update --project server/server.csproj --startup-project server/server.csproj --no-build
+        run: dotnet ef database update --project server/server.csproj --startup-project server/server.csproj --configuration Release --no-build
