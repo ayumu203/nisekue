@@ -43,7 +43,9 @@ classDiagram
     class ChatRoom {
         <<Aggregate Root>>
         +PlayerId OwnerId
-        +ChatMessage[] ChatMessages
+        +int LastChatId
+        -List~ChatMessage~ _messages
+        +IReadOnlyList~ChatMessage~ Messages
         +GetNextMessageId() : int
         +PostMessage(senderId : PlayerId, text : string) : void
         +EnforceMessageLimit() : void
@@ -51,10 +53,10 @@ classDiagram
     %% メッセージ管理の単位
     class ChatMessage {
         <<Entity>>
-        +PlayerId PlayerId
+        +PlayerId SenderId
         +int ChatId
         +ChatText Body
-        +DateTime CreatedAt
+        +DateTimeOffset CreatedAt
     }
     %% メッセージの文字列の値オブジェクト
     class ChatText {
