@@ -46,8 +46,10 @@ classDiagram
         +int LastChatId
         -List~ChatMessage~ _messages
         +IReadOnlyList~ChatMessage~ Messages
+        +ChatRoom(ownerId: PlayerId, lastChatId: int, messages: IEnumerable~ChatMessage~)
         +GetNextMessageId() : int
         +PostMessage(senderId : PlayerId, text : string) : void
+        +RestoreMessages(messages: IEnumerable~ChatMessage~) : void
         +EnforceMessageLimit() : void
     }
     %% メッセージ管理の単位
@@ -66,9 +68,14 @@ classDiagram
     }
 
     class IChatRoomRepository {
-        +Task~ChatRoom?~ GetChatRoomAsync(ownerId: PlayerId)
+        +Task~ChatRoom~ GetChatRoomAsync(ownerId: PlayerId)
         +Task SaveAsync(room: ChatRoom)
     }
     ChatRoom *-- ChatMessage : 0..50
     ChatMessage *-- ChatText : has
     IChatRoomRepository ..> ChatRoom : stores/loads
+
+    %% Repository rule:
+    %% - GetChatRoomAsync: 未作成時は new ChatRoom(ownerId, 0) を返す
+    %% - SaveAsync: chat_rooms/chat_messages を同一トランザクションで差分upsert
+    %% - LastChatId: max(chat_messages.chat_id) 以上を維持し、不整合時は max(last_chat_id, max(chat_id)) を正とする
