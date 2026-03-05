@@ -68,4 +68,5 @@ classDiagram
         +Task SaveAsync(room: ChatRoom)
     }
     ChatRoom *-- ChatMessage : 0..50
+    ChatMessage *-- ChatText : has
     IChatRoomRepository ..> ChatRoom : stores/loads

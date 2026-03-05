@@ -12,3 +12,17 @@ erDiagram
         int luck "NOT NULL, DEFAULT 0"
         int speed "NOT NULL, DEFAULT 0"
     }
+    CHAT_ROOMS {
+        uuid owner_id PK, FK "internal.players.id"
+        int last_chat_id "NOT NULL, DEFAULT 0"
+    }
+    CHAT_MESSAGES {
+        uuid owner_id PK, FK "internal.chat_rooms.owner_id"
+        uuid sender_id FK "internal.players.id, NOT NULL"
+        int chat_id PK "NOT NULL"
+        varchar(200) message "NOT NULL"
+        timestamptz created_at "NOT NULL, DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    PLAYERS ||--|| CHAT_ROOMS : owns
+    CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
