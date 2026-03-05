@@ -7,9 +7,9 @@ classDiagram
         +int Level
         +int Exp
         +BaseStatus Status
-        +UpdateName(name: string) name
+        +UpdateName(name: string) void
         +UpdateStatus(status: BaseStatus) void
-        -ValidateName(name: string) name 
+        -ValidateName(name: string) string 
         +GainExp(exp: int) void
         +LevelUp() bool
     }
@@ -18,13 +18,6 @@ classDiagram
         <<Value Object>>
         +Guid Id
     }
-
-    class PlayerRepository {
-        +Task~Player?~ GetPlayerAsync(id: PlayerId)
-        +Task SaveAsync(player: Player)
-    }
-    Player *-- PlayerId : has
-    PlayerRepository ..> Player : stores/loads
 
     %% Player の基本ステータス
     class BaseStatus {
@@ -38,4 +31,41 @@ classDiagram
         +int Speed
     }
 
+    class IPlayerRepository {
+        +Task~Player?~ GetPlayerAsync(id: PlayerId)
+        +Task SaveAsync(player: Player)
+    }
+    Player *-- PlayerId : has
     Player *-- BaseStatus : has
+    IPlayerRepository ..> Player : stores/loads
+
+    %% ルームチャット機能
+    class ChatRoom {
+        <<Aggregate Root>>
+        +PlayerId OwnerId
+        +ChatMessage[] ChatMessages
+        +GetNextMessageId() : int
+        +PostMessage(senderId : PlayerId, text : string) : void
+        +EnforceMessageLimit() : void
+    }
+    %% メッセージ管理の単位
+    class ChatMessage {
+        <<Entity>>
+        +PlayerId PlayerId
+        +int ChatId
+        +ChatText Body
+        +DateTime CreatedAt
+    }
+    %% メッセージの文字列の値オブジェクト
+    class ChatText {
+        <<Value Object>>
+        +string Text
+        -ValidateMessage() : string
+    }
+
+    class IChatRoomRepository {
+        +Task~ChatRoom?~ GetChatRoomAsync(ownerId: PlayerId)
+        +Task SaveAsync(room: ChatRoom)
+    }
+    ChatRoom *-- ChatMessage : 0..50
+    IChatRoomRepository ..> ChatRoom : stores/loads
