@@ -110,7 +110,9 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
     });
 }).RequireAuthorization();
 
-app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request, IPlayerRepository playerRepository) =>
+app.MapPost(
+    "/player",
+    async (ClaimsPrincipal user, CreatePlayerRequest request, IPlayerRepository playerRepository, IChatRoomRepository chatRoomRepository) =>
 {
     var playerId = TryGetPlayerId(user);
     if (playerId is null)
@@ -127,6 +129,8 @@ app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request,
             exp: 0,
             status: new BaseStatus(maxHp: 1, maxMp: 0, strength: 0, defense: 0, intelligence: 0, luck: 0, speed: 0));
         await playerRepository.SaveAsync(player);
+        var room = await chatRoomRepository.GetChatRoomAsync(player.Id);
+        await chatRoomRepository.SaveAsync(room);
         return Results.Ok(new
         {
             message = "プレイヤーを作成しました。",

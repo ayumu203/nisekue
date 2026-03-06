@@ -2,8 +2,11 @@ import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } fro
 import useSWR from 'swr'
 import SignOut from '../components/auth/SignOut'
 import { createPlayer, getPlayer } from '../api/player'
+import { getChatRoom, postChatMessage } from '../api/chatRoom'
 import { useAuth } from '../contexts/useAuth'
 import locale from '../../locale/home/Home.json'
+import ChatMessages from '../components/chat/ChatMessages'
+import ChatForm from '../components/chat/ChatForm'
 
 function toDefaultUserName(email: string | undefined): string {
   const fallback = 'player'
@@ -40,6 +43,20 @@ function Home() {
       await createPlayer({ userName: toDefaultUserName(user?.email) }, session.access_token)
       return getPlayer(session.access_token)
     }
+  })
+  const chatSWRKey = session?.access_token && player?.userId ? (['chat-room', player.userId] as const) : null
+  const {
+    data: chatRoom,
+    error: chatError,
+    isLoading: isChatLoading,
+    isValidating: isChatValidating,
+    mutate: mutateChatRoom,
+  } = useSWR(chatSWRKey, async () => {
+    if (!session?.access_token || !player?.userId) {
+      throw new Error('チャット情報の取得に必要な情報が不足しています')
+    }
+
+    return getChatRoom({ ownerId: player.userId }, session.access_token)
   })
 
   if (isLoading) {
@@ -90,6 +107,37 @@ function Home() {
               <br />
               {locale.labels.speed}: {player?.status.speed ?? locale.unknownValue}
             </Alert>
+          )}
+          <Typography variant="h5">チャット</Typography>
+          {isChatLoading ? (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <CircularProgress size={16} />
+              <Typography variant="body2">チャットを読み込み中...</Typography>
+            </Stack>
+          ) : chatError ? (
+            <Alert severity="warning">{chatError.message}</Alert>
+          ) : (
+            <Stack spacing={2}>
+              <ChatMessages messages={chatRoom?.messages ?? []} currentUserId={session?.user.id ?? ''} />
+              <ChatForm
+                isSubmitting={isChatValidating}
+                onSubmit={async (text) => {
+                  if (!session?.access_token || !player?.userId || !session.user.id) {
+                    throw new Error('セッション情報が不足しています')
+                  }
+
+                  await postChatMessage(
+                    {
+                      ownerId: player.userId,
+                      senderId: session.user.id,
+                      text,
+                    },
+                    session.access_token,
+                  )
+                  await mutateChatRoom()
+                }}
+              />
+            </Stack>
           )}
           <SignOut />
         </Stack>
