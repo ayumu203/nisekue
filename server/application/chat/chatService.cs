@@ -5,6 +5,12 @@ namespace server.application.chat;
 
 public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerRepository playerRepository)
 {
+    public async Task EnsureRoomAsync(PlayerId ownerId)
+    {
+        var room = await chatRoomRepository.GetChatRoomAsync(ownerId);
+        await chatRoomRepository.SaveAsync(room);
+    }
+
     public async Task<ChatRoomView> GetRoomAsync(PlayerId ownerId)
     {
         var room = await chatRoomRepository.GetChatRoomAsync(ownerId);
