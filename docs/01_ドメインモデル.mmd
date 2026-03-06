@@ -90,6 +90,7 @@ classDiagram
     %% フロントとデータのやり取りをするサービス
     class ChatService {
         <<Application Service>>
+        +Task EnsureRoomAsync(ownerId: PlayerId)
         +Task~ChatRoomView~ GetRoomAsync(ownerId: PlayerId)
         +Task~ChatRoomView~ PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
     }
