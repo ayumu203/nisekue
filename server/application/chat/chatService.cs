@@ -20,15 +20,13 @@ public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerReposito
             .Distinct()
             .ToArray();
 
-        // 投稿者のIDからユーザ名を取得する
-        var senderLookupTasks = senderIds.Select(async senderId =>
+        // 同一スコープのDbContextを並列利用しないよう順次取得する
+        var senderNameMap = new Dictionary<PlayerId, string>();
+        foreach (var senderId in senderIds)
         {
             var player = await playerRepository.GetPlayerAsync(senderId);
-            return (senderId, senderName: player?.Name ?? "Unknown");
-        });
-
-        var senderLookupResults = await Task.WhenAll(senderLookupTasks);
-        var senderNameMap = senderLookupResults.ToDictionary(x => x.senderId, x => x.senderName);
+            senderNameMap[senderId] = player?.Name ?? "Unknown";
+        }
 
         var messageViews = room.Messages
             .OrderBy(x => x.ChatId)

@@ -12,7 +12,7 @@ namespace server.infrastructure.chat
         {
             var roomEntity = await dbContext.ChatRooms
                 .AsNoTracking()
-                .SingleOrDefaultAsync(x => x.Owner_id == ownerId);
+                .SingleOrDefaultAsync(x => x.OwnerId == ownerId);
 
             if (roomEntity is null)
             {
@@ -21,14 +21,14 @@ namespace server.infrastructure.chat
 
             var messageEntities = await dbContext.ChatMessages
                 .AsNoTracking()
-                .Where(x => x.Owner_id == ownerId)
-                .OrderByDescending(x => x.Chat_id)
+                .Where(x => x.OwnerId == ownerId)
+                .OrderByDescending(x => x.ChatId)
                 .Take(50)
-                .OrderBy(x => x.Chat_id)
+                .OrderBy(x => x.ChatId)
                 .ToListAsync();
 
             var messages = messageEntities.Select(MapToDomain);
-            return new ChatRoom(ownerId, roomEntity.Last_chat_id, messages);
+            return new ChatRoom(ownerId, roomEntity.LastChatId, messages);
         }
 
         public async Task SaveAsync(ChatRoom room)
@@ -49,38 +49,23 @@ namespace server.infrastructure.chat
                         ?? throw new InvalidOperationException("チャットルーム行のロック取得に失敗しました。");
                 }
 
-                var existingMessages = await dbContext.ChatMessages
-                    .AsNoTracking()
-                    .Where(x => x.Owner_id == room.OwnerId)
-                    .Select(x => new { x.Chat_id, x.Sender_id, x.Message })
-                    .ToDictionaryAsync(x => x.Chat_id);
+                var messagesToPersist = room.Messages
+                    .Where(x => x.ChatId > dbLastChatId.Value)
+                    .OrderBy(x => x.ChatId)
+                    .ToList();
 
-                var nextChatId = dbLastChatId.Value;
-                foreach (var message in room.Messages.OrderBy(x => x.ChatId))
+                foreach (var message in messagesToPersist)
                 {
-                    if (existingMessages.TryGetValue(message.ChatId, out var existing) &&
-                        existing.Sender_id == message.SenderId &&
-                        existing.Message == message.Body.Text)
-                    {
-                        continue;
-                    }
-
-                    checked
-                    {
-                        nextChatId++;
-                    }
-
-                    var chatIdToPersist = nextChatId;
-
                     await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
                         INSERT INTO internal.chat_messages(owner_id, chat_id, sender_id, message)
-                        VALUES ({ownerId}, {chatIdToPersist}, {message.SenderId.Value}, {message.Body.Text})
-                        ON CONFLICT (owner_id, chat_id) DO UPDATE
-                        SET sender_id = EXCLUDED.sender_id,
-                            message = EXCLUDED.message");
+                        VALUES ({ownerId}, {message.ChatId}, {message.SenderId.Value}, {message.Body.Text})
+                        ON CONFLICT (owner_id, chat_id) DO NOTHING");
                 }
 
-                var persistedLastChatId = Math.Max(nextChatId, dbLastChatId.Value);
+                var maxPersistedChatId = messagesToPersist.Count == 0
+                    ? dbLastChatId.Value
+                    : messagesToPersist.Max(x => x.ChatId);
+                var persistedLastChatId = Math.Max(room.LastChatId, maxPersistedChatId);
                 await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
                     UPDATE internal.chat_rooms
                     SET last_chat_id = {persistedLastChatId}
@@ -123,6 +108,6 @@ namespace server.infrastructure.chat
         }
 
         private static ChatMessage MapToDomain(ChatMessageEntity entity) =>
-            new(entity.Sender_id, entity.Chat_id, new ChatText(entity.Message), entity.Created_at);
+            new(entity.SenderId, entity.ChatId, new ChatText(entity.Message), entity.CreatedAt);
     }
 }
