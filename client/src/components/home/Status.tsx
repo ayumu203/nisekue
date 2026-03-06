@@ -1,0 +1,205 @@
+import { Box, LinearProgress, Paper, Stack, Typography } from '@mui/material'
+import type { GetPlayerResponse } from '@/schema/player'
+import locale from '../../../locale/home/Home.json'
+
+type StatValue = number | string
+
+type StatItem = {
+  key: string
+  label: string
+  value: StatValue
+  normalized: number
+}
+
+type StatusProps = {
+  player: GetPlayerResponse | undefined
+}
+
+function toStatValue(value: number | undefined, fallback: string): StatValue {
+  return typeof value === 'number' ? value : fallback
+}
+
+function toNormalized(value: number | undefined, maxValue: number): number {
+  if (typeof value !== 'number' || maxValue <= 0) {
+    return 0
+  }
+
+  return Math.max(0, Math.min(100, (value / maxValue) * 100))
+}
+
+function StatusStatRow({
+  label,
+  value,
+  normalized,
+  hideGauge = false,
+}: Omit<StatItem, 'key'> & { hideGauge?: boolean }) {
+  return (
+    <Box
+      sx={{
+        p: 1.5,
+        borderRadius: 1.5,
+        border: '1px solid',
+        borderColor: 'divider',
+        backgroundColor: 'background.paper',
+      }}
+    >
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+        <Typography variant="body2" color="text.secondary">
+          {label}
+        </Typography>
+        <Typography variant="subtitle2" fontWeight={700}>
+          {value}
+        </Typography>
+      </Stack>
+      {!hideGauge ? (
+        <LinearProgress
+          variant="determinate"
+          value={normalized}
+          sx={{ height: 6, borderRadius: 999, backgroundColor: 'action.hover' }}
+        />
+      ) : null}
+    </Box>
+  )
+}
+
+export default function Status({ player }: StatusProps) {
+  const maxResourceValue = Math.max(player?.status.maxHp ?? 0, player?.status.maxMp ?? 0, 1)
+  const maxAttributeValue = Math.max(
+    player?.status.strength ?? 0,
+    player?.status.defense ?? 0,
+    player?.status.intelligence ?? 0,
+    player?.status.luck ?? 0,
+    player?.status.speed ?? 0,
+    1,
+  )
+
+  const resourceItems: StatItem[] = [
+    {
+      key: 'maxHp',
+      label: locale.labels.maxHp,
+      value: toStatValue(player?.status.maxHp, locale.unknownValue),
+      normalized: toNormalized(player?.status.maxHp, maxResourceValue),
+    },
+    {
+      key: 'maxMp',
+      label: locale.labels.maxMp,
+      value: toStatValue(player?.status.maxMp, locale.unknownValue),
+      normalized: toNormalized(player?.status.maxMp, maxResourceValue),
+    },
+  ]
+
+  const attributeItems: StatItem[] = [
+    {
+      key: 'strength',
+      label: locale.labels.strength,
+      value: toStatValue(player?.status.strength, locale.unknownValue),
+      normalized: toNormalized(player?.status.strength, maxAttributeValue),
+    },
+    {
+      key: 'defense',
+      label: locale.labels.defense,
+      value: toStatValue(player?.status.defense, locale.unknownValue),
+      normalized: toNormalized(player?.status.defense, maxAttributeValue),
+    },
+    {
+      key: 'intelligence',
+      label: locale.labels.intelligence,
+      value: toStatValue(player?.status.intelligence, locale.unknownValue),
+      normalized: toNormalized(player?.status.intelligence, maxAttributeValue),
+    },
+    {
+      key: 'luck',
+      label: locale.labels.luck,
+      value: toStatValue(player?.status.luck, locale.unknownValue),
+      normalized: toNormalized(player?.status.luck, maxAttributeValue),
+    },
+    {
+      key: 'speed',
+      label: locale.labels.speed,
+      value: toStatValue(player?.status.speed, locale.unknownValue),
+      normalized: toNormalized(player?.status.speed, maxAttributeValue),
+    },
+  ]
+
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        borderRadius: 3,
+        p: 2.5,
+      }}
+    >
+      <Stack spacing={2}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1.5}
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          justifyContent="space-between"
+        >
+          <Box>
+            <Typography variant="overline" color="text.secondary">
+              {locale.labels.userName}
+            </Typography>
+            <Typography variant="h6" fontWeight={700}>
+              {player?.userName ?? locale.notSet}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              px: 1.5,
+              py: 0.75,
+              border: '1px solid',
+              borderColor: 'primary.main',
+              borderRadius: 1,
+            }}
+          >
+            <Typography variant="subtitle2" color="primary.main" fontWeight={700}>
+              {locale.labels.level}: {player?.level ?? locale.unknownValue}
+            </Typography>
+          </Box>
+        </Stack>
+
+        <StatusStatRow
+          label={locale.labels.exp}
+          value={toStatValue(player?.exp, locale.unknownValue)}
+          normalized={0}
+          hideGauge
+        />
+
+        <Box>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            {locale.labels.maxHp} / {locale.labels.maxMp}
+          </Typography>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+              gap: 1.5,
+            }}
+          >
+            {resourceItems.map((item) => (
+              <StatusStatRow key={item.key} label={item.label} value={item.value} normalized={item.normalized} />
+            ))}
+          </Box>
+        </Box>
+
+        <Box>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            {locale.baseStatusTitle}
+          </Typography>
+          <Stack spacing={1.5}>
+            {attributeItems.map((item) => (
+              <StatusStatRow
+                key={item.key}
+                label={item.label}
+                value={item.value}
+                normalized={item.normalized}
+                hideGauge
+              />
+            ))}
+          </Stack>
+        </Box>
+      </Stack>
+    </Paper>
+  )
+}

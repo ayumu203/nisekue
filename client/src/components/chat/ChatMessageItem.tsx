@@ -42,7 +42,7 @@ function ChatMessageItem({ message }: Props) {
         </Typography>
       </Box>
       <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-        #{message.chatId} {formatTime(message.createdAt)}
+        {formatTime(message.createdAt)}
       </Typography>
     </Stack>
   )
