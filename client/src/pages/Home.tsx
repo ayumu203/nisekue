@@ -1,12 +1,12 @@
 import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import useSWR from 'swr'
-import SignOut from '../components/auth/SignOut'
-import { createPlayer, getPlayer } from '../api/player'
-import { getChatRoom, postChatMessage } from '../api/chatRoom'
-import { useAuth } from '../contexts/useAuth'
+import SignOut from '@/components/auth/SignOut'
+import { createPlayer, getPlayer } from '@/api/player'
+import { getChatRoom, postChatMessage } from '@/api/chat'
+import { useAuth } from '@/contexts/useAuth'
 import locale from '../../locale/home/Home.json'
-import ChatMessages from '../components/chat/ChatMessages'
-import ChatForm from '../components/chat/ChatForm'
+import ChatMessages from '@/components/chat/ChatMessages'
+import ChatForm from '@/components/chat/ChatForm'
 
 function toDefaultUserName(email: string | undefined): string {
   const fallback = 'player'
@@ -118,7 +118,7 @@ function Home() {
             <Alert severity="warning">{chatError.message}</Alert>
           ) : (
             <Stack spacing={2}>
-              <ChatMessages messages={chatRoom?.messages ?? []} currentUserId={session?.user.id ?? ''} />
+              <ChatMessages messages={chatRoom?.messages ?? []} />
               <ChatForm
                 isSubmitting={isChatValidating}
                 onSubmit={async (text) => {
@@ -126,7 +126,7 @@ function Home() {
                     throw new Error('セッション情報が不足しています')
                   }
 
-                  await postChatMessage(
+                  const updated = await postChatMessage(
                     {
                       ownerId: player.userId,
                       senderId: session.user.id,
@@ -134,7 +134,7 @@ function Home() {
                     },
                     session.access_token,
                   )
-                  await mutateChatRoom()
+                  await mutateChatRoom(updated, { revalidate: false })
                 }}
               />
             </Stack>

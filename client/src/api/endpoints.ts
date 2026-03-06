@@ -2,20 +2,21 @@ import {
   getPlayerResponseSchema,
   createPlayerRequestSchema,
   createPlayerResponseSchema,
+} from '@/schema/player'
+import {
   getChatRoomRequestSchema,
   getChatRoomResponseSchema,
   postChatMessageRequestSchema,
   postChatMessageResponseSchema,
-} from '../schema/player'
+} from '@/schema/chat'
+
+export type { GetPlayerResponse, CreatePlayerRequest, CreatePlayerResponse } from '@/schema/player'
 export type {
-  GetPlayerResponse,
-  CreatePlayerRequest,
-  CreatePlayerResponse,
   GetChatRoomRequest,
   GetChatRoomResponse,
   PostChatMessageRequest,
   PostChatMessageResponse,
-} from '../schema/player'
+} from '@/schema/chat'
 
 export const endpoints = {
   player: {

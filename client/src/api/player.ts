@@ -1,9 +1,9 @@
-import { endpoints } from './endpoints'
+import { endpoints } from '@/api/endpoints'
 import type {
   CreatePlayerRequest,
   CreatePlayerResponse,
   GetPlayerResponse,
-} from '../schema/player'
+} from '@/schema/player'
 
 function resolveApiBaseUrl(): string {
   return (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')

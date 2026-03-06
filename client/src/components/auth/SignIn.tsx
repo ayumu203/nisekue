@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Alert, Box, Button, Stack, TextField } from '@mui/material'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 import locale from '../../../locale/auth/SignIn.json'
 
 type SignInProps = {

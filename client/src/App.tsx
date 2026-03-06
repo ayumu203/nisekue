@@ -1,8 +1,8 @@
 import './App.css'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import Auth from './pages/Auth'
-import Home from './pages/Home'
-import { useAuth } from './contexts/useAuth'
+import Auth from '@/pages/Auth'
+import Home from '@/pages/Home'
+import { useAuth } from '@/contexts/useAuth'
 
 function App() {
   const { isLoading, user } = useAuth()
