@@ -1,8 +1,4 @@
-import {
-  getPlayerResponseSchema,
-  createPlayerRequestSchema,
-  createPlayerResponseSchema,
-} from '@/schema/player'
+import { getPlayerResponseSchema, createPlayerRequestSchema, createPlayerResponseSchema } from '@/schema/player'
 import {
   getChatRoomRequestSchema,
   getChatRoomResponseSchema,

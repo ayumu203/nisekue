@@ -1,10 +1,6 @@
 import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
-import type {
-  CreatePlayerRequest,
-  CreatePlayerResponse,
-  GetPlayerResponse,
-} from '@/schema/player'
+import type { CreatePlayerRequest, CreatePlayerResponse, GetPlayerResponse } from '@/schema/player'
 
 function resolveApiBaseUrl(): string {
   return (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')

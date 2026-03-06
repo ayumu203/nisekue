@@ -1,6 +1,11 @@
 import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
-import type { GetChatRoomRequest, GetChatRoomResponse, PostChatMessageRequest, PostChatMessageResponse } from '@/schema/chat'
+import type {
+  GetChatRoomRequest,
+  GetChatRoomResponse,
+  PostChatMessageRequest,
+  PostChatMessageResponse,
+} from '@/schema/chat'
 
 function resolveApiBaseUrl(): string {
   return (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
