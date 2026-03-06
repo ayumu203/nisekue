@@ -144,6 +144,60 @@ app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request,
     }
 }).RequireAuthorization();
 
+app.MapGet("/chat/room", async (Guid ownerId, IChatRoomRepository chatRoomRepository) =>
+{
+    var room = await chatRoomRepository.GetChatRoomAsync(new PlayerId(ownerId));
+
+    return Results.Ok(new
+    {
+        ownerId = room.OwnerId.Value,
+        lastChatId = room.LastChatId,
+        messages = room.Messages.Select(x => new
+        {
+            senderId = x.SenderId.Value,
+            chatId = x.ChatId,
+            text = x.Body.Text,
+            createdAt = x.CreatedAt
+        })
+    });
+}).RequireAuthorization();
+
+app.MapPost("/chat/room/messages", async (PostChatMessageRequest request, IChatRoomRepository chatRoomRepository) =>
+{
+    try
+    {
+        var ownerId = new PlayerId(request.OwnerId);
+        var senderId = new PlayerId(request.SenderId);
+        var room = await chatRoomRepository.GetChatRoomAsync(ownerId);
+        room.PostMessage(senderId, request.Text);
+        await chatRoomRepository.SaveAsync(room);
+
+        var posted = room.Messages.LastOrDefault();
+        return Results.Ok(new
+        {
+            ownerId = room.OwnerId.Value,
+            lastChatId = room.LastChatId,
+            postedMessage = posted is null
+                ? null
+                : new
+                {
+                    senderId = posted.SenderId.Value,
+                    chatId = posted.ChatId,
+                    text = posted.Body.Text,
+                    createdAt = posted.CreatedAt
+                }
+        });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+}).RequireAuthorization();
+
 app.Run();
 
 static PlayerId? TryGetPlayerId(ClaimsPrincipal user)
@@ -155,3 +209,4 @@ static PlayerId? TryGetPlayerId(ClaimsPrincipal user)
 }
 
 public record CreatePlayerRequest(string UserName);
+public record PostChatMessageRequest(Guid OwnerId, Guid SenderId, string Text);

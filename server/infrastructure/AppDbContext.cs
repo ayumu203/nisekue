@@ -83,6 +83,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired();
         chatMessage.Property(x => x.Created_at)
             .HasColumnName("created_at")
+            .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .IsRequired();
     }
 }
