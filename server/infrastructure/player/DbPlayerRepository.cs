@@ -4,10 +4,11 @@ using server.domain.player;
 
 namespace server.infrastructure.player
 {
-    public class SupabasePlayerRepository(AppDbContext dbContext) : IPlayerRepository
+    public class SupabasePlayerRepository(IDbContextFactory<AppDbContext> dbContextFactory) : IPlayerRepository
     {
         public async Task<Player?> GetPlayerAsync(PlayerId id)
         {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             var entity = await dbContext.Players
                 .AsNoTracking()
                 .SingleOrDefaultAsync(x => x.Id == id.Value);
@@ -22,6 +23,7 @@ namespace server.infrastructure.player
 
         public async Task SaveAsync(Player player)
         {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             var existing = await dbContext.Players
                 .SingleOrDefaultAsync(x => x.Id == player.Id.Value);
 

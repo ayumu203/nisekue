@@ -55,7 +55,7 @@ builder.Services.AddAuthorization();
 var supabaseConnectionString = builder.Configuration.GetConnectionString("Supabase")
     ?? throw new InvalidOperationException("Connection string 'Supabase' is not configured.");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
 {
     options.UseNpgsql(supabaseConnectionString, npgsqlOptions =>
     {

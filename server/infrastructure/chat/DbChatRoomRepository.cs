@@ -6,10 +6,11 @@ using System.Data;
 
 namespace server.infrastructure.chat
 {
-    public class DbChatRoomRepository(AppDbContext dbContext) : IChatRoomRepository
+    public class DbChatRoomRepository(IDbContextFactory<AppDbContext> dbContextFactory) : IChatRoomRepository
     {
         public async Task<ChatRoom> GetChatRoomAsync(PlayerId ownerId)
         {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             var roomEntity = await dbContext.ChatRooms
                 .AsNoTracking()
                 .SingleOrDefaultAsync(x => x.OwnerId == ownerId);
@@ -35,17 +36,18 @@ namespace server.infrastructure.chat
         {
             ArgumentNullException.ThrowIfNull(room);
 
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             await using var tx = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
                 var ownerId = room.OwnerId.Value;
-                var dbLastChatId = await LockRoomAndGetLastChatIdAsync(ownerId);
+                var dbLastChatId = await LockRoomAndGetLastChatIdAsync(dbContext, ownerId);
                 if (dbLastChatId is null)
                 {
                     await dbContext.Database.ExecuteSqlInterpolatedAsync(
                         $"INSERT INTO internal.chat_rooms(owner_id, last_chat_id) VALUES ({ownerId}, 0) ON CONFLICT (owner_id) DO NOTHING");
 
-                    dbLastChatId = await LockRoomAndGetLastChatIdAsync(ownerId)
+                    dbLastChatId = await LockRoomAndGetLastChatIdAsync(dbContext, ownerId)
                         ?? throw new InvalidOperationException("チャットルーム行のロック取得に失敗しました。");
                 }
 
@@ -98,7 +100,7 @@ namespace server.infrastructure.chat
             }
         }
 
-        private async Task<int?> LockRoomAndGetLastChatIdAsync(Guid ownerId)
+        private static async Task<int?> LockRoomAndGetLastChatIdAsync(AppDbContext dbContext, Guid ownerId)
         {
             var rows = await dbContext.Database
                 .SqlQueryRaw<int>("SELECT last_chat_id FROM internal.chat_rooms WHERE owner_id = {0} FOR UPDATE", ownerId)
