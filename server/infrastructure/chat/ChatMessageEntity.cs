@@ -2,11 +2,11 @@ using server.domain.player;
 
 namespace server.infrastructure.chat;
 
-public class ChatMessageEntity(PlayerId owner_id, int chat_id, PlayerId sender_id, string message, DateTimeOffset created_at)
+public class ChatMessageEntity(PlayerId ownerId, int chatId, PlayerId senderId, string message, DateTimeOffset createdAt)
 {
-    public PlayerId Owner_id { get; } = owner_id;
-    public int Chat_id { get; } = chat_id;
-    public PlayerId Sender_id { get; } = sender_id;
+    public PlayerId OwnerId { get; } = ownerId;
+    public int ChatId { get; } = chatId;
+    public PlayerId SenderId { get; } = senderId;
     public string Message { get; } = message;
-    public DateTimeOffset Created_at { get; } = created_at;
+    public DateTimeOffset CreatedAt { get; } = createdAt;
 }

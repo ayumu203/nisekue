@@ -51,28 +51,28 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired();
         var chatRoom = modelBuilder.Entity<ChatRoomEntity>();
         chatRoom.ToTable("chat_rooms", "internal");
-        chatRoom.HasKey(x => x.Owner_id);
-        chatRoom.Property(x => x.Owner_id)
+        chatRoom.HasKey(x => x.OwnerId);
+        chatRoom.Property(x => x.OwnerId)
             .HasColumnName("owner_id")
             .HasColumnType("uuid")
             .HasConversion(x => x.Value, value => new PlayerId(value))
             .IsRequired();
-        chatRoom.Property(x => x.Last_chat_id)
+        chatRoom.Property(x => x.LastChatId)
             .HasColumnName("last_chat_id")
             .IsRequired();
 
         var chatMessage = modelBuilder.Entity<ChatMessageEntity>();
         chatMessage.ToTable("chat_messages", "internal");
-        chatMessage.HasKey(x => new { x.Owner_id, x.Chat_id });
-        chatMessage.Property(x => x.Owner_id)
+        chatMessage.HasKey(x => new { x.OwnerId, x.ChatId });
+        chatMessage.Property(x => x.OwnerId)
             .HasColumnName("owner_id")
             .HasColumnType("uuid")
             .HasConversion(x => x.Value, value => new PlayerId(value))
             .IsRequired();
-        chatMessage.Property(x => x.Chat_id)
+        chatMessage.Property(x => x.ChatId)
             .HasColumnName("chat_id")
             .IsRequired();
-        chatMessage.Property(x => x.Sender_id)
+        chatMessage.Property(x => x.SenderId)
             .HasColumnName("sender_id")
             .HasColumnType("uuid")
             .HasConversion(x => x.Value, value => new PlayerId(value))
@@ -81,7 +81,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("message")
             .HasMaxLength(ChatText.MessageMaxLength)
             .IsRequired();
-        chatMessage.Property(x => x.Created_at)
+        chatMessage.Property(x => x.CreatedAt)
             .HasColumnName("created_at")
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .IsRequired();
