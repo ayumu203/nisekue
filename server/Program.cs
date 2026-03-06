@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using server.application.chat;
 using server.domain.chat;
 using server.domain.player;
 using server.infrastructure;
@@ -65,6 +66,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // DI
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
+builder.Services.AddScoped<ChatService>();
 
 var app = builder.Build();
 
@@ -148,9 +150,9 @@ app.MapPost(
     }
 }).RequireAuthorization();
 
-app.MapGet("/chat/room", async (Guid ownerId, IChatRoomRepository chatRoomRepository) =>
+app.MapGet("/chat/room", async (Guid ownerId, ChatService chatService) =>
 {
-    var room = await chatRoomRepository.GetChatRoomAsync(new PlayerId(ownerId));
+    var room = await chatService.GetRoomAsync(new PlayerId(ownerId));
 
     return Results.Ok(new
     {
@@ -158,38 +160,32 @@ app.MapGet("/chat/room", async (Guid ownerId, IChatRoomRepository chatRoomReposi
         lastChatId = room.LastChatId,
         messages = room.Messages.Select(x => new
         {
-            senderId = x.SenderId.Value,
             chatId = x.ChatId,
-            text = x.Body.Text,
+            senderName = x.SenderName,
+            text = x.Message,
             createdAt = x.CreatedAt
         })
     });
 }).RequireAuthorization();
 
-app.MapPost("/chat/room/messages", async (PostChatMessageRequest request, IChatRoomRepository chatRoomRepository) =>
+app.MapPost("/chat/room/messages", async (PostChatMessageRequest request, ChatService chatService) =>
 {
     try
     {
         var ownerId = new PlayerId(request.OwnerId);
         var senderId = new PlayerId(request.SenderId);
-        var room = await chatRoomRepository.GetChatRoomAsync(ownerId);
-        room.PostMessage(senderId, request.Text);
-        await chatRoomRepository.SaveAsync(room);
-
-        var posted = room.Messages.LastOrDefault();
+        var room = await chatService.PostMessageAsync(ownerId, senderId, request.Text);
         return Results.Ok(new
         {
             ownerId = room.OwnerId.Value,
             lastChatId = room.LastChatId,
-            postedMessage = posted is null
-                ? null
-                : new
-                {
-                    senderId = posted.SenderId.Value,
-                    chatId = posted.ChatId,
-                    text = posted.Body.Text,
-                    createdAt = posted.CreatedAt
-                }
+            messages = room.Messages.Select(x => new
+            {
+                chatId = x.ChatId,
+                senderName = x.SenderName,
+                text = x.Message,
+                createdAt = x.CreatedAt
+            })
         });
     }
     catch (ArgumentException ex)
