@@ -1,4 +1,5 @@
 import { endpoints } from '@/api/endpoints'
+import { fetchSafely } from '@/api/http'
 import type {
   CreatePlayerRequest,
   CreatePlayerResponse,
@@ -18,7 +19,7 @@ function extractErrorMessage(json: unknown, fallback: string): string {
 export async function getPlayer(accessToken: string): Promise<GetPlayerResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
 
-  const response = await fetch(`${apiBaseUrl}${endpoints.player.get.path}`, {
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.get.path}`, {
     method: endpoints.player.get.method,
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -38,7 +39,7 @@ export async function createPlayer(input: CreatePlayerRequest, accessToken: stri
   const payload = endpoints.player.create.requestSchema.parse(input)
   const apiBaseUrl = resolveApiBaseUrl()
 
-  const response = await fetch(`${apiBaseUrl}${endpoints.player.create.path}`, {
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.create.path}`, {
     method: endpoints.player.create.method,
     headers: {
       'Content-Type': 'application/json',

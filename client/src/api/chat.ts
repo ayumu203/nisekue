@@ -1,4 +1,5 @@
 import { endpoints } from '@/api/endpoints'
+import { fetchSafely } from '@/api/http'
 import type { GetChatRoomRequest, GetChatRoomResponse, PostChatMessageRequest, PostChatMessageResponse } from '@/schema/chat'
 
 function resolveApiBaseUrl(): string {
@@ -17,7 +18,7 @@ export async function getChatRoom(input: GetChatRoomRequest, accessToken: string
   const url = new URL(`${apiBaseUrl}${endpoints.chatRoom.get.path}`, window.location.origin)
   url.searchParams.set('ownerId', payload.ownerId)
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchSafely(url.toString(), {
     method: endpoints.chatRoom.get.method,
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -40,7 +41,7 @@ export async function postChatMessage(
   const payload = endpoints.chatRoom.postMessage.requestSchema.parse(input)
   const apiBaseUrl = resolveApiBaseUrl()
 
-  const response = await fetch(`${apiBaseUrl}${endpoints.chatRoom.postMessage.path}`, {
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.chatRoom.postMessage.path}`, {
     method: endpoints.chatRoom.postMessage.method,
     headers: {
       'Content-Type': 'application/json',
