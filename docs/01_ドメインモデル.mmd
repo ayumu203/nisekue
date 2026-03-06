@@ -7,9 +7,9 @@ classDiagram
         +int Level
         +int Exp
         +BaseStatus Status
-        +UpdateName(name: string) name
+        +UpdateName(name: string) void
         +UpdateStatus(status: BaseStatus) void
-        -ValidateName(name: string) name 
+        -ValidateName(name: string) string 
         +GainExp(exp: int) void
         +LevelUp() bool
     }
@@ -18,13 +18,6 @@ classDiagram
         <<Value Object>>
         +Guid Id
     }
-
-    class PlayerRepository {
-        +Task~Player?~ GetPlayerAsync(id: PlayerId)
-        +Task SaveAsync(player: Player)
-    }
-    Player *-- PlayerId : has
-    PlayerRepository ..> Player : stores/loads
 
     %% Player の基本ステータス
     class BaseStatus {
@@ -38,4 +31,74 @@ classDiagram
         +int Speed
     }
 
+    class IPlayerRepository {
+        +Task~Player?~ GetPlayerAsync(id: PlayerId)
+        +Task SaveAsync(player: Player)
+    }
+    Player *-- PlayerId : has
     Player *-- BaseStatus : has
+    IPlayerRepository ..> Player : stores/loads
+
+    %% ルームチャット機能
+    class ChatRoom {
+        <<Aggregate Root>>
+        +PlayerId OwnerId
+        +int LastChatId
+        -List~ChatMessage~ _messages
+        +IReadOnlyList~ChatMessage~ Messages
+        +ChatRoom(ownerId: PlayerId, lastChatId: int, messages: IEnumerable~ChatMessage~)
+        +GetNextMessageId() : int
+        +PostMessage(senderId : PlayerId, text : string) : void
+        +RestoreMessages(messages: IEnumerable~ChatMessage~) : void
+        +EnforceMessageLimit() : void
+    }
+    %% メッセージ管理の単位
+    class ChatMessage {
+        <<Entity>>
+        +PlayerId SenderId
+        +int ChatId
+        +ChatText Body
+        +DateTimeOffset CreatedAt
+    }
+    %% メッセージの文字列の値オブジェクト
+    class ChatText {
+        <<Value Object>>
+        +string Text
+        -ValidateMessage() : string
+    }
+
+    %% チャットルームとDBのつなぎ込み
+    class IChatRoomRepository {
+        +Task~ChatRoom~ GetChatRoomAsync(ownerId: PlayerId)
+        +Task SaveAsync(room: ChatRoom)
+    }
+    %% フロントへ表示するチャットルームのデータ
+    class ChatRoomView {
+        <<Read Model>>
+        +PlayerId OwnerId
+        +int LastChatId
+        +IReadOnlyList~ChatMessageView~ Messages
+    }
+    %% フロントへ表示するチャットデータ
+    class ChatMessageView {
+        <<Read Model>>
+        +int ChatId
+        +string SenderName
+        +string Message
+        +DateTimeOffset CreatedAt
+    }
+    %% フロントとデータのやり取りをするサービス
+    class ChatService {
+        <<Application Service>>
+        +Task EnsureRoomAsync(ownerId: PlayerId)
+        +Task~ChatRoomView~ GetRoomAsync(ownerId: PlayerId)
+        +Task~ChatRoomView~ PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
+    }
+    
+    ChatRoom *-- ChatMessage : 0..50
+    ChatMessage *-- ChatText : has
+    IChatRoomRepository ..> ChatRoom : stores/loads
+    ChatService ..> IChatRoomRepository : use
+    ChatService ..> IPlayerRepository : resolve sender name
+    ChatService ..> ChatMessageView : builds
+    ChatService ..> ChatRoomView : builds

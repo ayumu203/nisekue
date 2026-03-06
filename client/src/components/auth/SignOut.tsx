@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Alert, Button, Stack } from '@mui/material'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 type SignOutProps = {
   onMessage?: (message: string) => void

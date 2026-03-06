@@ -1,9 +1,13 @@
 import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import useSWR from 'swr'
-import SignOut from '../components/auth/SignOut'
-import { createPlayer, getPlayer } from '../api/player'
-import { useAuth } from '../contexts/useAuth'
+import SignOut from '@/components/auth/SignOut'
+import { createPlayer, getPlayer } from '@/api/player'
+import { getChatRoom, postChatMessage } from '@/api/chat'
+import { useAuth } from '@/contexts/useAuth'
 import locale from '../../locale/home/Home.json'
+import ChatMessages from '@/components/chat/ChatMessages'
+import ChatForm from '@/components/chat/ChatForm'
+import Status from '@/components/home/Status'
 
 function toDefaultUserName(email: string | undefined): string {
   const fallback = 'player'
@@ -41,7 +45,20 @@ function Home() {
       return getPlayer(session.access_token)
     }
   })
+  const chatSWRKey = session?.access_token && player?.userId ? (['chat-room', player.userId] as const) : null
+  const {
+    data: chatRoom,
+    error: chatError,
+    isLoading: isChatLoading,
+    isValidating: isChatValidating,
+    mutate: mutateChatRoom,
+  } = useSWR(chatSWRKey, async () => {
+    if (!session?.access_token || !player?.userId) {
+      throw new Error(locale.chatFetchInfoMissing)
+    }
 
+    return getChatRoom({ ownerId: player.userId }, session.access_token)
+  })
   if (isLoading) {
     return (
       <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
@@ -57,7 +74,6 @@ function Home() {
     <Container maxWidth="sm" sx={{ py: 8 }}>
       <Paper elevation={2} sx={{ p: 4 }}>
         <Stack spacing={2}>
-          <Typography variant="h4">{locale.title}</Typography>
           <Alert severity="success">
             {locale.signedInAs}: {user?.email}
           </Alert>
@@ -69,28 +85,42 @@ function Home() {
           ) : playerError ? (
             <Alert severity="warning">{playerError.message}</Alert>
           ) : (
-            <Alert severity="info">
-              {locale.labels.userName}: {player?.userName ?? locale.notSet}
-              <br />
-              {locale.labels.level}: {player?.level ?? locale.unknownValue}
-              <br />
-              {locale.labels.exp}: {player?.exp ?? locale.unknownValue}
-              <br />
-              {locale.labels.maxHp}: {player?.status.maxHp ?? locale.unknownValue}
-              <br />
-              {locale.labels.maxMp}: {player?.status.maxMp ?? locale.unknownValue}
-              <br />
-              {locale.labels.strength}: {player?.status.strength ?? locale.unknownValue}
-              <br />
-              {locale.labels.defense}: {player?.status.defense ?? locale.unknownValue}
-              <br />
-              {locale.labels.intelligence}: {player?.status.intelligence ?? locale.unknownValue}
-              <br />
-              {locale.labels.luck}: {player?.status.luck ?? locale.unknownValue}
-              <br />
-              {locale.labels.speed}: {player?.status.speed ?? locale.unknownValue}
-            </Alert>
+            <Status player={player} />
           )}
+          <Paper variant="outlined" sx={{ borderRadius: 3, p: 2.5 }}>
+            <Stack spacing={2}>
+              <Typography variant="h5">{locale.chatTitle}</Typography>
+              {isChatLoading ? (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CircularProgress size={16} />
+                  <Typography variant="body2">{locale.chatLoading}</Typography>
+                </Stack>
+              ) : chatError ? (
+                <Alert severity="warning">{chatError.message}</Alert>
+              ) : (
+                <Stack spacing={2}>
+                  <ChatMessages messages={chatRoom?.messages ?? []} />
+                  <ChatForm
+                    isSubmitting={isChatValidating}
+                    onSubmit={async (text) => {
+                      if (!session?.access_token || !player?.userId) {
+                        throw new Error(locale.sessionInfoMissing)
+                      }
+
+                      const updated = await postChatMessage(
+                        {
+                          ownerId: player.userId,
+                          text,
+                        },
+                        session.access_token,
+                      )
+                      await mutateChatRoom(updated, { revalidate: false })
+                    }}
+                  />
+                </Stack>
+              )}
+            </Stack>
+          </Paper>
           <SignOut />
         </Stack>
       </Paper>

@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using server.application.chat;
+using server.domain.chat;
 using server.domain.player;
 using server.infrastructure;
+using server.infrastructure.chat;
 using System.Security.Claims;
 using server.infrastructure.player;
 
@@ -62,6 +65,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // DI
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
+builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
+builder.Services.AddScoped<ChatService>();
 
 var app = builder.Build();
 
@@ -107,7 +112,9 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
     });
 }).RequireAuthorization();
 
-app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request, IPlayerRepository playerRepository) =>
+app.MapPost(
+    "/player",
+    async (ClaimsPrincipal user, CreatePlayerRequest request, IPlayerRepository playerRepository, ChatService chatService) =>
 {
     var playerId = TryGetPlayerId(user);
     if (playerId is null)
@@ -124,11 +131,78 @@ app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request,
             exp: 0,
             status: new BaseStatus(maxHp: 1, maxMp: 0, strength: 0, defense: 0, intelligence: 0, luck: 0, speed: 0));
         await playerRepository.SaveAsync(player);
+        await chatService.EnsureRoomAsync(player.Id);
         return Results.Ok(new
         {
             message = "プレイヤーを作成しました。",
             userId = player.Id.Value,
             userName = player.Name
+        });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+}).RequireAuthorization();
+
+app.MapGet("/chat/room", async (Guid ownerId, ChatService chatService) =>
+{
+    var room = await chatService.GetRoomAsync(new PlayerId(ownerId));
+
+    return Results.Ok(new
+    {
+        ownerId = room.OwnerId.Value,
+        lastChatId = room.LastChatId,
+        messages = room.Messages.Select(x => new
+        {
+            chatId = x.ChatId,
+            senderName = x.SenderName,
+            text = x.Message,
+            createdAt = x.CreatedAt
+        })
+    });
+}).RequireAuthorization();
+
+app.MapPost("/chat/room/messages", async (ClaimsPrincipal user, PostChatMessageRequest request, ChatService chatService, IPlayerRepository playerRepository) =>
+{
+    var currentPlayerId = TryGetPlayerId(user);
+    if (currentPlayerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var ownerId = new PlayerId(request.OwnerId);
+    var senderId = currentPlayerId.Value;
+    var owner = await playerRepository.GetPlayerAsync(ownerId);
+    if (owner is null)
+    {
+        return Results.NotFound(new { message = "送信先プレイヤーが見つかりません。" });
+    }
+
+    var sender = await playerRepository.GetPlayerAsync(senderId);
+    if (sender is null)
+    {
+        return Results.NotFound(new { message = "投稿者のプレイヤーが見つかりません。" });
+    }
+
+    try
+    {
+        var room = await chatService.PostMessageAsync(ownerId, senderId, request.Text);
+        return Results.Ok(new
+        {
+            ownerId = room.OwnerId.Value,
+            lastChatId = room.LastChatId,
+            messages = room.Messages.Select(x => new
+            {
+                chatId = x.ChatId,
+                senderName = x.SenderName,
+                text = x.Message,
+                createdAt = x.CreatedAt
+            })
         });
     }
     catch (ArgumentException ex)
@@ -152,3 +226,4 @@ static PlayerId? TryGetPlayerId(ClaimsPrincipal user)
 }
 
 public record CreatePlayerRequest(string UserName);
+public record PostChatMessageRequest(Guid OwnerId, string Text);
