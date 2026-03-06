@@ -103,14 +103,13 @@ function Home() {
                   <ChatForm
                     isSubmitting={isChatValidating}
                     onSubmit={async (text) => {
-                      if (!session?.access_token || !player?.userId || !session.user.id) {
+                      if (!session?.access_token || !player?.userId) {
                         throw new Error(locale.sessionInfoMissing)
                       }
 
                       const updated = await postChatMessage(
                         {
                           ownerId: player.userId,
-                          senderId: session.user.id,
                           text,
                         },
                         session.access_token,

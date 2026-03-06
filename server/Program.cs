@@ -167,12 +167,30 @@ app.MapGet("/chat/room", async (Guid ownerId, ChatService chatService) =>
     });
 }).RequireAuthorization();
 
-app.MapPost("/chat/room/messages", async (PostChatMessageRequest request, ChatService chatService) =>
+app.MapPost("/chat/room/messages", async (ClaimsPrincipal user, PostChatMessageRequest request, ChatService chatService, IPlayerRepository playerRepository) =>
 {
+    var currentPlayerId = TryGetPlayerId(user);
+    if (currentPlayerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var ownerId = new PlayerId(request.OwnerId);
+    var senderId = currentPlayerId.Value;
+    var owner = await playerRepository.GetPlayerAsync(ownerId);
+    if (owner is null)
+    {
+        return Results.NotFound(new { message = "送信先プレイヤーが見つかりません。" });
+    }
+
+    var sender = await playerRepository.GetPlayerAsync(senderId);
+    if (sender is null)
+    {
+        return Results.NotFound(new { message = "投稿者のプレイヤーが見つかりません。" });
+    }
+
     try
     {
-        var ownerId = new PlayerId(request.OwnerId);
-        var senderId = new PlayerId(request.SenderId);
         var room = await chatService.PostMessageAsync(ownerId, senderId, request.Text);
         return Results.Ok(new
         {
@@ -208,4 +226,4 @@ static PlayerId? TryGetPlayerId(ClaimsPrincipal user)
 }
 
 public record CreatePlayerRequest(string UserName);
-public record PostChatMessageRequest(Guid OwnerId, Guid SenderId, string Text);
+public record PostChatMessageRequest(Guid OwnerId, string Text);

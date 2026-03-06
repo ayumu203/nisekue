@@ -20,7 +20,6 @@ export const getChatRoomResponseSchema = z.object({
 
 export const postChatMessageRequestSchema = z.object({
   ownerId: playerIdSchema,
-  senderId: playerIdSchema,
   text: z.string().trim().min(1, 'メッセージを入力してください').max(200, 'メッセージは200文字以内で入力してください'),
 })
 
