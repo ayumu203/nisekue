@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using server.domain.chat;
 using server.domain.player;
 using server.infrastructure;
+using server.infrastructure.chat;
 using System.Security.Claims;
 using server.infrastructure.player;
 
@@ -62,6 +64,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // DI
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
+builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
 
 var app = builder.Build();
 

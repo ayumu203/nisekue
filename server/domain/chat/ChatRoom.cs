@@ -9,6 +9,12 @@ public class ChatRoom(PlayerId ownerId, int lastChatId = 0)
     private readonly List<ChatMessage> _messages = [];
     public IReadOnlyList<ChatMessage> Messages => _messages;
 
+    public ChatRoom(PlayerId ownerId, int lastChatId, IEnumerable<ChatMessage> messages)
+        : this(ownerId, lastChatId)
+    {
+        RestoreMessages(messages);
+    }
+
     public int GetNextMessageId()
     {
         checked
@@ -33,6 +39,21 @@ public class ChatRoom(PlayerId ownerId, int lastChatId = 0)
         if (_messages.Count <= 50) return;
 
         _messages.RemoveRange(0, _messages.Count - 50);
+    }
+
+    public void RestoreMessages(IEnumerable<ChatMessage> messages)
+    {
+        if (messages is null)
+        {
+            throw new ArgumentNullException(nameof(messages));
+        }
+
+        _messages.Clear();
+        _messages.AddRange(messages.OrderBy(x => x.ChatId));
+        EnforceMessageLimit();
+
+        var maxChatId = _messages.Count == 0 ? 0 : _messages[^1].ChatId;
+        LastChatId = Math.Max(LastChatId, maxChatId);
     }
 
     private static int ValidateLastChatId(int value)
