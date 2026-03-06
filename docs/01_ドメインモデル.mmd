@@ -67,10 +67,19 @@ classDiagram
         -ValidateMessage() : string
     }
 
+    %% チャットルームとDBのつなぎ込み
     class IChatRoomRepository {
         +Task~ChatRoom~ GetChatRoomAsync(ownerId: PlayerId)
         +Task SaveAsync(room: ChatRoom)
     }
+    %% フロントへ表示するチャットルームのデータ
+    class ChatRoomView {
+        <<Read Model>>
+        +PlayerId OwnerId
+        +int LastChatId
+        +IReadOnlyList~ChatMessageView~ Messages
+    }
+    %% フロントへ表示するチャットデータ
     class ChatMessageView {
         <<Read Model>>
         +int ChatId
@@ -78,14 +87,17 @@ classDiagram
         +string Message
         +DateTimeOffset CreatedAt
     }
-    class ChatMessageService {
+    %% フロントとデータのやり取りをするサービス
+    class ChatService {
         <<Application Service>>
-        +Task~IReadOnlyList~ChatMessageView~~ GetMessagesAsync(ownerId: PlayerId)
-        +Task PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
+        +Task~ChatRoomView~ GetRoomAsync(ownerId: PlayerId)
+        +Task~ChatRoomView~ PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
     }
+    
     ChatRoom *-- ChatMessage : 0..50
     ChatMessage *-- ChatText : has
     IChatRoomRepository ..> ChatRoom : stores/loads
-    ChatMessageService ..> IChatRoomRepository : use
-    ChatMessageService ..> IPlayerRepository : resolve sender name
-    ChatMessageService ..> ChatMessageView : builds
+    ChatService ..> IChatRoomRepository : use
+    ChatService ..> IPlayerRepository : resolve sender name
+    ChatService ..> ChatMessageView : builds
+    ChatService ..> ChatRoomView : builds
