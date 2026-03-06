@@ -1,13 +1,12 @@
 import { Alert, Stack, Typography } from '@mui/material'
-import type { GetChatRoomResponse } from '../../schema/player'
-import ChatMessageItem from './ChatMessageItem'
+import type { GetChatRoomResponse } from '@/schema/chat'
+import ChatMessageItem from '@/components/chat/ChatMessageItem'
 
 type Props = {
   messages: GetChatRoomResponse['messages']
-  currentUserId: string
 }
 
-function ChatMessages({ messages, currentUserId }: Props) {
+function ChatMessages({ messages }: Props) {
   if (messages.length === 0) {
     return <Alert severity="info">まだメッセージはありません。</Alert>
   }
@@ -18,7 +17,7 @@ function ChatMessages({ messages, currentUserId }: Props) {
         {messages.length}件
       </Typography>
       {messages.map((message) => (
-        <ChatMessageItem key={message.chatId} message={message} isMine={message.senderId === currentUserId} />
+        <ChatMessageItem key={message.chatId} message={message} />
       ))}
     </Stack>
   )

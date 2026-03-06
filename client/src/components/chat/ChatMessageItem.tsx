@@ -1,11 +1,10 @@
 import { Box, Stack, Typography } from '@mui/material'
-import type { GetChatRoomResponse } from '../../schema/player'
+import type { GetChatRoomResponse } from '@/schema/chat'
 
 type ChatMessage = GetChatRoomResponse['messages'][number]
 
 type Props = {
   message: ChatMessage
-  isMine: boolean
 }
 
 function formatTime(value: string): string {
@@ -22,19 +21,22 @@ function formatTime(value: string): string {
   }).format(date)
 }
 
-function ChatMessageItem({ message, isMine }: Props) {
+function ChatMessageItem({ message }: Props) {
   return (
-    <Stack alignItems={isMine ? 'flex-end' : 'flex-start'}>
+    <Stack alignItems="flex-start">
       <Box
         sx={{
           maxWidth: '80%',
           px: 1.5,
           py: 1,
           borderRadius: 2,
-          bgcolor: isMine ? 'primary.light' : 'grey.200',
-          color: isMine ? 'primary.contrastText' : 'text.primary',
+          bgcolor: 'grey.200',
+          color: 'text.primary',
         }}
       >
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+          {message.senderName}
+        </Typography>
         <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
           {message.text}
         </Typography>
