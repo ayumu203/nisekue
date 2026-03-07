@@ -1,7 +1,6 @@
 {
   "authLoading": "認証状態を確認中...",
   "title": "プレイヤー",
-  "signedInAs": "ログイン中",
   "playerLoading": "プレイヤー情報を読み込み中...",
   "chatTitle": "チャット",
   "chatLoading": "チャットを読み込み中...",

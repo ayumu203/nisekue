@@ -14,7 +14,7 @@ import locale from '../../locale/home/Home.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 
 export default function Training() {
-  const { session, user, isLoading } = useAuth()
+  const { session, isLoading } = useAuth()
   const [selectedEnemy, setSelectedEnemy] = useState<TrainingEnemy | null>(null)
   const [trainingResult, setTrainingResult] = useState<ExecuteTrainingResponse | null>(null)
   const [trainingError, setTrainingError] = useState<string | null>(null)
@@ -128,10 +128,6 @@ export default function Training() {
               ホームへ戻る
             </Button>
           </Stack>
-
-          <Alert severity="success">
-            {locale.signedInAs}: {user?.email}
-          </Alert>
 
           {isPlayerLoading ? (
             <Stack direction="row" spacing={1} alignItems="center">

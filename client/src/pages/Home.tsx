@@ -12,7 +12,7 @@ import ChatForm from '@/components/chat/ChatForm'
 import Status from '@/components/home/Status'
 
 function Home() {
-  const { session, user, isLoading } = useAuth()
+  const { session, isLoading } = useAuth()
   const playerSWRKey = session?.user.id ? (['player', session.user.id] as const) : null
   const {
     data: player,
@@ -66,9 +66,6 @@ function Home() {
     <Container maxWidth="sm" sx={{ py: 8 }}>
       <Paper elevation={2} sx={{ p: 4 }}>
         <Stack spacing={2}>
-          <Alert severity="success">
-            {locale.signedInAs}: {user?.email}
-          </Alert>
           {isPlayerLoading ? (
             <Stack direction="row" spacing={1} alignItems="center">
               <CircularProgress size={16} />
