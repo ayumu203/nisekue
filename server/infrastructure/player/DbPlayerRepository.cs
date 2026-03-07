@@ -78,7 +78,7 @@ namespace server.infrastructure.player
                 entity.Name,
                 level: entity.Level,
                 exp: entity.Exp,
-                status: new BaseStatus(
+                status: new Status(
                     maxHp: entity.MaxHp,
                     maxMp: entity.MaxMp,
                     strength: entity.Strength,

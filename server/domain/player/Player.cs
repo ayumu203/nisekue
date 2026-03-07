@@ -1,6 +1,6 @@
 namespace server.domain.player;
 
-public class Player(PlayerId id, string name, int level, int exp, BaseStatus status)
+public class Player(PlayerId id, string name, int level, int exp, Status status)
 {
     public const int NameMaxLength = 20;
 
@@ -8,14 +8,14 @@ public class Player(PlayerId id, string name, int level, int exp, BaseStatus sta
     public string Name { get; private set; } = ValidateName(name);
     public int Level { get; private set; } = level;
     public int Exp { get; private set; } = exp;
-    public BaseStatus Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
+    public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
 
     public void UpdateName(string name)
     {
         Name = ValidateName(name);
     }
 
-    public void UpdateStatus(BaseStatus status)
+    public void UpdateStatus(Status status)
     {
         Status = status ?? throw new ArgumentNullException(nameof(status));
     }

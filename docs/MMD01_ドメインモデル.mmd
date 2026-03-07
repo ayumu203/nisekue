@@ -6,9 +6,9 @@ classDiagram
         +string Name
         +int Level
         +int Exp
-        +BaseStatus Status
+        +Status Status
         +UpdateName(name: string) void
-        +UpdateStatus(status: BaseStatus) void
+        +UpdateStatus(status: Status) void
         -ValidateName(name: string) string 
         +GainExp(exp: int) void
         +LevelUp() bool
@@ -20,7 +20,7 @@ classDiagram
     }
 
     %% Player の基本ステータス
-    class BaseStatus {
+    class Status {
         <<Value Object>>
         +int MaxHp
         +int MaxMp
@@ -36,7 +36,7 @@ classDiagram
         +Task SaveAsync(player: Player)
     }
     Player *-- PlayerId : has
-    Player *-- BaseStatus : has
+    Player *-- Status : has
     IPlayerRepository ..> Player : stores/loads
 
     %% ルームチャット機能
