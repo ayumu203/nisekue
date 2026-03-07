@@ -57,7 +57,11 @@ export async function executeTraining(
   if (response.status === 429) {
     const cooldown = trainingCooldownErrorSchema.safeParse(json)
     if (cooldown.success) {
-      throw new TrainingCooldownError(cooldown.data.message, cooldown.data.retryAfterSeconds, cooldown.data.cooldownUntil)
+      throw new TrainingCooldownError(
+        cooldown.data.message,
+        cooldown.data.retryAfterSeconds,
+        cooldown.data.cooldownUntil,
+      )
     }
 
     throw new Error('訓練のクールダウン中です')

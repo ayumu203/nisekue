@@ -49,7 +49,9 @@ export default function TrainingBattleResult({
           結果: {result.trainingResult} / ターン: {result.turn} / 獲得経験値: {result.exp}
         </Typography>
         <Stack spacing={0.75}>
-          <Typography variant="body2">プレイヤー HP: {result.currentPlayerHp} / {result.maxPlayerHp}</Typography>
+          <Typography variant="body2">
+            プレイヤー HP: {result.currentPlayerHp} / {result.maxPlayerHp}
+          </Typography>
           <LinearProgress
             variant="determinate"
             value={normalizeHp(result.currentPlayerHp, result.maxPlayerHp)}
@@ -57,7 +59,9 @@ export default function TrainingBattleResult({
           />
         </Stack>
         <Stack spacing={0.75}>
-          <Typography variant="body2">敵 HP: {result.currentEnemyHp} / {result.maxEnemyHp}</Typography>
+          <Typography variant="body2">
+            敵 HP: {result.currentEnemyHp} / {result.maxEnemyHp}
+          </Typography>
           <LinearProgress
             variant="determinate"
             value={normalizeHp(result.currentEnemyHp, result.maxEnemyHp)}
