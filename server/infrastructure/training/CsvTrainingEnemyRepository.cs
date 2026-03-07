@@ -7,17 +7,27 @@ namespace server.infrastructure.training;
 public class CsvTrainingEnemyRepository : ITrainingEnemyRepository
 {
     private readonly IReadOnlyDictionary<TrainingEnemyId, TrainingEnemy> enemies;
+    private readonly IReadOnlyList<TrainingEnemy> enemyList;
 
     public CsvTrainingEnemyRepository()
     {
         var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "training_enemies.csv");
         enemies = LoadEnemies(csvPath);
+        enemyList = enemies.Values
+            .OrderBy(x => x.Level)
+            .ThenBy(x => x.Id.Value)
+            .ToArray();
     }
 
     public Task<TrainingEnemy?> GetTrainingEnemyAsync(TrainingEnemyId id)
     {
         enemies.TryGetValue(id, out var enemy);
         return Task.FromResult(enemy);
+    }
+
+    public Task<IReadOnlyList<TrainingEnemy>> GetTrainingEnemiesAsync()
+    {
+        return Task.FromResult(enemyList);
     }
 
     private static IReadOnlyDictionary<TrainingEnemyId, TrainingEnemy> LoadEnemies(string csvPath)

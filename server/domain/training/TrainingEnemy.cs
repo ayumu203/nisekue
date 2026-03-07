@@ -1,5 +1,5 @@
 using server.domain.player;
-using server.domain.shared;
+using server.shared.constants.training;
 
 namespace server.domain.training;
 
@@ -24,9 +24,9 @@ public class TrainingEnemy(TrainingEnemyId id, string name, string imagePath, in
     private static string ValidateName(string name)
     {
         var normalized = name?.Trim() ?? string.Empty;
-        if (normalized.Length is < 1 or > DomainConstraints.Names.TrainingEnemyMaxLength)
+        if (normalized.Length is < 1 or > TrainingConstants.Constraints.EnemyNameMaxLength)
         {
-            throw new ArgumentException($"敵名は1文字から{DomainConstraints.Names.TrainingEnemyMaxLength}文字以内です.", nameof(name));
+            throw new ArgumentException($"敵名は1文字から{TrainingConstants.Constraints.EnemyNameMaxLength}文字以内です.", nameof(name));
         }
 
         return normalized;
@@ -35,9 +35,9 @@ public class TrainingEnemy(TrainingEnemyId id, string name, string imagePath, in
     private static string ValidateImagePath(string imagePath)
     {
         var normalized = imagePath?.Trim() ?? string.Empty;
-        if (normalized.Length is < 1 or > DomainConstraints.Paths.TrainingEnemyImagePathMaxLength)
+        if (normalized.Length is < 1 or > TrainingConstants.Constraints.EnemyImagePathMaxLength)
         {
-            throw new ArgumentException($"画像パスは1文字から{DomainConstraints.Paths.TrainingEnemyImagePathMaxLength}文字以内です.", nameof(imagePath));
+            throw new ArgumentException($"画像パスは1文字から{TrainingConstants.Constraints.EnemyImagePathMaxLength}文字以内です.", nameof(imagePath));
         }
 
         return normalized;

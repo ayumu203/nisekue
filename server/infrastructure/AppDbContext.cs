@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using server.domain.chat;
 using server.domain.player;
-using server.domain.shared;
+using server.shared.constants.chat;
+using server.shared.constants.player;
 using server.infrastructure.chat;
 using server.infrastructure.player;
 
@@ -21,7 +22,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         player.Property(x => x.Id).HasColumnName("id");
         player.Property(x => x.Name)
             .HasColumnName("name")
-            .HasMaxLength(DomainConstraints.Names.PlayerMaxLength)
+            .HasMaxLength(PlayerConstants.NameMaxLength)
             .IsRequired();
         player.Property(x => x.Level)
             .HasColumnName("level")
@@ -80,7 +81,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired();
         chatMessage.Property(x => x.Message)
             .HasColumnName("message")
-            .HasMaxLength(ChatText.MessageMaxLength)
+            .HasMaxLength(ChatConstants.MessageMaxLength)
             .IsRequired();
         chatMessage.Property(x => x.CreatedAt)
             .HasColumnName("created_at")

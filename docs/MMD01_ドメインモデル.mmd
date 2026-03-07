@@ -124,6 +124,7 @@ classDiagram
     %% ロード時にメモリキャッシュなので実質的なインメモリ実装
     class ITrainingEnemyRepository {
         +Task~TrainingEnemy?~ GetTrainingEnemyAsync(id: TrainingEnemyId)
+        +Task~IReadOnlyList~TrainingEnemy~~ GetTrainingEnemiesAsync()
     }
 
     %% トレーニングの処理を行うサービス
