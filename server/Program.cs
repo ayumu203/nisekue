@@ -154,6 +154,59 @@ app.MapPost(
     }
 }).RequireAuthorization();
 
+app.MapPut(
+    "/player",
+    async (ClaimsPrincipal user, UpdatePlayerRequest request, IPlayerRepository playerRepository) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (string.IsNullOrWhiteSpace(request.UserName))
+    {
+        return Results.BadRequest(new { message = "更新対象が指定されていません。" });
+    }
+
+    var player = await playerRepository.GetPlayerAsync(playerId.Value);
+    if (player is null)
+    {
+        return Results.NotFound(new
+        {
+            message = "プレイヤーが見つかりません。",
+            userId = playerId.Value.Value
+        });
+    }
+
+    try
+    {
+        var updatedPlayer = new Player(
+            player.Id,
+            request.UserName,
+            player.Level,
+            player.Exp,
+            player.Status);
+
+        await playerRepository.SaveAsync(updatedPlayer);
+
+        return Results.Ok(new
+        {
+            message = "プレイヤー情報を更新しました。",
+            userId = updatedPlayer.Id.Value,
+            userName = updatedPlayer.Name
+        });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+}).RequireAuthorization();
+
 app.MapGet("/chat/room", async (Guid ownerId, ChatService chatService) =>
 {
     var room = await chatService.GetRoomAsync(new PlayerId(ownerId));
@@ -265,5 +318,6 @@ static PlayerId? TryGetPlayerId(ClaimsPrincipal user)
 }
 
 public record CreatePlayerRequest(string UserName);
+public record UpdatePlayerRequest(string? UserName);
 public record PostChatMessageRequest(Guid OwnerId, string Text);
 public record ExecuteTrainingRequest(int EnemyId);
