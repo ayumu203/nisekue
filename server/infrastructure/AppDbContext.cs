@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using server.domain.chat;
 using server.domain.player;
+using server.domain.shared;
 using server.infrastructure.chat;
 using server.infrastructure.player;
 
@@ -20,7 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         player.Property(x => x.Id).HasColumnName("id");
         player.Property(x => x.Name)
             .HasColumnName("name")
-            .HasMaxLength(Player.NameMaxLength)
+            .HasMaxLength(DomainConstraints.Names.PlayerMaxLength)
             .IsRequired();
         player.Property(x => x.Level)
             .HasColumnName("level")
