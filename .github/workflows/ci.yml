@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   backend:
-    name: Backend (format/lint/build)
+    name: Backend (format/lint/build/test)
     runs-on: ubuntu-latest
 
     steps:
@@ -29,7 +29,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore server/server.csproj
+        run: dotnet restore Nisekue.sln
 
       - name: Format check
         run: dotnet format server/server.csproj whitespace --verify-no-changes --no-restore
@@ -39,6 +39,9 @@ jobs:
 
       - name: Build
         run: dotnet build server/server.csproj -c Release --no-restore -warnaserror
+
+      - name: Test
+        run: dotnet test tests/server.tests/server.tests.csproj -c Release --no-restore --verbosity normal
 
   frontend:
     name: Frontend (format/lint/build)
