@@ -4,10 +4,12 @@ using Microsoft.IdentityModel.Tokens;
 using server.application.chat;
 using server.domain.chat;
 using server.domain.player;
+using server.domain.training;
 using server.infrastructure;
 using server.infrastructure.chat;
 using System.Security.Claims;
 using server.infrastructure.player;
+using server.infrastructure.training;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,6 +68,7 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 // DI
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
+builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
 builder.Services.AddScoped<ChatService>();
 
 var app = builder.Build();
