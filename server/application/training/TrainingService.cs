@@ -24,10 +24,20 @@ public class TrainingService(IPlayerRepository playerRepository, ITrainingEnemyR
     public async Task<TrainingResultView> ExecuteTraining(PlayerId playerId, TrainingEnemyId enemyId)
     {
         var player = await playerRepository.GetPlayerAsync(playerId)
-            ?? throw new InvalidOperationException("プレイヤーが見つかりません。");
+            ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
 
         var enemy = await trainingEnemyRepository.GetTrainingEnemyAsync(enemyId)
-            ?? throw new InvalidOperationException("敵が見つかりません。");
+            ?? throw new KeyNotFoundException("敵が見つかりません。");
+
+        var nowUtc = DateTimeOffset.UtcNow;
+        var cooldownUntil = await playerRepository.TryStartTrainingCooldownAsync(
+            playerId,
+            nowUtc,
+            TimeSpan.FromSeconds(TrainingConstants.Battle.CooldownSeconds));
+        if (cooldownUntil is not null && cooldownUntil.Value > nowUtc)
+        {
+            throw new TrainingCooldownException(cooldownUntil.Value);
+        }
 
         var turnResult = new TurnResult(
             Turn: 0,

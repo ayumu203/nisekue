@@ -33,6 +33,7 @@ classDiagram
 
     class IPlayerRepository {
         +Task~Player?~ GetPlayerAsync(id: PlayerId)
+        +Task~DateTimeOffset?~ TryStartTrainingCooldownAsync(id: PlayerId, nowUtc: DateTimeOffset, cooldown: TimeSpan)
         +Task SaveAsync(player: Player)
     }
     Player *-- PlayerId : has
