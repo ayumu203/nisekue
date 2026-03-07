@@ -47,12 +47,10 @@ namespace server.infrastructure.player
                 throw new InvalidOperationException("プレイヤーが見つかりません。");
             }
 
-            var values = await dbContext.Database.SqlQueryRaw<DateTimeOffset?>(
+            return await dbContext.Database.SqlQueryRaw<DateTimeOffset?>(
                 "SELECT training_cooldown_until FROM internal.players WHERE id = {0}",
                 id.Value)
-                .ToListAsync();
-
-            return values.FirstOrDefault();
+                .FirstOrDefaultAsync();
         }
 
         public async Task SaveAsync(Player player)
