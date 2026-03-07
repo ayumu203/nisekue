@@ -5,21 +5,11 @@ import SignOut from '@/components/auth/SignOut'
 import { createPlayer, getPlayer } from '@/api/player'
 import { getChatRoom, postChatMessage } from '@/api/chat'
 import { useAuth } from '@/contexts/useAuth'
+import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/home/Home.json'
 import ChatMessages from '@/components/chat/ChatMessages'
 import ChatForm from '@/components/chat/ChatForm'
 import Status from '@/components/home/Status'
-
-function toDefaultUserName(email: string | undefined): string {
-  const fallback = 'player'
-  if (!email) {
-    return fallback
-  }
-
-  const local = email.split('@')[0]?.trim() ?? ''
-  const normalized = local.replace(/\s+/g, '').slice(0, 20)
-  return normalized.length > 0 ? normalized : fallback
-}
 
 function Home() {
   const { session, user, isLoading } = useAuth()
@@ -42,7 +32,7 @@ function Home() {
         throw error
       }
 
-      await createPlayer({ userName: toDefaultUserName(user?.email) }, session.access_token)
+      await createPlayer({ userName: INITIAL_PLAYER_NAME }, session.access_token)
       return getPlayer(session.access_token)
     }
   })
@@ -91,6 +81,9 @@ function Home() {
           )}
           <Button component={Link} to="/training" variant="contained">
             訓練へ進む
+          </Button>
+          <Button component={Link} to="/player-setting" variant="outlined">
+            プレイヤー設定
           </Button>
           <Button component={Link} to="/thanks" variant="text" size="small">
             サンクス

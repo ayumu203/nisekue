@@ -9,19 +9,9 @@ import Status from '@/components/home/Status'
 import TrainingBattleResult from '@/components/training/TrainingBattleResult'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
 import { useAuth } from '@/contexts/useAuth'
+import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/home/Home.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
-
-function toDefaultUserName(email: string | undefined): string {
-  const fallback = 'player'
-  if (!email) {
-    return fallback
-  }
-
-  const local = email.split('@')[0]?.trim() ?? ''
-  const normalized = local.replace(/\s+/g, '').slice(0, 20)
-  return normalized.length > 0 ? normalized : fallback
-}
 
 export default function Training() {
   const { session, user, isLoading } = useAuth()
@@ -66,7 +56,7 @@ export default function Training() {
         throw error
       }
 
-      await createPlayer({ userName: toDefaultUserName(user?.email) }, session.access_token)
+      await createPlayer({ userName: INITIAL_PLAYER_NAME }, session.access_token)
       return getPlayer(session.access_token)
     }
   })

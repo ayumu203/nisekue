@@ -1,0 +1,13 @@
+{
+  "title": "プレイヤー設定",
+  "loadingAuth": "認証情報を確認中...",
+  "loadingPlayer": "プレイヤー情報を読み込み中...",
+  "backToHome": "ホームへ戻る",
+  "playerNameLabel": "プレイヤー名",
+  "playerNamePlaceholder": "プレイヤー名を入力",
+  "submitButton": "保存",
+  "saving": "保存中...",
+  "saved": "プレイヤー情報を更新しました。",
+  "sessionMissing": "セッション情報がありません",
+  "saveFailed": "プレイヤー情報の更新に失敗しました"
+}

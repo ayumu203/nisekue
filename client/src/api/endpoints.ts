@@ -1,4 +1,10 @@
-import { getPlayerResponseSchema, createPlayerRequestSchema, createPlayerResponseSchema } from '@/schema/player'
+import {
+  getPlayerResponseSchema,
+  createPlayerRequestSchema,
+  createPlayerResponseSchema,
+  updatePlayerRequestSchema,
+  updatePlayerResponseSchema,
+} from '@/schema/player'
 import {
   getChatRoomRequestSchema,
   getChatRoomResponseSchema,
@@ -11,7 +17,13 @@ import {
   executeTrainingResponseSchema,
 } from '@/schema/training'
 
-export type { GetPlayerResponse, CreatePlayerRequest, CreatePlayerResponse } from '@/schema/player'
+export type {
+  GetPlayerResponse,
+  CreatePlayerRequest,
+  CreatePlayerResponse,
+  UpdatePlayerRequest,
+  UpdatePlayerResponse,
+} from '@/schema/player'
 export type {
   GetChatRoomRequest,
   GetChatRoomResponse,
@@ -38,6 +50,12 @@ export const endpoints = {
       method: 'POST',
       requestSchema: createPlayerRequestSchema,
       responseSchema: createPlayerResponseSchema,
+    },
+    update: {
+      path: '/player',
+      method: 'POST',
+      requestSchema: updatePlayerRequestSchema,
+      responseSchema: updatePlayerResponseSchema,
     },
   },
   chatRoom: {
