@@ -53,7 +53,7 @@ export const endpoints = {
     },
     update: {
       path: '/player',
-      method: 'POST',
+      method: 'PUT',
       requestSchema: updatePlayerRequestSchema,
       responseSchema: updatePlayerResponseSchema,
     },
