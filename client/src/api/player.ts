@@ -1,7 +1,13 @@
 import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
 import { extractErrorMessage, resolveApiBaseUrl } from '@/api/util'
-import type { CreatePlayerRequest, CreatePlayerResponse, GetPlayerResponse } from '@/schema/player'
+import type {
+  CreatePlayerRequest,
+  CreatePlayerResponse,
+  GetPlayerResponse,
+  UpdatePlayerRequest,
+  UpdatePlayerResponse,
+} from '@/schema/player'
 
 export async function getPlayer(accessToken: string): Promise<GetPlayerResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
@@ -42,4 +48,26 @@ export async function createPlayer(input: CreatePlayerRequest, accessToken: stri
   }
 
   return endpoints.player.create.responseSchema.parse(json)
+}
+
+export async function updatePlayer(input: UpdatePlayerRequest, accessToken: string): Promise<UpdatePlayerResponse> {
+  const payload = endpoints.player.update.requestSchema.parse(input)
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.update.path}`, {
+    method: endpoints.player.update.method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'ユーザー情報の更新に失敗しました'))
+  }
+
+  return endpoints.player.update.responseSchema.parse(json)
 }
