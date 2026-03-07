@@ -11,6 +11,7 @@ using server.infrastructure.chat;
 using System.Security.Claims;
 using server.infrastructure.player;
 using server.infrastructure.training;
+using server.shared.constants.player;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -164,37 +165,39 @@ app.MapPut(
         return Results.Unauthorized();
     }
 
-    if (string.IsNullOrWhiteSpace(request.UserName))
+    if (request.UserName is null)
     {
         return Results.BadRequest(new { message = "更新対象が指定されていません。" });
     }
 
-    var player = await playerRepository.GetPlayerAsync(playerId.Value);
-    if (player is null)
+    if (string.IsNullOrWhiteSpace(request.UserName))
     {
-        return Results.NotFound(new
-        {
-            message = "プレイヤーが見つかりません。",
-            userId = playerId.Value.Value
-        });
+        return Results.BadRequest(new { message = "ユーザー名を入力してください。" });
+    }
+
+    var normalizedUserName = request.UserName.Trim();
+    if (normalizedUserName.Length > PlayerConstants.NameMaxLength)
+    {
+        return Results.BadRequest(new { message = $"プレイヤー名は1文字から{PlayerConstants.NameMaxLength}文字以内です." });
     }
 
     try
     {
-        var updatedPlayer = new Player(
-            player.Id,
-            request.UserName,
-            player.Level,
-            player.Exp,
-            player.Status);
-
-        await playerRepository.SaveAsync(updatedPlayer);
+        var isUpdated = await playerRepository.UpdateNameAsync(playerId.Value, normalizedUserName);
+        if (!isUpdated)
+        {
+            return Results.NotFound(new
+            {
+                message = "プレイヤーが見つかりません。",
+                userId = playerId.Value.Value
+            });
+        }
 
         return Results.Ok(new
         {
             message = "プレイヤー情報を更新しました。",
-            userId = updatedPlayer.Id.Value,
-            userName = updatedPlayer.Name
+            userId = playerId.Value.Value,
+            userName = normalizedUserName
         });
     }
     catch (ArgumentException ex)
