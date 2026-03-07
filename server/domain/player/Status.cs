@@ -1,6 +1,6 @@
 namespace server.domain.player;
 
-public class BaseStatus(int maxHp, int maxMp, int strength, int defense, int intelligence, int luck, int speed)
+public class Status(int maxHp, int maxMp, int strength, int defense, int intelligence, int luck, int speed)
 {
     public int MaxHp { get; } = ValidateStatusValue(maxHp, nameof(maxHp));
     public int MaxMp { get; } = ValidateNonNegative(maxMp, nameof(maxMp));

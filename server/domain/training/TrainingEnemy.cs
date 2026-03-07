@@ -3,20 +3,20 @@ using server.shared.constants.training;
 
 namespace server.domain.training;
 
-public class TrainingEnemy(TrainingEnemyId id, string name, string imagePath, int level, BaseStatus status)
+public class TrainingEnemy(TrainingEnemyId id, string name, string imagePath, int level, Status status)
 {
     public TrainingEnemyId Id { get; } = id;
     public string Name { get; private set; } = ValidateName(name);
     public string ImagePath { get; private set; } = ValidateImagePath(imagePath);
     public int Level { get; } = ValidateLevel(level);
-    public BaseStatus Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
+    public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
 
     public void UpdateName(string name)
     {
         Name = ValidateName(name);
     }
 
-    public void UpdateStatus(BaseStatus status)
+    public void UpdateStatus(Status status)
     {
         Status = status ?? throw new ArgumentNullException(nameof(status));
     }

@@ -135,7 +135,7 @@ app.MapPost(
             request.UserName,
             level: 1,
             exp: 0,
-            status: new BaseStatus(maxHp: 1, maxMp: 0, strength: 0, defense: 0, intelligence: 0, luck: 0, speed: 0));
+            status: new Status(maxHp: 1, maxMp: 0, strength: 0, defense: 0, intelligence: 0, luck: 0, speed: 0));
         await playerRepository.SaveAsync(player);
         await chatService.EnsureRoomAsync(player.Id);
         return Results.Ok(new
