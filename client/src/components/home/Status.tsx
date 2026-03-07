@@ -27,6 +27,15 @@ function toNormalized(value: number | undefined, maxValue: number): number {
   return Math.max(0, Math.min(100, (value / maxValue) * 100))
 }
 
+function formatExpProgress(exp: number | undefined, level: number | undefined, fallback: string): string {
+  if (typeof exp !== 'number' || typeof level !== 'number') {
+    return `${fallback} / ${fallback}`
+  }
+
+  const requiredExp = level * 10
+  return `${exp} / ${requiredExp}`
+}
+
 function StatusStatRow({
   label,
   value,
@@ -159,17 +168,7 @@ export default function Status({ player }: StatusProps) {
           </Box>
         </Stack>
 
-        <StatusStatRow
-          label={locale.labels.exp}
-          value={toStatValue(player?.exp, locale.unknownValue)}
-          normalized={0}
-          hideGauge
-        />
-
         <Box>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            {locale.labels.maxHp} / {locale.labels.maxMp}
-          </Typography>
           <Box
             sx={{
               display: 'grid',
@@ -197,6 +196,12 @@ export default function Status({ player }: StatusProps) {
                 hideGauge
               />
             ))}
+            <StatusStatRow
+              label={locale.labels.exp}
+              value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+              normalized={0}
+              hideGauge
+            />
           </Stack>
         </Box>
       </Stack>
