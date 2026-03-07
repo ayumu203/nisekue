@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using server.domain.player;
+using server.shared.constants.player;
 
 namespace server.infrastructure.player
 {
@@ -55,6 +56,23 @@ namespace server.infrastructure.player
             return values.Count == 0 ? nowUtc : values[0];
         }
 
+        public async Task<bool> UpdateNameAsync(PlayerId id, string name)
+        {
+            var normalized = name?.Trim() ?? string.Empty;
+            if (normalized.Length is < 1 or > PlayerConstants.NameMaxLength)
+            {
+                throw new ArgumentException($"プレイヤー名は1文字から{PlayerConstants.NameMaxLength}文字以内です.", nameof(name));
+            }
+
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var affectedRows = await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE internal.players
+                SET name = {normalized}
+                WHERE id = {id.Value}");
+
+            return affectedRows > 0;
+        }
+
         public async Task SaveAsync(Player player)
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -80,7 +98,6 @@ namespace server.infrastructure.player
             }
             else
             {
-                existing.Name = player.Name;
                 existing.Level = player.Level;
                 existing.Exp = player.Exp;
                 existing.MaxHp = player.Status.MaxHp;

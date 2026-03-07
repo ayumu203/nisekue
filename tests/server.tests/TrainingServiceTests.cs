@@ -187,6 +187,17 @@ public class TrainingServiceTests
             return Task.FromResult<DateTimeOffset?>(null);
         }
 
+        public Task<bool> UpdateNameAsync(PlayerId id, string name)
+        {
+            if (playerState.Id != id)
+            {
+                return Task.FromResult(false);
+            }
+
+            playerState.UpdateName(name);
+            return Task.FromResult(true);
+        }
+
         public Task SaveAsync(Player player)
         {
             SaveCalled = true;
