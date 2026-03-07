@@ -78,12 +78,14 @@ export default function PlayerSetting() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper elevation={2} sx={{ p: 4 }}>
-        <Stack spacing={2}>
-          <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
-            <Typography variant="h4">{locale.title}</Typography>
-            <Button component={Link} to="/" variant="outlined">
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
+      <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 } }}>
+        <Stack spacing={{ xs: 1.5, sm: 2 }}>
+          <Stack spacing={1}>
+            <Typography variant="h4" textAlign="center">
+              {locale.title}
+            </Typography>
+            <Button component={Link} to="/" variant="outlined" sx={{ alignSelf: 'flex-end' }}>
               {locale.backToHome}
             </Button>
           </Stack>

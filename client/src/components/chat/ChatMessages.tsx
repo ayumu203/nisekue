@@ -7,6 +7,8 @@ type Props = {
 }
 
 function ChatMessages({ messages }: Props) {
+  const reversedMessages = [...messages].reverse()
+
   if (messages.length === 0) {
     return <Alert severity="info">まだメッセージはありません。</Alert>
   }
@@ -16,7 +18,7 @@ function ChatMessages({ messages }: Props) {
       <Typography variant="caption" color="text.secondary">
         {messages.length}件
       </Typography>
-      {messages.map((message) => (
+      {reversedMessages.map((message) => (
         <ChatMessageItem key={message.chatId} message={message} />
       ))}
     </Stack>

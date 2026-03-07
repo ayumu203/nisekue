@@ -109,8 +109,12 @@ function Home() {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: 'minmax(280px, 360px) minmax(0, 1fr)' },
-              gap: { xs: 1.5, sm: 2, md: 3 },
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'minmax(180px, 260px) minmax(0, 1fr)',
+                md: 'minmax(280px, 360px) minmax(0, 1fr)',
+              },
+              gap: { xs: 1.5, sm: 3 },
               alignItems: 'start',
             }}
           >
@@ -161,7 +165,6 @@ function Home() {
                   <Alert severity="warning">{chatError.message}</Alert>
                 ) : (
                   <Stack spacing={2}>
-                    <ChatMessages messages={chatRoom?.messages ?? []} />
                     <ChatForm
                       isSubmitting={isChatValidating}
                       onSubmit={async (text) => {
@@ -179,6 +182,7 @@ function Home() {
                         await mutateChatRoom(updated, { revalidate: false })
                       }}
                     />
+                    <ChatMessages messages={chatRoom?.messages ?? []} />
                   </Stack>
                 )}
               </Stack>
