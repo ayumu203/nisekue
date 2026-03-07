@@ -129,7 +129,13 @@ function Home() {
               ) : (
                 <Status player={player} />
               )}
-              <Button component={Link} to="/training" variant="contained" startIcon={<TrainingIcon />} sx={menuButtonSx}>
+              <Button
+                component={Link}
+                to="/training"
+                variant="contained"
+                startIcon={<TrainingIcon />}
+                sx={menuButtonSx}
+              >
                 {locale.training}
               </Button>
               <Button
