@@ -1,4 +1,5 @@
-import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import SignOut from '@/components/auth/SignOut'
 import { createPlayer, getPlayer } from '@/api/player'
@@ -59,6 +60,7 @@ function Home() {
 
     return getChatRoom({ ownerId: player.userId }, session.access_token)
   })
+
   if (isLoading) {
     return (
       <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
@@ -87,6 +89,12 @@ function Home() {
           ) : (
             <Status player={player} />
           )}
+          <Button component={Link} to="/training" variant="contained">
+            訓練へ進む
+          </Button>
+          <Button component={Link} to="/thanks" variant="text" size="small">
+            サンクス
+          </Button>
           <Paper variant="outlined" sx={{ borderRadius: 3, p: 2.5 }}>
             <Stack spacing={2}>
               <Typography variant="h5">{locale.chatTitle}</Typography>

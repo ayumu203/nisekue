@@ -2,12 +2,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using server.application.chat;
+using server.application.training;
 using server.domain.chat;
 using server.domain.player;
+using server.domain.training;
 using server.infrastructure;
 using server.infrastructure.chat;
 using System.Security.Claims;
 using server.infrastructure.player;
+using server.infrastructure.training;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,7 +69,9 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 // DI
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
+builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
 builder.Services.AddScoped<ChatService>();
+builder.Services.AddScoped<TrainingService>();
 
 var app = builder.Build();
 
@@ -215,6 +220,40 @@ app.MapPost("/chat/room/messages", async (ClaimsPrincipal user, PostChatMessageR
     }
 }).RequireAuthorization();
 
+app.MapGet("/training/enemies", async (TrainingService trainingService) =>
+{
+    var enemies = await trainingService.GetTrainingEnemies();
+    return Results.Ok(enemies);
+}).RequireAuthorization();
+
+app.MapPost("/training/execute", async (ClaimsPrincipal user, ExecuteTrainingRequest request, TrainingService trainingService) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    try
+    {
+        var result = await trainingService.ExecuteTraining(playerId.Value, new TrainingEnemyId(request.EnemyId));
+        return Results.Ok(result);
+    }
+    catch (TrainingCooldownException ex)
+    {
+        var retryAfterSeconds = Math.Max(
+            1,
+            (int)Math.Ceiling((ex.CooldownUntil - DateTimeOffset.UtcNow).TotalSeconds));
+        return Results.Json(
+            new { message = ex.Message, retryAfterSeconds, cooldownUntil = ex.CooldownUntil },
+            statusCode: StatusCodes.Status429TooManyRequests);
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(new { message = ex.Message });
+    }
+}).RequireAuthorization();
+
 app.Run();
 
 static PlayerId? TryGetPlayerId(ClaimsPrincipal user)
@@ -227,3 +266,4 @@ static PlayerId? TryGetPlayerId(ClaimsPrincipal user)
 
 public record CreatePlayerRequest(string UserName);
 public record PostChatMessageRequest(Guid OwnerId, string Text);
+public record ExecuteTrainingRequest(int EnemyId);

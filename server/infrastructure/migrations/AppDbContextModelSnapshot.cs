@@ -24,15 +24,15 @@ namespace server.infrastructure.migrations
 
             modelBuilder.Entity("server.infrastructure.chat.ChatMessageEntity", b =>
                 {
-                    b.Property<Guid>("Owner_id")
+                    b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid")
                         .HasColumnName("owner_id");
 
-                    b.Property<int>("Chat_id")
+                    b.Property<int>("ChatId")
                         .HasColumnType("integer")
                         .HasColumnName("chat_id");
 
-                    b.Property<DateTimeOffset>("Created_at")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
@@ -44,26 +44,26 @@ namespace server.infrastructure.migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("message");
 
-                    b.Property<Guid>("Sender_id")
+                    b.Property<Guid>("SenderId")
                         .HasColumnType("uuid")
                         .HasColumnName("sender_id");
 
-                    b.HasKey("Owner_id", "Chat_id");
+                    b.HasKey("OwnerId", "ChatId");
 
                     b.ToTable("chat_messages", "internal");
                 });
 
             modelBuilder.Entity("server.infrastructure.chat.ChatRoomEntity", b =>
                 {
-                    b.Property<Guid>("Owner_id")
+                    b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid")
                         .HasColumnName("owner_id");
 
-                    b.Property<int>("Last_chat_id")
+                    b.Property<int>("LastChatId")
                         .HasColumnType("integer")
                         .HasColumnName("last_chat_id");
 
-                    b.HasKey("Owner_id");
+                    b.HasKey("OwnerId");
 
                     b.ToTable("chat_rooms", "internal");
                 });
@@ -116,6 +116,16 @@ namespace server.infrastructure.migrations
                     b.Property<int>("Strength")
                         .HasColumnType("integer")
                         .HasColumnName("strength");
+
+                    b.Property<int>("TrainingBattleCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("training_battle_count");
+
+                    b.Property<DateTimeOffset?>("TrainingCooldownUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("training_cooldown_until");
 
                     b.HasKey("Id");
 

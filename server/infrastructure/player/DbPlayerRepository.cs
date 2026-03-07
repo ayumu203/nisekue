@@ -21,6 +21,40 @@ namespace server.infrastructure.player
             return MapToDomain(entity);
         }
 
+        public async Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var cooldownUntil = nowUtc.Add(cooldown);
+
+            var affectedRows = await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE internal.players
+                SET training_battle_count = COALESCE(training_battle_count, 0) + 1,
+                    training_cooldown_until = {cooldownUntil}
+                WHERE id = {id.Value}
+                  AND (training_cooldown_until IS NULL OR training_cooldown_until <= {nowUtc})");
+
+            if (affectedRows > 0)
+            {
+                return null;
+            }
+
+            var playerExists = await dbContext.Players
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == id.Value);
+
+            if (!playerExists)
+            {
+                throw new InvalidOperationException("プレイヤーが見つかりません。");
+            }
+
+            var values = await dbContext.Database.SqlQueryRaw<DateTimeOffset?>(
+                "SELECT training_cooldown_until FROM internal.players WHERE id = {0}",
+                id.Value)
+                .ToListAsync();
+
+            return values.Count == 0 ? nowUtc : values[0];
+        }
+
         public async Task SaveAsync(Player player)
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
