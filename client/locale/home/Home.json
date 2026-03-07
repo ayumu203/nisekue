@@ -3,6 +3,7 @@
   "title": "プレイヤー",
   "signedInAs": "ログイン中",
   "playerLoading": "プレイヤー情報を読み込み中...",
+  "playerSettingLink": "プレイヤー設定",
   "chatTitle": "チャット",
   "chatLoading": "チャットを読み込み中...",
   "chatFetchInfoMissing": "チャット情報の取得に必要な情報が不足しています",

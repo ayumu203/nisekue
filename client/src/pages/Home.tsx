@@ -89,6 +89,9 @@ function Home() {
           ) : (
             <Status player={player} />
           )}
+          <Button component={Link} to="/player-setting" variant="outlined">
+            {locale.playerSettingLink}
+          </Button>
           <Button component={Link} to="/training" variant="contained">
             訓練へ進む
           </Button>

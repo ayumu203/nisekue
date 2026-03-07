@@ -34,6 +34,18 @@ export const createPlayerResponseSchema = z.object({
   userName: playerUserNameSchema.optional(),
 })
 
+export const updatePlayerRequestSchema = z.object({
+  userName: playerUserNameSchema,
+})
+
+export const updatePlayerResponseSchema = z.object({
+  message: z.string().min(1, 'レスポンスメッセージが空です'),
+  userId: playerIdSchema,
+  userName: playerUserNameSchema.optional(),
+})
+
 export type GetPlayerResponse = z.infer<typeof getPlayerResponseSchema>
 export type CreatePlayerRequest = z.infer<typeof createPlayerRequestSchema>
 export type CreatePlayerResponse = z.infer<typeof createPlayerResponseSchema>
+export type UpdatePlayerRequest = z.infer<typeof updatePlayerRequestSchema>
+export type UpdatePlayerResponse = z.infer<typeof updatePlayerResponseSchema>

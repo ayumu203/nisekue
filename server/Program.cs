@@ -154,6 +154,45 @@ app.MapPost(
     }
 }).RequireAuthorization();
 
+app.MapPut("/player", async (ClaimsPrincipal user, UpdatePlayerRequest request, IPlayerRepository playerRepository) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var player = await playerRepository.GetPlayerAsync(playerId.Value);
+    if (player is null)
+    {
+        return Results.NotFound(new
+        {
+            message = "プレイヤーが見つかりません。",
+            userId = playerId.Value.Value
+        });
+    }
+
+    try
+    {
+        player.UpdateName(request.UserName);
+        await playerRepository.SaveAsync(player);
+        return Results.Ok(new
+        {
+            message = "プレイヤー名を変更しました。",
+            userId = player.Id.Value,
+            userName = player.Name
+        });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+}).RequireAuthorization();
+
 app.MapGet("/chat/room", async (Guid ownerId, ChatService chatService) =>
 {
     var room = await chatService.GetRoomAsync(new PlayerId(ownerId));
@@ -265,5 +304,6 @@ static PlayerId? TryGetPlayerId(ClaimsPrincipal user)
 }
 
 public record CreatePlayerRequest(string UserName);
+public record UpdatePlayerRequest(string UserName);
 public record PostChatMessageRequest(Guid OwnerId, string Text);
 public record ExecuteTrainingRequest(int EnemyId);
