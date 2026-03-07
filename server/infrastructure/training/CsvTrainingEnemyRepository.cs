@@ -70,7 +70,7 @@ public class CsvTrainingEnemyRepository : ITrainingEnemyRepository
                 columns[1],
                 columns[2],
                 ParseInt(columns[3], "level", i + 1),
-                new BaseStatus(
+                new Status(
                     ParseInt(columns[4], "max_hp", i + 1),
                     ParseInt(columns[5], "max_mp", i + 1),
                     ParseInt(columns[6], "strength", i + 1),

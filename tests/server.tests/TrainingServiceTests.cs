@@ -18,14 +18,14 @@ public class TrainingServiceTests
             name: "Tester",
             level: 5,
             exp: 0,
-            status: new BaseStatus(maxHp: 30, maxMp: 10, strength: 12, defense: 8, intelligence: 5, luck: 2, speed: 10));
+            status: new Status(maxHp: 30, maxMp: 10, strength: 12, defense: 8, intelligence: 5, luck: 2, speed: 10));
 
         var enemy = new TrainingEnemy(
             new TrainingEnemyId(1),
             name: "Enemy",
             imagePath: "/image/training/01_heishi.png",
             level: 5,
-            status: new BaseStatus(maxHp: 20, maxMp: 0, strength: 8, defense: 3, intelligence: 2, luck: 1, speed: 5));
+            status: new Status(maxHp: 20, maxMp: 0, strength: 8, defense: 3, intelligence: 2, luck: 1, speed: 5));
 
         var playerRepository = new FakePlayerRepository(player);
         var enemyRepository = new FakeTrainingEnemyRepository(enemy);
@@ -49,14 +49,14 @@ public class TrainingServiceTests
             name: "Tester",
             level: 1,
             exp: 0,
-            status: new BaseStatus(maxHp: 50, maxMp: 0, strength: 30, defense: 5, intelligence: 0, luck: 0, speed: 10));
+            status: new Status(maxHp: 50, maxMp: 0, strength: 30, defense: 5, intelligence: 0, luck: 0, speed: 10));
 
         var enemy = new TrainingEnemy(
             new TrainingEnemyId(1),
             name: "Enemy",
             imagePath: "/image/training/01_heishi.png",
             level: 1,
-            status: new BaseStatus(maxHp: 10, maxMp: 0, strength: 20, defense: 0, intelligence: 0, luck: 0, speed: 1));
+            status: new Status(maxHp: 10, maxMp: 0, strength: 20, defense: 0, intelligence: 0, luck: 0, speed: 1));
 
         var before = new TurnResult(Turn: 0, CurrentPlayerHp: player.Status.MaxHp, CurrentEnemyHp: enemy.Status.MaxHp);
 
@@ -76,14 +76,14 @@ public class TrainingServiceTests
             name: "Tester",
             level: 1,
             exp: 0,
-            status: new BaseStatus(maxHp: 10, maxMp: 0, strength: 25, defense: 0, intelligence: 0, luck: 0, speed: 1));
+            status: new Status(maxHp: 10, maxMp: 0, strength: 25, defense: 0, intelligence: 0, luck: 0, speed: 1));
 
         var enemy = new TrainingEnemy(
             new TrainingEnemyId(1),
             name: "Enemy",
             imagePath: "/image/training/01_heishi.png",
             level: 1,
-            status: new BaseStatus(maxHp: 30, maxMp: 0, strength: 30, defense: 0, intelligence: 0, luck: 0, speed: 10));
+            status: new Status(maxHp: 30, maxMp: 0, strength: 30, defense: 0, intelligence: 0, luck: 0, speed: 10));
 
         var before = new TurnResult(Turn: 0, CurrentPlayerHp: player.Status.MaxHp, CurrentEnemyHp: enemy.Status.MaxHp);
 
@@ -103,14 +103,14 @@ public class TrainingServiceTests
             name: "Tester",
             level: 1,
             exp: 0,
-            status: new BaseStatus(maxHp: 50, maxMp: 0, strength: 10, defense: 8, intelligence: 0, luck: 0, speed: 10));
+            status: new Status(maxHp: 50, maxMp: 0, strength: 10, defense: 8, intelligence: 0, luck: 0, speed: 10));
 
         var enemy = new TrainingEnemy(
             new TrainingEnemyId(1),
             name: "Enemy",
             imagePath: "/image/training/01_heishi.png",
             level: 1,
-            status: new BaseStatus(maxHp: 40, maxMp: 0, strength: 9, defense: 7, intelligence: 0, luck: 0, speed: 5));
+            status: new Status(maxHp: 40, maxMp: 0, strength: 9, defense: 7, intelligence: 0, luck: 0, speed: 5));
 
         var before = new TurnResult(Turn: 0, CurrentPlayerHp: player.Status.MaxHp, CurrentEnemyHp: enemy.Status.MaxHp);
 
@@ -130,14 +130,14 @@ public class TrainingServiceTests
             name: "Tester",
             level: 10,
             exp: 0,
-            status: new BaseStatus(maxHp: 30, maxMp: 0, strength: 10, defense: 5, intelligence: 8, luck: 0, speed: 5));
+            status: new Status(maxHp: 30, maxMp: 0, strength: 10, defense: 5, intelligence: 8, luck: 0, speed: 5));
 
         var enemy = new TrainingEnemy(
             new TrainingEnemyId(1),
             name: "Enemy",
             imagePath: "/image/training/01_heishi.png",
             level: 12,
-            status: new BaseStatus(maxHp: 55, maxMp: 0, strength: 8, defense: 5, intelligence: 3, luck: 0, speed: 4));
+            status: new Status(maxHp: 55, maxMp: 0, strength: 8, defense: 5, intelligence: 3, luck: 0, speed: 4));
 
         var turnResult = new TurnResult(Turn: 2, CurrentPlayerHp: 10, CurrentEnemyHp: 15);
 
@@ -155,14 +155,14 @@ public class TrainingServiceTests
             name: "Tester",
             level: 1,
             exp: 0,
-            status: new BaseStatus(maxHp: 30, maxMp: 0, strength: 5, defense: 2, intelligence: 3, luck: 0, speed: 3));
+            status: new Status(maxHp: 30, maxMp: 0, strength: 5, defense: 2, intelligence: 3, luck: 0, speed: 3));
 
         var enemy = new TrainingEnemy(
             new TrainingEnemyId(1),
             name: "Enemy",
             imagePath: "/image/training/01_heishi.png",
             level: 30,
-            status: new BaseStatus(maxHp: 100, maxMp: 0, strength: 20, defense: 10, intelligence: 10, luck: 0, speed: 10));
+            status: new Status(maxHp: 100, maxMp: 0, strength: 20, defense: 10, intelligence: 10, luck: 0, speed: 10));
 
         var turnResult = new TurnResult(Turn: 3, CurrentPlayerHp: 0, CurrentEnemyHp: 99);
 

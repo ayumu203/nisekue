@@ -6,9 +6,9 @@ classDiagram
         +string Name
         +int Level
         +int Exp
-        +BaseStatus Status
+        +Status Status
         +UpdateName(name: string) void
-        +UpdateStatus(status: BaseStatus) void
+        +UpdateStatus(status: Status) void
         -ValidateName(name: string) string 
         +GainExp(exp: int) void
         +LevelUp() bool
@@ -20,7 +20,7 @@ classDiagram
     }
 
     %% Player の基本ステータス
-    class BaseStatus {
+    class Status {
         <<Value Object>>
         +int MaxHp
         +int MaxMp
@@ -38,7 +38,7 @@ classDiagram
         +Task SaveAsync(player: Player)
     }
     Player *-- PlayerId : has
-    Player *-- BaseStatus : has
+    Player *-- Status : has
     IPlayerRepository ..> Player : stores/loads
 
 
@@ -114,7 +114,7 @@ classDiagram
         +string Name
         +string ImagePath
         +int Level
-        +BaseStatus Status
+        +Status Status
         -ValidateName(name: string) string         
     }
     class TrainingEnemyId {
@@ -165,7 +165,7 @@ classDiagram
     }
 
 
-    TrainingEnemy *-- BaseStatus : has
+    TrainingEnemy *-- Status : has
     TrainingEnemy *-- TrainingEnemyId : has
     ITrainingEnemyRepository --> TrainingEnemy : loads
     TrainingService ..> IPlayerRepository : use
