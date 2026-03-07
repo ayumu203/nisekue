@@ -50,7 +50,7 @@ function PlayerSetting() {
 
     const validation = playerUserNameSchema.safeParse(normalizedUserName)
     if (!validation.success) {
-      setErrorMessage(validation.error.issues[0]?.message ?? locale.playerMissing)
+      setErrorMessage(validation.error.issues[0]?.message ?? locale.validationError)
       setSuccessMessage(null)
       return
     }
@@ -66,15 +66,15 @@ function PlayerSetting() {
           current
             ? {
                 ...current,
-                userName: updated.userName ?? validation.data,
+                userName: updated.userName,
               }
             : current,
         { revalidate: false },
       )
-      setUserName(updated.userName ?? validation.data)
+      setUserName(updated.userName)
       setSuccessMessage(updated.message || locale.success)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : locale.playerMissing)
+      setErrorMessage(error instanceof Error ? error.message : locale.updateFailed)
     } finally {
       setIsSubmitting(false)
     }

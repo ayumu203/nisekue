@@ -10,5 +10,7 @@
   "success": "プレイヤー名を変更しました。",
   "playerLoading": "プレイヤー情報を読み込み中...",
   "sessionInfoMissing": "セッション情報が不足しています",
-  "playerMissing": "プレイヤーが見つかりません。先にホーム画面でプレイヤーを作成してください。"
+  "playerMissing": "プレイヤーが見つかりません。先にホーム画面でプレイヤーを作成してください。",
+  "validationError": "プレイヤー名が無効です。",
+  "updateFailed": "プレイヤー名の更新に失敗しました。"
 }

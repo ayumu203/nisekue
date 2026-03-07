@@ -41,7 +41,7 @@ export const updatePlayerRequestSchema = z.object({
 export const updatePlayerResponseSchema = z.object({
   message: z.string().min(1, 'レスポンスメッセージが空です'),
   userId: playerIdSchema,
-  userName: playerUserNameSchema.optional(),
+  userName: playerUserNameSchema,
 })
 
 export type GetPlayerResponse = z.infer<typeof getPlayerResponseSchema>

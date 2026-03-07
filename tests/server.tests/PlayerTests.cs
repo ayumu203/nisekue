@@ -7,7 +7,7 @@ namespace server.tests;
 public class PlayerTests
 {
     [Fact]
-    public void UpdateName_WithTrimmedValidName_UpdatesName()
+    public void UpdateName_WithWhitespaceAroundValidName_TrimsAndUpdatesName()
     {
         var player = new Player(
             new PlayerId(Guid.NewGuid()),
