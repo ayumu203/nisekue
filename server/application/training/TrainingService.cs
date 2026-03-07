@@ -80,7 +80,7 @@ public class TrainingService(IPlayerRepository playerRepository, ITrainingEnemyR
             IsLevelUp: isLevelUp);
     }
 
-    private static TurnResult ExecuteTurn(Player player, TrainingEnemy enemy, TurnResult turnResult)
+    internal static TurnResult ExecuteTurn(Player player, TrainingEnemy enemy, TurnResult turnResult)
     {
         var currentPlayerHp = turnResult.CurrentPlayerHp;
         var currentEnemyHp = turnResult.CurrentEnemyHp;
@@ -127,7 +127,7 @@ public class TrainingService(IPlayerRepository playerRepository, ITrainingEnemyR
         };
     }
 
-    private static int CalcExp(Player player, TrainingEnemy enemy, TurnResult turnResult)
+    internal static int CalcExp(Player player, TrainingEnemy enemy, TurnResult turnResult)
     {
         var playerDealtTotalDamage = enemy.Status.MaxHp - turnResult.CurrentEnemyHp;
         var levelDiff = Math.Abs(player.Level - enemy.Level);
