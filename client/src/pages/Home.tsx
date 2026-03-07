@@ -92,6 +92,9 @@ function Home() {
           <Button component={Link} to="/training" variant="contained">
             訓練へ進む
           </Button>
+          <Button component={Link} to="/thanks" variant="text" size="small">
+            サンクス
+          </Button>
           <Paper variant="outlined" sx={{ borderRadius: 3, p: 2.5 }}>
             <Stack spacing={2}>
               <Typography variant="h5">{locale.chatTitle}</Typography>
