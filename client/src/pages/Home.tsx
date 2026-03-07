@@ -103,75 +103,87 @@ function Home() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 8 } }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 } }}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          {isPlayerLoading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={16} />
-              <Typography variant="body2">{locale.playerLoading}</Typography>
-            </Stack>
-          ) : playerError ? (
-            <Alert severity="warning">{playerError.message}</Alert>
-          ) : (
-            <Status player={player} />
-          )}
-          <Button component={Link} to="/training" variant="contained" startIcon={<TrainingIcon />} sx={menuButtonSx}>
-            訓練
-          </Button>
-          <Button
-            component={Link}
-            to="/player-setting"
-            variant="outlined"
-            startIcon={<PlayerSettingIcon />}
-            sx={menuButtonSx}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: 'minmax(280px, 360px) minmax(0, 1fr)' },
+              gap: { xs: 1.5, sm: 2, md: 3 },
+              alignItems: 'start',
+            }}
           >
-            プレイヤー設定
-          </Button>
-          <Button
-            component={Link}
-            to="/thanks"
-            variant="outlined"
-            startIcon={<SpecialThanksIcon />}
-            sx={menuButtonSx}
-          >
-            スペシャルサンクス
-          </Button>
-          <Paper variant="outlined" sx={{ borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
             <Stack spacing={{ xs: 1.5, sm: 2 }}>
-              <Typography variant="h5">{locale.chatTitle}</Typography>
-              {isChatLoading ? (
+              {isPlayerLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <CircularProgress size={16} />
-                  <Typography variant="body2">{locale.chatLoading}</Typography>
+                  <Typography variant="body2">{locale.playerLoading}</Typography>
                 </Stack>
-              ) : chatError ? (
-                <Alert severity="warning">{chatError.message}</Alert>
+              ) : playerError ? (
+                <Alert severity="warning">{playerError.message}</Alert>
               ) : (
-                <Stack spacing={2}>
-                  <ChatMessages messages={chatRoom?.messages ?? []} />
-                  <ChatForm
-                    isSubmitting={isChatValidating}
-                    onSubmit={async (text) => {
-                      if (!session?.access_token || !player?.userId) {
-                        throw new Error(locale.sessionInfoMissing)
-                      }
-
-                      const updated = await postChatMessage(
-                        {
-                          ownerId: player.userId,
-                          text,
-                        },
-                        session.access_token,
-                      )
-                      await mutateChatRoom(updated, { revalidate: false })
-                    }}
-                  />
-                </Stack>
+                <Status player={player} />
               )}
+              <Button component={Link} to="/training" variant="contained" startIcon={<TrainingIcon />} sx={menuButtonSx}>
+                {locale.training}
+              </Button>
+              <Button
+                component={Link}
+                to="/player-setting"
+                variant="outlined"
+                startIcon={<PlayerSettingIcon />}
+                sx={menuButtonSx}
+              >
+                {locale.playerSetting}
+              </Button>
+              <Button
+                component={Link}
+                to="/thanks"
+                variant="outlined"
+                startIcon={<SpecialThanksIcon />}
+                sx={menuButtonSx}
+              >
+                {locale.specialThanks}
+              </Button>
+              <SignOut buttonSx={menuButtonSx} />
             </Stack>
-          </Paper>
-          <SignOut />
+
+            <Paper variant="outlined" sx={{ borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+              <Stack spacing={{ xs: 1.5, sm: 2 }}>
+                <Typography variant="h5">{locale.chatTitle}</Typography>
+                {isChatLoading ? (
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <CircularProgress size={16} />
+                    <Typography variant="body2">{locale.chatLoading}</Typography>
+                  </Stack>
+                ) : chatError ? (
+                  <Alert severity="warning">{chatError.message}</Alert>
+                ) : (
+                  <Stack spacing={2}>
+                    <ChatMessages messages={chatRoom?.messages ?? []} />
+                    <ChatForm
+                      isSubmitting={isChatValidating}
+                      onSubmit={async (text) => {
+                        if (!session?.access_token || !player?.userId) {
+                          throw new Error(locale.sessionInfoMissing)
+                        }
+
+                        const updated = await postChatMessage(
+                          {
+                            ownerId: player.userId,
+                            text,
+                          },
+                          session.access_token,
+                        )
+                        await mutateChatRoom(updated, { revalidate: false })
+                      }}
+                    />
+                  </Stack>
+                )}
+              </Stack>
+            </Paper>
+          </Box>
         </Stack>
       </Paper>
     </Container>

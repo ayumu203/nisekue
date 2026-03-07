@@ -1,6 +1,9 @@
 {
   "authLoading": "認証状態を確認中...",
   "title": "プレイヤー",
+  "training": "訓練",
+  "playerSetting": "プレイヤー設定",
+  "specialThanks": "スペシャルサンクス",
   "playerLoading": "プレイヤー情報を読み込み中...",
   "chatTitle": "チャット",
   "chatLoading": "チャットを読み込み中...",
