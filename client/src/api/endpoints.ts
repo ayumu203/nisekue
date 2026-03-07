@@ -5,6 +5,11 @@ import {
   postChatMessageRequestSchema,
   postChatMessageResponseSchema,
 } from '@/schema/chat'
+import {
+  getTrainingEnemiesResponseSchema,
+  executeTrainingRequestSchema,
+  executeTrainingResponseSchema,
+} from '@/schema/training'
 
 export type { GetPlayerResponse, CreatePlayerRequest, CreatePlayerResponse } from '@/schema/player'
 export type {
@@ -13,6 +18,13 @@ export type {
   PostChatMessageRequest,
   PostChatMessageResponse,
 } from '@/schema/chat'
+export type {
+  TrainingEnemy,
+  GetTrainingEnemiesResponse,
+  ExecuteTrainingRequest,
+  ExecuteTrainingResponse,
+  TrainingCooldownError,
+} from '@/schema/training'
 
 export const endpoints = {
   player: {
@@ -40,6 +52,19 @@ export const endpoints = {
       method: 'POST',
       requestSchema: postChatMessageRequestSchema,
       responseSchema: postChatMessageResponseSchema,
+    },
+  },
+  training: {
+    getEnemies: {
+      path: '/training/enemies',
+      method: 'GET',
+      responseSchema: getTrainingEnemiesResponseSchema,
+    },
+    execute: {
+      path: '/training/execute',
+      method: 'POST',
+      requestSchema: executeTrainingRequestSchema,
+      responseSchema: executeTrainingResponseSchema,
     },
   },
 } as const

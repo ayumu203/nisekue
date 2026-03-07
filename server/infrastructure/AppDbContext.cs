@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using server.domain.chat;
 using server.domain.player;
+using server.shared.constants.chat;
+using server.shared.constants.player;
 using server.infrastructure.chat;
 using server.infrastructure.player;
 
@@ -20,7 +22,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         player.Property(x => x.Id).HasColumnName("id");
         player.Property(x => x.Name)
             .HasColumnName("name")
-            .HasMaxLength(Player.NameMaxLength)
+            .HasMaxLength(PlayerConstants.NameMaxLength)
             .IsRequired();
         player.Property(x => x.Level)
             .HasColumnName("level")
@@ -49,6 +51,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         player.Property(x => x.Speed)
             .HasColumnName("speed")
             .IsRequired();
+        player.Property(x => x.TrainingBattleCount)
+            .HasColumnName("training_battle_count")
+            .HasDefaultValue(0)
+            .IsRequired();
+        player.Property(x => x.TrainingCooldownUntil)
+            .HasColumnName("training_cooldown_until");
         var chatRoom = modelBuilder.Entity<ChatRoomEntity>();
         chatRoom.ToTable("chat_rooms", "internal");
         chatRoom.HasKey(x => x.OwnerId);
@@ -79,7 +87,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired();
         chatMessage.Property(x => x.Message)
             .HasColumnName("message")
-            .HasMaxLength(ChatText.MessageMaxLength)
+            .HasMaxLength(ChatConstants.MessageMaxLength)
             .IsRequired();
         chatMessage.Property(x => x.CreatedAt)
             .HasColumnName("created_at")

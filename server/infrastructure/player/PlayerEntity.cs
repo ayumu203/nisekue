@@ -13,4 +13,6 @@ public class PlayerEntity
     public int Intelligence { get; set; }
     public int Luck { get; set; }
     public int Speed { get; set; }
+    public int TrainingBattleCount { get; set; }
+    public DateTimeOffset? TrainingCooldownUntil { get; set; }
 }

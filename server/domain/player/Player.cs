@@ -1,9 +1,9 @@
+using server.shared.constants.player;
+
 namespace server.domain.player;
 
 public class Player(PlayerId id, string name, int level, int exp, Status status)
 {
-    public const int NameMaxLength = 20;
-
     public PlayerId Id { get; } = id;
     public string Name { get; private set; } = ValidateName(name);
     public int Level { get; private set; } = level;
@@ -23,9 +23,9 @@ public class Player(PlayerId id, string name, int level, int exp, Status status)
     private static string ValidateName(string name)
     {
         var normalized = name?.Trim() ?? string.Empty;
-        if (normalized.Length is < 1 or > NameMaxLength)
+        if (normalized.Length is < 1 or > PlayerConstants.NameMaxLength)
         {
-            throw new ArgumentException($"プレイヤー名は1文字から{NameMaxLength}文字以内です.", nameof(name));
+            throw new ArgumentException($"プレイヤー名は1文字から{PlayerConstants.NameMaxLength}文字以内です.", nameof(name));
         }
 
         return normalized;

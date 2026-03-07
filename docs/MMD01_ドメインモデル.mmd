@@ -1,7 +1,7 @@
 classDiagram
     %% Player の基本情報
     class Player {
-        <<Aggregate Root>>
+        <<Entity>>
         +PlayerId Id
         +string Name
         +int Level
@@ -33,11 +33,13 @@ classDiagram
 
     class IPlayerRepository {
         +Task~Player?~ GetPlayerAsync(id: PlayerId)
+        +Task~DateTimeOffset?~ TryStartTrainingCooldownAsync(id: PlayerId, nowUtc: DateTimeOffset, cooldown: TimeSpan)
         +Task SaveAsync(player: Player)
     }
     Player *-- PlayerId : has
     Player *-- Status : has
     IPlayerRepository ..> Player : stores/loads
+
 
     %% ルームチャット機能
     class ChatRoom {
@@ -98,7 +100,75 @@ classDiagram
     ChatRoom *-- ChatMessage : 0..50
     ChatMessage *-- ChatText : has
     IChatRoomRepository ..> ChatRoom : stores/loads
-    ChatService ..> IChatRoomRepository : use
-    ChatService ..> IPlayerRepository : resolve sender name
     ChatService ..> ChatMessageView : builds
     ChatService ..> ChatRoomView : builds
+    ChatService ..> IChatRoomRepository : use
+    ChatService ..> IPlayerRepository : resolve sender name
+
+    %% トレーニングモード
+    %% 敵データ
+    class TrainingEnemy {
+        <<Entity>>
+        +TrainingEnemyId Id
+        +string Name
+        +string ImagePath
+        +int Level
+        +Status Status
+        -ValidateName(name: string) string         
+    }
+    class TrainingEnemyId {
+        <<Value Object>>
+        +int Id
+    }
+
+    %% 敵データをCSVより取得する
+    %% ロード時にメモリキャッシュなので実質的なインメモリ実装
+    class ITrainingEnemyRepository {
+        +Task~TrainingEnemy?~ GetTrainingEnemyAsync(id: TrainingEnemyId)
+        +Task~IReadOnlyList~TrainingEnemy~~ GetTrainingEnemiesAsync()
+    }
+
+    %% トレーニングの処理を行うサービス
+    class TrainingService {
+        <<Application Service>>
+        +GetTrainingEnemies() TrainingEnemyView[]
+        +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
+        %% それぞれのHPを返す
+        -ExecuteTurn(player Player, enemy : TrainingEnemy, turnResult : TurnResult) TurnResult        
+        -CalcExp(player Player, enemy : TrainingEnemy, turnResult : TurnResult) int
+        %% レベルアップしたらtrueを返す
+        -ApplyExp(player Player, exp : int) bool
+    }
+    class TurnResult {
+        +int Turn
+        +int CurrentPlayerHp
+        +int CurrentEnemyHp
+    }
+    class TrainingEnemyView {
+        <<Read Model>>
+        +string Name
+        +string ImagePath
+        +int Level
+    }
+    class TrainingResultView {
+        <<Read Model>>
+        %% 勝ち・負け・引き分け
+        +string TrainingResult
+        +int Turn
+        +int CurrentPlayerHp
+        +int MaxPlayerHp
+        +int CurrentEnemyHp
+        +int MaxEnemyHp
+        +int Exp
+        +bool IsLevelUp
+    }
+
+
+    TrainingEnemy *-- Status : has
+    TrainingEnemy *-- TrainingEnemyId : has
+    ITrainingEnemyRepository --> TrainingEnemy : loads
+    TrainingService ..> IPlayerRepository : use
+    TrainingService ..> ITrainingEnemyRepository : use
+    TrainingService ..> TurnResult : use
+    TrainingService ..> TrainingResultView : has
+    TrainingService ..> TrainingEnemyView : has

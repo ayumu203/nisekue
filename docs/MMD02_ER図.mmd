@@ -11,6 +11,8 @@ erDiagram
         int intelligence "NOT NULL, DEFAULT 0"
         int luck "NOT NULL, DEFAULT 0"
         int speed "NOT NULL, DEFAULT 0"
+        int training_battle_count "NOT NULL, DEFAULT 0"
+        timestamptz training_cooldown_until "NULL"
     }
     CHAT_ROOMS {
         uuid owner_id PK, FK "internal.players.id"
@@ -26,8 +28,3 @@ erDiagram
 
     PLAYERS ||--|| CHAT_ROOMS : owns
     CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
-
-    %% Repository rule:
-    %% - chat_rooms / chat_messages は同一トランザクションで更新する
-    %% - chat_messages は(owner_id, chat_id)をキーに差分upsertする
-    %% - last_chat_id は max(chat_messages.chat_id) 以上を維持し、不整合時は max(last_chat_id, max(chat_id)) を採用する

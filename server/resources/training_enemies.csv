@@ -1,0 +1,9 @@
+id,name,image_path,level,max_hp,max_mp,strength,defense,intelligence,luck,speed
+1,へいし,/image/training/01_heishi.png,1,12,0,3,1,0,1,2
+2,じゅんへいし,/image/training/02_heishi.png,2,18,0,5,2,0,1,4
+3,エリートへいし,/image/training/03_heishi.png,4,28,4,7,4,2,2,6
+4,まほうつかい見習い,/image/training/04_magic.png,6,26,18,3,3,10,3,5
+5,まほうつかい,/image/training/05_magic.png,8,34,28,4,4,14,4,7
+6,だいまどうし,/image/training/06_magic.png,10,42,40,5,5,18,5,9
+7,レヴナント,/image/training/07_rev.png,12,56,12,16,9,8,6,10
+8,アンポ,/image/training/08_anpo.png,14,72,20,20,12,10,7,12
