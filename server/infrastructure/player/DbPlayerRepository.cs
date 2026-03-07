@@ -52,7 +52,7 @@ namespace server.infrastructure.player
                 id.Value)
                 .ToListAsync();
 
-            return values.Count == 0 ? nowUtc : values[0];
+            return values.FirstOrDefault();
         }
 
         public async Task SaveAsync(Player player)
