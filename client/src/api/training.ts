@@ -1,5 +1,6 @@
 import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
+import { extractErrorMessage, resolveApiBaseUrl } from '@/api/util'
 import { trainingCooldownErrorSchema } from '@/schema/training'
 import type { ExecuteTrainingRequest, ExecuteTrainingResponse, GetTrainingEnemiesResponse } from '@/schema/training'
 
@@ -14,16 +15,6 @@ export class TrainingCooldownError extends Error {
     this.retryAfterSeconds = retryAfterSeconds
     this.cooldownUntil = cooldownUntil
   }
-}
-
-function resolveApiBaseUrl(): string {
-  return (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
-}
-
-function extractErrorMessage(json: unknown, fallback: string): string {
-  return typeof json === 'object' && json !== null && 'message' in json && typeof json.message === 'string'
-    ? json.message
-    : fallback
 }
 
 export async function getTrainingEnemies(accessToken: string): Promise<GetTrainingEnemiesResponse> {

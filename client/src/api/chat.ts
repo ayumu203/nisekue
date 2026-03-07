@@ -1,21 +1,12 @@
 import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
+import { extractErrorMessage, resolveApiBaseUrl } from '@/api/util'
 import type {
   GetChatRoomRequest,
   GetChatRoomResponse,
   PostChatMessageRequest,
   PostChatMessageResponse,
 } from '@/schema/chat'
-
-function resolveApiBaseUrl(): string {
-  return (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/+$/, '')
-}
-
-function extractErrorMessage(json: unknown, fallback: string): string {
-  return typeof json === 'object' && json !== null && 'message' in json && typeof json.message === 'string'
-    ? json.message
-    : fallback
-}
 
 export async function getChatRoom(input: GetChatRoomRequest, accessToken: string): Promise<GetChatRoomResponse> {
   const payload = endpoints.chatRoom.get.requestSchema.parse(input)
