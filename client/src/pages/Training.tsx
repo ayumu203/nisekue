@@ -10,7 +10,7 @@ import TrainingBattleResult from '@/components/training/TrainingBattleResult'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
-import locale from '../../locale/home/Home.json'
+import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 
 export default function Training() {
@@ -52,7 +52,7 @@ export default function Training() {
       return await getPlayer(session.access_token)
     } catch (error) {
       const message = error instanceof Error ? error.message : ''
-      if (!message.includes('プレイヤーが見つかりません')) {
+      if (!message.includes(locale.playerNotFoundMessage)) {
         throw error
       }
 
@@ -95,11 +95,12 @@ export default function Training() {
       await mutatePlayer()
     } catch (error) {
       if (error instanceof TrainingCooldownError) {
-        setTrainingError(`${error.message} (${error.retryAfterSeconds}秒後に再試行できます)`)
+        const retryAfterMessage = locale.retryAfterSeconds.replace('{{seconds}}', String(error.retryAfterSeconds))
+        setTrainingError(`${error.message} (${retryAfterMessage})`)
       } else if (error instanceof Error) {
         setTrainingError(error.message)
       } else {
-        setTrainingError('訓練の実行に失敗しました')
+        setTrainingError(locale.trainingFailed)
       }
     } finally {
       setIsTrainingSubmitting(false)
@@ -123,9 +124,9 @@ export default function Training() {
       <Paper elevation={2} sx={{ p: 4 }}>
         <Stack spacing={2}>
           <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
-            <Typography variant="h4">訓練</Typography>
+            <Typography variant="h4">{locale.title}</Typography>
             <Button component={Link} to="/" variant="outlined">
-              ホームへ戻る
+              {locale.backToHome}
             </Button>
           </Stack>
 
@@ -149,7 +150,7 @@ export default function Training() {
               {isTrainingEnemiesLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <CircularProgress size={16} />
-                  <Typography variant="body2">訓練相手を読み込み中...</Typography>
+                  <Typography variant="body2">{locale.enemiesLoading}</Typography>
                 </Stack>
               ) : trainingEnemiesError ? (
                 <Alert severity="warning">{trainingEnemiesError.message}</Alert>

@@ -1,6 +1,7 @@
 import { Button, LinearProgress, Paper, Stack, Typography } from '@mui/material'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
+import locale from '../../../locale/training/Training.json'
 
 type TrainingBattleResultProps = {
   enemy: TrainingEnemy
@@ -25,10 +26,23 @@ export default function TrainingBattleResult({
   lockRemainingSeconds,
   onRematch,
 }: TrainingBattleResultProps) {
+  const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
+  const battleAgainst = locale.battleAgainst.replace('{{enemyName}}', enemy.name)
+  const resultSummary = locale.resultSummary
+    .replace('{{trainingResult}}', result.trainingResult)
+    .replace('{{turn}}', String(result.turn))
+    .replace('{{exp}}', String(result.exp))
+  const playerHp = locale.playerHp
+    .replace('{{current}}', String(result.currentPlayerHp))
+    .replace('{{max}}', String(result.maxPlayerHp))
+  const enemyHp = locale.enemyHp
+    .replace('{{current}}', String(result.currentEnemyHp))
+    .replace('{{max}}', String(result.maxEnemyHp))
+
   return (
     <Paper variant="outlined" sx={{ borderRadius: 3, p: 2.5 }}>
       <Stack spacing={2}>
-        <Typography variant="h5">戦闘結果</Typography>
+        <Typography variant="h5">{locale.battleResultTitle}</Typography>
         <img
           src={resolvePublicAssetPath(enemy.imagePath)}
           alt={enemy.name}
@@ -43,15 +57,11 @@ export default function TrainingBattleResult({
           }}
         />
         <Typography variant="subtitle1" fontWeight={700}>
-          {enemy.name} と戦闘
+          {battleAgainst}
         </Typography>
-        <Typography variant="body2">
-          結果: {result.trainingResult} / ターン: {result.turn} / 獲得経験値: {result.exp}
-        </Typography>
+        <Typography variant="body2">{resultSummary}</Typography>
         <Stack spacing={0.75}>
-          <Typography variant="body2">
-            プレイヤー HP: {result.currentPlayerHp} / {result.maxPlayerHp}
-          </Typography>
+          <Typography variant="body2">{playerHp}</Typography>
           <LinearProgress
             variant="determinate"
             value={normalizeHp(result.currentPlayerHp, result.maxPlayerHp)}
@@ -59,9 +69,7 @@ export default function TrainingBattleResult({
           />
         </Stack>
         <Stack spacing={0.75}>
-          <Typography variant="body2">
-            敵 HP: {result.currentEnemyHp} / {result.maxEnemyHp}
-          </Typography>
+          <Typography variant="body2">{enemyHp}</Typography>
           <LinearProgress
             variant="determinate"
             value={normalizeHp(result.currentEnemyHp, result.maxEnemyHp)}
@@ -70,7 +78,7 @@ export default function TrainingBattleResult({
           />
         </Stack>
         <Button variant="contained" disabled={isActionDisabled} onClick={onRematch}>
-          {isActionDisabled ? `再戦まで ${lockRemainingSeconds}s` : '再戦する'}
+          {isActionDisabled ? rematchInSeconds : locale.rematch}
         </Button>
       </Stack>
     </Paper>
