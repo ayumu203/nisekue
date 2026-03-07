@@ -1,0 +1,22 @@
+{
+  "authLoading": "認証状態を確認中...",
+  "sessionInfoMissing": "セッション情報が不足しています",
+  "title": "訓練",
+  "backToHome": "ホームへ戻る",
+  "signedInAs": "ログイン中",
+  "playerLoading": "プレイヤー情報を読み込み中...",
+  "playerNotFoundMessage": "プレイヤーが見つかりません",
+  "enemiesLoading": "訓練相手を読み込み中...",
+  "trainingFailed": "訓練の実行に失敗しました",
+  "retryAfterSeconds": "{{seconds}}秒後に再試行できます",
+  "enemySelectTitle": "訓練相手",
+  "enemyLevel": "Lv.{{level}}",
+  "fight": "戦う",
+  "rematchInSeconds": "再戦まで {{seconds}}s",
+  "battleResultTitle": "戦闘結果",
+  "battleAgainst": "{{enemyName}} と戦闘",
+  "resultSummary": "結果: {{trainingResult}} / ターン: {{turn}} / 獲得経験値: {{exp}}",
+  "playerHp": "プレイヤー HP: {{current}} / {{max}}",
+  "enemyHp": "敵 HP: {{current}} / {{max}}",
+  "rematch": "再戦する"
+}

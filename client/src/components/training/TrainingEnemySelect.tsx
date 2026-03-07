@@ -1,6 +1,7 @@
 import { Button, Card, CardContent, CardMedia, Grid, Stack, Typography } from '@mui/material'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { TrainingEnemy } from '@/schema/training'
+import locale from '../../../locale/training/Training.json'
 
 type TrainingEnemySelectProps = {
   enemies: TrainingEnemy[]
@@ -15,9 +16,11 @@ export default function TrainingEnemySelect({
   lockRemainingSeconds,
   onFight,
 }: TrainingEnemySelectProps) {
+  const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
+
   return (
     <Stack spacing={2}>
-      <Typography variant="h5">訓練相手</Typography>
+      <Typography variant="h5">{locale.enemySelectTitle}</Typography>
       <Grid container spacing={2}>
         {enemies.map((enemy) => (
           <Grid key={enemy.id} size={{ xs: 12, sm: 6, md: 4 }}>
@@ -37,7 +40,7 @@ export default function TrainingEnemySelect({
                 <Stack spacing={1.5}>
                   <Stack spacing={0.25}>
                     <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                      Lv.{enemy.level}
+                      {locale.enemyLevel.replace('{{level}}', String(enemy.level))}
                     </Typography>
                     <Typography
                       variant="subtitle1"
@@ -48,7 +51,7 @@ export default function TrainingEnemySelect({
                     </Typography>
                   </Stack>
                   <Button variant="contained" disabled={isActionDisabled} onClick={() => onFight(enemy)}>
-                    {isActionDisabled ? `再戦まで ${lockRemainingSeconds}s` : '戦う'}
+                    {isActionDisabled ? rematchInSeconds : locale.fight}
                   </Button>
                 </Stack>
               </CardContent>
