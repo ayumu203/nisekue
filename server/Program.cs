@@ -117,6 +117,7 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
                 slot = index + 1,
                 moveId = moveId?.Id,
                 moveName = move?.Name,
+                description = move?.Description,
                 targetType = move?.TargetType.ToString(),
                 attackRange = move?.AttackRange.ToString(),
                 mpCost = move?.MpCost,

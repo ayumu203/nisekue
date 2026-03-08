@@ -24,6 +24,7 @@ export const playerMoveSlotSchema = z.object({
   slot: z.number().int().min(1).max(10),
   moveId: z.number().int().min(1).nullable(),
   moveName: z.string().min(1).nullable(),
+  description: z.string().min(1).nullable(),
   targetType: moveTargetTypeSchema.nullable(),
   attackRange: moveAttackRangeSchema.nullable(),
   mpCost: z.number().int().min(0).nullable(),

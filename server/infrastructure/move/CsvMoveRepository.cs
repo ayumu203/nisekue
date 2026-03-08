@@ -47,6 +47,7 @@ public class CsvMoveRepository : IMoveRepository
             var move = new Move(
                 id: new MoveId(master.MoveId),
                 name: master.MoveName,
+                description: master.Description,
                 targetType: master.TargetType,
                 attackRange: master.AttackRange,
                 mpCost: master.MpCost,
@@ -83,7 +84,7 @@ public class CsvMoveRepository : IMoveRepository
             }
 
             var columns = line.Split(',', StringSplitOptions.TrimEntries);
-            if (columns.Length != 7)
+            if (columns.Length != 8)
             {
                 throw new InvalidOperationException($"move_master.csv の形式が不正です。行: {i + 1}");
             }
@@ -97,11 +98,12 @@ public class CsvMoveRepository : IMoveRepository
             map.Add(moveId, new MoveMasterRow(
                 MoveId: moveId,
                 MoveName: columns[1],
-                TargetType: ParseEnum<TargetType>(columns[2], "target_type", i + 1),
-                AttackRange: ParseEnum<AttackRange>(columns[3], "attack_range", i + 1),
-                MpCost: ParseInt(columns[4], "mp_cost", i + 1),
-                ExecutionPriority: ParseInt(columns[5], "execution_priority", i + 1),
-                MoveCategory: ParseEnum<MoveCategory>(columns[6], "move_category", i + 1)));
+                Description: columns[2],
+                TargetType: ParseEnum<TargetType>(columns[3], "target_type", i + 1),
+                AttackRange: ParseEnum<AttackRange>(columns[4], "attack_range", i + 1),
+                MpCost: ParseInt(columns[5], "mp_cost", i + 1),
+                ExecutionPriority: ParseInt(columns[6], "execution_priority", i + 1),
+                MoveCategory: ParseEnum<MoveCategory>(columns[7], "move_category", i + 1)));
         }
 
         if (map.Count == 0)
@@ -298,6 +300,7 @@ public class CsvMoveRepository : IMoveRepository
     private readonly record struct MoveMasterRow(
         int MoveId,
         string MoveName,
+        string Description,
         TargetType TargetType,
         AttackRange AttackRange,
         int MpCost,

@@ -148,6 +148,7 @@ public class MoveDomainValidationTests
         new(
             id: new MoveId(1),
             name: "テスト技",
+            description: "テスト用の技説明",
             targetType: TargetType.Enemy,
             attackRange: AttackRange.Single,
             mpCost: 3,

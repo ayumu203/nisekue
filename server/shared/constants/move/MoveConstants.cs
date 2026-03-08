@@ -5,6 +5,7 @@ public static class MoveConstants
     public static class Constraints
     {
         public const int NameMaxLength = 20;
+        public const int DescriptionMaxLength = 120;
         public const int MinId = 1;
         public const int MinSequence = 1;
         public const int MinHitCount = 1;

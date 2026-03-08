@@ -9,6 +9,7 @@ public class Move
 
     public MoveId Id { get; }
     public string Name { get; private set; }
+    public string Description { get; private set; }
     public TargetType TargetType { get; private set; }
     public AttackRange AttackRange { get; private set; }
     public int MpCost { get; private set; }
@@ -16,14 +17,15 @@ public class Move
     public MoveCategory Category { get; private set; }
     public IReadOnlyList<MoveEffect> Effects => _effects;
 
-    public Move(MoveId id, string name, TargetType targetType, AttackRange attackRange, int mpCost, int executionPriority, MoveCategory category)
-        : this(id, name, targetType, attackRange, mpCost, executionPriority, category, [])
+    public Move(MoveId id, string name, string description, TargetType targetType, AttackRange attackRange, int mpCost, int executionPriority, MoveCategory category)
+        : this(id, name, description, targetType, attackRange, mpCost, executionPriority, category, [])
     {
     }
 
     public Move(
         MoveId id,
         string name,
+        string description,
         TargetType targetType,
         AttackRange attackRange,
         int mpCost,
@@ -33,6 +35,7 @@ public class Move
     {
         Id = id ?? throw new ArgumentNullException(nameof(id));
         Name = ValidateName(name);
+        Description = ValidateDescription(description);
         TargetType = targetType;
         AttackRange = attackRange;
         MpCost = ValidateMpCost(mpCost);
@@ -101,5 +104,18 @@ public class Move
         }
 
         return mpCost;
+    }
+
+    private static string ValidateDescription(string description)
+    {
+        var normalized = description?.Trim() ?? string.Empty;
+        if (normalized.Length is < 1 or > MoveConstants.Constraints.DescriptionMaxLength)
+        {
+            throw new ArgumentException(
+                $"技説明は1文字から{MoveConstants.Constraints.DescriptionMaxLength}文字以内です。",
+                nameof(description));
+        }
+
+        return normalized;
     }
 }
