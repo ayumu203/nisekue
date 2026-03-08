@@ -11,6 +11,7 @@ namespace server.infrastructure;
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<PlayerEntity> Players => Set<PlayerEntity>();
+    public DbSet<PlayerMoveEntity> PlayerMoves => Set<PlayerMoveEntity>();
     public DbSet<ChatRoomEntity> ChatRooms => Set<ChatRoomEntity>();
     public DbSet<ChatMessageEntity> ChatMessages => Set<ChatMessageEntity>();
 
@@ -62,6 +63,30 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired();
         player.Property(x => x.TrainingCooldownUntil)
             .HasColumnName("training_cooldown_until");
+
+        var playerMoves = modelBuilder.Entity<PlayerMoveEntity>();
+        playerMoves.ToTable("player_moves", "internal");
+        playerMoves.HasKey(x => x.PlayerId);
+        playerMoves.Property(x => x.PlayerId)
+            .HasColumnName("player_id")
+            .HasColumnType("uuid")
+            .IsRequired();
+        playerMoves.Property(x => x.MoveId1).HasColumnName("move_id_1");
+        playerMoves.Property(x => x.MoveId2).HasColumnName("move_id_2");
+        playerMoves.Property(x => x.MoveId3).HasColumnName("move_id_3");
+        playerMoves.Property(x => x.MoveId4).HasColumnName("move_id_4");
+        playerMoves.Property(x => x.MoveId5).HasColumnName("move_id_5");
+        playerMoves.Property(x => x.MoveId6).HasColumnName("move_id_6");
+        playerMoves.Property(x => x.MoveId7).HasColumnName("move_id_7");
+        playerMoves.Property(x => x.MoveId8).HasColumnName("move_id_8");
+        playerMoves.Property(x => x.MoveId9).HasColumnName("move_id_9");
+        playerMoves.Property(x => x.MoveId10).HasColumnName("move_id_10");
+        playerMoves
+            .HasOne<PlayerEntity>()
+            .WithOne()
+            .HasForeignKey<PlayerMoveEntity>(x => x.PlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         var chatRoom = modelBuilder.Entity<ChatRoomEntity>();
         chatRoom.ToTable("chat_rooms", "internal");
         chatRoom.HasKey(x => x.OwnerId);

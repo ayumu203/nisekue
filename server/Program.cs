@@ -4,9 +4,9 @@ using Microsoft.IdentityModel.Tokens;
 using server.application.chat;
 using server.application.training;
 using server.domain.chat;
+using server.domain.move;
 using server.domain.player;
 using server.domain.training;
-using server.domain.move;
 using server.infrastructure;
 using server.infrastructure.chat;
 using System.Security.Claims;
@@ -140,13 +140,17 @@ app.MapPost(
 
     try
     {
+        var moveSet = new MoveSet();
+        moveSet.SetSlot(0, new MoveId(8));
+
         var player = new Player(
             playerId.Value,
             request.UserName,
             level: 1,
             exp: 0,
             status: new Status(maxHp: 10, maxMp: 2, strength: 1, defense: 1, intelligence: 1, luck: 1, speed: 1),
-            job: Job.Apprentice);
+            job: Job.Apprentice,
+            moveSet: moveSet);
         await playerRepository.SaveAsync(player);
         await chatService.EnsureRoomAsync(player.Id);
         return Results.Ok(new
