@@ -6,3 +6,4 @@ effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical
 5,5,1,Damage,1,1.25,4,0.02,Fire,,,,,,,,
 6,6,1,Buff,,,,,,,,Defense,Add,15,3,1.00,false
 7,7,1,Damage,1,1.20,3,0.03,Holy,,,,,,,,
+8,8,1,Damage,1,1.30,0,0.03,Strike,,,,,,,,

@@ -6,3 +6,4 @@ move_id,move_name,target_type,attack_range,mp_cost,execution_priority,move_categ
 5,プラーミア,Enemy,Row,6,0,Attack
 6,シルト,Ally,All,8,1,Support
 7,ヒルフェ,Enemy,Single,5,0,Attack
+8,ルーキーストライク,Enemy,Single,4,0,Attack
