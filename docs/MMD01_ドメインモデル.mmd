@@ -195,11 +195,14 @@ classDiagram
             +IReadOnlyList~MoveEffect~ Effects
             +Validate() void
             +GetOrderedEffects() IReadOnlyList~MoveEffect~
+            -ValidateName(name: string) string
+            -ValidateMpCost(mpCost: int) int
         }
 
         class MoveId {
             <<Value Object>>
             +int Id
+            -Validate(id: int) int
         }
 
         class MoveEffect {
@@ -212,26 +215,36 @@ classDiagram
             +AilmentEffect? Ailment
             +BuffEffect? Buff
             +ValidateByType() void
+            -ValidateOnlyDamage() void
+            -ValidateOnlyAilment() void
+            -ValidateOnlyBuff() void
+            -ValidateSequence(sequence: int) int
         }
 
         class MoveEffectId {
             <<Value Object>>
             +int Id
+            -Validate(id: int) int
         }
 
         class DamageEffect {
             <<Value Object>>
             +int HitCount
             +decimal PowerRate
-            +int FixedDamage
+            +int FixedValue
             +decimal CriticalRate
             +ElementType ElementType
+            -ValidateHitCount(hitCount: int) int
+            -ValidateFixedValue(fixedValue: int) int
+            -ValidateRateRange(value: decimal, paramName: string) decimal
+            -ValidateNonNegative(value: decimal, paramName: string) decimal
         }
 
         class AilmentEffect {
             <<Value Object>>
             +AilmentType AilmentType
             +decimal AilmentRate
+            -ValidateRateRange(value: decimal) decimal
         }
 
         class BuffEffect {
@@ -242,6 +255,9 @@ classDiagram
             +int BuffTurns
             +decimal BuffRate
             +bool CanStack
+            -ValidateBuffValue(value: decimal, op: BuffOp) decimal
+            -ValidateTurns(turns: int) int
+            -ValidateRateRange(value: decimal) decimal
         }
 
         class IMoveRepository {
@@ -286,4 +302,4 @@ classDiagram
     MoveEffect *-- DamageEffect : optional
     MoveEffect *-- AilmentEffect : optional
     MoveEffect *-- BuffEffect : optional
-    IMoveRepository ..> Move : stores/loads
+    IMoveRepository ..> Move : loads

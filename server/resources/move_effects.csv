@@ -1,4 +1,4 @@
-effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_damage,critical_rate,element_type,ailment_type,ailment_rate,buff_stat,buff_op,buff_value,buff_turns,buff_rate,can_stack
+effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical_rate,element_type,ailment_type,ailment_rate,buff_stat,buff_op,buff_value,buff_turns,buff_rate,can_stack
 1,1,1,Damage,1,1.10,2,0.03,Slash,,,,,,,,
 2,2,1,Damage,1,1.25,4,0.02,None,,,,,,,,
 3,3,1,Ailment,,,,,,Taunt,1.00,,,,,,
