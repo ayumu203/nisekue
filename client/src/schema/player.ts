@@ -19,7 +19,17 @@ export const playerJobSchema = z.object({
 export const moveTargetTypeSchema = z.enum(['Enemy', 'Ally', 'Self'])
 export const moveAttackRangeSchema = z.enum(['Single', 'Column', 'Row', 'Square', 'All'])
 export const moveCategorySchema = z.enum(['Attack', 'Support', 'Hybrid'])
-export const moveElementTypeSchema = z.enum(['Strike', 'Slash', 'Pierce', 'Fire', 'Water', 'Earth', 'Wind', 'Holy', 'None'])
+export const moveElementTypeSchema = z.enum([
+  'Strike',
+  'Slash',
+  'Pierce',
+  'Fire',
+  'Water',
+  'Earth',
+  'Wind',
+  'Holy',
+  'None',
+])
 
 export const playerMoveSlotSchema = z.object({
   slot: z.number().int().min(1).max(10),
