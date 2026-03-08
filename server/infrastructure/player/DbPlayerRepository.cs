@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using server.domain.move;
 using server.domain.player;
 using server.shared.constants.player;
 
@@ -19,7 +20,11 @@ namespace server.infrastructure.player
                 return null;
             }
 
-            return MapToDomain(entity);
+            var moveEntity = await dbContext.PlayerMoves
+                .AsNoTracking()
+                .SingleOrDefaultAsync(x => x.PlayerId == id.Value);
+
+            return MapToDomain(entity, moveEntity);
         }
 
         public async Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown)
@@ -96,9 +101,14 @@ namespace server.infrastructure.player
                     Luck = player.Status.Luck,
                     Speed = player.Status.Speed,
                 });
+
+                dbContext.PlayerMoves.Add(CreateMoveEntity(player.Id, player.MoveSet));
             }
             else
             {
+                var existingMoves = await dbContext.PlayerMoves
+                    .SingleOrDefaultAsync(x => x.PlayerId == player.Id.Value);
+
                 existing.Job = player.Job;
                 existing.Level = player.Level;
                 existing.Exp = player.Exp;
@@ -109,6 +119,15 @@ namespace server.infrastructure.player
                 existing.Intelligence = player.Status.Intelligence;
                 existing.Luck = player.Status.Luck;
                 existing.Speed = player.Status.Speed;
+
+                if (existingMoves is null)
+                {
+                    dbContext.PlayerMoves.Add(CreateMoveEntity(player.Id, player.MoveSet));
+                }
+                else
+                {
+                    ApplyMoveSet(existingMoves, player.MoveSet);
+                }
             }
 
             try
@@ -125,7 +144,7 @@ namespace server.infrastructure.player
             }
         }
 
-        private static Player MapToDomain(PlayerEntity entity) =>
+        private static Player MapToDomain(PlayerEntity entity, PlayerMoveEntity? moveEntity) =>
             new(
                 new PlayerId(entity.Id),
                 entity.Name,
@@ -139,6 +158,65 @@ namespace server.infrastructure.player
                     defense: entity.Defense,
                     intelligence: entity.Intelligence,
                     luck: entity.Luck,
-                    speed: entity.Speed));
+                    speed: entity.Speed),
+                moveSet: MapToMoveSet(moveEntity));
+
+        private static MoveSet MapToMoveSet(PlayerMoveEntity? moveEntity)
+        {
+            if (moveEntity is null)
+            {
+                return new MoveSet();
+            }
+
+            return new MoveSet(
+            [
+                ToMoveId(moveEntity.MoveId1),
+                ToMoveId(moveEntity.MoveId2),
+                ToMoveId(moveEntity.MoveId3),
+                ToMoveId(moveEntity.MoveId4),
+                ToMoveId(moveEntity.MoveId5),
+                ToMoveId(moveEntity.MoveId6),
+                ToMoveId(moveEntity.MoveId7),
+                ToMoveId(moveEntity.MoveId8),
+                ToMoveId(moveEntity.MoveId9),
+                ToMoveId(moveEntity.MoveId10)
+            ]);
+        }
+
+        private static PlayerMoveEntity CreateMoveEntity(PlayerId playerId, MoveSet moveSet)
+        {
+            var entity = new PlayerMoveEntity
+            {
+                PlayerId = playerId.Value
+            };
+
+            ApplyMoveSet(entity, moveSet);
+            return entity;
+        }
+
+        private static void ApplyMoveSet(PlayerMoveEntity entity, MoveSet moveSet)
+        {
+            var slots = moveSet.Slots;
+            if (slots.Count != MoveSet.MaxSlots)
+            {
+                throw new InvalidOperationException($"MoveSet のスロット数が不正です。count={slots.Count}");
+            }
+
+            entity.MoveId1 = slots[0]?.Id;
+            entity.MoveId2 = slots[1]?.Id;
+            entity.MoveId3 = slots[2]?.Id;
+            entity.MoveId4 = slots[3]?.Id;
+            entity.MoveId5 = slots[4]?.Id;
+            entity.MoveId6 = slots[5]?.Id;
+            entity.MoveId7 = slots[6]?.Id;
+            entity.MoveId8 = slots[7]?.Id;
+            entity.MoveId9 = slots[8]?.Id;
+            entity.MoveId10 = slots[9]?.Id;
+        }
+
+        private static MoveId? ToMoveId(int? value)
+        {
+            return value.HasValue ? new MoveId(value.Value) : null;
+        }
     }
 }

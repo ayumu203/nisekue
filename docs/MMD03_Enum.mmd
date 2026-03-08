@@ -1,0 +1,83 @@
+classDiagram
+    direction LR
+    namespace CoreDomain {
+        class Job {
+            <<Enum>>
+            Apprentice
+            Warrior
+            Guardian
+            Mage
+            Priest
+            Ranger
+        }
+    }
+
+    namespace MoveDomain {
+        class TargetType {
+            <<Enum>>
+            Enemy
+            Ally
+            Self
+        }
+
+        class AttackRange {
+            <<Enum>>
+            Single
+            Column
+            Row
+            Square
+            All
+        }
+
+        class MoveCategory {
+            <<Enum>>
+            Attack
+            Support
+            Hybrid
+        }
+
+        class MoveEffectType {
+            <<Enum>>
+            Damage
+            Heal
+            Ailment
+            Buff
+        }
+
+        class ElementType {
+            <<Enum>>
+            Strike
+            Slash
+            Pierce
+            Fire
+            Water
+            Earth
+            Wind
+            Holy
+            None
+        }
+
+        class AilmentType {
+            <<Enum>>
+            Paralysis
+            Poison
+            Taunt
+        }
+
+        class BuffStat {
+            <<Enum>>
+            MaxHp
+            MaxMp
+            Strength
+            Defense
+            Intelligence
+            Luck
+            Speed
+        }
+
+        class BuffOp {
+            <<Enum>>
+            Add
+            Mul
+        }
+    }

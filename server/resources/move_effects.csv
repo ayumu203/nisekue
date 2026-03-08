@@ -1,0 +1,9 @@
+effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical_rate,element_type,ailment_type,ailment_rate,buff_stat,buff_op,buff_value,buff_turns,buff_rate,can_stack
+1,1,1,Damage,1,1.10,2,0.03,Slash,,,,,,,,
+2,2,1,Damage,1,1.25,4,0.02,None,,,,,,,,
+3,3,1,Ailment,,,,,,Taunt,1.00,,,,,,
+4,4,1,Heal,,1.00,20,,Holy,,,,,,,,
+5,5,1,Damage,1,1.25,4,0.02,Fire,,,,,,,,
+6,6,1,Buff,,,,,,,,Defense,Add,15,3,1.00,false
+7,7,1,Damage,1,1.20,3,0.03,Holy,,,,,,,,
+8,8,1,Damage,1,1.30,0,0.03,Strike,,,,,,,,

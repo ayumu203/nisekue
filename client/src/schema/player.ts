@@ -16,6 +16,33 @@ export const playerJobSchema = z.object({
   displayName: z.string().min(1, 'ジョブ名が空です'),
 })
 
+export const moveTargetTypeSchema = z.enum(['Enemy', 'Ally', 'Self'])
+export const moveAttackRangeSchema = z.enum(['Single', 'Column', 'Row', 'Square', 'All'])
+export const moveCategorySchema = z.enum(['Attack', 'Support', 'Hybrid'])
+export const moveElementTypeSchema = z.enum([
+  'Strike',
+  'Slash',
+  'Pierce',
+  'Fire',
+  'Water',
+  'Earth',
+  'Wind',
+  'Holy',
+  'None',
+])
+
+export const playerMoveSlotSchema = z.object({
+  slot: z.number().int().min(1).max(10),
+  moveId: z.number().int().min(1).nullable(),
+  moveName: z.string().min(1).nullable(),
+  description: z.string().min(1).nullable(),
+  elementType: moveElementTypeSchema.nullable(),
+  targetType: moveTargetTypeSchema.nullable(),
+  attackRange: moveAttackRangeSchema.nullable(),
+  mpCost: z.number().int().min(0).nullable(),
+  category: moveCategorySchema.nullable(),
+})
+
 export const getPlayerResponseSchema = z.object({
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
@@ -31,6 +58,7 @@ export const getPlayerResponseSchema = z.object({
     luck: z.number().int().min(0, 'Luckは0以上である必要があります'),
     speed: z.number().int().min(0, 'Speedは0以上である必要があります'),
   }),
+  moveSlots: z.array(playerMoveSlotSchema).length(10),
 })
 
 export const createPlayerRequestSchema = z.object({
@@ -67,6 +95,7 @@ export const updatePlayerJobResponseSchema = z.object({
 })
 
 export type GetPlayerResponse = z.infer<typeof getPlayerResponseSchema>
+export type PlayerMoveSlot = z.infer<typeof playerMoveSlotSchema>
 export type CreatePlayerRequest = z.infer<typeof createPlayerRequestSchema>
 export type CreatePlayerResponse = z.infer<typeof createPlayerResponseSchema>
 export type UpdatePlayerNameRequest = z.infer<typeof updatePlayerNameRequestSchema>

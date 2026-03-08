@@ -5,6 +5,7 @@ import Home from '@/pages/Home'
 import Training from '@/pages/Training'
 import Thanks from '@/pages/Thanks'
 import PlayerSetting from '@/pages/PlayerSetting'
+import MoveSetting from '@/pages/MoveSetting'
 import { useAuth } from '@/contexts/useAuth'
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
       <Route path="/" element={user ? <Home /> : <Navigate to="/auth" replace />} />
       <Route path="/training" element={user ? <Training /> : <Navigate to="/auth" replace />} />
       <Route path="/player-setting" element={user ? <PlayerSetting /> : <Navigate to="/auth" replace />} />
+      <Route path="/move-setting" element={user ? <MoveSetting /> : <Navigate to="/auth" replace />} />
       <Route path="/thanks" element={<Thanks />} />
       <Route path="*" element={<Navigate to={user ? '/' : '/auth'} replace />} />
     </Routes>

@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using server.application.chat;
 using server.application.training;
 using server.domain.chat;
+using server.domain.move;
 using server.domain.player;
 using server.domain.training;
 using server.infrastructure;
@@ -11,6 +12,7 @@ using server.infrastructure.chat;
 using System.Security.Claims;
 using server.infrastructure.player;
 using server.infrastructure.training;
+using server.infrastructure.move;
 using server.shared.constants.player;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -72,6 +74,7 @@ builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
 builder.Services.AddSingleton<IGrowthValueRepository, CsvGrowthValueRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
 builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
+builder.Services.AddSingleton<IMoveRepository, CsvMoveRepository>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<TrainingService>();
 
@@ -82,7 +85,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/", () => Results.Ok(new { message = "Hello World!" }));
-app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepository) =>
+app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepository, IMoveRepository moveRepository) =>
 {
     var playerId = TryGetPlayerId(user);
     if (playerId is null)
@@ -99,6 +102,33 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
             userId = playerId.Value.Value
         });
     }
+
+    var allMoves = await moveRepository.GetAllMovesAsync();
+    var moveById = allMoves.ToDictionary(x => x.Id.Id);
+    var moveSlots = player.MoveSet.Slots
+        .Select((moveId, index) =>
+        {
+            var move = moveId is null
+                ? null
+                : moveById.GetValueOrDefault(moveId.Id);
+
+            return new
+            {
+                slot = index + 1,
+                moveId = moveId?.Id,
+                moveName = move?.Name,
+                description = move?.Description,
+                elementType = move?.GetOrderedEffects()
+                    .FirstOrDefault(effect => effect.Damage is not null)?
+                    .Damage?
+                    .ElementType
+                    .ToString(),
+                targetType = move?.TargetType.ToString(),
+                attackRange = move?.AttackRange.ToString(),
+                mpCost = move?.MpCost,
+                category = move?.Category.ToString()
+            };
+        });
 
     return Results.Ok(new
     {
@@ -121,7 +151,8 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
             intelligence = player.Status.Intelligence,
             luck = player.Status.Luck,
             speed = player.Status.Speed
-        }
+        },
+        moveSlots
     });
 }).RequireAuthorization();
 
@@ -137,13 +168,17 @@ app.MapPost(
 
     try
     {
+        var moveSet = new MoveSet();
+        moveSet.SetSlot(0, new MoveId(8));
+
         var player = new Player(
             playerId.Value,
             request.UserName,
             level: 1,
             exp: 0,
             status: new Status(maxHp: 10, maxMp: 2, strength: 1, defense: 1, intelligence: 1, luck: 1, speed: 1),
-            job: Job.Apprentice);
+            job: Job.Apprentice,
+            moveSet: moveSet);
         await playerRepository.SaveAsync(player);
         await chatService.EnsureRoomAsync(player.Id);
         return Results.Ok(new
