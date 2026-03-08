@@ -85,7 +85,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/", () => Results.Ok(new { message = "Hello World!" }));
-app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepository) =>
+app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepository, IMoveRepository moveRepository) =>
 {
     var playerId = TryGetPlayerId(user);
     if (playerId is null)
@@ -102,6 +102,27 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
             userId = playerId.Value.Value
         });
     }
+
+    var allMoves = await moveRepository.GetAllMovesAsync();
+    var moveById = allMoves.ToDictionary(x => x.Id.Id);
+    var moveSlots = player.MoveSet.Slots
+        .Select((moveId, index) =>
+        {
+            var move = moveId is null
+                ? null
+                : moveById.GetValueOrDefault(moveId.Id);
+
+            return new
+            {
+                slot = index + 1,
+                moveId = moveId?.Id,
+                moveName = move?.Name,
+                targetType = move?.TargetType.ToString(),
+                attackRange = move?.AttackRange.ToString(),
+                mpCost = move?.MpCost,
+                category = move?.Category.ToString()
+            };
+        });
 
     return Results.Ok(new
     {
@@ -124,7 +145,8 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
             intelligence = player.Status.Intelligence,
             luck = player.Status.Luck,
             speed = player.Status.Speed
-        }
+        },
+        moveSlots
     });
 }).RequireAuthorization();
 
