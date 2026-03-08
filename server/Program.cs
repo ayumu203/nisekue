@@ -118,6 +118,11 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
                 moveId = moveId?.Id,
                 moveName = move?.Name,
                 description = move?.Description,
+                elementType = move?.GetOrderedEffects()
+                    .FirstOrDefault(effect => effect.Damage is not null)?
+                    .Damage?
+                    .ElementType
+                    .ToString(),
                 targetType = move?.TargetType.ToString(),
                 attackRange = move?.AttackRange.ToString(),
                 mpCost = move?.MpCost,
