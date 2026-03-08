@@ -1,6 +1,7 @@
-import { Box, LinearProgress, Paper, Stack, Typography } from '@mui/material'
+import { Box, Paper, Stack, Typography } from '@mui/material'
 import type { GetPlayerResponse } from '@/schema/player'
 import locale from '../../../locale/home/Home.json'
+import StatusStatRow from '@/components/home/StatusStatRow'
 
 type StatValue = number | string
 
@@ -27,39 +28,17 @@ function toNormalized(value: number | undefined, maxValue: number): number {
   return Math.max(0, Math.min(100, (value / maxValue) * 100))
 }
 
-function StatusStatRow({
-  label,
-  value,
-  normalized,
-  hideGauge = false,
-}: Omit<StatItem, 'key'> & { hideGauge?: boolean }) {
-  return (
-    <Box
-      sx={{
-        p: 1.5,
-        borderRadius: 1.5,
-        border: '1px solid',
-        borderColor: 'divider',
-        backgroundColor: 'background.paper',
-      }}
-    >
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-        <Typography variant="body2" color="text.secondary">
-          {label}
-        </Typography>
-        <Typography variant="subtitle2" fontWeight={700}>
-          {value}
-        </Typography>
-      </Stack>
-      {!hideGauge ? (
-        <LinearProgress
-          variant="determinate"
-          value={normalized}
-          sx={{ height: 6, borderRadius: 999, backgroundColor: 'action.hover' }}
-        />
-      ) : null}
-    </Box>
-  )
+function formatExpProgress(exp: number | undefined, level: number | undefined, fallback: string): string {
+  if (typeof exp !== 'number' || typeof level !== 'number') {
+    return `${fallback} / ${fallback}`
+  }
+
+  if (!Number.isFinite(exp) || !Number.isFinite(level) || level <= 0) {
+    return `${fallback} / ${fallback}`
+  }
+
+  const requiredExp = level * 10
+  return `${exp} / ${requiredExp}`
 }
 
 export default function Status({ player }: StatusProps) {
@@ -159,17 +138,7 @@ export default function Status({ player }: StatusProps) {
           </Box>
         </Stack>
 
-        <StatusStatRow
-          label={locale.labels.exp}
-          value={toStatValue(player?.exp, locale.unknownValue)}
-          normalized={0}
-          hideGauge
-        />
-
         <Box>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            {locale.labels.maxHp} / {locale.labels.maxMp}
-          </Typography>
           <Box
             sx={{
               display: 'grid',
@@ -197,6 +166,12 @@ export default function Status({ player }: StatusProps) {
                 hideGauge
               />
             ))}
+            <StatusStatRow
+              label={locale.labels.exp}
+              value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+              normalized={0}
+              hideGauge
+            />
           </Stack>
         </Box>
       </Stack>

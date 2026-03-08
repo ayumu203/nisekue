@@ -1,5 +1,16 @@
-import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
-import { useEffect, useState } from 'react'
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Paper,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { executeTraining, getTrainingEnemies, TrainingCooldownError } from '@/api/training'
@@ -9,12 +20,16 @@ import Status from '@/components/home/Status'
 import TrainingBattleResult from '@/components/training/TrainingBattleResult'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
 import { useAuth } from '@/contexts/useAuth'
+import { menuButtonSx, twoColumnContentGridSx } from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 
 export default function Training() {
-  const { session, user, isLoading } = useAuth()
+  const { session, isLoading } = useAuth()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const battleResultRef = useRef<HTMLDivElement | null>(null)
   const [selectedEnemy, setSelectedEnemy] = useState<TrainingEnemy | null>(null)
   const [trainingResult, setTrainingResult] = useState<ExecuteTrainingResponse | null>(null)
   const [trainingError, setTrainingError] = useState<string | null>(null)
@@ -36,6 +51,14 @@ export default function Training() {
     const timerId = window.setInterval(update, 250)
     return () => window.clearInterval(timerId)
   }, [trainingLockUntilMs])
+
+  useEffect(() => {
+    if (!isMobile || !selectedEnemy || !trainingResult) {
+      return
+    }
+
+    battleResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [isMobile, selectedEnemy, trainingResult])
 
   const playerSWRKey = session?.user.id ? ([`training-player`, session.user.id] as const) : null
   const {
@@ -120,66 +143,63 @@ export default function Training() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper elevation={2} sx={{ p: 4 }}>
-        <Stack spacing={2}>
-          <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
-            <Typography variant="h4">{locale.title}</Typography>
-            <Button component={Link} to="/" variant="outlined">
-              {locale.backToHome}
-            </Button>
-          </Stack>
-
-          <Alert severity="success">
-            {locale.signedInAs}: {user?.email}
-          </Alert>
-
-          {isPlayerLoading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={16} />
-              <Typography variant="body2">{locale.playerLoading}</Typography>
-            </Stack>
-          ) : playerError ? (
-            <Alert severity="warning">{playerError.message}</Alert>
-          ) : (
-            <Status player={player} />
-          )}
-
-          <Paper variant="outlined" sx={{ borderRadius: 3, p: 2.5 }}>
-            <Stack spacing={2}>
-              {isTrainingEnemiesLoading ? (
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
+      <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 } }}>
+        <Stack spacing={{ xs: 1.5, sm: 2 }}>
+          <Box sx={twoColumnContentGridSx}>
+            <Stack spacing={{ xs: 1.5, sm: 2 }}>
+              {isPlayerLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <CircularProgress size={16} />
-                  <Typography variant="body2">{locale.enemiesLoading}</Typography>
+                  <Typography variant="body2">{locale.playerLoading}</Typography>
                 </Stack>
-              ) : trainingEnemiesError ? (
-                <Alert severity="warning">{trainingEnemiesError.message}</Alert>
+              ) : playerError ? (
+                <Alert severity="warning">{playerError.message}</Alert>
               ) : (
-                <TrainingEnemySelect
-                  enemies={trainingEnemies ?? []}
-                  isActionDisabled={isTrainingActionDisabled}
-                  lockRemainingSeconds={trainingLockRemainingSeconds}
-                  onFight={runTraining}
-                />
+                <Status player={player} />
               )}
-
-              {trainingError ? <Alert severity="warning">{trainingError}</Alert> : null}
-
-              {selectedEnemy && trainingResult ? (
-                <TrainingBattleResult
-                  enemy={selectedEnemy}
-                  result={trainingResult}
-                  isActionDisabled={isTrainingActionDisabled}
-                  lockRemainingSeconds={trainingLockRemainingSeconds}
-                  onRematch={async () => {
-                    await runTraining(selectedEnemy)
-                  }}
-                />
-              ) : null}
+              <Button component={Link} to="/" variant="outlined" sx={menuButtonSx}>
+                {locale.backToHome}
+              </Button>
+              <SignOut buttonSx={menuButtonSx} />
             </Stack>
-          </Paper>
 
-          <SignOut />
+            <Paper variant="outlined" sx={{ borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+              <Stack spacing={{ xs: 1.5, sm: 2 }}>
+                {selectedEnemy && trainingResult ? (
+                  <Box ref={battleResultRef}>
+                    <TrainingBattleResult
+                      enemy={selectedEnemy}
+                      result={trainingResult}
+                      isActionDisabled={isTrainingActionDisabled}
+                      lockRemainingSeconds={trainingLockRemainingSeconds}
+                      onRematch={async () => {
+                        await runTraining(selectedEnemy)
+                      }}
+                    />
+                  </Box>
+                ) : null}
+
+                {isTrainingEnemiesLoading ? (
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <CircularProgress size={16} />
+                    <Typography variant="body2">{locale.enemiesLoading}</Typography>
+                  </Stack>
+                ) : trainingEnemiesError ? (
+                  <Alert severity="warning">{trainingEnemiesError.message}</Alert>
+                ) : (
+                  <TrainingEnemySelect
+                    enemies={trainingEnemies ?? []}
+                    isActionDisabled={isTrainingActionDisabled}
+                    lockRemainingSeconds={trainingLockRemainingSeconds}
+                    onFight={runTraining}
+                  />
+                )}
+
+                {trainingError ? <Alert severity="warning">{trainingError}</Alert> : null}
+              </Stack>
+            </Paper>
+          </Box>
         </Stack>
       </Paper>
     </Container>

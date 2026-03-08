@@ -3,15 +3,15 @@ import { Link } from 'react-router-dom'
 
 export default function Thanks() {
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper elevation={2} sx={{ p: 4 }}>
-        <Stack spacing={2}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
+      <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 } }}>
+        <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Typography variant="h4">サンクス</Typography>
           <Typography variant="body2" color="text.secondary">
             利用させていただいた画像素材の提供元です。
           </Typography>
 
-          <Paper variant="outlined" sx={{ borderRadius: 2, p: 2 }}>
+          <Paper variant="outlined" sx={{ borderRadius: 2, p: { xs: 2, sm: 2.5 } }}>
             <Stack spacing={0.5}>
               <Typography variant="subtitle1" fontWeight={700}>
                 モンスター &amp; マテリアルズ II

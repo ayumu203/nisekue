@@ -11,12 +11,14 @@ function ChatMessages({ messages }: Props) {
     return <Alert severity="info">まだメッセージはありません。</Alert>
   }
 
+  const reversedMessages = [...messages].reverse()
+
   return (
     <Stack spacing={1.5}>
       <Typography variant="caption" color="text.secondary">
         {messages.length}件
       </Typography>
-      {messages.map((message) => (
+      {reversedMessages.map((message) => (
         <ChatMessageItem key={message.chatId} message={message} />
       ))}
     </Stack>

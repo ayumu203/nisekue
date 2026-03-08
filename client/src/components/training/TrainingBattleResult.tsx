@@ -1,4 +1,4 @@
-import { Button, LinearProgress, Paper, Stack, Typography } from '@mui/material'
+import { Box, Button, LinearProgress, Paper, Stack, Typography } from '@mui/material'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
@@ -9,6 +9,18 @@ type TrainingBattleResultProps = {
   isActionDisabled: boolean
   lockRemainingSeconds: number
   onRematch: () => Promise<void> | void
+}
+
+function toResultColor(trainingResult: ExecuteTrainingResponse['trainingResult']): string {
+  if (trainingResult === 'Win') {
+    return 'success.main'
+  }
+
+  if (trainingResult === 'Lose') {
+    return 'error.main'
+  }
+
+  return 'warning.main'
 }
 
 function normalizeHp(current: number, max: number): number {
@@ -28,10 +40,6 @@ export default function TrainingBattleResult({
 }: TrainingBattleResultProps) {
   const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
   const battleAgainst = locale.battleAgainst.replace('{{enemyName}}', enemy.name)
-  const resultSummary = locale.resultSummary
-    .replace('{{trainingResult}}', result.trainingResult)
-    .replace('{{turn}}', String(result.turn))
-    .replace('{{exp}}', String(result.exp))
   const playerHp = locale.playerHp
     .replace('{{current}}', String(result.currentPlayerHp))
     .replace('{{max}}', String(result.maxPlayerHp))
@@ -42,7 +50,6 @@ export default function TrainingBattleResult({
   return (
     <Paper variant="outlined" sx={{ borderRadius: 3, p: 2.5 }}>
       <Stack spacing={2}>
-        <Typography variant="h5">{locale.battleResultTitle}</Typography>
         <img
           src={resolvePublicAssetPath(enemy.imagePath)}
           alt={enemy.name}
@@ -56,10 +63,41 @@ export default function TrainingBattleResult({
             boxSizing: 'border-box',
           }}
         />
-        <Typography variant="subtitle1" fontWeight={700}>
+        <Typography variant="subtitle1" fontWeight={700} textAlign="center">
           {battleAgainst}
         </Typography>
-        <Typography variant="body2">{resultSummary}</Typography>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+            gap: 1,
+          }}
+        >
+          <Paper variant="outlined" sx={{ p: 1.25 }}>
+            <Typography variant="caption" color="text.secondary">
+              {locale.result}
+            </Typography>
+            <Typography variant="subtitle2" fontWeight={700} color={toResultColor(result.trainingResult)}>
+              {result.trainingResult}
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 1.25 }}>
+            <Typography variant="caption" color="text.secondary">
+              {locale.turn}
+            </Typography>
+            <Typography variant="subtitle2" fontWeight={700}>
+              {result.turn}
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 1.25 }}>
+            <Typography variant="caption" color="text.secondary">
+              {locale.expGained}
+            </Typography>
+            <Typography variant="subtitle2" fontWeight={700}>
+              {result.exp}
+            </Typography>
+          </Paper>
+        </Box>
         <Stack spacing={0.75}>
           <Typography variant="body2">{playerHp}</Typography>
           <LinearProgress

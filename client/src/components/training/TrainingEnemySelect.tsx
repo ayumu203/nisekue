@@ -23,7 +23,7 @@ export default function TrainingEnemySelect({
       <Typography variant="h5">{locale.enemySelectTitle}</Typography>
       <Grid container spacing={2}>
         {enemies.map((enemy) => (
-          <Grid key={enemy.id} size={{ xs: 12, sm: 6 }}>
+          <Grid key={enemy.id} size={{ xs: 12, sm: 6, md: 4 }}>
             <Card variant="outlined" sx={{ height: '100%' }}>
               <CardMedia
                 component="img"
@@ -38,12 +38,16 @@ export default function TrainingEnemySelect({
               />
               <CardContent>
                 <Stack spacing={1.5}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      {enemy.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                  <Stack spacing={0.25}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
                       {locale.enemyLevel.replace('{{level}}', String(enemy.level))}
+                    </Typography>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={700}
+                      sx={{ fontSize: { xs: '1rem', sm: '0.95rem', md: '1rem' } }}
+                    >
+                      {enemy.name}
                     </Typography>
                   </Stack>
                   <Button variant="contained" disabled={isActionDisabled} onClick={() => onFight(enemy)}>
