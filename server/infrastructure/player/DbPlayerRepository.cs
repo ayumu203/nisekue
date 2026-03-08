@@ -85,6 +85,7 @@ namespace server.infrastructure.player
                 {
                     Id = player.Id.Value,
                     Name = player.Name,
+                    Job = player.Job,
                     Level = player.Level,
                     Exp = player.Exp,
                     MaxHp = player.Status.MaxHp,
@@ -98,6 +99,7 @@ namespace server.infrastructure.player
             }
             else
             {
+                existing.Job = player.Job;
                 existing.Level = player.Level;
                 existing.Exp = player.Exp;
                 existing.MaxHp = player.Status.MaxHp;
@@ -127,6 +129,7 @@ namespace server.infrastructure.player
             new(
                 new PlayerId(entity.Id),
                 entity.Name,
+                job: entity.Job,
                 level: entity.Level,
                 exp: entity.Exp,
                 status: new Status(
