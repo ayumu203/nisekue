@@ -35,9 +35,7 @@ public class Player(PlayerId id, string name, int level, int exp, Status status)
     {
         if (level < 1)
         {
-            // 外部データ（DBなど）から不正なレベル値が入ってきた場合でも、
-            // ドメインオブジェクト生成時に例外を投げず、最小レベルに補正する。
-            return 1;
+            throw new ArgumentOutOfRangeException(nameof(level), "プレイヤーレベルは1以上である必要があります。");
         }
 
         return level;
