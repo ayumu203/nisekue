@@ -39,6 +39,14 @@ function PlayerSettingIcon(props: SvgIconProps) {
   )
 }
 
+function MoveSettingIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M4 7h16v2H4zm0 4h10v2H4zm0 4h16v2H4z" />
+    </SvgIcon>
+  )
+}
+
 function SpecialThanksIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
@@ -131,6 +139,15 @@ function Home() {
                 sx={menuButtonSx}
               >
                 {locale.playerSetting}
+              </Button>
+              <Button
+                component={Link}
+                to="/move-setting"
+                variant="outlined"
+                startIcon={<MoveSettingIcon />}
+                sx={menuButtonSx}
+              >
+                {locale.moveSetting}
               </Button>
               <Button
                 component={Link}
