@@ -83,8 +83,6 @@ namespace server.infrastructure.player
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             var existing = await dbContext.Players
                 .SingleOrDefaultAsync(x => x.Id == player.Id.Value);
-            var existingMoves = await dbContext.PlayerMoves
-                .SingleOrDefaultAsync(x => x.PlayerId == player.Id.Value);
 
             if (existing is null)
             {
@@ -108,6 +106,9 @@ namespace server.infrastructure.player
             }
             else
             {
+                var existingMoves = await dbContext.PlayerMoves
+                    .SingleOrDefaultAsync(x => x.PlayerId == player.Id.Value);
+
                 existing.Job = player.Job;
                 existing.Level = player.Level;
                 existing.Exp = player.Exp;

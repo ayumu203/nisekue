@@ -35,6 +35,13 @@ public class CsvMoveRepository : IMoveRepository
     {
         var masters = LoadMoveMasters(moveMasterPath);
         var effectsByMoveId = LoadMoveEffects(moveEffectsPath);
+        var extraMoveIds = effectsByMoveId.Keys.Except(masters.Keys).OrderBy(x => x).ToArray();
+        if (extraMoveIds.Length > 0)
+        {
+            throw new InvalidOperationException(
+                $"move_effects.csv に move_master.csv に存在しない move_id が含まれています。move_id={string.Join(", ", extraMoveIds)}");
+        }
+
         var map = new Dictionary<int, Move>();
 
         foreach (var master in masters.Values)
