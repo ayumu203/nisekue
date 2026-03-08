@@ -21,6 +21,7 @@ import {
 
 export type {
   GetPlayerResponse,
+  PlayerMoveSlot,
   CreatePlayerRequest,
   CreatePlayerResponse,
   UpdatePlayerNameRequest,
