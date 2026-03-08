@@ -2,7 +2,14 @@ using server.shared.constants.player;
 
 namespace server.domain.player;
 
-public class Player(PlayerId id, string name, int level, int exp, Status status, Job job = Job.Apprentice)
+public class Player(
+    PlayerId id,
+    string name,
+    int level,
+    int exp,
+    Status status,
+    Job job = Job.Apprentice,
+    MoveSet? moveSet = null)
 {
     public PlayerId Id { get; } = id;
     public string Name { get; private set; } = ValidateName(name);
@@ -10,6 +17,7 @@ public class Player(PlayerId id, string name, int level, int exp, Status status,
     public int Level { get; private set; } = ValidateLevel(level);
     public int Exp { get; private set; } = exp;
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
+    public MoveSet MoveSet { get; private set; } = moveSet ?? new MoveSet();
 
     public void UpdateName(string name)
     {
@@ -24,6 +32,11 @@ public class Player(PlayerId id, string name, int level, int exp, Status status,
     public void UpdateStatus(Status status)
     {
         Status = status ?? throw new ArgumentNullException(nameof(status));
+    }
+
+    public void UpdateMoveSet(MoveSet moveSet)
+    {
+        MoveSet = moveSet ?? throw new ArgumentNullException(nameof(moveSet));
     }
 
     private static string ValidateName(string name)

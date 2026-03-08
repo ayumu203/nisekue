@@ -10,10 +10,11 @@ classDiagram
             +int Level
             +int Exp
             +Status Status
-            +PlayerMoveSet MoveSet
+            +MoveSet MoveSet
             +UpdateName(name: string) void
             +UpdateJob(job: Job) void
             +UpdateStatus(status: Status) void
+            +UpdateMoveSet(moveSet: MoveSet) void
             -ValidateName(name: string) string
             +GainExp(exp: int) void
             +LevelUp(growthValueRepository: IGrowthValueRepository) bool
@@ -46,11 +47,13 @@ classDiagram
             +int Speed
         }
 
-        class PlayerMoveSet {
+        class MoveSet {
             <<Value Object>>
             +IReadOnlyList~MoveId?~ Slots
             +SetSlot(index: int, moveId: MoveId?) void
             +GetSlot(index: int) MoveId?
+            +GetLearnedMoveIds() IReadOnlyList~MoveId~
+            +GetFirstEmptySlotIndex() int?
             +ClearSlot(index: int) void
             +SwapSlots(fromIndex: int, toIndex: int) void
         }
@@ -270,7 +273,7 @@ classDiagram
     %% Core
     Player *-- PlayerId : has
     Player *-- Status : has
-    Player *-- PlayerMoveSet : has
+    Player *-- MoveSet : has
     Player ..> IGrowthValueRepository : uses at LevelUp
     IGrowthValueRepository ..> GrowthValue : returns
     IPlayerRepository ..> Player : stores/loads
