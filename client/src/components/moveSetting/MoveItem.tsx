@@ -22,6 +22,7 @@ function resolveCategoryColor(category: PlayerMoveSlot['category']): 'error' | '
 export default function MoveItem({ slot }: MoveItemProps) {
   const isEmpty = slot.moveId === null
   const moveName = slot.moveName ?? (slot.moveId === null ? locale.emptySlot : locale.unknownMove)
+  const moveDescription = slot.description ?? locale.unknownMoveDescription
 
   return (
     <Paper
@@ -33,13 +34,19 @@ export default function MoveItem({ slot }: MoveItemProps) {
     >
       <Stack spacing={1}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-end">
-          <Typography variant="subtitle2" fontWeight={700}>
+          <Typography variant="subtitle1" fontWeight={700}>
             {moveName}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {typeof slot.mpCost === 'number' ? `MP ${slot.mpCost}` : ''}
           </Typography>
         </Stack>
+
+        {isEmpty ? null : (
+          <Typography variant="body2" color="text.secondary">
+            {moveDescription}
+          </Typography>
+        )}
 
         {isEmpty ? null : (
           <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>

@@ -9,6 +9,7 @@
   "slotLabel": "スロット",
   "emptySlot": "未設定",
   "unknownMove": "不明な技",
+  "unknownMoveDescription": "説明が設定されていません",
   "submitButton": "保存",
   "saving": "保存中...",
   "saved": "プレイヤー情報を更新しました。",
