@@ -24,6 +24,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("name")
             .HasMaxLength(PlayerConstants.NameMaxLength)
             .IsRequired();
+        player.Property(x => x.Job)
+            .HasColumnName("job")
+            .HasConversion<int>()
+            .HasDefaultValue(Job.Apprentice)
+            .IsRequired();
         player.Property(x => x.Level)
             .HasColumnName("level")
             .IsRequired();

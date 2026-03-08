@@ -1,9 +1,12 @@
+using server.domain.player;
+
 namespace server.infrastructure.player;
 
 public class PlayerEntity
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public Job Job { get; set; } = Job.Apprentice;
     public int Level { get; set; }
     public int Exp { get; set; }
     public int MaxHp { get; set; }

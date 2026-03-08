@@ -29,7 +29,8 @@ public class TrainingServiceTests
 
         var playerRepository = new FakePlayerRepository(player);
         var enemyRepository = new FakeTrainingEnemyRepository(enemy);
-        var service = new TrainingService(playerRepository, enemyRepository);
+        var growthValueRepository = new FakeGrowthValueRepository();
+        var service = new TrainingService(playerRepository, enemyRepository, growthValueRepository);
 
         var result = await service.ExecuteTraining(playerId, enemy.Id);
 
@@ -217,6 +218,21 @@ public class TrainingServiceTests
         {
             IReadOnlyList<TrainingEnemy> list = new[] { enemy };
             return Task.FromResult(list);
+        }
+    }
+
+    private sealed class FakeGrowthValueRepository : IGrowthValueRepository
+    {
+        public GrowthValue GetByJob(Job job)
+        {
+            return new GrowthValue(
+                MaxHp: 1,
+                MaxMp: 0,
+                Strength: 1,
+                Defense: 1,
+                Intelligence: 1,
+                Luck: 1,
+                Speed: 1);
         }
     }
 }

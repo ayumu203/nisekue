@@ -69,6 +69,7 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 
 // DI
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
+builder.Services.AddSingleton<IGrowthValueRepository, CsvGrowthValueRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
 builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
 builder.Services.AddScoped<ChatService>();
@@ -103,6 +104,12 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
     {
         userId = player.Id.Value,
         userName = player.Name,
+        job = new
+        {
+            code = player.Job.ToString(),
+            value = (int)player.Job,
+            displayName = GetJobDisplayName(player.Job)
+        },
         level = player.Level,
         exp = player.Exp,
         status = new
@@ -135,14 +142,21 @@ app.MapPost(
             request.UserName,
             level: 1,
             exp: 0,
-            status: new Status(maxHp: 1, maxMp: 0, strength: 0, defense: 0, intelligence: 0, luck: 0, speed: 0));
+            status: new Status(maxHp: 10, maxMp: 2, strength: 1, defense: 1, intelligence: 1, luck: 1, speed: 1),
+            job: Job.Apprentice);
         await playerRepository.SaveAsync(player);
         await chatService.EnsureRoomAsync(player.Id);
         return Results.Ok(new
         {
             message = "プレイヤーを作成しました。",
             userId = player.Id.Value,
-            userName = player.Name
+            userName = player.Name,
+            job = new
+            {
+                code = player.Job.ToString(),
+                value = (int)player.Job,
+                displayName = GetJobDisplayName(player.Job)
+            }
         });
     }
     catch (ArgumentException ex)
@@ -156,18 +170,13 @@ app.MapPost(
 }).RequireAuthorization();
 
 app.MapPut(
-    "/player",
-    async (ClaimsPrincipal user, UpdatePlayerRequest request, IPlayerRepository playerRepository) =>
+    "/player/name",
+    async (ClaimsPrincipal user, UpdatePlayerNameRequest request, IPlayerRepository playerRepository) =>
 {
     var playerId = TryGetPlayerId(user);
     if (playerId is null)
     {
         return Results.Unauthorized();
-    }
-
-    if (request.UserName is null)
-    {
-        return Results.BadRequest(new { message = "更新対象が指定されていません。" });
     }
 
     if (string.IsNullOrWhiteSpace(request.UserName))
@@ -183,8 +192,8 @@ app.MapPut(
 
     try
     {
-        var isUpdated = await playerRepository.UpdateNameAsync(playerId.Value, normalizedUserName);
-        if (!isUpdated)
+        var player = await playerRepository.GetPlayerAsync(playerId.Value);
+        if (player is null)
         {
             return Results.NotFound(new
             {
@@ -193,16 +202,74 @@ app.MapPut(
             });
         }
 
+        player.UpdateName(normalizedUserName);
+        await playerRepository.SaveAsync(player);
+
         return Results.Ok(new
         {
             message = "プレイヤー情報を更新しました。",
             userId = playerId.Value.Value,
-            userName = normalizedUserName
+            userName = player.Name,
+            job = new
+            {
+                code = player.Job.ToString(),
+                value = (int)player.Job,
+                displayName = GetJobDisplayName(player.Job)
+            }
         });
     }
     catch (ArgumentException ex)
     {
         return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+}).RequireAuthorization();
+
+app.MapPut(
+    "/player/job",
+    async (ClaimsPrincipal user, UpdatePlayerJobRequest request, IPlayerRepository playerRepository) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!Enum.IsDefined(request.Job))
+    {
+        return Results.BadRequest(new { message = "jobの値が不正です。" });
+    }
+
+    try
+    {
+        var player = await playerRepository.GetPlayerAsync(playerId.Value);
+        if (player is null)
+        {
+            return Results.NotFound(new
+            {
+                message = "プレイヤーが見つかりません。",
+                userId = playerId.Value.Value
+            });
+        }
+
+        player.UpdateJob(request.Job);
+        await playerRepository.SaveAsync(player);
+
+        return Results.Ok(new
+        {
+            message = "プレイヤーの職業を更新しました。",
+            userId = playerId.Value.Value,
+            userName = player.Name,
+            job = new
+            {
+                code = player.Job.ToString(),
+                value = (int)player.Job,
+                displayName = GetJobDisplayName(player.Job)
+            }
+        });
     }
     catch (InvalidOperationException ex)
     {
@@ -320,7 +387,20 @@ static PlayerId? TryGetPlayerId(ClaimsPrincipal user)
     return Guid.TryParse(subject, out var guid) ? new PlayerId(guid) : null;
 }
 
+static string GetJobDisplayName(Job job) =>
+    job switch
+    {
+        Job.Apprentice => "見習い",
+        Job.Warrior => "戦士",
+        Job.Guardian => "盾使い",
+        Job.Mage => "魔法使い",
+        Job.Priest => "僧侶",
+        Job.Ranger => "レンジャー",
+        _ => job.ToString()
+    };
+
 public record CreatePlayerRequest(string UserName);
-public record UpdatePlayerRequest(string? UserName);
+public record UpdatePlayerNameRequest(string UserName);
+public record UpdatePlayerJobRequest(Job Job);
 public record PostChatMessageRequest(Guid OwnerId, string Text);
 public record ExecuteTrainingRequest(int EnemyId);

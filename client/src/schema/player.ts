@@ -8,9 +8,18 @@ export const playerUserNameSchema = z
   .min(1, 'ユーザー名を入力してください')
   .max(20, 'ユーザー名は20文字以内で入力してください')
 
+export const playerJobCodeSchema = z.enum(['Apprentice', 'Warrior', 'Guardian', 'Mage', 'Priest', 'Ranger'])
+
+export const playerJobSchema = z.object({
+  code: playerJobCodeSchema,
+  value: z.number().int().min(1).max(6),
+  displayName: z.string().min(1, 'ジョブ名が空です'),
+})
+
 export const getPlayerResponseSchema = z.object({
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
+  job: playerJobSchema,
   level: z.number().int().min(1, 'レベルは1以上である必要があります'),
   exp: z.number().int().min(0, '経験値は0以上である必要があります'),
   status: z.object({
@@ -32,27 +41,35 @@ export const createPlayerResponseSchema = z.object({
   message: z.string().min(1, 'レスポンスメッセージが空です'),
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
+  job: playerJobSchema,
 })
 
-export const updatePlayerRequestSchema = z
-  .object({
-    userName: playerUserNameSchema.optional(),
-  })
-  .refine((value) => Object.values(value).some((field) => field !== undefined), {
-    message: '更新対象が指定されていません',
-  })
+export const updatePlayerNameRequestSchema = z.object({
+  userName: playerUserNameSchema,
+})
 
-export const updatePlayerResponseSchema = z.union([
-  z.object({
-    message: z.string().min(1, 'レスポンスメッセージが空です'),
-    userId: playerIdSchema,
-    userName: playerUserNameSchema.optional(),
-  }),
-  getPlayerResponseSchema,
-])
+export const updatePlayerNameResponseSchema = z.object({
+  message: z.string().min(1, 'レスポンスメッセージが空です'),
+  userId: playerIdSchema,
+  userName: playerUserNameSchema.optional(),
+  job: playerJobSchema,
+})
+
+export const updatePlayerJobRequestSchema = z.object({
+  job: z.number().int().min(1).max(6),
+})
+
+export const updatePlayerJobResponseSchema = z.object({
+  message: z.string().min(1, 'レスポンスメッセージが空です'),
+  userId: playerIdSchema,
+  userName: playerUserNameSchema.optional(),
+  job: playerJobSchema,
+})
 
 export type GetPlayerResponse = z.infer<typeof getPlayerResponseSchema>
 export type CreatePlayerRequest = z.infer<typeof createPlayerRequestSchema>
 export type CreatePlayerResponse = z.infer<typeof createPlayerResponseSchema>
-export type UpdatePlayerRequest = z.infer<typeof updatePlayerRequestSchema>
-export type UpdatePlayerResponse = z.infer<typeof updatePlayerResponseSchema>
+export type UpdatePlayerNameRequest = z.infer<typeof updatePlayerNameRequestSchema>
+export type UpdatePlayerNameResponse = z.infer<typeof updatePlayerNameResponseSchema>
+export type UpdatePlayerJobRequest = z.infer<typeof updatePlayerJobRequestSchema>
+export type UpdatePlayerJobResponse = z.infer<typeof updatePlayerJobResponseSchema>

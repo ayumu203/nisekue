@@ -2,8 +2,10 @@ import {
   getPlayerResponseSchema,
   createPlayerRequestSchema,
   createPlayerResponseSchema,
-  updatePlayerRequestSchema,
-  updatePlayerResponseSchema,
+  updatePlayerNameRequestSchema,
+  updatePlayerNameResponseSchema,
+  updatePlayerJobRequestSchema,
+  updatePlayerJobResponseSchema,
 } from '@/schema/player'
 import {
   getChatRoomRequestSchema,
@@ -21,8 +23,10 @@ export type {
   GetPlayerResponse,
   CreatePlayerRequest,
   CreatePlayerResponse,
-  UpdatePlayerRequest,
-  UpdatePlayerResponse,
+  UpdatePlayerNameRequest,
+  UpdatePlayerNameResponse,
+  UpdatePlayerJobRequest,
+  UpdatePlayerJobResponse,
 } from '@/schema/player'
 export type {
   GetChatRoomRequest,
@@ -51,11 +55,17 @@ export const endpoints = {
       requestSchema: createPlayerRequestSchema,
       responseSchema: createPlayerResponseSchema,
     },
-    update: {
-      path: '/player',
+    updateName: {
+      path: '/player/name',
       method: 'PUT',
-      requestSchema: updatePlayerRequestSchema,
-      responseSchema: updatePlayerResponseSchema,
+      requestSchema: updatePlayerNameRequestSchema,
+      responseSchema: updatePlayerNameResponseSchema,
+    },
+    updateJob: {
+      path: '/player/job',
+      method: 'PUT',
+      requestSchema: updatePlayerJobRequestSchema,
+      responseSchema: updatePlayerJobResponseSchema,
     },
   },
   chatRoom: {

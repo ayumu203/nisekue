@@ -4,14 +4,16 @@ classDiagram
         <<Entity>>
         +PlayerId Id
         +string Name
+        +Job Job
         +int Level
         +int Exp
         +Status Status
         +UpdateName(name: string) void
+        +UpdateJob(job: Job) void
         +UpdateStatus(status: Status) void
         -ValidateName(name: string) string 
         +GainExp(exp: int) void
-        +LevelUp() bool
+        +LevelUp(growthValueRepository: IGrowthValueRepository) bool
     }
 
     class PlayerId {
@@ -19,8 +21,29 @@ classDiagram
         +Guid Id
     }
 
+    class Job {
+        <<Enum>>
+        Apprentice
+        Warrior
+        Guardian
+        Mage
+        Priest
+        Ranger
+    }
+
     %% Player の基本ステータス
     class Status {
+        <<Value Object>>
+        +int MaxHp
+        +int MaxMp
+        +int Strength
+        +int Defense
+        +int Intelligence
+        +int Luck
+        +int Speed
+    }
+
+    class GrowthValue {
         <<Value Object>>
         +int MaxHp
         +int MaxMp
@@ -37,8 +60,15 @@ classDiagram
         +Task~DateTimeOffset?~ TryStartTrainingCooldownAsync(id: PlayerId, nowUtc: DateTimeOffset, cooldown: TimeSpan)
         +Task SaveAsync(player: Player)
     }
+    class IGrowthValueRepository {
+        +GrowthValue GetByJob(job: Job)
+    }
+
     Player *-- PlayerId : has
+    Player *-- Job : has
     Player *-- Status : has
+    Player ..> IGrowthValueRepository : uses at LevelUp
+    IGrowthValueRepository ..> GrowthValue : returns
     IPlayerRepository ..> Player : stores/loads
 
 
@@ -170,6 +200,7 @@ classDiagram
     ITrainingEnemyRepository --> TrainingEnemy : loads
     TrainingService ..> IPlayerRepository : use
     TrainingService ..> ITrainingEnemyRepository : use
+    TrainingService ..> IGrowthValueRepository : use
     TrainingService ..> TurnResult : use
     TrainingService ..> TrainingResultView : has
     TrainingService ..> TrainingEnemyView : has

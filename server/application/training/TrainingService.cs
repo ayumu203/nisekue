@@ -4,7 +4,10 @@ using server.shared.constants.training;
 
 namespace server.application.training;
 
-public class TrainingService(IPlayerRepository playerRepository, ITrainingEnemyRepository trainingEnemyRepository)
+public class TrainingService(
+    IPlayerRepository playerRepository,
+    ITrainingEnemyRepository trainingEnemyRepository,
+    IGrowthValueRepository growthValueRepository)
 {
     public async Task<TrainingEnemyView[]> GetTrainingEnemies()
     {
@@ -160,9 +163,9 @@ public class TrainingService(IPlayerRepository playerRepository, ITrainingEnemyR
         return Math.Max(1, exp);
     }
 
-    private static bool ApplyExp(Player player, int exp)
+    private bool ApplyExp(Player player, int exp)
     {
         player.GainExp(exp);
-        return player.LevelUp();
+        return player.LevelUp(growthValueRepository);
     }
 }

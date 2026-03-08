@@ -14,6 +14,7 @@
   "unknownValue": "-",
   "labels": {
     "userName": "ユーザー名",
+    "job": "職業",
     "level": "レベル",
     "exp": "経験値",
     "maxHp": "HP",

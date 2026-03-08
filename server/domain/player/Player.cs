@@ -2,10 +2,11 @@ using server.shared.constants.player;
 
 namespace server.domain.player;
 
-public class Player(PlayerId id, string name, int level, int exp, Status status)
+public class Player(PlayerId id, string name, int level, int exp, Status status, Job job = Job.Apprentice)
 {
     public PlayerId Id { get; } = id;
     public string Name { get; private set; } = ValidateName(name);
+    public Job Job { get; private set; } = job;
     public int Level { get; private set; } = ValidateLevel(level);
     public int Exp { get; private set; } = exp;
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
@@ -13,6 +14,11 @@ public class Player(PlayerId id, string name, int level, int exp, Status status)
     public void UpdateName(string name)
     {
         Name = ValidateName(name);
+    }
+
+    public void UpdateJob(Job job)
+    {
+        Job = job;
     }
 
     public void UpdateStatus(Status status)
@@ -46,13 +52,22 @@ public class Player(PlayerId id, string name, int level, int exp, Status status)
         if (exp < 0) exp = 0;
         Exp += exp;
     }
-    public bool LevelUp()
+    public bool LevelUp(IGrowthValueRepository growthValueRepository)
     {
+        var growth = growthValueRepository.GetByJob(Job);
         bool flag = false;
         while (Exp >= Level * 10)
         {
             Exp -= Level * 10;
             Level++;
+            Status = new Status(
+                maxHp: Status.MaxHp + growth.MaxHp,
+                maxMp: Status.MaxMp + growth.MaxMp,
+                strength: Status.Strength + growth.Strength,
+                defense: Status.Defense + growth.Defense,
+                intelligence: Status.Intelligence + growth.Intelligence,
+                luck: Status.Luck + growth.Luck,
+                speed: Status.Speed + growth.Speed);
             flag = true;
         }
         return flag;
