@@ -75,7 +75,7 @@ export default function TrainingBattleResult({
         >
           <Paper variant="outlined" sx={{ p: 1.25 }}>
             <Typography variant="caption" color="text.secondary">
-              結果
+              {locale.result}
             </Typography>
             <Typography variant="subtitle2" fontWeight={700} color={toResultColor(result.trainingResult)}>
               {result.trainingResult}
@@ -83,7 +83,7 @@ export default function TrainingBattleResult({
           </Paper>
           <Paper variant="outlined" sx={{ p: 1.25 }}>
             <Typography variant="caption" color="text.secondary">
-              ターン
+              {locale.turn}
             </Typography>
             <Typography variant="subtitle2" fontWeight={700}>
               {result.turn}
@@ -91,7 +91,7 @@ export default function TrainingBattleResult({
           </Paper>
           <Paper variant="outlined" sx={{ p: 1.25 }}>
             <Typography variant="caption" color="text.secondary">
-              獲得経験値
+              {locale.expGained}
             </Typography>
             <Typography variant="subtitle2" fontWeight={700}>
               {result.exp}

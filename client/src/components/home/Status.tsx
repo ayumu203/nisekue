@@ -1,6 +1,7 @@
-import { Box, LinearProgress, Paper, Stack, Typography } from '@mui/material'
+import { Box, Paper, Stack, Typography } from '@mui/material'
 import type { GetPlayerResponse } from '@/schema/player'
 import locale from '../../../locale/home/Home.json'
+import StatusStatRow from '@/components/home/StatusStatRow'
 
 type StatValue = number | string
 
@@ -32,43 +33,12 @@ function formatExpProgress(exp: number | undefined, level: number | undefined, f
     return `${fallback} / ${fallback}`
   }
 
+  if (!Number.isFinite(exp) || !Number.isFinite(level) || level <= 0) {
+    return `${fallback} / ${fallback}`
+  }
+
   const requiredExp = level * 10
   return `${exp} / ${requiredExp}`
-}
-
-function StatusStatRow({
-  label,
-  value,
-  normalized,
-  hideGauge = false,
-}: Omit<StatItem, 'key'> & { hideGauge?: boolean }) {
-  return (
-    <Box
-      sx={{
-        p: 1.5,
-        borderRadius: 1.5,
-        border: '1px solid',
-        borderColor: 'divider',
-        backgroundColor: 'background.paper',
-      }}
-    >
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-        <Typography variant="body2" color="text.secondary">
-          {label}
-        </Typography>
-        <Typography variant="subtitle2" fontWeight={700}>
-          {value}
-        </Typography>
-      </Stack>
-      {!hideGauge ? (
-        <LinearProgress
-          variant="determinate"
-          value={normalized}
-          sx={{ height: 6, borderRadius: 999, backgroundColor: 'action.hover' }}
-        />
-      ) : null}
-    </Box>
-  )
 }
 
 export default function Status({ player }: StatusProps) {

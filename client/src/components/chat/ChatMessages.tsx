@@ -7,11 +7,11 @@ type Props = {
 }
 
 function ChatMessages({ messages }: Props) {
-  const reversedMessages = [...messages].reverse()
-
   if (messages.length === 0) {
     return <Alert severity="info">まだメッセージはありません。</Alert>
   }
+
+  const reversedMessages = [...messages].reverse()
 
   return (
     <Stack spacing={1.5}>

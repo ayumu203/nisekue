@@ -21,6 +21,7 @@ import locale from '../../locale/home/Home.json'
 import ChatMessages from '@/components/chat/ChatMessages'
 import ChatForm from '@/components/chat/ChatForm'
 import Status from '@/components/home/Status'
+import { menuButtonSx, twoColumnContentGridSx } from '@/constants/styles'
 
 function TrainingIcon(props: SvgIconProps) {
   return (
@@ -48,11 +49,6 @@ function SpecialThanksIcon(props: SvgIconProps) {
 
 function Home() {
   const { session, isLoading } = useAuth()
-  const menuButtonSx = {
-    width: '100%',
-    minHeight: 48,
-    whiteSpace: 'nowrap',
-  }
   const playerSWRKey = session?.user.id ? (['player', session.user.id] as const) : null
   const {
     data: player,
@@ -106,18 +102,7 @@ function Home() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 } }}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: 'minmax(180px, 260px) minmax(0, 1fr)',
-                md: 'minmax(280px, 360px) minmax(0, 1fr)',
-              },
-              gap: { xs: 1.5, sm: 3 },
-              alignItems: 'start',
-            }}
-          >
+          <Box sx={twoColumnContentGridSx}>
             <Stack spacing={{ xs: 1.5, sm: 2 }}>
               {isPlayerLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">

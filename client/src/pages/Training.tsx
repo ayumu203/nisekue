@@ -20,6 +20,7 @@ import Status from '@/components/home/Status'
 import TrainingBattleResult from '@/components/training/TrainingBattleResult'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
 import { useAuth } from '@/contexts/useAuth'
+import { menuButtonSx, twoColumnContentGridSx } from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
@@ -28,11 +29,6 @@ export default function Training() {
   const { session, isLoading } = useAuth()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const menuButtonSx = {
-    width: '100%',
-    minHeight: 48,
-    whiteSpace: 'nowrap',
-  }
   const battleResultRef = useRef<HTMLDivElement | null>(null)
   const [selectedEnemy, setSelectedEnemy] = useState<TrainingEnemy | null>(null)
   const [trainingResult, setTrainingResult] = useState<ExecuteTrainingResponse | null>(null)
@@ -150,18 +146,7 @@ export default function Training() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 } }}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: 'minmax(180px, 260px) minmax(0, 1fr)',
-                md: 'minmax(280px, 360px) minmax(0, 1fr)',
-              },
-              gap: { xs: 1.5, sm: 3 },
-              alignItems: 'start',
-            }}
-          >
+          <Box sx={twoColumnContentGridSx}>
             <Stack spacing={{ xs: 1.5, sm: 2 }}>
               {isPlayerLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">
