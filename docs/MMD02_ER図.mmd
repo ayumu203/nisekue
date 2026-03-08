@@ -26,6 +26,20 @@ erDiagram
         varchar(200) message "NOT NULL"
         timestamptz created_at "NOT NULL, DEFAULT CURRENT_TIMESTAMP"
     }
+    PLAYER_MOVES {
+        uuid player_id PK, FK "internal.players.id"
+        int move_id_1 "NULL (references CSV move_id logically)"
+        int move_id_2 "NULL (references CSV move_id logically)"
+        int move_id_3 "NULL (references CSV move_id logically)"
+        int move_id_4 "NULL (references CSV move_id logically)"
+        int move_id_5 "NULL (references CSV move_id logically)"
+        int move_id_6 "NULL (references CSV move_id logically)"
+        int move_id_7 "NULL (references CSV move_id logically)"
+        int move_id_8 "NULL (references CSV move_id logically)"
+        int move_id_9 "NULL (references CSV move_id logically)"
+        int move_id_10 "NULL (references CSV move_id logically)"
+    }
 
     PLAYERS ||--|| CHAT_ROOMS : owns
     CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
+    PLAYERS ||--|| PLAYER_MOVES : has_slots

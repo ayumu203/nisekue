@@ -1,133 +1,265 @@
 classDiagram
-    %% Player の基本情報
-    class Player {
-        <<Entity>>
-        +PlayerId Id
-        +string Name
-        +Job Job
-        +int Level
-        +int Exp
-        +Status Status
-        +UpdateName(name: string) void
-        +UpdateJob(job: Job) void
-        +UpdateStatus(status: Status) void
-        -ValidateName(name: string) string 
-        +GainExp(exp: int) void
-        +LevelUp(growthValueRepository: IGrowthValueRepository) bool
+    %% Enum 定義は docs/MMD03_Enum.mmd を参照
+    namespace CoreDomain {
+        %% Player の基本情報
+        class Player {
+            <<Entity>>
+            +PlayerId Id
+            +string Name
+            +Job Job
+            +int Level
+            +int Exp
+            +Status Status
+            +PlayerMoveSet MoveSet
+            +UpdateName(name: string) void
+            +UpdateJob(job: Job) void
+            +UpdateStatus(status: Status) void
+            -ValidateName(name: string) string
+            +GainExp(exp: int) void
+            +LevelUp(growthValueRepository: IGrowthValueRepository) bool
+        }
+
+        class PlayerId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class Status {
+            <<Value Object>>
+            +int MaxHp
+            +int MaxMp
+            +int Strength
+            +int Defense
+            +int Intelligence
+            +int Luck
+            +int Speed
+        }
+
+        class GrowthValue {
+            <<Value Object>>
+            +int MaxHp
+            +int MaxMp
+            +int Strength
+            +int Defense
+            +int Intelligence
+            +int Luck
+            +int Speed
+        }
+
+        class PlayerMoveSet {
+            <<Value Object>>
+            +IReadOnlyList~MoveId?~ Slots
+            +SetSlot(index: int, moveId: MoveId?) void
+            +GetSlot(index: int) MoveId?
+            +ClearSlot(index: int) void
+            +SwapSlots(fromIndex: int, toIndex: int) void
+        }
+
+        class IPlayerRepository {
+            +Task~Player?~ GetPlayerAsync(id: PlayerId)
+            +Task~bool~ UpdateNameAsync(id: PlayerId, name: string)
+            +Task~DateTimeOffset?~ TryStartTrainingCooldownAsync(id: PlayerId, nowUtc: DateTimeOffset, cooldown: TimeSpan)
+            +Task SaveAsync(player: Player)
+        }
+
+        class IGrowthValueRepository {
+            +GrowthValue GetByJob(job: Job)
+        }
     }
 
-    class PlayerId {
-        <<Value Object>>
-        +Guid Id
+    namespace ChatDomain {
+        %% ルームチャット機能
+        class ChatRoom {
+            <<Aggregate Root>>
+            +PlayerId OwnerId
+            +int LastChatId
+            -List~ChatMessage~ _messages
+            +IReadOnlyList~ChatMessage~ Messages
+            +ChatRoom(ownerId: PlayerId, lastChatId: int, messages: IEnumerable~ChatMessage~)
+            +GetNextMessageId() : int
+            +PostMessage(senderId : PlayerId, text : string) : void
+            +RestoreMessages(messages: IEnumerable~ChatMessage~) : void
+            +EnforceMessageLimit() : void
+        }
+
+        class ChatMessage {
+            <<Entity>>
+            +PlayerId SenderId
+            +int ChatId
+            +ChatText Body
+            +DateTimeOffset CreatedAt
+        }
+
+        class ChatText {
+            <<Value Object>>
+            +string Text
+            -ValidateMessage() : string
+        }
+
+        class IChatRoomRepository {
+            +Task~ChatRoom~ GetChatRoomAsync(ownerId: PlayerId)
+            +Task SaveAsync(room: ChatRoom)
+        }
+
+        class ChatRoomView {
+            <<Read Model>>
+            +PlayerId OwnerId
+            +int LastChatId
+            +IReadOnlyList~ChatMessageView~ Messages
+        }
+
+        class ChatMessageView {
+            <<Read Model>>
+            +int ChatId
+            +string SenderName
+            +string Message
+            +DateTimeOffset CreatedAt
+        }
+
+        class ChatService {
+            <<Application Service>>
+            +Task EnsureRoomAsync(ownerId: PlayerId)
+            +Task~ChatRoomView~ GetRoomAsync(ownerId: PlayerId)
+            +Task~ChatRoomView~ PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
+        }
     }
 
-    class Job {
-        <<Enum>>
-        Apprentice
-        Warrior
-        Guardian
-        Mage
-        Priest
-        Ranger
+    namespace TrainingDomain {
+        %% トレーニングモード
+        class TrainingEnemy {
+            <<Entity>>
+            +TrainingEnemyId Id
+            +string Name
+            +string ImagePath
+            +int Level
+            +Status Status
+            -ValidateName(name: string) string
+        }
+
+        class TrainingEnemyId {
+            <<Value Object>>
+            +int Id
+        }
+
+        class ITrainingEnemyRepository {
+            +Task~TrainingEnemy?~ GetTrainingEnemyAsync(id: TrainingEnemyId)
+            +Task~IReadOnlyList~TrainingEnemy~~ GetTrainingEnemiesAsync()
+        }
+
+        class TrainingService {
+            <<Application Service>>
+            +GetTrainingEnemies() TrainingEnemyView[]
+            +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
+            -ExecuteTurn(player Player, enemy : TrainingEnemy, turnResult : TurnResult) TurnResult
+            -CalcExp(player Player, enemy : TrainingEnemy, turnResult : TurnResult) int
+            -ApplyExp(player Player, exp : int) bool
+        }
+
+        class TurnResult {
+            +int Turn
+            +int CurrentPlayerHp
+            +int CurrentEnemyHp
+        }
+
+        class TrainingEnemyView {
+            <<Read Model>>
+            +string Name
+            +string ImagePath
+            +int Level
+        }
+
+        class TrainingResultView {
+            <<Read Model>>
+            +string TrainingResult
+            +int Turn
+            +int CurrentPlayerHp
+            +int MaxPlayerHp
+            +int CurrentEnemyHp
+            +int MaxEnemyHp
+            +int Exp
+            +bool IsLevelUp
+        }
     }
 
-    %% Player の基本ステータス
-    class Status {
-        <<Value Object>>
-        +int MaxHp
-        +int MaxMp
-        +int Strength
-        +int Defense
-        +int Intelligence
-        +int Luck
-        +int Speed
+    namespace MoveDomain {
+        %% 技データ
+        class Move {
+            <<Aggregate Root>>
+            +MoveId Id
+            +string Name
+            +TargetType TargetType
+            +AttackRange AttackRange
+            +int MpCost
+            +int ExecutionPriority
+            +MoveCategory Category
+            +IReadOnlyList~MoveEffect~ Effects
+            +Validate() void
+            +GetOrderedEffects() IReadOnlyList~MoveEffect~
+        }
+
+        class MoveId {
+            <<Value Object>>
+            +int Id
+        }
+
+        class MoveEffect {
+            <<Entity>>
+            +MoveEffectId EffectId
+            +MoveId MoveId
+            +int Sequence
+            +MoveEffectType EffectType
+            +DamageEffect? Damage
+            +AilmentEffect? Ailment
+            +BuffEffect? Buff
+            +ValidateByType() void
+        }
+
+        class MoveEffectId {
+            <<Value Object>>
+            +int Id
+        }
+
+        class DamageEffect {
+            <<Value Object>>
+            +int HitCount
+            +decimal PowerRate
+            +int FixedDamage
+            +decimal CriticalRate
+            +ElementType ElementType
+        }
+
+        class AilmentEffect {
+            <<Value Object>>
+            +AilmentType AilmentType
+            +decimal AilmentRate
+        }
+
+        class BuffEffect {
+            <<Value Object>>
+            +BuffStat BuffStat
+            +BuffOp BuffOp
+            +decimal BuffValue
+            +int BuffTurns
+            +decimal BuffRate
+            +bool CanStack
+        }
+
+        class IMoveRepository {
+            +Task~Move?~ GetMoveAsync(moveId: MoveId)
+            +Task~IReadOnlyList~Move~~ GetAllMovesAsync()
+        }
+
     }
 
-    class GrowthValue {
-        <<Value Object>>
-        +int MaxHp
-        +int MaxMp
-        +int Strength
-        +int Defense
-        +int Intelligence
-        +int Luck
-        +int Speed
-    }
-
-    class IPlayerRepository {
-        +Task~Player?~ GetPlayerAsync(id: PlayerId)
-        +Task~bool~ UpdateNameAsync(id: PlayerId, name: string)
-        +Task~DateTimeOffset?~ TryStartTrainingCooldownAsync(id: PlayerId, nowUtc: DateTimeOffset, cooldown: TimeSpan)
-        +Task SaveAsync(player: Player)
-    }
-    class IGrowthValueRepository {
-        +GrowthValue GetByJob(job: Job)
-    }
-
+    %% Core
     Player *-- PlayerId : has
-    Player *-- Job : has
     Player *-- Status : has
+    Player *-- PlayerMoveSet : has
     Player ..> IGrowthValueRepository : uses at LevelUp
     IGrowthValueRepository ..> GrowthValue : returns
     IPlayerRepository ..> Player : stores/loads
 
-
-    %% ルームチャット機能
-    class ChatRoom {
-        <<Aggregate Root>>
-        +PlayerId OwnerId
-        +int LastChatId
-        -List~ChatMessage~ _messages
-        +IReadOnlyList~ChatMessage~ Messages
-        +ChatRoom(ownerId: PlayerId, lastChatId: int, messages: IEnumerable~ChatMessage~)
-        +GetNextMessageId() : int
-        +PostMessage(senderId : PlayerId, text : string) : void
-        +RestoreMessages(messages: IEnumerable~ChatMessage~) : void
-        +EnforceMessageLimit() : void
-    }
-    %% メッセージ管理の単位
-    class ChatMessage {
-        <<Entity>>
-        +PlayerId SenderId
-        +int ChatId
-        +ChatText Body
-        +DateTimeOffset CreatedAt
-    }
-    %% メッセージの文字列の値オブジェクト
-    class ChatText {
-        <<Value Object>>
-        +string Text
-        -ValidateMessage() : string
-    }
-
-    %% チャットルームとDBのつなぎ込み
-    class IChatRoomRepository {
-        +Task~ChatRoom~ GetChatRoomAsync(ownerId: PlayerId)
-        +Task SaveAsync(room: ChatRoom)
-    }
-    %% フロントへ表示するチャットルームのデータ
-    class ChatRoomView {
-        <<Read Model>>
-        +PlayerId OwnerId
-        +int LastChatId
-        +IReadOnlyList~ChatMessageView~ Messages
-    }
-    %% フロントへ表示するチャットデータ
-    class ChatMessageView {
-        <<Read Model>>
-        +int ChatId
-        +string SenderName
-        +string Message
-        +DateTimeOffset CreatedAt
-    }
-    %% フロントとデータのやり取りをするサービス
-    class ChatService {
-        <<Application Service>>
-        +Task EnsureRoomAsync(ownerId: PlayerId)
-        +Task~ChatRoomView~ GetRoomAsync(ownerId: PlayerId)
-        +Task~ChatRoomView~ PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
-    }
-    
+    %% Chat
     ChatRoom *-- ChatMessage : 0..50
     ChatMessage *-- ChatText : has
     IChatRoomRepository ..> ChatRoom : stores/loads
@@ -136,65 +268,7 @@ classDiagram
     ChatService ..> IChatRoomRepository : use
     ChatService ..> IPlayerRepository : resolve sender name
 
-    %% トレーニングモード
-    %% 敵データ
-    class TrainingEnemy {
-        <<Entity>>
-        +TrainingEnemyId Id
-        +string Name
-        +string ImagePath
-        +int Level
-        +Status Status
-        -ValidateName(name: string) string         
-    }
-    class TrainingEnemyId {
-        <<Value Object>>
-        +int Id
-    }
-
-    %% 敵データをCSVより取得する
-    %% ロード時にメモリキャッシュなので実質的なインメモリ実装
-    class ITrainingEnemyRepository {
-        +Task~TrainingEnemy?~ GetTrainingEnemyAsync(id: TrainingEnemyId)
-        +Task~IReadOnlyList~TrainingEnemy~~ GetTrainingEnemiesAsync()
-    }
-
-    %% トレーニングの処理を行うサービス
-    class TrainingService {
-        <<Application Service>>
-        +GetTrainingEnemies() TrainingEnemyView[]
-        +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
-        %% それぞれのHPを返す
-        -ExecuteTurn(player Player, enemy : TrainingEnemy, turnResult : TurnResult) TurnResult        
-        -CalcExp(player Player, enemy : TrainingEnemy, turnResult : TurnResult) int
-        %% レベルアップしたらtrueを返す
-        -ApplyExp(player Player, exp : int) bool
-    }
-    class TurnResult {
-        +int Turn
-        +int CurrentPlayerHp
-        +int CurrentEnemyHp
-    }
-    class TrainingEnemyView {
-        <<Read Model>>
-        +string Name
-        +string ImagePath
-        +int Level
-    }
-    class TrainingResultView {
-        <<Read Model>>
-        %% 勝ち・負け・引き分け
-        +string TrainingResult
-        +int Turn
-        +int CurrentPlayerHp
-        +int MaxPlayerHp
-        +int CurrentEnemyHp
-        +int MaxEnemyHp
-        +int Exp
-        +bool IsLevelUp
-    }
-
-
+    %% Training
     TrainingEnemy *-- Status : has
     TrainingEnemy *-- TrainingEnemyId : has
     ITrainingEnemyRepository --> TrainingEnemy : loads
@@ -204,3 +278,12 @@ classDiagram
     TrainingService ..> TurnResult : use
     TrainingService ..> TrainingResultView : has
     TrainingService ..> TrainingEnemyView : has
+
+    %% Move
+    Move *-- MoveId : has
+    Move *-- MoveEffect : 1..*
+    MoveEffect *-- MoveEffectId : has
+    MoveEffect *-- DamageEffect : optional
+    MoveEffect *-- AilmentEffect : optional
+    MoveEffect *-- BuffEffect : optional
+    IMoveRepository ..> Move : stores/loads
