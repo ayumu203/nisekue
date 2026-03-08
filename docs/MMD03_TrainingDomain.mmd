@@ -22,19 +22,45 @@ classDiagram
             +Task~IReadOnlyList~TrainingEnemy~~ GetTrainingEnemiesAsync()
         }
 
+        class TrainingBattleFactory {
+            <<Application Service>>
+            +CreatePlayerSnapshot(player: Player) BattleActorSnapshot
+            +CreateEnemySnapshot(enemy: TrainingEnemy) BattleActorSnapshot
+            +CreateInitialStates(player: Player, enemy: TrainingEnemy) BattleActorState[]
+            +CreateActions(playerActorId: BattleActorId, enemyActorId: BattleActorId) BattleAction[]
+        }
+
+        class TrainingOutcome {
+            <<Enum>>
+            Win
+            Lose
+            Draw
+        }
+
+        class TrainingOutcomeJudge {
+            <<Domain Service>>
+            +Judge(states: IEnumerable~BattleActorState~, playerActorId: BattleActorId, enemyActorId: BattleActorId) TrainingOutcome
+        }
+
+        class TrainingExpCalculator {
+            <<Domain Service>>
+            +Calculate(player: Player, enemy: TrainingEnemy, outcome: TrainingOutcome, playerDealtTotalDamage: int) int
+        }
+
+        class TrainingBattleSummary {
+            <<Value Object>>
+            +int Turn
+            +int CurrentPlayerHp
+            +int CurrentEnemyHp
+            +TrainingOutcome Outcome
+        }
+
         class TrainingService {
             <<Application Service>>
             +GetTrainingEnemies() TrainingEnemyView[]
             +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
-            -ExecuteTurn(player Player, enemy : TrainingEnemy, turnResult : TurnResult) TurnResult
-            -CalcExp(player Player, enemy : TrainingEnemy, turnResult : TurnResult) int
-            -ApplyExp(player Player, exp : int) bool
-        }
-
-        class TurnResult {
-            +int Turn
-            +int CurrentPlayerHp
-            +int CurrentEnemyHp
+            -BuildSummary(resolution: BattleTurnResolution, playerActorId: BattleActorId, enemyActorId: BattleActorId, turn: int) TrainingBattleSummary
+            -ApplyExp(player: Player, exp: int) bool
         }
 
         class TrainingEnemyView {
@@ -59,7 +85,14 @@ classDiagram
 
     TrainingEnemy *-- TrainingEnemyId : has
     ITrainingEnemyRepository --> TrainingEnemy : loads
+    TrainingBattleFactory ..> TrainingEnemy : uses
+    TrainingOutcomeJudge ..> TrainingOutcome : returns
+    TrainingExpCalculator ..> TrainingOutcome : uses
+    TrainingBattleSummary ..> TrainingOutcome : has
     TrainingService ..> ITrainingEnemyRepository : use
-    TrainingService ..> TurnResult : use
+    TrainingService ..> TrainingBattleFactory : use
+    TrainingService ..> TrainingOutcomeJudge : use
+    TrainingService ..> TrainingExpCalculator : use
+    TrainingService ..> TrainingBattleSummary : builds
     TrainingService ..> TrainingResultView : has
     TrainingService ..> TrainingEnemyView : has
