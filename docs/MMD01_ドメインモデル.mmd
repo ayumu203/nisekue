@@ -4,14 +4,25 @@ classDiagram
         <<Entity>>
         +PlayerId Id
         +string Name
+        +Job Job
         +int Level
         +int Exp
         +Status Status
         +UpdateName(name: string) void
+        +UpdateJob(job: Job) void
         +UpdateStatus(status: Status) void
         -ValidateName(name: string) string 
         +GainExp(exp: int) void
         +LevelUp() bool
+    }
+
+    class Job {
+        <<Enum>>
+        Warrior
+        Guardian
+        Mage
+        Priest
+        Ranger
     }
 
     class PlayerId {
@@ -38,6 +49,7 @@ classDiagram
         +Task SaveAsync(player: Player)
     }
     Player *-- PlayerId : has
+    Player *-- Job : has
     Player *-- Status : has
     IPlayerRepository ..> Player : stores/loads
 
