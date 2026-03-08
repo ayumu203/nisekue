@@ -5,8 +5,10 @@ import type {
   CreatePlayerRequest,
   CreatePlayerResponse,
   GetPlayerResponse,
-  UpdatePlayerRequest,
-  UpdatePlayerResponse,
+  UpdatePlayerNameRequest,
+  UpdatePlayerNameResponse,
+  UpdatePlayerJobRequest,
+  UpdatePlayerJobResponse,
 } from '@/schema/player'
 
 export async function getPlayer(accessToken: string): Promise<GetPlayerResponse> {
@@ -50,16 +52,16 @@ export async function createPlayer(input: CreatePlayerRequest, accessToken: stri
   return endpoints.player.create.responseSchema.parse(json)
 }
 
-export async function updatePlayer(input: UpdatePlayerRequest, accessToken: string): Promise<UpdatePlayerResponse> {
-  const parsedPayload = endpoints.player.update.requestSchema.safeParse(input)
+export async function updatePlayer(input: UpdatePlayerNameRequest, accessToken: string): Promise<UpdatePlayerNameResponse> {
+  const parsedPayload = endpoints.player.updateName.requestSchema.safeParse(input)
   if (!parsedPayload.success) {
     throw new Error(parsedPayload.error.issues[0]?.message ?? '入力内容が不正です')
   }
   const payload = parsedPayload.data
   const apiBaseUrl = resolveApiBaseUrl()
 
-  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.update.path}`, {
-    method: endpoints.player.update.method,
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.updateName.path}`, {
+    method: endpoints.player.updateName.method,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
@@ -73,5 +75,34 @@ export async function updatePlayer(input: UpdatePlayerRequest, accessToken: stri
     throw new Error(extractErrorMessage(json, 'ユーザー情報の更新に失敗しました'))
   }
 
-  return endpoints.player.update.responseSchema.parse(json)
+  return endpoints.player.updateName.responseSchema.parse(json)
+}
+
+export async function updatePlayerJob(
+  input: UpdatePlayerJobRequest,
+  accessToken: string,
+): Promise<UpdatePlayerJobResponse> {
+  const parsedPayload = endpoints.player.updateJob.requestSchema.safeParse(input)
+  if (!parsedPayload.success) {
+    throw new Error(parsedPayload.error.issues[0]?.message ?? '入力内容が不正です')
+  }
+  const payload = parsedPayload.data
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.updateJob.path}`, {
+    method: endpoints.player.updateJob.method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '職業の更新に失敗しました'))
+  }
+
+  return endpoints.player.updateJob.responseSchema.parse(json)
 }
