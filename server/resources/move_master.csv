@@ -1,0 +1,8 @@
+move_id,move_name,target_type,attack_range,mp_cost,execution_priority,move_category
+1,なぎはらい,Enemy,Column,4,0,Attack
+2,ヴズルイフ,Enemy,Row,6,0,Attack
+3,ちょうはつ,Self,Single,3,1,Support
+4,テラピー,Ally,Single,5,0,Support
+5,プラーミア,Enemy,Row,6,0,Attack
+6,シルト,Ally,All,8,1,Support
+7,ヒルフェ,Enemy,Single,5,0,Attack
