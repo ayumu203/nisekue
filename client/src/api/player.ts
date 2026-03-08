@@ -52,7 +52,10 @@ export async function createPlayer(input: CreatePlayerRequest, accessToken: stri
   return endpoints.player.create.responseSchema.parse(json)
 }
 
-export async function updatePlayer(input: UpdatePlayerNameRequest, accessToken: string): Promise<UpdatePlayerNameResponse> {
+export async function updatePlayer(
+  input: UpdatePlayerNameRequest,
+  accessToken: string,
+): Promise<UpdatePlayerNameResponse> {
   const parsedPayload = endpoints.player.updateName.requestSchema.safeParse(input)
   if (!parsedPayload.success) {
     throw new Error(parsedPayload.error.issues[0]?.message ?? '入力内容が不正です')

@@ -122,6 +122,9 @@ export default function Status({ player }: StatusProps) {
             <Typography variant="h6" fontWeight={700}>
               {player?.userName ?? locale.notSet}
             </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {locale.labels.job}: {player?.job.displayName ?? locale.unknownValue}
+            </Typography>
           </Box>
           <Box
             sx={{
