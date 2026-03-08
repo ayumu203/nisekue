@@ -1,0 +1,65 @@
+classDiagram
+    %% Enum 定義は docs/MMD03_Enum.mmd を参照
+    namespace ChatDomain {
+        %% ルームチャット機能
+        class ChatRoom {
+            <<Aggregate Root>>
+            +PlayerId OwnerId
+            +int LastChatId
+            -List~ChatMessage~ _messages
+            +IReadOnlyList~ChatMessage~ Messages
+            +ChatRoom(ownerId: PlayerId, lastChatId: int, messages: IEnumerable~ChatMessage~)
+            +GetNextMessageId() : int
+            +PostMessage(senderId : PlayerId, text : string) : void
+            +RestoreMessages(messages: IEnumerable~ChatMessage~) : void
+            +EnforceMessageLimit() : void
+        }
+
+        class ChatMessage {
+            <<Entity>>
+            +PlayerId SenderId
+            +int ChatId
+            +ChatText Body
+            +DateTimeOffset CreatedAt
+        }
+
+        class ChatText {
+            <<Value Object>>
+            +string Text
+            -ValidateMessage() : string
+        }
+
+        class IChatRoomRepository {
+            +Task~ChatRoom~ GetChatRoomAsync(ownerId: PlayerId)
+            +Task SaveAsync(room: ChatRoom)
+        }
+
+        class ChatRoomView {
+            <<Read Model>>
+            +PlayerId OwnerId
+            +int LastChatId
+            +IReadOnlyList~ChatMessageView~ Messages
+        }
+
+        class ChatMessageView {
+            <<Read Model>>
+            +int ChatId
+            +string SenderName
+            +string Message
+            +DateTimeOffset CreatedAt
+        }
+
+        class ChatService {
+            <<Application Service>>
+            +Task EnsureRoomAsync(ownerId: PlayerId)
+            +Task~ChatRoomView~ GetRoomAsync(ownerId: PlayerId)
+            +Task~ChatRoomView~ PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
+        }
+    }
+
+    ChatRoom *-- ChatMessage : 0..50
+    ChatMessage *-- ChatText : has
+    IChatRoomRepository ..> ChatRoom : stores/loads
+    ChatService ..> ChatMessageView : builds
+    ChatService ..> ChatRoomView : builds
+    ChatService ..> IChatRoomRepository : use

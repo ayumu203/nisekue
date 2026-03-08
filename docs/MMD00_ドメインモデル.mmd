@@ -1,0 +1,665 @@
+classDiagram
+    %% Enum 定義は docs/MMD03_Enum.mmd を参照
+    namespace CoreDomain {
+        %% Player の基本情報
+        class Player {
+            <<Entity>>
+            +PlayerId Id
+            +string Name
+            +Job Job
+            +int Level
+            +int Exp
+            +Status Status
+            +MoveSet MoveSet
+            +UpdateName(name: string) void
+            +UpdateJob(job: Job) void
+            +UpdateStatus(status: Status) void
+            +UpdateMoveSet(moveSet: MoveSet) void
+            -ValidateName(name: string) string
+            +GainExp(exp: int) void
+            +LevelUp(growthValueRepository: IGrowthValueRepository) bool
+        }
+
+        class PlayerId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class Status {
+            <<Value Object>>
+            +int MaxHp
+            +int MaxMp
+            +int Strength
+            +int Defense
+            +int Intelligence
+            +int Luck
+            +int Speed
+        }
+
+        class GrowthValue {
+            <<Value Object>>
+            +int MaxHp
+            +int MaxMp
+            +int Strength
+            +int Defense
+            +int Intelligence
+            +int Luck
+            +int Speed
+        }
+
+        class MoveSet {
+            <<Value Object>>
+            +IReadOnlyList~MoveId?~ Slots
+            +SetSlot(index: int, moveId: MoveId?) void
+            +GetSlot(index: int) MoveId?
+            +GetLearnedMoveIds() IReadOnlyList~MoveId~
+            +GetFirstEmptySlotIndex() int?
+            +ClearSlot(index: int) void
+            +SwapSlots(fromIndex: int, toIndex: int) void
+        }
+
+        class IPlayerRepository {
+            +Task~Player?~ GetPlayerAsync(id: PlayerId)
+            +Task~bool~ UpdateNameAsync(id: PlayerId, name: string)
+            +Task~DateTimeOffset?~ TryStartTrainingCooldownAsync(id: PlayerId, nowUtc: DateTimeOffset, cooldown: TimeSpan)
+            +Task SaveAsync(player: Player)
+        }
+
+        class IGrowthValueRepository {
+            +GrowthValue GetByJob(job: Job)
+        }
+    }
+
+    namespace ChatDomain {
+        %% ルームチャット機能
+        class ChatRoom {
+            <<Aggregate Root>>
+            +PlayerId OwnerId
+            +int LastChatId
+            -List~ChatMessage~ _messages
+            +IReadOnlyList~ChatMessage~ Messages
+            +ChatRoom(ownerId: PlayerId, lastChatId: int, messages: IEnumerable~ChatMessage~)
+            +GetNextMessageId() : int
+            +PostMessage(senderId : PlayerId, text : string) : void
+            +RestoreMessages(messages: IEnumerable~ChatMessage~) : void
+            +EnforceMessageLimit() : void
+        }
+
+        class ChatMessage {
+            <<Entity>>
+            +PlayerId SenderId
+            +int ChatId
+            +ChatText Body
+            +DateTimeOffset CreatedAt
+        }
+
+        class ChatText {
+            <<Value Object>>
+            +string Text
+            -ValidateMessage() : string
+        }
+
+        class IChatRoomRepository {
+            +Task~ChatRoom~ GetChatRoomAsync(ownerId: PlayerId)
+            +Task SaveAsync(room: ChatRoom)
+        }
+
+        class ChatRoomView {
+            <<Read Model>>
+            +PlayerId OwnerId
+            +int LastChatId
+            +IReadOnlyList~ChatMessageView~ Messages
+        }
+
+        class ChatMessageView {
+            <<Read Model>>
+            +int ChatId
+            +string SenderName
+            +string Message
+            +DateTimeOffset CreatedAt
+        }
+
+        class ChatService {
+            <<Application Service>>
+            +Task EnsureRoomAsync(ownerId: PlayerId)
+            +Task~ChatRoomView~ GetRoomAsync(ownerId: PlayerId)
+            +Task~ChatRoomView~ PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
+        }
+    }
+
+    namespace TrainingDomain {
+        %% トレーニングモード
+        class TrainingEnemy {
+            <<Entity>>
+            +TrainingEnemyId Id
+            +string Name
+            +string ImagePath
+            +int Level
+            +Status Status
+            -ValidateName(name: string) string
+        }
+
+        class TrainingEnemyId {
+            <<Value Object>>
+            +int Id
+        }
+
+        class ITrainingEnemyRepository {
+            +Task~TrainingEnemy?~ GetTrainingEnemyAsync(id: TrainingEnemyId)
+            +Task~IReadOnlyList~TrainingEnemy~~ GetTrainingEnemiesAsync()
+        }
+
+        class TrainingService {
+            <<Application Service>>
+            +GetTrainingEnemies() TrainingEnemyView[]
+            +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
+            -ExecuteTurn(player Player, enemy : TrainingEnemy, turnResult : TurnResult) TurnResult
+            -CalcExp(player Player, enemy : TrainingEnemy, turnResult : TurnResult) int
+            -ApplyExp(player Player, exp : int) bool
+        }
+
+        class TurnResult {
+            +int Turn
+            +int CurrentPlayerHp
+            +int CurrentEnemyHp
+        }
+
+        class TrainingEnemyView {
+            <<Read Model>>
+            +string Name
+            +string ImagePath
+            +int Level
+        }
+
+        class TrainingResultView {
+            <<Read Model>>
+            +string TrainingResult
+            +int Turn
+            +int CurrentPlayerHp
+            +int MaxPlayerHp
+            +int CurrentEnemyHp
+            +int MaxEnemyHp
+            +int Exp
+            +bool IsLevelUp
+        }
+    }
+
+    namespace MoveDomain {
+        %% 技データ
+        class Move {
+            <<Aggregate Root>>
+            +MoveId Id
+            +string Name
+            +string Description
+            +TargetType TargetType
+            +AttackRange AttackRange
+            +int MpCost
+            +int ExecutionPriority
+            +MoveCategory Category
+            +IReadOnlyList~MoveEffect~ Effects
+            +Validate() void
+            +GetOrderedEffects() IReadOnlyList~MoveEffect~
+            -ValidateName(name: string) string
+            -ValidateMpCost(mpCost: int) int
+        }
+
+        class MoveId {
+            <<Value Object>>
+            +int Id
+            -Validate(id: int) int
+        }
+
+        class MoveEffect {
+            <<Entity>>
+            +MoveEffectId EffectId
+            +MoveId MoveId
+            +int Sequence
+            +MoveEffectType EffectType
+            +DamageEffect? Damage
+            +AilmentEffect? Ailment
+            +BuffEffect? Buff
+            +ValidateByType() void
+            -ValidateOnlyDamage() void
+            -ValidateOnlyAilment() void
+            -ValidateOnlyBuff() void
+            -ValidateSequence(sequence: int) int
+        }
+
+        class MoveEffectId {
+            <<Value Object>>
+            +int Id
+            -Validate(id: int) int
+        }
+
+        class DamageEffect {
+            <<Value Object>>
+            +int HitCount
+            +decimal PowerRate
+            +int FixedValue
+            +decimal CriticalRate
+            +ElementType ElementType
+            -ValidateHitCount(hitCount: int) int
+            -ValidateFixedValue(fixedValue: int) int
+            -ValidateRateRange(value: decimal, paramName: string) decimal
+            -ValidateNonNegative(value: decimal, paramName: string) decimal
+        }
+
+        class AilmentEffect {
+            <<Value Object>>
+            +AilmentType AilmentType
+            +decimal AilmentRate
+            -ValidateRateRange(value: decimal) decimal
+        }
+
+        class BuffEffect {
+            <<Value Object>>
+            +BuffStat BuffStat
+            +BuffOp BuffOp
+            +decimal BuffValue
+            +int BuffTurns
+            +decimal BuffRate
+            +bool CanStack
+            -ValidateBuffValue(value: decimal, op: BuffOp) decimal
+            -ValidateTurns(turns: int) int
+            -ValidateRateRange(value: decimal) decimal
+        }
+
+        class IMoveRepository {
+            +Task~Move?~ GetMoveAsync(moveId: MoveId)
+            +Task~IReadOnlyList~Move~~ GetAllMovesAsync()
+        }
+
+    }
+
+    namespace QuestDomain {
+        %% クエスト機能
+        class QuestStageDefinition {
+            <<Aggregate Root>>
+            +QuestStageId Id
+            +string Code
+            +string Name
+            +int RecommendedLevel
+            +int MinimumSortieMemberCount
+            +int PartyCapacity
+            +IReadOnlyList~QuestFloorDefinition~ Floors
+            +bool IsActive
+        }
+
+        class QuestStageId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestFloorDefinition {
+            <<Entity>>
+            +int FloorNo
+            +FloorType FloorType
+            +IReadOnlyList~QuestEnemySpawnDefinition~ Spawns
+            +QuestFloorRewardRule RewardRule
+        }
+
+        class QuestFloorRewardRule {
+            <<Value Object>>
+            +decimal ExpRate
+            +decimal GoldRate
+        }
+
+        class QuestEnemySpawnDefinition {
+            <<Entity>>
+            +int SpawnNo
+            +QuestEnemyDefinitionId EnemyDefinitionId
+            +BattleRow Row
+            +BattleColumn Column
+        }
+
+        class QuestEnemyDefinition {
+            <<Aggregate Root>>
+            +QuestEnemyDefinitionId Id
+            +string Name
+            +int Level
+            +Status Status
+            +string ImagePath
+            +EnemyAiType AiType
+            +IReadOnlyList~MoveId~ MoveIds
+        }
+
+        class QuestEnemyDefinitionId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestNpcTemplate {
+            <<Aggregate Root>>
+            +QuestNpcTemplateId Id
+            +string Name
+            +Job Job
+            +BattleRow PreferredRow
+            +int Level
+            +Status BaseStatus
+            +IReadOnlyList~MoveId~ MoveIds
+            +NpcRole Role
+        }
+
+        class QuestNpcTemplateId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class BattlePosition {
+            <<Value Object>>
+            +BattleRow Row
+            +BattleColumn Column
+        }
+
+        class FormationLayout {
+            <<Value Object>>
+            +IReadOnlyList~BattlePosition~ OccupiedPositions
+            +Assign(participantId: QuestParticipantId, position: BattlePosition) void
+            +Release(position: BattlePosition) void
+            +IsOccupied(position: BattlePosition) bool
+        }
+
+        class QuestRoom {
+            <<Aggregate Root>>
+            +QuestRoomId Id
+            +PlayerId OwnerId
+            +QuestStageId StageId
+            +QuestRoomMode Mode
+            +QuestRoomStatus Status
+            +FormationLayout Formation
+            +IReadOnlyList~QuestParticipant~ Participants
+            +QuestRoomCloseReason? CloseReason
+            +DateTimeOffset CreatedAt
+            +DateTimeOffset? ClosedAt
+            +AddPlayer(playerId: PlayerId, displayName: string) void
+            +AssignPosition(participantId: QuestParticipantId, position: BattlePosition) void
+            +MarkDisconnected(participantId: QuestParticipantId, at: DateTimeOffset) void
+            +MarkReconnected(participantId: QuestParticipantId, at: DateTimeOffset) void
+            +RemoveParticipant(participantId: QuestParticipantId, at: DateTimeOffset) void
+            +CanStart() bool
+            +AddNpcParticipants(npcTemplates: IEnumerable~QuestNpcTemplate~) void
+            +CloseRecruitment(reason: QuestRoomCloseReason, at: DateTimeOffset) void
+        }
+
+        class QuestRoomId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestParticipant {
+            <<Entity>>
+            +QuestParticipantId Id
+            +ParticipantType Type
+            +PlayerId? PlayerId
+            +QuestNpcTemplateId? NpcTemplateId
+            +string DisplayName
+            +ParticipantStatus Status
+            +BattlePosition Position
+            +bool IsOwner
+            +DateTimeOffset JoinedAt
+            +DateTimeOffset? LastSeenAt
+            +DateTimeOffset? LeftAt
+        }
+
+        class QuestParticipantId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestRunPartyMemberSnapshot {
+            <<Value Object>>
+            +QuestParticipantId ParticipantId
+            +ParticipantType Type
+            +string DisplayName
+            +Job Job
+            +Status BaseStatus
+            +MoveSet MoveSet
+            +BattlePosition StartPosition
+            +ActionMode InitialActionMode
+        }
+
+        class QuestRun {
+            <<Aggregate Root>>
+            +QuestRunId Id
+            +QuestRoomId RoomId
+            +QuestStageId StageId
+            +QuestRunStatus Status
+            +QuestFloorState FloorState
+            +QuestBattleState BattleState
+            +QuestTurnState TurnState
+            +QuestTrapCollection Traps
+            +QuestRewardAccumulator Rewards
+            +DateTimeOffset StartedAt
+            +DateTimeOffset? EndedAt
+            +InitializeFirstFloor() void
+            +SubmitCommand(participantId: QuestParticipantId, command: QuestTurnCommand, now: DateTimeOffset) void
+            +SwitchToAutoActionForTimeout(now: DateTimeOffset) void
+            +RequestManualControl(participantId: QuestParticipantId) void
+            +ApproveManualControl(participantId: QuestParticipantId, ownerId: PlayerId) void
+            +ResolveTurn() void
+            +AdvanceFloor() void
+            +ApplyTrapsOnFloorStart() void
+            +MarkSucceeded() void
+            +MarkFailed() void
+            +Abort(reason: string) void
+        }
+
+        class QuestRunId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestFloorState {
+            <<Value Object>>
+            +int CurrentFloorNo
+            +bool IsBossFloor
+        }
+
+        class QuestTurnState {
+            <<Value Object>>
+            +int CurrentTurnNo
+            +DateTimeOffset ActionDeadlineAt
+            +IReadOnlyList~QuestTurnCommand~ PendingCommands
+        }
+
+        class QuestBattleState {
+            <<Value Object>>
+            +IReadOnlyList~QuestRunPartyMemberState~ PartyMembers
+            +IReadOnlyList~QuestEnemyState~ Enemies
+        }
+
+        class QuestRunPartyMemberState {
+            <<Entity>>
+            +QuestParticipantId ParticipantId
+            +int CurrentHp
+            +int CurrentMp
+            +bool IsDead
+            +int CanActFromTurn
+            +ActionMode ActionMode
+            +IReadOnlyList~AilmentType~ ActiveAilments
+            +IReadOnlyList~BuffStat~ ActiveBuffs
+        }
+
+        class QuestEnemyState {
+            <<Entity>>
+            +QuestEnemyInstanceId Id
+            +QuestEnemyDefinitionId EnemyDefinitionId
+            +BattlePosition Position
+            +int CurrentHp
+            +int CurrentMp
+            +bool IsDead
+            +IReadOnlyList~AilmentType~ ActiveAilments
+            +IReadOnlyList~BuffStat~ ActiveBuffs
+        }
+
+        class QuestEnemyInstanceId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestTurnCommand {
+            <<Entity>>
+            +QuestParticipantId ParticipantId
+            +int TurnNo
+            +ActionKind ActionKind
+            +MoveId? MoveId
+            +TargetSelector Target
+            +DateTimeOffset SubmittedAt
+            +bool IsAutoSubmitted
+        }
+
+        class TargetSelector {
+            <<Value Object>>
+            +TargetType TargetType
+            +AttackRange AttackRange
+            +BattlePosition? Position
+        }
+
+        class QuestTrapCollection {
+            <<Value Object>>
+            +IReadOnlyList~QuestTrapState~ Traps
+        }
+
+        class QuestTrapState {
+            <<Entity>>
+            +QuestTrapId Id
+            +QuestParticipantId SourceParticipantId
+            +MoveId MoveId
+            +int ExpiresAfterFloorNo
+            +bool IsTriggered
+        }
+
+        class QuestTrapId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestRewardAccumulator {
+            <<Value Object>>
+            +int Exp
+        }
+
+        class IQuestStageRepository {
+            +Task~QuestStageDefinition?~ GetAsync(id: QuestStageId)
+            +Task~QuestStageDefinition?~ GetByCodeAsync(code: string)
+        }
+
+        class IQuestRoomRepository {
+            +Task~QuestRoom?~ GetAsync(id: QuestRoomId)
+            +Task SaveAsync(room: QuestRoom)
+        }
+
+        class IQuestRunRepository {
+            +Task~QuestRun?~ GetAsync(id: QuestRunId)
+            +Task~QuestRun?~ GetByRoomIdAsync(roomId: QuestRoomId)
+            +Task SaveAsync(run: QuestRun)
+        }
+
+        class IQuestNpcTemplateRepository {
+            +Task~IReadOnlyList~QuestNpcTemplate~~ GetForStartAsync(stageId: QuestStageId, count: int)
+        }
+
+        class IQuestEnemyDefinitionRepository {
+            +Task~QuestEnemyDefinition?~ GetAsync(id: QuestEnemyDefinitionId)
+        }
+
+        class QuestRoomService {
+            <<Application Service>>
+            +Task~QuestRoom~ CreateRoomAsync(ownerId: PlayerId, stageId: QuestStageId, mode: QuestRoomMode)
+            +Task~QuestRoom~ JoinRoomAsync(roomId: QuestRoomId, playerId: PlayerId)
+            +Task~QuestRun~ StartAsync(roomId: QuestRoomId)
+        }
+
+        class QuestNpcAssignmentService {
+            <<Application Service>>
+            +Task~IReadOnlyList~QuestNpcTemplate~~ AssignForStart(room: QuestRoom, minimumSortieCount: int)
+        }
+
+        class QuestSnapshotFactory {
+            <<Application Service>>
+            +Create(participants: IEnumerable~QuestParticipant~, players: IEnumerable~Player~, npcTemplates: IEnumerable~QuestNpcTemplate~) QuestRunPartyMemberSnapshot[]
+        }
+
+        class QuestRunFactory {
+            <<Application Service>>
+            +Create(stageDefinition: QuestStageDefinition, snapshots: IEnumerable~QuestRunPartyMemberSnapshot~, now: DateTimeOffset) QuestRun
+        }
+
+        class QuestRunService {
+            <<Application Service>>
+            +Task~QuestRun~ SubmitCommandAsync(runId: QuestRunId, participantId: QuestParticipantId, command: QuestTurnCommand)
+            +Task~QuestRun~ ResolveTimeoutAsync(runId: QuestRunId, now: DateTimeOffset)
+            +Task~QuestRun~ ResolveTurnAsync(runId: QuestRunId)
+        }
+    }
+
+    %% Core
+    Player *-- PlayerId : has
+    Player *-- Status : has
+    Player *-- MoveSet : has
+    Player ..> IGrowthValueRepository : uses at LevelUp
+    IGrowthValueRepository ..> GrowthValue : returns
+    IPlayerRepository ..> Player : stores/loads
+
+    %% Chat
+    ChatRoom *-- ChatMessage : 0..50
+    ChatMessage *-- ChatText : has
+    IChatRoomRepository ..> ChatRoom : stores/loads
+    ChatService ..> ChatMessageView : builds
+    ChatService ..> ChatRoomView : builds
+    ChatService ..> IChatRoomRepository : use
+
+    %% Training
+    TrainingEnemy *-- TrainingEnemyId : has
+    ITrainingEnemyRepository --> TrainingEnemy : loads
+    TrainingService ..> ITrainingEnemyRepository : use
+    TrainingService ..> TurnResult : use
+    TrainingService ..> TrainingResultView : has
+    TrainingService ..> TrainingEnemyView : has
+
+    %% Move
+    Move *-- MoveId : has
+    Move *-- MoveEffect : 1..*
+    MoveEffect *-- MoveEffectId : has
+    MoveEffect *-- DamageEffect : optional
+    MoveEffect *-- AilmentEffect : optional
+    MoveEffect *-- BuffEffect : optional
+    IMoveRepository ..> Move : loads
+
+    %% Quest
+    QuestStageDefinition *-- QuestStageId : has
+    QuestStageDefinition *-- QuestFloorDefinition : 1..*
+    QuestFloorDefinition *-- QuestFloorRewardRule : has
+    QuestFloorDefinition *-- QuestEnemySpawnDefinition : 0..*
+    QuestEnemyDefinition *-- QuestEnemyDefinitionId : has
+    QuestNpcTemplate *-- QuestNpcTemplateId : has
+    QuestRoom *-- QuestRoomId : has
+    QuestRoom *-- FormationLayout : has
+    QuestRoom *-- QuestParticipant : 1..*
+    QuestParticipant *-- QuestParticipantId : has
+    QuestParticipant *-- BattlePosition : has
+    QuestRun *-- QuestRunId : has
+    QuestRun *-- QuestFloorState : has
+    QuestRun *-- QuestBattleState : has
+    QuestRun *-- QuestTurnState : has
+    QuestRun *-- QuestTrapCollection : has
+    QuestRun *-- QuestRewardAccumulator : has
+    QuestBattleState *-- QuestRunPartyMemberState : 1..*
+    QuestBattleState *-- QuestEnemyState : 0..*
+    QuestEnemyState *-- QuestEnemyInstanceId : has
+    QuestTurnState *-- QuestTurnCommand : 0..*
+    QuestTurnCommand *-- TargetSelector : has
+    QuestTrapCollection *-- QuestTrapState : 0..*
+    QuestTrapState *-- QuestTrapId : has
+    IQuestStageRepository ..> QuestStageDefinition : loads
+    IQuestRoomRepository ..> QuestRoom : stores/loads
+    IQuestRunRepository ..> QuestRun : stores/loads
+    IQuestNpcTemplateRepository ..> QuestNpcTemplate : loads
+    IQuestEnemyDefinitionRepository ..> QuestEnemyDefinition : loads
+    QuestRoomService ..> QuestRoom : use
+    QuestRoomService ..> QuestRun : starts
+    QuestNpcAssignmentService ..> IQuestNpcTemplateRepository : use
+    QuestNpcAssignmentService ..> QuestNpcTemplate : selects
+    QuestSnapshotFactory ..> QuestRunPartyMemberSnapshot : builds
+    QuestRunFactory ..> QuestRun : builds
+    QuestRunService ..> QuestRun : use

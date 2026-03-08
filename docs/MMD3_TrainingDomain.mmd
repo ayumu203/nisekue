@@ -1,0 +1,65 @@
+classDiagram
+    %% Enum 定義は docs/MMD03_Enum.mmd を参照
+    namespace TrainingDomain {
+        %% トレーニングモード
+        class TrainingEnemy {
+            <<Entity>>
+            +TrainingEnemyId Id
+            +string Name
+            +string ImagePath
+            +int Level
+            +Status Status
+            -ValidateName(name: string) string
+        }
+
+        class TrainingEnemyId {
+            <<Value Object>>
+            +int Id
+        }
+
+        class ITrainingEnemyRepository {
+            +Task~TrainingEnemy?~ GetTrainingEnemyAsync(id: TrainingEnemyId)
+            +Task~IReadOnlyList~TrainingEnemy~~ GetTrainingEnemiesAsync()
+        }
+
+        class TrainingService {
+            <<Application Service>>
+            +GetTrainingEnemies() TrainingEnemyView[]
+            +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
+            -ExecuteTurn(player Player, enemy : TrainingEnemy, turnResult : TurnResult) TurnResult
+            -CalcExp(player Player, enemy : TrainingEnemy, turnResult : TurnResult) int
+            -ApplyExp(player Player, exp : int) bool
+        }
+
+        class TurnResult {
+            +int Turn
+            +int CurrentPlayerHp
+            +int CurrentEnemyHp
+        }
+
+        class TrainingEnemyView {
+            <<Read Model>>
+            +string Name
+            +string ImagePath
+            +int Level
+        }
+
+        class TrainingResultView {
+            <<Read Model>>
+            +string TrainingResult
+            +int Turn
+            +int CurrentPlayerHp
+            +int MaxPlayerHp
+            +int CurrentEnemyHp
+            +int MaxEnemyHp
+            +int Exp
+            +bool IsLevelUp
+        }
+    }
+
+    TrainingEnemy *-- TrainingEnemyId : has
+    ITrainingEnemyRepository --> TrainingEnemy : loads
+    TrainingService ..> ITrainingEnemyRepository : use
+    TrainingService ..> TurnResult : use
+    TrainingService ..> TrainingResultView : has
+    TrainingService ..> TrainingEnemyView : has

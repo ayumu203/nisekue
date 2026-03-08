@@ -1,0 +1,78 @@
+classDiagram
+    %% Enum 定義は docs/MMD03_Enum.mmd を参照
+    namespace CoreDomain {
+        %% Player の基本情報
+        class Player {
+            <<Entity>>
+            +PlayerId Id
+            +string Name
+            +Job Job
+            +int Level
+            +int Exp
+            +Status Status
+            +MoveSet MoveSet
+            +UpdateName(name: string) void
+            +UpdateJob(job: Job) void
+            +UpdateStatus(status: Status) void
+            +UpdateMoveSet(moveSet: MoveSet) void
+            -ValidateName(name: string) string
+            +GainExp(exp: int) void
+            +LevelUp(growthValueRepository: IGrowthValueRepository) bool
+        }
+
+        class PlayerId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class Status {
+            <<Value Object>>
+            +int MaxHp
+            +int MaxMp
+            +int Strength
+            +int Defense
+            +int Intelligence
+            +int Luck
+            +int Speed
+        }
+
+        class GrowthValue {
+            <<Value Object>>
+            +int MaxHp
+            +int MaxMp
+            +int Strength
+            +int Defense
+            +int Intelligence
+            +int Luck
+            +int Speed
+        }
+
+        class MoveSet {
+            <<Value Object>>
+            +IReadOnlyList~MoveId?~ Slots
+            +SetSlot(index: int, moveId: MoveId?) void
+            +GetSlot(index: int) MoveId?
+            +GetLearnedMoveIds() IReadOnlyList~MoveId~
+            +GetFirstEmptySlotIndex() int?
+            +ClearSlot(index: int) void
+            +SwapSlots(fromIndex: int, toIndex: int) void
+        }
+
+        class IPlayerRepository {
+            +Task~Player?~ GetPlayerAsync(id: PlayerId)
+            +Task~bool~ UpdateNameAsync(id: PlayerId, name: string)
+            +Task~DateTimeOffset?~ TryStartTrainingCooldownAsync(id: PlayerId, nowUtc: DateTimeOffset, cooldown: TimeSpan)
+            +Task SaveAsync(player: Player)
+        }
+
+        class IGrowthValueRepository {
+            +GrowthValue GetByJob(job: Job)
+        }
+    }
+
+    Player *-- PlayerId : has
+    Player *-- Status : has
+    Player *-- MoveSet : has
+    Player ..> IGrowthValueRepository : uses at LevelUp
+    IGrowthValueRepository ..> GrowthValue : returns
+    IPlayerRepository ..> Player : stores/loads
