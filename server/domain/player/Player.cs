@@ -6,7 +6,7 @@ public class Player(PlayerId id, string name, int level, int exp, Status status)
 {
     public PlayerId Id { get; } = id;
     public string Name { get; private set; } = ValidateName(name);
-    public int Level { get; private set; } = level;
+    public int Level { get; private set; } = ValidateLevel(level);
     public int Exp { get; private set; } = exp;
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
 
@@ -30,6 +30,17 @@ public class Player(PlayerId id, string name, int level, int exp, Status status)
 
         return normalized;
     }
+
+    private static int ValidateLevel(int level)
+    {
+        if (level < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(level), "プレイヤーレベルは1以上である必要があります。");
+        }
+
+        return level;
+    }
+
     public void GainExp(int exp)
     {
         if (exp < 0) exp = 0;
