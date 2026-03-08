@@ -6,11 +6,13 @@ using server.application.training;
 using server.domain.chat;
 using server.domain.player;
 using server.domain.training;
+using server.domain.move;
 using server.infrastructure;
 using server.infrastructure.chat;
 using System.Security.Claims;
 using server.infrastructure.player;
 using server.infrastructure.training;
+using server.infrastructure.move;
 using server.shared.constants.player;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -72,6 +74,7 @@ builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
 builder.Services.AddSingleton<IGrowthValueRepository, CsvGrowthValueRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
 builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
+builder.Services.AddSingleton<IMoveRepository, CsvMoveRepository>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<TrainingService>();
 
