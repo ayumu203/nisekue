@@ -69,6 +69,7 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 
 // DI
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
+builder.Services.AddSingleton<IGrowthValueRepository, CsvGrowthValueRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
 builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
 builder.Services.AddScoped<ChatService>();

@@ -52,13 +52,22 @@ public class Player(PlayerId id, string name, int level, int exp, Status status,
         if (exp < 0) exp = 0;
         Exp += exp;
     }
-    public bool LevelUp()
+    public bool LevelUp(IGrowthValueRepository growthValueRepository)
     {
+        var growth = growthValueRepository.GetByJob(Job);
         bool flag = false;
         while (Exp >= Level * 10)
         {
             Exp -= Level * 10;
             Level++;
+            Status = new Status(
+                maxHp: Status.MaxHp + growth.MaxHp,
+                maxMp: Status.MaxMp + growth.MaxMp,
+                strength: Status.Strength + growth.Strength,
+                defense: Status.Defense + growth.Defense,
+                intelligence: Status.Intelligence + growth.Intelligence,
+                luck: Status.Luck + growth.Luck,
+                speed: Status.Speed + growth.Speed);
             flag = true;
         }
         return flag;
