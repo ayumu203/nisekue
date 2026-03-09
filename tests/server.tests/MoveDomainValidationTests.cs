@@ -45,14 +45,14 @@ public class MoveDomainValidationTests
     [Fact]
     public void BuffEffect_WhenTurnsIsZero_ThrowsArgumentOutOfRangeException()
     {
-        var act = () => new BuffEffect(BuffStat.Defense, BuffOp.Add, 10m, 0, 1.0m, canStack: false);
+        var act = () => new BuffEffect(BuffStat.Defense, BuffCalculationType.Add, 10m, 0, 1.0m, canStack: false);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
     public void BuffEffect_WhenMulAndValueIsZero_ThrowsArgumentOutOfRangeException()
     {
-        var act = () => new BuffEffect(BuffStat.Strength, BuffOp.Mul, 0m, 3, 1.0m, canStack: false);
+        var act = () => new BuffEffect(BuffStat.Strength, BuffCalculationType.Mul, 0m, 3, 1.0m, canStack: false);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 

@@ -231,7 +231,7 @@ public class CsvMoveRepository : IMoveRepository
 
         var buffStat = ParseNullableEnum<BuffStat>(columns[11], "buff_stat", lineNumber)
             ?? throw new InvalidOperationException($"Buff には buff_stat が必要です。行: {lineNumber}");
-        var buffOp = ParseNullableEnum<BuffOp>(columns[12], "buff_op", lineNumber)
+        var buffCalculationType = ParseNullableEnum<BuffCalculationType>(columns[12], "buff_op", lineNumber)
             ?? throw new InvalidOperationException($"Buff には buff_op が必要です。行: {lineNumber}");
         var buffValue = ParseNullableDecimal(columns[13], "buff_value", lineNumber)
             ?? throw new InvalidOperationException($"Buff には buff_value が必要です。行: {lineNumber}");
@@ -241,7 +241,7 @@ public class CsvMoveRepository : IMoveRepository
             ?? throw new InvalidOperationException($"Buff には buff_rate が必要です。行: {lineNumber}");
         var canStack = ParseNullableBool(columns[16], "can_stack", lineNumber) ?? false;
 
-        return new BuffEffect(buffStat, buffOp, buffValue, buffTurns, buffRate, canStack);
+        return new BuffEffect(buffStat, buffCalculationType, buffValue, buffTurns, buffRate, canStack);
     }
 
     private static int ParseInt(string value, string columnName, int lineNumber)
