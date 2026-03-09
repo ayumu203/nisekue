@@ -11,7 +11,8 @@ public class BattleService
     {
         var statusResolver = new BattleStatusResolver();
         var damageCalculator = new BattleDamageCalculator();
-        var actionResolver = new BattleActionResolver(damageCalculator, statusResolver);
+        var targetingResolver = new BattleTargetingResolver();
+        var actionResolver = new BattleActionResolver(damageCalculator, statusResolver, targetingResolver);
         var turnOrderResolver = new BattleTurnOrderResolver(statusResolver);
         _battleTurnResolver = new BattleTurnResolver(turnOrderResolver, actionResolver);
     }
@@ -49,6 +50,6 @@ public class BattleService
                 x.MoveId is null ? null : new MoveId(x.MoveId.Value)))
             .ToArray();
 
-        return _battleTurnResolver.Resolve(actions, snapshots, states, request.Moves);
+        return _battleTurnResolver.Resolve(actions, snapshots, states, request.Moves, request.FieldContext);
     }
 }

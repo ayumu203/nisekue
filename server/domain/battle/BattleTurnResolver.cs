@@ -13,7 +13,8 @@ public class BattleTurnResolver(
         IEnumerable<BattleAction> actions,
         IEnumerable<BattleActorSnapshot> snapshots,
         IEnumerable<BattleActorState> states,
-        IEnumerable<Move> moves)
+        IEnumerable<Move> moves,
+        BattleFieldContext? fieldContext = null)
     {
         ArgumentNullException.ThrowIfNull(actions);
         var snapshotArray = snapshots?.ToArray() ?? throw new ArgumentNullException(nameof(snapshots));
@@ -32,7 +33,7 @@ public class BattleTurnResolver(
                 continue;
             }
 
-            actionResults.Add(battleActionResolver.Resolve(action, snapshotArray, stateArray, moveArray));
+            actionResults.Add(battleActionResolver.Resolve(action, snapshotArray, stateArray, moveArray, fieldContext));
         }
 
         var snapshotMap = snapshotArray.ToDictionary(x => x.Id);

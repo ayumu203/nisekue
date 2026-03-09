@@ -7,13 +7,15 @@ namespace server.domain.battle;
 
 public class BattleActionResolver(
     BattleDamageCalculator battleDamageCalculator,
-    BattleStatusResolver battleStatusResolver)
+    BattleStatusResolver battleStatusResolver,
+    BattleTargetingResolver battleTargetingResolver)
 {
     public BattleActionResult Resolve(
         BattleAction action,
         IEnumerable<BattleActorSnapshot> snapshots,
         IEnumerable<BattleActorState> states,
-        IEnumerable<Move> moves)
+        IEnumerable<Move> moves,
+        BattleFieldContext? fieldContext = null)
     {
         ArgumentNullException.ThrowIfNull(action);
         var snapshotMap = snapshots?.ToDictionary(x => x.Id) ?? throw new ArgumentNullException(nameof(snapshots));
@@ -39,8 +41,8 @@ public class BattleActionResolver(
 
         return action.Kind switch
         {
-            BattleActionKind.NormalAttack => ResolveNormalAttack(action, actorSnapshot, actorState, snapshotMap, stateMap),
-            BattleActionKind.UseMove => ResolveMove(action, actorSnapshot, actorState, snapshotMap, stateMap, moveMap),
+            BattleActionKind.NormalAttack => ResolveNormalAttack(action, actorSnapshot, actorState, snapshotMap, stateMap, fieldContext),
+            BattleActionKind.UseMove => ResolveMove(action, actorSnapshot, actorState, snapshotMap, stateMap, moveMap, fieldContext),
             BattleActionKind.Guard => ResolveGuard(actorSnapshot, actorState),
             BattleActionKind.Wait => new BattleActionResult(action.ActorId, true),
             _ => throw new ArgumentOutOfRangeException(nameof(action.Kind), $"未対応の BattleActionKind: {action.Kind}")
@@ -52,9 +54,10 @@ public class BattleActionResolver(
         BattleActorSnapshot actorSnapshot,
         BattleActorState actorState,
         IReadOnlyDictionary<BattleActorId, BattleActorSnapshot> snapshotMap,
-        IReadOnlyDictionary<BattleActorId, BattleActorState> stateMap)
+        IReadOnlyDictionary<BattleActorId, BattleActorState> stateMap,
+        BattleFieldContext? fieldContext)
     {
-        var targets = ResolveTargets(action.Target, actorSnapshot, snapshotMap, stateMap);
+        var targets = battleTargetingResolver.ResolveTargets(action.Target, actorSnapshot, snapshotMap.Values, stateMap.Values, fieldContext);
         if (targets.Count == 0)
         {
             return new BattleActionResult(action.ActorId, false);
@@ -98,7 +101,8 @@ public class BattleActionResolver(
         BattleActorState actorState,
         IReadOnlyDictionary<BattleActorId, BattleActorSnapshot> snapshotMap,
         IReadOnlyDictionary<BattleActorId, BattleActorState> stateMap,
-        IReadOnlyDictionary<int, Move> moveMap)
+        IReadOnlyDictionary<int, Move> moveMap,
+        BattleFieldContext? fieldContext)
     {
         if (action.MoveId is null || !moveMap.TryGetValue(action.MoveId.Id, out var move))
         {
@@ -118,8 +122,9 @@ public class BattleActionResolver(
         var targets = ResolveTargets(
             new BattleTargetSelector(move.TargetType, move.AttackRange, action.Target.TargetActorIds),
             actorSnapshot,
-            snapshotMap,
-            stateMap);
+            snapshotMap.Values,
+            stateMap.Values,
+            fieldContext);
         if (targets.Count == 0)
         {
             return new BattleActionResult(action.ActorId, false);
@@ -293,45 +298,13 @@ public class BattleActionResolver(
         return Random.Shared.NextDouble() < 0.3d;
     }
 
-    private static IReadOnlyList<BattleActorId> ResolveTargets(
+    private IReadOnlyList<BattleActorId> ResolveTargets(
         BattleTargetSelector selector,
         BattleActorSnapshot actorSnapshot,
-        IReadOnlyDictionary<BattleActorId, BattleActorSnapshot> snapshotMap,
-        IReadOnlyDictionary<BattleActorId, BattleActorState> stateMap)
+        IEnumerable<BattleActorSnapshot> snapshots,
+        IEnumerable<BattleActorState> states,
+        BattleFieldContext? fieldContext)
     {
-        var candidates = snapshotMap.Values
-            .Where(x => IsTargetTypeMatch(selector.TargetType, actorSnapshot, x))
-            .Where(x => stateMap.TryGetValue(x.Id, out var state) && !state.IsDead)
-            .OrderBy(x => x.Id.Value)
-            .Select(x => x.Id)
-            .ToArray();
-
-        if (selector.TargetActorIds.Count > 0)
-        {
-            candidates = candidates
-                .Where(x => selector.TargetActorIds.Contains(x))
-                .ToArray();
-        }
-
-        return selector.AttackRange switch
-        {
-            AttackRange.Single => candidates.Take(1).ToArray(),
-            AttackRange.Column => candidates.Take(2).ToArray(),
-            AttackRange.Row => candidates.Take(2).ToArray(),
-            AttackRange.Square => candidates.Take(4).ToArray(),
-            AttackRange.All => candidates,
-            _ => throw new ArgumentOutOfRangeException(nameof(selector.AttackRange), $"未対応の AttackRange: {selector.AttackRange}")
-        };
-    }
-
-    private static bool IsTargetTypeMatch(TargetType targetType, BattleActorSnapshot actorSnapshot, BattleActorSnapshot targetSnapshot)
-    {
-        return targetType switch
-        {
-            TargetType.Enemy => actorSnapshot.Side != targetSnapshot.Side,
-            TargetType.Ally => actorSnapshot.Side == targetSnapshot.Side && actorSnapshot.Id != targetSnapshot.Id,
-            TargetType.Self => actorSnapshot.Id == targetSnapshot.Id,
-            _ => throw new ArgumentOutOfRangeException(nameof(targetType), $"未対応の TargetType: {targetType}")
-        };
+        return battleTargetingResolver.ResolveTargets(selector, actorSnapshot, snapshots, states, fieldContext);
     }
 }
