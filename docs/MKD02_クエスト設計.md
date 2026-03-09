@@ -134,6 +134,8 @@
 * `BattleFieldContext` がない場合、`BattleDomain` は従来どおり `AttackRange` による件数制御だけを行う。
 * `Training` は `BattleFieldContext` を渡さない利用形態とし、前衛・中衛・後衛による射程制御を適用しない。
 * 隊列射程の最終判定責務は `BattleActionResolver` 直書きではなく、専用の `BattleTargetingResolver` に分離する。
+* 現在の `BattleTargetingResolver` は、前衛を相手前衛まで、中衛を相手前衛・中衛まで、後衛を相手全行まで到達可能とみなし、プレイヤー/敵で同じルールを適用する。
+* 現在の `BattleTargetingResolver` は、物理/魔法/回復/バフで射程ルールを分けず、位置情報と `AttackRange` だけで対象を決める。
 
 ## 5. ドメインモデル案
 
