@@ -1,0 +1,39 @@
+using server.shared.constants.battle;
+
+namespace server.domain.battle;
+
+public class BattleDamageCalculator(Func<double>? randomProvider = null)
+{
+    private readonly Func<double> randomProvider = randomProvider ?? Random.Shared.NextDouble;
+
+    public BattleDamageResult Calculate(BattleDamageInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+
+        var attackPower = input.UsesIntelligence
+            ? input.AttackerStatus.Intelligence
+            : input.AttackerStatus.Strength;
+        var defensePower = input.UsesIntelligence
+            ? input.DefenderStatus.Intelligence
+            : input.DefenderStatus.Defense;
+
+        var baseDamage = input.FixedPower + (int)Math.Round(attackPower * input.PowerRate, MidpointRounding.AwayFromZero);
+        var rawDamage = Math.Max(1, baseDamage - defensePower);
+
+        var isCritical = input.CriticalRate > 0m && randomProvider() < CalculateCriticalChance(input);
+        var criticalMultiplier = isCritical ? 1m + input.CriticalRate : 1m;
+        var damage = Math.Max(1, (int)Math.Round(rawDamage * criticalMultiplier, MidpointRounding.AwayFromZero));
+
+        return new BattleDamageResult(damage, isCritical);
+    }
+
+    private static double CalculateCriticalChance(BattleDamageInput input)
+    {
+        var luckAdvantage = Math.Max(0, input.AttackerStatus.Luck - input.DefenderStatus.Luck);
+        var normalizedAdvantage = Math.Min(luckAdvantage, BattleConstants.Critical.MaxLuckAdvantageForChance)
+            / (double)BattleConstants.Critical.MaxLuckAdvantageForChance;
+
+        return BattleConstants.Critical.MinChance
+            + ((BattleConstants.Critical.MaxChance - BattleConstants.Critical.MinChance) * normalizedAdvantage);
+    }
+}

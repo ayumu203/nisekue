@@ -49,6 +49,27 @@ classDiagram
     }
 
     namespace ActionContext {
+        class BattleFieldContext {
+            <<Value Object>>
+            +IReadOnlyList~BattleActorPosition~ Positions
+            +bool EnableFormationRangeControl
+        }
+
+        class BattleActorPosition {
+            <<Value Object>>
+            +BattleActorId ActorId
+            +BattlePosition Position
+        }
+
+
+        class BattleTurnRequest {
+            <<Value Object>>
+            +IReadOnlyList~BattleActorInput~ Actors
+            +IReadOnlyList~BattleActionInput~ Actions
+            +IReadOnlyList~Move~ Moves
+            +BattleFieldContext? FieldContext
+        }
+
         class BattleAction {
             <<Value Object>>
             +BattleActorId ActorId
@@ -105,6 +126,13 @@ classDiagram
         }
     }
 
+    namespace ApplicationContext {
+        class BattleService {
+            <<Application Service>>
+            +ResolveTurn(request: BattleTurnRequest) BattleTurnResolution
+        }
+    }
+
     namespace ServiceContext {
         class BattleTurnOrderResolver {
             <<Domain Service>>
@@ -123,12 +151,17 @@ classDiagram
 
         class BattleActionResolver {
             <<Domain Service>>
-            +Resolve(action: BattleAction, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, moves: IEnumerable~Move~) BattleActionResult
+            +Resolve(action: BattleAction, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, moves: IEnumerable~Move~, fieldContext: BattleFieldContext?) BattleActionResult
+        }
+
+        class BattleTargetingResolver {
+            <<Domain Service>>
+            +ResolveTargets(selector: BattleTargetSelector, actor: BattleActorSnapshot, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, fieldContext: BattleFieldContext?) BattleActorId[]
         }
 
         class BattleTurnResolver {
             <<Domain Service>>
-            +Resolve(actions: IEnumerable~BattleAction~, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, moves: IEnumerable~Move~) BattleTurnResolution
+            +Resolve(actions: IEnumerable~BattleAction~, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, moves: IEnumerable~Move~, fieldContext: BattleFieldContext?) BattleTurnResolution
         }
     }
 
@@ -136,7 +169,12 @@ classDiagram
     BattleActorState *-- BattleActorId : has
     BattleActorState *-- BattleAilmentState : 0..*
     BattleActorState *-- BattleBuffState : 0..*
+    BattleFieldContext *-- BattleActorPosition : 0..*
     BattleAction *-- BattleTargetSelector : has
+    BattleService ..> BattleTurnRequest : accepts
+    BattleService ..> BattleTurnResolution : returns
+    BattleService ..> BattleTurnResolver : orchestrates
+    BattleTurnRequest ..> BattleFieldContext : optionally_has
     BattleDamageResult ..> BattleDamageInput : result_of
     BattleActionResult *-- BattleTargetResult : 0..*
     BattleTurnResolution *-- BattleActionResult : 0..*
@@ -146,6 +184,8 @@ classDiagram
     BattleDamageCalculator ..> BattleDamageResult : builds
     BattleActionResolver ..> BattleDamageCalculator : use
     BattleActionResolver ..> BattleStatusResolver : use
+    BattleActionResolver ..> BattleTargetingResolver : use
+    BattleTargetingResolver ..> BattleFieldContext : use
     BattleTurnResolver ..> BattleTurnResolution : builds
     BattleTurnResolver ..> BattleTurnOrderResolver : use
     BattleTurnResolver ..> BattleActionResolver : use

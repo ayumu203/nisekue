@@ -284,6 +284,7 @@ classDiagram
             +CreateEnemySnapshots(definitions: IEnumerable~QuestEnemyDefinition~, placements: IEnumerable~QuestEnemyPlacement~) BattleActorSnapshot[]
             +CreateInitialStates(partySnapshots: IEnumerable~QuestRunPartyMemberSnapshot~, enemyDefinitions: IEnumerable~QuestEnemyDefinition~) BattleActorState[]
             +CreateBattleActions(commands: IEnumerable~QuestSubmittedCommand~) BattleAction[]
+            +CreateBattleFieldContext(partySnapshots: IEnumerable~QuestRunPartyMemberSnapshot~, placements: IEnumerable~QuestEnemyPlacement~) BattleFieldContext
         }
 
         class QuestRunFactory {
@@ -338,6 +339,7 @@ classDiagram
     QuestRunFactory ..> IQuestEnemyDefinitionRepository : use
     QuestRunFactory ..> QuestRun : builds
     QuestBattleFactory ..> QuestSubmittedCommand : use
+    QuestBattleFactory ..> BattleFieldContext : builds
     QuestRunOutcomeJudge ..> QuestRunResolutionSummary : returns
     QuestRunService ..> QuestRun : use
     QuestRunService ..> QuestRunResolutionSummary : builds
