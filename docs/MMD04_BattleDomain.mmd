@@ -25,8 +25,11 @@ classDiagram
             +IReadOnlyList~BattleAilmentState~ Ailments
             +IReadOnlyList~BattleBuffState~ Buffs
             +ReceiveDamage(value: int) void
-            +RestoreHp(value: int) void
+            +RestoreHp(value: int, maxHp: int) void
             +ConsumeMp(value: int) void
+            +ApplyAilment(ailment: BattleAilmentState) void
+            +ApplyBuff(buff: BattleBuffState, canStack: bool) void
+            +TickTurnEnd() void
             +CanAct() bool
         }
 
@@ -39,7 +42,7 @@ classDiagram
         class BattleBuffState {
             <<Value Object>>
             +BuffStat Stat
-            +BuffOp Op
+            +BuffCalculationType CalculationType
             +decimal Value
             +int RemainingTurns
         }
@@ -91,6 +94,7 @@ classDiagram
         class BattleActionResult {
             <<Value Object>>
             +BattleActorId ActorId
+            +bool Succeeded
             +IReadOnlyList~BattleTargetResult~ TargetResults
         }
 
@@ -104,7 +108,7 @@ classDiagram
     namespace ServiceContext {
         class BattleTurnOrderResolver {
             <<Domain Service>>
-            +Resolve(snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~) BattleActorId[]
+            +Resolve(actions: IEnumerable~BattleAction~, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, moves: IEnumerable~Move~) BattleActorId[]
         }
 
         class BattleStatusResolver {
@@ -119,12 +123,12 @@ classDiagram
 
         class BattleActionResolver {
             <<Domain Service>>
-            +Resolve(action: BattleAction, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~) BattleActionResult
+            +Resolve(action: BattleAction, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, moves: IEnumerable~Move~) BattleActionResult
         }
 
         class BattleTurnResolver {
             <<Domain Service>>
-            +Resolve(actions: IEnumerable~BattleAction~, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~) BattleTurnResolution
+            +Resolve(actions: IEnumerable~BattleAction~, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, moves: IEnumerable~Move~) BattleTurnResolution
         }
     }
 
@@ -137,11 +141,11 @@ classDiagram
     BattleActionResult *-- BattleTargetResult : 0..*
     BattleTurnResolution *-- BattleActionResult : 0..*
     BattleTurnOrderResolver ..> BattleActorState : use
+    BattleTurnOrderResolver ..> BattleAction : use
     BattleStatusResolver ..> BattleActorState : use
     BattleDamageCalculator ..> BattleDamageResult : builds
     BattleActionResolver ..> BattleDamageCalculator : use
     BattleActionResolver ..> BattleStatusResolver : use
-    BattleTurnResolver ..> BattleAction : use
     BattleTurnResolver ..> BattleTurnResolution : builds
     BattleTurnResolver ..> BattleTurnOrderResolver : use
     BattleTurnResolver ..> BattleActionResolver : use

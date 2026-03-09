@@ -3,18 +3,18 @@ using server.shared.constants.move;
 
 namespace server.domain.move;
 
-public class BuffEffect(BuffStat buffStat, BuffOp buffOp, decimal buffValue, int buffTurns, decimal buffRate, bool canStack)
+public class BuffEffect(BuffStat buffStat, BuffCalculationType buffCalculationType, decimal buffValue, int buffTurns, decimal buffRate, bool canStack)
 {
     public BuffStat BuffStat { get; } = buffStat;
-    public BuffOp BuffOp { get; } = buffOp;
-    public decimal BuffValue { get; } = ValidateBuffValue(buffValue, buffOp);
+    public BuffCalculationType BuffCalculationType { get; } = buffCalculationType;
+    public decimal BuffValue { get; } = ValidateBuffValue(buffValue, buffCalculationType);
     public int BuffTurns { get; } = ValidateTurns(buffTurns);
     public decimal BuffRate { get; } = ValidateRateRange(buffRate);
     public bool CanStack { get; } = canStack;
 
-    private static decimal ValidateBuffValue(decimal value, BuffOp op)
+    private static decimal ValidateBuffValue(decimal value, BuffCalculationType calculationType)
     {
-        if (op == BuffOp.Mul && value <= 0m)
+        if (calculationType == BuffCalculationType.Mul && value <= 0m)
         {
             throw new ArgumentOutOfRangeException(nameof(value), "Mul 指定時の buffValue は0より大きい必要があります。");
         }

@@ -70,12 +70,12 @@ classDiagram
         class BuffEffect {
             <<Value Object>>
             +BuffStat BuffStat
-            +BuffOp BuffOp
+            +BuffCalculationType BuffCalculationType
             +decimal BuffValue
             +int BuffTurns
             +decimal BuffRate
             +bool CanStack
-            -ValidateBuffValue(value: decimal, op: BuffOp) decimal
+            -ValidateBuffValue(value: decimal, calculationType: BuffCalculationType) decimal
             -ValidateTurns(turns: int) int
             -ValidateRateRange(value: decimal) decimal
         }
