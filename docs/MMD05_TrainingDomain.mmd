@@ -59,6 +59,8 @@ classDiagram
             <<Application Service>>
             +GetTrainingEnemies() TrainingEnemyView[]
             +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
+            -ResolveBattleUntilFinished(snapshots: IEnumerable~BattleActorSnapshot~, initialStates: IEnumerable~BattleActorState~, playerActorId: BattleActorId, enemyActorId: BattleActorId) TrainingBattleSummary
+            -ResolveSingleTurn(actions: IEnumerable~BattleAction~, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~) BattleTurnResolution
             -BuildSummary(resolution: BattleTurnResolution, playerActorId: BattleActorId, enemyActorId: BattleActorId, turn: int) TrainingBattleSummary
             -ApplyExp(player: Player, exp: int) bool
         }
@@ -86,13 +88,13 @@ classDiagram
     TrainingEnemy *-- TrainingEnemyId : has
     ITrainingEnemyRepository --> TrainingEnemy : loads
     TrainingBattleFactory ..> TrainingEnemy : uses
-    TrainingOutcomeJudge ..> TrainingOutcome : returns
-    TrainingExpCalculator ..> TrainingOutcome : uses
     TrainingBattleSummary ..> TrainingOutcome : has
     TrainingService ..> ITrainingEnemyRepository : use
     TrainingService ..> TrainingBattleFactory : use
     TrainingService ..> TrainingOutcomeJudge : use
     TrainingService ..> TrainingExpCalculator : use
+    TrainingService ..> BattleTurnResolver : use
+    TrainingService ..> BattleTurnResolution : use
     TrainingService ..> TrainingBattleSummary : builds
     TrainingService ..> TrainingResultView : has
     TrainingService ..> TrainingEnemyView : has
