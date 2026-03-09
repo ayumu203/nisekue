@@ -48,17 +48,120 @@ public class BattleDamageCalculatorTests
         result.IsCritical.Should().BeFalse();
     }
 
-    private static BattleDamageInput CreateInput(int attackerLuck, int defenderLuck, decimal criticalRate)
+    [Fact]
+    public void Calculate_WhenUsesIntelligence_UsesIntelligenceAndTargetIntelligenceForDamage()
+    {
+        var calculator = new BattleDamageCalculator(() => 0.99d);
+
+        var result = calculator.Calculate(CreateInput(
+            attackerLuck: 10,
+            defenderLuck: 10,
+            criticalRate: 0m,
+            attackerStrength: 4,
+            attackerIntelligence: 20,
+            defenderDefense: 10,
+            defenderIntelligence: 3,
+            usesIntelligence: true));
+
+        result.Damage.Should().Be(22);
+        result.IsCritical.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Calculate_WhenUsesStrength_UsesStrengthAndTargetDefenseForDamage()
+    {
+        var calculator = new BattleDamageCalculator(() => 0.99d);
+
+        var result = calculator.Calculate(CreateInput(
+            attackerLuck: 10,
+            defenderLuck: 10,
+            criticalRate: 0m,
+            attackerStrength: 20,
+            attackerIntelligence: 4,
+            defenderDefense: 3,
+            defenderIntelligence: 10,
+            usesIntelligence: false));
+
+        result.Damage.Should().Be(22);
+        result.IsCritical.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Calculate_WhenCriticalHit_AppliesCriticalMultiplierToDamage()
+    {
+        var calculator = new BattleDamageCalculator(() => 0.0d);
+
+        var result = calculator.Calculate(CreateInput(
+            attackerLuck: 30,
+            defenderLuck: 5,
+            criticalRate: 0.5m,
+            attackerStrength: 10,
+            attackerIntelligence: 3,
+            defenderDefense: 5,
+            defenderIntelligence: 3,
+            usesIntelligence: false));
+
+        result.Damage.Should().Be(15);
+        result.IsCritical.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Calculate_WhenCriticalHitAndUsesIntelligence_AppliesCriticalMultiplierToIntelligenceDamage()
+    {
+        var calculator = new BattleDamageCalculator(() => 0.0d);
+
+        var result = calculator.Calculate(CreateInput(
+            attackerLuck: 30,
+            defenderLuck: 5,
+            criticalRate: 0.5m,
+            attackerStrength: 4,
+            attackerIntelligence: 20,
+            defenderDefense: 10,
+            defenderIntelligence: 3,
+            usesIntelligence: true));
+
+        result.Damage.Should().Be(33);
+        result.IsCritical.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Calculate_WhenUsesIntelligence_ReducesDamageByAttackDefenseRatio()
+    {
+        var calculator = new BattleDamageCalculator(() => 0.99d);
+
+        var result = calculator.Calculate(CreateInput(
+            attackerLuck: 10,
+            defenderLuck: 10,
+            criticalRate: 0m,
+            attackerStrength: 4,
+            attackerIntelligence: 12,
+            defenderDefense: 10,
+            defenderIntelligence: 12,
+            usesIntelligence: true));
+
+        result.Damage.Should().Be(9);
+        result.IsCritical.Should().BeFalse();
+    }
+
+    private static BattleDamageInput CreateInput(
+        int attackerLuck,
+        int defenderLuck,
+        decimal criticalRate,
+        int attackerStrength = 10,
+        int attackerIntelligence = 3,
+        int defenderDefense = 5,
+        int defenderIntelligence = 3,
+        bool usesIntelligence = false)
     {
         return new BattleDamageInput(
             attackerId: new BattleActorId(Guid.NewGuid()),
             defenderId: new BattleActorId(Guid.NewGuid()),
-            attackerStatus: new Status(maxHp: 30, maxMp: 10, strength: 10, defense: 5, intelligence: 3, luck: attackerLuck, speed: 8),
-            defenderStatus: new Status(maxHp: 30, maxMp: 10, strength: 8, defense: 5, intelligence: 3, luck: defenderLuck, speed: 6),
+            attackerStatus: new Status(maxHp: 30, maxMp: 10, strength: attackerStrength, defense: 5, intelligence: attackerIntelligence, luck: attackerLuck, speed: 8),
+            defenderStatus: new Status(maxHp: 30, maxMp: 10, strength: 8, defense: defenderDefense, intelligence: defenderIntelligence, luck: defenderLuck, speed: 6),
             fixedPower: 5,
             powerRate: 1m,
             criticalRate: criticalRate,
             elementType: ElementType.None,
-            usesIntelligence: false);
+            usesIntelligence: usesIntelligence);
     }
 }

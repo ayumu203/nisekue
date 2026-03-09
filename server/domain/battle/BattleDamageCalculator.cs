@@ -18,7 +18,9 @@ public class BattleDamageCalculator(Func<double>? randomProvider = null)
             : input.DefenderStatus.Defense;
 
         var baseDamage = input.FixedPower + (int)Math.Round(attackPower * input.PowerRate, MidpointRounding.AwayFromZero);
-        var rawDamage = Math.Max(1, baseDamage - defensePower);
+        var rawDamage = input.UsesIntelligence
+            ? CalculateIntelligenceDamage(baseDamage, attackPower, defensePower)
+            : Math.Max(1, baseDamage - defensePower);
 
         var isCritical = input.CriticalRate > 0m && randomProvider() < CalculateCriticalChance(input);
         var criticalMultiplier = isCritical ? 1m + input.CriticalRate : 1m;
@@ -35,5 +37,11 @@ public class BattleDamageCalculator(Func<double>? randomProvider = null)
 
         return BattleConstants.Critical.MinChance
             + ((BattleConstants.Critical.MaxChance - BattleConstants.Critical.MinChance) * normalizedAdvantage);
+    }
+
+    private static int CalculateIntelligenceDamage(int baseDamage, int attackPower, int defensePower)
+    {
+        var ratio = (decimal)attackPower / (attackPower + defensePower);
+        return Math.Max(1, (int)Math.Round(baseDamage * ratio, MidpointRounding.AwayFromZero));
     }
 }
