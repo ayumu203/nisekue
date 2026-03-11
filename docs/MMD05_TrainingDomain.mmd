@@ -24,10 +24,14 @@ classDiagram
 
         class TrainingBattleFactory {
             <<Application Service>>
-            +CreatePlayerSnapshot(player: Player) BattleActorSnapshot
-            +CreateEnemySnapshot(enemy: TrainingEnemy) BattleActorSnapshot
-            +CreateInitialStates(player: Player, enemy: TrainingEnemy) BattleActorState[]
-            +CreateActions(playerActorId: BattleActorId, enemyActorId: BattleActorId) BattleAction[]
+            +CreatePlayerActor(player: Player) BattleActorInput
+            +CreateEnemyActor(enemy: TrainingEnemy) BattleActorInput
+            +CreateTurnActions(playerActorId: Guid, enemyActorId: Guid) BattleActionInput[]
+            +CreateTrainingMoves(player: Player, enemy: TrainingEnemy) Move[]
+            +PlayerActorId Guid
+            +EnemyActorId Guid
+            -CreateTrainingNormalAttack(moveId: int, status: Status) Move
+            -ResolveAttackStat(status: Status) BuffStat
         }
 
         class TrainingOutcome {
@@ -59,9 +63,9 @@ classDiagram
             <<Application Service>>
             +GetTrainingEnemies() TrainingEnemyView[]
             +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
-            -ResolveBattleUntilFinished(snapshots: IEnumerable~BattleActorSnapshot~, initialStates: IEnumerable~BattleActorState~, playerActorId: BattleActorId, enemyActorId: BattleActorId) TrainingBattleSummary
-            -ResolveSingleTurn(actions: IEnumerable~BattleAction~, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~) BattleTurnResolution
-            -BuildSummary(resolution: BattleTurnResolution, playerActorId: BattleActorId, enemyActorId: BattleActorId, turn: int) TrainingBattleSummary
+            -ResolveBattleUntilFinished(actors: IReadOnlyList~BattleActorInput~, actions: IReadOnlyList~BattleActionInput~, moves: IReadOnlyList~Move~) TrainingBattleSummary
+            -BuildNextTurnActors(actors: IReadOnlyList~BattleActorInput~, states: IReadOnlyList~BattleActorState~) BattleActorInput[]
+            -BuildSummary(actors: IReadOnlyList~BattleActorInput~, turn: int) TrainingBattleSummary
             -ApplyExp(player: Player, exp: int) bool
         }
 
@@ -93,8 +97,6 @@ classDiagram
     TrainingService ..> TrainingBattleFactory : use
     TrainingService ..> TrainingOutcomeJudge : use
     TrainingService ..> TrainingExpCalculator : use
-    TrainingService ..> BattleTurnResolver : use
-    TrainingService ..> BattleTurnResolution : use
     TrainingService ..> TrainingBattleSummary : builds
     TrainingService ..> TrainingResultView : has
     TrainingService ..> TrainingEnemyView : has
