@@ -223,6 +223,34 @@ public class TrainingServiceTests
     }
 
     [Fact]
+    public async Task ExecuteTraining_WhenPlayerSelectsNormalAttack_UsesTrainingNormalAttack()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var player = new Player(
+            playerId,
+            name: "Battler",
+            level: 5,
+            exp: 0,
+            status: new Status(maxHp: 30, maxMp: 0, strength: 10, defense: 8, intelligence: 2, luck: 0, speed: 10));
+
+        var enemy = new TrainingEnemy(
+            new TrainingEnemyId(1),
+            name: "Enemy",
+            imagePath: "/image/training/01_heishi.png",
+            level: 5,
+            status: new Status(maxHp: 20, maxMp: 0, strength: 8, defense: 3, intelligence: 2, luck: 1, speed: 5));
+
+        var service = CreateService(new FakePlayerRepository(player), new FakeTrainingEnemyRepository(enemy));
+
+        var result = await service.ExecuteTraining(playerId, enemy.Id, [null, null, null]);
+
+        result.TrainingResult.Should().Be("Win");
+        result.Turn.Should().Be(3);
+        result.CurrentPlayerHp.Should().Be(28);
+        result.CurrentEnemyHp.Should().Be(0);
+    }
+
+    [Fact]
     public void Calculate_WhenWinWithSmallLevelDifference_ReturnsExpectedExperience()
     {
         var calculator = new TrainingExpCalculator();

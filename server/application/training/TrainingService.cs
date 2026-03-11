@@ -32,7 +32,7 @@ public class TrainingService(
             .ToArray();
     }
 
-    public async Task<TrainingResultView> ExecuteTraining(PlayerId playerId, TrainingEnemyId enemyId, IReadOnlyList<int> playerMoveIds)
+    public async Task<TrainingResultView> ExecuteTraining(PlayerId playerId, TrainingEnemyId enemyId, IReadOnlyList<int?> playerMoveIds)
     {
         var player = await playerRepository.GetPlayerAsync(playerId)
             ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
@@ -54,7 +54,7 @@ public class TrainingService(
 
         var actors = new[]
         {
-            trainingBattleFactory.CreatePlayerActor(player),
+            trainingBattleFactory.CreatePlayerActor(player, playerMoves),
             trainingBattleFactory.CreateEnemyActor(enemy)
         };
         var moves = trainingBattleFactory.CreateTrainingMoves(enemy, playerMoves);
@@ -158,7 +158,7 @@ public class TrainingService(
         return player.LevelUp(growthValueRepository);
     }
 
-    private async Task<Move[]> LoadTrainingMovesAsync(Player player, IReadOnlyList<int> playerMoveIds)
+    private async Task<Move[]> LoadTrainingMovesAsync(Player player, IReadOnlyList<int?> playerMoveIds)
     {
         ArgumentNullException.ThrowIfNull(playerMoveIds);
 
@@ -174,12 +174,18 @@ public class TrainingService(
         var moves = new List<Move>(playerMoveIds.Count);
         foreach (var moveId in playerMoveIds)
         {
-            if (!learnedMoveIds.Contains(moveId))
+            if (moveId is null)
+            {
+                moves.Add(trainingBattleFactory.CreatePlayerTrainingNormalAttack(player.Status));
+                continue;
+            }
+
+            if (!learnedMoveIds.Contains(moveId.Value))
             {
                 throw new ArgumentException($"未習得の技は指定できません。 moveId={moveId}", nameof(playerMoveIds));
             }
 
-            var move = await moveRepository.GetMoveAsync(new MoveId(moveId));
+            var move = await moveRepository.GetMoveAsync(new MoveId(moveId.Value));
             if (move is null)
             {
                 throw new ArgumentException($"存在しない技は指定できません。 moveId={moveId}", nameof(playerMoveIds));

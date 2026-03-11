@@ -450,4 +450,4 @@ public record CreatePlayerRequest(string UserName);
 public record UpdatePlayerNameRequest(string UserName);
 public record UpdatePlayerJobRequest(Job Job);
 public record PostChatMessageRequest(Guid OwnerId, string Text);
-public record ExecuteTrainingRequest(int EnemyId, IReadOnlyList<int> MoveIds);
+public record ExecuteTrainingRequest(int EnemyId, IReadOnlyList<int?> MoveIds);

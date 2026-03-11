@@ -17,16 +17,17 @@ public class TrainingBattleFactory
     public Guid PlayerActorId => PlayerBattleActorId;
     public Guid EnemyActorId => EnemyBattleActorId;
 
-    public BattleActorInput CreatePlayerActor(Player player)
+    public BattleActorInput CreatePlayerActor(Player player, IEnumerable<Move> selectedPlayerMoves)
     {
         ArgumentNullException.ThrowIfNull(player);
+        ArgumentNullException.ThrowIfNull(selectedPlayerMoves);
 
         return new BattleActorInput(
             PlayerBattleActorId,
             player.Name,
             BattleSide.Ally,
             player.Status,
-            player.MoveSet,
+            CreatePlayerMoveSet(selectedPlayerMoves),
             CurrentHp: player.Status.MaxHp,
             CurrentMp: player.Status.MaxMp);
     }
@@ -75,6 +76,13 @@ public class TrainingBattleFactory
         return moveMap.Values.ToArray();
     }
 
+    public Move CreatePlayerTrainingNormalAttack(Status status)
+    {
+        ArgumentNullException.ThrowIfNull(status);
+
+        return CreateTrainingNormalAttack(PlayerTrainingMoveId, status);
+    }
+
     private static BattleActionInput CreatePlayerTurnAction(
         BattleActorInput playerActor,
         Guid enemyActorId,
@@ -105,6 +113,24 @@ public class TrainingBattleFactory
         var slots = new MoveId?[MoveSet.MaxSlots];
         slots[0] = new MoveId(moveId);
         return slots;
+    }
+
+    private static MoveSet CreatePlayerMoveSet(IEnumerable<Move> selectedPlayerMoves)
+    {
+        var slots = new MoveId?[MoveSet.MaxSlots];
+        var moveIds = selectedPlayerMoves
+            .Select(x => x.Id.Id)
+            .Append(PlayerTrainingMoveId)
+            .Distinct()
+            .Take(MoveSet.MaxSlots)
+            .ToArray();
+
+        for (var i = 0; i < moveIds.Length; i++)
+        {
+            slots[i] = new MoveId(moveIds[i]);
+        }
+
+        return new MoveSet(slots);
     }
 
     private static IReadOnlyList<Guid>? ResolveTargetActorIds(Guid playerActorId, Guid enemyActorId, TargetType targetType)
