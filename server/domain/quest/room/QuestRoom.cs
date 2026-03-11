@@ -11,6 +11,7 @@ public class QuestRoom(
     FormationLayout? formation = null,
     IEnumerable<QuestParticipant>? participants = null,
     QuestRoomStatus status = QuestRoomStatus.Recruiting,
+    int version = 0,
     QuestRoomCloseReason? closeReason = null,
     DateTimeOffset? createdAt = null,
     DateTimeOffset? closedAt = null)
@@ -22,6 +23,7 @@ public class QuestRoom(
     public QuestStageId StageId { get; } = stageId;
     public QuestRoomMode Mode { get; } = mode;
     public QuestRoomStatus Status { get; private set; } = status;
+    public int Version { get; private set; } = ValidateVersion(version);
     public FormationLayout Formation { get; private set; } = formation ?? new FormationLayout();
     public IReadOnlyList<QuestParticipant> Participants => participants;
     public QuestRoomCloseReason? CloseReason { get; private set; } = closeReason;
@@ -154,6 +156,11 @@ public class QuestRoom(
         ClosedAt = at;
     }
 
+    public void SyncVersion(int version)
+    {
+        Version = ValidateVersion(version);
+    }
+
     private QuestParticipant FindParticipant(QuestParticipantId participantId)
     {
         return participants.FirstOrDefault(x => x.Id == participantId)
@@ -184,5 +191,15 @@ public class QuestRoom(
         {
             throw new InvalidOperationException("ルームの参加上限は6人です。");
         }
+    }
+
+    private static int ValidateVersion(int version)
+    {
+        if (version < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(version), "バージョンは0以上である必要があります。");
+        }
+
+        return version;
     }
 }

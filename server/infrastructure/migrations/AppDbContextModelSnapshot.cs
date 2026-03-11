@@ -229,6 +229,11 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasColumnName("status");
 
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
                     b.HasKey("Id");
 
                     b.ToTable("quest_rooms", "internal");

@@ -46,6 +46,7 @@ erDiagram
         int stage_id "references CSV quest stage id logically"
         int mode "NOT NULL (Solo/Multi)"
         int status "NOT NULL (Recruiting/Closed)"
+        int version "NOT NULL, optimistic concurrency token"
         int close_reason "NULL (Started/Cancelled/Expired)"
         timestamptz created_at "NOT NULL"
         timestamptz closed_at "NULL"

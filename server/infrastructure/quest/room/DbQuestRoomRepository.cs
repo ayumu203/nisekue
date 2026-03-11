@@ -39,6 +39,7 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
             formation,
             participants,
             (QuestRoomStatus)roomEntity.Status,
+            roomEntity.Version,
             roomEntity.CloseReason is null ? null : (QuestRoomCloseReason)roomEntity.CloseReason.Value,
             roomEntity.CreatedAt,
             roomEntity.ClosedAt);
@@ -50,51 +51,63 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var existing = await dbContext.QuestRooms.SingleOrDefaultAsync(x => x.Id == room.Id.Value);
-        if (existing is null)
+        try
         {
-            dbContext.QuestRooms.Add(new QuestRoomEntity
+            if (existing is null)
             {
-                Id = room.Id.Value,
-                OwnerPlayerId = room.OwnerId.Value,
-                StageId = room.StageId.Value,
-                Mode = (int)room.Mode,
-                Status = (int)room.Status,
-                CloseReason = room.CloseReason is null ? null : (int)room.CloseReason.Value,
-                CreatedAt = room.CreatedAt,
-                ClosedAt = room.ClosedAt
-            });
-        }
-        else
-        {
-            existing.StageId = room.StageId.Value;
-            existing.Mode = (int)room.Mode;
-            existing.Status = (int)room.Status;
-            existing.CloseReason = room.CloseReason is null ? null : (int)room.CloseReason.Value;
-            existing.ClosedAt = room.ClosedAt;
-        }
+                existing = new QuestRoomEntity
+                {
+                    Id = room.Id.Value,
+                    OwnerPlayerId = room.OwnerId.Value,
+                    StageId = room.StageId.Value,
+                    Mode = (int)room.Mode,
+                    Status = (int)room.Status,
+                    Version = 1,
+                    CloseReason = room.CloseReason is null ? null : (int)room.CloseReason.Value,
+                    CreatedAt = room.CreatedAt,
+                    ClosedAt = room.ClosedAt
+                };
+                dbContext.QuestRooms.Add(existing);
+            }
+            else
+            {
+                dbContext.Entry(existing).Property(x => x.Version).OriginalValue = room.Version;
+                existing.StageId = room.StageId.Value;
+                existing.Mode = (int)room.Mode;
+                existing.Status = (int)room.Status;
+                existing.Version = room.Version + 1;
+                existing.CloseReason = room.CloseReason is null ? null : (int)room.CloseReason.Value;
+                existing.ClosedAt = room.ClosedAt;
+            }
 
-        var participants = await dbContext.QuestRoomParticipants
-            .Where(x => x.RoomId == room.Id.Value)
-            .ToListAsync();
-        dbContext.QuestRoomParticipants.RemoveRange(participants);
-        dbContext.QuestRoomParticipants.AddRange(room.Participants.Select(x => new QuestRoomParticipantEntity
-        {
-            Id = x.Id.Value,
-            RoomId = room.Id.Value,
-            ParticipantType = (int)x.Type,
-            PlayerId = x.PlayerId?.Value,
-            NpcTemplateId = x.NpcTemplateId?.Value,
-            DisplayName = x.DisplayName,
-            BattleRow = (int)x.Position.Row,
-            BattleColumn = (int)x.Position.Column,
-            ParticipantStatus = (int)x.Status,
-            IsOwner = x.IsOwner,
-            JoinedAt = x.JoinedAt,
-            LastSeenAt = x.LastSeenAt,
-            LeftAt = x.LeftAt
-        }));
+            var participants = await dbContext.QuestRoomParticipants
+                .Where(x => x.RoomId == room.Id.Value)
+                .ToListAsync();
+            dbContext.QuestRoomParticipants.RemoveRange(participants);
+            dbContext.QuestRoomParticipants.AddRange(room.Participants.Select(x => new QuestRoomParticipantEntity
+            {
+                Id = x.Id.Value,
+                RoomId = room.Id.Value,
+                ParticipantType = (int)x.Type,
+                PlayerId = x.PlayerId?.Value,
+                NpcTemplateId = x.NpcTemplateId?.Value,
+                DisplayName = x.DisplayName,
+                BattleRow = (int)x.Position.Row,
+                BattleColumn = (int)x.Position.Column,
+                ParticipantStatus = (int)x.Status,
+                IsOwner = x.IsOwner,
+                JoinedAt = x.JoinedAt,
+                LastSeenAt = x.LastSeenAt,
+                LeftAt = x.LeftAt
+            }));
 
-        await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
+            room.SyncVersion(existing.Version);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new InvalidOperationException("ルームが同時更新されました。最新状態を再取得してからやり直してください。", ex);
+        }
     }
 
     private static QuestParticipant MapParticipant(QuestRoomParticipantEntity entity)

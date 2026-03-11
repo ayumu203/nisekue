@@ -146,6 +146,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRoom.Property(x => x.StageId).HasColumnName("stage_id").IsRequired();
         questRoom.Property(x => x.Mode).HasColumnName("mode").IsRequired();
         questRoom.Property(x => x.Status).HasColumnName("status").IsRequired();
+        questRoom.Property(x => x.Version).HasColumnName("version").IsConcurrencyToken().IsRequired();
         questRoom.Property(x => x.CloseReason).HasColumnName("close_reason");
         questRoom.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
         questRoom.Property(x => x.ClosedAt).HasColumnName("closed_at");

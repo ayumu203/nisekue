@@ -542,6 +542,7 @@ CSV 採用理由:
 | `stage_id` | int | CSV の `QuestStageDefinition.Id` を参照 |
 | `mode` | int | `Solo` / `Multi` |
 | `status` | int | `Recruiting` / `Closed` |
+| `version` | int | NOT NULL, 楽観ロック用の更新バージョン |
 | `close_reason` | int | `Started` / `Cancelled` / `Expired`, NULL 可 |
 | `created_at` | timestamptz | NOT NULL |
 | `closed_at` | timestamptz | NULL |
@@ -570,6 +571,7 @@ CSV 採用理由:
 * `npc_template_id` は `participant_type = Npc` のとき必須。
 * `UNIQUE(room_id, battle_row, battle_column)`。
 * `UNIQUE(room_id, player_id)` ただし `player_id IS NOT NULL`。
+* `quest_rooms.version` を楽観ロックに使い、同時参加更新は stale write を拒否する。
 
 ### 7.4 進行系テーブル案
 
