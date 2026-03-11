@@ -49,10 +49,7 @@ export default function MoveSetting() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Stack spacing={1}>
-            <Typography variant="h4" textAlign="center">
-              {locale.moveListTitle}
-            </Typography>
+          <Stack spacing={1} alignItems="flex-end">
             <Button component={Link} to="/" variant="outlined" sx={{ alignSelf: 'flex-end' }}>
               {locale.backToHome}
             </Button>

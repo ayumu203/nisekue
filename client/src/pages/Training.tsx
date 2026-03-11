@@ -230,7 +230,7 @@ export default function Training() {
               ) : playerError ? (
                 <Alert severity="warning">{playerError.message}</Alert>
               ) : (
-                <Status player={player} />
+                <Status player={player} compactTrainingMobile={isMobile} />
               )}
               <Button component={Link} to="/" variant="outlined" sx={menuButtonSx}>
                 {locale.backToHome}
