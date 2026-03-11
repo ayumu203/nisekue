@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Alert, Button, Stack, SvgIcon, TextField, type SvgIconProps } from '@mui/material'
-import { softGreenButtonSx } from '@/constants/styles'
+import { greenOutlinedInputSx, softGreenButtonSx } from '@/constants/styles'
+import locale from '../../../locale/chat/Chat.json'
 
 type Props = {
   isSubmitting: boolean
@@ -31,7 +32,7 @@ function ChatForm({ isSubmitting, onSubmit }: Props) {
       setText('')
       setErrorMessage(null)
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'メッセージ送信に失敗しました'
+      const message = error instanceof Error ? error.message : locale.sendFailed
       setErrorMessage(message)
     }
   }
@@ -49,23 +50,15 @@ function ChatForm({ isSubmitting, onSubmit }: Props) {
             }
           }}
           size="small"
-          placeholder="メッセージを入力"
+          placeholder={locale.placeholder}
           fullWidth
           disabled={isSubmitting}
           inputProps={{ maxLength: 200 }}
           sx={{
+            ...greenOutlinedInputSx,
             '& .MuiOutlinedInput-root': {
+              ...greenOutlinedInputSx['& .MuiOutlinedInput-root'],
               minHeight: 40,
-              backgroundColor: '#fffdf8',
-              '& fieldset': {
-                borderColor: '#b7d9b9',
-              },
-              '&:hover fieldset': {
-                borderColor: '#78c27d',
-              },
-              '&.Mui-focused fieldset': {
-                borderColor: '#78c27d',
-              },
             },
           }}
         />
@@ -73,7 +66,7 @@ function ChatForm({ isSubmitting, onSubmit }: Props) {
           type="submit"
           variant="contained"
           disabled={isSubmitting || text.trim().length === 0}
-          aria-label="送信"
+          aria-label={locale.send}
           sx={{
             ...softGreenButtonSx,
             minWidth: 40,

@@ -4,7 +4,7 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayer } from '@/api/player'
-import { innerSurfaceSx, outerPagePaperSx, softGreenButtonSx } from '@/constants/styles'
+import { greenOutlinedInputSx, innerSurfaceSx, outerPagePaperSx, softGreenButtonSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-setting/PlayerSetting.json'
@@ -110,23 +110,7 @@ export default function PlayerSetting() {
                     onChange={(event) => {
                       setUserName(event.target.value)
                     }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: '#fffdf8',
-                        '& fieldset': {
-                          borderColor: '#b7d9b9',
-                        },
-                        '&:hover fieldset': {
-                          borderColor: '#78c27d',
-                        },
-                        '&.Mui-focused fieldset': {
-                          borderColor: '#78c27d',
-                        },
-                      },
-                      '& .MuiInputLabel-root.Mui-focused': {
-                        color: '#4f4638',
-                      },
-                    }}
+                    sx={greenOutlinedInputSx}
                   />
                   {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
                   {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}

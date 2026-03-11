@@ -25,6 +25,47 @@ export const softGreenButtonSx = {
   },
 } as const
 
+export const greenBadgeSx = {
+  px: 1.5,
+  py: 0.75,
+  border: '1px solid',
+  borderColor: '#eef8ef',
+  borderRadius: 999,
+  backgroundColor: '#78c27d',
+} as const
+
+export const greenBadgeTextSx = {
+  color: '#ffffff',
+  fontWeight: 700,
+} as const
+
+export const greenOutlinedInputSx = {
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#fffdf8',
+    '& fieldset': {
+      borderColor: '#b7d9b9',
+    },
+    '&:hover fieldset': {
+      borderColor: '#78c27d',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#78c27d',
+    },
+  },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: '#4f4638',
+  },
+} as const
+
+export const playerHpBarSx = {
+  height: 8,
+  borderRadius: 999,
+  backgroundColor: '#dcefdc',
+  '& .MuiLinearProgress-bar': {
+    backgroundColor: '#78c27d',
+  },
+} as const
+
 export const innerSurfaceSx = {
   backgroundColor: '#fff7e8',
   borderColor: '#e7d9b6',

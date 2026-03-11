@@ -26,8 +26,6 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 999,
-          borderWidth: 2,
-          borderStyle: 'solid',
           textTransform: 'none',
           fontWeight: 900,
           fontSize: '0.95rem',
@@ -36,6 +34,8 @@ const theme = createTheme({
           },
         },
         contained: {
+          borderWidth: 2,
+          borderStyle: 'solid',
           borderColor: '#ffffff',
           boxShadow: 'none',
         },
@@ -43,8 +43,13 @@ const theme = createTheme({
           color: '#ffffff',
         },
         outlined: {
+          borderWidth: 2,
+          borderStyle: 'solid',
           borderColor: '#ffffff',
           color: '#ffffff',
+        },
+        text: {
+          border: 'none',
         },
       },
     },

@@ -1,6 +1,6 @@
 import { Box, Button, LinearProgress, Paper, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
-import { innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
+import { innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
@@ -107,14 +107,7 @@ export default function TrainingBattleResult({
           <LinearProgress
             variant="determinate"
             value={normalizeHp(result.currentPlayerHp, result.maxPlayerHp)}
-            sx={{
-              height: 8,
-              borderRadius: 999,
-              backgroundColor: '#dcefdc',
-              '& .MuiLinearProgress-bar': {
-                backgroundColor: '#78c27d',
-              },
-            }}
+            sx={playerHpBarSx}
           />
         </Stack>
         <Stack spacing={0.75}>

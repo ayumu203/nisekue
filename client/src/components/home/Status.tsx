@@ -1,5 +1,5 @@
 import { Box, Paper, Stack, Typography } from '@mui/material'
-import { innerSurfaceSx } from '@/constants/styles'
+import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx } from '@/constants/styles'
 import type { GetPlayerResponse } from '@/schema/player'
 import locale from '../../../locale/home/Home.json'
 import StatusStatRow from '@/components/home/StatusStatRow'
@@ -131,17 +131,8 @@ export default function Status({ player, compactTrainingMobile = false }: Status
               </Typography>
             </Box>
           )}
-          <Box
-            sx={{
-              px: 1.5,
-              py: 0.75,
-              border: '1px solid',
-              borderColor: '#eef8ef',
-              borderRadius: 999,
-              backgroundColor: '#78c27d',
-            }}
-          >
-            <Typography variant="subtitle2" color="#ffffff" fontWeight={700}>
+          <Box sx={greenBadgeSx}>
+            <Typography variant="subtitle2" sx={greenBadgeTextSx}>
               {locale.labels.level}: {player?.level ?? locale.unknownValue}
             </Typography>
           </Box>
