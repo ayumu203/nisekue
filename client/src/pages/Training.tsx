@@ -31,7 +31,7 @@ function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
   return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
 }
 
-function buildDefaultTrainingMoveIds(player: GetPlayerResponse): Array<number | null> {
+function buildDefaultTrainingMoveIds(): Array<number | null> {
   return [null, null, null]
 }
 
@@ -40,7 +40,7 @@ function normalizeTrainingMoveIds(
   moveIds: Array<number | null> | null,
 ): Array<number | null> {
   const availableMoveIds = new Set(getAvailableTrainingMoveIds(player))
-  const fallbackMoveIds = buildDefaultTrainingMoveIds(player)
+  const fallbackMoveIds = buildDefaultTrainingMoveIds()
 
   if (!moveIds || moveIds.length !== 3) {
     return fallbackMoveIds
