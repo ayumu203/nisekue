@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Box, Paper, Stack, Typography } from '@mui/material'
 import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx } from '@/constants/styles'
 import type { GetPlayerResponse } from '@/schema/player'
@@ -43,7 +44,22 @@ function formatExpProgress(exp: number | undefined, level: number | undefined, f
   return `${exp} / ${requiredExp}`
 }
 
+function resolveCharacterImageSrc(imagePath: string | null | undefined): string | null {
+  if (!imagePath) {
+    return null
+  }
+
+  const normalizedPath = imagePath.replace(/^\/+/, '')
+  return `${import.meta.env.BASE_URL}image/character/${normalizedPath}`
+}
+
+function resolveStatusBackgroundSrc(fileName: string): string {
+  const normalizedPath = fileName.replace(/^\/+/, '')
+  return `${import.meta.env.BASE_URL}image/status/${normalizedPath}`
+}
+
 export default function Status({ player, compactTrainingMobile = false }: StatusProps) {
+  const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
   const maxResourceValue = Math.max(player?.status.maxHp ?? 0, player?.status.maxMp ?? 0, 1)
   const maxAttributeValue = Math.max(
     player?.status.strength ?? 0,
@@ -102,6 +118,10 @@ export default function Status({ player, compactTrainingMobile = false }: Status
     },
   ]
 
+  const characterImageSrc =
+    player?.imagePath && player.imagePath !== failedImagePath ? resolveCharacterImageSrc(player.imagePath) : null
+  const characterBackgroundSrc = resolveStatusBackgroundSrc('back-image.jpg')
+
   return (
     <Paper
       variant="outlined"
@@ -112,77 +132,112 @@ export default function Status({ player, compactTrainingMobile = false }: Status
       }}
     >
       <Stack spacing={2}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1.5}
-          alignItems={{ xs: 'flex-start', sm: 'center' }}
-          justifyContent="space-between"
-        >
-          {compactTrainingMobile ? null : (
-            <Box>
-              <Typography variant="overline" color="text.secondary">
-                {locale.labels.userName}
-              </Typography>
-              <Typography variant="h6" fontWeight={700}>
-                {player?.userName ?? locale.notSet}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {locale.labels.job}: {player?.job.displayName ?? locale.unknownValue}
-              </Typography>
-            </Box>
-          )}
-          <Box sx={greenBadgeSx}>
-            <Typography variant="subtitle2" sx={greenBadgeTextSx}>
-              {locale.labels.level}: {player?.level ?? locale.unknownValue}
-            </Typography>
-          </Box>
-        </Stack>
-
-        <Box>
+        <Stack spacing={2}>
           <Box
             sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-              gap: 1.5,
+              width: '100%',
+              maxWidth: 237,
+              aspectRatio: '338 / 350',
+              alignSelf: 'center',
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+              backgroundImage: `url(${characterBackgroundSrc})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              overflow: 'hidden',
             }}
           >
-            {resourceItems.map((item) => (
-              <StatusStatRow key={item.key} label={item.label} value={item.value} normalized={item.normalized} />
-            ))}
+            {characterImageSrc ? (
+              <Box
+                component="img"
+                src={characterImageSrc}
+                alt={player?.userName ? `${player.userName} character` : 'player character'}
+                onError={() => setFailedImagePath(player?.imagePath ?? null)}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  objectPosition: 'center bottom',
+                  display: 'block',
+                }}
+              />
+            ) : (
+              <Stack alignItems="center" justifyContent="center" sx={{ width: '100%', height: '100%', px: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {locale.notSet}
+                </Typography>
+              </Stack>
+            )}
           </Box>
-        </Box>
 
-        {compactTrainingMobile ? (
-          <StatusStatRow
-            label={locale.labels.exp}
-            value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
-            normalized={0}
-            hideGauge
-          />
-        ) : (
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1.5}
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            justifyContent="space-between"
+          >
+            {compactTrainingMobile ? null : (
+              <Box>
+                <Typography variant="h6" fontWeight={700}>
+                  {player?.userName ?? locale.notSet}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {player?.job.displayName ?? locale.unknownValue}
+                </Typography>
+              </Box>
+            )}
+            <Box sx={greenBadgeSx}>
+              <Typography variant="subtitle2" sx={greenBadgeTextSx}>
+                {locale.labels.level}: {player?.level ?? locale.unknownValue}
+              </Typography>
+            </Box>
+          </Stack>
+
           <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              {locale.baseStatusTitle}
-            </Typography>
-            <Stack spacing={1.5}>
-              {attributeItems.map((item) => (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                gap: 1.5,
+              }}
+            >
+              {resourceItems.map((item) => (
+                <StatusStatRow key={item.key} label={item.label} value={item.value} normalized={item.normalized} />
+              ))}
+            </Box>
+          </Box>
+
+          {compactTrainingMobile ? (
+            <StatusStatRow
+              label={locale.labels.exp}
+              value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+              normalized={0}
+              hideGauge
+            />
+          ) : (
+            <Box>
+              <Stack spacing={1.5}>
+                {attributeItems.map((item) => (
+                  <StatusStatRow
+                    key={item.key}
+                    label={item.label}
+                    value={item.value}
+                    normalized={item.normalized}
+                    hideGauge
+                  />
+                ))}
                 <StatusStatRow
-                  key={item.key}
-                  label={item.label}
-                  value={item.value}
-                  normalized={item.normalized}
+                  label={locale.labels.exp}
+                  value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+                  normalized={0}
                   hideGauge
                 />
-              ))}
-              <StatusStatRow
-                label={locale.labels.exp}
-                value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
-                normalized={0}
-                hideGauge
-              />
-            </Stack>
-          </Box>
-        )}
+              </Stack>
+            </Box>
+          )}
+        </Stack>
       </Stack>
     </Paper>
   )
