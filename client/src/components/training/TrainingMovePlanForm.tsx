@@ -152,7 +152,7 @@ export default function TrainingMovePlanForm({
 
         {showSubmitButton ? (
           <Button variant="contained" disabled={isActionDisabled} onClick={onSubmit}>
-            {isActionDisabled ? rematchInSeconds : submitLabel ?? locale.startTraining}
+            {isActionDisabled ? rematchInSeconds : (submitLabel ?? locale.startTraining)}
           </Button>
         ) : null}
       </Stack>
