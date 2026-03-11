@@ -44,7 +44,7 @@ export default function Thanks() {
           <Paper variant="outlined" sx={{ borderRadius: 2, p: { xs: 2, sm: 2.5 } }}>
             <Stack spacing={0.5}>
               <Typography variant="subtitle1" fontWeight={700}>
-                MNO
+                MNO様
               </Typography>
               <MuiLink
                 href="https://www.tumblr.com/sanoya0u0"
