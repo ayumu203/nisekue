@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Alert, Box, Button, Stack, TextField } from '@mui/material'
+import { softGreenButtonSx } from '@/constants/styles'
 import { supabase } from '@/lib/supabase'
 import locale from '../../../locale/auth/SignIn.json'
 
@@ -59,7 +60,7 @@ function SignIn({ onMessage }: SignInProps) {
           required
           fullWidth
         />
-        <Button type="submit" variant="contained" disabled={isSubmitting}>
+        <Button type="submit" variant="contained" disabled={isSubmitting} sx={softGreenButtonSx}>
           {isSubmitting ? locale.submitting : locale.submit}
         </Button>
         {error ? <Alert severity="error">{error}</Alert> : null}

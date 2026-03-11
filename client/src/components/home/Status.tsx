@@ -1,4 +1,5 @@
 import { Box, Paper, Stack, Typography } from '@mui/material'
+import { innerSurfaceSx } from '@/constants/styles'
 import type { GetPlayerResponse } from '@/schema/player'
 import locale from '../../../locale/home/Home.json'
 import StatusStatRow from '@/components/home/StatusStatRow'
@@ -104,6 +105,7 @@ export default function Status({ player }: StatusProps) {
     <Paper
       variant="outlined"
       sx={{
+        ...innerSurfaceSx,
         borderRadius: 3,
         p: 2.5,
       }}
@@ -131,11 +133,12 @@ export default function Status({ player }: StatusProps) {
               px: 1.5,
               py: 0.75,
               border: '1px solid',
-              borderColor: 'primary.main',
-              borderRadius: 1,
+              borderColor: '#eef8ef',
+              borderRadius: 999,
+              backgroundColor: '#78c27d',
             }}
           >
-            <Typography variant="subtitle2" color="primary.main" fontWeight={700}>
+            <Typography variant="subtitle2" color="#ffffff" fontWeight={700}>
               {locale.labels.level}: {player?.level ?? locale.unknownValue}
             </Typography>
           </Box>

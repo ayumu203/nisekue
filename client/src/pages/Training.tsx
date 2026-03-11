@@ -21,7 +21,7 @@ import TrainingBattleResult from '@/components/training/TrainingBattleResult'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
 import TrainingMovePlanForm from '@/components/training/TrainingMovePlanForm'
 import { useAuth } from '@/contexts/useAuth'
-import { menuButtonSx, twoColumnContentGridSx } from '@/constants/styles'
+import { innerSurfaceSx, menuButtonSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
@@ -218,7 +218,7 @@ export default function Training() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 } }}>
+      <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Box sx={twoColumnContentGridSx}>
             <Stack spacing={{ xs: 1.5, sm: 2 }}>
@@ -238,7 +238,7 @@ export default function Training() {
               <SignOut buttonSx={menuButtonSx} />
             </Stack>
 
-            <Paper variant="outlined" sx={{ borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+            <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
               <Stack spacing={{ xs: 1.5, sm: 2 }}>
                 {selectedEnemy && trainingResult ? (
                   <Box ref={battleResultRef}>

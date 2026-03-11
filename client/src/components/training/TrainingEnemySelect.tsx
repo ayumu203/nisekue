@@ -1,4 +1,5 @@
 import { Button, Card, CardContent, CardMedia, Grid, Stack, Typography } from '@mui/material'
+import { innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
@@ -24,7 +25,7 @@ export default function TrainingEnemySelect({
       <Grid container spacing={2}>
         {enemies.map((enemy) => (
           <Grid key={enemy.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <Card variant="outlined" sx={{ height: '100%' }}>
+            <Card variant="outlined" sx={{ ...innerSurfaceSx, height: '100%' }}>
               <CardMedia
                 component="img"
                 height="160"
@@ -50,7 +51,7 @@ export default function TrainingEnemySelect({
                       {enemy.name}
                     </Typography>
                   </Stack>
-                  <Button variant="contained" disabled={isActionDisabled} onClick={() => onFight(enemy)}>
+                  <Button variant="contained" disabled={isActionDisabled} onClick={() => onFight(enemy)} sx={softGreenButtonSx}>
                     {isActionDisabled ? rematchInSeconds : locale.fight}
                   </Button>
                 </Stack>

@@ -1,5 +1,6 @@
 import { Box, Button, LinearProgress, Paper, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
+import { innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
@@ -51,7 +52,7 @@ export default function TrainingBattleResult({
     .replace('{{max}}', String(result.maxEnemyHp))
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 3, p: 2.5 }}>
+    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2.5 }}>
       <Stack spacing={2}>
         <img
           src={resolvePublicAssetPath(enemy.imagePath)}
@@ -76,7 +77,7 @@ export default function TrainingBattleResult({
             gap: 1,
           }}
         >
-          <Paper variant="outlined" sx={{ p: 1.25 }}>
+          <Paper variant="outlined" sx={{ ...innerSurfaceSx, p: 1.25 }}>
             <Typography variant="caption" color="text.secondary">
               {locale.result}
             </Typography>
@@ -84,7 +85,7 @@ export default function TrainingBattleResult({
               {result.trainingResult}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 1.25 }}>
+          <Paper variant="outlined" sx={{ ...innerSurfaceSx, p: 1.25 }}>
             <Typography variant="caption" color="text.secondary">
               {locale.turn}
             </Typography>
@@ -92,7 +93,7 @@ export default function TrainingBattleResult({
               {result.turn}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 1.25 }}>
+          <Paper variant="outlined" sx={{ ...innerSurfaceSx, p: 1.25 }}>
             <Typography variant="caption" color="text.secondary">
               {locale.expGained}
             </Typography>
@@ -106,7 +107,14 @@ export default function TrainingBattleResult({
           <LinearProgress
             variant="determinate"
             value={normalizeHp(result.currentPlayerHp, result.maxPlayerHp)}
-            sx={{ height: 8, borderRadius: 999 }}
+            sx={{
+              height: 8,
+              borderRadius: 999,
+              backgroundColor: '#dcefdc',
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: '#78c27d',
+              },
+            }}
           />
         </Stack>
         <Stack spacing={0.75}>
@@ -119,7 +127,7 @@ export default function TrainingBattleResult({
           />
         </Stack>
         {movePlanSlot}
-        <Button variant="contained" disabled={isActionDisabled} onClick={onRematch}>
+        <Button variant="contained" disabled={isActionDisabled} onClick={onRematch} sx={softGreenButtonSx}>
           {isActionDisabled ? rematchInSeconds : locale.rematch}
         </Button>
       </Stack>

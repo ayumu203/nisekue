@@ -3,6 +3,7 @@ import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typograp
 import { Navigate } from 'react-router-dom'
 import SignIn from '@/components/auth/SignIn'
 import SignUp from '@/components/auth/SignUp'
+import { outerPagePaperSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import commonLocale from '../../locale/auth/Common.json'
 import signInLocale from '../../locale/auth/SignIn.json'
@@ -30,7 +31,7 @@ function Auth() {
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper elevation={2} sx={{ p: 4 }}>
+      <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={3}>
           <Typography variant="h4">{mode === 'signIn' ? signInLocale.title : signUpLocale.title}</Typography>
           {message ? <Alert severity="info">{message}</Alert> : null}

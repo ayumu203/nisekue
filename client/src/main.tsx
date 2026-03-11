@@ -7,8 +7,47 @@ import App from '@/App'
 import { AuthProvider } from '@/contexts/AuthProvider'
 
 const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#f4a6c1',
+      dark: '#ea8db0',
+      contrastText: '#ffffff',
+    },
+    text: {
+      primary: '#4f4638',
+      secondary: '#7a6f5c',
+    },
+  },
   typography: {
     fontFamily: '"DotGothic16", sans-serif',
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 999,
+          borderWidth: 2,
+          borderStyle: 'solid',
+          textTransform: 'none',
+          fontWeight: 900,
+          fontSize: '0.95rem',
+          '@media (min-width:900px)': {
+            fontSize: '1.08rem',
+          },
+        },
+        contained: {
+          borderColor: '#ffffff',
+          boxShadow: 'none',
+        },
+        containedPrimary: {
+          color: '#ffffff',
+        },
+        outlined: {
+          borderColor: '#ffffff',
+          color: '#ffffff',
+        },
+      },
+    },
   },
 })
 

@@ -1,10 +1,11 @@
 import { Button, Container, Link as MuiLink, Paper, Stack, Typography } from '@mui/material'
 import { Link } from 'react-router-dom'
+import { outerPagePaperSx } from '@/constants/styles'
 
 export default function Thanks() {
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 } }}>
+      <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Typography variant="h4">サンクス</Typography>
           <Typography variant="body2" color="text.secondary">

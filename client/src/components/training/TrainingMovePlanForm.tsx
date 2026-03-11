@@ -1,6 +1,7 @@
 import { Alert, Box, Button, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { resolvePublicAssetPath } from '@/lib/assets'
+import { innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
 import type { GetPlayerResponse, PlayerMoveSlot } from '@/schema/player'
 import type { TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
@@ -91,7 +92,7 @@ export default function TrainingMovePlanForm({
   const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 3, p: 2.5 }}>
+    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2.5 }}>
       <Stack spacing={2}>
         {showEnemyHeader ? (
           <Stack spacing={1.25}>
@@ -154,7 +155,7 @@ export default function TrainingMovePlanForm({
         ))}
 
         {showSubmitButton ? (
-          <Button variant="contained" disabled={isActionDisabled} onClick={onSubmit}>
+          <Button variant="contained" disabled={isActionDisabled} onClick={onSubmit} sx={softGreenButtonSx}>
             {isActionDisabled ? rematchInSeconds : (submitLabel ?? locale.startTraining)}
           </Button>
         ) : null}
