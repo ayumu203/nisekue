@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Alert, Box, Button, Stack, TextField } from '@mui/material'
-import { softGreenButtonSx } from '@/constants/styles'
+import { greenOutlinedInputSx, softGreenButtonSx } from '@/constants/styles'
 import { supabase } from '@/lib/supabase'
 import locale from '../../../locale/auth/SignIn.json'
 
@@ -49,6 +49,7 @@ function SignIn({ onMessage }: SignInProps) {
           onChange={(event) => setEmail(event.target.value)}
           required
           fullWidth
+          sx={greenOutlinedInputSx}
         />
         <TextField
           id="sign-in-password"
@@ -59,6 +60,7 @@ function SignIn({ onMessage }: SignInProps) {
           onChange={(event) => setPassword(event.target.value)}
           required
           fullWidth
+          sx={greenOutlinedInputSx}
         />
         <Button type="submit" variant="contained" disabled={isSubmitting} sx={softGreenButtonSx}>
           {isSubmitting ? locale.submitting : locale.submit}

@@ -73,6 +73,8 @@ export const innerSurfaceSx = {
 
 export const outerPagePaperSx = {
   backgroundColor: '#ffcc00',
+  border: '1px solid',
+  borderColor: '#d3a93a',
   borderRadius: { xs: 3, sm: 4 },
   p: { xs: 2, sm: 4 },
 } as const
