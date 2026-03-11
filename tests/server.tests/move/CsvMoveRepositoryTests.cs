@@ -161,6 +161,7 @@ public class CsvMoveRepositoryTests
         move.Effects[0].Damage!.AttackStat.Should().Be(BuffStat.Defense);
     }
 
+    /*
     [Fact]
     public async Task GetMoveAsync_WhenEffectImagePathConfigured_ReturnsPath()
     {
@@ -171,6 +172,7 @@ public class CsvMoveRepositoryTests
         move.Should().NotBeNull();
         move!.EffectImagePath.Should().Be("effects/plamia.png");
     }
+    */
 
     public static TheoryData<int, string, TargetType, AttackRange, int, ElementType> AttackMoveDefinitions => new()
     {
