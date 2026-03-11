@@ -176,7 +176,7 @@ app.MapPost(
     try
     {
         var moveSet = new MoveSet();
-        moveSet.SetSlot(0, new MoveId(8));
+        moveSet.SetSlot(0, new MoveId(1));
 
         var player = new Player(
             playerId.Value,
@@ -185,6 +185,7 @@ app.MapPost(
             exp: 0,
             status: new Status(maxHp: 10, maxMp: 2, strength: 1, defense: 1, intelligence: 1, luck: 1, speed: 1),
             job: Job.Apprentice,
+            imagePath: "ch001_bmnpc.png",
             moveSet: moveSet);
         await playerRepository.SaveAsync(player);
         await chatService.EnsureRoomAsync(player.Id);
@@ -193,6 +194,7 @@ app.MapPost(
             message = "プレイヤーを作成しました。",
             userId = player.Id.Value,
             userName = player.Name,
+            imagePath = player.ImagePath,
             job = new
             {
                 code = player.Job.ToString(),
