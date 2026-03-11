@@ -324,6 +324,7 @@
   * `QuestTurnState TurnState`
   * `QuestTrapCollection Traps`
   * `QuestRewardAccumulator Rewards`
+  * `IReadOnlyList<QuestChatMessage> ChatMessages`
   * `DateTimeOffset StartedAt`
   * `DateTimeOffset? EndedAt`
 * `QuestFloorState`
@@ -370,6 +371,12 @@
   * `bool IsTriggered`
 * `QuestRewardAccumulator`
   * `int Exp`
+* `QuestChatMessage`
+  * `QuestParticipantId SenderParticipantId`
+  * `string DisplayName`
+  * `string? ImagePath`
+  * `string Message`
+  * `DateTimeOffset SentAt`
 
 #### 行動の意味
 
@@ -390,11 +397,13 @@
 * `RequestManualControl(participantId)`
 * `ApproveManualControl(participantId, ownerId)`
 * `ResolveTurn()`
+* `ApplyBattleResolution(resolution, actorMap)`
 * `AdvanceFloor()`
 * `ApplyTrapsOnFloorStart()`
 * `MarkSucceeded()`
 * `MarkFailed()`
 * `Abort(reason)`
+* `AddChatMessage(message)`
 
 #### 不変条件
 
@@ -406,6 +415,8 @@
 * 蘇生された場合は `CanActFromTurn = CurrentTurnNo + 1` とする。
 * `Failed` は、生存していて `LeaveQuest` しておらず、かつ `AutoAttackOnly` でもない参加者が 0 人になった時点で成立する。
 * `Escape` 成功時の終了区分は `Failed` とする。
+* そのターンで敵を全滅させた場合は `isFloorCleared = true` とし、最終階層であれば `Succeeded` を成立させる。
+* クエスト中チャットは `QuestRun` が保持し、送信者表示名、画像パス、本文、送信時刻を進行中状態として保持する。
 
 ### 5.7 補助マスタ案
 
@@ -575,6 +586,7 @@ CSV 採用理由:
 | `action_deadline_at` | timestamptz | NOT NULL |
 | `last_resolved_turn_no` | int | NULL |
 | `last_turn_results_json` | jsonb | NULL, 最新ターンの解決結果のみ保持 |
+| `chat_messages_json` | jsonb | NOT NULL, クエスト中チャットのメッセージ配列 |
 | `started_at` | timestamptz | NOT NULL |
 | `ended_at` | timestamptz | NULL |
 
@@ -692,6 +704,11 @@ CSV 採用理由:
 
 サーバーは完全な戦闘ログを永続化せず、`quest_runs.last_turn_results_json` に最新ターンの解決結果のみを保持する。
 クライアントは画面表示用に複数ターンのログをメモリ保持してよいが、再接続時の復元対象は最新ターン結果までとする。
+
+#### クエスト中チャットは JSON 配列で保持する
+
+クエスト中チャットは単なる文字列配列ではなく、送信者表示名、送信者画像パス、本文、送信時刻を持つメッセージ配列として `quest_runs.chat_messages_json` に保持する。
+これによりクライアントは、追加のプレイヤー参照なしにクエスト画面上でチャット投稿者名とアイコンをそのまま描画できる。
 
 #### 放置は参加者除外でなく行動モード変更で表現する
 

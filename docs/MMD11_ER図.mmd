@@ -75,6 +75,7 @@ erDiagram
         timestamptz action_deadline_at "NOT NULL"
         int last_resolved_turn_no "NULL"
         jsonb last_turn_results_json "NULL, only latest turn result"
+        jsonb chat_messages_json "NOT NULL, quest chat message array"
         timestamptz started_at "NOT NULL"
         timestamptz ended_at "NULL"
     }

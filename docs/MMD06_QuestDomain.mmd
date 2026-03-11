@@ -112,6 +112,7 @@ classDiagram
             +Assign(participantId: QuestParticipantId, position: BattlePosition) void
             +Release(position: BattlePosition) void
             +IsOccupied(position: BattlePosition) bool
+            +FindFirstEmpty(preferredRow: BattleRow?) BattlePosition
         }
 
         class QuestRoom {
@@ -191,6 +192,7 @@ classDiagram
             +QuestTurnState TurnState
             +QuestTrapCollection Traps
             +QuestRewardAccumulator Rewards
+            +IReadOnlyList~QuestChatMessage~ ChatMessages
             +DateTimeOffset StartedAt
             +DateTimeOffset? EndedAt
             +InitializeFirstFloor() void
@@ -198,11 +200,13 @@ classDiagram
             +SwitchToAutoActionForTimeout(now: DateTimeOffset) void
             +RequestManualControl(participantId: QuestParticipantId) void
             +ApproveManualControl(participantId: QuestParticipantId, ownerId: PlayerId) void
+            +ApplyBattleResolution(resolution: BattleTurnResolution, partyActorMap: IReadOnlyDictionary~BattleActorId, QuestParticipantId~, enemyActorMap: IReadOnlyDictionary~BattleActorId, QuestEnemyInstanceId~, finalFloorNo: int, nextDeadlineAt: DateTimeOffset) QuestRunResolutionSummary
             +AdvanceFloor() void
             +ApplyTrapsOnFloorStart() void
             +MarkSucceeded() void
             +MarkFailed() void
             +Abort(reason: string) void
+            +AddChatMessage(message: QuestChatMessage) void
         }
 
         class QuestRunId {
@@ -238,6 +242,15 @@ classDiagram
         class QuestTrapCollection {
             <<Value Object>>
             +IReadOnlyList~QuestTrapState~ Traps
+        }
+
+        class QuestChatMessage {
+            <<Value Object>>
+            +QuestParticipantId SenderParticipantId
+            +string DisplayName
+            +string? ImagePath
+            +string Message
+            +DateTimeOffset SentAt
         }
 
         class QuestTrapState {
@@ -336,6 +349,7 @@ classDiagram
     QuestRun *-- QuestTurnState : has
     QuestRun *-- QuestTrapCollection : has
     QuestRun *-- QuestRewardAccumulator : has
+    QuestRun *-- QuestChatMessage : 0..*
     QuestFloorState *-- QuestEnemyPlacement : 0..*
     QuestTurnState *-- QuestSubmittedCommand : 0..*
     QuestTrapCollection *-- QuestTrapState : 0..*

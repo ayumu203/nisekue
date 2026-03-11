@@ -28,7 +28,7 @@ public class QuestEnemyDefinition(
         var normalized = value?.Trim() ?? string.Empty;
         if (normalized.Length == 0)
         {
-            throw new ArgumentException("画像パスは必須です。", paramName);
+            throw new ArgumentException("値は必須です。", paramName);
         }
 
         return normalized;

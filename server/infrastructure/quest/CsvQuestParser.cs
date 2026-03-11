@@ -4,7 +4,7 @@ using server.domain.battle.enums;
 
 namespace server.infrastructure.quest;
 
-internal static class CsvQuestRepositoryShared
+internal static class CsvQuestParser
 {
     public static string[] ReadDataLines(string csvPath)
     {
