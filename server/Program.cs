@@ -123,6 +123,7 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
                 moveId = moveId?.Id,
                 moveName = move?.Name,
                 description = move?.Description,
+                effectImagePath = move?.EffectImagePath,
                 elementType = move?.GetOrderedEffects()
                     .FirstOrDefault(effect => effect.Damage is not null)?
                     .Damage?
@@ -139,6 +140,7 @@ app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepos
     {
         userId = player.Id.Value,
         userName = player.Name,
+        imagePath = player.ImagePath,
         job = new
         {
             code = player.Job.ToString(),

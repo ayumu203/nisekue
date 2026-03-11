@@ -25,6 +25,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("name")
             .HasMaxLength(PlayerConstants.NameMaxLength)
             .IsRequired();
+        player.Property(x => x.ImagePath)
+            .HasColumnName("image_path")
+            .HasMaxLength(PlayerConstants.ImagePathMaxLength);
         player.Property(x => x.Job)
             .HasColumnName("job")
             .HasConversion<int>()

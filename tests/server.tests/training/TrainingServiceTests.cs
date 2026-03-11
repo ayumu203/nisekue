@@ -416,6 +416,7 @@ public class TrainingServiceTests
             mpCost,
             0,
             MoveCategory.Attack,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(moveId),

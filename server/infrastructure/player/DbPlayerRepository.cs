@@ -90,6 +90,7 @@ namespace server.infrastructure.player
                 {
                     Id = player.Id.Value,
                     Name = player.Name,
+                    ImagePath = player.ImagePath,
                     Job = player.Job,
                     Level = player.Level,
                     Exp = player.Exp,
@@ -110,6 +111,7 @@ namespace server.infrastructure.player
                     .SingleOrDefaultAsync(x => x.PlayerId == player.Id.Value);
 
                 existing.Job = player.Job;
+                existing.ImagePath = player.ImagePath;
                 existing.Level = player.Level;
                 existing.Exp = player.Exp;
                 existing.MaxHp = player.Status.MaxHp;
@@ -148,6 +150,7 @@ namespace server.infrastructure.player
             new(
                 new PlayerId(entity.Id),
                 entity.Name,
+                imagePath: entity.ImagePath,
                 job: entity.Job,
                 level: entity.Level,
                 exp: entity.Exp,

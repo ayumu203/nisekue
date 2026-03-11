@@ -37,6 +37,27 @@ public class PlayerTests
         player.Level.Should().Be(5);
     }
 
+    [Fact]
+    public void UpdateImagePath_WhenValidValue_StoresTrimmedPath()
+    {
+        var player = CreatePlayer(level: 1);
+
+        player.UpdateImagePath("  avatars/player-01.png  ");
+
+        player.ImagePath.Should().Be("avatars/player-01.png");
+    }
+
+    [Fact]
+    public void UpdateImagePath_WhenWhitespace_ClearsValue()
+    {
+        var player = CreatePlayer(level: 1);
+        player.UpdateImagePath("avatars/player-01.png");
+
+        player.UpdateImagePath("   ");
+
+        player.ImagePath.Should().BeNull();
+    }
+
     // 経験値が閾値に達していない場合は、レベルもステータスも変化しない.
     [Fact]
     public void LevelUp_WhenExpIsInsufficient_ReturnsFalseAndKeepsValues()

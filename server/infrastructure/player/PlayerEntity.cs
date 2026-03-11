@@ -6,6 +6,7 @@ public class PlayerEntity
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? ImagePath { get; set; }
     public Job Job { get; set; } = Job.Apprentice;
     public int Level { get; set; }
     public int Exp { get; set; }
