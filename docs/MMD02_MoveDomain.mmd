@@ -54,6 +54,7 @@ classDiagram
             +int FixedValue
             +decimal CriticalRate
             +ElementType ElementType
+            +BuffStat? AttackStat
             -ValidateHitCount(hitCount: int) int
             -ValidateFixedValue(fixedValue: int) int
             -ValidateRateRange(value: decimal, paramName: string) decimal
@@ -64,7 +65,9 @@ classDiagram
             <<Value Object>>
             +AilmentType AilmentType
             +decimal AilmentRate
+            +int AilmentTurns
             -ValidateRateRange(value: decimal) decimal
+            -ValidateTurns(turns: int) int
         }
 
         class BuffEffect {
