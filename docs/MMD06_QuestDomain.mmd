@@ -85,6 +85,18 @@ classDiagram
         class IQuestEnemyDefinitionRepository {
             +Task~QuestEnemyDefinition?~ GetAsync(id: QuestEnemyDefinitionId)
         }
+
+        class CsvQuestStageRepository {
+            <<Infrastructure>>
+        }
+
+        class CsvQuestNpcTemplateRepository {
+            <<Infrastructure>>
+        }
+
+        class CsvQuestEnemyDefinitionRepository {
+            <<Infrastructure>>
+        }
     }
 
     namespace RoomContext {
@@ -209,6 +221,7 @@ classDiagram
             <<Value Object>>
             +int CurrentTurnNo
             +DateTimeOffset ActionDeadlineAt
+            +int? LastResolvedTurnNo
             +IReadOnlyList~QuestSubmittedCommand~ PendingCommands
         }
 
@@ -217,6 +230,7 @@ classDiagram
             +QuestParticipantId ParticipantId
             +int TurnNo
             +ActionKind ActionKind
+            +BattlePosition? SelectedTargetPosition
             +DateTimeOffset SubmittedAt
             +bool IsAutoSubmitted
         }
@@ -331,6 +345,9 @@ classDiagram
     IQuestRunRepository ..> QuestRun : stores/loads
     IQuestNpcTemplateRepository ..> QuestNpcTemplate : loads
     IQuestEnemyDefinitionRepository ..> QuestEnemyDefinition : loads
+    CsvQuestStageRepository ..|> IQuestStageRepository : implements
+    CsvQuestNpcTemplateRepository ..|> IQuestNpcTemplateRepository : implements
+    CsvQuestEnemyDefinitionRepository ..|> IQuestEnemyDefinitionRepository : implements
     QuestRoomService ..> IQuestStageRepository : use
     QuestRoomService ..> QuestRoom : use
     QuestRoomService ..> QuestRun : starts
@@ -340,7 +357,6 @@ classDiagram
     QuestRunFactory ..> IQuestEnemyDefinitionRepository : use
     QuestRunFactory ..> QuestRun : builds
     QuestBattleFactory ..> QuestSubmittedCommand : use
-    QuestBattleFactory ..> BattleFieldContext : builds
     QuestRunOutcomeJudge ..> QuestRunResolutionSummary : returns
     QuestRunService ..> QuestRun : use
     QuestRunService ..> QuestRunResolutionSummary : builds

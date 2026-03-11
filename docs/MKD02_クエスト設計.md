@@ -115,7 +115,9 @@
 ### 4.4 JSON 利用方針
 
 * 集約の不変条件判定に使う主キー関係、状態遷移、参加者識別、階層番号、ターン番号は通常カラムで持つ。
-* 種類追加が頻繁な可変戦闘効果、対象指定、演算パラメータだけを `jsonb` に寄せる。
+* HP / MP / 行動モード / 行動可能ターンのような進行制御の骨格は通常カラムで持つ。
+* 種類追加が頻繁な状態異常、バフ、一時的な派生パラメータ、最新ターンの解決結果は `jsonb` に寄せる。
+* 行動入力の対象指定は、対象 actor id ではなく `BattlePosition` を基準に保持する。
 
 ### 4.5 1ルーム1出撃方針
 
@@ -141,6 +143,8 @@
 * 現在の `BattleTargetingResolver` は、物理/魔法/回復/バフで射程ルールを分けず、位置情報と `AttackRange` だけで対象を決める。
 * `BattleActionResult` はログ表示と演出再生のため、`ActorId` に加えて `ActionKind` と `MoveId` を持つ。
 * これによりクエスト側は、ターン解決後の各行動について「だれが」「何の行動を」「どの技で」行ったかを結果 DTO だけで把握できる。
+* 単体攻撃や単体対象技の入力は「どのマスを狙ったか」を `BattlePosition` で保持し、解決時にその座標にいる対象へ適用する。
+* 範囲攻撃は、入力時に選んだ `BattlePosition` を起点として、`AttackRange` と `BattleFieldContext` に従って最終対象を展開する。
 
 ## 5. ドメインモデル案
 
@@ -354,7 +358,7 @@
   * `int TurnNo`
   * `ActionKind ActionKind` (`NormalAttack`, `UseMove`, `Guard`, `Wait`, `LeaveQuest`, `Escape`)
   * `MoveId? MoveId`
-  * `TargetSelector Target`
+  * `BattlePosition? SelectedTargetPosition`
   * `DateTimeOffset SubmittedAt`
   * `bool IsAutoSubmitted`
 * `QuestTrapState`
@@ -375,6 +379,8 @@
 
 * `QuestTurnCommand` は入力として保持するが、クライアントのログ表示や技エフェクト表示は、最終的には `BattleActionResult` に含まれる `ActorId` / `ActionKind` / `MoveId` を基準に行う。
 * これにより行動順の並び替え後でも、解決順どおりにログと演出を再生できる。
+* 単体攻撃は `SelectedTargetPosition` によって対象マスを指定する。通常攻撃でも「正面以外の敵マスを狙う」入力を許可できる。
+* 解決時に対象マスのユニットが不在または無効化されている場合の扱いは、戦闘ロジック側で不発または代替対象選択として判定する。
 
 #### 主な振る舞い
 
@@ -477,99 +483,40 @@
 * `Escape` 成功時は `Failed` に含める。
 * `Aborted` は障害、運営操作、将来の明示的中断要求などに備えた状態として残す。
 
-## 7. データベース設計ドラフト
+## 7. 永続化設計ドラフト
 
-### 7.1 テーブル分類
+### 7.1 永続化分類
 
-* マスタ系: ステージ、階層、敵、NPC テンプレート
+* マスタ系: ステージ、階層、敵、NPC テンプレートは CSV で管理する
 * 募集系: ルーム、参加者
 * 進行系: クエスト実行、開始時スナップショット、戦闘状態、行動入力、罠、報酬
 
-### 7.2 マスタ系テーブル案
+### 7.2 マスタ系 CSV 案
 
-#### `internal.quest_stages`
+クエストのコンテンツ追加速度を優先し、ステージ・敵・NPC テンプレートは DB テーブルではなく CSV で管理する。
+既存の `CsvTrainingEnemyRepository` と同様に、クエストも CSV リポジトリを用いる。
 
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `id` | uuid | PK |
-| `stage_code` | varchar(50) | UNIQUE, 安定識別子 |
-| `name` | varchar(100) | NOT NULL |
-| `recommended_level` | int | NOT NULL |
-| `min_party_member_count` | int | NOT NULL, 初期値 4 |
-| `max_party_member_count` | int | NOT NULL, 初期値 6 |
-| `is_active` | boolean | NOT NULL |
+想定ファイル:
 
-#### `internal.quest_stage_floors`
+* `server/resources/quest/stages.csv`
+* `server/resources/quest/stage_floors.csv`
+* `server/resources/quest/floor_enemy_spawns.csv`
+* `server/resources/quest/enemies.csv`
+* `server/resources/quest/enemy_moves.csv`
+* `server/resources/quest/npc_templates.csv`
+* `server/resources/quest/npc_moves.csv`
 
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `stage_id` | uuid | PK, FK `quest_stages.id` |
-| `floor_no` | int | PK |
-| `floor_type` | int | `Normal` / `Boss` |
-| `reward_exp_rate` | numeric(5,2) | NOT NULL, 初期値 1.00 |
-| `reward_gold_rate` | numeric(5,2) | NOT NULL, 初期値 1.00 |
+想定リポジトリ:
 
-#### `internal.quest_enemy_definitions`
+* `CsvQuestStageRepository`
+* `CsvQuestEnemyDefinitionRepository`
+* `CsvQuestNpcTemplateRepository`
 
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `id` | uuid | PK |
-| `name` | varchar(100) | NOT NULL |
-| `level` | int | NOT NULL |
-| `max_hp` | int | NOT NULL |
-| `max_mp` | int | NOT NULL |
-| `strength` | int | NOT NULL |
-| `defense` | int | NOT NULL |
-| `intelligence` | int | NOT NULL |
-| `luck` | int | NOT NULL |
-| `speed` | int | NOT NULL |
-| `image_path` | varchar(255) | NULL |
-| `ai_type` | int | NOT NULL |
+CSV 採用理由:
 
-#### `internal.quest_enemy_moves`
-
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `enemy_definition_id` | uuid | PK, FK `quest_enemy_definitions.id` |
-| `slot_no` | int | PK |
-| `move_id` | int | 既存 `move_master.csv` を論理参照 |
-
-#### `internal.quest_floor_enemy_spawns`
-
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `stage_id` | uuid | PK |
-| `floor_no` | int | PK |
-| `placement_no` | int | PK |
-| `enemy_definition_id` | uuid | FK `quest_enemy_definitions.id` |
-| `battle_row` | int | NOT NULL |
-| `battle_column` | int | NOT NULL |
-
-#### `internal.quest_npc_templates`
-
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `id` | uuid | PK |
-| `name` | varchar(100) | NOT NULL |
-| `job` | int | NOT NULL |
-| `preferred_row` | int | NOT NULL |
-| `level` | int | NOT NULL |
-| `max_hp` | int | NOT NULL |
-| `max_mp` | int | NOT NULL |
-| `strength` | int | NOT NULL |
-| `defense` | int | NOT NULL |
-| `intelligence` | int | NOT NULL |
-| `luck` | int | NOT NULL |
-| `speed` | int | NOT NULL |
-| `role` | int | NOT NULL |
-
-#### `internal.quest_npc_moves`
-
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `npc_template_id` | uuid | PK, FK `quest_npc_templates.id` |
-| `slot_no` | int | PK |
-| `move_id` | int | 既存 `move_master.csv` を論理参照 |
+* Git 管理下でコンテンツ差分をレビューしやすい。
+* ステージや敵を追加するたびに DB seed や migration を増やさずに済む。
+* 既存のトレーニング敵定義と同じ運用パターンに寄せられる。
 
 ### 7.3 募集系テーブル案
 
@@ -579,7 +526,7 @@
 | --- | --- | --- |
 | `id` | uuid | PK |
 | `owner_player_id` | uuid | FK `players.id` |
-| `stage_id` | uuid | FK `quest_stages.id` |
+| `stage_id` | uuid | CSV の `QuestStageDefinition.Id` を参照 |
 | `mode` | int | `Solo` / `Multi` |
 | `status` | int | `Recruiting` / `Closed` |
 | `close_reason` | int | `Started` / `Cancelled` / `Expired`, NULL 可 |
@@ -594,7 +541,7 @@
 | `room_id` | uuid | FK `quest_rooms.id` |
 | `participant_type` | int | `Player` / `Npc` |
 | `player_id` | uuid | NULL, FK `players.id` |
-| `npc_template_id` | uuid | NULL, FK `quest_npc_templates.id` |
+| `npc_template_id` | uuid | NULL, CSV の `QuestNpcTemplate.Id` を参照 |
 | `display_name` | varchar(100) | NOT NULL |
 | `battle_row` | int | NOT NULL |
 | `battle_column` | int | NOT NULL |
@@ -619,11 +566,13 @@
 | --- | --- | --- |
 | `id` | uuid | PK |
 | `room_id` | uuid | UNIQUE, FK `quest_rooms.id` |
-| `stage_id` | uuid | FK `quest_stages.id` |
+| `stage_id` | uuid | CSV の `QuestStageDefinition.Id` を参照 |
 | `status` | int | `InProgress` / `Succeeded` / `Failed` / `Aborted` |
 | `current_floor_no` | int | NOT NULL |
 | `current_turn_no` | int | NOT NULL |
 | `action_deadline_at` | timestamptz | NOT NULL |
+| `last_resolved_turn_no` | int | NULL |
+| `last_turn_results_json` | jsonb | NULL, 最新ターンの解決結果のみ保持 |
 | `started_at` | timestamptz | NOT NULL |
 | `ended_at` | timestamptz | NULL |
 
@@ -661,6 +610,7 @@
 | `can_act_from_turn` | int | NOT NULL |
 | `action_mode` | int | `Manual` / `AutoAttackOnly` |
 | `active_effects_json` | jsonb | 状態異常・バフを保持 |
+| `derived_parameters_json` | jsonb | 一時的な補正値や将来拡張パラメータを保持 |
 | `updated_at` | timestamptz | NOT NULL |
 
 #### `internal.quest_run_enemies`
@@ -670,13 +620,14 @@
 | `run_id` | uuid | PK, FK `quest_runs.id` |
 | `enemy_instance_id` | uuid | PK |
 | `floor_no` | int | NOT NULL |
-| `enemy_definition_id` | uuid | FK `quest_enemy_definitions.id` |
+| `enemy_definition_id` | uuid | CSV の `QuestEnemyDefinition.Id` を参照 |
 | `battle_row` | int | NOT NULL |
 | `battle_column` | int | NOT NULL |
 | `current_hp` | int | NOT NULL |
 | `current_mp` | int | NOT NULL |
 | `is_dead` | boolean | NOT NULL |
 | `active_effects_json` | jsonb | 状態異常・バフを保持 |
+| `derived_parameters_json` | jsonb | 一時的な補正値や将来拡張パラメータを保持 |
 
 `quest_run_enemies` は進行中クエストの復元に必要な敵状態を保持するテーブルとし、完全な戦闘履歴保存は目的としない。
 
@@ -689,7 +640,8 @@
 | `participant_id` | uuid | PK, FK `quest_room_participants.id` |
 | `action_kind` | int | NOT NULL |
 | `move_id` | int | NULL |
-| `target_json` | jsonb | 対象指定 |
+| `target_row` | int | NULL |
+| `target_column` | int | NULL |
 | `submitted_at` | timestamptz | NOT NULL |
 | `is_auto_submitted` | boolean | NOT NULL |
 
@@ -734,6 +686,11 @@
 `BattleActionResult` は `ActorId` に加えて `ActionKind` と `MoveId` を持つ。
 これによりクエスト側は入力コマンドの再解釈に依存せず、解決順どおりの行動ログと技演出を構築できる。
 
+#### サーバーは最新ターンの解決結果のみ保持する
+
+サーバーは完全な戦闘ログを永続化せず、`quest_runs.last_turn_results_json` に最新ターンの解決結果のみを保持する。
+クライアントは画面表示用に複数ターンのログをメモリ保持してよいが、再接続時の復元対象は最新ターン結果までとする。
+
 #### 放置は参加者除外でなく行動モード変更で表現する
 
 冒険中のプレイヤーは `quest_room_participants` から削除しない。
@@ -764,7 +721,6 @@
 
 * 中衛専用武器の条件は、装備システム実装前はどう表現するか。
 * ボス階層到達前の回復・準備フェーズを設けるか。
-* 戦闘ログをどこまで保存するか。少なくともターン結果 DTO はログ表示可能な粒度を持つが、永続保存範囲は別途判断する。
 * `QuestBattleState` など内部概念を将来別集約へ分離する必要があるか。
 
 ## 10. 次の更新対象
