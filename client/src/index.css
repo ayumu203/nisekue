@@ -1,0 +1,25 @@
+@font-face {
+  font-family: 'DotGothic16';
+  src: url('/fonts/DotGothic16-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  font-family: 'DotGothic16', sans-serif;
+}
+
+html,
+body,
+#root {
+  font-family: 'DotGothic16', sans-serif;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: 'DotGothic16', sans-serif;
+}

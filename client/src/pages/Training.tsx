@@ -19,6 +19,7 @@ import SignOut from '@/components/auth/SignOut'
 import Status from '@/components/home/Status'
 import TrainingBattleResult from '@/components/training/TrainingBattleResult'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
+import TrainingMovePlanForm from '@/components/training/TrainingMovePlanForm'
 import { useAuth } from '@/contexts/useAuth'
 import { menuButtonSx, twoColumnContentGridSx } from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
@@ -26,13 +27,32 @@ import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import type { GetPlayerResponse } from '@/schema/player'
 
-function buildTrainingMoveIds(player: GetPlayerResponse): number[] {
-  const firstMoveId = player.moveSlots.find((slot) => slot.moveId !== null)?.moveId
-  if (firstMoveId == null) {
-    throw new Error(locale.trainingFailed)
+function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
+  return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
+}
+
+function buildDefaultTrainingMoveIds(player: GetPlayerResponse): Array<number | null> {
+  return [null, null, null]
+}
+
+function normalizeTrainingMoveIds(
+  player: GetPlayerResponse,
+  moveIds: Array<number | null> | null,
+): Array<number | null> {
+  const availableMoveIds = new Set(getAvailableTrainingMoveIds(player))
+  const fallbackMoveIds = buildDefaultTrainingMoveIds(player)
+
+  if (!moveIds || moveIds.length !== 3) {
+    return fallbackMoveIds
   }
 
-  return [firstMoveId, firstMoveId, firstMoveId]
+  return moveIds.map((moveId, index) => {
+    if (moveId === null) {
+      return null
+    }
+
+    return availableMoveIds.has(moveId) ? moveId : fallbackMoveIds[index]
+  })
 }
 
 export default function Training() {
@@ -46,6 +66,8 @@ export default function Training() {
   const [isTrainingSubmitting, setIsTrainingSubmitting] = useState(false)
   const [trainingLockUntilMs, setTrainingLockUntilMs] = useState(0)
   const [trainingLockRemainingSeconds, setTrainingLockRemainingSeconds] = useState(0)
+  const [plannedMoveIds, setPlannedMoveIds] = useState<Array<number | null> | null>(null)
+  const [lastSubmittedMoveIds, setLastSubmittedMoveIds] = useState<Array<number | null> | null>(null)
 
   useEffect(() => {
     if (trainingLockUntilMs <= Date.now()) {
@@ -109,7 +131,16 @@ export default function Training() {
 
   const isTrainingActionDisabled = isTrainingSubmitting || trainingLockRemainingSeconds > 0
 
-  async function runTraining(enemy: TrainingEnemy): Promise<void> {
+  useEffect(() => {
+    if (!player) {
+      return
+    }
+
+    setPlannedMoveIds((current) => normalizeTrainingMoveIds(player, current ?? lastSubmittedMoveIds))
+    setLastSubmittedMoveIds((current) => (current ? normalizeTrainingMoveIds(player, current) : current))
+  }, [player])
+
+  async function runTraining(enemy: TrainingEnemy, moveIds: Array<number | null>): Promise<void> {
     if (!session?.access_token) {
       throw new Error(locale.sessionInfoMissing)
     }
@@ -127,13 +158,16 @@ export default function Training() {
         throw new Error(locale.playerLoading)
       }
 
+      const normalizedMoveIds = normalizeTrainingMoveIds(player, moveIds)
       const result = await executeTraining(
         {
           enemyId: enemy.id,
-          moveIds: buildTrainingMoveIds(player),
+          moveIds: normalizedMoveIds,
         },
         session.access_token,
       )
+      setLastSubmittedMoveIds(normalizedMoveIds)
+      setPlannedMoveIds(normalizedMoveIds)
       setTrainingResult(result)
       await mutatePlayer()
     } catch (error) {
@@ -149,6 +183,26 @@ export default function Training() {
       setIsTrainingSubmitting(false)
       setTrainingLockUntilMs(Date.now() + 5000)
     }
+  }
+
+  function handleSelectEnemy(enemy: TrainingEnemy): void {
+    setSelectedEnemy(enemy)
+    setTrainingResult(null)
+    setTrainingError(null)
+
+    if (!player) {
+      return
+    }
+
+    setPlannedMoveIds(normalizeTrainingMoveIds(player, lastSubmittedMoveIds))
+  }
+
+  function handleChangePlannedMoveId(turnIndex: number, moveId: number | null): void {
+    setPlannedMoveIds((current) => {
+      const next = [...(current ?? [])]
+      next[turnIndex] = moveId
+      return next
+    })
   }
 
   if (isLoading) {
@@ -193,11 +247,44 @@ export default function Training() {
                       result={trainingResult}
                       isActionDisabled={isTrainingActionDisabled}
                       lockRemainingSeconds={trainingLockRemainingSeconds}
+                      movePlanSlot={
+                        player && plannedMoveIds ? (
+                          <TrainingMovePlanForm
+                            enemy={selectedEnemy}
+                            player={player}
+                            moveIds={plannedMoveIds}
+                            isActionDisabled={isTrainingActionDisabled}
+                            lockRemainingSeconds={trainingLockRemainingSeconds}
+                            onChangeMoveId={handleChangePlannedMoveId}
+                            showEnemyHeader={false}
+                            showSubmitButton={false}
+                            onSubmit={() => {}}
+                          />
+                        ) : null
+                      }
                       onRematch={async () => {
-                        await runTraining(selectedEnemy)
+                        if (!player) {
+                          throw new Error(locale.playerLoading)
+                        }
+
+                        await runTraining(selectedEnemy, normalizeTrainingMoveIds(player, lastSubmittedMoveIds))
                       }}
                     />
                   </Box>
+                ) : null}
+
+                {selectedEnemy && player && plannedMoveIds && !trainingResult ? (
+                  <TrainingMovePlanForm
+                    enemy={selectedEnemy}
+                    player={player}
+                    moveIds={plannedMoveIds}
+                    isActionDisabled={isTrainingActionDisabled}
+                    lockRemainingSeconds={trainingLockRemainingSeconds}
+                    onChangeMoveId={handleChangePlannedMoveId}
+                    onSubmit={async () => {
+                      await runTraining(selectedEnemy, plannedMoveIds)
+                    }}
+                  />
                 ) : null}
 
                 {isTrainingEnemiesLoading ? (
@@ -212,7 +299,7 @@ export default function Training() {
                     enemies={trainingEnemies ?? []}
                     isActionDisabled={isTrainingActionDisabled}
                     lockRemainingSeconds={trainingLockRemainingSeconds}
-                    onFight={runTraining}
+                    onFight={handleSelectEnemy}
                   />
                 )}
 
