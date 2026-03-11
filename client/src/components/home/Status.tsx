@@ -1,4 +1,5 @@
 import { Box, Paper, Stack, Typography } from '@mui/material'
+import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx } from '@/constants/styles'
 import type { GetPlayerResponse } from '@/schema/player'
 import locale from '../../../locale/home/Home.json'
 import StatusStatRow from '@/components/home/StatusStatRow'
@@ -14,6 +15,7 @@ type StatItem = {
 
 type StatusProps = {
   player: GetPlayerResponse | undefined
+  compactTrainingMobile?: boolean
 }
 
 function toStatValue(value: number | undefined, fallback: string): StatValue {
@@ -41,7 +43,7 @@ function formatExpProgress(exp: number | undefined, level: number | undefined, f
   return `${exp} / ${requiredExp}`
 }
 
-export default function Status({ player }: StatusProps) {
+export default function Status({ player, compactTrainingMobile = false }: StatusProps) {
   const maxResourceValue = Math.max(player?.status.maxHp ?? 0, player?.status.maxMp ?? 0, 1)
   const maxAttributeValue = Math.max(
     player?.status.strength ?? 0,
@@ -104,6 +106,7 @@ export default function Status({ player }: StatusProps) {
     <Paper
       variant="outlined"
       sx={{
+        ...innerSurfaceSx,
         borderRadius: 3,
         p: 2.5,
       }}
@@ -115,27 +118,21 @@ export default function Status({ player }: StatusProps) {
           alignItems={{ xs: 'flex-start', sm: 'center' }}
           justifyContent="space-between"
         >
-          <Box>
-            <Typography variant="overline" color="text.secondary">
-              {locale.labels.userName}
-            </Typography>
-            <Typography variant="h6" fontWeight={700}>
-              {player?.userName ?? locale.notSet}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {locale.labels.job}: {player?.job.displayName ?? locale.unknownValue}
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              px: 1.5,
-              py: 0.75,
-              border: '1px solid',
-              borderColor: 'primary.main',
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="subtitle2" color="primary.main" fontWeight={700}>
+          {compactTrainingMobile ? null : (
+            <Box>
+              <Typography variant="overline" color="text.secondary">
+                {locale.labels.userName}
+              </Typography>
+              <Typography variant="h6" fontWeight={700}>
+                {player?.userName ?? locale.notSet}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {locale.labels.job}: {player?.job.displayName ?? locale.unknownValue}
+              </Typography>
+            </Box>
+          )}
+          <Box sx={greenBadgeSx}>
+            <Typography variant="subtitle2" sx={greenBadgeTextSx}>
               {locale.labels.level}: {player?.level ?? locale.unknownValue}
             </Typography>
           </Box>
@@ -155,28 +152,37 @@ export default function Status({ player }: StatusProps) {
           </Box>
         </Box>
 
-        <Box>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            {locale.baseStatusTitle}
-          </Typography>
-          <Stack spacing={1.5}>
-            {attributeItems.map((item) => (
+        {compactTrainingMobile ? (
+          <StatusStatRow
+            label={locale.labels.exp}
+            value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+            normalized={0}
+            hideGauge
+          />
+        ) : (
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              {locale.baseStatusTitle}
+            </Typography>
+            <Stack spacing={1.5}>
+              {attributeItems.map((item) => (
+                <StatusStatRow
+                  key={item.key}
+                  label={item.label}
+                  value={item.value}
+                  normalized={item.normalized}
+                  hideGauge
+                />
+              ))}
               <StatusStatRow
-                key={item.key}
-                label={item.label}
-                value={item.value}
-                normalized={item.normalized}
+                label={locale.labels.exp}
+                value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+                normalized={0}
                 hideGauge
               />
-            ))}
-            <StatusStatRow
-              label={locale.labels.exp}
-              value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
-              normalized={0}
-              hideGauge
-            />
-          </Stack>
-        </Box>
+            </Stack>
+          </Box>
+        )}
       </Stack>
     </Paper>
   )

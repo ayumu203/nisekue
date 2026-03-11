@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import MoveItemBox from '@/components/moveSetting/MoveItemBox'
+import { outerPagePaperSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-setting/PlayerSetting.json'
@@ -46,12 +47,9 @@ export default function MoveSetting() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 } }}>
+      <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Stack spacing={1}>
-            <Typography variant="h4" textAlign="center">
-              {locale.moveListTitle}
-            </Typography>
+          <Stack spacing={1} alignItems="flex-end">
             <Button component={Link} to="/" variant="outlined" sx={{ alignSelf: 'flex-end' }}>
               {locale.backToHome}
             </Button>

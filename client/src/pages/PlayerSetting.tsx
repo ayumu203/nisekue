@@ -4,6 +4,7 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayer } from '@/api/player'
+import { greenOutlinedInputSx, innerSurfaceSx, outerPagePaperSx, softGreenButtonSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-setting/PlayerSetting.json'
@@ -79,7 +80,7 @@ export default function PlayerSetting() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 } }}>
+      <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Stack spacing={1}>
             <Typography variant="h4" textAlign="center">
@@ -98,24 +99,27 @@ export default function PlayerSetting() {
           ) : playerError ? (
             <Alert severity="warning">{playerError.message}</Alert>
           ) : (
-            <Box component="form" onSubmit={handleSubmit}>
-              <Stack spacing={2}>
-                <TextField
-                  fullWidth
-                  label={locale.playerNameLabel}
-                  placeholder={locale.playerNamePlaceholder}
-                  value={userName}
-                  onChange={(event) => {
-                    setUserName(event.target.value)
-                  }}
-                />
-                {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
-                {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
-                <Button type="submit" variant="contained" disabled={isSubmitting}>
-                  {isSubmitting ? locale.saving : locale.submitButton}
-                </Button>
-              </Stack>
-            </Box>
+            <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+              <Box component="form" onSubmit={handleSubmit}>
+                <Stack spacing={2}>
+                  <TextField
+                    fullWidth
+                    label={locale.playerNameLabel}
+                    placeholder={locale.playerNamePlaceholder}
+                    value={userName}
+                    onChange={(event) => {
+                      setUserName(event.target.value)
+                    }}
+                    sx={greenOutlinedInputSx}
+                  />
+                  {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
+                  {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
+                  <Button type="submit" variant="contained" disabled={isSubmitting} sx={softGreenButtonSx}>
+                    {isSubmitting ? locale.saving : locale.submitButton}
+                  </Button>
+                </Stack>
+              </Box>
+            </Paper>
           )}
         </Stack>
       </Paper>

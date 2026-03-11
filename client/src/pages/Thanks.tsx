@@ -1,20 +1,18 @@
 import { Button, Container, Link as MuiLink, Paper, Stack, Typography } from '@mui/material'
 import { Link } from 'react-router-dom'
+import { outerPagePaperSx } from '@/constants/styles'
 
 export default function Thanks() {
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={{ p: { xs: 2, sm: 4 } }}>
+      <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Typography variant="h4">サンクス</Typography>
-          <Typography variant="body2" color="text.secondary">
-            利用させていただいた画像素材の提供元です。
-          </Typography>
+          <Typography variant="h4">スペシャルサンクス</Typography>
 
           <Paper variant="outlined" sx={{ borderRadius: 2, p: { xs: 2, sm: 2.5 } }}>
             <Stack spacing={0.5}>
               <Typography variant="subtitle1" fontWeight={700}>
-                モンスター &amp; マテリアルズ II
+                モンスター &amp; マテリアルズ II様
               </Typography>
               <MuiLink
                 href="https://darts-x.sakura.ne.jp/m/"
@@ -23,6 +21,22 @@ export default function Thanks() {
                 underline="hover"
               >
                 https://darts-x.sakura.ne.jp/m/
+              </MuiLink>
+            </Stack>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ borderRadius: 2, p: { xs: 2, sm: 2.5 } }}>
+            <Stack spacing={0.5}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                Mokemo様
+              </Typography>
+              <MuiLink
+                href="https://mokemo-factory.booth.pm"
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="hover"
+              >
+                https://mokemo-factory.booth.pm
               </MuiLink>
             </Stack>
           </Paper>

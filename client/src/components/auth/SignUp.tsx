@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Alert, Box, Button, Stack, TextField } from '@mui/material'
+import { greenOutlinedInputSx, softGreenButtonSx } from '@/constants/styles'
 import { supabase } from '@/lib/supabase'
 import locale from '../../../locale/auth/SignUp.json'
 
@@ -60,6 +61,7 @@ function SignUp({ onMessage }: SignUpProps) {
           onChange={(event) => setEmail(event.target.value)}
           required
           fullWidth
+          sx={greenOutlinedInputSx}
         />
         <TextField
           id="sign-up-password"
@@ -70,8 +72,9 @@ function SignUp({ onMessage }: SignUpProps) {
           onChange={(event) => setPassword(event.target.value)}
           required
           fullWidth
+          sx={greenOutlinedInputSx}
         />
-        <Button type="submit" variant="contained" disabled={isSubmitting}>
+        <Button type="submit" variant="contained" disabled={isSubmitting} sx={softGreenButtonSx}>
           {isSubmitting ? locale.submitting : locale.submit}
         </Button>
         {error ? <Alert severity="error">{error}</Alert> : null}
