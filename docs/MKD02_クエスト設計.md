@@ -44,7 +44,10 @@
 
 * プレイヤーの恒久情報は既存の `CoreDomain.Player` を正とする。
 * 技マスタは既存の `MoveDomain.Move` を利用し、`move_id` は既存 CSV マスタを参照する。
-* クエスト開始時に `Player` の `Job` / `Status` / `MoveSet` をスナップショット化し、クエスト中はそのスナップショットを参照する。
+* `Player` はクライアント表示用の `ImagePath` を持ち、`internal.players` に保存する。
+* `Move` は必要な場合だけクライアント表示用の `EffectImagePath` を持てる。値は既存 CSV マスタに保持し、未設定を許容する。
+* `QuestEnemyDefinition` は敵 CSV の `ImagePath` を参照し、クライアントで敵画像表示に利用する。
+* クエスト開始時に `Player` の `Job` / `Status` / `MoveSet` / `ImagePath` をスナップショット化し、クエスト中はそのスナップショットを参照する。
 
 ### 3.2 配置方針
 
@@ -102,7 +105,7 @@
 
 ### 4.3 スナップショット方針
 
-クエスト中にプレイヤー本体の `Status` や `MoveSet` が変更されても、進行中クエストには反映しない。
+クエスト中にプレイヤー本体の `Status` や `MoveSet` や `ImagePath` が変更されても、進行中クエストには反映しない。
 理由は以下の通り。
 
 * ページ再接続時に同一状態を復元しやすい。
@@ -272,6 +275,7 @@
 * `QuestParticipantId ParticipantId`
 * `ParticipantType Type`
 * `string DisplayName`
+* `string? ImagePath`
 * `Job Job`
 * `Status BaseStatus`
 * `MoveSet MoveSet`
@@ -284,6 +288,7 @@
 * `QuestRun` はこのスナップショットだけを参照して開始できる。
 * 将来、装備補正や一時バフを開始時に織り込む拡張点にする。
 * `MoveSet` はクエスト開始時点で使用可能な技スロット構成を表す。詳細効果は `MoveDomain.Move` を参照し、クエスト固有の使用制約がある場合はスナップショット側で補助情報を持つ余地を残す。
+* `ImagePath` はクライアントの戦闘表示に使う見た目情報であり、進行中クエスト中のプレイヤー画像差し替えの影響を受けないよう開始時点で固定する。
 
 ### 5.6 `QuestRun` 案
 
@@ -414,6 +419,11 @@
 * `string ImagePath`
 * `EnemyAiType AiType`
 * `IReadOnlyList<MoveId> MoveIds`
+
+補足:
+
+* `QuestEnemyDefinition.ImagePath` は敵 CSV に保持する表示用画像パスであり、クライアントはこれを使って敵画像を描画する。
+* 技演出は `MoveDomain.Move.EffectImagePath` を参照し、未設定ならエフェクト画像表示を行わない。
 
 ### 5.8 ドメインサービス案
 
@@ -617,6 +627,7 @@
 | `participant_id` | uuid | PK, FK `quest_room_participants.id` |
 | `participant_type` | int | `Player` / `Npc` |
 | `display_name` | varchar(100) | NOT NULL |
+| `image_path` | varchar(255) | NULL |
 | `job` | int | NOT NULL |
 | `start_row` | int | NOT NULL |
 | `start_column` | int | NOT NULL |
@@ -698,6 +709,16 @@
 
 クエスト中の HP / MP / バフ / 状態異常は `players` テーブルへ書かない。
 クエスト終了時に、今回は経験値のみを恒久情報へ反映する。
+
+#### 表示用画像は恒久情報とスナップショットを併用する
+
+`players.image_path` は恒久的なプロフィール兼戦闘表示画像として保持する。
+一方で進行中クエストの表示整合性を保つため、開始時点の `image_path` は `quest_run_party_snapshots` にも複製して固定する。
+
+#### 技エフェクト画像は CSV オプション項目として扱う
+
+技エフェクト画像は既存の技 CSV における任意項目として扱い、DB テーブル追加は行わない。
+クライアントは `EffectImagePath` が設定されている技だけ画像演出を表示し、未設定技は従来どおりテキストや既定演出のみで処理する。
 
 #### 放置は参加者除外でなく行動モード変更で表現する
 

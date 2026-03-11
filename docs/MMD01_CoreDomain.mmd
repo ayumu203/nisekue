@@ -6,16 +6,19 @@ classDiagram
             <<Entity>>
             +PlayerId Id
             +string Name
+            +string? ImagePath
             +Job Job
             +int Level
             +int Exp
             +Status Status
             +MoveSet MoveSet
             +UpdateName(name: string) void
+            +UpdateImagePath(imagePath: string?) void
             +UpdateJob(job: Job) void
             +UpdateStatus(status: Status) void
             +UpdateMoveSet(moveSet: MoveSet) void
             -ValidateName(name: string) string
+            -ValidateImagePath(imagePath: string?) string?
             +GainExp(exp: int) void
             +LevelUp(growthValueRepository: IGrowthValueRepository) bool
         }
