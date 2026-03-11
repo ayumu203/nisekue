@@ -24,6 +24,16 @@ import { menuButtonSx, twoColumnContentGridSx } from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
+import type { GetPlayerResponse } from '@/schema/player'
+
+function buildTrainingMoveIds(player: GetPlayerResponse): number[] {
+  const firstMoveId = player.moveSlots.find((slot) => slot.moveId !== null)?.moveId
+  if (firstMoveId == null) {
+    throw new Error(locale.trainingFailed)
+  }
+
+  return [firstMoveId, firstMoveId, firstMoveId]
+}
 
 export default function Training() {
   const { session, isLoading } = useAuth()
@@ -113,7 +123,17 @@ export default function Training() {
     setSelectedEnemy(enemy)
 
     try {
-      const result = await executeTraining({ enemyId: enemy.id }, session.access_token)
+      if (!player) {
+        throw new Error(locale.playerLoading)
+      }
+
+      const result = await executeTraining(
+        {
+          enemyId: enemy.id,
+          moveIds: buildTrainingMoveIds(player),
+        },
+        session.access_token,
+      )
       setTrainingResult(result)
       await mutatePlayer()
     } catch (error) {
