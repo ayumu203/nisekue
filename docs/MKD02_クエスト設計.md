@@ -203,6 +203,7 @@
 * `StageCode` は API やフロントエンドから参照しやすい安定識別子であり、表示名とは別に持つ。例: `beginner-forest`。
 * `MinPartyMemberCount` は開始時に満たすべき最低出撃人数であり、本ドラフトでは 4 を想定する。
 * `MaxPartyMemberCount` は盤面に配置可能な最大人数であり、本ドラフトでは 6 を想定する。
+* `QuestStageId` / `QuestEnemyDefinitionId` / `QuestNpcTemplateId` は CSV マスタで人が扱いやすい連番 `int` を使う。
 * `QuestEnemyDefinitionId` は敵マスタを指す識別子であり、実行中の敵個体を指す `QuestEnemyInstanceId` と区別するため `Definition` を付ける。
 
 #### 主な責務
@@ -436,6 +437,7 @@
 補足:
 
 * `QuestEnemyDefinition.ImagePath` は敵 CSV に保持する表示用画像パスであり、クライアントはこれを使って敵画像を描画する。
+* `EnemyAiType` はボス / 雑魚の区別ではなく、各敵がどの行動を優先するかを表す行動方針である。階層種別は `FloorType` で表し、同一階層内で単体火力役、盾役、支援役のような役割差を持つ敵編成を表現できるようにする。
 * 技演出は `MoveDomain.Move.EffectImagePath` を参照し、未設定ならエフェクト画像表示を行わない。
 * 技演出の再生契機はターン解決後の `BattleActionResult` とし、ダメージや状態変化の反映後にクライアントで表示する。
 
@@ -526,7 +528,7 @@ CSV 採用理由:
 | --- | --- | --- |
 | `id` | uuid | PK |
 | `owner_player_id` | uuid | FK `players.id` |
-| `stage_id` | uuid | CSV の `QuestStageDefinition.Id` を参照 |
+| `stage_id` | int | CSV の `QuestStageDefinition.Id` を参照 |
 | `mode` | int | `Solo` / `Multi` |
 | `status` | int | `Recruiting` / `Closed` |
 | `close_reason` | int | `Started` / `Cancelled` / `Expired`, NULL 可 |
@@ -541,7 +543,7 @@ CSV 採用理由:
 | `room_id` | uuid | FK `quest_rooms.id` |
 | `participant_type` | int | `Player` / `Npc` |
 | `player_id` | uuid | NULL, FK `players.id` |
-| `npc_template_id` | uuid | NULL, CSV の `QuestNpcTemplate.Id` を参照 |
+| `npc_template_id` | int | NULL, CSV の `QuestNpcTemplate.Id` を参照 |
 | `display_name` | varchar(100) | NOT NULL |
 | `battle_row` | int | NOT NULL |
 | `battle_column` | int | NOT NULL |
@@ -566,7 +568,7 @@ CSV 採用理由:
 | --- | --- | --- |
 | `id` | uuid | PK |
 | `room_id` | uuid | UNIQUE, FK `quest_rooms.id` |
-| `stage_id` | uuid | CSV の `QuestStageDefinition.Id` を参照 |
+| `stage_id` | int | CSV の `QuestStageDefinition.Id` を参照 |
 | `status` | int | `InProgress` / `Succeeded` / `Failed` / `Aborted` |
 | `current_floor_no` | int | NOT NULL |
 | `current_turn_no` | int | NOT NULL |
@@ -620,7 +622,7 @@ CSV 採用理由:
 | `run_id` | uuid | PK, FK `quest_runs.id` |
 | `enemy_instance_id` | uuid | PK |
 | `floor_no` | int | NOT NULL |
-| `enemy_definition_id` | uuid | CSV の `QuestEnemyDefinition.Id` を参照 |
+| `enemy_definition_id` | int | CSV の `QuestEnemyDefinition.Id` を参照 |
 | `battle_row` | int | NOT NULL |
 | `battle_column` | int | NOT NULL |
 | `current_hp` | int | NOT NULL |

@@ -1,0 +1,4 @@
+id,name,job,preferred_row,level,max_hp,max_mp,strength,defense,intelligence,luck,speed,role
+1,臨時前衛ウォリアー,Warrior,Front,1,18,2,3,2,1,1,1,FrontGuard
+2,臨時支援レンジャー,Ranger,Middle,1,14,4,2,1,2,1,2,MidSupport
+3,臨時回復プリースト,Priest,Back,1,12,8,1,1,3,1,1,RearHealer
