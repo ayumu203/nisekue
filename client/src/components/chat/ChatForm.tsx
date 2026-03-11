@@ -39,13 +39,7 @@ function ChatForm({ isSubmitting, onSubmit }: Props) {
   return (
     <Stack spacing={1}>
       {errorMessage ? <Alert severity="warning">{errorMessage}</Alert> : null}
-      <Stack
-        component="form"
-        direction="row"
-        spacing={1}
-        alignItems="stretch"
-        onSubmit={handleSubmit}
-      >
+      <Stack component="form" direction="row" spacing={1} alignItems="stretch" onSubmit={handleSubmit}>
         <TextField
           value={text}
           onChange={(event) => {

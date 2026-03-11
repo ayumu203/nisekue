@@ -51,7 +51,12 @@ export default function TrainingEnemySelect({
                       {enemy.name}
                     </Typography>
                   </Stack>
-                  <Button variant="contained" disabled={isActionDisabled} onClick={() => onFight(enemy)} sx={softGreenButtonSx}>
+                  <Button
+                    variant="contained"
+                    disabled={isActionDisabled}
+                    onClick={() => onFight(enemy)}
+                    sx={softGreenButtonSx}
+                  >
                     {isActionDisabled ? rematchInSeconds : locale.fight}
                   </Button>
                 </Stack>
