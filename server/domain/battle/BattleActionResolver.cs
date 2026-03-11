@@ -8,8 +8,11 @@ namespace server.domain.battle;
 public class BattleActionResolver(
     BattleDamageCalculator battleDamageCalculator,
     BattleStatusResolver battleStatusResolver,
-    BattleTargetingResolver battleTargetingResolver)
+    BattleTargetingResolver battleTargetingResolver,
+    Func<double>? randomProvider = null)
 {
+    private readonly Func<double> _randomProvider = randomProvider ?? Random.Shared.NextDouble;
+
     public BattleActionResult Resolve(
         BattleAction action,
         IEnumerable<BattleActorSnapshot> snapshots,
@@ -309,14 +312,14 @@ public class BattleActionResolver(
         return rate >= 1m || (rate > 0m && attackerStatus.Luck >= defenderStatus.Luck);
     }
 
-    private static bool ShouldSkipActionByParalysis(BattleActorState actorState)
+    private bool ShouldSkipActionByParalysis(BattleActorState actorState)
     {
         if (!actorState.Ailments.Any(x => x.Type == AilmentType.Paralysis))
         {
             return false;
         }
 
-        return Random.Shared.NextDouble() < 0.3d;
+        return _randomProvider() < 0.3d;
     }
 
     private IReadOnlyList<BattleActorId> ResolveTargets(

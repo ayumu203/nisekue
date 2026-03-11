@@ -57,7 +57,9 @@ public class BattleTargetingResolver
         var positionMap = fieldContext.Positions.ToDictionary(x => x.ActorId, x => x.Position);
         if (!positionMap.TryGetValue(actorSnapshot.Id, out var actorPosition))
         {
-            return candidates.OrderBy(x => x.Id.Value);
+            return candidates
+                .Where(x => positionMap.ContainsKey(x.Id))
+                .OrderBy(x => x.Id.Value);
         }
 
         var candidatesWithPosition = candidates

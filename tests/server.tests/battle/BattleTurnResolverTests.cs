@@ -128,6 +128,32 @@ public class BattleTurnResolverTests
         updatedState.CurrentMp.Should().Be(4);
     }
 
+    [Fact]
+    public void Resolve_AfterTurnEndExpiredMaxMpDebuff_RestoresMpByRatio()
+    {
+        var resolver = CreateResolver();
+
+        var actorId = new BattleActorId(Guid.NewGuid());
+        var snapshot = CreateSnapshot(1, speed: 7, strength: 8, actorId: actorId);
+        var state = new BattleActorState(
+            actorId,
+            currentHp: 10,
+            currentMp: 4,
+            buffs:
+            [
+                new BattleBuffState(BuffStat.MaxMp, BuffCalculationType.Mul, 0.5m, 1)
+            ]);
+        var action = new BattleAction(
+            actorId,
+            BattleActionKind.Wait,
+            new BattleTargetSelector(TargetType.Self, AttackRange.Single));
+
+        var result = resolver.Resolve([action], [snapshot], [state], []);
+        var updatedState = result.UpdatedStates.Should().ContainSingle().Subject;
+
+        updatedState.CurrentMp.Should().Be(8);
+    }
+
     private static BattleTurnResolver CreateResolver()
     {
         var statusResolver = new BattleStatusResolver();

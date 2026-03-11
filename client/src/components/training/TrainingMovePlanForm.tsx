@@ -134,6 +134,9 @@ export default function TrainingMovePlanForm({
             <Select
               size="small"
               value={turn.moveId === null ? 'normal-attack' : String(turn.moveId)}
+              inputProps={{
+                'aria-label': `${locale.turnLabel.replace('{{turn}}', String(index + 1))} ${locale.moveLabel}`,
+              }}
               onChange={(event: SelectChangeEvent<string>) =>
                 onChangeMoveId(index, event.target.value === 'normal-attack' ? null : Number(event.target.value))
               }

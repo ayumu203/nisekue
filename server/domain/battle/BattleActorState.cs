@@ -37,6 +37,13 @@ public class BattleActorState(
         CurrentMp = Math.Max(0, CurrentMp - ValidateNonNegative(value, nameof(value)));
     }
 
+    public void RestoreMp(int value, int maxMp)
+    {
+        var validatedValue = ValidateNonNegative(value, nameof(value));
+        var validatedMaxMp = ValidatePositive(maxMp, nameof(maxMp));
+        CurrentMp = Math.Min(validatedMaxMp, CurrentMp + validatedValue);
+    }
+
     public void ApplyAilment(BattleAilmentState ailment)
     {
         ArgumentNullException.ThrowIfNull(ailment);

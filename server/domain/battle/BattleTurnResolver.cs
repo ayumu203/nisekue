@@ -67,7 +67,15 @@ public class BattleTurnResolver(
         if (beforeStatus.MaxMp != afterStatus.MaxMp)
         {
             var normalizedMp = NormalizeByRatio(state.CurrentMp, beforeStatus.MaxMp, afterStatus.MaxMp);
-            state.ConsumeMp(Math.Max(0, state.CurrentMp - normalizedMp));
+            var mpDelta = state.CurrentMp - normalizedMp;
+            if (mpDelta > 0)
+            {
+                state.ConsumeMp(mpDelta);
+            }
+            else if (mpDelta < 0)
+            {
+                state.RestoreMp(-mpDelta, afterStatus.MaxMp);
+            }
         }
     }
 

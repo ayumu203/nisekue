@@ -192,12 +192,49 @@ public class BattleActionResolverTests
         result.Succeeded.Should().BeFalse();
     }
 
-    private static BattleActionResolver CreateResolver()
+    [Fact]
+    public void Resolve_WhenActorHasParalysis_UsesInjectedRandomProvider()
+    {
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var actorState = new BattleActorState(
+            actor.Id,
+            currentHp: 30,
+            currentMp: 10,
+            ailments: [new BattleAilmentState(AilmentType.Paralysis, 2)]);
+        var targetState = CreateState(target.Id);
+
+        var skippedResolver = CreateResolver(() => 0.2d);
+        var skippedResult = skippedResolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.NormalAttack, EnemyTarget()),
+            [actor, target],
+            [actorState, targetState],
+            []);
+
+        skippedResult.Succeeded.Should().BeFalse();
+        targetState.CurrentHp.Should().Be(30);
+
+        var actingResolver = CreateResolver(() => 0.9d);
+        var actingResult = actingResolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.NormalAttack, EnemyTarget()),
+            [actor, target],
+            [new BattleActorState(
+                actor.Id,
+                currentHp: 30,
+                currentMp: 10,
+                ailments: [new BattleAilmentState(AilmentType.Paralysis, 2)]), CreateState(target.Id)],
+            []);
+
+        actingResult.Succeeded.Should().BeTrue();
+    }
+
+    private static BattleActionResolver CreateResolver(Func<double>? randomProvider = null)
     {
         return new BattleActionResolver(
             new BattleDamageCalculator(() => 0.99d),
             new BattleStatusResolver(),
-            new BattleTargetingResolver());
+            new BattleTargetingResolver(),
+            randomProvider);
     }
 
     private static BattleActorSnapshot CreateSnapshot(int seed, BattleSide side, IReadOnlyList<int>? learnedMoveIds = null)

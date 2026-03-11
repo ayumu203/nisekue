@@ -233,6 +233,26 @@ public class BattleTargetingResolverTests
         result.Should().Equal(enemyFrontLeft.Id, enemyFrontRight.Id, enemyMiddleLeft.Id, enemyMiddleRight.Id);
     }
 
+    [Fact]
+    public void ResolveTargets_WhenActorPositionMissing_IgnoresCandidatesWithoutPosition()
+    {
+        var resolver = new BattleTargetingResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var enemyWithPosition = CreateSnapshot(2, BattleSide.Enemy);
+        var enemyWithoutPosition = CreateSnapshot(3, BattleSide.Enemy);
+
+        var result = resolver.ResolveTargets(
+            new BattleTargetSelector(TargetType.Enemy, AttackRange.Single),
+            actor,
+            [actor, enemyWithPosition, enemyWithoutPosition],
+            CreateStates(actor, enemyWithPosition, enemyWithoutPosition),
+            new BattleFieldContext([
+                new BattleActorPosition(enemyWithPosition.Id, new BattlePosition(BattleRow.Front, BattleColumn.Left))
+            ]));
+
+        result.Should().Equal(enemyWithPosition.Id);
+    }
+
     private static BattleActorSnapshot CreateSnapshot(int seed, BattleSide side)
     {
         return new BattleActorSnapshot(

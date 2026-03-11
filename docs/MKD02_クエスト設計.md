@@ -7,7 +7,7 @@
 
 * クエスト機能の責務境界を定義する。
 * 永続化が必要な情報と、クエスト実行中だけ必要な情報を切り分ける。
-* `docs/MMD01_ドメインモデル.mmd` と `docs/MMD02_ER図.mmd` を更新する前段として、用語と状態遷移を固める。
+* `docs/MMD01_CoreDomain.mmd` と `docs/MMD11_ER図.mmd` を更新する前段として、用語と状態遷移を固める。
 
 ## 2. 今回の主要決定事項
 
@@ -736,8 +736,8 @@
 
 このドラフトをもとに、次に反映すべき対象は以下。
 
-1. `docs/MMD01_ドメインモデル.mmd`
-2. `docs/MMD02_ER図.mmd`
+1. `docs/MMD01_CoreDomain.mmd`
+2. `docs/MMD11_ER図.mmd`
 3. 必要なら `docs/MMD21_Enum.mmd`
 
 特に以下を明示的に反映する。
