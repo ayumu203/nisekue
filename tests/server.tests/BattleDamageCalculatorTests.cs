@@ -49,7 +49,7 @@ public class BattleDamageCalculatorTests
     }
 
     [Fact]
-    public void Calculate_WhenUsesIntelligence_UsesIntelligenceAndTargetIntelligenceForDamage()
+    public void Calculate_WhenAttackStatIsIntelligence_UsesIntelligenceAndTargetIntelligenceForDamage()
     {
         var calculator = new BattleDamageCalculator(() => 0.99d);
 
@@ -61,14 +61,14 @@ public class BattleDamageCalculatorTests
             attackerIntelligence: 20,
             defenderDefense: 10,
             defenderIntelligence: 3,
-            usesIntelligence: true));
+            attackStat: BuffStat.Intelligence));
 
         result.Damage.Should().Be(22);
         result.IsCritical.Should().BeFalse();
     }
 
     [Fact]
-    public void Calculate_WhenUsesStrength_UsesStrengthAndTargetDefenseForDamage()
+    public void Calculate_WhenAttackStatIsStrength_UsesStrengthAndTargetDefenseForDamage()
     {
         var calculator = new BattleDamageCalculator(() => 0.99d);
 
@@ -80,7 +80,7 @@ public class BattleDamageCalculatorTests
             attackerIntelligence: 4,
             defenderDefense: 3,
             defenderIntelligence: 10,
-            usesIntelligence: false));
+            attackStat: BuffStat.Strength));
 
         result.Damage.Should().Be(22);
         result.IsCritical.Should().BeFalse();
@@ -99,14 +99,14 @@ public class BattleDamageCalculatorTests
             attackerIntelligence: 3,
             defenderDefense: 5,
             defenderIntelligence: 3,
-            usesIntelligence: false));
+            attackStat: BuffStat.Strength));
 
         result.Damage.Should().Be(15);
         result.IsCritical.Should().BeTrue();
     }
 
     [Fact]
-    public void Calculate_WhenCriticalHitAndUsesIntelligence_AppliesCriticalMultiplierToIntelligenceDamage()
+    public void Calculate_WhenCriticalHitAndAttackStatIsIntelligence_AppliesCriticalMultiplierToIntelligenceDamage()
     {
         var calculator = new BattleDamageCalculator(() => 0.0d);
 
@@ -118,14 +118,14 @@ public class BattleDamageCalculatorTests
             attackerIntelligence: 20,
             defenderDefense: 10,
             defenderIntelligence: 3,
-            usesIntelligence: true));
+            attackStat: BuffStat.Intelligence));
 
         result.Damage.Should().Be(33);
         result.IsCritical.Should().BeTrue();
     }
 
     [Fact]
-    public void Calculate_WhenUsesIntelligence_ReducesDamageByAttackDefenseRatio()
+    public void Calculate_WhenAttackStatIsIntelligence_ReducesDamageByAttackDefenseRatio()
     {
         var calculator = new BattleDamageCalculator(() => 0.99d);
 
@@ -137,9 +137,26 @@ public class BattleDamageCalculatorTests
             attackerIntelligence: 12,
             defenderDefense: 10,
             defenderIntelligence: 12,
-            usesIntelligence: true));
+            attackStat: BuffStat.Intelligence));
 
         result.Damage.Should().Be(9);
+        result.IsCritical.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Calculate_WhenAttackStatIsLuck_UsesLuckAsAttackPower()
+    {
+        var calculator = new BattleDamageCalculator(() => 0.99d);
+
+        var result = calculator.Calculate(CreateInput(
+            attackerLuck: 18,
+            defenderLuck: 10,
+            criticalRate: 0m,
+            attackerStrength: 4,
+            defenderDefense: 5,
+            attackStat: BuffStat.Luck));
+
+        result.Damage.Should().Be(18);
         result.IsCritical.Should().BeFalse();
     }
 
@@ -151,7 +168,7 @@ public class BattleDamageCalculatorTests
         int attackerIntelligence = 3,
         int defenderDefense = 5,
         int defenderIntelligence = 3,
-        bool usesIntelligence = false)
+        BuffStat attackStat = BuffStat.Strength)
     {
         return new BattleDamageInput(
             attackerId: new BattleActorId(Guid.NewGuid()),
@@ -162,6 +179,6 @@ public class BattleDamageCalculatorTests
             powerRate: 1m,
             criticalRate: criticalRate,
             elementType: ElementType.None,
-            usesIntelligence: usesIntelligence);
+            attackStat: attackStat);
     }
 }

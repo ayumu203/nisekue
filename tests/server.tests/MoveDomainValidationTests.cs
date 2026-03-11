@@ -38,8 +38,22 @@ public class MoveDomainValidationTests
     [Fact]
     public void AilmentEffect_WhenRateExceedsMax_ThrowsArgumentOutOfRangeException()
     {
-        var act = () => new AilmentEffect(AilmentType.Taunt, 1.1m);
+        var act = () => new AilmentEffect(AilmentType.Taunt, 1.1m, 1);
         act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void AilmentEffect_WhenTurnsIsZero_ThrowsArgumentOutOfRangeException()
+    {
+        var act = () => new AilmentEffect(AilmentType.DamageTrap, 1.0m, 0, CreateTrapDamageEffect());
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void AilmentEffect_WhenDamageTrapWithoutTriggerDamage_ThrowsArgumentException()
+    {
+        var act = () => new AilmentEffect(AilmentType.DamageTrap, 1.0m, 1);
+        act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -78,7 +92,7 @@ public class MoveDomainValidationTests
             sequence: 1,
             effectType: MoveEffectType.Ailment,
             damage: CreateDamageEffect(),
-            ailment: new AilmentEffect(AilmentType.Taunt, 1.0m));
+            ailment: new AilmentEffect(AilmentType.Taunt, 1.0m, 1));
 
         var act = () => effect.ValidateByType();
         act.Should().Throw<InvalidOperationException>();
@@ -161,4 +175,7 @@ public class MoveDomainValidationTests
 
     private static DamageEffect CreateHealEffect() =>
         new(hitCount: 1, powerRate: 1.0m, fixedValue: 10, criticalRate: 0m, elementType: ElementType.Holy);
+
+    private static DamageEffect CreateTrapDamageEffect() =>
+        new(hitCount: 2, powerRate: 0.10m, fixedValue: 0, criticalRate: 0m, elementType: ElementType.None);
 }

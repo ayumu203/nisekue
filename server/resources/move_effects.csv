@@ -11,7 +11,7 @@ effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical
 10,9,1,Buff,,,,,,,,,,Defense,Add,15,3,1.00,false
 11,10,1,Ailment,,,,,,,Paralysis,1.00,1,,,,,,
 12,11,1,Ailment,,,,,,,Poison,1.00,1,,,,,,
-13,12,1,Ailment,,,,,,,Trap,1.00,2,,,,,,
+13,12,1,Ailment,2,0.10,0,0.00,None,,DamageTrap,1.00,2,,,,,,
 14,13,1,Heal,,1.00,20,,Holy,,,,,,,,,,
 15,14,1,Heal,,1.25,45,,Holy,,,,,,,,,,
 16,15,1,Heal,,1.60,85,,Holy,,,,,,,,,,

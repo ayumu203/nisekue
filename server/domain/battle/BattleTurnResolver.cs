@@ -88,7 +88,7 @@ public class BattleTurnResolver(
             state.Id,
             state.CurrentHp,
             state.CurrentMp,
-            state.Ailments.Select(x => new BattleAilmentState(x.Type, x.RemainingTurns)),
+            state.Ailments.Select(x => new BattleAilmentState(x.Type, x.RemainingTurns, x.TriggerDamage)),
             state.Buffs.Select(x => new BattleBuffState(x.Stat, x.CalculationType, x.Value, x.RemainingTurns)));
     }
 }

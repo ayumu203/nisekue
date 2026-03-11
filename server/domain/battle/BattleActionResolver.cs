@@ -64,7 +64,6 @@ public class BattleActionResolver(
         }
 
         var attackerStatus = battleStatusResolver.BuildEffectiveStatus(actorSnapshot, actorState);
-        var usesIntelligence = attackerStatus.Intelligence > attackerStatus.Strength;
         var targetResults = new List<BattleTargetResult>();
 
         foreach (var targetId in targets)
@@ -86,7 +85,7 @@ public class BattleActionResolver(
                 powerRate: 1m,
                 criticalRate: 0m,
                 elementType: ElementType.None,
-                usesIntelligence: usesIntelligence));
+                attackStat: BuffStat.Strength));
 
             targetState.ReceiveDamage(damageResult.Damage);
             targetResults.Add(new BattleTargetResult(targetId, damageResult.Damage, targetState.IsDead, null));
@@ -133,7 +132,6 @@ public class BattleActionResolver(
         actorState.ConsumeMp(move.MpCost);
 
         var attackerStatus = battleStatusResolver.BuildEffectiveStatus(actorSnapshot, actorState);
-        var usesIntelligence = ShouldUseIntelligence(move, attackerStatus);
         var targetResults = new List<BattleTargetResult>();
 
         foreach (var effect in move.GetOrderedEffects())
@@ -154,8 +152,9 @@ public class BattleActionResolver(
                     targetSnapshot,
                     defenderStatus,
                     targetState,
+                    move,
                     effect,
-                    usesIntelligence);
+                    move.Category != MoveCategory.Attack);
                 if (result is not null)
                 {
                     targetResults.Add(result);
@@ -179,13 +178,14 @@ public class BattleActionResolver(
         BattleActorSnapshot targetSnapshot,
         Status defenderStatus,
         BattleActorState targetState,
+        Move move,
         MoveEffect effect,
-        bool usesIntelligence)
+        bool isSupportMove)
     {
         return effect.EffectType switch
         {
-            MoveEffectType.Damage => ResolveDamageEffect(actorSnapshot, attackerStatus, targetSnapshot, defenderStatus, targetState, effect, usesIntelligence),
-            MoveEffectType.Heal => ResolveHealEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, effect, usesIntelligence),
+            MoveEffectType.Damage => ResolveDamageEffect(actorSnapshot, attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
+            MoveEffectType.Heal => ResolveHealEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
             MoveEffectType.Ailment => ResolveAilmentEffect(actorSnapshot, attackerStatus, defenderStatus, targetState, effect),
             MoveEffectType.Buff => ResolveBuffEffect(actorSnapshot, attackerStatus, defenderStatus, targetState, effect),
             _ => throw new ArgumentOutOfRangeException(nameof(effect.EffectType), $"未対応の MoveEffectType: {effect.EffectType}")
@@ -198,10 +198,12 @@ public class BattleActionResolver(
         BattleActorSnapshot targetSnapshot,
         Status defenderStatus,
         BattleActorState targetState,
+        Move move,
         MoveEffect effect,
-        bool usesIntelligence)
+        bool isSupportMove)
     {
         ArgumentNullException.ThrowIfNull(effect.Damage);
+        var attackStat = ResolveAttackStat(move, effect.Damage, attackerStatus, isSupportMove);
 
         var totalDamage = 0;
         for (var i = 0; i < effect.Damage.HitCount; i++)
@@ -215,7 +217,7 @@ public class BattleActionResolver(
                 effect.Damage.PowerRate,
                 effect.Damage.CriticalRate,
                 effect.Damage.ElementType,
-                usesIntelligence));
+                attackStat));
             totalDamage += damageResult.Damage;
         }
 
@@ -228,12 +230,19 @@ public class BattleActionResolver(
         BattleActorSnapshot targetSnapshot,
         Status defenderStatus,
         BattleActorState targetState,
+        Move move,
         MoveEffect effect,
-        bool usesIntelligence)
+        bool isSupportMove)
     {
         ArgumentNullException.ThrowIfNull(effect.Damage);
 
-        var attackPower = usesIntelligence ? attackerStatus.Intelligence : attackerStatus.Strength;
+        var attackStat = ResolveAttackStat(move, effect.Damage, attackerStatus, isSupportMove);
+        var attackPower = attackStat switch
+        {
+            BuffStat.Intelligence => attackerStatus.Intelligence,
+            BuffStat.Defense => attackerStatus.Defense,
+            _ => attackerStatus.Strength
+        };
         var healValue = effect.Damage.FixedValue + (int)Math.Round(attackPower * effect.Damage.PowerRate, MidpointRounding.AwayFromZero);
         targetState.RestoreHp(Math.Max(1, healValue), defenderStatus.MaxHp);
 
@@ -252,7 +261,7 @@ public class BattleActionResolver(
         var appliedAilment = default(AilmentType?);
         if (ShouldApplySecondaryEffect(effect.Ailment.AilmentRate, attackerStatus, defenderStatus))
         {
-            targetState.ApplyAilment(new BattleAilmentState(effect.Ailment.AilmentType, 1));
+            targetState.ApplyAilment(new BattleAilmentState(effect.Ailment.AilmentType, effect.Ailment.AilmentTurns, effect.Ailment.TriggerDamage));
             appliedAilment = effect.Ailment.AilmentType;
         }
 
@@ -278,9 +287,21 @@ public class BattleActionResolver(
         return new BattleTargetResult(targetState.Id, 0, targetState.IsDead, null);
     }
 
-    private static bool ShouldUseIntelligence(Move move, Status attackerStatus)
+    private static BuffStat ResolveAttackStat(Move move, DamageEffect effect, Status attackerStatus, bool isSupportMove)
     {
-        return move.Category != MoveCategory.Attack || attackerStatus.Intelligence > attackerStatus.Strength;
+        if (effect.AttackStat is not null)
+        {
+            return effect.AttackStat.Value;
+        }
+
+        if (isSupportMove || move.Category != MoveCategory.Attack)
+        {
+            return BuffStat.Intelligence;
+        }
+
+        return attackerStatus.Intelligence > attackerStatus.Strength
+            ? BuffStat.Intelligence
+            : BuffStat.Strength;
     }
 
     private static bool ShouldApplySecondaryEffect(decimal rate, Status attackerStatus, Status defenderStatus)

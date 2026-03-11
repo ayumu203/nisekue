@@ -1,3 +1,4 @@
+using server.domain.move;
 using server.domain.move.enums;
 
 namespace server.domain.battle;
@@ -45,7 +46,7 @@ public class BattleActorState(
         {
             var existing = _ailments[index];
             var turns = Math.Max(existing.RemainingTurns, ailment.RemainingTurns);
-            _ailments[index] = new BattleAilmentState(ailment.Type, turns);
+            _ailments[index] = new BattleAilmentState(ailment.Type, turns, ailment.TriggerDamage);
             return;
         }
 
@@ -97,7 +98,7 @@ public class BattleActorState(
             var remainingTurns = ailment.RemainingTurns - 1;
             if (remainingTurns > 0)
             {
-                updated.Add(new BattleAilmentState(ailment.Type, remainingTurns));
+                updated.Add(new BattleAilmentState(ailment.Type, remainingTurns, ailment.TriggerDamage));
             }
         }
 
@@ -114,11 +115,33 @@ public class BattleActorState(
                 return;
             }
 
-            if (ailment.Type == AilmentType.Poison)
+            if (ailment.Type == AilmentType.Poison || ailment.Type == AilmentType.PoisonTrap)
             {
                 var damage = Math.Max(1, CurrentHp / 10);
                 ReceiveDamage(damage);
             }
+
+            if (ailment.Type == AilmentType.DamageTrap)
+            {
+                ApplyTrapDamage(ailment.TriggerDamage);
+            }
+        }
+    }
+
+    private void ApplyTrapDamage(DamageEffect? triggerDamage)
+    {
+        ArgumentNullException.ThrowIfNull(triggerDamage);
+
+        for (var i = 0; i < triggerDamage.HitCount; i++)
+        {
+            if (IsDead)
+            {
+                return;
+            }
+
+            var damage = triggerDamage.FixedValue
+                + (int)Math.Round(CurrentHp * triggerDamage.PowerRate, MidpointRounding.AwayFromZero);
+            ReceiveDamage(Math.Max(1, damage));
         }
     }
 

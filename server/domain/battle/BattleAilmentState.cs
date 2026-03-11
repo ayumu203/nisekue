@@ -1,11 +1,13 @@
+using server.domain.move;
 using server.domain.move.enums;
 
 namespace server.domain.battle;
 
-public class BattleAilmentState(AilmentType type, int remainingTurns)
+public class BattleAilmentState(AilmentType type, int remainingTurns, DamageEffect? triggerDamage = null)
 {
     public AilmentType Type { get; } = type;
     public int RemainingTurns { get; } = ValidateTurns(remainingTurns);
+    public DamageEffect? TriggerDamage { get; } = triggerDamage;
 
     private static int ValidateTurns(int remainingTurns)
     {

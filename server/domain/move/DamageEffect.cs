@@ -3,13 +3,20 @@ using server.shared.constants.move;
 
 namespace server.domain.move;
 
-public class DamageEffect(int hitCount, decimal powerRate, int fixedValue, decimal criticalRate, ElementType elementType)
+public class DamageEffect(
+    int hitCount,
+    decimal powerRate,
+    int fixedValue,
+    decimal criticalRate,
+    ElementType elementType,
+    BuffStat? attackStat = null)
 {
     public int HitCount { get; } = ValidateHitCount(hitCount);
     public decimal PowerRate { get; } = ValidateNonNegative(powerRate, nameof(powerRate));
     public int FixedValue { get; } = ValidateFixedValue(fixedValue);
     public decimal CriticalRate { get; } = ValidateRateRange(criticalRate, nameof(criticalRate));
     public ElementType ElementType { get; } = elementType;
+    public BuffStat? AttackStat { get; } = attackStat;
 
     private static int ValidateHitCount(int hitCount)
     {

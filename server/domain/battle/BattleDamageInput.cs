@@ -12,7 +12,7 @@ public class BattleDamageInput(
     decimal powerRate,
     decimal criticalRate,
     ElementType elementType,
-    bool usesIntelligence)
+    BuffStat attackStat)
 {
     public BattleActorId AttackerId { get; } = attackerId;
     public BattleActorId DefenderId { get; } = defenderId;
@@ -22,7 +22,7 @@ public class BattleDamageInput(
     public decimal PowerRate { get; } = ValidateNonNegative(powerRate, nameof(powerRate));
     public decimal CriticalRate { get; } = ValidateNonNegative(criticalRate, nameof(criticalRate));
     public ElementType ElementType { get; } = elementType;
-    public bool UsesIntelligence { get; } = usesIntelligence;
+    public BuffStat AttackStat { get; } = attackStat;
 
     private static int ValidateNonNegative(int value, string paramName)
     {
