@@ -117,6 +117,8 @@ classDiagram
         class BattleActionResult {
             <<Value Object>>
             +BattleActorId ActorId
+            +BattleActionKind ActionKind
+            +MoveId? MoveId
             +bool Succeeded
             +IReadOnlyList~BattleTargetResult~ TargetResults
         }
