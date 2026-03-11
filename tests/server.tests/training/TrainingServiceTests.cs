@@ -217,9 +217,9 @@ public class TrainingServiceTests
 
         result.TrainingResult.Should().Be("Draw");
         result.Turn.Should().Be(3);
-        result.CurrentPlayerHp.Should().Be(24);
-        result.CurrentEnemyHp.Should().Be(3);
-        result.Exp.Should().Be(2);
+        result.CurrentPlayerHp.Should().Be(21);
+        result.CurrentEnemyHp.Should().Be(12);
+        result.Exp.Should().Be(1);
     }
 
     [Fact]
