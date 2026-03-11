@@ -1,0 +1,193 @@
+classDiagram
+    %% Enum 定義は docs/MMD21_Enum.mmd を参照
+
+    namespace ActorContext {
+        class BattleActorId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class BattleActorSnapshot {
+            <<Value Object>>
+            +BattleActorId Id
+            +string DisplayName
+            +BattleSide Side
+            +Status BaseStatus
+            +MoveSet MoveSet
+        }
+
+        class BattleActorState {
+            <<Entity>>
+            +BattleActorId Id
+            +int CurrentHp
+            +int CurrentMp
+            +bool IsDead
+            +IReadOnlyList~BattleAilmentState~ Ailments
+            +IReadOnlyList~BattleBuffState~ Buffs
+            +ReceiveDamage(value: int) void
+            +RestoreHp(value: int, maxHp: int) void
+            +ConsumeMp(value: int) void
+            +ApplyAilment(ailment: BattleAilmentState) void
+            +ApplyBuff(buff: BattleBuffState, canStack: bool) void
+            +TickTurnEnd() void
+            +CanAct() bool
+            -ApplyAilmentTurnEndEffects() void
+        }
+
+        class BattleAilmentState {
+            <<Value Object>>
+            +AilmentType Type
+            +int RemainingTurns
+            +DamageEffect? TriggerDamage
+        }
+
+        class BattleBuffState {
+            <<Value Object>>
+            +BuffStat Stat
+            +BuffCalculationType CalculationType
+            +decimal Value
+            +int RemainingTurns
+        }
+    }
+
+    namespace ActionContext {
+        class BattleFieldContext {
+            <<Value Object>>
+            +IReadOnlyList~BattleActorPosition~ Positions
+            +bool EnableFormationRangeControl
+        }
+
+        class BattleActorPosition {
+            <<Value Object>>
+            +BattleActorId ActorId
+            +BattlePosition Position
+        }
+
+
+        class BattleTurnRequest {
+            <<Value Object>>
+            +IReadOnlyList~BattleActorInput~ Actors
+            +IReadOnlyList~BattleActionInput~ Actions
+            +IReadOnlyList~Move~ Moves
+            +BattleFieldContext? FieldContext
+        }
+
+        class BattleAction {
+            <<Value Object>>
+            +BattleActorId ActorId
+            +BattleActionKind Kind
+            +MoveId? MoveId
+            +BattleTargetSelector Target
+        }
+
+        class BattleTargetSelector {
+            <<Value Object>>
+            +TargetType TargetType
+            +AttackRange AttackRange
+            +IReadOnlyList~BattleActorId~ TargetActorIds
+        }
+
+        class BattleDamageInput {
+            <<Value Object>>
+            +BattleActorId AttackerId
+            +BattleActorId DefenderId
+            +Status AttackerStatus
+            +Status DefenderStatus
+            +int FixedPower
+            +decimal PowerRate
+            +decimal CriticalRate
+            +ElementType ElementType
+            +BuffStat AttackStat
+        }
+
+        class BattleDamageResult {
+            <<Value Object>>
+            +int Damage
+            +bool IsCritical
+        }
+
+        class BattleTargetResult {
+            <<Value Object>>
+            +BattleActorId TargetActorId
+            +int Damage
+            +bool IsDefeated
+            +AilmentType? AppliedAilment
+        }
+
+        class BattleActionResult {
+            <<Value Object>>
+            +BattleActorId ActorId
+            +bool Succeeded
+            +IReadOnlyList~BattleTargetResult~ TargetResults
+        }
+
+        class BattleTurnResolution {
+            <<Value Object>>
+            +IReadOnlyList~BattleActionResult~ ActionResults
+            +IReadOnlyList~BattleActorState~ UpdatedStates
+        }
+    }
+
+    namespace ApplicationContext {
+        class BattleService {
+            <<Application Service>>
+            +ResolveTurn(request: BattleTurnRequest) BattleTurnResolution
+        }
+    }
+
+    namespace ServiceContext {
+        class BattleTurnOrderResolver {
+            <<Domain Service>>
+            +Resolve(actions: IEnumerable~BattleAction~, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, moves: IEnumerable~Move~) BattleActorId[]
+        }
+
+        class BattleStatusResolver {
+            <<Domain Service>>
+            +BuildEffectiveStatus(snapshot: BattleActorSnapshot, state: BattleActorState) Status
+        }
+
+        class BattleDamageCalculator {
+            <<Domain Service>>
+            +Calculate(input: BattleDamageInput) BattleDamageResult
+        }
+
+        class BattleActionResolver {
+            <<Domain Service>>
+            +Resolve(action: BattleAction, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, moves: IEnumerable~Move~, fieldContext: BattleFieldContext?) BattleActionResult
+        }
+
+        class BattleTargetingResolver {
+            <<Domain Service>>
+            +ResolveTargets(selector: BattleTargetSelector, actor: BattleActorSnapshot, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, fieldContext: BattleFieldContext?) BattleActorId[]
+        }
+
+        class BattleTurnResolver {
+            <<Domain Service>>
+            +Resolve(actions: IEnumerable~BattleAction~, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, moves: IEnumerable~Move~, fieldContext: BattleFieldContext?) BattleTurnResolution
+        }
+    }
+
+    BattleActorState ..> BattleActorSnapshot : based_on
+    BattleActorState *-- BattleActorId : has
+    BattleActorState *-- BattleAilmentState : 0..*
+    BattleActorState *-- BattleBuffState : 0..*
+    BattleFieldContext *-- BattleActorPosition : 0..*
+    BattleAction *-- BattleTargetSelector : has
+    BattleService ..> BattleTurnRequest : accepts
+    BattleService ..> BattleTurnResolution : returns
+    BattleService ..> BattleTurnResolver : orchestrates
+    BattleTurnRequest ..> BattleFieldContext : optionally_has
+    BattleDamageResult ..> BattleDamageInput : result_of
+    BattleActionResult *-- BattleTargetResult : 0..*
+    BattleTurnResolution *-- BattleActionResult : 0..*
+    BattleTurnOrderResolver ..> BattleActorState : use
+    BattleTurnOrderResolver ..> BattleAction : use
+    BattleStatusResolver ..> BattleActorState : use
+    BattleDamageCalculator ..> BattleDamageResult : builds
+    BattleActionResolver ..> BattleDamageCalculator : use
+    BattleActionResolver ..> BattleStatusResolver : use
+    BattleActionResolver ..> BattleTargetingResolver : use
+    BattleTargetingResolver ..> BattleFieldContext : use
+    BattleTurnResolver ..> BattleTurnResolution : builds
+    BattleTurnResolver ..> BattleTurnOrderResolver : use
+    BattleTurnResolver ..> BattleActionResolver : use

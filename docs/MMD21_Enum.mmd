@@ -1,0 +1,191 @@
+classDiagram
+    direction LR
+    namespace CoreDomain {
+        class Job {
+            <<Enum>>
+            Apprentice
+            Warrior
+            Guardian
+            Mage
+            Priest
+            Ranger
+        }
+    }
+
+    namespace MoveDomain {
+        class TargetType {
+            <<Enum>>
+            Enemy
+            Ally
+            Self
+        }
+
+        class AttackRange {
+            <<Enum>>
+            Single
+            Column
+            Row
+            Square
+            All
+        }
+
+        class MoveCategory {
+            <<Enum>>
+            Attack
+            Support
+            Hybrid
+        }
+
+        class MoveEffectType {
+            <<Enum>>
+            Damage
+            Heal
+            Ailment
+            Buff
+        }
+
+        class ElementType {
+            <<Enum>>
+            Strike
+            Slash
+            Pierce
+            Fire
+            Water
+            Earth
+            Wind
+            Holy
+            None
+        }
+
+        class AilmentType {
+            <<Enum>>
+            Paralysis
+            Poison
+            Taunt
+            PoisonTrap
+            DamageTrap
+        }
+
+        class BuffStat {
+            <<Enum>>
+            MaxHp
+            MaxMp
+            Strength
+            Defense
+            Intelligence
+            Luck
+            Speed
+        }
+
+        class BuffCalculationType {
+            <<Enum>>
+            Add
+            Mul
+        }
+    }
+
+    namespace BattleDomain {
+        class BattleSide {
+            <<Enum>>
+            Ally
+            Enemy
+        }
+
+        class BattleActionKind {
+            <<Enum>>
+            NormalAttack
+            UseMove
+            Guard
+            Wait
+        }
+    }
+
+    namespace QuestDomain {
+        class FloorType {
+            <<Enum>>
+            Normal
+            Boss
+        }
+
+        class BattleRow {
+            <<Enum>>
+            Front
+            Middle
+            Back
+        }
+
+        class BattleColumn {
+            <<Enum>>
+            Left
+            Right
+        }
+
+        class QuestRoomMode {
+            <<Enum>>
+            Solo
+            Multi
+        }
+
+        class QuestRoomStatus {
+            <<Enum>>
+            Recruiting
+            Closed
+        }
+
+        class QuestRoomCloseReason {
+            <<Enum>>
+            Started
+            Cancelled
+            Expired
+        }
+
+        class ParticipantType {
+            <<Enum>>
+            Player
+            Npc
+        }
+
+        class ParticipantStatus {
+            <<Enum>>
+            Joined
+            Disconnected
+            Left
+        }
+
+        class QuestRunStatus {
+            <<Enum>>
+            InProgress
+            Succeeded
+            Failed
+            Aborted
+        }
+
+        class ActionMode {
+            <<Enum>>
+            Manual
+            AutoAttackOnly
+        }
+
+        class ActionKind {
+            <<Enum>>
+            NormalAttack
+            UseMove
+            Guard
+            Wait
+            LeaveQuest
+            Escape
+        }
+
+        class NpcRole {
+            <<Enum>>
+            FrontGuard
+            MidSupport
+            RearHealer
+        }
+
+        class EnemyAiType {
+            <<Enum>>
+            Normal
+            Boss
+        }
+    }

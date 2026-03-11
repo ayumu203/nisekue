@@ -11,6 +11,7 @@ export const getTrainingEnemiesResponseSchema = z.array(trainingEnemySchema)
 
 export const executeTrainingRequestSchema = z.object({
   enemyId: z.number().int().min(1, 'enemyIdは1以上である必要があります'),
+  moveIds: z.array(z.number().int().min(1, 'moveIdは1以上である必要があります').nullable()).length(3),
 })
 
 export const executeTrainingResponseSchema = z.object({

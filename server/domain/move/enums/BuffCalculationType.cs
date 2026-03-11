@@ -1,6 +1,6 @@
 namespace server.domain.move.enums;
 
-public enum BuffOp
+public enum BuffCalculationType
 {
     Add = 1,
     Mul = 2

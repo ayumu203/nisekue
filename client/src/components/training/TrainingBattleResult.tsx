@@ -1,4 +1,5 @@
 import { Box, Button, LinearProgress, Paper, Stack, Typography } from '@mui/material'
+import type { ReactNode } from 'react'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
@@ -8,6 +9,7 @@ type TrainingBattleResultProps = {
   result: ExecuteTrainingResponse
   isActionDisabled: boolean
   lockRemainingSeconds: number
+  movePlanSlot?: ReactNode
   onRematch: () => Promise<void> | void
 }
 
@@ -36,6 +38,7 @@ export default function TrainingBattleResult({
   result,
   isActionDisabled,
   lockRemainingSeconds,
+  movePlanSlot,
   onRematch,
 }: TrainingBattleResultProps) {
   const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
@@ -115,6 +118,7 @@ export default function TrainingBattleResult({
             sx={{ height: 8, borderRadius: 999 }}
           />
         </Stack>
+        {movePlanSlot}
         <Button variant="contained" disabled={isActionDisabled} onClick={onRematch}>
           {isActionDisabled ? rematchInSeconds : locale.rematch}
         </Button>

@@ -1,0 +1,345 @@
+classDiagram
+    %% Enum 定義は docs/MMD21_Enum.mmd を参照
+
+    namespace StageContext {
+        class QuestStageDefinition {
+            <<Aggregate Root>>
+            +QuestStageId Id
+            +string StageCode
+            +string Name
+            +int RecommendedLevel
+            +int MinPartyMemberCount
+            +int MaxPartyMemberCount
+            +IReadOnlyList~QuestFloorDefinition~ Floors
+            +bool IsActive
+        }
+
+        class QuestStageId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestFloorDefinition {
+            <<Entity>>
+            +int FloorNo
+            +FloorType FloorType
+            +IReadOnlyList~QuestEnemyPlacement~ Placements
+            +QuestFloorRewardRule RewardRule
+        }
+
+        class QuestFloorRewardRule {
+            <<Value Object>>
+            +decimal ExpRate
+            +decimal GoldRate
+        }
+
+        class QuestEnemyPlacement {
+            <<Entity>>
+            +int PlacementNo
+            +QuestEnemyDefinitionId EnemyDefinitionId
+            +BattlePosition Position
+        }
+
+        class QuestEnemyDefinition {
+            <<Aggregate Root>>
+            +QuestEnemyDefinitionId Id
+            +string Name
+            +int Level
+            +Status Status
+            +string ImagePath
+            +EnemyAiType AiType
+            +IReadOnlyList~MoveId~ MoveIds
+        }
+
+        class QuestEnemyDefinitionId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestNpcTemplate {
+            <<Aggregate Root>>
+            +QuestNpcTemplateId Id
+            +string Name
+            +Job Job
+            +BattleRow PreferredRow
+            +int Level
+            +Status BaseStatus
+            +IReadOnlyList~MoveId~ MoveIds
+            +NpcRole Role
+        }
+
+        class QuestNpcTemplateId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class IQuestStageRepository {
+            +Task~QuestStageDefinition?~ GetAsync(id: QuestStageId)
+            +Task~QuestStageDefinition?~ GetByStageCodeAsync(stageCode: string)
+        }
+
+        class IQuestNpcTemplateRepository {
+            +Task~IReadOnlyList~QuestNpcTemplate~~ GetForStartAsync(stageId: QuestStageId, count: int)
+        }
+
+        class IQuestEnemyDefinitionRepository {
+            +Task~QuestEnemyDefinition?~ GetAsync(id: QuestEnemyDefinitionId)
+        }
+    }
+
+    namespace RoomContext {
+        class BattlePosition {
+            <<Value Object>>
+            +BattleRow Row
+            +BattleColumn Column
+        }
+
+        class FormationLayout {
+            <<Value Object>>
+            +IReadOnlyList~BattlePosition~ OccupiedPositions
+            +Assign(participantId: QuestParticipantId, position: BattlePosition) void
+            +Release(position: BattlePosition) void
+            +IsOccupied(position: BattlePosition) bool
+        }
+
+        class QuestRoom {
+            <<Aggregate Root>>
+            +QuestRoomId Id
+            +PlayerId OwnerId
+            +QuestStageId StageId
+            +QuestRoomMode Mode
+            +QuestRoomStatus Status
+            +FormationLayout Formation
+            +IReadOnlyList~QuestParticipant~ Participants
+            +QuestRoomCloseReason? CloseReason
+            +DateTimeOffset CreatedAt
+            +DateTimeOffset? ClosedAt
+            +AddPlayer(playerId: PlayerId, displayName: string) void
+            +AssignPosition(participantId: QuestParticipantId, position: BattlePosition) void
+            +MarkDisconnected(participantId: QuestParticipantId, at: DateTimeOffset) void
+            +MarkReconnected(participantId: QuestParticipantId, at: DateTimeOffset) void
+            +RemoveParticipant(participantId: QuestParticipantId, at: DateTimeOffset) void
+            +CanStart() bool
+            +AddNpcParticipants(npcTemplates: IEnumerable~QuestNpcTemplate~) void
+            +CloseRecruitment(reason: QuestRoomCloseReason, at: DateTimeOffset) void
+        }
+
+        class QuestRoomId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestParticipant {
+            <<Entity>>
+            +QuestParticipantId Id
+            +ParticipantType Type
+            +PlayerId? PlayerId
+            +QuestNpcTemplateId? NpcTemplateId
+            +string DisplayName
+            +ParticipantStatus Status
+            +BattlePosition Position
+            +bool IsOwner
+            +DateTimeOffset JoinedAt
+            +DateTimeOffset? LastSeenAt
+            +DateTimeOffset? LeftAt
+        }
+
+        class QuestParticipantId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class IQuestRoomRepository {
+            +Task~QuestRoom?~ GetAsync(id: QuestRoomId)
+            +Task SaveAsync(room: QuestRoom)
+        }
+    }
+
+    namespace RunContext {
+        class QuestRunPartyMemberSnapshot {
+            <<Value Object>>
+            +QuestParticipantId ParticipantId
+            +ParticipantType Type
+            +string DisplayName
+            +Job Job
+            +Status BaseStatus
+            +MoveSet MoveSet
+            +BattlePosition StartPosition
+            +ActionMode InitialActionMode
+        }
+
+        class QuestRun {
+            <<Aggregate Root>>
+            +QuestRunId Id
+            +QuestRoomId RoomId
+            +QuestStageId StageId
+            +QuestRunStatus Status
+            +QuestFloorState FloorState
+            +QuestTurnState TurnState
+            +QuestTrapCollection Traps
+            +QuestRewardAccumulator Rewards
+            +DateTimeOffset StartedAt
+            +DateTimeOffset? EndedAt
+            +InitializeFirstFloor() void
+            +SubmitCommand(participantId: QuestParticipantId, command: QuestSubmittedCommand, now: DateTimeOffset) void
+            +SwitchToAutoActionForTimeout(now: DateTimeOffset) void
+            +RequestManualControl(participantId: QuestParticipantId) void
+            +ApproveManualControl(participantId: QuestParticipantId, ownerId: PlayerId) void
+            +AdvanceFloor() void
+            +ApplyTrapsOnFloorStart() void
+            +MarkSucceeded() void
+            +MarkFailed() void
+            +Abort(reason: string) void
+        }
+
+        class QuestRunId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestFloorState {
+            <<Value Object>>
+            +int CurrentFloorNo
+            +bool IsBossFloor
+            +IReadOnlyList~QuestEnemyPlacement~ CurrentPlacements
+        }
+
+        class QuestTurnState {
+            <<Value Object>>
+            +int CurrentTurnNo
+            +DateTimeOffset ActionDeadlineAt
+            +IReadOnlyList~QuestSubmittedCommand~ PendingCommands
+        }
+
+        class QuestSubmittedCommand {
+            <<Entity>>
+            +QuestParticipantId ParticipantId
+            +int TurnNo
+            +ActionKind ActionKind
+            +DateTimeOffset SubmittedAt
+            +bool IsAutoSubmitted
+        }
+
+        class QuestTrapCollection {
+            <<Value Object>>
+            +IReadOnlyList~QuestTrapState~ Traps
+        }
+
+        class QuestTrapState {
+            <<Entity>>
+            +QuestTrapId Id
+            +QuestParticipantId SourceParticipantId
+            +MoveId MoveId
+            +int ExpiresAfterFloorNo
+            +bool IsTriggered
+        }
+
+        class QuestTrapId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class QuestRewardAccumulator {
+            <<Value Object>>
+            +int Exp
+            +AddExp(value: int) void
+        }
+
+        class QuestRunResolutionSummary {
+            <<Value Object>>
+            +int Turn
+            +bool IsFloorCleared
+            +bool IsQuestCompleted
+            +bool IsQuestFailed
+        }
+
+        class IQuestRunRepository {
+            +Task~QuestRun?~ GetAsync(id: QuestRunId)
+            +Task~QuestRun?~ GetByRoomIdAsync(roomId: QuestRoomId)
+            +Task SaveAsync(run: QuestRun)
+        }
+    }
+
+    namespace ServiceContext {
+        class QuestRoomService {
+            <<Application Service>>
+            +Task~QuestRoom~ CreateRoomAsync(ownerId: PlayerId, stageId: QuestStageId, mode: QuestRoomMode)
+            +Task~QuestRoom~ JoinRoomAsync(roomId: QuestRoomId, playerId: PlayerId)
+            +Task~QuestRun~ StartAsync(roomId: QuestRoomId)
+        }
+
+        class QuestNpcAssignmentService {
+            <<Application Service>>
+            +Task~IReadOnlyList~QuestNpcTemplate~~ AssignForStart(room: QuestRoom, minPartyMemberCount: int)
+        }
+
+        class QuestSnapshotFactory {
+            <<Application Service>>
+            +Create(participants: IEnumerable~QuestParticipant~, players: IEnumerable~Player~, npcTemplates: IEnumerable~QuestNpcTemplate~) QuestRunPartyMemberSnapshot[]
+        }
+
+        class QuestBattleFactory {
+            <<Application Service>>
+            +CreateActorSnapshots(snapshots: IEnumerable~QuestRunPartyMemberSnapshot~) BattleActorSnapshot[]
+            +CreateEnemySnapshots(definitions: IEnumerable~QuestEnemyDefinition~, placements: IEnumerable~QuestEnemyPlacement~) BattleActorSnapshot[]
+            +CreateInitialStates(partySnapshots: IEnumerable~QuestRunPartyMemberSnapshot~, enemyDefinitions: IEnumerable~QuestEnemyDefinition~) BattleActorState[]
+            +CreateBattleActions(commands: IEnumerable~QuestSubmittedCommand~) BattleAction[]
+            +CreateBattleFieldContext(partySnapshots: IEnumerable~QuestRunPartyMemberSnapshot~, placements: IEnumerable~QuestEnemyPlacement~) BattleFieldContext
+        }
+
+        class QuestRunFactory {
+            <<Application Service>>
+            +Create(stageDefinition: QuestStageDefinition, snapshots: IEnumerable~QuestRunPartyMemberSnapshot~, now: DateTimeOffset) QuestRun
+        }
+
+        class QuestRunOutcomeJudge {
+            <<Domain Service>>
+            +Judge(run: QuestRun, resolution: BattleTurnResolution) QuestRunResolutionSummary
+        }
+
+        class QuestRunService {
+            <<Application Service>>
+            +Task~QuestRun~ SubmitCommandAsync(runId: QuestRunId, participantId: QuestParticipantId, command: QuestSubmittedCommand)
+            +Task~QuestRun~ ResolveTimeoutAsync(runId: QuestRunId, now: DateTimeOffset)
+            +Task~QuestRunResolutionSummary~ ResolveTurnAsync(runId: QuestRunId)
+        }
+    }
+
+    QuestStageDefinition *-- QuestStageId : has
+    QuestStageDefinition *-- QuestFloorDefinition : 1..*
+    QuestFloorDefinition *-- QuestFloorRewardRule : has
+    QuestFloorDefinition *-- QuestEnemyPlacement : 0..*
+    QuestEnemyDefinition *-- QuestEnemyDefinitionId : has
+    QuestNpcTemplate *-- QuestNpcTemplateId : has
+    QuestRoom *-- QuestRoomId : has
+    QuestRoom *-- FormationLayout : has
+    QuestRoom *-- QuestParticipant : 1..*
+    QuestParticipant *-- QuestParticipantId : has
+    QuestParticipant *-- BattlePosition : has
+    QuestRun *-- QuestRunId : has
+    QuestRun *-- QuestFloorState : has
+    QuestRun *-- QuestTurnState : has
+    QuestRun *-- QuestTrapCollection : has
+    QuestRun *-- QuestRewardAccumulator : has
+    QuestFloorState *-- QuestEnemyPlacement : 0..*
+    QuestTurnState *-- QuestSubmittedCommand : 0..*
+    QuestTrapCollection *-- QuestTrapState : 0..*
+    QuestTrapState *-- QuestTrapId : has
+    IQuestStageRepository ..> QuestStageDefinition : loads
+    IQuestRoomRepository ..> QuestRoom : stores/loads
+    IQuestRunRepository ..> QuestRun : stores/loads
+    IQuestNpcTemplateRepository ..> QuestNpcTemplate : loads
+    IQuestEnemyDefinitionRepository ..> QuestEnemyDefinition : loads
+    QuestRoomService ..> IQuestStageRepository : use
+    QuestRoomService ..> QuestRoom : use
+    QuestRoomService ..> QuestRun : starts
+    QuestNpcAssignmentService ..> IQuestNpcTemplateRepository : use
+    QuestNpcAssignmentService ..> QuestNpcTemplate : selects
+    QuestSnapshotFactory ..> QuestRunPartyMemberSnapshot : builds
+    QuestRunFactory ..> IQuestEnemyDefinitionRepository : use
+    QuestRunFactory ..> QuestRun : builds
+    QuestBattleFactory ..> QuestSubmittedCommand : use
+    QuestBattleFactory ..> BattleFieldContext : builds
+    QuestRunOutcomeJudge ..> QuestRunResolutionSummary : returns
+    QuestRunService ..> QuestRun : use
+    QuestRunService ..> QuestRunResolutionSummary : builds

@@ -1,3 +1,6 @@
+using server.application.battle;
+using server.domain.battle;
+using server.domain.move;
 using server.domain.player;
 using server.domain.training;
 using server.shared.constants.training;
@@ -7,7 +10,12 @@ namespace server.application.training;
 public class TrainingService(
     IPlayerRepository playerRepository,
     ITrainingEnemyRepository trainingEnemyRepository,
-    IGrowthValueRepository growthValueRepository)
+    IMoveRepository moveRepository,
+    IGrowthValueRepository growthValueRepository,
+    BattleService battleService,
+    TrainingBattleFactory trainingBattleFactory,
+    TrainingOutcomeJudge trainingOutcomeJudge,
+    TrainingExpCalculator trainingExpCalculator)
 {
     public async Task<TrainingEnemyView[]> GetTrainingEnemies()
     {
@@ -24,13 +32,15 @@ public class TrainingService(
             .ToArray();
     }
 
-    public async Task<TrainingResultView> ExecuteTraining(PlayerId playerId, TrainingEnemyId enemyId)
+    public async Task<TrainingResultView> ExecuteTraining(PlayerId playerId, TrainingEnemyId enemyId, IReadOnlyList<int?> playerMoveIds)
     {
         var player = await playerRepository.GetPlayerAsync(playerId)
             ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
 
         var enemy = await trainingEnemyRepository.GetTrainingEnemyAsync(enemyId)
             ?? throw new KeyNotFoundException("敵が見つかりません。");
+
+        var playerMoves = await LoadTrainingMovesAsync(player, playerMoveIds);
 
         var nowUtc = DateTimeOffset.UtcNow;
         var cooldownUntil = await playerRepository.TryStartTrainingCooldownAsync(
@@ -42,130 +52,148 @@ public class TrainingService(
             throw new TrainingCooldownException(cooldownUntil.Value);
         }
 
-        var turnResult = new TurnResult(
-            Turn: 0,
-            CurrentPlayerHp: player.Status.MaxHp,
-            CurrentEnemyHp: enemy.Status.MaxHp);
-
-        for (var i = 0; i < TrainingConstants.Battle.MaxTurns; i++)
+        var actors = new[]
         {
-            if (turnResult.CurrentPlayerHp <= 0 || turnResult.CurrentEnemyHp <= 0)
-            {
-                continue;
-            }
+            trainingBattleFactory.CreatePlayerActor(player, playerMoves),
+            trainingBattleFactory.CreateEnemyActor(enemy)
+        };
+        var moves = trainingBattleFactory.CreateTrainingMoves(enemy, playerMoves);
 
-            turnResult = ExecuteTurn(player, enemy, turnResult);
-        }
+        var summary = ResolveBattleUntilFinished(actors, playerMoves, moves);
 
-        var trainingResult = "Draw";
-        if (turnResult.CurrentPlayerHp > 0 && turnResult.CurrentEnemyHp <= 0)
-        {
-            trainingResult = "Win";
-        }
-        else if (turnResult.CurrentPlayerHp <= 0 && turnResult.CurrentEnemyHp > 0)
-        {
-            trainingResult = "Lose";
-        }
-
-        var exp = CalcExp(player, enemy, turnResult);
+        var exp = trainingExpCalculator.Calculate(
+            player,
+            enemy,
+            summary.Outcome,
+            enemy.Status.MaxHp - summary.CurrentEnemyHp);
         var isLevelUp = ApplyExp(player, exp);
 
         await playerRepository.SaveAsync(player);
 
         return new TrainingResultView(
-            TrainingResult: trainingResult,
-            Turn: turnResult.Turn,
-            CurrentPlayerHp: turnResult.CurrentPlayerHp,
+            TrainingResult: summary.Outcome.ToString(),
+            Turn: summary.Turn,
+            CurrentPlayerHp: summary.CurrentPlayerHp,
             MaxPlayerHp: player.Status.MaxHp,
-            CurrentEnemyHp: turnResult.CurrentEnemyHp,
+            CurrentEnemyHp: summary.CurrentEnemyHp,
             MaxEnemyHp: enemy.Status.MaxHp,
             Exp: exp,
             IsLevelUp: isLevelUp);
     }
 
-    internal static TurnResult ExecuteTurn(Player player, TrainingEnemy enemy, TurnResult turnResult)
+    private TrainingBattleSummary ResolveBattleUntilFinished(
+        IReadOnlyList<BattleActorInput> actors,
+        IReadOnlyList<Move> playerMoves,
+        IReadOnlyList<Move> moves)
     {
-        var currentPlayerHp = turnResult.CurrentPlayerHp;
-        var currentEnemyHp = turnResult.CurrentEnemyHp;
+        ArgumentNullException.ThrowIfNull(actors);
+        ArgumentNullException.ThrowIfNull(playerMoves);
+        ArgumentNullException.ThrowIfNull(moves);
 
-        var playerFirst = player.Status.Speed >= enemy.Status.Speed;
-        if (playerFirst)
+        var currentActors = actors.ToArray();
+        var turn = 0;
+
+        while (turn < TrainingConstants.Battle.MaxTurns && turn < playerMoves.Count)
         {
-            var playerUsesIntelligence = player.Status.Intelligence > player.Status.Strength;
-            var playerAttackPower = playerUsesIntelligence ? player.Status.Intelligence : player.Status.Strength;
-            var playerDefensePower = playerUsesIntelligence ? enemy.Status.Intelligence : enemy.Status.Defense;
-            var playerDealtDamage = Math.Max(1, playerAttackPower - playerDefensePower);
-            currentEnemyHp = Math.Max(0, currentEnemyHp - playerDealtDamage);
-            if (currentEnemyHp > 0)
+            var playerActor = currentActors.Single(x => x.ActorId == trainingBattleFactory.PlayerActorId);
+            var enemyActor = currentActors.Single(x => x.ActorId == trainingBattleFactory.EnemyActorId);
+            if (playerActor.CurrentHp <= 0 || enemyActor.CurrentHp <= 0)
             {
-                var enemyUsesIntelligence = enemy.Status.Intelligence > enemy.Status.Strength;
-                var enemyAttackPower = enemyUsesIntelligence ? enemy.Status.Intelligence : enemy.Status.Strength;
-                var enemyDefensePower = enemyUsesIntelligence ? player.Status.Intelligence : player.Status.Defense;
-                var enemyDealtDamage = Math.Max(1, enemyAttackPower - enemyDefensePower);
-                currentPlayerHp = Math.Max(0, currentPlayerHp - enemyDealtDamage);
+                break;
             }
-        }
-        else
-        {
-            var enemyUsesIntelligence = enemy.Status.Intelligence > enemy.Status.Strength;
-            var enemyAttackPower = enemyUsesIntelligence ? enemy.Status.Intelligence : enemy.Status.Strength;
-            var enemyDefensePower = enemyUsesIntelligence ? player.Status.Intelligence : player.Status.Defense;
-            var enemyDealtDamage = Math.Max(1, enemyAttackPower - enemyDefensePower);
-            currentPlayerHp = Math.Max(0, currentPlayerHp - enemyDealtDamage);
-            if (currentPlayerHp > 0)
-            {
-                var playerUsesIntelligence = player.Status.Intelligence > player.Status.Strength;
-                var playerAttackPower = playerUsesIntelligence ? player.Status.Intelligence : player.Status.Strength;
-                var playerDefensePower = playerUsesIntelligence ? enemy.Status.Intelligence : enemy.Status.Defense;
-                var playerDealtDamage = Math.Max(1, playerAttackPower - playerDefensePower);
-                currentEnemyHp = Math.Max(0, currentEnemyHp - playerDealtDamage);
-            }
+
+            var actions = trainingBattleFactory.CreateTurnActions(playerActor, enemyActor.ActorId, playerMoves[turn]);
+            var resolution = battleService.ResolveTurn(new BattleTurnRequest(currentActors, actions, moves));
+            turn++;
+            currentActors = BuildNextTurnActors(currentActors, resolution.UpdatedStates);
         }
 
-        return turnResult with
-        {
-            Turn = turnResult.Turn + 1,
-            CurrentPlayerHp = currentPlayerHp,
-            CurrentEnemyHp = currentEnemyHp
-        };
+        return BuildSummary(currentActors, turn);
     }
 
-    internal static int CalcExp(Player player, TrainingEnemy enemy, TurnResult turnResult)
+    private BattleActorInput[] BuildNextTurnActors(
+        IReadOnlyList<BattleActorInput> actors,
+        IReadOnlyList<BattleActorState> states)
     {
-        var playerDealtTotalDamage = enemy.Status.MaxHp - turnResult.CurrentEnemyHp;
-        var levelDiff = Math.Abs(player.Level - enemy.Level);
+        var stateMap = states.ToDictionary(x => x.Id.Value);
+        return actors
+            .Select(actor =>
+            {
+                var state = stateMap[actor.ActorId];
+                return actor with
+                {
+                    CurrentHp = state.CurrentHp,
+                    CurrentMp = state.CurrentMp,
+                    Ailments = state.Ailments.ToArray(),
+                    Buffs = state.Buffs.ToArray()
+                };
+            })
+            .ToArray();
+    }
 
-        var resultBonus = TrainingConstants.Exp.DrawMultiplier;
-        if (turnResult.CurrentPlayerHp > 0 && turnResult.CurrentEnemyHp <= 0)
-        {
-            resultBonus = TrainingConstants.Exp.WinMultiplier;
-        }
-        else if (turnResult.CurrentPlayerHp <= 0 && turnResult.CurrentEnemyHp > 0)
-        {
-            resultBonus = TrainingConstants.Exp.LoseMultiplier;
-        }
+    private TrainingBattleSummary BuildSummary(
+        IReadOnlyList<BattleActorInput> actors,
+        int turn)
+    {
+        var playerActor = actors.Single(x => x.ActorId == trainingBattleFactory.PlayerActorId);
+        var enemyActor = actors.Single(x => x.ActorId == trainingBattleFactory.EnemyActorId);
+        var outcome = trainingOutcomeJudge.Judge(
+            [
+                new BattleActorState(new BattleActorId(playerActor.ActorId), playerActor.CurrentHp ?? playerActor.BaseStatus.MaxHp, playerActor.CurrentMp ?? playerActor.BaseStatus.MaxMp),
+                new BattleActorState(new BattleActorId(enemyActor.ActorId), enemyActor.CurrentHp ?? enemyActor.BaseStatus.MaxHp, enemyActor.CurrentMp ?? enemyActor.BaseStatus.MaxMp)
+            ],
+            new BattleActorId(trainingBattleFactory.PlayerActorId),
+            new BattleActorId(trainingBattleFactory.EnemyActorId));
 
-        var baseExp = Math.Max(
-            TrainingConstants.Exp.BaseExpMin,
-            playerDealtTotalDamage / TrainingConstants.Exp.DamageBaseDivisor);
-
-        var levelBonus = TrainingConstants.Exp.LevelBonusLow;
-        if (levelDiff <= TrainingConstants.Exp.LevelBonusHighThreshold)
-        {
-            levelBonus = TrainingConstants.Exp.LevelBonusHigh;
-        }
-        else if (levelDiff <= TrainingConstants.Exp.LevelBonusMidThreshold)
-        {
-            levelBonus = TrainingConstants.Exp.LevelBonusMid;
-        }
-
-        var exp = (int)Math.Floor(baseExp * (levelBonus + resultBonus));
-        return Math.Max(1, exp);
+        return new TrainingBattleSummary(
+            Turn: turn,
+            CurrentPlayerHp: playerActor.CurrentHp ?? playerActor.BaseStatus.MaxHp,
+            CurrentEnemyHp: enemyActor.CurrentHp ?? enemyActor.BaseStatus.MaxHp,
+            Outcome: outcome);
     }
 
     private bool ApplyExp(Player player, int exp)
     {
         player.GainExp(exp);
         return player.LevelUp(growthValueRepository);
+    }
+
+    private async Task<Move[]> LoadTrainingMovesAsync(Player player, IReadOnlyList<int?> playerMoveIds)
+    {
+        ArgumentNullException.ThrowIfNull(playerMoveIds);
+
+        if (playerMoveIds.Count != TrainingConstants.Battle.MaxTurns)
+        {
+            throw new ArgumentException($"特訓で指定できる技は{TrainingConstants.Battle.MaxTurns}ターン分固定です。", nameof(playerMoveIds));
+        }
+
+        var learnedMoveIds = player.MoveSet.GetLearnedMoveIds()
+            .Select(x => x.Id)
+            .ToHashSet();
+
+        var moves = new List<Move>(playerMoveIds.Count);
+        foreach (var moveId in playerMoveIds)
+        {
+            if (moveId is null)
+            {
+                moves.Add(trainingBattleFactory.CreatePlayerTrainingNormalAttack(player.Status));
+                continue;
+            }
+
+            if (!learnedMoveIds.Contains(moveId.Value))
+            {
+                throw new ArgumentException($"未習得の技は指定できません。 moveId={moveId}", nameof(playerMoveIds));
+            }
+
+            var move = await moveRepository.GetMoveAsync(new MoveId(moveId.Value));
+            if (move is null)
+            {
+                throw new ArgumentException($"存在しない技は指定できません。 moveId={moveId}", nameof(playerMoveIds));
+            }
+
+            moves.Add(move);
+        }
+
+        return moves.ToArray();
     }
 }

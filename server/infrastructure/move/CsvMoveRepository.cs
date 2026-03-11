@@ -146,7 +146,7 @@ public class CsvMoveRepository : IMoveRepository
             }
 
             var columns = line.Split(',', StringSplitOptions.TrimEntries);
-            if (columns.Length != 17)
+            if (columns.Length != 19)
             {
                 throw new InvalidOperationException($"move_effects.csv の形式が不正です。行: {i + 1}");
             }
@@ -203,8 +203,9 @@ public class CsvMoveRepository : IMoveRepository
         var fixedValue = ParseNullableInt(columns[6], "fixed_value", lineNumber) ?? 0;
         var criticalRate = ParseNullableDecimal(columns[7], "critical_rate", lineNumber) ?? 0m;
         var elementType = ParseNullableEnum<ElementType>(columns[8], "element_type", lineNumber) ?? ElementType.None;
+        var attackStat = ParseNullableEnum<BuffStat>(columns[9], "attack_stat", lineNumber);
 
-        return new DamageEffect(hitCount, powerRate, fixedValue, criticalRate, elementType);
+        return new DamageEffect(hitCount, powerRate, fixedValue, criticalRate, elementType, attackStat);
     }
 
     private static AilmentEffect? BuildAilmentEffect(string[] columns, MoveEffectType effectType, int lineNumber)
@@ -214,12 +215,32 @@ public class CsvMoveRepository : IMoveRepository
             return null;
         }
 
-        var ailmentType = ParseNullableEnum<AilmentType>(columns[9], "ailment_type", lineNumber)
+        var ailmentType = ParseNullableEnum<AilmentType>(columns[10], "ailment_type", lineNumber)
             ?? throw new InvalidOperationException($"Ailment には ailment_type が必要です。行: {lineNumber}");
-        var ailmentRate = ParseNullableDecimal(columns[10], "ailment_rate", lineNumber)
+        var ailmentRate = ParseNullableDecimal(columns[11], "ailment_rate", lineNumber)
             ?? throw new InvalidOperationException($"Ailment には ailment_rate が必要です。行: {lineNumber}");
+        var ailmentTurns = ParseNullableInt(columns[12], "ailment_turns", lineNumber)
+            ?? throw new InvalidOperationException($"Ailment には ailment_turns が必要です。行: {lineNumber}");
+        var triggerDamage = BuildAilmentTriggerDamage(columns, ailmentType, lineNumber);
 
-        return new AilmentEffect(ailmentType, ailmentRate);
+        return new AilmentEffect(ailmentType, ailmentRate, ailmentTurns, triggerDamage);
+    }
+
+    private static DamageEffect? BuildAilmentTriggerDamage(string[] columns, AilmentType ailmentType, int lineNumber)
+    {
+        if (ailmentType != AilmentType.DamageTrap)
+        {
+            return null;
+        }
+
+        var hitCount = ParseNullableInt(columns[4], "hit_count", lineNumber) ?? 1;
+        var powerRate = ParseNullableDecimal(columns[5], "power_rate", lineNumber) ?? 0m;
+        var fixedValue = ParseNullableInt(columns[6], "fixed_value", lineNumber) ?? 0;
+        var criticalRate = ParseNullableDecimal(columns[7], "critical_rate", lineNumber) ?? 0m;
+        var elementType = ParseNullableEnum<ElementType>(columns[8], "element_type", lineNumber) ?? ElementType.None;
+        var attackStat = ParseNullableEnum<BuffStat>(columns[9], "attack_stat", lineNumber);
+
+        return new DamageEffect(hitCount, powerRate, fixedValue, criticalRate, elementType, attackStat);
     }
 
     private static BuffEffect? BuildBuffEffect(string[] columns, MoveEffectType effectType, int lineNumber)
@@ -229,19 +250,19 @@ public class CsvMoveRepository : IMoveRepository
             return null;
         }
 
-        var buffStat = ParseNullableEnum<BuffStat>(columns[11], "buff_stat", lineNumber)
+        var buffStat = ParseNullableEnum<BuffStat>(columns[13], "buff_stat", lineNumber)
             ?? throw new InvalidOperationException($"Buff には buff_stat が必要です。行: {lineNumber}");
-        var buffOp = ParseNullableEnum<BuffOp>(columns[12], "buff_op", lineNumber)
+        var buffCalculationType = ParseNullableEnum<BuffCalculationType>(columns[14], "buff_op", lineNumber)
             ?? throw new InvalidOperationException($"Buff には buff_op が必要です。行: {lineNumber}");
-        var buffValue = ParseNullableDecimal(columns[13], "buff_value", lineNumber)
+        var buffValue = ParseNullableDecimal(columns[15], "buff_value", lineNumber)
             ?? throw new InvalidOperationException($"Buff には buff_value が必要です。行: {lineNumber}");
-        var buffTurns = ParseNullableInt(columns[14], "buff_turns", lineNumber)
+        var buffTurns = ParseNullableInt(columns[16], "buff_turns", lineNumber)
             ?? throw new InvalidOperationException($"Buff には buff_turns が必要です。行: {lineNumber}");
-        var buffRate = ParseNullableDecimal(columns[15], "buff_rate", lineNumber)
+        var buffRate = ParseNullableDecimal(columns[17], "buff_rate", lineNumber)
             ?? throw new InvalidOperationException($"Buff には buff_rate が必要です。行: {lineNumber}");
-        var canStack = ParseNullableBool(columns[16], "can_stack", lineNumber) ?? false;
+        var canStack = ParseNullableBool(columns[18], "can_stack", lineNumber) ?? false;
 
-        return new BuffEffect(buffStat, buffOp, buffValue, buffTurns, buffRate, canStack);
+        return new BuffEffect(buffStat, buffCalculationType, buffValue, buffTurns, buffRate, canStack);
     }
 
     private static int ParseInt(string value, string columnName, int lineNumber)

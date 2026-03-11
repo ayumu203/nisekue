@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using server.application.chat;
+using server.application.battle;
 using server.application.training;
 using server.domain.chat;
 using server.domain.move;
@@ -75,6 +76,10 @@ builder.Services.AddSingleton<IGrowthValueRepository, CsvGrowthValueRepository>(
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
 builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
 builder.Services.AddSingleton<IMoveRepository, CsvMoveRepository>();
+builder.Services.AddScoped<BattleService>();
+builder.Services.AddScoped<TrainingBattleFactory>();
+builder.Services.AddScoped<TrainingOutcomeJudge>();
+builder.Services.AddScoped<TrainingExpCalculator>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<TrainingService>();
 
@@ -394,7 +399,10 @@ app.MapPost("/training/execute", async (ClaimsPrincipal user, ExecuteTrainingReq
 
     try
     {
-        var result = await trainingService.ExecuteTraining(playerId.Value, new TrainingEnemyId(request.EnemyId));
+        var result = await trainingService.ExecuteTraining(
+            playerId.Value,
+            new TrainingEnemyId(request.EnemyId),
+            request.MoveIds);
         return Results.Ok(result);
     }
     catch (TrainingCooldownException ex)
@@ -409,6 +417,10 @@ app.MapPost("/training/execute", async (ClaimsPrincipal user, ExecuteTrainingReq
     catch (KeyNotFoundException ex)
     {
         return Results.NotFound(new { message = ex.Message });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
     }
 }).RequireAuthorization();
 
@@ -438,4 +450,4 @@ public record CreatePlayerRequest(string UserName);
 public record UpdatePlayerNameRequest(string UserName);
 public record UpdatePlayerJobRequest(Job Job);
 public record PostChatMessageRequest(Guid OwnerId, string Text);
-public record ExecuteTrainingRequest(int EnemyId);
+public record ExecuteTrainingRequest(int EnemyId, IReadOnlyList<int?> MoveIds);

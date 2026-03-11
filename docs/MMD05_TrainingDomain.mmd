@@ -1,0 +1,102 @@
+classDiagram
+    %% Enum 定義は docs/MMD21_Enum.mmd を参照
+    namespace TrainingDomain {
+        %% トレーニングモード
+        class TrainingEnemy {
+            <<Entity>>
+            +TrainingEnemyId Id
+            +string Name
+            +string ImagePath
+            +int Level
+            +Status Status
+            -ValidateName(name: string) string
+        }
+
+        class TrainingEnemyId {
+            <<Value Object>>
+            +int Id
+        }
+
+        class ITrainingEnemyRepository {
+            +Task~TrainingEnemy?~ GetTrainingEnemyAsync(id: TrainingEnemyId)
+            +Task~IReadOnlyList~TrainingEnemy~~ GetTrainingEnemiesAsync()
+        }
+
+        class TrainingBattleFactory {
+            <<Application Service>>
+            +CreatePlayerActor(player: Player) BattleActorInput
+            +CreateEnemyActor(enemy: TrainingEnemy) BattleActorInput
+            +CreateTurnActions(playerActorId: Guid, enemyActorId: Guid) BattleActionInput[]
+            +CreateTrainingMoves(player: Player, enemy: TrainingEnemy) Move[]
+            +PlayerActorId Guid
+            +EnemyActorId Guid
+            -CreateTrainingNormalAttack(moveId: int, status: Status) Move
+            -ResolveAttackStat(status: Status) BuffStat
+        }
+
+        class TrainingOutcome {
+            <<Enum>>
+            Win
+            Lose
+            Draw
+        }
+
+        class TrainingOutcomeJudge {
+            <<Domain Service>>
+            +Judge(states: IEnumerable~BattleActorState~, playerActorId: BattleActorId, enemyActorId: BattleActorId) TrainingOutcome
+        }
+
+        class TrainingExpCalculator {
+            <<Domain Service>>
+            +Calculate(player: Player, enemy: TrainingEnemy, outcome: TrainingOutcome, playerDealtTotalDamage: int) int
+        }
+
+        class TrainingBattleSummary {
+            <<Value Object>>
+            +int Turn
+            +int CurrentPlayerHp
+            +int CurrentEnemyHp
+            +TrainingOutcome Outcome
+        }
+
+        class TrainingService {
+            <<Application Service>>
+            +GetTrainingEnemies() TrainingEnemyView[]
+            +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
+            -ResolveBattleUntilFinished(actors: IReadOnlyList~BattleActorInput~, actions: IReadOnlyList~BattleActionInput~, moves: IReadOnlyList~Move~) TrainingBattleSummary
+            -BuildNextTurnActors(actors: IReadOnlyList~BattleActorInput~, states: IReadOnlyList~BattleActorState~) BattleActorInput[]
+            -BuildSummary(actors: IReadOnlyList~BattleActorInput~, turn: int) TrainingBattleSummary
+            -ApplyExp(player: Player, exp: int) bool
+        }
+
+        class TrainingEnemyView {
+            <<Read Model>>
+            +string Name
+            +string ImagePath
+            +int Level
+        }
+
+        class TrainingResultView {
+            <<Read Model>>
+            +string TrainingResult
+            +int Turn
+            +int CurrentPlayerHp
+            +int MaxPlayerHp
+            +int CurrentEnemyHp
+            +int MaxEnemyHp
+            +int Exp
+            +bool IsLevelUp
+        }
+    }
+
+    TrainingEnemy *-- TrainingEnemyId : has
+    ITrainingEnemyRepository --> TrainingEnemy : loads
+    TrainingBattleFactory ..> TrainingEnemy : uses
+    TrainingBattleSummary ..> TrainingOutcome : has
+    TrainingService ..> ITrainingEnemyRepository : use
+    TrainingService ..> TrainingBattleFactory : use
+    TrainingService ..> TrainingOutcomeJudge : use
+    TrainingService ..> TrainingExpCalculator : use
+    TrainingService ..> TrainingBattleSummary : builds
+    TrainingService ..> TrainingResultView : has
+    TrainingService ..> TrainingEnemyView : has
