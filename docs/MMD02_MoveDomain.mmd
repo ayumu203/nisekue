@@ -66,8 +66,10 @@ classDiagram
             +AilmentType AilmentType
             +decimal AilmentRate
             +int AilmentTurns
+            +DamageEffect? TriggerDamage
             -ValidateRateRange(value: decimal) decimal
             -ValidateTurns(turns: int) int
+            -ValidateTriggerDamage(ailmentType: AilmentType, triggerDamage: DamageEffect?) DamageEffect?
         }
 
         class BuffEffect {
@@ -94,5 +96,6 @@ classDiagram
     MoveEffect *-- MoveEffectId : has
     MoveEffect *-- DamageEffect : optional
     MoveEffect *-- AilmentEffect : optional
+    AilmentEffect *-- DamageEffect : optional
     MoveEffect *-- BuffEffect : optional
     IMoveRepository ..> Move : loads
