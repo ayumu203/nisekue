@@ -41,6 +41,22 @@ export default function Thanks() {
             </Stack>
           </Paper>
 
+          <Paper variant="outlined" sx={{ borderRadius: 2, p: { xs: 2, sm: 2.5 } }}>
+            <Stack spacing={0.5}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                MNO
+              </Typography>
+              <MuiLink
+                href="https://www.tumblr.com/sanoya0u0"
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="hover"
+              >
+                https://www.tumblr.com/sanoya0u0
+              </MuiLink>
+            </Stack>
+          </Paper>
+
           <Button component={Link} to="/" variant="outlined">
             ホームへ戻る
           </Button>
