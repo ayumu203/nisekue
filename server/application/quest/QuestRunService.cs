@@ -9,9 +9,12 @@ namespace server.application.quest;
 
 public class QuestRunService(
     IQuestRunRepository questRunRepository,
+    IQuestRoomRepository questRoomRepository,
     IQuestStageRepository questStageRepository,
     IQuestEnemyDefinitionRepository questEnemyDefinitionRepository,
     IMoveRepository moveRepository,
+    IPlayerRepository playerRepository,
+    IGrowthValueRepository growthValueRepository,
     BattleService battleService,
     QuestBattleFactory questBattleFactory)
 {
@@ -113,6 +116,8 @@ public class QuestRunService(
         var resolution = battleService.ResolveTurn(new BattleTurnRequest(actors, actions, moves, fieldContext));
 
         var finalFloorNo = stage.Floors.Max(x => x.FloorNo);
+        var currentFloor = stage.Floors.FirstOrDefault(x => x.FloorNo == previousFloorNo)
+            ?? throw new InvalidOperationException($"現在階層の定義が見つかりません。 floorNo={previousFloorNo}");
         var partyActorMap = questBattleFactory.CreatePartyActorMap(run);
         var enemyActorMap = questBattleFactory.CreateEnemyActorMap(run);
 
@@ -149,6 +154,11 @@ public class QuestRunService(
             nextFloor is not null && nextFloor.FloorType == FloorType.Boss,
             summary));
 
+        if (summary.IsFloorCleared)
+        {
+            run.Rewards.AddExp(CalculateFloorExp(currentFloor, enemyDefinitions));
+        }
+
         if (nextFloor is not null && nextEnemyStates is not null)
         {
             run.StartNextFloor(
@@ -158,7 +168,59 @@ public class QuestRunService(
                 DateTimeOffset.UtcNow.Add(TurnDeadline));
         }
 
+        if (run.Status != QuestRunStatus.InProgress)
+        {
+            await ApplyQuestRewardsAsync(run);
+        }
+
         return true;
+    }
+
+    private static int CalculateFloorExp(
+        QuestFloorDefinition floor,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+    {
+        ArgumentNullException.ThrowIfNull(floor);
+        ArgumentNullException.ThrowIfNull(enemyDefinitions);
+
+        var baseExp = floor.Placements.Sum(placement =>
+            enemyDefinitions.TryGetValue(placement.EnemyDefinitionId, out var definition)
+                ? definition.Level
+                : 0);
+
+        return (int)Math.Floor(baseExp * floor.RewardRule.ExpRate);
+    }
+
+    private async Task ApplyQuestRewardsAsync(QuestRun run)
+    {
+        if (run.Rewards.Exp <= 0)
+        {
+            return;
+        }
+
+        var room = await questRoomRepository.GetAsync(run.RoomId)
+            ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
+
+        var rewardedPlayerIds = room.Participants
+            .Where(participant => participant.PlayerId is not null)
+            .Where(participant =>
+            {
+                var state = run.BattleState.FindPartyMember(participant.Id);
+                return !state.HasLeftQuest;
+            })
+            .Select(participant => participant.PlayerId!.Value)
+            .Distinct()
+            .ToArray();
+
+        foreach (var playerId in rewardedPlayerIds)
+        {
+            var player = await playerRepository.GetPlayerAsync(playerId)
+                ?? throw new KeyNotFoundException($"プレイヤーが見つかりません。 playerId={playerId.Value}");
+
+            player.GainExp(run.Rewards.Exp);
+            player.LevelUp(growthValueRepository);
+            await playerRepository.SaveAsync(player);
+        }
     }
 
     private async Task<QuestEnemyState[]> CreateEnemyStatesAsync(QuestFloorDefinition floor)
