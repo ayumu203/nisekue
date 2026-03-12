@@ -87,7 +87,7 @@ public class QuestBattleFactory
 
         var pending = run.TurnState.PendingCommands.ToDictionary(x => x.ParticipantId);
         var partyActions = new List<BattleActionInput>();
-        var moveIds = new HashSet<int>();
+        var movesById = new Dictionary<int, Move>();
 
         foreach (var member in run.BattleState.PartyMembers)
         {
@@ -100,14 +100,16 @@ public class QuestBattleFactory
                 ? submitted
                 : CreateFallbackPartyCommand(run, member);
 
-            var action = CreateBattleAction(run, command, isEnemy: false);
+            Move? move = null;
+            if (command.ActionKind == ActionKind.UseMove && command.MoveId is not null)
+            {
+                move = await GetMoveAsync(command.MoveId, moveRepository, movesById);
+            }
+
+            var action = CreateBattleAction(run, command, isEnemy: false, move);
             if (action is not null)
             {
                 partyActions.Add(action);
-                if (action.MoveId is not null)
-                {
-                    moveIds.Add(action.MoveId.Value);
-                }
             }
         }
 
@@ -118,15 +120,7 @@ public class QuestBattleFactory
             .Cast<BattleActionInput>()
             .ToArray();
 
-        var moves = new List<Move>();
-        foreach (var moveId in moveIds)
-        {
-            var move = await moveRepository.GetMoveAsync(new MoveId(moveId))
-                ?? throw new KeyNotFoundException($"技定義が見つかりません。 moveId={moveId}");
-            moves.Add(move);
-        }
-
-        return (partyActions.Concat(enemyActions).ToArray(), moves.ToArray());
+        return (partyActions.Concat(enemyActions).ToArray(), movesById.Values.ToArray());
     }
 
     private static QuestSubmittedCommand CreateFallbackPartyCommand(QuestRun run, QuestRunPartyMemberState member)
@@ -147,7 +141,7 @@ public class QuestBattleFactory
             isAutoSubmitted: true);
     }
 
-    private static BattleActionInput? CreateBattleAction(QuestRun run, QuestSubmittedCommand command, bool isEnemy)
+    private static BattleActionInput? CreateBattleAction(QuestRun run, QuestSubmittedCommand command, bool isEnemy, Move? move = null)
     {
         return command.ActionKind switch
         {
@@ -157,14 +151,14 @@ public class QuestBattleFactory
                 MoveId: null,
                 TargetType: TargetType.Enemy,
                 AttackRange: AttackRange.Single,
-                TargetActorIds: ResolveTargetActorIds(run, command.SelectedTargetPosition, targetEnemy: !isEnemy)),
-            ActionKind.UseMove when command.MoveId is not null => new BattleActionInput(
+                TargetActorIds: ResolveTargetActorIds(run, command.ParticipantId, command.SelectedTargetPosition, TargetType.Enemy)),
+            ActionKind.UseMove when command.MoveId is not null && move is not null => new BattleActionInput(
                 ActorId: command.ParticipantId.Value,
                 Kind: BattleActionKind.UseMove,
                 MoveId: command.MoveId.Id,
-                TargetType: TargetType.Enemy,
-                AttackRange: AttackRange.Single,
-                TargetActorIds: ResolveTargetActorIds(run, command.SelectedTargetPosition, targetEnemy: true)),
+                TargetType: move.TargetType,
+                AttackRange: move.AttackRange,
+                TargetActorIds: ResolveTargetActorIds(run, command.ParticipantId, command.SelectedTargetPosition, move.TargetType)),
             ActionKind.Guard => new BattleActionInput(
                 ActorId: command.ParticipantId.Value,
                 Kind: BattleActionKind.Guard,
@@ -208,19 +202,40 @@ public class QuestBattleFactory
             TargetActorIds: [targetId]);
     }
 
-    private static IReadOnlyList<Guid>? ResolveTargetActorIds(QuestRun run, BattlePosition? position, bool targetEnemy)
+    private static async Task<Move> GetMoveAsync(
+        MoveId moveId,
+        IMoveRepository moveRepository,
+        IDictionary<int, Move> movesById)
     {
-        if (position is null)
+        if (movesById.TryGetValue(moveId.Id, out var cached))
         {
-            var fallback = targetEnemy
-                ? run.BattleState.Enemies.FirstOrDefault(x => !x.IsDead)?.Id.Value
-                : run.PartySnapshots
-                    .Join(run.BattleState.PartyMembers, x => x.ParticipantId, x => x.ParticipantId, (snapshot, state) => new { snapshot, state })
-                    .FirstOrDefault(x => !x.state.IsDead && !x.state.HasLeftQuest)?.snapshot.ParticipantId.Value;
-            return fallback is null ? null : [fallback.Value];
+            return cached;
         }
 
-        if (targetEnemy)
+        var move = await moveRepository.GetMoveAsync(moveId)
+            ?? throw new KeyNotFoundException($"技定義が見つかりません。 moveId={moveId.Id}");
+        movesById[moveId.Id] = move;
+        return move;
+    }
+
+    private static IReadOnlyList<Guid>? ResolveTargetActorIds(
+        QuestRun run,
+        QuestParticipantId actorParticipantId,
+        BattlePosition? position,
+        TargetType targetType)
+    {
+        return targetType switch
+        {
+            TargetType.Enemy => ResolveEnemyTargetActorIds(run, position),
+            TargetType.Ally => ResolveAllyTargetActorIds(run, actorParticipantId, position),
+            TargetType.Self => [actorParticipantId.Value],
+            _ => throw new ArgumentOutOfRangeException(nameof(targetType), $"未対応の TargetType: {targetType}")
+        };
+    }
+
+    private static IReadOnlyList<Guid>? ResolveEnemyTargetActorIds(QuestRun run, BattlePosition? position)
+    {
+        if (position is not null)
         {
             var enemyId = run.BattleState.Enemies
                 .FirstOrDefault(x => !x.IsDead && x.Position == position.Value)
@@ -228,11 +243,39 @@ public class QuestBattleFactory
             return enemyId is null ? null : [enemyId.Value];
         }
 
-        var participantId = run.PartySnapshots
+        var fallback = run.BattleState.Enemies
+            .Where(x => !x.IsDead)
+            .OrderBy(x => (int)x.Position.Row)
+            .ThenBy(x => (int)x.Position.Column)
+            .Select(x => x.Id.Value)
+            .FirstOrDefault();
+        return fallback == Guid.Empty ? null : [fallback];
+    }
+
+    private static IReadOnlyList<Guid>? ResolveAllyTargetActorIds(
+        QuestRun run,
+        QuestParticipantId actorParticipantId,
+        BattlePosition? position)
+    {
+        var allies = run.PartySnapshots
             .Join(run.BattleState.PartyMembers, x => x.ParticipantId, x => x.ParticipantId, (snapshot, state) => new { snapshot, state })
-            .FirstOrDefault(x => !x.state.IsDead && !x.state.HasLeftQuest && x.snapshot.StartPosition == position.Value)
-            ?.snapshot.ParticipantId.Value;
-        return participantId is null ? null : [participantId.Value];
+            .Where(x => !x.state.IsDead && !x.state.HasLeftQuest && x.snapshot.ParticipantId != actorParticipantId)
+            .ToArray();
+
+        if (position is not null)
+        {
+            var participantId = allies
+                .FirstOrDefault(x => x.snapshot.StartPosition == position.Value)
+                ?.snapshot.ParticipantId.Value;
+            return participantId is null ? null : [participantId.Value];
+        }
+
+        var fallback = allies
+            .OrderBy(x => (int)x.snapshot.StartPosition.Row)
+            .ThenBy(x => (int)x.snapshot.StartPosition.Column)
+            .Select(x => x.snapshot.ParticipantId.Value)
+            .FirstOrDefault();
+        return fallback == Guid.Empty ? null : [fallback];
     }
 
     private static Guid ResolveEnemyActorId(QuestParticipantId participantId)
