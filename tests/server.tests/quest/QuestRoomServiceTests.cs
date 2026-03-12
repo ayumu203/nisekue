@@ -172,6 +172,9 @@ public class QuestRoomServiceTests
             return Task.FromResult(room);
         }
 
+        public Task<IReadOnlyList<QuestRoom>> SearchAsync(QuestRoomSearchCondition condition)
+            => Task.FromResult<IReadOnlyList<QuestRoom>>(rooms.Values.ToArray());
+
         public Task SaveAsync(QuestRoom room)
         {
             rooms[room.Id.Value] = room;
@@ -197,6 +200,9 @@ public class QuestRoomServiceTests
             var run = runs.Values.FirstOrDefault(x => x.RoomId == roomId);
             return Task.FromResult(run);
         }
+
+        public Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
+            => Task.FromResult<IReadOnlyList<QuestRun>>([]);
 
         public Task SaveAsync(QuestRun run)
         {

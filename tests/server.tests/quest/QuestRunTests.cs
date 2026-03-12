@@ -128,7 +128,8 @@ public class QuestRunTests
             new QuestTurnState(1, DateTimeOffset.UtcNow.AddSeconds(30)),
             new QuestTrapCollection(),
             new QuestRewardAccumulator(),
-            [],
-            DateTimeOffset.UtcNow);
+            lastTurnResults: null,
+            chatMessages: [],
+            startedAt: DateTimeOffset.UtcNow);
     }
 }
