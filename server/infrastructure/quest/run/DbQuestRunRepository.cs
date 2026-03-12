@@ -20,6 +20,28 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         return LoadAsync(x => x.RoomId == roomId.Value);
     }
 
+    public async Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var runIds = await dbContext.QuestRuns
+            .AsNoTracking()
+            .Where(x => x.Status == (int)QuestRunStatus.InProgress && x.ActionDeadlineAt <= now)
+            .Select(x => x.Id)
+            .ToListAsync();
+
+        var runs = new List<QuestRun>(runIds.Count);
+        foreach (var runId in runIds)
+        {
+            var run = await GetAsync(new QuestRunId(runId));
+            if (run is not null)
+            {
+                runs.Add(run);
+            }
+        }
+
+        return runs;
+    }
+
     public async Task SaveAsync(QuestRun run)
     {
         ArgumentNullException.ThrowIfNull(run);
@@ -38,7 +60,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                 CurrentTurnNo = run.TurnState.CurrentTurnNo,
                 ActionDeadlineAt = run.TurnState.ActionDeadlineAt,
                 LastResolvedTurnNo = run.TurnState.LastResolvedTurnNo,
-                LastTurnResultsJson = null,
+                LastTurnResultsJson = QuestJsonSerializer.SerializeLastTurnResults(run.LastTurnResults),
                 ChatMessagesJson = QuestJsonSerializer.SerializeChatMessages(run.ChatMessages),
                 StartedAt = run.StartedAt,
                 EndedAt = run.EndedAt
@@ -52,6 +74,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             existing.CurrentTurnNo = run.TurnState.CurrentTurnNo;
             existing.ActionDeadlineAt = run.TurnState.ActionDeadlineAt;
             existing.LastResolvedTurnNo = run.TurnState.LastResolvedTurnNo;
+            existing.LastTurnResultsJson = QuestJsonSerializer.SerializeLastTurnResults(run.LastTurnResults);
             existing.ChatMessagesJson = QuestJsonSerializer.SerializeChatMessages(run.ChatMessages);
             existing.EndedAt = run.EndedAt;
         }
@@ -101,6 +124,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         var enemies = enemyEntities.Select(MapEnemy).ToArray();
         var turnCommands = turnCommandEntities.Select(MapTurnCommand).ToArray();
         var traps = trapEntities.Select(MapTrap).ToArray();
+        var lastTurnResults = QuestJsonSerializer.DeserializeLastTurnResults(runEntity.LastTurnResultsJson);
         var chatMessages = QuestJsonSerializer.DeserializeChatMessages(runEntity.ChatMessagesJson);
 
         return new QuestRun(
@@ -113,6 +137,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             new QuestTurnState(runEntity.CurrentTurnNo, runEntity.ActionDeadlineAt, turnCommands, runEntity.LastResolvedTurnNo),
             new QuestTrapCollection(traps),
             new QuestRewardAccumulator(rewardEntity?.Exp ?? 0),
+            lastTurnResults,
             chatMessages,
             runEntity.StartedAt,
             (QuestRunStatus)runEntity.Status,

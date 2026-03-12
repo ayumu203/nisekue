@@ -14,6 +14,7 @@ public class QuestRun(
     QuestTurnState turnState,
     QuestTrapCollection traps,
     QuestRewardAccumulator rewards,
+    QuestLastTurnResults? lastTurnResults,
     IEnumerable<QuestChatMessage>? chatMessages,
     DateTimeOffset startedAt,
     QuestRunStatus status = QuestRunStatus.InProgress,
@@ -33,6 +34,7 @@ public class QuestRun(
     public QuestTurnState TurnState { get; } = turnState ?? throw new ArgumentNullException(nameof(turnState));
     public QuestTrapCollection Traps { get; } = traps ?? throw new ArgumentNullException(nameof(traps));
     public QuestRewardAccumulator Rewards { get; } = rewards ?? throw new ArgumentNullException(nameof(rewards));
+    public QuestLastTurnResults? LastTurnResults { get; private set; } = lastTurnResults;
     public IReadOnlyList<QuestChatMessage> ChatMessages => chatMessages;
     public DateTimeOffset StartedAt { get; } = startedAt;
     public DateTimeOffset? EndedAt { get; private set; } = endedAt;
@@ -193,6 +195,11 @@ public class QuestRun(
         EnsureInProgress();
         ArgumentNullException.ThrowIfNull(message);
         chatMessages.Add(message);
+    }
+
+    public void SetLastTurnResults(QuestLastTurnResults? lastTurnResults)
+    {
+        LastTurnResults = lastTurnResults;
     }
 
     public void MarkSucceeded()

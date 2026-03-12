@@ -81,6 +81,18 @@ internal static class QuestJsonSerializer
             x.SentAt)).ToArray();
     }
 
+    public static string? SerializeLastTurnResults(QuestLastTurnResults? results)
+    {
+        return results is null ? null : JsonSerializer.Serialize(results, Options);
+    }
+
+    public static QuestLastTurnResults? DeserializeLastTurnResults(string? json)
+    {
+        return string.IsNullOrWhiteSpace(json)
+            ? null
+            : JsonSerializer.Deserialize<QuestLastTurnResults>(json, Options);
+    }
+
     public static string SerializeDerivedParametersPlaceholder()
     {
         return "{}";

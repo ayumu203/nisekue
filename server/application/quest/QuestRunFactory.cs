@@ -62,7 +62,8 @@ public class QuestRunFactory(IQuestEnemyDefinitionRepository enemyDefinitionRepo
             new QuestTurnState(1, now.Add(InitialTurnDeadline)),
             new QuestTrapCollection(),
             new QuestRewardAccumulator(),
-            [],
-            now);
+            lastTurnResults: null,
+            chatMessages: [],
+            startedAt: now);
     }
 }

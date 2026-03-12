@@ -45,6 +45,79 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
             roomEntity.ClosedAt);
     }
 
+    public async Task<IReadOnlyList<QuestRoom>> SearchAsync(QuestRoomSearchCondition condition)
+    {
+        ArgumentNullException.ThrowIfNull(condition);
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var query = dbContext.QuestRooms.AsNoTracking().AsQueryable();
+
+        if (condition.StageId is not null)
+        {
+            query = query.Where(x => x.StageId == condition.StageId.Value.Value);
+        }
+
+        if (condition.Mode is not null)
+        {
+            query = query.Where(x => x.Mode == (int)condition.Mode.Value);
+        }
+
+        if (condition.Status is not null)
+        {
+            query = query.Where(x => x.Status == (int)condition.Status.Value);
+        }
+
+        if (condition.OwnerPlayerId is not null)
+        {
+            query = query.Where(x => x.OwnerPlayerId == condition.OwnerPlayerId.Value.Value);
+        }
+
+        var roomEntities = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((condition.Page - 1) * condition.PageSize)
+            .Take(condition.PageSize)
+            .ToListAsync();
+
+        if (roomEntities.Count == 0)
+        {
+            return [];
+        }
+
+        var roomIds = roomEntities.Select(x => x.Id).ToArray();
+        var participantEntities = await dbContext.QuestRoomParticipants
+            .AsNoTracking()
+            .Where(x => roomIds.Contains(x.RoomId))
+            .OrderBy(x => x.JoinedAt)
+            .ToListAsync();
+
+        var participantsByRoomId = participantEntities
+            .GroupBy(x => x.RoomId)
+            .ToDictionary(x => x.Key, x => x.Select(MapParticipant).ToArray());
+
+        return roomEntities
+            .Select(roomEntity =>
+            {
+                var participants = participantsByRoomId.GetValueOrDefault(roomEntity.Id) ?? [];
+                var formation = new FormationLayout(participants
+                    .Where(x => x.Status != ParticipantStatus.Left)
+                    .Select(x => x.Position));
+
+                return new QuestRoom(
+                    new QuestRoomId(roomEntity.Id),
+                    new PlayerId(roomEntity.OwnerPlayerId),
+                    new QuestStageId(roomEntity.StageId),
+                    (QuestRoomMode)roomEntity.Mode,
+                    formation,
+                    participants,
+                    (QuestRoomStatus)roomEntity.Status,
+                    roomEntity.Version,
+                    roomEntity.CloseReason is null ? null : (QuestRoomCloseReason)roomEntity.CloseReason.Value,
+                    roomEntity.CreatedAt,
+                    roomEntity.ClosedAt);
+            })
+            .ToArray();
+    }
+
     public async Task SaveAsync(QuestRoom room)
     {
         ArgumentNullException.ThrowIfNull(room);
