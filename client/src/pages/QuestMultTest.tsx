@@ -25,6 +25,7 @@ import {
   joinQuestRoom,
   listQuestRooms,
   startQuestRoom,
+  submitQuestCommand,
   updateQuestRoomPosition,
 } from '@/api/quest'
 import QuestBattleStatusPanel from '@/components/quest/QuestBattleStatusPanel'
@@ -40,7 +41,14 @@ import {
 } from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/quest/QuestMultTest.json'
-import type { BattleColumn, BattleRow, GetQuestStagesResponse, QuestRoomDetailResponse, QuestRunDetailResponse } from '@/schema/quest'
+import type {
+  BattleColumn,
+  BattleRow,
+  GetQuestStagesResponse,
+  QuestActionKind,
+  QuestRoomDetailResponse,
+  QuestRunDetailResponse,
+} from '@/schema/quest'
 
 function formatStagePartyRange(stage: GetQuestStagesResponse[number]): string {
   return `${stage.minPartyMemberCount} - ${stage.maxPartyMemberCount}`
@@ -66,6 +74,12 @@ export default function QuestMultTest() {
   const [isUpdatingParticipantId, setIsUpdatingParticipantId] = useState<string | null>(null)
   const [isStarting, setIsStarting] = useState(false)
   const [positionDrafts, setPositionDrafts] = useState<Record<string, { row: BattleRow; column: BattleColumn }>>({})
+  const [selectedActionKind, setSelectedActionKind] = useState<QuestActionKind>('NormalAttack')
+  const [selectedMoveId, setSelectedMoveId] = useState<number | ''>('')
+  const [selectedTargetRow, setSelectedTargetRow] = useState<BattleRow | ''>('')
+  const [selectedTargetColumn, setSelectedTargetColumn] = useState<BattleColumn | ''>('')
+  const [commandMessage, setCommandMessage] = useState<string | null>(null)
+  const [isCommandSubmitting, setIsCommandSubmitting] = useState(false)
 
   const playerSWRKey = session?.user.id ? ([`quest-mult-player`, session.user.id] as const) : null
   const {
@@ -160,6 +174,7 @@ export default function QuestMultTest() {
     data: currentRun,
     error: runError,
     isLoading: isRunLoading,
+    mutate: mutateRun,
   } = useSWR(
     roomRunSWRKey,
     async () => {
@@ -177,6 +192,29 @@ export default function QuestMultTest() {
     player && currentRoom
       ? currentRoom.participants.find((participant) => participant.playerId === player.userId)?.participantId ?? null
       : null
+  const availableMoves = useMemo(() => (player?.moveSlots ?? []).filter((slot) => slot.moveId != null), [player])
+  const firstEnemyPosition = currentRun?.enemies[0]?.position ?? null
+  const currentPendingCommand =
+    currentRun && selfParticipantId
+      ? currentRun.pendingCommands.find(
+          (command) => command.participantId === selfParticipantId && command.turnNo === currentRun.turn.currentTurnNo,
+        ) ?? null
+      : null
+
+  useEffect(() => {
+    if (!firstEnemyPosition) {
+      return
+    }
+
+    setSelectedTargetRow((current) => current || firstEnemyPosition.row)
+    setSelectedTargetColumn((current) => current || firstEnemyPosition.column)
+  }, [firstEnemyPosition])
+
+  useEffect(() => {
+    if (selectedActionKind !== 'UseMove') {
+      setSelectedMoveId('')
+    }
+  }, [selectedActionKind])
 
   useEffect(() => {
     if (selectedStageId !== '' || activeStages.length === 0) {
@@ -321,6 +359,55 @@ export default function QuestMultTest() {
     }
   }
 
+  async function handleSubmitCommand(): Promise<void> {
+    if (!session?.access_token) {
+      setSubmitError(locale.sessionInfoMissing)
+      return
+    }
+
+    if (!currentRun || !selfParticipantId) {
+      setSubmitError(locale.commandUnavailable)
+      return
+    }
+
+    setIsCommandSubmitting(true)
+    setSubmitError(null)
+    setCommandMessage(null)
+
+    try {
+      const selectedTargetPosition =
+        selectedTargetRow !== '' && selectedTargetColumn !== ''
+          ? {
+              targetRow: selectedTargetRow,
+              targetColumn: selectedTargetColumn,
+            }
+          : {
+              targetRow: null,
+              targetColumn: null,
+            }
+
+      const result = await submitQuestCommand(
+        currentRun.runId,
+        {
+          participantId: selfParticipantId,
+          turnNo: currentRun.turn.currentTurnNo,
+          actionKind: selectedActionKind,
+          moveId: selectedActionKind === 'UseMove' && selectedMoveId !== '' ? selectedMoveId : null,
+          targetRow: selectedTargetPosition.targetRow,
+          targetColumn: selectedTargetPosition.targetColumn,
+        },
+        session.access_token,
+      )
+
+      await mutateRun()
+      setCommandMessage(result.resolvedInThisRequest ? locale.commandResolved : locale.commandAccepted)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : locale.commandSubmitFailed)
+    } finally {
+      setIsCommandSubmitting(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
@@ -361,6 +448,7 @@ export default function QuestMultTest() {
                   {roomError ? <Alert severity="warning">{roomError.message}</Alert> : null}
                   {runError ? <Alert severity="warning">{runError.message}</Alert> : null}
                   {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+                  {commandMessage ? <Alert severity="success">{commandMessage}</Alert> : null}
 
                   {isPlayerLoading || isStagesLoading ? (
                     <Stack direction="row" spacing={1} alignItems="center">
@@ -603,6 +691,122 @@ export default function QuestMultTest() {
                     <Typography variant="body2" color="text.secondary">
                       {locale.questRunEmpty}
                     </Typography>
+                  )}
+                </Stack>
+              </Paper>
+
+              <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+                <Stack spacing={2}>
+                  <Typography variant="h5">{locale.commandPanelTitle}</Typography>
+                  {!currentRun ? (
+                    <Typography variant="body2" color="text.secondary">
+                      {locale.commandPanelEmpty}
+                    </Typography>
+                  ) : (
+                    <Stack spacing={2}>
+                      <Typography variant="body2" color="text.secondary">
+                        {`${locale.currentTurnLabel}: ${currentRun.turn.currentTurnNo}`}
+                      </Typography>
+
+                      <FormControl fullWidth sx={greenOutlinedInputSx}>
+                        <InputLabel id="quest-mult-action-kind-select-label">{locale.labels.actionKind}</InputLabel>
+                        <Select
+                          labelId="quest-mult-action-kind-select-label"
+                          value={selectedActionKind}
+                          label={locale.labels.actionKind}
+                          onChange={(event) => {
+                            setSelectedActionKind(event.target.value as QuestActionKind)
+                          }}
+                        >
+                          <MenuItem value="NormalAttack">{locale.actionKinds.NormalAttack}</MenuItem>
+                          <MenuItem value="UseMove">{locale.actionKinds.UseMove}</MenuItem>
+                          <MenuItem value="Guard">{locale.actionKinds.Guard}</MenuItem>
+                          <MenuItem value="Wait">{locale.actionKinds.Wait}</MenuItem>
+                          <MenuItem value="LeaveQuest">{locale.actionKinds.LeaveQuest}</MenuItem>
+                          <MenuItem value="Escape">{locale.actionKinds.Escape}</MenuItem>
+                        </Select>
+                      </FormControl>
+
+                      <FormControl fullWidth sx={greenOutlinedInputSx} disabled={selectedActionKind !== 'UseMove'}>
+                        <InputLabel id="quest-mult-move-select-label">{locale.labels.move}</InputLabel>
+                        <Select
+                          labelId="quest-mult-move-select-label"
+                          value={selectedMoveId}
+                          label={locale.labels.move}
+                          onChange={(event) => {
+                            const nextValue = event.target.value
+                            setSelectedMoveId(nextValue === '' ? '' : Number(nextValue))
+                          }}
+                        >
+                          <MenuItem value="">{locale.labels.none}</MenuItem>
+                          {availableMoves.map((move) => (
+                            <MenuItem key={move.slot} value={move.moveId!}>
+                              {move.moveName}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                        <FormControl fullWidth sx={greenOutlinedInputSx}>
+                          <InputLabel id="quest-mult-target-row-select-label">{locale.labels.targetRow}</InputLabel>
+                          <Select
+                            labelId="quest-mult-target-row-select-label"
+                            value={selectedTargetRow}
+                            label={locale.labels.targetRow}
+                            onChange={(event) => {
+                              setSelectedTargetRow(event.target.value as BattleRow | '')
+                            }}
+                          >
+                            <MenuItem value="">{locale.labels.none}</MenuItem>
+                            <MenuItem value="Front">{locale.rows.Front}</MenuItem>
+                            <MenuItem value="Middle">{locale.rows.Middle}</MenuItem>
+                            <MenuItem value="Back">{locale.rows.Back}</MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        <FormControl fullWidth sx={greenOutlinedInputSx}>
+                          <InputLabel id="quest-mult-target-column-select-label">{locale.labels.targetColumn}</InputLabel>
+                          <Select
+                            labelId="quest-mult-target-column-select-label"
+                            value={selectedTargetColumn}
+                            label={locale.labels.targetColumn}
+                            onChange={(event) => {
+                              setSelectedTargetColumn(event.target.value as BattleColumn | '')
+                            }}
+                          >
+                            <MenuItem value="">{locale.labels.none}</MenuItem>
+                            <MenuItem value="Left">{locale.columns.Left}</MenuItem>
+                            <MenuItem value="Right">{locale.columns.Right}</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Stack>
+
+                      <Button
+                        variant="contained"
+                        onClick={() => void handleSubmitCommand()}
+                        disabled={isCommandSubmitting || selfParticipantId == null}
+                        sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                      >
+                        {isCommandSubmitting ? locale.submittingCommand : locale.submitCommand}
+                      </Button>
+
+                      {currentPendingCommand ? (
+                        <Paper
+                          variant="outlined"
+                          sx={{
+                            borderRadius: 2,
+                            p: 1.5,
+                            backgroundColor: '#fffdf8',
+                          }}
+                        >
+                          <Typography variant="subtitle2">{locale.pendingCommandTitle}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {`${locale.labels.actionKind}: ${locale.actionKinds[currentPendingCommand.actionKind]}`}
+                          </Typography>
+                        </Paper>
+                      ) : null}
+                    </Stack>
                   )}
                 </Stack>
               </Paper>
