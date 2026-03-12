@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import type { HubConnection } from '@microsoft/signalr'
 import { endpoints } from '@/api/endpoints'
 import {
@@ -33,9 +33,14 @@ export function useQuestRunHub({
   onError,
 }: UseQuestRunHubOptions): UseQuestRunHubResult {
   const isEnabled = Boolean(runId && accessToken)
-  const [connection, setConnection] = useState<HubConnection | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [connectionError, setConnectionError] = useState<Error | null>(null)
+  const connectionStateVersionRef = useRef(0)
+
+  const connection = useMemo(
+    () => (isEnabled ? createQuestRunHubConnection(accessToken) : null),
+    [accessToken, isEnabled],
+  )
 
   const handleSnapshot = useEffectEvent((payload: unknown) => {
     const parsed = questRunHubSnapshotEventSchema.parse(payload)
@@ -53,37 +58,37 @@ export function useQuestRunHub({
   })
 
   useEffect(() => {
-    if (!isEnabled) {
+    if (!connection || !runId) {
       return
     }
 
+    const currentVersion = connectionStateVersionRef.current + 1
+    connectionStateVersionRef.current = currentVersion
     let isDisposed = false
-    const nextConnection = createQuestRunHubConnection(accessToken)
-    setConnection(nextConnection)
-    setConnectionError(null)
 
-    nextConnection.on(endpoints.quest.hub.snapshotEvent, handleSnapshot)
-    nextConnection.on(endpoints.quest.hub.updatedEvent, handleUpdated)
-    nextConnection.on(endpoints.quest.hub.errorEvent, handleHubError)
+    connection.on(endpoints.quest.hub.snapshotEvent, handleSnapshot)
+    connection.on(endpoints.quest.hub.updatedEvent, handleUpdated)
+    connection.on(endpoints.quest.hub.errorEvent, handleHubError)
 
     const start = async () => {
       try {
-        await nextConnection.start()
-        if (isDisposed) {
-          await nextConnection.stop()
+        await connection.start()
+        if (isDisposed || connectionStateVersionRef.current != currentVersion) {
+          await connection.stop()
           return
         }
 
-        await subscribeQuestRun(nextConnection, runId)
-        if (isDisposed) {
-          await unsubscribeQuestRun(nextConnection, runId)
-          await nextConnection.stop()
+        await subscribeQuestRun(connection, runId)
+        if (isDisposed || connectionStateVersionRef.current != currentVersion) {
+          await unsubscribeQuestRun(connection, runId)
+          await connection.stop()
           return
         }
 
+        setConnectionError(null)
         setIsConnected(true)
       } catch (error) {
-        if (isDisposed) {
+        if (isDisposed || connectionStateVersionRef.current != currentVersion) {
           return
         }
 
@@ -96,30 +101,32 @@ export function useQuestRunHub({
 
     return () => {
       isDisposed = true
-      setIsConnected(false)
-      setConnection(null)
 
       const teardown = async () => {
-        nextConnection.off(endpoints.quest.hub.snapshotEvent, handleSnapshot)
-        nextConnection.off(endpoints.quest.hub.updatedEvent, handleUpdated)
-        nextConnection.off(endpoints.quest.hub.errorEvent, handleHubError)
+        connection.off(endpoints.quest.hub.snapshotEvent, handleSnapshot)
+        connection.off(endpoints.quest.hub.updatedEvent, handleUpdated)
+        connection.off(endpoints.quest.hub.errorEvent, handleHubError)
 
         try {
-          await unsubscribeQuestRun(nextConnection, runId)
+          await unsubscribeQuestRun(connection, runId)
         } catch {
           // Ignore unsubscribe errors during teardown.
         }
 
         try {
-          await nextConnection.stop()
+          await connection.stop()
         } catch {
           // Ignore stop errors during teardown.
+        }
+
+        if (connectionStateVersionRef.current == currentVersion) {
+          setIsConnected(false)
         }
       }
 
       void teardown()
     }
-  }, [accessToken, isEnabled, runId])
+  }, [connection, runId])
 
   return {
     connection: isEnabled ? connection : null,
