@@ -1,9 +1,13 @@
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using server.infrastructure;
 
 #nullable disable
 
 namespace server.infrastructure.migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260312093000_AddQuestRoomVersionConcurrency")]
     public partial class AddQuestRoomVersionConcurrency : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

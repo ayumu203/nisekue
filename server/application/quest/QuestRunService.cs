@@ -123,6 +123,20 @@ public class QuestRunService(
             finalFloorNo,
             DateTimeOffset.UtcNow.Add(TurnDeadline));
 
+        if (run.Status == QuestRunStatus.InProgress && summary.IsFloorCleared && !summary.IsQuestCompleted)
+        {
+            var nextFloorNo = previousFloorNo + 1;
+            var nextFloor = stage.Floors.FirstOrDefault(x => x.FloorNo == nextFloorNo)
+                ?? throw new InvalidOperationException($"次階層が見つかりません。 floorNo={nextFloorNo}");
+
+            var nextEnemyStates = await CreateEnemyStatesAsync(nextFloor);
+            run.StartNextFloor(
+                nextEnemyStates,
+                nextFloor.FloorType == FloorType.Boss,
+                nextFloor.Placements,
+                DateTimeOffset.UtcNow.Add(TurnDeadline));
+        }
+
         run.SetLastTurnResults(BuildLastTurnResults(
             run,
             resolution,
@@ -137,6 +151,28 @@ public class QuestRunService(
             summary));
 
         return true;
+    }
+
+    private async Task<QuestEnemyState[]> CreateEnemyStatesAsync(QuestFloorDefinition floor)
+    {
+        ArgumentNullException.ThrowIfNull(floor);
+
+        var enemyStates = new List<QuestEnemyState>(floor.Placements.Count);
+        foreach (var placement in floor.Placements)
+        {
+            var enemyDefinition = await questEnemyDefinitionRepository.GetAsync(placement.EnemyDefinitionId)
+                ?? throw new KeyNotFoundException($"敵定義が見つかりません。 enemyDefinitionId={placement.EnemyDefinitionId}");
+
+            enemyStates.Add(new QuestEnemyState(
+                QuestEnemyInstanceId.New(),
+                enemyDefinition.Id,
+                placement.Position,
+                enemyDefinition.Status.MaxHp,
+                enemyDefinition.Status.MaxMp,
+                isDead: false));
+        }
+
+        return enemyStates.ToArray();
     }
 
     private static IReadOnlyList<QuestParticipantId> GetWaitingParticipantIds(QuestRun run)

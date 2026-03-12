@@ -85,6 +85,17 @@ internal static class QuestEndpoints
                 : Results.Ok(EndpointHelpers.MapQuestRoom(room));
         });
 
+        questGroup.MapGet("/rooms/{roomId:guid}/run", async (
+            Guid roomId,
+            IQuestRunRepository questRunRepository,
+            QuestResponseMapper responseMapper) =>
+        {
+            var run = await questRunRepository.GetByRoomIdAsync(new QuestRoomId(roomId));
+            return run is null
+                ? Results.NotFound(new { message = "進行中クエストが見つかりません。" })
+                : Results.Ok(await responseMapper.MapQuestRunDetailAsync(run));
+        });
+
         questGroup.MapPost("/rooms/{roomId:guid}/join", async (Guid roomId, ClaimsPrincipal user, QuestRoomService questRoomService) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);

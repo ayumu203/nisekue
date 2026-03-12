@@ -119,6 +119,27 @@ public class QuestRun(
         FloorState.AdvanceTo(FloorState.CurrentFloorNo + 1, isBossFloor, nextPlacements ?? []);
     }
 
+    public void StartNextFloor(
+        IEnumerable<QuestEnemyState> nextEnemies,
+        bool isBossFloor,
+        IEnumerable<QuestEnemyPlacement> nextPlacements,
+        DateTimeOffset nextDeadlineAt)
+    {
+        EnsureInProgress();
+        ArgumentNullException.ThrowIfNull(nextEnemies);
+        ArgumentNullException.ThrowIfNull(nextPlacements);
+
+        if (!BattleState.AreAllEnemiesDefeated())
+        {
+            throw new InvalidOperationException("敵が残っているため次階層へ進めません。");
+        }
+
+        AdvanceFloor(isBossFloor, nextPlacements);
+        BattleState.ReplaceEnemies(nextEnemies);
+        ApplyTrapsOnFloorStart();
+        TurnState.Advance(nextDeadlineAt);
+    }
+
     public void ApplyTrapsOnFloorStart()
     {
         EnsureInProgress();

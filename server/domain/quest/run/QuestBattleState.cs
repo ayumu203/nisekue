@@ -8,7 +8,7 @@ public class QuestBattleState(
 {
     private readonly QuestRunPartyMemberState[] partyMembers = partyMembers?.ToArray()
         ?? throw new ArgumentNullException(nameof(partyMembers));
-    private readonly QuestEnemyState[] enemies = enemies?.ToArray()
+    private readonly List<QuestEnemyState> enemies = enemies?.ToList()
         ?? throw new ArgumentNullException(nameof(enemies));
 
     public IReadOnlyList<QuestRunPartyMemberState> PartyMembers => partyMembers;
@@ -28,6 +28,13 @@ public class QuestBattleState(
     public bool AreAllEnemiesDefeated()
     {
         return enemies.All(x => !x.IsAlive);
+    }
+
+    public void ReplaceEnemies(IEnumerable<QuestEnemyState> nextEnemies)
+    {
+        ArgumentNullException.ThrowIfNull(nextEnemies);
+        enemies.Clear();
+        enemies.AddRange(nextEnemies);
     }
 
     public void ApplyResolution(
