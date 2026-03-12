@@ -365,7 +365,9 @@
 * `page`
 * `pageSize`
 
-初期実装では `Recruiting` を主対象とし、フロントエンドが必要とする場合のみ `Closed` を明示指定で取得できる形とする。
+初期実装では、`status` 未指定時は `Recruiting` を既定値とする。
+並び順は `createdAt desc` を既定とし、ページングは `page = 1`, `pageSize = 20` を初期値とする。
+`pageSize` は最大 100 までに丸める。
 
 #### レスポンス View
 
@@ -395,7 +397,7 @@
 
 リクエスト:
 
-* body なし、または将来メモ追加が必要になった場合のみ簡易 DTO を追加する。
+* `ParticipantId`
 
 認可:
 
@@ -431,7 +433,7 @@
 
 `QuestRunDetailResponse.PartyMembers` の各要素に、以下の復帰状態項目を追加してよい。
 
-* `ManualControlRequestStatus` (`None`, `Pending`, `Approved`)
+* `ManualControlRequestStatus` (`None`, `Pending`)
 
 初期実装では申請履歴全件ではなく、現在ターン時点の最新状態だけを返せばよい。
 
@@ -452,26 +454,28 @@
 
 ### 4.15 `QuestRun` 認可モデル方針
 
-進行中クエストの認可は、`QuestRoom` の参加者を毎回引き直して判定するのではなく、`QuestRun` 側で完結できる形へ寄せる。
+初期実装では、進行中クエストの認可は `QuestRun` 単体では閉じず、`QuestRoom` の参加者情報を参照して判定する。
+将来的には `QuestRun` 側で完結できる形へ寄せる余地を残す。
 
 #### 方針
 
-* `QuestRun` 開始時に、`QuestParticipantId` と `PlayerId` の対応を進行側へスナップショットとして固定する。
-* `commands`、`chat`、`manual-control/request` など本人起点 API の認可は、この対応表を用いて `runId` 単位で判定する。
-* `manual-control/approve` のようなオーナー権限が必要な API についても、開始時点の `OwnerPlayerId` を `QuestRun` 側で参照可能にする。
+* `commands`、`chat`、`manual-control/request` など本人起点 API は、`QuestRun.RoomId` から `QuestRoom` を参照し、`ParticipantId` と `PlayerId` の対応で認可する。
+* `manual-control/approve` のようなオーナー権限が必要な API も、`QuestRoom.OwnerId` を参照して判定する。
+* `QuestRun` 自体は進行画面用のスナップショット情報を持つが、認可用の `PlayerId` 対応表は初期実装では保持しない。
 
 #### 認可判断の例
 
 * `POST /quest/runs/{runId}/commands`
-  * 実行者に対応する `ParticipantId` のコマンド送信のみ許可する。
+  * `QuestRoom` 上で実行者に対応する `ParticipantId` のコマンド送信のみ許可する。
 * `POST /quest/runs/{runId}/manual-control/request`
-  * 実行者に対応する `ParticipantId` の復帰申請のみ許可する。
+  * `QuestRoom` 上で実行者に対応する `ParticipantId` の復帰申請のみ許可する。
 * `POST /quest/runs/{runId}/manual-control/approve`
-  * `OwnerPlayerId` と一致する実行者のみ許可する。
+  * `QuestRoom.OwnerId` と一致する実行者のみ許可する。
 * クエスト中チャット
-  * `QuestRun` に紐づく参加者本人のみ投稿を許可する。
+  * `QuestRoom` に紐づく参加者本人のみ投稿を許可する。
 
-この方針により、進行中 API の認可を `QuestRun` 単体で閉じ、`QuestRoom` 参照依存を減らす。
+この方針により、初期実装では既存のルーム参加情報をそのまま認可に利用する。
+将来 `QuestRun` 側へ認可スナップショットを持たせる場合は、この節を更新する。
 
 ## 5. ドメインモデル案
 
@@ -1063,14 +1067,12 @@ CSV 採用理由:
 
 ### 9.1 優先度高
 
-* `QuestRoomSummaryResponse` の検索条件と並び順をどこまで固定するか。
-  初期実装では `stageId`, `mode`, `status`, `ownerPlayerId` を想定するが、フロントエンドの一覧導線に合わせて必須クエリや既定ソートを詰める必要がある。
 * 手動復帰申請状態を専用テーブルで持つか、既存の進行状態 JSON / 列へ畳み込むか。
   API 契約は固めたが、永続化方式はまだ設計選択の余地がある。
 * タイムアウト進行ジョブの実行粒度。
   何秒間隔で走査するか、1 回の処理で何件まで進めるか、排他制御をどう行うかは実装設計で決める必要がある。
-* `QuestRun` 側の認可スナップショットを、専用テーブルで持つか開始時スナップショットへ統合するか。
-  認可責務は `QuestRun` 側へ寄せる方針としたが、保存先の詳細は未決である。
+* 将来 `QuestRun` 側へ認可スナップショットを持たせるか。
+  初期実装では `QuestRoom` 参照で認可するが、進行中 API の独立性を高めるために `QuestRun` 側へ寄せるかは後続論点として残る。
 
 フロントエンド実装の初期段階では、最低でも次を先に解消することを推奨する。
 
