@@ -7,6 +7,7 @@ import Thanks from '@/pages/Thanks'
 import PlayerSetting from '@/pages/PlayerSetting'
 import MoveSetting from '@/pages/MoveSetting'
 import Quest from '@/pages/Quest'
+import QuestMultTest from '@/pages/QuestMultTest'
 import { useAuth } from '@/contexts/useAuth'
 
 function App() {
@@ -20,7 +21,9 @@ function App() {
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
       <Route path="/" element={user ? <Home /> : <Navigate to="/auth" replace />} />
-      <Route path="/quest" element={user ? <Quest /> : <Navigate to="/auth" replace />} />
+      <Route path="/quest" element={<Navigate to="/quest/quest-mult-test" replace />} />
+      <Route path="/quest/quest-solo-test" element={user ? <Quest /> : <Navigate to="/auth" replace />} />
+      <Route path="/quest/quest-mult-test" element={user ? <QuestMultTest /> : <Navigate to="/auth" replace />} />
       <Route path="/training" element={user ? <Training /> : <Navigate to="/auth" replace />} />
       <Route path="/player-setting" element={user ? <PlayerSetting /> : <Navigate to="/auth" replace />} />
       <Route path="/move-setting" element={user ? <MoveSetting /> : <Navigate to="/auth" replace />} />

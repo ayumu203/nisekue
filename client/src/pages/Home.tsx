@@ -138,7 +138,7 @@ function Home() {
               )}
               <Button
                 component={Link}
-                to="/quest"
+                to="/quest/quest-mult-test"
                 variant="contained"
                 startIcon={<QuestIcon />}
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}

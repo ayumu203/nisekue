@@ -294,7 +294,10 @@ export const questRunHubErrorEventSchema = z.object({
 })
 
 export type GetQuestStagesResponse = z.infer<typeof getQuestStagesResponseSchema>
+export type BattleRow = z.infer<typeof battleRowSchema>
+export type BattleColumn = z.infer<typeof battleColumnSchema>
 export type CreateQuestRoomRequest = z.infer<typeof createQuestRoomRequestSchema>
+export type QuestActionKind = z.infer<typeof questActionKindSchema>
 export type QuestRoomDetailResponse = z.infer<typeof questRoomDetailResponseSchema>
 export type ListQuestRoomsRequest = z.infer<typeof listQuestRoomsRequestSchema>
 export type QuestRoomSummaryResponse = z.infer<typeof questRoomSummaryResponseSchema>
