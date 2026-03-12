@@ -47,7 +47,6 @@ import type {
   GetQuestStagesResponse,
   QuestActionKind,
   QuestRoomDetailResponse,
-  QuestRunDetailResponse,
 } from '@/schema/quest'
 
 function formatStagePartyRange(stage: GetQuestStagesResponse[number]): string {

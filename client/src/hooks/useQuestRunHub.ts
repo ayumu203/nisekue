@@ -32,6 +32,7 @@ export function useQuestRunHub({
   onUpdated,
   onError,
 }: UseQuestRunHubOptions): UseQuestRunHubResult {
+  const isEnabled = Boolean(runId && accessToken)
   const [connection, setConnection] = useState<HubConnection | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [connectionError, setConnectionError] = useState<Error | null>(null)
@@ -52,10 +53,7 @@ export function useQuestRunHub({
   })
 
   useEffect(() => {
-    if (!runId || !accessToken) {
-      setConnection(null)
-      setIsConnected(false)
-      setConnectionError(null)
+    if (!isEnabled) {
       return
     }
 
@@ -121,11 +119,11 @@ export function useQuestRunHub({
 
       void teardown()
     }
-  }, [accessToken, handleHubError, handleSnapshot, handleUpdated, runId])
+  }, [accessToken, isEnabled, runId])
 
   return {
-    connection,
-    isConnected,
-    connectionError,
+    connection: isEnabled ? connection : null,
+    isConnected: isEnabled ? isConnected : false,
+    connectionError: isEnabled ? connectionError : null,
   }
 }

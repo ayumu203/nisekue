@@ -138,7 +138,7 @@ export default function Training() {
 
     setPlannedMoveIds((current) => normalizeTrainingMoveIds(player, current ?? lastSubmittedMoveIds))
     setLastSubmittedMoveIds((current) => (current ? normalizeTrainingMoveIds(player, current) : current))
-  }, [player])
+  }, [lastSubmittedMoveIds, player])
 
   async function runTraining(enemy: TrainingEnemy, moveIds: Array<number | null>): Promise<void> {
     if (!session?.access_token) {
