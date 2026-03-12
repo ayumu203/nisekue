@@ -38,7 +38,7 @@ export function useQuestRunHub({
   const connectionStateVersionRef = useRef(0)
 
   const connection = useMemo(
-    () => (isEnabled ? createQuestRunHubConnection(accessToken) : null),
+    () => (isEnabled && accessToken ? createQuestRunHubConnection(accessToken) : null),
     [accessToken, isEnabled],
   )
 

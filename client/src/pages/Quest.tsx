@@ -552,10 +552,10 @@ export default function Quest() {
                         <InputLabel id="quest-move-select-label">{locale.labels.move}</InputLabel>
                         <Select
                           labelId="quest-move-select-label"
-                          value={selectedMoveId}
+                          value={selectedMoveId === '' ? '' : String(selectedMoveId)}
                           label={locale.labels.move}
                           onChange={(event) => {
-                            const nextValue = event.target.value
+                            const nextValue = String(event.target.value)
                             setSelectedMoveId(nextValue === '' ? '' : Number(nextValue))
                           }}
                         >

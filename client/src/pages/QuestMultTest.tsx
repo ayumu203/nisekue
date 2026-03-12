@@ -744,10 +744,10 @@ export default function QuestMultTest() {
                         <InputLabel id="quest-mult-move-select-label">{locale.labels.move}</InputLabel>
                         <Select
                           labelId="quest-mult-move-select-label"
-                          value={selectedMoveId}
+                          value={selectedMoveId === '' ? '' : String(selectedMoveId)}
                           label={locale.labels.move}
                           onChange={(event) => {
-                            const nextValue = event.target.value
+                            const nextValue = String(event.target.value)
                             setSelectedMoveId(nextValue === '' ? '' : Number(nextValue))
                           }}
                         >
