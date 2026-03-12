@@ -119,6 +119,23 @@ export async function getQuestRoom(roomId: string, accessToken: string): Promise
   return endpoints.quest.getRoom.responseSchema.parse(json)
 }
 
+export async function getQuestRunByRoom(roomId: string, accessToken: string): Promise<QuestRunDetailResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.quest.getRoomRun.path(roomId)}`, {
+    method: endpoints.quest.getRoomRun.method,
+    headers: createAuthorizedHeaders(accessToken, null),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'クエスト進行情報の取得に失敗しました'))
+  }
+
+  return endpoints.quest.getRoomRun.responseSchema.parse(json)
+}
+
 export async function joinQuestRoom(roomId: string, accessToken: string): Promise<QuestRoomDetailResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
 

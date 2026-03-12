@@ -37,6 +37,14 @@ function TrainingIcon(props: SvgIconProps) {
   )
 }
 
+function QuestIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M4 5h16v3H4zm2 5h12l-1 9H7zM10 2h4v2h-4z" />
+    </SvgIcon>
+  )
+}
+
 function PlayerSettingIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
@@ -128,6 +136,15 @@ function Home() {
               ) : (
                 <Status player={player} />
               )}
+              <Button
+                component={Link}
+                to="/quest"
+                variant="contained"
+                startIcon={<QuestIcon />}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+              >
+                {locale.quest}
+              </Button>
               <Button
                 component={Link}
                 to="/training"

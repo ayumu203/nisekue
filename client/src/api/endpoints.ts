@@ -155,6 +155,11 @@ export const endpoints = {
       method: 'GET',
       responseSchema: questRoomDetailResponseSchema,
     },
+    getRoomRun: {
+      path: (roomId: string) => `/quest/rooms/${roomId}/run`,
+      method: 'GET',
+      responseSchema: questRunDetailResponseSchema,
+    },
     joinRoom: {
       path: (roomId: string) => `/quest/rooms/${roomId}/join`,
       method: 'POST',
