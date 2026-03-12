@@ -83,14 +83,90 @@ internal static class QuestJsonSerializer
 
     public static string? SerializeLastTurnResults(QuestLastTurnResults? results)
     {
-        return results is null ? null : JsonSerializer.Serialize(results, Options);
+        return results is null
+            ? null
+            : JsonSerializer.Serialize(new LastTurnResultsDto(
+                results.TurnNo,
+                results.ResolvedAt,
+                results.Actions.Select(action => new ResolvedActionDto(
+                    action.ActorParticipantId,
+                    action.ActorEnemyInstanceId,
+                    action.ActorDisplayName,
+                    action.ActionKind,
+                    action.MoveId,
+                    action.MoveName,
+                    action.Succeeded,
+                    action.TargetSummaries.Select(target => new ResolvedTargetSummaryDto(
+                        target.TargetParticipantId,
+                        target.TargetEnemyInstanceId,
+                        target.TargetDisplayName,
+                        target.ResultType,
+                        target.HpChange,
+                        target.MpChange,
+                        target.AppliedEffects.ToArray(),
+                        target.RemovedEffects.ToArray(),
+                        target.IsDeadAfterAction)).ToArray(),
+                    action.Logs.ToArray())).ToArray(),
+                results.FloorTransition is null
+                    ? null
+                    : new FloorTransitionDto(
+                        results.FloorTransition.PreviousFloorNo,
+                        results.FloorTransition.CurrentFloorNo,
+                        results.FloorTransition.FloorCleared,
+                        results.FloorTransition.BossFloorReached),
+                results.RunTransition is null
+                    ? null
+                    : new RunTransitionDto(
+                        results.RunTransition.PreviousStatus,
+                        results.RunTransition.CurrentStatus,
+                        results.RunTransition.QuestEnded)), Options);
     }
 
     public static QuestLastTurnResults? DeserializeLastTurnResults(string? json)
     {
-        return string.IsNullOrWhiteSpace(json)
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        var dto = JsonSerializer.Deserialize<LastTurnResultsDto>(json, Options);
+        return dto is null
             ? null
-            : JsonSerializer.Deserialize<QuestLastTurnResults>(json, Options);
+            : new QuestLastTurnResults(
+                dto.TurnNo,
+                dto.ResolvedAt,
+                dto.Actions.Select(action => new QuestResolvedAction(
+                    action.ActorParticipantId,
+                    action.ActorEnemyInstanceId,
+                    action.ActorDisplayName,
+                    action.ActionKind,
+                    action.MoveId,
+                    action.MoveName,
+                    action.Succeeded,
+                    action.TargetSummaries.Select(target => new QuestResolvedTargetSummary(
+                        target.TargetParticipantId,
+                        target.TargetEnemyInstanceId,
+                        target.TargetDisplayName,
+                        target.ResultType,
+                        target.HpChange,
+                        target.MpChange,
+                        target.AppliedEffects,
+                        target.RemovedEffects,
+                        target.IsDeadAfterAction)),
+                    action.Logs)).ToArray(),
+                dto.FloorTransition is null
+                    ? null
+                    : new QuestFloorTransition(
+                        dto.FloorTransition.PreviousFloorNo,
+                        dto.FloorTransition.CurrentFloorNo,
+                        dto.FloorTransition.FloorCleared,
+                        dto.FloorTransition.BossFloorReached),
+                dto.RunTransition is null
+                    ? null
+                    : new QuestRunTransition(
+                        dto.RunTransition.PreviousStatus,
+                        dto.RunTransition.CurrentStatus,
+                        dto.RunTransition.QuestEnded));
     }
 
     public static string SerializeDerivedParametersPlaceholder()
@@ -103,4 +179,32 @@ internal static class QuestJsonSerializer
     private sealed record DamageDto(int HitCount, decimal PowerRate, int FixedValue, decimal CriticalRate, int ElementType, int? AttackStat);
     private sealed record BuffDto(int Stat, int CalculationType, decimal Value, int RemainingTurns);
     private sealed record ChatMessageDto(Guid SenderParticipantId, string DisplayName, string? ImagePath, string Message, DateTimeOffset SentAt);
+    private sealed record LastTurnResultsDto(
+        int TurnNo,
+        DateTimeOffset ResolvedAt,
+        ResolvedActionDto[] Actions,
+        FloorTransitionDto? FloorTransition,
+        RunTransitionDto? RunTransition);
+    private sealed record ResolvedActionDto(
+        Guid? ActorParticipantId,
+        Guid? ActorEnemyInstanceId,
+        string ActorDisplayName,
+        string ActionKind,
+        int? MoveId,
+        string? MoveName,
+        bool Succeeded,
+        ResolvedTargetSummaryDto[] TargetSummaries,
+        string[] Logs);
+    private sealed record ResolvedTargetSummaryDto(
+        Guid? TargetParticipantId,
+        Guid? TargetEnemyInstanceId,
+        string TargetDisplayName,
+        string ResultType,
+        int HpChange,
+        int MpChange,
+        string[] AppliedEffects,
+        string[] RemovedEffects,
+        bool IsDeadAfterAction);
+    private sealed record FloorTransitionDto(int PreviousFloorNo, int CurrentFloorNo, bool FloorCleared, bool BossFloorReached);
+    private sealed record RunTransitionDto(string PreviousStatus, string CurrentStatus, bool QuestEnded);
 }

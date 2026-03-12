@@ -123,18 +123,15 @@ public class QuestRunService(
             finalFloorNo,
             DateTimeOffset.UtcNow.Add(TurnDeadline));
 
+        QuestFloorDefinition? nextFloor = null;
+        QuestEnemyState[]? nextEnemyStates = null;
         if (run.Status == QuestRunStatus.InProgress && summary.IsFloorCleared && !summary.IsQuestCompleted)
         {
             var nextFloorNo = previousFloorNo + 1;
-            var nextFloor = stage.Floors.FirstOrDefault(x => x.FloorNo == nextFloorNo)
+            nextFloor = stage.Floors.FirstOrDefault(x => x.FloorNo == nextFloorNo)
                 ?? throw new InvalidOperationException($"次階層が見つかりません。 floorNo={nextFloorNo}");
 
-            var nextEnemyStates = await CreateEnemyStatesAsync(nextFloor);
-            run.StartNextFloor(
-                nextEnemyStates,
-                nextFloor.FloorType == FloorType.Boss,
-                nextFloor.Placements,
-                DateTimeOffset.UtcNow.Add(TurnDeadline));
+            nextEnemyStates = await CreateEnemyStatesAsync(nextFloor);
         }
 
         run.SetLastTurnResults(BuildLastTurnResults(
@@ -148,7 +145,18 @@ public class QuestRunService(
             beforeEnemy,
             previousFloorNo,
             previousStatus,
+            nextFloor?.FloorNo,
+            nextFloor is not null && nextFloor.FloorType == FloorType.Boss,
             summary));
+
+        if (nextFloor is not null && nextEnemyStates is not null)
+        {
+            run.StartNextFloor(
+                nextEnemyStates,
+                nextFloor.FloorType == FloorType.Boss,
+                nextFloor.Placements,
+                DateTimeOffset.UtcNow.Add(TurnDeadline));
+        }
 
         return true;
     }
@@ -199,6 +207,8 @@ public class QuestRunService(
         IReadOnlyDictionary<QuestEnemyInstanceId, ActorStateSnapshot> beforeEnemy,
         int previousFloorNo,
         string previousStatus,
+        int? nextFloorNo,
+        bool nextFloorIsBoss,
         QuestRunResolutionSummary summary)
     {
         var moveById = moves.ToDictionary(x => x.Id.Id);
@@ -301,7 +311,11 @@ public class QuestRunService(
         }).ToArray();
 
         var floorTransition = summary.IsFloorCleared
-            ? new QuestFloorTransition(previousFloorNo, run.FloorState.CurrentFloorNo, true, run.FloorState.IsBossFloor)
+            ? new QuestFloorTransition(
+                previousFloorNo,
+                nextFloorNo ?? run.FloorState.CurrentFloorNo,
+                true,
+                nextFloorNo.HasValue ? nextFloorIsBoss : run.FloorState.IsBossFloor)
             : null;
 
         var runTransition = new QuestRunTransition(previousStatus, run.Status.ToString(), run.Status != QuestRunStatus.InProgress);
