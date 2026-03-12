@@ -146,6 +146,333 @@
 * 単体攻撃や単体対象技の入力は「どのマスを狙ったか」を `BattlePosition` で保持し、解決時にその座標にいる対象へ適用する。
 * 範囲攻撃は、入力時に選んだ `BattlePosition` を起点として、`AttackRange` と `BattleFieldContext` に従って最終対象を展開する。
 
+### 4.8 API / 通知方針
+
+* クライアント向けの進行状態は、ドメインモデルや永続化モデルをそのまま返さず、公開用 DTO として `QuestRunDetailResponse` に射影して返す。
+* `QuestRunDetailResponse` には、パーティ進行の把握、戦闘画面の再描画、直前ターン演出の再生に必要な情報を含める。
+* 一方で、未公開の内部管理情報、楽観ロック用 `version`、内部 ID 対応のうちクライアントで不要なもの、敵 AI 内部値やサーバー都合のメタ情報は含めない。
+* 直前ターンの解決結果は `QuestRunDetailResponse.LastTurnResults` として返し、`quest_runs.last_turn_results_json` をその公開用 View に対応づける。
+* 行動入力 API は `POST /quest/runs/{runId}/commands` を主入口とし、コマンド受信後に未入力者が 0 人なら、そのリクエスト内でターン解決まで行う。
+* ターン解決後の最新状態通知は SignalR を用いて行う。クライアントは `QuestRunHub` へ接続し、`runId` 単位のグループへ参加する。
+* サーバーはターン解決完了後、対象 `runId` グループへ `QuestRunDetailResponse` を broadcast する。
+* `POST /quest/runs/{runId}/commands` の HTTP 応答は受付結果の返却を主とし、画面更新の正本は SignalR 通知とする。
+* `GET /quest/runs/{runId}` は初期表示や再接続復元のために `QuestRunDetailResponse` を返す読み取り API として残す。
+* `POST /quest/runs/{runId}/manual-control/request` と `POST /quest/runs/{runId}/manual-control/approve` は、状態更新後に同様に `QuestRunDetailResponse` を SignalR 通知できる構成とする。
+
+### 4.9 `QuestRunHub` イベント契約
+
+`QuestRunHub` は SignalR Hub として実装し、クライアントは接続後に `runId` ごとのグループ購読を行う。
+
+#### クライアント -> サーバー
+
+* `SubscribeRun(runId)`
+  * 指定した `runId` のグループへ参加する。
+  * 参加成功後、サーバーは現在状態を `QuestRunSnapshot` で返してよい。
+* `UnsubscribeRun(runId)`
+  * 指定した `runId` のグループから離脱する。
+
+#### サーバー -> クライアント
+
+* `QuestRunSnapshot`
+  * 接続直後または購読直後に現在状態を 1 回返すイベント。
+  * payload は `QuestRunDetailResponse` とする。
+* `QuestRunUpdated`
+  * コマンド登録後のターン解決、手動復帰申請、手動復帰承認、その他進行状態変更時に返すイベント。
+  * payload は `QuestRunDetailResponse` とする。
+* `QuestRunError`
+  * 購読失敗、認可失敗、不正な `runId` 指定などを返すイベント。
+  * payload は `code`, `message` を持つ簡易エラー DTO とする。
+
+初期実装では `QuestRunSnapshot` と `QuestRunUpdated` の payload を統一し、クライアントは受信した `QuestRunDetailResponse` で画面状態を丸ごと差し替える前提とする。
+
+### 4.10 `QuestRunDetailResponse` View 案
+
+`QuestRunDetailResponse` は、クエスト画面の初期描画、再接続復元、進行中更新通知を同一形で扱うための公開 View とする。
+
+#### ルート項目
+
+* `RunId`
+* `RoomId`
+* `StageId`
+* `Status` (`InProgress`, `Succeeded`, `Failed`, `Aborted`)
+* `Floor`
+* `Turn`
+* `PartyMembers`
+* `Enemies`
+* `PendingCommands`
+* `ChatMessages`
+* `Rewards`
+* `LastTurnResults`
+
+#### `Floor`
+
+* `CurrentFloorNo`
+* `IsBossFloor`
+
+#### `Turn`
+
+* `CurrentTurnNo`
+* `ActionDeadlineAt`
+* `WaitingParticipantIds`
+
+#### `PartyMembers`
+
+各要素は `QuestPartyMemberView` とし、以下を持つ。
+
+* `ParticipantId`
+* `Type` (`Player`, `Npc`)
+* `DisplayName`
+* `ImagePath`
+* `Position`
+* `CurrentHp`
+* `CurrentMp`
+* `MaxHp`
+* `MaxMp`
+* `IsDead`
+* `CanActFromTurn`
+* `ActionMode` (`Manual`, `AutoAttackOnly`)
+* `ActiveEffects`
+
+#### `Enemies`
+
+各要素は `QuestEnemyView` とし、以下を持つ。
+
+* `EnemyInstanceId`
+* `EnemyDefinitionId`
+* `Name`
+* `ImagePath`
+* `Position`
+* `CurrentHp`
+* `CurrentMp`
+* `MaxHp`
+* `MaxMp`
+* `IsDead`
+* `ActiveEffects`
+
+#### `PendingCommands`
+
+各要素は `QuestPendingCommandView` とし、以下を持つ。
+
+* `ParticipantId`
+* `TurnNo`
+* `ActionKind` (`NormalAttack`, `UseMove`, `Guard`, `Wait`, `LeaveQuest`, `Escape`)
+* `MoveId`
+* `SelectedTargetPosition`
+* `IsAutoSubmitted`
+* `SubmittedAt`
+
+`PendingCommands` は初期実装では入力済みコマンド内容まで含めるが、後に秘匿要件が出た場合は `SubmittedParticipantIds` のような縮約 View へ差し替えられる余地を残す。
+
+#### `ChatMessages`
+
+各要素は `QuestChatMessageView` とし、以下を持つ。
+
+* `SenderParticipantId`
+* `DisplayName`
+* `ImagePath`
+* `Message`
+* `SentAt`
+
+#### `Rewards`
+
+`QuestRewardView` として以下を持つ。
+
+* `Exp`
+
+#### `ActiveEffects`
+
+パーティ / 敵の状態異常とバフは `QuestActiveEffectView` として表現し、以下を持つ。
+
+* `EffectType`
+* `DisplayName`
+* `RemainingTurns`
+* `Stacks`
+
+### 4.11 `LastTurnResults` View 案
+
+`LastTurnResults` は、直前ターンの演出再生、行動ログ表示、階層遷移 / クエスト終了演出の判断に必要な情報を返す。
+
+#### `QuestLastTurnResultsView`
+
+* `TurnNo`
+* `ResolvedAt`
+* `Actions`
+* `FloorTransition`
+* `RunTransition`
+
+#### `Actions`
+
+各要素は `QuestResolvedActionView` とし、以下を持つ。
+
+* `ActorParticipantId`
+* `ActorEnemyInstanceId`
+* `ActorDisplayName`
+* `ActionKind` (`NormalAttack`, `UseMove`, `Guard`, `Wait`, `LeaveQuest`, `Escape`)
+* `MoveId`
+* `MoveName`
+* `TargetSummaries`
+* `Logs`
+
+味方と敵のどちらが行動主体でも扱えるよう、`ActorParticipantId` と `ActorEnemyInstanceId` は排他的に利用する。
+
+#### `TargetSummaries`
+
+各要素は `QuestActionTargetResultView` とし、以下を持つ。
+
+* `TargetParticipantId`
+* `TargetEnemyInstanceId`
+* `TargetDisplayName`
+* `ResultType` (`Hit`, `Miss`, `Guarded`, `Healed`, `BuffApplied`, `AilmentApplied`, `Defeated`)
+* `HpChange`
+* `MpChange`
+* `AppliedEffects`
+* `RemovedEffects`
+* `IsDeadAfterAction`
+
+#### `FloorTransition`
+
+階層遷移が発生した場合のみ `QuestFloorTransitionView` を返し、以下を持つ。
+
+* `PreviousFloorNo`
+* `CurrentFloorNo`
+* `FloorCleared`
+* `BossFloorReached`
+
+#### `RunTransition`
+
+クエスト状態変化の有無を表す `QuestRunTransitionView` として、以下を持つ。
+
+* `PreviousStatus`
+* `CurrentStatus`
+* `QuestEnded`
+
+### 4.12 ルーム一覧 API 方針
+
+参加可能ルーム一覧の表示のため、`GET /quest/rooms` を追加する。
+
+#### 用途
+
+* 募集中ルームの一覧表示
+* 参加画面でのステージ選択後の候補表示
+* 再接続導線での自分の参加中ルーム確認
+
+#### クエリ条件案
+
+* `stageId`
+* `mode` (`Solo`, `Multi`)
+* `status` (`Recruiting`, `Closed`)
+* `ownerPlayerId`
+* `page`
+* `pageSize`
+
+初期実装では `Recruiting` を主対象とし、フロントエンドが必要とする場合のみ `Closed` を明示指定で取得できる形とする。
+
+#### レスポンス View
+
+`QuestRoomSummaryResponse` として、各要素に以下を持つ。
+
+* `RoomId`
+* `StageId`
+* `StageName`
+* `Mode`
+* `Status`
+* `OwnerPlayerId`
+* `OwnerDisplayName`
+* `ParticipantCount`
+* `MinPartyMemberCount`
+* `MaxPartyMemberCount`
+* `CreatedAt`
+
+一覧用途では詳細な配置情報や参加者全件は返さず、ルームカード描画に必要な情報へ絞る。
+
+### 4.13 手動復帰 API 方針
+
+手動復帰は HTTP API で要求を受け付け、状態更新後は SignalR で `QuestRunDetailResponse` を通知する。
+
+#### `POST /quest/runs/{runId}/manual-control/request`
+
+`AutoAttackOnly` に移行した参加者本人が、自分の手動復帰を申請するための API とする。
+
+リクエスト:
+
+* body なし、または将来メモ追加が必要になった場合のみ簡易 DTO を追加する。
+
+認可:
+
+* 実行者本人のみ呼び出せる。
+* 対象参加者が `AutoAttackOnly` である場合のみ受け付ける。
+
+結果:
+
+* 手動復帰申請中状態を `QuestRun` に反映する。
+* 更新後は `QuestRunUpdated` で `QuestRunDetailResponse` を対象 `runId` グループへ通知する。
+* HTTP 応答は受付成否のみを返す。
+
+#### `POST /quest/runs/{runId}/manual-control/approve`
+
+オーナーが手動復帰申請を承認するための API とする。
+
+リクエスト:
+
+* `ParticipantId`
+
+認可:
+
+* ルームオーナーのみ呼び出せる。
+* 対象参加者に未処理の手動復帰申請がある場合のみ受け付ける。
+
+結果:
+
+* 対象参加者の `ActionMode` を `Manual` へ戻す。
+* 更新後は `QuestRunUpdated` で `QuestRunDetailResponse` を対象 `runId` グループへ通知する。
+* HTTP 応答は受付成否のみを返す。
+
+#### 手動復帰表示のための View
+
+`QuestRunDetailResponse.PartyMembers` の各要素に、以下の復帰状態項目を追加してよい。
+
+* `ManualControlRequestStatus` (`None`, `Pending`, `Approved`)
+
+初期実装では申請履歴全件ではなく、現在ターン時点の最新状態だけを返せばよい。
+
+### 4.14 タイムアウト進行の起動方針
+
+未入力者が 0 人になった時点のターン解決は `POST /quest/runs/{runId}/commands` 内で実行する。
+一方で、誰も追加操作しないまま `ActionDeadlineAt` を超過したケースに備え、タイムアウト進行の起動契機を定める。
+
+初期実装では以下の方針を採る。
+
+* サーバー側に定期実行ジョブを用意し、期限切れの `QuestRun` を走査する。
+* 期限切れを検知した `QuestRun` について、未入力の `Manual` 参加者を `AutoAttackOnly` へ切り替え、自動コマンドを投入する。
+* その結果として未入力者が 0 人になれば、その場でターン解決まで行う。
+* 解決後は `QuestRunUpdated` で `QuestRunDetailResponse` を通知する。
+
+`GET /quest/runs/{runId}` では副作用を持たせず、読み取り専用とする。
+これにより、画面再表示やポーリング取得によって進行が偶発的に進むことを避ける。
+
+### 4.15 `QuestRun` 認可モデル方針
+
+進行中クエストの認可は、`QuestRoom` の参加者を毎回引き直して判定するのではなく、`QuestRun` 側で完結できる形へ寄せる。
+
+#### 方針
+
+* `QuestRun` 開始時に、`QuestParticipantId` と `PlayerId` の対応を進行側へスナップショットとして固定する。
+* `commands`、`chat`、`manual-control/request` など本人起点 API の認可は、この対応表を用いて `runId` 単位で判定する。
+* `manual-control/approve` のようなオーナー権限が必要な API についても、開始時点の `OwnerPlayerId` を `QuestRun` 側で参照可能にする。
+
+#### 認可判断の例
+
+* `POST /quest/runs/{runId}/commands`
+  * 実行者に対応する `ParticipantId` のコマンド送信のみ許可する。
+* `POST /quest/runs/{runId}/manual-control/request`
+  * 実行者に対応する `ParticipantId` の復帰申請のみ許可する。
+* `POST /quest/runs/{runId}/manual-control/approve`
+  * `OwnerPlayerId` と一致する実行者のみ許可する。
+* クエスト中チャット
+  * `QuestRun` に紐づく参加者本人のみ投稿を許可する。
+
+この方針により、進行中 API の認可を `QuestRun` 単体で閉じ、`QuestRoom` 参照依存を減らす。
+
 ## 5. ドメインモデル案
 
 ### 5.1 集約一覧
@@ -736,11 +1063,26 @@ CSV 採用理由:
 
 ### 9.1 優先度高
 
-現時点で優先度高の未確定事項はなし。
+* `QuestRoomSummaryResponse` の検索条件と並び順をどこまで固定するか。
+  初期実装では `stageId`, `mode`, `status`, `ownerPlayerId` を想定するが、フロントエンドの一覧導線に合わせて必須クエリや既定ソートを詰める必要がある。
+* 手動復帰申請状態を専用テーブルで持つか、既存の進行状態 JSON / 列へ畳み込むか。
+  API 契約は固めたが、永続化方式はまだ設計選択の余地がある。
+* タイムアウト進行ジョブの実行粒度。
+  何秒間隔で走査するか、1 回の処理で何件まで進めるか、排他制御をどう行うかは実装設計で決める必要がある。
+* `QuestRun` 側の認可スナップショットを、専用テーブルで持つか開始時スナップショットへ統合するか。
+  認可責務は `QuestRun` 側へ寄せる方針としたが、保存先の詳細は未決である。
+
+フロントエンド実装の初期段階では、最低でも次を先に解消することを推奨する。
+
+* `GET /quest/rooms`
+* `GET /quest/runs/{runId}` の `QuestRunDetailResponse`
+* `POST /quest/runs/{runId}/commands`
+* `POST /quest/runs/{runId}/manual-control/request`
+* `POST /quest/runs/{runId}/manual-control/approve`
+* `QuestRunHub`
 
 ### 9.2 優先度中
 
-* 中衛専用武器の条件は、装備システム実装前はどう表現するか。
 * ボス階層到達前の回復・準備フェーズを設けるか。
 * `QuestBattleState` など内部概念を将来別集約へ分離する必要があるか。
 

@@ -5,10 +5,13 @@ using server.application.chat;
 using server.application.quest;
 using server.application.battle;
 using server.application.training;
+using server.domain.battle;
+using server.domain.battle.enums;
 using server.domain.chat;
 using server.domain.move;
 using server.domain.player;
 using server.domain.quest;
+using server.domain.quest.enums;
 using server.domain.training;
 using server.infrastructure;
 using server.infrastructure.chat;
@@ -337,6 +340,411 @@ app.MapPut(
     }
 }).RequireAuthorization();
 
+var questGroup = app.MapGroup("/quest").RequireAuthorization();
+
+questGroup.MapGet("/stages", async (IQuestStageRepository questStageRepository) =>
+{
+    var stages = await questStageRepository.GetAllAsync();
+    return Results.Ok(stages
+        .Where(x => x.IsActive)
+        .Select(MapQuestStage));
+});
+
+questGroup.MapPost("/rooms", async (ClaimsPrincipal user, CreateQuestRoomRequest request, QuestRoomService questRoomService) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    try
+    {
+        var room = await questRoomService.CreateRoomAsync(playerId.Value, new QuestStageId(request.StageId), request.Mode);
+        return Results.Ok(MapQuestRoom(room));
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(new { message = ex.Message });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+});
+
+questGroup.MapGet("/rooms/{roomId:guid}", async (Guid roomId, IQuestRoomRepository questRoomRepository) =>
+{
+    var room = await questRoomRepository.GetAsync(new QuestRoomId(roomId));
+    return room is null
+        ? Results.NotFound(new { message = "ルームが見つかりません。" })
+        : Results.Ok(MapQuestRoom(room));
+});
+
+questGroup.MapPost("/rooms/{roomId:guid}/join", async (Guid roomId, ClaimsPrincipal user, QuestRoomService questRoomService) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    try
+    {
+        var room = await questRoomService.JoinRoomAsync(new QuestRoomId(roomId), playerId.Value);
+        return Results.Ok(MapQuestRoom(room));
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(new { message = ex.Message });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+});
+
+questGroup.MapPut("/rooms/{roomId:guid}/positions", async (
+    Guid roomId,
+    ClaimsPrincipal user,
+    UpdateQuestRoomPositionRequest request,
+    IQuestRoomRepository questRoomRepository) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var room = await questRoomRepository.GetAsync(new QuestRoomId(roomId));
+    if (room is null)
+    {
+        return Results.NotFound(new { message = "ルームが見つかりません。" });
+    }
+
+    var targetParticipant = room.Participants.FirstOrDefault(x => x.Id == new QuestParticipantId(request.ParticipantId));
+    if (targetParticipant is null)
+    {
+        return Results.NotFound(new { message = "参加者が見つかりません。" });
+    }
+
+    var canMove = room.OwnerId == playerId.Value || targetParticipant.PlayerId == playerId.Value;
+    if (!canMove)
+    {
+        return Results.Forbid();
+    }
+
+    try
+    {
+        room.AssignPosition(
+            targetParticipant.Id,
+            new BattlePosition(request.Row, request.Column));
+        await questRoomRepository.SaveAsync(room);
+        return Results.Ok(MapQuestRoom(room));
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+});
+
+questGroup.MapPost("/rooms/{roomId:guid}/start", async (
+    Guid roomId,
+    ClaimsPrincipal user,
+    IQuestRoomRepository questRoomRepository,
+    QuestRoomService questRoomService) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var room = await questRoomRepository.GetAsync(new QuestRoomId(roomId));
+    if (room is null)
+    {
+        return Results.NotFound(new { message = "ルームが見つかりません。" });
+    }
+
+    if (room.OwnerId != playerId.Value)
+    {
+        return Results.Forbid();
+    }
+
+    try
+    {
+        var run = await questRoomService.StartAsync(room.Id);
+        return Results.Ok(MapQuestRun(run));
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(new { message = ex.Message });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+});
+
+questGroup.MapGet("/runs/{runId:guid}", async (Guid runId, IQuestRunRepository questRunRepository) =>
+{
+    var run = await questRunRepository.GetAsync(new QuestRunId(runId));
+    return run is null
+        ? Results.NotFound(new { message = "クエスト進行情報が見つかりません。" })
+        : Results.Ok(MapQuestRun(run));
+});
+
+questGroup.MapPost("/runs/{runId:guid}/commands", async (
+    Guid runId,
+    ClaimsPrincipal user,
+    SubmitQuestCommandRequest request,
+    IQuestRunRepository questRunRepository,
+    IQuestRoomRepository questRoomRepository,
+    QuestRunService questRunService) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var run = await questRunRepository.GetAsync(new QuestRunId(runId));
+    if (run is null)
+    {
+        return Results.NotFound(new { message = "クエスト進行情報が見つかりません。" });
+    }
+
+    var room = await questRoomRepository.GetAsync(run.RoomId);
+    if (room is null)
+    {
+        return Results.NotFound(new { message = "ルームが見つかりません。" });
+    }
+
+    var participantId = new QuestParticipantId(request.ParticipantId);
+    var participant = room.Participants.FirstOrDefault(x => x.Id == participantId);
+    if (participant is null)
+    {
+        return Results.NotFound(new { message = "参加者が見つかりません。" });
+    }
+
+    if (participant.PlayerId != playerId.Value)
+    {
+        return Results.Forbid();
+    }
+
+    if ((request.TargetRow is null) != (request.TargetColumn is null))
+    {
+        return Results.BadRequest(new { message = "targetRow と targetColumn は両方指定するか、両方省略してください。" });
+    }
+
+    try
+    {
+        var command = new QuestSubmittedCommand(
+            participantId,
+            request.TurnNo,
+            request.ActionKind,
+            DateTimeOffset.UtcNow,
+            request.MoveId is null ? null : new MoveId(request.MoveId.Value),
+            request.TargetRow is null ? null : new BattlePosition(request.TargetRow.Value, request.TargetColumn!.Value));
+
+        var updatedRun = await questRunService.SubmitCommandAsync(run.Id, participantId, command);
+        return Results.Ok(MapQuestRun(updatedRun));
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(new { message = ex.Message });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+});
+
+questGroup.MapPost("/runs/{runId:guid}/resolve-timeout", async (
+    Guid runId,
+    ClaimsPrincipal user,
+    IQuestRunRepository questRunRepository,
+    IQuestRoomRepository questRoomRepository,
+    QuestRunService questRunService) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var run = await questRunRepository.GetAsync(new QuestRunId(runId));
+    if (run is null)
+    {
+        return Results.NotFound(new { message = "クエスト進行情報が見つかりません。" });
+    }
+
+    var room = await questRoomRepository.GetAsync(run.RoomId);
+    if (room is null)
+    {
+        return Results.NotFound(new { message = "ルームが見つかりません。" });
+    }
+
+    if (room.OwnerId != playerId.Value)
+    {
+        return Results.Forbid();
+    }
+
+    try
+    {
+        var updatedRun = await questRunService.ResolveTimeoutAsync(run.Id, DateTimeOffset.UtcNow);
+        return Results.Ok(MapQuestRun(updatedRun));
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+});
+
+questGroup.MapPost("/runs/{runId:guid}/resolve-turn", async (
+    Guid runId,
+    ClaimsPrincipal user,
+    IQuestRunRepository questRunRepository,
+    IQuestRoomRepository questRoomRepository,
+    QuestRunService questRunService) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var run = await questRunRepository.GetAsync(new QuestRunId(runId));
+    if (run is null)
+    {
+        return Results.NotFound(new { message = "クエスト進行情報が見つかりません。" });
+    }
+
+    var room = await questRoomRepository.GetAsync(run.RoomId);
+    if (room is null)
+    {
+        return Results.NotFound(new { message = "ルームが見つかりません。" });
+    }
+
+    if (room.OwnerId != playerId.Value)
+    {
+        return Results.Forbid();
+    }
+
+    try
+    {
+        var summary = await questRunService.ResolveTurnAsync(run.Id);
+        return Results.Ok(new
+        {
+            turn = summary.Turn,
+            isFloorCleared = summary.IsFloorCleared,
+            isQuestCompleted = summary.IsQuestCompleted,
+            isQuestFailed = summary.IsQuestFailed
+        });
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return Results.NotFound(new { message = ex.Message });
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+});
+
+questGroup.MapPost("/runs/{runId:guid}/chat", async (
+    Guid runId,
+    ClaimsPrincipal user,
+    PostQuestChatMessageRequest request,
+    IQuestRunRepository questRunRepository,
+    IQuestRoomRepository questRoomRepository,
+    QuestRunService questRunService) =>
+{
+    var playerId = TryGetPlayerId(user);
+    if (playerId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var run = await questRunRepository.GetAsync(new QuestRunId(runId));
+    if (run is null)
+    {
+        return Results.NotFound(new { message = "クエスト進行情報が見つかりません。" });
+    }
+
+    var room = await questRoomRepository.GetAsync(run.RoomId);
+    if (room is null)
+    {
+        return Results.NotFound(new { message = "ルームが見つかりません。" });
+    }
+
+    var participantId = new QuestParticipantId(request.ParticipantId);
+    var participant = room.Participants.FirstOrDefault(x => x.Id == participantId);
+    if (participant is null)
+    {
+        return Results.NotFound(new { message = "参加者が見つかりません。" });
+    }
+
+    if (participant.PlayerId != playerId.Value)
+    {
+        return Results.Forbid();
+    }
+
+    var snapshot = run.PartySnapshots.FirstOrDefault(x => x.ParticipantId == participantId);
+    if (snapshot is null)
+    {
+        return Results.NotFound(new { message = "進行中クエストの参加者スナップショットが見つかりません。" });
+    }
+
+    try
+    {
+        var message = new QuestChatMessage(
+            participantId,
+            snapshot.DisplayName,
+            snapshot.ImagePath,
+            request.Message,
+            DateTimeOffset.UtcNow);
+        var updatedRun = await questRunService.AddChatMessageAsync(run.Id, message);
+        return Results.Ok(MapQuestRun(updatedRun));
+    }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+});
+
 app.MapGet("/chat/room", async (Guid ownerId, ChatService chatService) =>
 {
     var room = await chatService.GetRoomAsync(new PlayerId(ownerId));
@@ -466,6 +874,185 @@ static string GetJobDisplayName(Job job) =>
         _ => job.ToString()
     };
 
+static object MapQuestStage(QuestStageDefinition stage) => new
+{
+    stageId = stage.Id.Value,
+    stageCode = stage.StageCode,
+    name = stage.Name,
+    recommendedLevel = stage.RecommendedLevel,
+    minPartyMemberCount = stage.MinPartyMemberCount,
+    maxPartyMemberCount = stage.MaxPartyMemberCount,
+    isActive = stage.IsActive,
+    floors = stage.Floors.Select(floor => new
+    {
+        floorNo = floor.FloorNo,
+        floorType = floor.FloorType.ToString(),
+        enemyCount = floor.Placements.Count
+    })
+};
+
+static object MapQuestRoom(QuestRoom room) => new
+{
+    roomId = room.Id.Value,
+    ownerPlayerId = room.OwnerId.Value,
+    stageId = room.StageId.Value,
+    mode = room.Mode.ToString(),
+    status = room.Status.ToString(),
+    version = room.Version,
+    closeReason = room.CloseReason?.ToString(),
+    createdAt = room.CreatedAt,
+    closedAt = room.ClosedAt,
+    canStart = room.CanStart(),
+    formation = new
+    {
+        occupiedPositions = room.Formation.OccupiedPositions.Select(position => new
+        {
+            row = position.Row.ToString(),
+            column = position.Column.ToString()
+        })
+    },
+    participants = room.Participants.Select(participant => new
+    {
+        participantId = participant.Id.Value,
+        type = participant.Type.ToString(),
+        playerId = participant.PlayerId?.Value,
+        npcTemplateId = participant.NpcTemplateId?.Value,
+        displayName = participant.DisplayName,
+        status = participant.Status.ToString(),
+        isOwner = participant.IsOwner,
+        position = new
+        {
+            row = participant.Position.Row.ToString(),
+            column = participant.Position.Column.ToString()
+        },
+        joinedAt = participant.JoinedAt,
+        lastSeenAt = participant.LastSeenAt,
+        leftAt = participant.LeftAt
+    })
+};
+
+static object MapQuestRun(QuestRun run) => new
+{
+    runId = run.Id.Value,
+    roomId = run.RoomId.Value,
+    stageId = run.StageId.Value,
+    status = run.Status.ToString(),
+    startedAt = run.StartedAt,
+    endedAt = run.EndedAt,
+    floor = new
+    {
+        currentFloorNo = run.FloorState.CurrentFloorNo,
+        isBossFloor = run.FloorState.IsBossFloor
+    },
+    turn = new
+    {
+        currentTurnNo = run.TurnState.CurrentTurnNo,
+        actionDeadlineAt = run.TurnState.ActionDeadlineAt,
+        lastResolvedTurnNo = run.TurnState.LastResolvedTurnNo,
+        pendingCommands = run.TurnState.PendingCommands.Select(command => new
+        {
+            participantId = command.ParticipantId.Value,
+            turnNo = command.TurnNo,
+            actionKind = command.ActionKind.ToString(),
+            moveId = command.MoveId?.Id,
+            target = command.SelectedTargetPosition is null
+                ? null
+                : new
+                {
+                    row = command.SelectedTargetPosition.Value.Row.ToString(),
+                    column = command.SelectedTargetPosition.Value.Column.ToString()
+                },
+            submittedAt = command.SubmittedAt,
+            isAutoSubmitted = command.IsAutoSubmitted
+        })
+    },
+    party = run.PartySnapshots.Select(snapshot =>
+    {
+        var state = run.BattleState.PartyMembers.First(member => member.ParticipantId == snapshot.ParticipantId);
+        return new
+        {
+            participantId = snapshot.ParticipantId.Value,
+            type = snapshot.Type.ToString(),
+            displayName = snapshot.DisplayName,
+            imagePath = snapshot.ImagePath,
+            job = snapshot.Job.ToString(),
+            startPosition = new
+            {
+                row = snapshot.StartPosition.Row.ToString(),
+                column = snapshot.StartPosition.Column.ToString()
+            },
+            currentHp = state.CurrentHp,
+            currentMp = state.CurrentMp,
+            isDead = state.IsDead,
+            canActFromTurn = state.CanActFromTurn,
+            actionMode = state.ActionMode.ToString(),
+            hasLeftQuest = state.HasLeftQuest,
+            isManualControlRequested = state.IsManualControlRequested,
+            ailments = state.Ailments.Select(x => new
+            {
+                type = x.Type.ToString(),
+                remainingTurns = x.RemainingTurns
+            }),
+            buffs = state.Buffs.Select(x => new
+            {
+                stat = x.Stat.ToString(),
+                calculationType = x.CalculationType.ToString(),
+                value = x.Value,
+                remainingTurns = x.RemainingTurns
+            })
+        };
+    }),
+    enemies = run.BattleState.Enemies.Select(enemy => new
+    {
+        enemyInstanceId = enemy.Id.Value,
+        enemyDefinitionId = enemy.EnemyDefinitionId.Value,
+        position = new
+        {
+            row = enemy.Position.Row.ToString(),
+            column = enemy.Position.Column.ToString()
+        },
+        currentHp = enemy.CurrentHp,
+        currentMp = enemy.CurrentMp,
+        isDead = enemy.IsDead,
+        ailments = enemy.Ailments.Select(x => new
+        {
+            type = x.Type.ToString(),
+            remainingTurns = x.RemainingTurns
+        }),
+        buffs = enemy.Buffs.Select(x => new
+        {
+            stat = x.Stat.ToString(),
+            calculationType = x.CalculationType.ToString(),
+            value = x.Value,
+            remainingTurns = x.RemainingTurns
+        })
+    }),
+    rewards = new
+    {
+        exp = run.Rewards.Exp
+    },
+    traps = run.Traps.Traps.Select(trap => new
+    {
+        trapId = trap.Id.Value,
+        sourceParticipantId = trap.SourceParticipantId.Value,
+        moveId = trap.MoveId.Id,
+        expiresAfterFloorNo = trap.ExpiresAfterFloorNo,
+        isTriggered = trap.IsTriggered
+    }),
+    chatMessages = run.ChatMessages.Select(message => new
+    {
+        senderParticipantId = message.SenderParticipantId.Value,
+        displayName = message.DisplayName,
+        imagePath = message.ImagePath,
+        message = message.Message,
+        sentAt = message.SentAt
+    })
+};
+
+public record CreateQuestRoomRequest(int StageId, QuestRoomMode Mode);
+public record UpdateQuestRoomPositionRequest(Guid ParticipantId, BattleRow Row, BattleColumn Column);
+public record SubmitQuestCommandRequest(Guid ParticipantId, int TurnNo, ActionKind ActionKind, int? MoveId, BattleRow? TargetRow, BattleColumn? TargetColumn);
+public record PostQuestChatMessageRequest(Guid ParticipantId, string Message);
 public record CreatePlayerRequest(string UserName);
 public record UpdatePlayerNameRequest(string UserName);
 public record UpdatePlayerJobRequest(Job Job);
