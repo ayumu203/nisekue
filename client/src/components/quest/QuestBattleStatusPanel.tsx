@@ -88,7 +88,11 @@ export default function QuestBattleStatusPanel({ run, selfParticipantId, locale 
                   <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
                     <Typography variant="subtitle2">{member.displayName}</Typography>
                     {member.participantId === selfParticipantId ? <Chip size="small" label="You" /> : null}
-                    <Chip size="small" color={isWaiting ? 'warning' : 'success'} label={isWaiting ? locale.labels.pending : locale.labels.submitted} />
+                    <Chip
+                      size="small"
+                      color={isWaiting ? 'warning' : 'success'}
+                      label={isWaiting ? locale.labels.pending : locale.labels.submitted}
+                    />
                     <Chip
                       size="small"
                       variant="outlined"
@@ -103,8 +107,15 @@ export default function QuestBattleStatusPanel({ run, selfParticipantId, locale 
 
                   <Stack spacing={0.75}>
                     <Typography variant="body2">{`${locale.currentHpLabel}: ${member.currentHp} / ${member.maxHp ?? '-'}`}</Typography>
-                    <LinearProgress variant="determinate" value={getHpRate(member.currentHp, member.maxHp)} sx={playerHpBarSx} />
-                    <Typography variant="body2" color="text.secondary">{`${locale.currentMpLabel}: ${member.currentMp} / ${member.maxMp ?? '-'}`}</Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={getHpRate(member.currentHp, member.maxHp)}
+                      sx={playerHpBarSx}
+                    />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                    >{`${locale.currentMpLabel}: ${member.currentMp} / ${member.maxMp ?? '-'}`}</Typography>
                   </Stack>
 
                   <Typography variant="body2" color="text.secondary">
@@ -148,8 +159,15 @@ export default function QuestBattleStatusPanel({ run, selfParticipantId, locale 
 
                 <Stack spacing={0.75}>
                   <Typography variant="body2">{`${locale.currentHpLabel}: ${enemy.currentHp} / ${enemy.maxHp ?? '-'}`}</Typography>
-                  <LinearProgress variant="determinate" value={getHpRate(enemy.currentHp, enemy.maxHp)} sx={playerHpBarSx} />
-                  <Typography variant="body2" color="text.secondary">{`${locale.currentMpLabel}: ${enemy.currentMp} / ${enemy.maxMp ?? '-'}`}</Typography>
+                  <LinearProgress
+                    variant="determinate"
+                    value={getHpRate(enemy.currentHp, enemy.maxHp)}
+                    sx={playerHpBarSx}
+                  />
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                  >{`${locale.currentMpLabel}: ${enemy.currentMp} / ${enemy.maxMp ?? '-'}`}</Typography>
                 </Stack>
 
                 <Typography variant="body2" color="text.secondary">

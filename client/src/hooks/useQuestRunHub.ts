@@ -9,11 +9,7 @@ import {
   type QuestRunHubSnapshotEvent,
   type QuestRunHubUpdatedEvent,
 } from '@/schema/quest'
-import {
-  createQuestRunHubConnection,
-  subscribeQuestRun,
-  unsubscribeQuestRun,
-} from '@/lib/questRunHub'
+import { createQuestRunHubConnection, subscribeQuestRun, unsubscribeQuestRun } from '@/lib/questRunHub'
 
 type UseQuestRunHubOptions = {
   runId: string | null

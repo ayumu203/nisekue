@@ -120,7 +120,12 @@ export default function QuestMultTest() {
   const activeStages = useMemo(() => (stages ?? []).filter((stage) => stage.isActive), [stages])
   const selectedStage = activeStages.find((stage) => stage.stageId === selectedStageId) ?? null
   const isCreateDisabled =
-    isSubmitting || isPlayerLoading || isStagesLoading || playerError != null || activeStages.length === 0 || selectedStageId === ''
+    isSubmitting ||
+    isPlayerLoading ||
+    isStagesLoading ||
+    playerError != null ||
+    activeStages.length === 0 ||
+    selectedStageId === ''
   const roomsSWRKey = session?.access_token ? ([`quest-mult-rooms`] as const) : null
   const {
     data: latestRooms,
@@ -141,9 +146,12 @@ export default function QuestMultTest() {
       session.access_token,
     )
 
-    return [...rooms].sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()).slice(0, 5)
+    return [...rooms]
+      .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+      .slice(0, 5)
   })
-  const roomSWRKey = session?.access_token && createdRoom?.roomId ? ([`quest-mult-room`, createdRoom.roomId] as const) : null
+  const roomSWRKey =
+    session?.access_token && createdRoom?.roomId ? ([`quest-mult-room`, createdRoom.roomId] as const) : null
   const {
     data: liveRoom,
     error: roomError,
@@ -190,15 +198,15 @@ export default function QuestMultTest() {
   )
   const selfParticipantId =
     player && currentRoom
-      ? currentRoom.participants.find((participant) => participant.playerId === player.userId)?.participantId ?? null
+      ? (currentRoom.participants.find((participant) => participant.playerId === player.userId)?.participantId ?? null)
       : null
   const availableMoves = useMemo(() => (player?.moveSlots ?? []).filter((slot) => slot.moveId != null), [player])
   const firstEnemyPosition = currentRun?.enemies[0]?.position ?? null
   const currentPendingCommand =
     currentRun && selfParticipantId
-      ? currentRun.pendingCommands.find(
+      ? (currentRun.pendingCommands.find(
           (command) => command.participantId === selfParticipantId && command.turnNo === currentRun.turn.currentTurnNo,
-        ) ?? null
+        ) ?? null)
       : null
 
   useEffect(() => {
@@ -601,7 +609,9 @@ export default function QuestMultTest() {
                             <Typography variant="subtitle2">{participant.displayName}</Typography>
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                               <FormControl fullWidth sx={greenOutlinedInputSx}>
-                                <InputLabel id={`participant-row-${participant.participantId}`}>{locale.positionRow}</InputLabel>
+                                <InputLabel id={`participant-row-${participant.participantId}`}>
+                                  {locale.positionRow}
+                                </InputLabel>
                                 <Select
                                   labelId={`participant-row-${participant.participantId}`}
                                   value={draft.row}
@@ -622,7 +632,9 @@ export default function QuestMultTest() {
                                 </Select>
                               </FormControl>
                               <FormControl fullWidth sx={greenOutlinedInputSx}>
-                                <InputLabel id={`participant-column-${participant.participantId}`}>{locale.positionColumn}</InputLabel>
+                                <InputLabel id={`participant-column-${participant.participantId}`}>
+                                  {locale.positionColumn}
+                                </InputLabel>
                                 <Select
                                   labelId={`participant-column-${participant.participantId}`}
                                   value={draft.column}
@@ -648,7 +660,9 @@ export default function QuestMultTest() {
                               disabled={isUpdatingParticipantId === participant.participantId}
                               sx={{ ...menuButtonSx, ...softGreenButtonSx }}
                             >
-                              {isUpdatingParticipantId === participant.participantId ? locale.updatingPosition : locale.savePosition}
+                              {isUpdatingParticipantId === participant.participantId
+                                ? locale.updatingPosition
+                                : locale.savePosition}
                             </Button>
                           </Stack>
                         </Paper>
@@ -766,7 +780,9 @@ export default function QuestMultTest() {
                         </FormControl>
 
                         <FormControl fullWidth sx={greenOutlinedInputSx}>
-                          <InputLabel id="quest-mult-target-column-select-label">{locale.labels.targetColumn}</InputLabel>
+                          <InputLabel id="quest-mult-target-column-select-label">
+                            {locale.labels.targetColumn}
+                          </InputLabel>
                           <Select
                             labelId="quest-mult-target-column-select-label"
                             value={selectedTargetColumn}

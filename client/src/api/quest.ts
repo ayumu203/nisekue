@@ -45,7 +45,10 @@ export async function getQuestStages(accessToken: string): Promise<GetQuestStage
   return endpoints.quest.getStages.responseSchema.parse(json)
 }
 
-export async function createQuestRoom(input: CreateQuestRoomRequest, accessToken: string): Promise<QuestRoomDetailResponse> {
+export async function createQuestRoom(
+  input: CreateQuestRoomRequest,
+  accessToken: string,
+): Promise<QuestRoomDetailResponse> {
   const payload = endpoints.quest.createRoom.requestSchema.parse(input)
   const apiBaseUrl = resolveApiBaseUrl()
 
@@ -64,7 +67,10 @@ export async function createQuestRoom(input: CreateQuestRoomRequest, accessToken
   return endpoints.quest.createRoom.responseSchema.parse(json)
 }
 
-export async function listQuestRooms(input: ListQuestRoomsRequest, accessToken: string): Promise<ListQuestRoomsResponse> {
+export async function listQuestRooms(
+  input: ListQuestRoomsRequest,
+  accessToken: string,
+): Promise<ListQuestRoomsResponse> {
   const payload = endpoints.quest.listRooms.requestSchema.parse(input)
   const apiBaseUrl = resolveApiBaseUrl()
   const url = new URL(`${apiBaseUrl}${endpoints.quest.listRooms.path}`, window.location.origin)

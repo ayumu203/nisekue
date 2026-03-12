@@ -113,7 +113,12 @@ export default function Quest() {
   const activeStages = useMemo(() => (stages ?? []).filter((stage) => stage.isActive), [stages])
   const selectedStage = activeStages.find((stage) => stage.stageId === selectedStageId) ?? null
   const isCreateDisabled =
-    isSubmitting || isPlayerLoading || isStagesLoading || playerError != null || activeStages.length === 0 || selectedStageId === ''
+    isSubmitting ||
+    isPlayerLoading ||
+    isStagesLoading ||
+    playerError != null ||
+    activeStages.length === 0 ||
+    selectedStageId === ''
 
   useEffect(() => {
     if (selectedStageId !== '' || activeStages.length === 0) {
@@ -211,15 +216,15 @@ export default function Quest() {
   const currentRun = liveRun ?? startedRun
   const selfParticipantId =
     player && createdRoom
-      ? createdRoom.participants.find((participant) => participant.playerId === player.userId)?.participantId ?? null
+      ? (createdRoom.participants.find((participant) => participant.playerId === player.userId)?.participantId ?? null)
       : null
   const availableMoves = useMemo(() => (player?.moveSlots ?? []).filter((slot) => slot.moveId != null), [player])
   const firstEnemyPosition = currentRun?.enemies[0]?.position ?? null
   const currentPendingCommand =
     currentRun && selfParticipantId
-      ? currentRun.pendingCommands.find(
+      ? (currentRun.pendingCommands.find(
           (command) => command.participantId === selfParticipantId && command.turnNo === currentRun.turn.currentTurnNo,
-        ) ?? null
+        ) ?? null)
       : null
   const isRunFinished = currentRun != null && currentRun.status !== 'InProgress'
 
@@ -630,7 +635,9 @@ export default function Quest() {
                 </Stack>
               </Paper>
 
-              {currentRun ? <QuestBattleStatusPanel run={currentRun} selfParticipantId={selfParticipantId} locale={locale} /> : null}
+              {currentRun ? (
+                <QuestBattleStatusPanel run={currentRun} selfParticipantId={selfParticipantId} locale={locale} />
+              ) : null}
 
               {isRunFinished ? (
                 <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
