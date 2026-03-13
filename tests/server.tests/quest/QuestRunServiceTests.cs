@@ -95,9 +95,37 @@ public class QuestRunServiceTests
         repository.SaveCount.Should().Be(1);
     }
 
+    [Fact]
+    public async Task ResolveTurnAsync_WhenRunEnds_AppliesQuestCooldownToRewardedPlayers()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerRepository = new FakePlayerRepository(room.Participants.Single().PlayerId!.Value);
+        var stage = CreateStage(run.StageId);
+        var service = CreateRunService(repository, roomRepository, playerRepository, stage, []);
+        var target = run.BattleState.Enemies.Single().Position;
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: target));
+
+        var player = await playerRepository.GetPlayerAsync(room.Participants.Single().PlayerId!.Value);
+        player.Should().NotBeNull();
+        player!.QuestCooldownUntil.Should().NotBeNull();
+    }
+
     private static QuestRunService CreateRunService(
         FakeQuestRunRepository runRepository,
         FakeQuestRoomRepository roomRepository,
+        FakePlayerRepository playerRepository,
         QuestStageDefinition stage,
         IReadOnlyList<Move> moves)
     {
@@ -107,10 +135,24 @@ public class QuestRunServiceTests
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
             new FakeMoveRepository(moves),
-            new FakePlayerRepository(),
+            playerRepository,
             new FakeGrowthValueRepository(),
             new BattleService(),
             new QuestBattleFactory());
+    }
+
+    private static QuestRunService CreateRunService(
+        FakeQuestRunRepository runRepository,
+        FakeQuestRoomRepository roomRepository,
+        QuestStageDefinition stage,
+        IReadOnlyList<Move> moves)
+    {
+        return CreateRunService(
+            runRepository,
+            roomRepository,
+            new FakePlayerRepository(roomRepository.PlayerIds.ToArray()),
+            stage,
+            moves);
     }
 
     private static QuestRun CreateRun(DateTimeOffset? deadlineAt = null)
@@ -257,6 +299,10 @@ public class QuestRunServiceTests
     private sealed class FakeQuestRoomRepository(QuestRoom room) : IQuestRoomRepository
     {
         private readonly QuestRoom room = room;
+        public IReadOnlyList<PlayerId> PlayerIds => this.room.Participants
+            .Where(x => x.PlayerId is not null)
+            .Select(x => x.PlayerId!.Value)
+            .ToArray();
 
         public Task<QuestRoom?> GetAsync(QuestRoomId id)
             => Task.FromResult(this.room.Id == id ? this.room : null);
@@ -300,16 +346,25 @@ public class QuestRunServiceTests
 
     private sealed class FakePlayerRepository : IPlayerRepository
     {
+        private readonly Dictionary<PlayerId, Player> players;
+
+        public FakePlayerRepository(params PlayerId[] playerIds)
+        {
+            players = playerIds.ToDictionary(
+                x => x,
+                x => new Player(
+                    x,
+                    "Owner",
+                    level: 1,
+                    exp: 0,
+                    status: new Status(10, 10, 10, 10, 10, 10, 10),
+                    job: Job.Warrior,
+                    imagePath: "/images/player.png",
+                    moveSet: new MoveSet()));
+        }
+
         public Task<Player?> GetPlayerAsync(PlayerId id)
-            => Task.FromResult<Player?>(new Player(
-                id,
-                "Owner",
-                level: 1,
-                exp: 0,
-                status: new Status(10, 10, 10, 10, 10, 10, 10),
-                job: Job.Warrior,
-                imagePath: "/images/player.png",
-                moveSet: new MoveSet()));
+            => Task.FromResult(players.GetValueOrDefault(id));
 
         public Task<bool> UpdateNameAsync(PlayerId id, string name)
             => Task.FromResult(true);
@@ -318,7 +373,10 @@ public class QuestRunServiceTests
             => Task.FromResult<DateTimeOffset?>(null);
 
         public Task SaveAsync(Player player)
-            => Task.CompletedTask;
+        {
+            players[player.Id] = player;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeGrowthValueRepository : IGrowthValueRepository

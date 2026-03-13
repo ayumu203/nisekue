@@ -13,10 +13,13 @@ public class QuestRoomService(
     QuestSnapshotFactory questSnapshotFactory,
     QuestRunFactory questRunFactory)
 {
+    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
+
     public async Task<QuestRoom> CreateRoomAsync(PlayerId ownerId, QuestStageId stageId, QuestRoomMode mode)
     {
         var player = await playerRepository.GetPlayerAsync(ownerId)
             ?? throw new KeyNotFoundException("オーナープレイヤーが見つかりません。");
+        EnsureQuestCooldownExpired(player, DateTimeOffset.UtcNow);
         var stage = await questStageRepository.GetAsync(stageId)
             ?? throw new KeyNotFoundException("ステージが見つかりません。");
         if (!stage.IsActive)
@@ -53,6 +56,7 @@ public class QuestRoomService(
             ?? throw new KeyNotFoundException("ルームが見つかりません。");
         var player = await playerRepository.GetPlayerAsync(playerId)
             ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
+        EnsureQuestCooldownExpired(player, DateTimeOffset.UtcNow);
 
         room.AddPlayer(playerId, player.Name);
         await questRoomRepository.SaveAsync(room);
@@ -111,5 +115,13 @@ public class QuestRoomService(
         await questRoomRepository.SaveAsync(room);
         await questRunRepository.SaveAsync(run);
         return run;
+    }
+
+    private static void EnsureQuestCooldownExpired(Player player, DateTimeOffset now)
+    {
+        if (player.QuestCooldownUntil is not null && player.QuestCooldownUntil.Value > now)
+        {
+            throw new InvalidOperationException($"クエスト終了後{(int)QuestCooldown.TotalMinutes}分間は再参加できません。");
+        }
     }
 }

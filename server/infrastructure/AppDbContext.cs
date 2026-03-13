@@ -77,6 +77,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired();
         player.Property(x => x.TrainingCooldownUntil)
             .HasColumnName("training_cooldown_until");
+        player.Property(x => x.QuestCooldownUntil)
+            .HasColumnName("quest_cooldown_until");
 
         var playerMoves = modelBuilder.Entity<PlayerMoveEntity>();
         playerMoves.ToTable("player_moves", "internal");

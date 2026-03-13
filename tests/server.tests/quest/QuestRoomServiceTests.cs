@@ -83,6 +83,53 @@ public class QuestRoomServiceTests
     }
 
     [Fact]
+    public async Task CreateRoomAsync_WhenOwnerIsInQuestCooldown_ThrowsInvalidOperationException()
+    {
+        var owner = CreatePlayer("Owner");
+        owner.SetQuestCooldownUntil(DateTimeOffset.UtcNow.AddMinutes(3));
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true);
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            new FakeQuestRoomRepository(),
+            new FakeQuestRunRepository(),
+            new FakePlayerRepository(owner),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var act = () => service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Solo);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("クエスト終了後3分間は再参加できません。");
+    }
+
+    [Fact]
+    public async Task JoinRoomAsync_WhenPlayerIsInQuestCooldown_ThrowsInvalidOperationException()
+    {
+        var owner = CreatePlayer("Owner");
+        var guest = CreatePlayer("Guest");
+        guest.SetQuestCooldownUntil(DateTimeOffset.UtcNow.AddMinutes(3));
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true);
+        var roomRepository = new FakeQuestRoomRepository();
+        var room = new QuestRoom(QuestRoomId.New(), owner.Id, stage.Id, QuestRoomMode.Multi);
+        room.AddPlayer(owner.Id, owner.Name);
+        await roomRepository.SaveAsync(room);
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            roomRepository,
+            new FakeQuestRunRepository(),
+            new FakePlayerRepository(owner, guest),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var act = () => service.JoinRoomAsync(room.Id, guest.Id);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("クエスト終了後3分間は再参加できません。");
+    }
+
+    [Fact]
     public async Task StartAsync_WhenPartyBelowMinimum_AddsNpcAndCreatesRun()
     {
         var owner = CreatePlayer("Owner");
@@ -271,10 +318,12 @@ public class QuestRoomServiceTests
         }
     }
 
-    private sealed class FakePlayerRepository(Player player) : IPlayerRepository
+    private sealed class FakePlayerRepository(params Player[] players) : IPlayerRepository
     {
+        private readonly Dictionary<PlayerId, Player> players = players.ToDictionary(x => x.Id);
+
         public Task<Player?> GetPlayerAsync(PlayerId id)
-            => Task.FromResult(player.Id == id ? player : null);
+            => Task.FromResult(players.GetValueOrDefault(id));
 
         public Task<bool> UpdateNameAsync(PlayerId id, string name)
             => Task.FromResult(false);
@@ -283,7 +332,10 @@ public class QuestRoomServiceTests
             => Task.FromResult<DateTimeOffset?>(null);
 
         public Task SaveAsync(Player player)
-            => Task.CompletedTask;
+        {
+            players[player.Id] = player;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeQuestNpcTemplateRepository(IReadOnlyList<QuestNpcTemplate> templates) : IQuestNpcTemplateRepository

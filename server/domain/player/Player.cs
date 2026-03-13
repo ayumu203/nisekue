@@ -10,11 +10,13 @@ public class Player(
     Status status,
     Job job = Job.Apprentice,
     string? imagePath = null,
+    DateTimeOffset? questCooldownUntil = null,
     MoveSet? moveSet = null)
 {
     public PlayerId Id { get; } = id;
     public string Name { get; private set; } = ValidateName(name);
     public string? ImagePath { get; private set; } = ValidateImagePath(imagePath);
+    public DateTimeOffset? QuestCooldownUntil { get; private set; } = questCooldownUntil;
     public Job Job { get; private set; } = job;
     public int Level { get; private set; } = ValidateLevel(level);
     public int Exp { get; private set; } = exp;
@@ -44,6 +46,11 @@ public class Player(
     public void UpdateMoveSet(MoveSet moveSet)
     {
         MoveSet = moveSet ?? throw new ArgumentNullException(nameof(moveSet));
+    }
+
+    public void SetQuestCooldownUntil(DateTimeOffset? until)
+    {
+        QuestCooldownUntil = until;
     }
 
     private static string ValidateName(string name)
