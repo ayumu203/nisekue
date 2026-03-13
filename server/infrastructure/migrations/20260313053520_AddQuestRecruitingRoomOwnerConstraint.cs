@@ -25,7 +25,8 @@ namespace server.infrastructure.migrations
                 SET
                     status = 2,
                     close_reason = 2,
-                    closed_at = COALESCE(qr.closed_at, CURRENT_TIMESTAMP)
+                    closed_at = COALESCE(qr.closed_at, CURRENT_TIMESTAMP),
+                    version = qr.version + 1
                 FROM duplicated_recruiting_rooms AS drr
                 WHERE qr.id = drr.id
                   AND drr.row_no > 1;
