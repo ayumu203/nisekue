@@ -2,12 +2,14 @@ import './App.css'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Auth from '@/pages/Auth'
 import Home from '@/pages/Home'
+import Players from '@/pages/Players'
 import Training from '@/pages/Training'
 import Thanks from '@/pages/Thanks'
 import PlayerSetting from '@/pages/PlayerSetting'
 import MoveSetting from '@/pages/MoveSetting'
 import Quest from '@/pages/Quest'
 import QuestMultTest from '@/pages/QuestMultTest'
+import VisitPlayer from '@/pages/VisitPlayer'
 import { useAuth } from '@/contexts/useAuth'
 
 function App() {
@@ -21,6 +23,8 @@ function App() {
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
       <Route path="/" element={user ? <Home /> : <Navigate to="/auth" replace />} />
+      <Route path="/players" element={user ? <Players /> : <Navigate to="/auth" replace />} />
+      <Route path="/players/:playerId/visit" element={user ? <VisitPlayer /> : <Navigate to="/auth" replace />} />
       <Route path="/quest" element={<Navigate to="/quest/quest-mult-test" replace />} />
       <Route path="/quest/quest-solo-test" element={user ? <Quest /> : <Navigate to="/auth" replace />} />
       <Route path="/quest/quest-mult-test" element={user ? <QuestMultTest /> : <Navigate to="/auth" replace />} />

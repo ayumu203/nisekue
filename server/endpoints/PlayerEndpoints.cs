@@ -10,6 +10,18 @@ internal static class PlayerEndpoints
 {
     internal static WebApplication MapPlayerEndpoints(this WebApplication app)
     {
+        app.MapGet("/players", async (IPlayerRepository playerRepository) =>
+        {
+            var players = await playerRepository.GetAllAsync();
+
+            return Results.Ok(players.Select(player => new
+            {
+                userId = player.Id.Value,
+                userName = player.Name,
+                imagePath = player.ImagePath
+            }));
+        }).RequireAuthorization();
+
         app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepository, IMoveRepository moveRepository) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
@@ -29,58 +41,23 @@ internal static class PlayerEndpoints
             }
 
             var allMoves = await moveRepository.GetAllMovesAsync();
-            var moveById = allMoves.ToDictionary(x => x.Id.Id);
-            var moveSlots = player.MoveSet.Slots
-                .Select((moveId, index) =>
-                {
-                    var move = moveId is null
-                        ? null
-                        : moveById.GetValueOrDefault(moveId.Id);
+            return Results.Ok(ToPlayerResponse(player, allMoves));
+        }).RequireAuthorization();
 
-                    return new
-                    {
-                        slot = index + 1,
-                        moveId = moveId?.Id,
-                        moveName = move?.Name,
-                        description = move?.Description,
-                        effectImagePath = move?.EffectImagePath,
-                        elementType = move?.GetOrderedEffects()
-                            .FirstOrDefault(effect => effect.Damage is not null)?
-                            .Damage?
-                            .ElementType
-                            .ToString(),
-                        targetType = move?.TargetType.ToString(),
-                        attackRange = move?.AttackRange.ToString(),
-                        mpCost = move?.MpCost,
-                        category = move?.Category.ToString()
-                    };
-                });
-
-            return Results.Ok(new
+        app.MapGet("/players/{playerId:guid}", async (Guid playerId, IPlayerRepository playerRepository, IMoveRepository moveRepository) =>
+        {
+            var player = await playerRepository.GetPlayerAsync(new PlayerId(playerId));
+            if (player is null)
             {
-                userId = player.Id.Value,
-                userName = player.Name,
-                imagePath = player.ImagePath,
-                job = new
+                return Results.NotFound(new
                 {
-                    code = player.Job.ToString(),
-                    value = (int)player.Job,
-                    displayName = EndpointHelpers.GetJobDisplayName(player.Job)
-                },
-                level = player.Level,
-                exp = player.Exp,
-                status = new
-                {
-                    maxHp = player.Status.MaxHp,
-                    maxMp = player.Status.MaxMp,
-                    strength = player.Status.Strength,
-                    defense = player.Status.Defense,
-                    intelligence = player.Status.Intelligence,
-                    luck = player.Status.Luck,
-                    speed = player.Status.Speed
-                },
-                moveSlots
-            });
+                    message = "プレイヤーが見つかりません。",
+                    userId = playerId
+                });
+            }
+
+            var allMoves = await moveRepository.GetAllMovesAsync();
+            return Results.Ok(ToPlayerResponse(player, allMoves));
         }).RequireAuthorization();
 
         app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request, IPlayerRepository playerRepository, ChatService chatService) =>
@@ -236,5 +213,61 @@ internal static class PlayerEndpoints
         }).RequireAuthorization();
 
         return app;
+    }
+
+    private static object ToPlayerResponse(Player player, IReadOnlyList<Move> allMoves)
+    {
+        var moveById = allMoves.ToDictionary(x => x.Id.Id);
+        var moveSlots = player.MoveSet.Slots
+            .Select((moveId, index) =>
+            {
+                var move = moveId is null
+                    ? null
+                    : moveById.GetValueOrDefault(moveId.Id);
+
+                return new
+                {
+                    slot = index + 1,
+                    moveId = moveId?.Id,
+                    moveName = move?.Name,
+                    description = move?.Description,
+                    effectImagePath = move?.EffectImagePath,
+                    elementType = move?.GetOrderedEffects()
+                        .FirstOrDefault(effect => effect.Damage is not null)?
+                        .Damage?
+                        .ElementType
+                        .ToString(),
+                    targetType = move?.TargetType.ToString(),
+                    attackRange = move?.AttackRange.ToString(),
+                    mpCost = move?.MpCost,
+                    category = move?.Category.ToString()
+                };
+            });
+
+        return new
+        {
+            userId = player.Id.Value,
+            userName = player.Name,
+            imagePath = player.ImagePath,
+            job = new
+            {
+                code = player.Job.ToString(),
+                value = (int)player.Job,
+                displayName = EndpointHelpers.GetJobDisplayName(player.Job)
+            },
+            level = player.Level,
+            exp = player.Exp,
+            status = new
+            {
+                maxHp = player.Status.MaxHp,
+                maxMp = player.Status.MaxMp,
+                strength = player.Status.Strength,
+                defense = player.Status.Defense,
+                intelligence = player.Status.Intelligence,
+                luck = player.Status.Luck,
+                speed = player.Status.Speed
+            },
+            moveSlots
+        };
     }
 }

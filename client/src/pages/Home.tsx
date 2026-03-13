@@ -69,6 +69,14 @@ function SpecialThanksIcon(props: SvgIconProps) {
   )
 }
 
+function VisitPlayersIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3m6 1a2.5 2.5 0 1 0-2.5-2.5A2.5 2.5 0 0 0 15 12m0 1.5c-1.84 0-5.5.92-5.5 2.75V18h11v-1.75C20.5 14.42 16.84 13.5 15 13.5M9 12c-2.33 0-7 1.17-7 3.5V18h5.5v-1.75c0-.83.31-1.58.89-2.21A11 11 0 0 1 9 12" />
+    </SvgIcon>
+  )
+}
+
 function Home() {
   const { session, isLoading } = useAuth()
   const playerSWRKey = session?.user.id ? (['player', session.user.id] as const) : null
@@ -156,6 +164,15 @@ function Home() {
               </Button>
               <Button
                 component={Link}
+                to="/players"
+                variant="contained"
+                startIcon={<VisitPlayersIcon />}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+              >
+                {locale.visitPlayers}
+              </Button>
+              <Button
+                component={Link}
                 to="/player-setting"
                 variant="outlined"
                 startIcon={<PlayerSettingIcon />}
@@ -194,6 +211,8 @@ function Home() {
                   </Stack>
                 ) : chatError ? (
                   <Alert severity="warning">{chatError.message}</Alert>
+                ) : !player ? (
+                  <Alert severity="warning">{locale.chatFetchInfoMissing}</Alert>
                 ) : (
                   <Stack spacing={2}>
                     <ChatForm
@@ -213,7 +232,7 @@ function Home() {
                         await mutateChatRoom(updated, { revalidate: false })
                       }}
                     />
-                    <ChatMessages messages={chatRoom?.messages ?? []} />
+                    <ChatMessages messages={chatRoom?.messages ?? []} currentPlayerId={player.userId} />
                   </Stack>
                 )}
               </Stack>

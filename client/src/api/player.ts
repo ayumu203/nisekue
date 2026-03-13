@@ -5,6 +5,7 @@ import type {
   CreatePlayerRequest,
   CreatePlayerResponse,
   GetPlayerResponse,
+  ListPlayersResponse,
   UpdatePlayerNameRequest,
   UpdatePlayerNameResponse,
   UpdatePlayerJobRequest,
@@ -28,6 +29,44 @@ export async function getPlayer(accessToken: string): Promise<GetPlayerResponse>
   }
 
   return endpoints.player.get.responseSchema.parse(json)
+}
+
+export async function getPlayerById(playerId: string, accessToken: string): Promise<GetPlayerResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.getById.path(playerId)}`, {
+    method: endpoints.player.getById.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'プレイヤー情報の取得に失敗しました'))
+  }
+
+  return endpoints.player.getById.responseSchema.parse(json)
+}
+
+export async function listPlayers(accessToken: string): Promise<ListPlayersResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.list.path}`, {
+    method: endpoints.player.list.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'プレイヤー一覧の取得に失敗しました'))
+  }
+
+  return endpoints.player.list.responseSchema.parse(json)
 }
 
 export async function createPlayer(input: CreatePlayerRequest, accessToken: string): Promise<CreatePlayerResponse> {

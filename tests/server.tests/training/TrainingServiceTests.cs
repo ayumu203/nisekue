@@ -352,6 +352,12 @@ public class TrainingServiceTests
             return Task.FromResult(playerState.Id == id ? playerState : null);
         }
 
+        public Task<IReadOnlyList<Player>> GetAllAsync()
+        {
+            IReadOnlyList<Player> players = [playerState];
+            return Task.FromResult(players);
+        }
+
         public Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown)
         {
             return Task.FromResult<DateTimeOffset?>(null);

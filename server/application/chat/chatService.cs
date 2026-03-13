@@ -21,20 +21,29 @@ public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerReposito
             .ToArray();
 
         // 同一スコープのDbContextを並列利用しないよう順次取得する
-        var senderNameMap = new Dictionary<PlayerId, string>();
+        var senderProfileMap = new Dictionary<PlayerId, (string Name, string? ImagePath)>();
         foreach (var senderId in senderIds)
         {
             var player = await playerRepository.GetPlayerAsync(senderId);
-            senderNameMap[senderId] = player?.Name ?? "Unknown";
+            senderProfileMap[senderId] = (player?.Name ?? "Unknown", player?.ImagePath);
         }
 
         var messageViews = room.Messages
             .OrderBy(x => x.ChatId)
-            .Select(x => new ChatMessageView(
-                ChatId: x.ChatId,
-                SenderName: senderNameMap.TryGetValue(x.SenderId, out var senderName) ? senderName : "Unknown",
-                Message: x.Body.Text,
-                CreatedAt: x.CreatedAt))
+            .Select(x =>
+            {
+                var senderProfile = senderProfileMap.TryGetValue(x.SenderId, out var profile)
+                    ? profile
+                    : ("Unknown", null);
+
+                return new ChatMessageView(
+                    ChatId: x.ChatId,
+                    SenderId: x.SenderId,
+                    SenderName: senderProfile.Name,
+                    ImagePath: senderProfile.ImagePath,
+                    Message: x.Body.Text,
+                    CreatedAt: x.CreatedAt);
+            })
             .ToArray();
 
         return new ChatRoomView(

@@ -27,6 +27,26 @@ namespace server.infrastructure.player
             return MapToDomain(entity, moveEntity);
         }
 
+        public async Task<IReadOnlyList<Player>> GetAllAsync()
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var playerEntities = await dbContext.Players
+                .AsNoTracking()
+                .OrderBy(x => x.Name)
+                .ThenBy(x => x.Id)
+                .ToListAsync();
+
+            var moveEntities = await dbContext.PlayerMoves
+                .AsNoTracking()
+                .ToListAsync();
+
+            var moveEntityByPlayerId = moveEntities.ToDictionary(x => x.PlayerId);
+
+            return playerEntities
+                .Select(entity => MapToDomain(entity, moveEntityByPlayerId.GetValueOrDefault(entity.Id)))
+                .ToArray();
+        }
+
         public async Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown)
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();

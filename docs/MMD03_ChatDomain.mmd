@@ -44,9 +44,18 @@ classDiagram
         class ChatMessageView {
             <<Read Model>>
             +int ChatId
+            +PlayerId SenderId
             +string SenderName
+            +string? ImagePath
             +string Message
             +DateTimeOffset CreatedAt
+        }
+
+        class ChatVisitTargetView {
+            <<Read Model>>
+            +PlayerId PlayerId
+            +string PlayerName
+            +string? ImagePath
         }
 
         class ChatService {
@@ -54,6 +63,11 @@ classDiagram
             +Task EnsureRoomAsync(ownerId: PlayerId)
             +Task~ChatRoomView~ GetRoomAsync(ownerId: PlayerId)
             +Task~ChatRoomView~ PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
+        }
+
+        class ChatVisitService {
+            <<Application Service>>
+            +Task~IReadOnlyList~ChatVisitTargetView~~ GetVisitTargetsAsync()
         }
     }
 
@@ -63,3 +77,4 @@ classDiagram
     ChatService ..> ChatMessageView : builds
     ChatService ..> ChatRoomView : builds
     ChatService ..> IChatRoomRepository : use
+    ChatVisitService ..> ChatVisitTargetView : builds

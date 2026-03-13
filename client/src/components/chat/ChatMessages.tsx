@@ -4,9 +4,10 @@ import ChatMessageItem from '@/components/chat/ChatMessageItem'
 
 type Props = {
   messages: GetChatRoomResponse['messages']
+  currentPlayerId: string
 }
 
-function ChatMessages({ messages }: Props) {
+function ChatMessages({ messages, currentPlayerId }: Props) {
   if (messages.length === 0) {
     return <Alert severity="info">まだメッセージはありません。</Alert>
   }
@@ -19,7 +20,7 @@ function ChatMessages({ messages }: Props) {
         {messages.length}件
       </Typography>
       {reversedMessages.map((message) => (
-        <ChatMessageItem key={message.chatId} message={message} />
+        <ChatMessageItem key={message.chatId} message={message} isOwnMessage={message.senderId === currentPlayerId} />
       ))}
     </Stack>
   )
