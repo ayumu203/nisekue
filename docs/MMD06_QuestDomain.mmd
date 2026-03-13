@@ -136,6 +136,7 @@ classDiagram
             +CanStart() bool
             +AddNpcParticipants(npcTemplates: IEnumerable~QuestNpcTemplate~) void
             +CloseRecruitment(reason: QuestRoomCloseReason, at: DateTimeOffset) void
+            +CancelForOwnerRoomReplacement(at: DateTimeOffset) void
         }
 
         class QuestRoomId {
@@ -165,6 +166,7 @@ classDiagram
 
         class IQuestRoomRepository {
             +Task~QuestRoom?~ GetAsync(id: QuestRoomId)
+            +Task~QuestRoom?~ GetRecruitingByOwnerAsync(ownerId: PlayerId)
             +Task~IReadOnlyList~QuestRoom~~ SearchAsync(condition: QuestRoomSearchCondition)
             +Task SaveAsync(room: QuestRoom)
         }
@@ -338,6 +340,7 @@ classDiagram
         class IQuestRunRepository {
             +Task~QuestRun?~ GetAsync(id: QuestRunId)
             +Task~QuestRun?~ GetByRoomIdAsync(roomId: QuestRoomId)
+            +Task~bool~ ExistsActiveRunByPlayerAsync(playerId: PlayerId)
             +Task SaveAsync(run: QuestRun)
         }
     }

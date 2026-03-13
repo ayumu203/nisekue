@@ -24,6 +24,18 @@ public class QuestRoomService(
             throw new InvalidOperationException("無効化されたステージではルームを作成できません。");
         }
 
+        if (await questRunRepository.ExistsActiveRunByPlayerAsync(ownerId))
+        {
+            throw new InvalidOperationException("進行中クエストに参加しているためルームを作成できません。");
+        }
+
+        var existingRecruitingRoom = await questRoomRepository.GetRecruitingByOwnerAsync(ownerId);
+        if (existingRecruitingRoom is not null)
+        {
+            existingRecruitingRoom.CancelForOwnerRoomReplacement(DateTimeOffset.UtcNow);
+            await questRoomRepository.SaveAsync(existingRecruitingRoom);
+        }
+
         var room = new QuestRoom(
             QuestRoomId.New(),
             ownerId,

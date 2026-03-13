@@ -150,6 +150,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRoom.Property(x => x.CloseReason).HasColumnName("close_reason");
         questRoom.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
         questRoom.Property(x => x.ClosedAt).HasColumnName("closed_at");
+        questRoom.HasIndex(x => x.OwnerPlayerId)
+            .IsUnique()
+            .HasFilter($"status = {(int)server.domain.quest.enums.QuestRoomStatus.Recruiting}");
 
         var questRoomParticipant = modelBuilder.Entity<QuestRoomParticipantEntity>();
         questRoomParticipant.ToTable("quest_room_participants", "internal");

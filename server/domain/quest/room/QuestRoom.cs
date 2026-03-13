@@ -156,6 +156,11 @@ public class QuestRoom(
         ClosedAt = at;
     }
 
+    public void CancelForOwnerRoomReplacement(DateTimeOffset at)
+    {
+        CloseRecruitment(QuestRoomCloseReason.Cancelled, at);
+    }
+
     public void SyncVersion(int version)
     {
         Version = ValidateVersion(version);

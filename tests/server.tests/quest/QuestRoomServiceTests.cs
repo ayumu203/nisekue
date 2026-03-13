@@ -37,6 +37,52 @@ public class QuestRoomServiceTests
     }
 
     [Fact]
+    public async Task CreateRoomAsync_WhenOwnerHasRecruitingRoom_CancelsOldRoomBeforeCreatingNewRoom()
+    {
+        var owner = CreatePlayer("Owner");
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true);
+        var roomRepository = new FakeQuestRoomRepository();
+        var existingRoom = new QuestRoom(QuestRoomId.New(), owner.Id, stage.Id, QuestRoomMode.Solo);
+        existingRoom.AddPlayer(owner.Id, owner.Name);
+        await roomRepository.SaveAsync(existingRoom);
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            roomRepository,
+            new FakeQuestRunRepository(),
+            new FakePlayerRepository(owner),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var newRoom = await service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Multi);
+
+        existingRoom.Status.Should().Be(QuestRoomStatus.Closed);
+        existingRoom.CloseReason.Should().Be(QuestRoomCloseReason.Cancelled);
+        newRoom.Id.Should().NotBe(existingRoom.Id);
+        roomRepository.SavedRooms.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public async Task CreateRoomAsync_WhenOwnerIsInActiveRun_ThrowsInvalidOperationException()
+    {
+        var owner = CreatePlayer("Owner");
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true);
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            new FakeQuestRoomRepository(),
+            new FakeQuestRunRepository { HasActiveRunForAnyPlayer = true },
+            new FakePlayerRepository(owner),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var act = () => service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Solo);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("進行中クエストに参加しているためルームを作成できません。");
+    }
+
+    [Fact]
     public async Task StartAsync_WhenPartyBelowMinimum_AddsNpcAndCreatesRun()
     {
         var owner = CreatePlayer("Owner");
@@ -172,6 +218,15 @@ public class QuestRoomServiceTests
             return Task.FromResult(room);
         }
 
+        public Task<QuestRoom?> GetRecruitingByOwnerAsync(PlayerId ownerId)
+        {
+            var room = rooms.Values
+                .Where(x => x.OwnerId == ownerId && x.Status == QuestRoomStatus.Recruiting)
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefault();
+            return Task.FromResult(room);
+        }
+
         public Task<IReadOnlyList<QuestRoom>> SearchAsync(QuestRoomSearchCondition condition)
             => Task.FromResult<IReadOnlyList<QuestRoom>>(rooms.Values.ToArray());
 
@@ -188,6 +243,7 @@ public class QuestRoomServiceTests
         private readonly Dictionary<Guid, QuestRun> runs = [];
 
         public List<QuestRun> SavedRuns { get; } = [];
+        public bool HasActiveRunForAnyPlayer { get; init; }
 
         public Task<QuestRun?> GetAsync(QuestRunId id)
         {
@@ -200,6 +256,9 @@ public class QuestRoomServiceTests
             var run = runs.Values.FirstOrDefault(x => x.RoomId == roomId);
             return Task.FromResult(run);
         }
+
+        public Task<bool> ExistsActiveRunByPlayerAsync(PlayerId playerId)
+            => Task.FromResult(HasActiveRunForAnyPlayer);
 
         public Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
             => Task.FromResult<IReadOnlyList<QuestRun>>([]);

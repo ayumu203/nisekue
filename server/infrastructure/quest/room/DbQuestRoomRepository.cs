@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.player;
@@ -43,6 +44,19 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
             roomEntity.CloseReason is null ? null : (QuestRoomCloseReason)roomEntity.CloseReason.Value,
             roomEntity.CreatedAt,
             roomEntity.ClosedAt);
+    }
+
+    public async Task<QuestRoom?> GetRecruitingByOwnerAsync(PlayerId ownerId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var roomId = await dbContext.QuestRooms
+            .AsNoTracking()
+            .Where(x => x.OwnerPlayerId == ownerId.Value && x.Status == (int)QuestRoomStatus.Recruiting)
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => x.Id)
+            .FirstOrDefaultAsync();
+
+        return roomId == Guid.Empty ? null : await GetAsync(new QuestRoomId(roomId));
     }
 
     public async Task<IReadOnlyList<QuestRoom>> SearchAsync(QuestRoomSearchCondition condition)
@@ -180,6 +194,10 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
         catch (DbUpdateConcurrencyException ex)
         {
             throw new InvalidOperationException("ルームが同時更新されました。最新状態を再取得してからやり直してください。", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            throw new InvalidOperationException("同じプレイヤーは同時に複数の募集中ルームを作成できません。", ex);
         }
     }
 

@@ -228,6 +228,9 @@ public class QuestRunServiceTests
         public Task<QuestRun?> GetByRoomIdAsync(QuestRoomId roomId)
             => Task.FromResult(StoredRun?.RoomId == roomId ? StoredRun : null);
 
+        public Task<bool> ExistsActiveRunByPlayerAsync(PlayerId playerId)
+            => Task.FromResult(false);
+
         public Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
             => Task.FromResult<IReadOnlyList<QuestRun>>(StoredRun is not null && StoredRun.TurnState.ActionDeadlineAt <= now ? [StoredRun] : []);
 
@@ -257,6 +260,9 @@ public class QuestRunServiceTests
 
         public Task<QuestRoom?> GetAsync(QuestRoomId id)
             => Task.FromResult(this.room.Id == id ? this.room : null);
+
+        public Task<QuestRoom?> GetRecruitingByOwnerAsync(PlayerId ownerId)
+            => Task.FromResult<QuestRoom?>(this.room.OwnerId == ownerId && this.room.Status == QuestRoomStatus.Recruiting ? this.room : null);
 
         public Task<IReadOnlyList<QuestRoom>> SearchAsync(QuestRoomSearchCondition condition)
             => Task.FromResult<IReadOnlyList<QuestRoom>>([room]);
