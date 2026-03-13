@@ -1,0 +1,319 @@
+namespace server.shared.constants.player;
+
+public static class PlayerImageCatalog
+{
+    private const string FileNamesText = """
+ch001_bmnpc.png
+ch002_bmnpc.png
+ch003_bmnpc.png
+ch004_bmnpc.png
+ch006_inmed.png
+ch007_inmed.png
+ch008_intoru.png
+ch009_innpc.png
+ch010_innpc.png
+ch011_innpc.png
+ch011b_innpc.png
+ch012_innpc.png
+ch013_innpc.png
+ch014_in.png
+ch015_in.png
+ch016_kd.png
+ch017_in.png
+ch018_in.png
+ch019_in.png
+ch020_in.png
+ch021_in.png
+ch022_in.png
+ch023_in.png
+ch024_in.png
+ch024b_in.png
+ch025_in.png
+ch026_inscp.png
+ch027_in.png
+ch028_in.png
+ch029_sino.png
+ch029b_sino.png
+ch030_sino.png
+ch031_in.png
+ch032_in.png
+ch033_in.png
+ch033b_in.png
+ch034_in.png
+ch035_in.png
+ch036_sino.png
+ch037_in.png
+ch037b_in.png
+ch038_sino.png
+ch039_sino.png
+ch040_sino.png
+ch041_sino.png
+ch042_sino.png
+ch042b_sino.png
+ch043_in.png
+ch044_sino.png
+ch044b_sino.png
+ch045_in.png
+ch046_sino.png
+ch047_sino.png
+ch048_in.png
+ch049_sino.png
+ch050_sino.png
+ch050b_sino.png
+ch050c_sino.png
+ch051_in.png
+ch051b_in.png
+ch052_in.png
+ch052b_in.png
+ch053_mg.png
+ch053b_mg.png
+ch053c_mg.png
+ch054_in.png
+ch055_in.png
+ch056_in.png
+ch057_in.png
+ch058_in.png
+ch058b_in.png
+ch059_in.png
+ch060_in.png
+ch061_in.png
+ch062_in.png
+ch063_sino.png
+ch064_in.png
+ch065_kill.png
+ch066_in.png
+ch067_in.png
+ch068_in.png
+ch069_in.png
+ch070_in.png
+ch071_in.png
+ch072_in.png
+ch073_log.png
+ch074_sino.png
+ch075_coc.png
+ch076_in.png
+ch077_in.png
+ch078_otogi.png
+ch079_jinzai.png
+ch080_in.png
+ch081_in.png
+ch082_sino.png
+ch083_in.png
+ch084_in.png
+ch085_in.png
+ch086_sino.png
+ch087_in.png
+ch088_in.png
+ch089_sino.png
+ch090_in.png
+ch091_nanabana.png
+ch092_nanabana.png
+ch092b_nanabana.png
+ch093_in.png
+ch094_sino.png
+ch095_nanabana.png
+ch096_magi.png
+ch097_nanabana.png
+ch098_nanabana.png
+ch099_nanabana.png
+ch099b_nanabana.png
+ch100_nanabana.png
+ch101_nanabana.png
+ch102_in.png
+ch103_nanabana.png
+ch104_nanabana.png
+ch105_nanabana.png
+ch106_in.png
+ch107_in.png
+ch108_in.png
+ch109_hero.png
+ch110_hero.png
+ch110b_hero.png
+ch111_hero.png
+ch112_hero.png
+ch112b_hero.png
+ch112c_hero.png
+ch113_sino.png
+ch113b_sino.png
+ch114_sino.png
+ch115_sino.png
+ch116_in.png
+ch117_sino.png
+ch117b_sino.png
+ch118_hero.png
+ch118b_hero.png
+ch119_hero.png
+ch119b_hero.png
+ch120_sino.png
+ch121_sino.png
+ch121b_sino.png
+ch121c_sino.png
+ch121d_sino.png
+ch122_hero.png
+ch122b_hero.png
+ch123_hero.png
+ch124_sino.png
+ch125_sino.png
+ch126_in.png
+ch127_in.png
+ch128_sino.png
+ch129_hero.png
+ch130_hero.png
+ch130b_hero.png
+ch130c_hero.png
+ch131_in.png
+ch132_hero.png
+ch133_in.png
+ch134_inscp.png
+ch135_in.png
+ch136_sino.png
+ch137_sino.png
+ch138_in.png
+ch139_gm.png
+ch139_nogm.png
+ch139b_gm.png
+ch139b_nogm.png
+ch140_sino.png
+ch141_coc.png
+ch142_in.png
+ch143_sino.png
+ch144_sino.png
+ch145_sino.png
+ch146_sino.png
+ch147_in.png
+ch147b_in.png
+ch148_in.png
+ch149_in.png
+ch149b_in.png
+ch149c_in.png
+ch150_sino.png
+ch151_x.png
+ch152_sino.png
+ch153_sino.png
+ch154_coc.png
+ch155_sino.png
+ch155b_sino.png
+ch156_in.png
+ch156b_in.png
+ch157_in.png
+ch158_x.png
+ch158b_x.png
+ch159_fate.png
+ch160_sino.png
+ch160b_sino.png
+ch161_sino.png
+ch161b_sino.png
+ch162_mon.png
+ch162b_mon.png
+ch163_sino.png
+ch164_sino.png
+ch165_sino.png
+ch165b_sino.png
+ch166_sino.png
+ch166b_sino.png
+ch166c_sino.png
+ch167_sino.png
+ch167b_sino.png
+ch167c_sino.png
+ch168_sino.png
+ch169_sino.png
+ch170_sino.png
+ch171_hero.png
+ch172_hero.png
+ch173_hero.png
+ch174_hero.png
+ch175_hero.png
+ch176_hero.png
+ch176b_hero.png
+ch177_hero.png
+ch177b_hero.png
+ch178_hero.png
+ch179_in.png
+ch179b_in.png
+ch180_hero.png
+ch181_sino.png
+ch182_sino.png
+ch183_hero.png
+ch184_hero.png
+ch185_sino.png
+ch186_sino.png
+ch187_sino.png
+ch188_hero.png
+ch189_sino.png
+ch190_sino.png
+ch190b_sino.png
+ch191_sino.png
+ch192_sino.png
+ch193_hutari.png
+ch194_in.png
+ch195_in.png
+ch196_kengou.png
+ch197_kengou.png
+ch198_kengou.png
+ch199_kengou.png
+ch200_coc.png
+ch201_kengou.png
+ch202_kengou.png
+ch203_shino.png
+ch204_kengou.png
+ch204b_kengou.png
+ch205_kengou.png
+ch206_kengou.png
+ch207_in.png
+ch207b_in.png
+ch208_kengou.png
+ch209_panic.png
+ch210_panic.png
+ch211_panic.png
+ch212_panic.png
+ch213_in.png
+ch214_in.png
+ch214b_in.png
+ch215_in.png
+ch215b_in.png
+ch216_in.png
+ch216b_in.png
+ch217_in.png
+ch218_in.png
+ch219_in.png
+ch220_in.png
+ch220b_in.png
+ch221_gw.png
+""";
+
+    public static readonly IReadOnlyList<string> FileNames = FileNamesText
+        .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    public static string DefaultFileName => FileNames[0];
+
+    public static bool TryResolveFileName(int imageNo, out string? fileName)
+    {
+        if (imageNo < 1 || imageNo > FileNames.Count)
+        {
+            fileName = null;
+            return false;
+        }
+
+        fileName = FileNames[imageNo - 1];
+        return true;
+    }
+
+    public static int? TryResolveImageNo(string? imagePath)
+    {
+        if (string.IsNullOrWhiteSpace(imagePath))
+        {
+            return null;
+        }
+
+        var normalized = Path.GetFileName(imagePath.Trim());
+        for (var index = 0; index < FileNames.Count; index++)
+        {
+            if (string.Equals(FileNames[index], normalized, StringComparison.Ordinal))
+            {
+                return index + 1;
+            }
+        }
+
+        return null;
+    }
+}

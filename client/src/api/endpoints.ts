@@ -5,6 +5,8 @@ import {
   createPlayerResponseSchema,
   updatePlayerNameRequestSchema,
   updatePlayerNameResponseSchema,
+  updatePlayerImageRequestSchema,
+  updatePlayerImageResponseSchema,
   updatePlayerJobRequestSchema,
   updatePlayerJobResponseSchema,
 } from '@/schema/player'
@@ -47,6 +49,8 @@ export type {
   CreatePlayerResponse,
   UpdatePlayerNameRequest,
   UpdatePlayerNameResponse,
+  UpdatePlayerImageRequest,
+  UpdatePlayerImageResponse,
   UpdatePlayerJobRequest,
   UpdatePlayerJobResponse,
 } from '@/schema/player'
@@ -110,6 +114,12 @@ export const endpoints = {
       method: 'PUT',
       requestSchema: updatePlayerNameRequestSchema,
       responseSchema: updatePlayerNameResponseSchema,
+    },
+    updateImage: {
+      path: '/player/image',
+      method: 'PUT',
+      requestSchema: updatePlayerImageRequestSchema,
+      responseSchema: updatePlayerImageResponseSchema,
     },
     updateJob: {
       path: '/player/job',

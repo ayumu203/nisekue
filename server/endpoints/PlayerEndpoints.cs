@@ -80,7 +80,7 @@ internal static class PlayerEndpoints
                     exp: 0,
                     status: new Status(maxHp: 10, maxMp: 2, strength: 1, defense: 1, intelligence: 1, luck: 1, speed: 1),
                     job: Job.Apprentice,
-                    imagePath: "ch001_bmnpc.png",
+                    imagePath: PlayerImageCatalog.DefaultFileName,
                     moveSet: moveSet);
                 await playerRepository.SaveAsync(player);
                 await chatService.EnsureRoomAsync(player.Id);
@@ -153,6 +153,55 @@ internal static class PlayerEndpoints
                         value = (int)player.Job,
                         displayName = EndpointHelpers.GetJobDisplayName(player.Job)
                     }
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
+        }).RequireAuthorization();
+
+        app.MapPut("/player/image", async (ClaimsPrincipal user, UpdatePlayerImageRequest request, IPlayerRepository playerRepository) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (!PlayerImageCatalog.TryResolveFileName(request.ImageNo, out var fileName))
+            {
+                return Results.BadRequest(new
+                {
+                    message = $"画像番号は1から{PlayerImageCatalog.FileNames.Count}の範囲で指定してください。"
+                });
+            }
+
+            try
+            {
+                var player = await playerRepository.GetPlayerAsync(playerId.Value);
+                if (player is null)
+                {
+                    return Results.NotFound(new
+                    {
+                        message = "プレイヤーが見つかりません。",
+                        userId = playerId.Value.Value
+                    });
+                }
+
+                player.UpdateImagePath(fileName);
+                await playerRepository.SaveAsync(player);
+
+                return Results.Ok(new
+                {
+                    message = "プレイヤー画像を更新しました。",
+                    userId = player.Id.Value,
+                    userName = player.Name,
+                    imagePath = player.ImagePath
                 });
             }
             catch (ArgumentException ex)

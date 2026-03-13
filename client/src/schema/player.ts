@@ -94,6 +94,17 @@ export const updatePlayerNameResponseSchema = z.object({
   job: playerJobSchema,
 })
 
+export const updatePlayerImageRequestSchema = z.object({
+  imageNo: z.number().int().min(1, '画像番号は1以上で入力してください'),
+})
+
+export const updatePlayerImageResponseSchema = z.object({
+  message: z.string().min(1, 'レスポンスメッセージが空です'),
+  userId: playerIdSchema,
+  userName: playerUserNameSchema.optional(),
+  imagePath: z.string().min(1).nullable().optional(),
+})
+
 export const updatePlayerJobRequestSchema = z.object({
   job: z.number().int().min(1).max(6),
 })
@@ -113,5 +124,7 @@ export type CreatePlayerRequest = z.infer<typeof createPlayerRequestSchema>
 export type CreatePlayerResponse = z.infer<typeof createPlayerResponseSchema>
 export type UpdatePlayerNameRequest = z.infer<typeof updatePlayerNameRequestSchema>
 export type UpdatePlayerNameResponse = z.infer<typeof updatePlayerNameResponseSchema>
+export type UpdatePlayerImageRequest = z.infer<typeof updatePlayerImageRequestSchema>
+export type UpdatePlayerImageResponse = z.infer<typeof updatePlayerImageResponseSchema>
 export type UpdatePlayerJobRequest = z.infer<typeof updatePlayerJobRequestSchema>
 export type UpdatePlayerJobResponse = z.infer<typeof updatePlayerJobResponseSchema>
