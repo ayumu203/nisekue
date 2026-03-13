@@ -124,6 +124,10 @@
 * 1 つの `QuestRoom` は 1 回の出撃にのみ対応する。
 * 再挑戦時は新規 `QuestRoom` を作成する。
 * そのため `quest_runs.room_id` は `UNIQUE` を前提とする。
+* 1 プレイヤーが同時に所有できる `Recruiting` な `QuestRoom` は 1 件までとする。
+* 新規ルーム作成時、同じ `OwnerId` の `Recruiting` ルームが存在する場合は、その既存ルームを `Closed + Cancelled` に遷移させたうえで新規ルームを作成する。
+* 進行中の `QuestRun` に参加しているプレイヤーは、新規ルームを作成できない。
+* これは「過去の募集を閉じて誤参加を防ぐ」ための募集制御であり、クエスト結果の `Succeeded` / `Failed` とは別概念として扱う。
 
 ### 4.6 配置責務とレイヤ配置
 
@@ -368,6 +372,7 @@
 初期実装では、`status` 未指定時は `Recruiting` を既定値とする。
 並び順は `createdAt desc` を既定とし、ページングは `page = 1`, `pageSize = 20` を初期値とする。
 `pageSize` は最大 100 までに丸める。
+他プレイヤー向けの参加候補表示では `Recruiting` のみを対象とし、`Closed + Cancelled` になった旧ルームは誤参加対象から除外する。
 
 #### レスポンス View
 
@@ -594,12 +599,14 @@
 * `CanStart()`
 * `AddNpcParticipants(npcTemplates)`
 * `CloseRecruitment(reason, at)`
+* `CancelForOwnerRoomReplacement(at)`
 
 #### 不変条件
 
 * オーナーは常に 1 人。
 * `Recruiting` 中のみ参加者追加・配置変更が可能。
 * 同一マスに複数参加者は配置できない。
+* 同一 `OwnerId` が同時に所有できる `Recruiting` ルームは 1 件まで。
 * `Solo` はオーナー 1 人で開始可能。
 * `Multi` は人間プレイヤー 2 人以上で開始可能。
 * NPC 補充は `CloseRecruitment()` の前に行い、`Closed` になった後は参加者構成を変更できない。
@@ -813,6 +820,8 @@
 * 開始可否は状態ではなく `QuestRoom.CanStart()` で判定する。
 * `Closed` は `Started` / `Cancelled` / `Expired` を `CloseReason` で区別する。
 * 開始後の成功失敗は `QuestRoom` では表現しない。
+* 新規ルーム作成に伴う旧ルームの終了は `Closed + Cancelled` とし、`QuestRun` の `Failed` へは変換しない。
+* 進行中クエスト参加者による新規ルーム作成要求は、状態遷移を起こさずリクエストを拒否する。
 
 ### 6.2 進行中クエスト
 
@@ -903,6 +912,8 @@ CSV 採用理由:
 * `UNIQUE(room_id, battle_row, battle_column)`。
 * `UNIQUE(room_id, player_id)` ただし `player_id IS NOT NULL`。
 * `quest_rooms.version` を楽観ロックに使い、同時参加更新は stale write を拒否する。
+* `quest_rooms` には `status = Recruiting` を条件とする `owner_player_id` の部分ユニーク制約を設け、同一オーナーの同時募集中ルームを DB でも禁止する。
+* 進行中クエスト参加者の新規ルーム作成禁止は `QuestRun` と参加者対応を参照してアプリケーション層で検証する。
 
 ### 7.4 進行系テーブル案
 
@@ -1053,6 +1064,9 @@ CSV 採用理由:
 | 要件 | 主担当集約 | 永続化先 |
 | --- | --- | --- |
 | オーナーのみ開始できる | `QuestRoom` | `quest_rooms`, `quest_room_participants` |
+| 同一プレイヤーの同時募集中ルームを 1 件までに制限する | `QuestRoom` | `quest_rooms` |
+| 新規ルーム作成時に同一オーナーの旧募集ルームを `Cancelled` で閉じる | `QuestRoom` | `quest_rooms` |
+| 進行中クエスト参加者は新規ルームを作成できない | `QuestRoom` + `QuestRun` | 募集系 + 進行系テーブル |
 | ソロは即開始、マルチは 2 人以上で開始 | `QuestRoom` | `quest_rooms` |
 | 開始時に不足人数だけ NPC を補充して最低 4 人編成にする | `QuestRoom` + `QuestSnapshotFactory` | `quest_room_participants`, `quest_run_party_snapshots` |
 | クエスト完了時に `LeaveQuest` していない参加者全員へ同一経験値を配る | `QuestRun` | `quest_reward_summaries` |
