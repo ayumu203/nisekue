@@ -385,6 +385,9 @@ public class QuestRunServiceTests
         public Task<Player?> GetPlayerAsync(PlayerId id)
             => Task.FromResult(players.GetValueOrDefault(id));
 
+        public Task<IReadOnlyList<Player>> GetAllAsync()
+            => Task.FromResult<IReadOnlyList<Player>>(players.Values.ToArray());
+
         public Task<bool> UpdateNameAsync(PlayerId id, string name)
             => Task.FromResult(true);
 

@@ -27,12 +27,7 @@ function ChatMessageItem({ message, isOwnMessage }: Props) {
   const avatarSrc = resolveCharacterAssetPath(message.imagePath)
 
   return (
-    <Stack
-      direction="row"
-      spacing={1}
-      alignItems="flex-end"
-      justifyContent={isOwnMessage ? 'flex-end' : 'flex-start'}
-    >
+    <Stack direction="row" spacing={1} alignItems="flex-end" justifyContent={isOwnMessage ? 'flex-end' : 'flex-start'}>
       {isOwnMessage ? null : (
         <Avatar
           src={avatarSrc ?? undefined}
