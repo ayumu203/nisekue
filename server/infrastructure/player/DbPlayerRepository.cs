@@ -36,14 +36,8 @@ namespace server.infrastructure.player
                 .ThenBy(x => x.Id)
                 .ToListAsync();
 
-            var moveEntities = await dbContext.PlayerMoves
-                .AsNoTracking()
-                .ToListAsync();
-
-            var moveEntityByPlayerId = moveEntities.ToDictionary(x => x.PlayerId);
-
             return playerEntities
-                .Select(entity => MapToDomain(entity, moveEntityByPlayerId.GetValueOrDefault(entity.Id)))
+                .Select(entity => MapToDomain(entity, moveEntity: null))
                 .ToArray();
         }
 

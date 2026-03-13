@@ -20,7 +20,6 @@ public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerReposito
             .Distinct()
             .ToArray();
 
-        // 同一スコープのDbContextを並列利用しないよう順次取得する
         var senderProfileMap = new Dictionary<PlayerId, (string Name, string? ImagePath)>();
         foreach (var senderId in senderIds)
         {
