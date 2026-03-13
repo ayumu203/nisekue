@@ -1,5 +1,6 @@
 import {
   getPlayerResponseSchema,
+  listPlayersResponseSchema,
   createPlayerRequestSchema,
   createPlayerResponseSchema,
   updatePlayerNameRequestSchema,
@@ -39,6 +40,8 @@ import {
 
 export type {
   GetPlayerResponse,
+  PlayerSummary,
+  ListPlayersResponse,
   PlayerMoveSlot,
   CreatePlayerRequest,
   CreatePlayerResponse,
@@ -85,6 +88,16 @@ export const endpoints = {
       path: '/player',
       method: 'GET',
       responseSchema: getPlayerResponseSchema,
+    },
+    getById: {
+      path: (playerId: string) => `/players/${playerId}`,
+      method: 'GET',
+      responseSchema: getPlayerResponseSchema,
+    },
+    list: {
+      path: '/players',
+      method: 'GET',
+      responseSchema: listPlayersResponseSchema,
     },
     create: {
       path: '/player',

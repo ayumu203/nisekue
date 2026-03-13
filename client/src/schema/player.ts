@@ -63,6 +63,14 @@ export const getPlayerResponseSchema = z.object({
   moveSlots: z.array(playerMoveSlotSchema).length(10),
 })
 
+export const playerSummarySchema = z.object({
+  userId: playerIdSchema,
+  userName: playerUserNameSchema.optional(),
+  imagePath: z.string().min(1).nullable().optional(),
+})
+
+export const listPlayersResponseSchema = z.array(playerSummarySchema)
+
 export const createPlayerRequestSchema = z.object({
   userName: playerUserNameSchema,
 })
@@ -98,6 +106,8 @@ export const updatePlayerJobResponseSchema = z.object({
 })
 
 export type GetPlayerResponse = z.infer<typeof getPlayerResponseSchema>
+export type PlayerSummary = z.infer<typeof playerSummarySchema>
+export type ListPlayersResponse = z.infer<typeof listPlayersResponseSchema>
 export type PlayerMoveSlot = z.infer<typeof playerMoveSlotSchema>
 export type CreatePlayerRequest = z.infer<typeof createPlayerRequestSchema>
 export type CreatePlayerResponse = z.infer<typeof createPlayerResponseSchema>
