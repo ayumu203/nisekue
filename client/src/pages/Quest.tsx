@@ -17,7 +17,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
-import { createQuestRoom, getQuestRun, getQuestStages, startQuestRoom, submitQuestCommand } from '@/api/quest'
+import {
+  cancelQuestRoom,
+  createQuestRoom,
+  escapeQuestRun,
+  getQuestRun,
+  getQuestStages,
+  startQuestRoom,
+  submitQuestCommand,
+} from '@/api/quest'
 import QuestBattleStatusPanel from '@/components/quest/QuestBattleStatusPanel'
 import { useAuth } from '@/contexts/useAuth'
 import {
@@ -67,12 +75,14 @@ export default function Quest() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
+  const [isCancellingRoom, setIsCancellingRoom] = useState(false)
   const [selectedActionKind, setSelectedActionKind] = useState<QuestActionKind>('NormalAttack')
   const [selectedMoveId, setSelectedMoveId] = useState<number | ''>('')
   const [selectedTargetRow, setSelectedTargetRow] = useState<BattleRow | ''>('')
   const [selectedTargetColumn, setSelectedTargetColumn] = useState<BattleColumn | ''>('')
   const [commandMessage, setCommandMessage] = useState<string | null>(null)
   const [isCommandSubmitting, setIsCommandSubmitting] = useState(false)
+  const [isEscaping, setIsEscaping] = useState(false)
 
   const playerSWRKey = session?.user.id ? ([`quest-player`, session.user.id] as const) : null
   const {
@@ -193,6 +203,32 @@ export default function Quest() {
     }
   }
 
+  async function handleCancelRoom(): Promise<void> {
+    if (!session?.access_token) {
+      setSubmitError(locale.sessionInfoMissing)
+      return
+    }
+
+    if (!createdRoom) {
+      setSubmitError(locale.createRoomFirst)
+      return
+    }
+
+    setIsCancellingRoom(true)
+    setSubmitError(null)
+    setCommandMessage(null)
+
+    try {
+      const room = await cancelQuestRoom(createdRoom.roomId, session.access_token)
+      setCreatedRoom(room)
+      setCommandMessage(locale.roomCancelled)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : locale.cancelRoomFailed)
+    } finally {
+      setIsCancellingRoom(false)
+    }
+  }
+
   const runSWRKey = session?.access_token && startedRun?.runId ? ([`quest-run`, startedRun.runId] as const) : null
   const {
     data: liveRun,
@@ -288,6 +324,33 @@ export default function Quest() {
       setSubmitError(error instanceof Error ? error.message : locale.commandSubmitFailed)
     } finally {
       setIsCommandSubmitting(false)
+    }
+  }
+
+  async function handleEscapeRun(): Promise<void> {
+    if (!session?.access_token) {
+      setSubmitError(locale.sessionInfoMissing)
+      return
+    }
+
+    if (!currentRun) {
+      setSubmitError(locale.commandUnavailable)
+      return
+    }
+
+    setIsEscaping(true)
+    setSubmitError(null)
+    setCommandMessage(null)
+
+    try {
+      const run = await escapeQuestRun(currentRun.runId, session.access_token)
+      setStartedRun(run)
+      await mutateRun(run, { revalidate: false })
+      setCommandMessage(locale.runEscaped)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : locale.escapeRunFailed)
+    } finally {
+      setIsEscaping(false)
     }
   }
 
@@ -432,14 +495,31 @@ export default function Quest() {
                       <Typography>{`${locale.participants}: ${createdRoom.participants.length}`}</Typography>
                       <Typography>{`${locale.canStartLabel}: ${createdRoom.canStart ? locale.yes : locale.no}`}</Typography>
                       <Typography>{`${locale.roomStatusLabel}: ${locale.roomStatus[createdRoom.status]}`}</Typography>
-                      <Button
-                        variant="contained"
-                        onClick={() => void handleStartQuest()}
-                        disabled={isStarting || !createdRoom.canStart || createdRoom.mode !== 'Solo'}
-                        sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                      >
-                        {isStarting ? locale.startingQuest : locale.startQuest}
-                      </Button>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                        <Button
+                          variant="contained"
+                          onClick={() => void handleStartQuest()}
+                          disabled={
+                            isStarting ||
+                            isCancellingRoom ||
+                            !createdRoom.canStart ||
+                            createdRoom.mode !== 'Solo' ||
+                            createdRoom.status !== 'Recruiting'
+                          }
+                          sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                        >
+                          {isStarting ? locale.startingQuest : locale.startQuest}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="inherit"
+                          onClick={() => void handleCancelRoom()}
+                          disabled={isStarting || isCancellingRoom || createdRoom.status !== 'Recruiting'}
+                          sx={menuButtonSx}
+                        >
+                          {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
+                        </Button>
+                      </Stack>
                       {createdRoom.mode !== 'Solo' ? (
                         <Typography variant="body2" color="text.secondary">
                           {locale.startSoloOnly}
@@ -606,10 +686,19 @@ export default function Quest() {
                       <Button
                         variant="contained"
                         onClick={() => void handleSubmitCommand()}
-                        disabled={isCommandSubmitting || selfParticipantId == null}
+                        disabled={isCommandSubmitting || isEscaping || selfParticipantId == null || currentRun.status !== 'InProgress'}
                         sx={{ ...menuButtonSx, ...softGreenButtonSx }}
                       >
                         {isCommandSubmitting ? locale.submittingCommand : locale.submitCommand}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={() => void handleEscapeRun()}
+                        disabled={isEscaping || isCommandSubmitting || currentRun.status !== 'InProgress'}
+                        sx={menuButtonSx}
+                      >
+                        {isEscaping ? locale.escapingRun : locale.escapeRun}
                       </Button>
 
                       {currentPendingCommand ? (

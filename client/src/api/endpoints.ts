@@ -176,9 +176,19 @@ export const endpoints = {
       method: 'POST',
       responseSchema: questRunDetailResponseSchema,
     },
+    cancelRoom: {
+      path: (roomId: string) => `/quest/rooms/${roomId}/cancel`,
+      method: 'POST',
+      responseSchema: questRoomDetailResponseSchema,
+    },
     getRun: {
       path: (runId: string) => `/quest/runs/${runId}`,
       method: 'GET',
+      responseSchema: questRunDetailResponseSchema,
+    },
+    escapeRun: {
+      path: (runId: string) => `/quest/runs/${runId}/escape`,
+      method: 'POST',
       responseSchema: questRunDetailResponseSchema,
     },
     submitCommand: {

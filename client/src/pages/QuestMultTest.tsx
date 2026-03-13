@@ -18,7 +18,9 @@ import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import {
+  cancelQuestRoom,
   createQuestRoom,
+  escapeQuestRun,
   getQuestRoom,
   getQuestRunByRoom,
   getQuestStages,
@@ -72,6 +74,7 @@ export default function QuestMultTest() {
   const [isJoiningRoomId, setIsJoiningRoomId] = useState<string | null>(null)
   const [isUpdatingParticipantId, setIsUpdatingParticipantId] = useState<string | null>(null)
   const [isStarting, setIsStarting] = useState(false)
+  const [isCancellingRoom, setIsCancellingRoom] = useState(false)
   const [positionDrafts, setPositionDrafts] = useState<Record<string, { row: BattleRow; column: BattleColumn }>>({})
   const [selectedActionKind, setSelectedActionKind] = useState<QuestActionKind>('NormalAttack')
   const [selectedMoveId, setSelectedMoveId] = useState<number | ''>('')
@@ -79,6 +82,7 @@ export default function QuestMultTest() {
   const [selectedTargetColumn, setSelectedTargetColumn] = useState<BattleColumn | ''>('')
   const [commandMessage, setCommandMessage] = useState<string | null>(null)
   const [isCommandSubmitting, setIsCommandSubmitting] = useState(false)
+  const [isEscaping, setIsEscaping] = useState(false)
 
   const playerSWRKey = session?.user.id ? ([`quest-mult-player`, session.user.id] as const) : null
   const {
@@ -366,6 +370,29 @@ export default function QuestMultTest() {
     }
   }
 
+  async function handleCancelRoom(): Promise<void> {
+    if (!session?.access_token || !currentRoom) {
+      setSubmitError(locale.sessionInfoMissing)
+      return
+    }
+
+    setIsCancellingRoom(true)
+    setSubmitError(null)
+    setCommandMessage(null)
+
+    try {
+      const room = await cancelQuestRoom(currentRoom.roomId, session.access_token)
+      setCreatedRoom(room)
+      await mutateRoom(room, { revalidate: false })
+      await mutateRooms()
+      setCommandMessage(locale.roomCancelled)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : locale.cancelRoomFailed)
+    } finally {
+      setIsCancellingRoom(false)
+    }
+  }
+
   async function handleSubmitCommand(): Promise<void> {
     if (!session?.access_token) {
       setSubmitError(locale.sessionInfoMissing)
@@ -412,6 +439,27 @@ export default function QuestMultTest() {
       setSubmitError(error instanceof Error ? error.message : locale.commandSubmitFailed)
     } finally {
       setIsCommandSubmitting(false)
+    }
+  }
+
+  async function handleEscapeRun(): Promise<void> {
+    if (!session?.access_token || !currentRun) {
+      setSubmitError(locale.commandUnavailable)
+      return
+    }
+
+    setIsEscaping(true)
+    setSubmitError(null)
+    setCommandMessage(null)
+
+    try {
+      const run = await escapeQuestRun(currentRun.runId, session.access_token)
+      await mutateRun(run, { revalidate: false })
+      setCommandMessage(locale.runEscaped)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : locale.escapeRunFailed)
+    } finally {
+      setIsEscaping(false)
     }
   }
 
@@ -541,14 +589,25 @@ export default function QuestMultTest() {
                       <Typography>{`${locale.roomStatusLabel}: ${locale.roomStatus[currentRoom.status]}`}</Typography>
                       <Typography>{`${locale.modeLabel}: ${locale.modeMultiFixed}`}</Typography>
                       {isJoinedRoomOwner ? (
-                        <Button
-                          variant="contained"
-                          onClick={() => void handleStartQuest()}
-                          disabled={isStarting || !currentRoom.canStart}
-                          sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                        >
-                          {isStarting ? locale.startingQuest : locale.startQuest}
-                        </Button>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                          <Button
+                            variant="contained"
+                            onClick={() => void handleStartQuest()}
+                            disabled={isStarting || isCancellingRoom || !currentRoom.canStart}
+                            sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                          >
+                            {isStarting ? locale.startingQuest : locale.startQuest}
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            color="inherit"
+                            onClick={() => void handleCancelRoom()}
+                            disabled={isStarting || isCancellingRoom || currentRoom.status !== 'Recruiting'}
+                            sx={menuButtonSx}
+                          >
+                            {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
+                          </Button>
+                        </Stack>
                       ) : null}
                       <Stack spacing={1}>
                         {currentRoom.participants.map((participant) => (
@@ -698,6 +757,17 @@ export default function QuestMultTest() {
                       <Typography>{`${locale.runStatusLabel}: ${locale.runStatus[currentRun.status]}`}</Typography>
                       <Typography>{`${locale.currentFloorLabel}: ${currentRun.floor.currentFloorNo}`}</Typography>
                       <Typography>{`${locale.turnNo}: ${currentRun.turn.currentTurnNo}`}</Typography>
+                      {isJoinedRoomOwner ? (
+                        <Button
+                          variant="outlined"
+                          color="inherit"
+                          onClick={() => void handleEscapeRun()}
+                          disabled={isEscaping || currentRun.status !== 'InProgress'}
+                          sx={menuButtonSx}
+                        >
+                          {isEscaping ? locale.escapingRun : locale.escapeRun}
+                        </Button>
+                      ) : null}
                       <QuestBattleStatusPanel run={currentRun} selfParticipantId={selfParticipantId} locale={locale} />
                     </Stack>
                   ) : (
@@ -800,7 +870,7 @@ export default function QuestMultTest() {
                       <Button
                         variant="contained"
                         onClick={() => void handleSubmitCommand()}
-                        disabled={isCommandSubmitting || selfParticipantId == null}
+                        disabled={isCommandSubmitting || isEscaping || selfParticipantId == null || currentRun.status !== 'InProgress'}
                         sx={{ ...menuButtonSx, ...softGreenButtonSx }}
                       >
                         {isCommandSubmitting ? locale.submittingCommand : locale.submitCommand}
