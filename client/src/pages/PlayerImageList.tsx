@@ -71,6 +71,7 @@ export default function PlayerImageList() {
                     component="img"
                     src={resolveCharacterAssetPath(option.fileName) ?? undefined}
                     alt={`${locale.imageNoLabel} ${option.imageNo}`}
+                    loading="lazy"
                     sx={{
                       width: '100%',
                       height: '100%',

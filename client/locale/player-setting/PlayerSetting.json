@@ -19,6 +19,7 @@
   "submitButton": "保存",
   "saving": "保存中...",
   "saved": "プレイヤー情報を更新しました。",
+  "partialSaveFailed": "一部のプレイヤー情報のみ更新しました。",
   "sessionMissing": "セッション情報がありません",
   "saveFailed": "プレイヤー情報の更新に失敗しました"
 }

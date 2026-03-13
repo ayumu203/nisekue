@@ -55,7 +55,7 @@ export default function PlayerSetting() {
 
   useEffect(() => {
     const imageNo = resolvePlayerImageNo(player?.imagePath)
-    setImageNoInput(imageNo ? String(imageNo) : '1')
+    setImageNoInput(imageNo ? String(imageNo) : '')
   }, [player?.imagePath])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -71,15 +71,59 @@ export default function PlayerSetting() {
     setIsSubmitting(true)
 
     try {
-      const normalizedImageNo = Number.parseInt(imageNoInput, 10)
-      if (!Number.isInteger(normalizedImageNo) || normalizedImageNo < 1 || normalizedImageNo > PLAYER_IMAGE_COUNT) {
-        throw new Error(locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT)))
+      const normalizedUserName = userName.trim()
+      let normalizedImageNo: number | null = null
+
+      if (imageNoInput.trim() !== '') {
+        const parsedImageNo = Number.parseInt(imageNoInput, 10)
+        if (!Number.isInteger(parsedImageNo) || parsedImageNo < 1 || parsedImageNo > PLAYER_IMAGE_COUNT) {
+          throw new Error(locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT)))
+        }
+
+        normalizedImageNo = parsedImageNo
       }
 
-      await updatePlayer({ userName }, session.access_token)
-      await updatePlayerImage({ imageNo: normalizedImageNo }, session.access_token)
-      await mutatePlayer()
-      setSuccessMessage(locale.saved)
+      const currentImageNo = resolvePlayerImageNo(player?.imagePath)
+      const shouldUpdateName = normalizedUserName !== (player?.userName ?? '')
+      const shouldUpdateImage = normalizedImageNo !== null && normalizedImageNo !== currentImageNo
+
+      if (!shouldUpdateName && !shouldUpdateImage) {
+        setSuccessMessage(locale.saved)
+        return
+      }
+
+      const errors: string[] = []
+      let anySuccess = false
+
+      if (shouldUpdateName) {
+        try {
+          await updatePlayer({ userName: normalizedUserName }, session.access_token)
+          anySuccess = true
+        } catch (error) {
+          errors.push(error instanceof Error ? error.message : locale.saveFailed)
+        }
+      }
+
+      if (shouldUpdateImage && normalizedImageNo !== null) {
+        try {
+          await updatePlayerImage({ imageNo: normalizedImageNo }, session.access_token)
+          anySuccess = true
+        } catch (error) {
+          errors.push(error instanceof Error ? error.message : locale.saveFailed)
+        }
+      }
+
+      if (anySuccess) {
+        await mutatePlayer()
+      }
+
+      if (errors.length === 0) {
+        setSuccessMessage(locale.saved)
+      } else if (anySuccess) {
+        setSubmitError(`${locale.partialSaveFailed} ${errors.join(' ')}`)
+      } else {
+        setSubmitError(errors.join(' ') || locale.saveFailed)
+      }
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : locale.saveFailed)
     } finally {
