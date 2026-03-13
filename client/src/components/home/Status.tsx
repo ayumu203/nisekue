@@ -4,6 +4,7 @@ import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx } from '@/constants/styl
 import type { GetPlayerResponse } from '@/schema/player'
 import locale from '../../../locale/home/Home.json'
 import StatusStatRow from '@/components/home/StatusStatRow'
+import { resolveCharacterAssetPath, resolveStatusAssetPath } from '@/lib/assets'
 
 type StatValue = number | string
 
@@ -42,20 +43,6 @@ function formatExpProgress(exp: number | undefined, level: number | undefined, f
 
   const requiredExp = level * 10
   return `${exp} / ${requiredExp}`
-}
-
-function resolveCharacterImageSrc(imagePath: string | null | undefined): string | null {
-  if (!imagePath) {
-    return null
-  }
-
-  const normalizedPath = imagePath.replace(/^\/+/, '')
-  return `${import.meta.env.BASE_URL}image/character/${normalizedPath}`
-}
-
-function resolveStatusBackgroundSrc(fileName: string): string {
-  const normalizedPath = fileName.replace(/^\/+/, '')
-  return `${import.meta.env.BASE_URL}image/status/${normalizedPath}`
 }
 
 export default function Status({ player, compactTrainingMobile = false }: StatusProps) {
@@ -119,8 +106,8 @@ export default function Status({ player, compactTrainingMobile = false }: Status
   ]
 
   const characterImageSrc =
-    player?.imagePath && player.imagePath !== failedImagePath ? resolveCharacterImageSrc(player.imagePath) : null
-  const characterBackgroundSrc = resolveStatusBackgroundSrc('back-image.jpg')
+    player?.imagePath && player.imagePath !== failedImagePath ? resolveCharacterAssetPath(player.imagePath) : null
+  const characterBackgroundSrc = resolveStatusAssetPath('back-image.jpg')
 
   return (
     <Paper
