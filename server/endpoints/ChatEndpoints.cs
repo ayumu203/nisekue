@@ -19,6 +19,7 @@ internal static class ChatEndpoints
                 messages = room.Messages.Select(x => new
                 {
                     chatId = x.ChatId,
+                    senderId = x.SenderId.Value,
                     senderName = x.SenderName,
                     text = x.Message,
                     createdAt = x.CreatedAt
@@ -58,6 +59,7 @@ internal static class ChatEndpoints
                     messages = room.Messages.Select(x => new
                     {
                         chatId = x.ChatId,
+                        senderId = x.SenderId.Value,
                         senderName = x.SenderName,
                         text = x.Message,
                         createdAt = x.CreatedAt

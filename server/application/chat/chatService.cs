@@ -32,6 +32,7 @@ public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerReposito
             .OrderBy(x => x.ChatId)
             .Select(x => new ChatMessageView(
                 ChatId: x.ChatId,
+                SenderId: x.SenderId,
                 SenderName: senderNameMap.TryGetValue(x.SenderId, out var senderName) ? senderName : "Unknown",
                 Message: x.Body.Text,
                 CreatedAt: x.CreatedAt))
