@@ -6,5 +6,6 @@ public sealed record ChatMessageView(
     int ChatId,
     PlayerId SenderId,
     string SenderName,
+    string? ImagePath,
     string Message,
     DateTimeOffset CreatedAt);

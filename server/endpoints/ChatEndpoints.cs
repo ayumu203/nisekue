@@ -21,6 +21,7 @@ internal static class ChatEndpoints
                     chatId = x.ChatId,
                     senderId = x.SenderId.Value,
                     senderName = x.SenderName,
+                    imagePath = x.ImagePath,
                     text = x.Message,
                     createdAt = x.CreatedAt
                 })
@@ -61,6 +62,7 @@ internal static class ChatEndpoints
                         chatId = x.ChatId,
                         senderId = x.SenderId.Value,
                         senderName = x.SenderName,
+                        imagePath = x.ImagePath,
                         text = x.Message,
                         createdAt = x.CreatedAt
                     })
