@@ -110,6 +110,7 @@ namespace server.infrastructure.player
                 var existingMoves = await dbContext.PlayerMoves
                     .SingleOrDefaultAsync(x => x.PlayerId == player.Id.Value);
 
+                existing.Name = player.Name;
                 existing.Job = player.Job;
                 existing.ImagePath = player.ImagePath;
                 existing.Level = player.Level;
