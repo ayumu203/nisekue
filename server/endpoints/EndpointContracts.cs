@@ -12,6 +12,7 @@ public record ManualControlApproveRequest(Guid ParticipantId);
 public record PostQuestChatMessageRequest(Guid ParticipantId, string Message);
 public record CreatePlayerRequest(string UserName);
 public record UpdatePlayerNameRequest(string UserName);
+public record UpdatePlayerImageRequest(int ImageNo);
 public record UpdatePlayerJobRequest(Job Job);
 public record PostChatMessageRequest(Guid OwnerId, string Text);
 public record ExecuteTrainingRequest(int EnemyId, IReadOnlyList<int?> MoveIds);

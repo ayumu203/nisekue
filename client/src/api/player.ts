@@ -8,6 +8,8 @@ import type {
   ListPlayersResponse,
   UpdatePlayerNameRequest,
   UpdatePlayerNameResponse,
+  UpdatePlayerImageRequest,
+  UpdatePlayerImageResponse,
   UpdatePlayerJobRequest,
   UpdatePlayerJobResponse,
 } from '@/schema/player'
@@ -118,6 +120,35 @@ export async function updatePlayer(
   }
 
   return endpoints.player.updateName.responseSchema.parse(json)
+}
+
+export async function updatePlayerImage(
+  input: UpdatePlayerImageRequest,
+  accessToken: string,
+): Promise<UpdatePlayerImageResponse> {
+  const parsedPayload = endpoints.player.updateImage.requestSchema.safeParse(input)
+  if (!parsedPayload.success) {
+    throw new Error(parsedPayload.error.issues[0]?.message ?? '入力内容が不正です')
+  }
+  const payload = parsedPayload.data
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.updateImage.path}`, {
+    method: endpoints.player.updateImage.method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'プレイヤー画像の更新に失敗しました'))
+  }
+
+  return endpoints.player.updateImage.responseSchema.parse(json)
 }
 
 export async function updatePlayerJob(

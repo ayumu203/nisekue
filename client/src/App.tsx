@@ -6,6 +6,7 @@ import Players from '@/pages/Players'
 import Training from '@/pages/Training'
 import Thanks from '@/pages/Thanks'
 import PlayerSetting from '@/pages/PlayerSetting'
+import PlayerImageList from '@/pages/PlayerImageList'
 import MoveSetting from '@/pages/MoveSetting'
 import Quest from '@/pages/Quest'
 import QuestMultTest from '@/pages/QuestMultTest'
@@ -30,6 +31,7 @@ function App() {
       <Route path="/quest/quest-mult-test" element={user ? <QuestMultTest /> : <Navigate to="/auth" replace />} />
       <Route path="/training" element={user ? <Training /> : <Navigate to="/auth" replace />} />
       <Route path="/player-setting" element={user ? <PlayerSetting /> : <Navigate to="/auth" replace />} />
+      <Route path="/player-images" element={user ? <PlayerImageList /> : <Navigate to="/auth" replace />} />
       <Route path="/move-setting" element={user ? <MoveSetting /> : <Navigate to="/auth" replace />} />
       <Route path="/thanks" element={<Thanks />} />
       <Route path="*" element={<Navigate to={user ? '/' : '/auth'} replace />} />

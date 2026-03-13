@@ -10,9 +10,16 @@
   "emptySlot": "未設定",
   "unknownMove": "不明な技",
   "unknownMoveDescription": "説明が設定されていません",
+  "playerImageLabel": "プレイヤー画像",
+  "playerImageNoLabel": "画像番号",
+  "playerImagePreviewAlt": "プレイヤー画像プレビュー",
+  "imageNoRange": "画像番号は1から{{max}}で入力してください。",
+  "randomSelect": "ランダム選択",
+  "openImageList": "画像一覧を見る",
   "submitButton": "保存",
   "saving": "保存中...",
   "saved": "プレイヤー情報を更新しました。",
+  "partialSaveFailed": "一部のプレイヤー情報のみ更新しました。",
   "sessionMissing": "セッション情報がありません",
   "saveFailed": "プレイヤー情報の更新に失敗しました"
 }

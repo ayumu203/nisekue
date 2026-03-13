@@ -3,15 +3,24 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
-import { createPlayer, getPlayer, updatePlayer } from '@/api/player'
-import { greenOutlinedInputSx, innerSurfaceSx, outerPagePaperSx, softGreenButtonSx } from '@/constants/styles'
+import { createPlayer, getPlayer, updatePlayer, updatePlayerImage } from '@/api/player'
+import {
+  greenOutlinedInputSx,
+  innerSurfaceSx,
+  mutedGreenButtonSx,
+  outerPagePaperSx,
+  softGreenButtonSx,
+} from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
+import { resolveCharacterAssetPath } from '@/lib/assets'
+import { PLAYER_IMAGE_COUNT, resolvePlayerImageFileName, resolvePlayerImageNo } from '@/lib/playerImages'
 import locale from '../../locale/player-setting/PlayerSetting.json'
 
 export default function PlayerSetting() {
   const { session, isLoading } = useAuth()
   const [userName, setUserName] = useState('')
+  const [imageNoInput, setImageNoInput] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -44,6 +53,11 @@ export default function PlayerSetting() {
     setUserName(player?.userName ?? '')
   }, [player?.userName])
 
+  useEffect(() => {
+    const imageNo = resolvePlayerImageNo(player?.imagePath)
+    setImageNoInput(imageNo ? String(imageNo) : '')
+  }, [player?.imagePath])
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
 
@@ -57,15 +71,71 @@ export default function PlayerSetting() {
     setIsSubmitting(true)
 
     try {
-      await updatePlayer({ userName }, session.access_token)
-      await mutatePlayer()
-      setSuccessMessage(locale.saved)
+      const normalizedUserName = userName.trim()
+      let normalizedImageNo: number | null = null
+
+      if (imageNoInput.trim() !== '') {
+        const parsedImageNo = Number.parseInt(imageNoInput, 10)
+        if (!Number.isInteger(parsedImageNo) || parsedImageNo < 1 || parsedImageNo > PLAYER_IMAGE_COUNT) {
+          throw new Error(locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT)))
+        }
+
+        normalizedImageNo = parsedImageNo
+      }
+
+      const currentImageNo = resolvePlayerImageNo(player?.imagePath)
+      const shouldUpdateName = normalizedUserName !== (player?.userName ?? '')
+      const shouldUpdateImage = normalizedImageNo !== null && normalizedImageNo !== currentImageNo
+
+      if (!shouldUpdateName && !shouldUpdateImage) {
+        setSuccessMessage(locale.saved)
+        return
+      }
+
+      const errors: string[] = []
+      let anySuccess = false
+
+      if (shouldUpdateName) {
+        try {
+          await updatePlayer({ userName: normalizedUserName }, session.access_token)
+          anySuccess = true
+        } catch (error) {
+          errors.push(error instanceof Error ? error.message : locale.saveFailed)
+        }
+      }
+
+      if (shouldUpdateImage && normalizedImageNo !== null) {
+        try {
+          await updatePlayerImage({ imageNo: normalizedImageNo }, session.access_token)
+          anySuccess = true
+        } catch (error) {
+          errors.push(error instanceof Error ? error.message : locale.saveFailed)
+        }
+      }
+
+      if (anySuccess) {
+        await mutatePlayer()
+      }
+
+      if (errors.length === 0) {
+        setSuccessMessage(locale.saved)
+      } else if (anySuccess) {
+        setSubmitError(`${locale.partialSaveFailed} ${errors.join(' ')}`)
+      } else {
+        setSubmitError(errors.join(' ') || locale.saveFailed)
+      }
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : locale.saveFailed)
     } finally {
       setIsSubmitting(false)
     }
   }
+
+  const selectedImageNo = Number.parseInt(imageNoInput, 10)
+  const previewImagePath =
+    Number.isInteger(selectedImageNo) && selectedImageNo >= 1 && selectedImageNo <= PLAYER_IMAGE_COUNT
+      ? resolveCharacterAssetPath(resolvePlayerImageFileName(selectedImageNo))
+      : null
 
   if (isLoading) {
     return (
@@ -112,6 +182,74 @@ export default function PlayerSetting() {
                     }}
                     sx={greenOutlinedInputSx}
                   />
+                  <Stack spacing={1.5}>
+                    <Typography variant="subtitle1">{locale.playerImageLabel}</Typography>
+                    <Box
+                      sx={{
+                        width: '100%',
+                        maxWidth: 237,
+                        aspectRatio: '338 / 350',
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: 'rgba(255,255,255,0.72)',
+                        overflow: 'hidden',
+                        alignSelf: 'center',
+                      }}
+                    >
+                      {previewImagePath ? (
+                        <Box
+                          component="img"
+                          src={previewImagePath}
+                          alt={locale.playerImagePreviewAlt}
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain',
+                            objectPosition: 'center bottom',
+                            display: 'block',
+                          }}
+                        />
+                      ) : (
+                        <Box sx={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', px: 2 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label={locale.playerImageNoLabel}
+                      value={imageNoInput}
+                      onChange={(event) => {
+                        setImageNoInput(event.target.value)
+                      }}
+                      inputProps={{
+                        min: 1,
+                        max: PLAYER_IMAGE_COUNT,
+                      }}
+                      helperText={locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
+                      sx={greenOutlinedInputSx}
+                    />
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                      <Button
+                        type="button"
+                        variant="contained"
+                        sx={mutedGreenButtonSx}
+                        onClick={() => {
+                          const randomImageNo = Math.floor(Math.random() * PLAYER_IMAGE_COUNT) + 1
+                          setImageNoInput(String(randomImageNo))
+                        }}
+                      >
+                        {locale.randomSelect}
+                      </Button>
+                      <Button component={Link} to="/player-images" variant="contained" sx={mutedGreenButtonSx}>
+                        {locale.openImageList}
+                      </Button>
+                    </Stack>
+                  </Stack>
                   {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
                   {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
                   <Button type="submit" variant="contained" disabled={isSubmitting} sx={softGreenButtonSx}>

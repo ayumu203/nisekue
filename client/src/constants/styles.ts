@@ -25,6 +25,27 @@ export const softGreenButtonSx = {
   },
 } as const
 
+export const mutedGreenButtonSx = {
+  '&&': {
+    backgroundColor: '#e4f3e6',
+    backgroundImage: 'none',
+    borderColor: '#8dbe90',
+    color: '#2f5b33',
+  },
+  '&&:hover': {
+    backgroundColor: '#d5ebd7',
+    backgroundImage: 'none',
+    borderColor: '#78b27b',
+    boxShadow: 'none',
+  },
+  '&&.Mui-disabled': {
+    backgroundColor: '#eef6ef',
+    backgroundImage: 'none',
+    borderColor: '#c6ddc8',
+    color: '#8aa48c',
+  },
+} as const
+
 export const greenBadgeSx = {
   px: 1.5,
   py: 0.75,
