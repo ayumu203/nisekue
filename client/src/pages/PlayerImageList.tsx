@@ -69,7 +69,7 @@ export default function PlayerImageList() {
                 >
                   <Box
                     component="img"
-                    src={resolveCharacterAssetPath(option.fileName)}
+                    src={resolveCharacterAssetPath(option.fileName) ?? undefined}
                     alt={`${locale.imageNoLabel} ${option.imageNo}`}
                     sx={{
                       width: '100%',
