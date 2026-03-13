@@ -870,7 +870,12 @@ export default function QuestMultTest() {
                       <Button
                         variant="contained"
                         onClick={() => void handleSubmitCommand()}
-                        disabled={isCommandSubmitting || isEscaping || selfParticipantId == null || currentRun.status !== 'InProgress'}
+                        disabled={
+                          isCommandSubmitting ||
+                          isEscaping ||
+                          selfParticipantId == null ||
+                          currentRun.status !== 'InProgress'
+                        }
                         sx={{ ...menuButtonSx, ...softGreenButtonSx }}
                       >
                         {isCommandSubmitting ? locale.submittingCommand : locale.submitCommand}
