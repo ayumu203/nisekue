@@ -63,6 +63,20 @@ public class QuestRoomService(
         return room;
     }
 
+    public async Task<QuestRoom> CancelRoomAsync(QuestRoomId roomId, PlayerId ownerId)
+    {
+        var room = await questRoomRepository.GetAsync(roomId)
+            ?? throw new KeyNotFoundException("ルームが見つかりません。");
+        if (room.OwnerId != ownerId)
+        {
+            throw new InvalidOperationException("ルームのオーナーのみ募集をキャンセルできます。");
+        }
+
+        room.CancelByOwner(DateTimeOffset.UtcNow);
+        await questRoomRepository.SaveAsync(room);
+        return room;
+    }
+
     public async Task<QuestRun> StartAsync(QuestRoomId roomId)
     {
         var room = await questRoomRepository.GetAsync(roomId)

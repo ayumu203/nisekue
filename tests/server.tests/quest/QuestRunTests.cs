@@ -91,6 +91,17 @@ public class QuestRunTests
         run.ChatMessages.Should().ContainSingle().Which.Message.Should().Be("hello");
     }
 
+    [Fact]
+    public void EscapeByOwner_WhenRunIsInProgress_MarksRunFailed()
+    {
+        var run = CreateRun();
+
+        run.EscapeByOwner();
+
+        run.Status.Should().Be(QuestRunStatus.Failed);
+        run.EndedAt.Should().NotBeNull();
+    }
+
     private static QuestRun CreateRun()
     {
         var participantId = QuestParticipantId.New();

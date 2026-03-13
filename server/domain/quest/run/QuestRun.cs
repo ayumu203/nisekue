@@ -223,6 +223,11 @@ public class QuestRun(
         LastTurnResults = lastTurnResults;
     }
 
+    public void EscapeByOwner()
+    {
+        MarkFailed();
+    }
+
     public void MarkSucceeded()
     {
         EnsureInProgress();

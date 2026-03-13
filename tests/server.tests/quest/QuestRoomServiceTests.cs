@@ -130,6 +130,30 @@ public class QuestRoomServiceTests
     }
 
     [Fact]
+    public async Task CancelRoomAsync_WhenOwnerMatches_ClosesRoomAsCancelled()
+    {
+        var owner = CreatePlayer("Owner");
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true);
+        var roomRepository = new FakeQuestRoomRepository();
+        var room = new QuestRoom(QuestRoomId.New(), owner.Id, stage.Id, QuestRoomMode.Solo);
+        room.AddPlayer(owner.Id, owner.Name);
+        await roomRepository.SaveAsync(room);
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            roomRepository,
+            new FakeQuestRunRepository(),
+            new FakePlayerRepository(owner),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var cancelledRoom = await service.CancelRoomAsync(room.Id, owner.Id);
+
+        cancelledRoom.Status.Should().Be(QuestRoomStatus.Closed);
+        cancelledRoom.CloseReason.Should().Be(QuestRoomCloseReason.Cancelled);
+    }
+
+    [Fact]
     public async Task StartAsync_WhenPartyBelowMinimum_AddsNpcAndCreatesRun()
     {
         var owner = CreatePlayer("Owner");

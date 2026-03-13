@@ -122,6 +122,25 @@ public class QuestRunServiceTests
         player!.QuestCooldownUntil.Should().NotBeNull();
     }
 
+    [Fact]
+    public async Task EscapeAsync_WhenOwnerMatches_MarksRunFailedAndAppliesQuestCooldown()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerRepository = new FakePlayerRepository(roomRepository.PlayerIds.ToArray());
+        var service = CreateRunService(repository, roomRepository, playerRepository, CreateStage(run.StageId), []);
+
+        var escapedRun = await service.EscapeAsync(run.Id, room.OwnerId);
+
+        escapedRun.Status.Should().Be(QuestRunStatus.Failed);
+        var player = await playerRepository.GetPlayerAsync(room.OwnerId);
+        player.Should().NotBeNull();
+        player!.QuestCooldownUntil.Should().NotBeNull();
+        repository.SaveCount.Should().Be(1);
+    }
+
     private static QuestRunService CreateRunService(
         FakeQuestRunRepository runRepository,
         FakeQuestRoomRepository roomRepository,

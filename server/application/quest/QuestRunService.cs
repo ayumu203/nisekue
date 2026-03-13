@@ -53,6 +53,22 @@ public class QuestRunService(
         return run;
     }
 
+    public async Task<QuestRun> EscapeAsync(QuestRunId runId, PlayerId ownerPlayerId)
+    {
+        var run = await GetDetailAsync(runId);
+        var room = await questRoomRepository.GetAsync(run.RoomId)
+            ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
+        if (room.OwnerId != ownerPlayerId)
+        {
+            throw new InvalidOperationException("ルームのオーナーのみ撤退を実行できます。");
+        }
+
+        run.EscapeByOwner();
+        await ApplyQuestCompletionEffectsAsync(run);
+        await questRunRepository.SaveAsync(run);
+        return run;
+    }
+
     public async Task<IReadOnlyList<QuestRun>> ProcessExpiredRunsAsync(DateTimeOffset now)
     {
         var expiredRuns = await questRunRepository.ListExpiredAsync(now);
