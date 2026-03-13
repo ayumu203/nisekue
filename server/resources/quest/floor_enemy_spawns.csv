@@ -1,0 +1,4 @@
+stage_id,floor_no,placement_no,enemy_definition_id,battle_row,battle_column
+1,1,1,1,Front,Left
+1,1,2,1,Front,Right
+1,2,1,2,Front,Left

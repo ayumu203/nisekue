@@ -346,6 +346,7 @@ public class BattleServiceTests
             3,
             0,
             MoveCategory.Attack,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(1),
@@ -367,6 +368,7 @@ public class BattleServiceTests
             3,
             0,
             MoveCategory.Support,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(1),
@@ -392,6 +394,7 @@ public class BattleServiceTests
             3,
             0,
             MoveCategory.Support,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(1),
@@ -413,6 +416,7 @@ public class BattleServiceTests
             6,
             1,
             MoveCategory.Support,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(1),
@@ -440,6 +444,7 @@ public class BattleServiceTests
             5,
             0,
             MoveCategory.Attack,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(1),
@@ -461,6 +466,7 @@ public class BattleServiceTests
             6,
             0,
             MoveCategory.Attack,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(1),
@@ -482,6 +488,7 @@ public class BattleServiceTests
             2,
             0,
             MoveCategory.Support,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(1),
@@ -503,6 +510,7 @@ public class BattleServiceTests
             5,
             0,
             MoveCategory.Support,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(1),

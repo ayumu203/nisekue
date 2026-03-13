@@ -5,6 +5,8 @@ using server.shared.constants.chat;
 using server.shared.constants.player;
 using server.infrastructure.chat;
 using server.infrastructure.player;
+using server.infrastructure.quest.room;
+using server.infrastructure.quest.run;
 
 namespace server.infrastructure;
 
@@ -14,6 +16,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PlayerMoveEntity> PlayerMoves => Set<PlayerMoveEntity>();
     public DbSet<ChatRoomEntity> ChatRooms => Set<ChatRoomEntity>();
     public DbSet<ChatMessageEntity> ChatMessages => Set<ChatMessageEntity>();
+    public DbSet<QuestRoomEntity> QuestRooms => Set<QuestRoomEntity>();
+    public DbSet<QuestRoomParticipantEntity> QuestRoomParticipants => Set<QuestRoomParticipantEntity>();
+    public DbSet<QuestRunEntity> QuestRuns => Set<QuestRunEntity>();
+    public DbSet<QuestRunPartySnapshotEntity> QuestRunPartySnapshots => Set<QuestRunPartySnapshotEntity>();
+    public DbSet<QuestRunPartyMemberEntity> QuestRunPartyMembers => Set<QuestRunPartyMemberEntity>();
+    public DbSet<QuestRunEnemyEntity> QuestRunEnemies => Set<QuestRunEnemyEntity>();
+    public DbSet<QuestTurnCommandEntity> QuestTurnCommands => Set<QuestTurnCommandEntity>();
+    public DbSet<QuestFloorTrapEntity> QuestFloorTraps => Set<QuestFloorTrapEntity>();
+    public DbSet<QuestRewardSummaryEntity> QuestRewardSummaries => Set<QuestRewardSummaryEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,6 +36,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("name")
             .HasMaxLength(PlayerConstants.NameMaxLength)
             .IsRequired();
+        player.Property(x => x.ImagePath)
+            .HasColumnName("image_path")
+            .HasMaxLength(PlayerConstants.ImagePathMaxLength);
         player.Property(x => x.Job)
             .HasColumnName("job")
             .HasConversion<int>()
@@ -123,5 +137,134 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("created_at")
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .IsRequired();
+
+        var questRoom = modelBuilder.Entity<QuestRoomEntity>();
+        questRoom.ToTable("quest_rooms", "internal");
+        questRoom.HasKey(x => x.Id);
+        questRoom.Property(x => x.Id).HasColumnName("id");
+        questRoom.Property(x => x.OwnerPlayerId).HasColumnName("owner_player_id").HasColumnType("uuid").IsRequired();
+        questRoom.Property(x => x.StageId).HasColumnName("stage_id").IsRequired();
+        questRoom.Property(x => x.Mode).HasColumnName("mode").IsRequired();
+        questRoom.Property(x => x.Status).HasColumnName("status").IsRequired();
+        questRoom.Property(x => x.Version).HasColumnName("version").IsConcurrencyToken().IsRequired();
+        questRoom.Property(x => x.CloseReason).HasColumnName("close_reason");
+        questRoom.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
+        questRoom.Property(x => x.ClosedAt).HasColumnName("closed_at");
+
+        var questRoomParticipant = modelBuilder.Entity<QuestRoomParticipantEntity>();
+        questRoomParticipant.ToTable("quest_room_participants", "internal");
+        questRoomParticipant.HasKey(x => x.Id);
+        questRoomParticipant.Property(x => x.Id).HasColumnName("id");
+        questRoomParticipant.Property(x => x.RoomId).HasColumnName("room_id").HasColumnType("uuid").IsRequired();
+        questRoomParticipant.Property(x => x.ParticipantType).HasColumnName("participant_type").IsRequired();
+        questRoomParticipant.Property(x => x.PlayerId).HasColumnName("player_id").HasColumnType("uuid");
+        questRoomParticipant.Property(x => x.NpcTemplateId).HasColumnName("npc_template_id");
+        questRoomParticipant.Property(x => x.DisplayName).HasColumnName("display_name").HasMaxLength(100).IsRequired();
+        questRoomParticipant.Property(x => x.BattleRow).HasColumnName("battle_row").IsRequired();
+        questRoomParticipant.Property(x => x.BattleColumn).HasColumnName("battle_column").IsRequired();
+        questRoomParticipant.Property(x => x.ParticipantStatus).HasColumnName("participant_status").IsRequired();
+        questRoomParticipant.Property(x => x.IsOwner).HasColumnName("is_owner").IsRequired();
+        questRoomParticipant.Property(x => x.JoinedAt).HasColumnName("joined_at").IsRequired();
+        questRoomParticipant.Property(x => x.LastSeenAt).HasColumnName("last_seen_at");
+        questRoomParticipant.Property(x => x.LeftAt).HasColumnName("left_at");
+        questRoomParticipant.HasIndex(x => new { x.RoomId, x.BattleRow, x.BattleColumn }).IsUnique();
+
+        var questRun = modelBuilder.Entity<QuestRunEntity>();
+        questRun.ToTable("quest_runs", "internal");
+        questRun.HasKey(x => x.Id);
+        questRun.Property(x => x.Id).HasColumnName("id");
+        questRun.Property(x => x.RoomId).HasColumnName("room_id").HasColumnType("uuid").IsRequired();
+        questRun.HasIndex(x => x.RoomId).IsUnique();
+        questRun.Property(x => x.StageId).HasColumnName("stage_id").IsRequired();
+        questRun.Property(x => x.Status).HasColumnName("status").IsRequired();
+        questRun.Property(x => x.CurrentFloorNo).HasColumnName("current_floor_no").IsRequired();
+        questRun.Property(x => x.CurrentTurnNo).HasColumnName("current_turn_no").IsRequired();
+        questRun.Property(x => x.ActionDeadlineAt).HasColumnName("action_deadline_at").IsRequired();
+        questRun.Property(x => x.LastResolvedTurnNo).HasColumnName("last_resolved_turn_no");
+        questRun.Property(x => x.LastTurnResultsJson).HasColumnName("last_turn_results_json").HasColumnType("jsonb");
+        questRun.Property(x => x.ChatMessagesJson).HasColumnName("chat_messages_json").HasColumnType("jsonb").IsRequired();
+        questRun.Property(x => x.StartedAt).HasColumnName("started_at").IsRequired();
+        questRun.Property(x => x.EndedAt).HasColumnName("ended_at");
+
+        var questRunPartySnapshot = modelBuilder.Entity<QuestRunPartySnapshotEntity>();
+        questRunPartySnapshot.ToTable("quest_run_party_snapshots", "internal");
+        questRunPartySnapshot.HasKey(x => new { x.RunId, x.ParticipantId });
+        questRunPartySnapshot.Property(x => x.RunId).HasColumnName("run_id").HasColumnType("uuid").IsRequired();
+        questRunPartySnapshot.Property(x => x.ParticipantId).HasColumnName("participant_id").HasColumnType("uuid").IsRequired();
+        questRunPartySnapshot.Property(x => x.ParticipantType).HasColumnName("participant_type").IsRequired();
+        questRunPartySnapshot.Property(x => x.DisplayName).HasColumnName("display_name").HasMaxLength(100).IsRequired();
+        questRunPartySnapshot.Property(x => x.ImagePath).HasColumnName("image_path").HasMaxLength(255);
+        questRunPartySnapshot.Property(x => x.Job).HasColumnName("job").IsRequired();
+        questRunPartySnapshot.Property(x => x.StartRow).HasColumnName("start_row").IsRequired();
+        questRunPartySnapshot.Property(x => x.StartColumn).HasColumnName("start_column").IsRequired();
+        questRunPartySnapshot.Property(x => x.MaxHp).HasColumnName("max_hp").IsRequired();
+        questRunPartySnapshot.Property(x => x.MaxMp).HasColumnName("max_mp").IsRequired();
+        questRunPartySnapshot.Property(x => x.Strength).HasColumnName("strength").IsRequired();
+        questRunPartySnapshot.Property(x => x.Defense).HasColumnName("defense").IsRequired();
+        questRunPartySnapshot.Property(x => x.Intelligence).HasColumnName("intelligence").IsRequired();
+        questRunPartySnapshot.Property(x => x.Luck).HasColumnName("luck").IsRequired();
+        questRunPartySnapshot.Property(x => x.Speed).HasColumnName("speed").IsRequired();
+        questRunPartySnapshot.Property(x => x.MoveSetJson).HasColumnName("move_set_json").HasColumnType("jsonb").IsRequired();
+        questRunPartySnapshot.Property(x => x.InitialActionMode).HasColumnName("initial_action_mode").IsRequired();
+
+        var questRunPartyMember = modelBuilder.Entity<QuestRunPartyMemberEntity>();
+        questRunPartyMember.ToTable("quest_run_party_members", "internal");
+        questRunPartyMember.HasKey(x => new { x.RunId, x.ParticipantId });
+        questRunPartyMember.Property(x => x.RunId).HasColumnName("run_id").HasColumnType("uuid").IsRequired();
+        questRunPartyMember.Property(x => x.ParticipantId).HasColumnName("participant_id").HasColumnType("uuid").IsRequired();
+        questRunPartyMember.Property(x => x.CurrentHp).HasColumnName("current_hp").IsRequired();
+        questRunPartyMember.Property(x => x.CurrentMp).HasColumnName("current_mp").IsRequired();
+        questRunPartyMember.Property(x => x.IsDead).HasColumnName("is_dead").IsRequired();
+        questRunPartyMember.Property(x => x.CanActFromTurn).HasColumnName("can_act_from_turn").IsRequired();
+        questRunPartyMember.Property(x => x.ActionMode).HasColumnName("action_mode").IsRequired();
+        questRunPartyMember.Property(x => x.HasLeftQuest).HasColumnName("has_left_quest").IsRequired();
+        questRunPartyMember.Property(x => x.IsManualControlRequested).HasColumnName("is_manual_control_requested").IsRequired();
+        questRunPartyMember.Property(x => x.ActiveEffectsJson).HasColumnName("active_effects_json").HasColumnType("jsonb").IsRequired();
+        questRunPartyMember.Property(x => x.DerivedParametersJson).HasColumnName("derived_parameters_json").HasColumnType("jsonb").IsRequired();
+        questRunPartyMember.Property(x => x.UpdatedAt).HasColumnName("updated_at").IsRequired();
+
+        var questRunEnemy = modelBuilder.Entity<QuestRunEnemyEntity>();
+        questRunEnemy.ToTable("quest_run_enemies", "internal");
+        questRunEnemy.HasKey(x => new { x.RunId, x.EnemyInstanceId });
+        questRunEnemy.Property(x => x.RunId).HasColumnName("run_id").HasColumnType("uuid").IsRequired();
+        questRunEnemy.Property(x => x.EnemyInstanceId).HasColumnName("enemy_instance_id").HasColumnType("uuid").IsRequired();
+        questRunEnemy.Property(x => x.FloorNo).HasColumnName("floor_no").IsRequired();
+        questRunEnemy.Property(x => x.EnemyDefinitionId).HasColumnName("enemy_definition_id").IsRequired();
+        questRunEnemy.Property(x => x.BattleRow).HasColumnName("battle_row").IsRequired();
+        questRunEnemy.Property(x => x.BattleColumn).HasColumnName("battle_column").IsRequired();
+        questRunEnemy.Property(x => x.CurrentHp).HasColumnName("current_hp").IsRequired();
+        questRunEnemy.Property(x => x.CurrentMp).HasColumnName("current_mp").IsRequired();
+        questRunEnemy.Property(x => x.IsDead).HasColumnName("is_dead").IsRequired();
+        questRunEnemy.Property(x => x.ActiveEffectsJson).HasColumnName("active_effects_json").HasColumnType("jsonb").IsRequired();
+        questRunEnemy.Property(x => x.DerivedParametersJson).HasColumnName("derived_parameters_json").HasColumnType("jsonb").IsRequired();
+
+        var questTurnCommand = modelBuilder.Entity<QuestTurnCommandEntity>();
+        questTurnCommand.ToTable("quest_turn_commands", "internal");
+        questTurnCommand.HasKey(x => new { x.RunId, x.TurnNo, x.ParticipantId });
+        questTurnCommand.Property(x => x.RunId).HasColumnName("run_id").HasColumnType("uuid").IsRequired();
+        questTurnCommand.Property(x => x.TurnNo).HasColumnName("turn_no").IsRequired();
+        questTurnCommand.Property(x => x.ParticipantId).HasColumnName("participant_id").HasColumnType("uuid").IsRequired();
+        questTurnCommand.Property(x => x.ActionKind).HasColumnName("action_kind").IsRequired();
+        questTurnCommand.Property(x => x.MoveId).HasColumnName("move_id");
+        questTurnCommand.Property(x => x.TargetRow).HasColumnName("target_row");
+        questTurnCommand.Property(x => x.TargetColumn).HasColumnName("target_column");
+        questTurnCommand.Property(x => x.SubmittedAt).HasColumnName("submitted_at").IsRequired();
+        questTurnCommand.Property(x => x.IsAutoSubmitted).HasColumnName("is_auto_submitted").IsRequired();
+
+        var questFloorTrap = modelBuilder.Entity<QuestFloorTrapEntity>();
+        questFloorTrap.ToTable("quest_floor_traps", "internal");
+        questFloorTrap.HasKey(x => new { x.RunId, x.TrapId });
+        questFloorTrap.Property(x => x.RunId).HasColumnName("run_id").HasColumnType("uuid").IsRequired();
+        questFloorTrap.Property(x => x.TrapId).HasColumnName("trap_id").HasColumnType("uuid").IsRequired();
+        questFloorTrap.Property(x => x.SourceParticipantId).HasColumnName("source_participant_id").HasColumnType("uuid").IsRequired();
+        questFloorTrap.Property(x => x.MoveId).HasColumnName("move_id").IsRequired();
+        questFloorTrap.Property(x => x.ExpiresAfterFloorNo).HasColumnName("expires_after_floor_no").IsRequired();
+        questFloorTrap.Property(x => x.IsTriggered).HasColumnName("is_triggered").IsRequired();
+
+        var questRewardSummary = modelBuilder.Entity<QuestRewardSummaryEntity>();
+        questRewardSummary.ToTable("quest_reward_summaries", "internal");
+        questRewardSummary.HasKey(x => x.RunId);
+        questRewardSummary.Property(x => x.RunId).HasColumnName("run_id").HasColumnType("uuid").IsRequired();
+        questRewardSummary.Property(x => x.Exp).HasColumnName("exp").IsRequired();
     }
 }

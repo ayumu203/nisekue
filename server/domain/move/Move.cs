@@ -10,6 +10,7 @@ public class Move
     public MoveId Id { get; }
     public string Name { get; private set; }
     public string Description { get; private set; }
+    public string? EffectImagePath { get; private set; }
     public TargetType TargetType { get; private set; }
     public AttackRange AttackRange { get; private set; }
     public int MpCost { get; private set; }
@@ -17,8 +18,8 @@ public class Move
     public MoveCategory Category { get; private set; }
     public IReadOnlyList<MoveEffect> Effects => _effects;
 
-    public Move(MoveId id, string name, string description, TargetType targetType, AttackRange attackRange, int mpCost, int executionPriority, MoveCategory category)
-        : this(id, name, description, targetType, attackRange, mpCost, executionPriority, category, [])
+    public Move(MoveId id, string name, string description, TargetType targetType, AttackRange attackRange, int mpCost, int executionPriority, MoveCategory category, string? effectImagePath = null)
+        : this(id, name, description, targetType, attackRange, mpCost, executionPriority, category, effectImagePath, [])
     {
     }
 
@@ -31,11 +32,13 @@ public class Move
         int mpCost,
         int executionPriority,
         MoveCategory category,
-        IEnumerable<MoveEffect>? effects)
+        string? effectImagePath = null,
+        IEnumerable<MoveEffect>? effects = null)
     {
         Id = id ?? throw new ArgumentNullException(nameof(id));
         Name = ValidateName(name);
         Description = ValidateDescription(description);
+        EffectImagePath = ValidateEffectImagePath(effectImagePath);
         TargetType = targetType;
         AttackRange = attackRange;
         MpCost = ValidateMpCost(mpCost);
@@ -104,6 +107,24 @@ public class Move
         }
 
         return mpCost;
+    }
+
+    private static string? ValidateEffectImagePath(string? effectImagePath)
+    {
+        if (string.IsNullOrWhiteSpace(effectImagePath))
+        {
+            return null;
+        }
+
+        var normalized = effectImagePath.Trim();
+        if (normalized.Length > MoveConstants.Constraints.ImagePathMaxLength)
+        {
+            throw new ArgumentException(
+                $"技エフェクト画像パスは{MoveConstants.Constraints.ImagePathMaxLength}文字以内です。",
+                nameof(effectImagePath));
+        }
+
+        return normalized;
     }
 
     private static string ValidateDescription(string description)

@@ -1,0 +1,3 @@
+id,name,level,max_hp,max_mp,strength,defense,intelligence,luck,speed,image_path,ai_type
+1,森スライム,1,12,2,2,1,1,1,1,enemy_slime.png,Aggressive
+2,森のぬし,3,30,6,4,3,2,2,2,enemy_boss_slime.png,Defensive

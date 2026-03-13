@@ -155,6 +155,7 @@ public class TrainingBattleFactory
             mpCost: 0,
             executionPriority: 0,
             MoveCategory.Attack,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(moveId),

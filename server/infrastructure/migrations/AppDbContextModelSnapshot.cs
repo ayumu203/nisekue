@@ -83,6 +83,11 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasColumnName("exp");
 
+                    b.Property<string>("ImagePath")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("image_path");
+
                     b.Property<int>("Intelligence")
                         .HasColumnType("integer")
                         .HasColumnName("intelligence");
@@ -187,6 +192,455 @@ namespace server.infrastructure.migrations
                     b.HasKey("PlayerId");
 
                     b.ToTable("player_moves", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.quest.room.QuestRoomEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("CloseReason")
+                        .HasColumnType("integer")
+                        .HasColumnName("close_reason");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("Mode")
+                        .HasColumnType("integer")
+                        .HasColumnName("mode");
+
+                    b.Property<Guid>("OwnerPlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_player_id");
+
+                    b.Property<int>("StageId")
+                        .HasColumnType("integer")
+                        .HasColumnName("stage_id");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("quest_rooms", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.quest.room.QuestRoomParticipantEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("BattleColumn")
+                        .HasColumnType("integer")
+                        .HasColumnName("battle_column");
+
+                    b.Property<int>("BattleRow")
+                        .HasColumnType("integer")
+                        .HasColumnName("battle_row");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("display_name");
+
+                    b.Property<bool>("IsOwner")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_owner");
+
+                    b.Property<DateTimeOffset>("JoinedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("joined_at");
+
+                    b.Property<DateTimeOffset?>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_seen_at");
+
+                    b.Property<DateTimeOffset?>("LeftAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("left_at");
+
+                    b.Property<int?>("NpcTemplateId")
+                        .HasColumnType("integer")
+                        .HasColumnName("npc_template_id");
+
+                    b.Property<int>("ParticipantStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("participant_status");
+
+                    b.Property<int>("ParticipantType")
+                        .HasColumnType("integer")
+                        .HasColumnName("participant_type");
+
+                    b.Property<Guid?>("PlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_id");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("room_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId", "BattleRow", "BattleColumn")
+                        .IsUnique();
+
+                    b.ToTable("quest_room_participants", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.quest.run.QuestFloorTrapEntity", b =>
+                {
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<Guid>("TrapId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trap_id");
+
+                    b.Property<int>("ExpiresAfterFloorNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("expires_after_floor_no");
+
+                    b.Property<bool>("IsTriggered")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_triggered");
+
+                    b.Property<int>("MoveId")
+                        .HasColumnType("integer")
+                        .HasColumnName("move_id");
+
+                    b.Property<Guid>("SourceParticipantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_participant_id");
+
+                    b.HasKey("RunId", "TrapId");
+
+                    b.ToTable("quest_floor_traps", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.quest.run.QuestRewardSummaryEntity", b =>
+                {
+                    b.Property<Guid>("RunId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<int>("Exp")
+                        .HasColumnType("integer")
+                        .HasColumnName("exp");
+
+                    b.HasKey("RunId");
+
+                    b.ToTable("quest_reward_summaries", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.quest.run.QuestRunEnemyEntity", b =>
+                {
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<Guid>("EnemyInstanceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("enemy_instance_id");
+
+                    b.Property<string>("ActiveEffectsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("active_effects_json");
+
+                    b.Property<int>("BattleColumn")
+                        .HasColumnType("integer")
+                        .HasColumnName("battle_column");
+
+                    b.Property<int>("BattleRow")
+                        .HasColumnType("integer")
+                        .HasColumnName("battle_row");
+
+                    b.Property<int>("CurrentHp")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_hp");
+
+                    b.Property<int>("CurrentMp")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_mp");
+
+                    b.Property<string>("DerivedParametersJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("derived_parameters_json");
+
+                    b.Property<int>("EnemyDefinitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("enemy_definition_id");
+
+                    b.Property<int>("FloorNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("floor_no");
+
+                    b.Property<bool>("IsDead")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_dead");
+
+                    b.HasKey("RunId", "EnemyInstanceId");
+
+                    b.ToTable("quest_run_enemies", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.quest.run.QuestRunEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("ActionDeadlineAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("action_deadline_at");
+
+                    b.Property<string>("ChatMessagesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("chat_messages_json");
+
+                    b.Property<int>("CurrentFloorNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_floor_no");
+
+                    b.Property<int>("CurrentTurnNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_turn_no");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ended_at");
+
+                    b.Property<int?>("LastResolvedTurnNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_resolved_turn_no");
+
+                    b.Property<string>("LastTurnResultsJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("last_turn_results_json");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("room_id");
+
+                    b.Property<int>("StageId")
+                        .HasColumnType("integer")
+                        .HasColumnName("stage_id");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId")
+                        .IsUnique();
+
+                    b.ToTable("quest_runs", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.quest.run.QuestRunPartyMemberEntity", b =>
+                {
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<Guid>("ParticipantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("participant_id");
+
+                    b.Property<int>("ActionMode")
+                        .HasColumnType("integer")
+                        .HasColumnName("action_mode");
+
+                    b.Property<string>("ActiveEffectsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("active_effects_json");
+
+                    b.Property<int>("CanActFromTurn")
+                        .HasColumnType("integer")
+                        .HasColumnName("can_act_from_turn");
+
+                    b.Property<int>("CurrentHp")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_hp");
+
+                    b.Property<int>("CurrentMp")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_mp");
+
+                    b.Property<string>("DerivedParametersJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("derived_parameters_json");
+
+                    b.Property<bool>("HasLeftQuest")
+                        .HasColumnType("boolean")
+                        .HasColumnName("has_left_quest");
+
+                    b.Property<bool>("IsDead")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_dead");
+
+                    b.Property<bool>("IsManualControlRequested")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_manual_control_requested");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("RunId", "ParticipantId");
+
+                    b.ToTable("quest_run_party_members", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.quest.run.QuestRunPartySnapshotEntity", b =>
+                {
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<Guid>("ParticipantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("participant_id");
+
+                    b.Property<int>("Defense")
+                        .HasColumnType("integer")
+                        .HasColumnName("defense");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("display_name");
+
+                    b.Property<string>("ImagePath")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("image_path");
+
+                    b.Property<int>("InitialActionMode")
+                        .HasColumnType("integer")
+                        .HasColumnName("initial_action_mode");
+
+                    b.Property<int>("Intelligence")
+                        .HasColumnType("integer")
+                        .HasColumnName("intelligence");
+
+                    b.Property<int>("Job")
+                        .HasColumnType("integer")
+                        .HasColumnName("job");
+
+                    b.Property<int>("Luck")
+                        .HasColumnType("integer")
+                        .HasColumnName("luck");
+
+                    b.Property<int>("MaxHp")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_hp");
+
+                    b.Property<int>("MaxMp")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_mp");
+
+                    b.Property<string>("MoveSetJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("move_set_json");
+
+                    b.Property<int>("ParticipantType")
+                        .HasColumnType("integer")
+                        .HasColumnName("participant_type");
+
+                    b.Property<int>("Speed")
+                        .HasColumnType("integer")
+                        .HasColumnName("speed");
+
+                    b.Property<int>("StartColumn")
+                        .HasColumnType("integer")
+                        .HasColumnName("start_column");
+
+                    b.Property<int>("StartRow")
+                        .HasColumnType("integer")
+                        .HasColumnName("start_row");
+
+                    b.Property<int>("Strength")
+                        .HasColumnType("integer")
+                        .HasColumnName("strength");
+
+                    b.HasKey("RunId", "ParticipantId");
+
+                    b.ToTable("quest_run_party_snapshots", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.quest.run.QuestTurnCommandEntity", b =>
+                {
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<int>("TurnNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("turn_no");
+
+                    b.Property<Guid>("ParticipantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("participant_id");
+
+                    b.Property<int>("ActionKind")
+                        .HasColumnType("integer")
+                        .HasColumnName("action_kind");
+
+                    b.Property<bool>("IsAutoSubmitted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_auto_submitted");
+
+                    b.Property<int?>("MoveId")
+                        .HasColumnType("integer")
+                        .HasColumnName("move_id");
+
+                    b.Property<DateTimeOffset>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<int?>("TargetColumn")
+                        .HasColumnType("integer")
+                        .HasColumnName("target_column");
+
+                    b.Property<int?>("TargetRow")
+                        .HasColumnType("integer")
+                        .HasColumnName("target_row");
+
+                    b.HasKey("RunId", "TurnNo", "ParticipantId");
+
+                    b.ToTable("quest_turn_commands", "internal");
                 });
 
             modelBuilder.Entity("server.infrastructure.player.PlayerMoveEntity", b =>

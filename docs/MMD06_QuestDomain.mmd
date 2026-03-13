@@ -16,7 +16,7 @@ classDiagram
 
         class QuestStageId {
             <<Value Object>>
-            +Guid Id
+            +int Id
         }
 
         class QuestFloorDefinition {
@@ -53,7 +53,7 @@ classDiagram
 
         class QuestEnemyDefinitionId {
             <<Value Object>>
-            +Guid Id
+            +int Id
         }
 
         class QuestNpcTemplate {
@@ -70,7 +70,7 @@ classDiagram
 
         class QuestNpcTemplateId {
             <<Value Object>>
-            +Guid Id
+            +int Id
         }
 
         class IQuestStageRepository {
@@ -84,6 +84,18 @@ classDiagram
 
         class IQuestEnemyDefinitionRepository {
             +Task~QuestEnemyDefinition?~ GetAsync(id: QuestEnemyDefinitionId)
+        }
+
+        class CsvQuestStageRepository {
+            <<Infrastructure>>
+        }
+
+        class CsvQuestNpcTemplateRepository {
+            <<Infrastructure>>
+        }
+
+        class CsvQuestEnemyDefinitionRepository {
+            <<Infrastructure>>
         }
     }
 
@@ -100,6 +112,7 @@ classDiagram
             +Assign(participantId: QuestParticipantId, position: BattlePosition) void
             +Release(position: BattlePosition) void
             +IsOccupied(position: BattlePosition) bool
+            +FindFirstEmpty(preferredRow: BattleRow?) BattlePosition
         }
 
         class QuestRoom {
@@ -109,6 +122,7 @@ classDiagram
             +QuestStageId StageId
             +QuestRoomMode Mode
             +QuestRoomStatus Status
+            +int Version
             +FormationLayout Formation
             +IReadOnlyList~QuestParticipant~ Participants
             +QuestRoomCloseReason? CloseReason
@@ -151,7 +165,18 @@ classDiagram
 
         class IQuestRoomRepository {
             +Task~QuestRoom?~ GetAsync(id: QuestRoomId)
+            +Task~IReadOnlyList~QuestRoom~~ SearchAsync(condition: QuestRoomSearchCondition)
             +Task SaveAsync(room: QuestRoom)
+        }
+
+        class QuestRoomSearchCondition {
+            <<Value Object>>
+            +QuestStageId? StageId
+            +QuestRoomMode? Mode
+            +QuestRoomStatus? Status
+            +PlayerId? OwnerPlayerId
+            +int Page
+            +int PageSize
         }
     }
 
@@ -161,6 +186,7 @@ classDiagram
             +QuestParticipantId ParticipantId
             +ParticipantType Type
             +string DisplayName
+            +string? ImagePath
             +Job Job
             +Status BaseStatus
             +MoveSet MoveSet
@@ -168,16 +194,27 @@ classDiagram
             +ActionMode InitialActionMode
         }
 
+        class QuestRunParticipantIdentity {
+            <<Value Object>>
+            +QuestParticipantId ParticipantId
+            +PlayerId? PlayerId
+            +bool IsOwner
+        }
+
         class QuestRun {
             <<Aggregate Root>>
             +QuestRunId Id
             +QuestRoomId RoomId
+            +PlayerId OwnerPlayerId
             +QuestStageId StageId
             +QuestRunStatus Status
             +QuestFloorState FloorState
+            +QuestBattleState BattleState
             +QuestTurnState TurnState
             +QuestTrapCollection Traps
             +QuestRewardAccumulator Rewards
+            +IReadOnlyList~QuestRunParticipantIdentity~ ParticipantIdentities
+            +IReadOnlyList~QuestChatMessage~ ChatMessages
             +DateTimeOffset StartedAt
             +DateTimeOffset? EndedAt
             +InitializeFirstFloor() void
@@ -185,11 +222,13 @@ classDiagram
             +SwitchToAutoActionForTimeout(now: DateTimeOffset) void
             +RequestManualControl(participantId: QuestParticipantId) void
             +ApproveManualControl(participantId: QuestParticipantId, ownerId: PlayerId) void
+            +ApplyBattleResolution(resolution: BattleTurnResolution, partyActorMap: IReadOnlyDictionary~BattleActorId, QuestParticipantId~, enemyActorMap: IReadOnlyDictionary~BattleActorId, QuestEnemyInstanceId~, finalFloorNo: int, nextDeadlineAt: DateTimeOffset) QuestRunResolutionSummary
             +AdvanceFloor() void
             +ApplyTrapsOnFloorStart() void
             +MarkSucceeded() void
             +MarkFailed() void
             +Abort(reason: string) void
+            +AddChatMessage(message: QuestChatMessage) void
         }
 
         class QuestRunId {
@@ -204,10 +243,43 @@ classDiagram
             +IReadOnlyList~QuestEnemyPlacement~ CurrentPlacements
         }
 
+        class QuestBattleState {
+            <<Value Object>>
+            +IReadOnlyList~QuestRunPartyMemberState~ PartyMembers
+            +IReadOnlyList~QuestEnemyState~ Enemies
+        }
+
+        class QuestRunPartyMemberState {
+            <<Entity>>
+            +QuestParticipantId ParticipantId
+            +int CurrentHp
+            +int CurrentMp
+            +bool IsDead
+            +int CanActFromTurn
+            +ActionMode ActionMode
+            +ManualControlRequestStatus ManualControlRequestStatus
+        }
+
+        class QuestEnemyState {
+            <<Entity>>
+            +QuestEnemyInstanceId Id
+            +QuestEnemyDefinitionId EnemyDefinitionId
+            +BattlePosition Position
+            +int CurrentHp
+            +int CurrentMp
+            +bool IsDead
+        }
+
+        class QuestEnemyInstanceId {
+            <<Value Object>>
+            +Guid Id
+        }
+
         class QuestTurnState {
             <<Value Object>>
             +int CurrentTurnNo
             +DateTimeOffset ActionDeadlineAt
+            +int? LastResolvedTurnNo
             +IReadOnlyList~QuestSubmittedCommand~ PendingCommands
         }
 
@@ -216,6 +288,7 @@ classDiagram
             +QuestParticipantId ParticipantId
             +int TurnNo
             +ActionKind ActionKind
+            +BattlePosition? SelectedTargetPosition
             +DateTimeOffset SubmittedAt
             +bool IsAutoSubmitted
         }
@@ -223,6 +296,15 @@ classDiagram
         class QuestTrapCollection {
             <<Value Object>>
             +IReadOnlyList~QuestTrapState~ Traps
+        }
+
+        class QuestChatMessage {
+            <<Value Object>>
+            +QuestParticipantId SenderParticipantId
+            +string DisplayName
+            +string? ImagePath
+            +string Message
+            +DateTimeOffset SentAt
         }
 
         class QuestTrapState {
@@ -265,6 +347,7 @@ classDiagram
             <<Application Service>>
             +Task~QuestRoom~ CreateRoomAsync(ownerId: PlayerId, stageId: QuestStageId, mode: QuestRoomMode)
             +Task~QuestRoom~ JoinRoomAsync(roomId: QuestRoomId, playerId: PlayerId)
+            +Task~IReadOnlyList~QuestRoom~~ ListAsync(condition: QuestRoomSearchCondition)
             +Task~QuestRun~ StartAsync(roomId: QuestRoomId)
         }
 
@@ -299,9 +382,11 @@ classDiagram
 
         class QuestRunService {
             <<Application Service>>
-            +Task~QuestRun~ SubmitCommandAsync(runId: QuestRunId, participantId: QuestParticipantId, command: QuestSubmittedCommand)
-            +Task~QuestRun~ ResolveTimeoutAsync(runId: QuestRunId, now: DateTimeOffset)
-            +Task~QuestRunResolutionSummary~ ResolveTurnAsync(runId: QuestRunId)
+            +Task~QuestRun~ GetDetailAsync(runId: QuestRunId, playerId: PlayerId)
+            +Task~QuestRun~ SubmitCommandAsync(runId: QuestRunId, playerId: PlayerId, command: QuestSubmittedCommand)
+            +Task~QuestRun~ RequestManualControlAsync(runId: QuestRunId, playerId: PlayerId)
+            +Task~QuestRun~ ApproveManualControlAsync(runId: QuestRunId, ownerPlayerId: PlayerId, participantId: QuestParticipantId)
+            +Task~int~ ProcessExpiredRunsAsync(now: DateTimeOffset)
         }
     }
 
@@ -318,19 +403,30 @@ classDiagram
     QuestParticipant *-- BattlePosition : has
     QuestRun *-- QuestRunId : has
     QuestRun *-- QuestFloorState : has
+    QuestRun *-- QuestBattleState : has
     QuestRun *-- QuestTurnState : has
     QuestRun *-- QuestTrapCollection : has
     QuestRun *-- QuestRewardAccumulator : has
+    QuestRun *-- QuestRunParticipantIdentity : 1..*
+    QuestRun *-- QuestChatMessage : 0..*
     QuestFloorState *-- QuestEnemyPlacement : 0..*
+    QuestBattleState *-- QuestRunPartyMemberState : 1..*
+    QuestBattleState *-- QuestEnemyState : 1..*
+    QuestEnemyState *-- QuestEnemyInstanceId : has
     QuestTurnState *-- QuestSubmittedCommand : 0..*
     QuestTrapCollection *-- QuestTrapState : 0..*
     QuestTrapState *-- QuestTrapId : has
     IQuestStageRepository ..> QuestStageDefinition : loads
     IQuestRoomRepository ..> QuestRoom : stores/loads
+    IQuestRoomRepository ..> QuestRoomSearchCondition : searches
     IQuestRunRepository ..> QuestRun : stores/loads
     IQuestNpcTemplateRepository ..> QuestNpcTemplate : loads
     IQuestEnemyDefinitionRepository ..> QuestEnemyDefinition : loads
+    CsvQuestStageRepository ..|> IQuestStageRepository : implements
+    CsvQuestNpcTemplateRepository ..|> IQuestNpcTemplateRepository : implements
+    CsvQuestEnemyDefinitionRepository ..|> IQuestEnemyDefinitionRepository : implements
     QuestRoomService ..> IQuestStageRepository : use
+    QuestRoomService ..> IQuestRoomRepository : use
     QuestRoomService ..> QuestRoom : use
     QuestRoomService ..> QuestRun : starts
     QuestNpcAssignmentService ..> IQuestNpcTemplateRepository : use
@@ -339,7 +435,6 @@ classDiagram
     QuestRunFactory ..> IQuestEnemyDefinitionRepository : use
     QuestRunFactory ..> QuestRun : builds
     QuestBattleFactory ..> QuestSubmittedCommand : use
-    QuestBattleFactory ..> BattleFieldContext : builds
     QuestRunOutcomeJudge ..> QuestRunResolutionSummary : returns
     QuestRunService ..> QuestRun : use
-    QuestRunService ..> QuestRunResolutionSummary : builds
+    QuestRunService ..> IQuestRunRepository : use

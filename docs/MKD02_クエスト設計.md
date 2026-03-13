@@ -44,7 +44,10 @@
 
 * プレイヤーの恒久情報は既存の `CoreDomain.Player` を正とする。
 * 技マスタは既存の `MoveDomain.Move` を利用し、`move_id` は既存 CSV マスタを参照する。
-* クエスト開始時に `Player` の `Job` / `Status` / `MoveSet` をスナップショット化し、クエスト中はそのスナップショットを参照する。
+* `Player` はクライアント表示用の `ImagePath` を持ち、`internal.players` に保存する。
+* `Move` は必要な場合だけクライアント表示用の `EffectImagePath` を持てる。値は既存 CSV マスタに保持し、未設定を許容する。
+* `QuestEnemyDefinition` は敵 CSV の `ImagePath` を参照し、クライアントで敵画像表示に利用する。
+* クエスト開始時に `Player` の `Job` / `Status` / `MoveSet` / `ImagePath` をスナップショット化し、クエスト中はそのスナップショットを参照する。
 
 ### 3.2 配置方針
 
@@ -102,7 +105,7 @@
 
 ### 4.3 スナップショット方針
 
-クエスト中にプレイヤー本体の `Status` や `MoveSet` が変更されても、進行中クエストには反映しない。
+クエスト中にプレイヤー本体の `Status` や `MoveSet` や `ImagePath` が変更されても、進行中クエストには反映しない。
 理由は以下の通り。
 
 * ページ再接続時に同一状態を復元しやすい。
@@ -112,7 +115,9 @@
 ### 4.4 JSON 利用方針
 
 * 集約の不変条件判定に使う主キー関係、状態遷移、参加者識別、階層番号、ターン番号は通常カラムで持つ。
-* 種類追加が頻繁な可変戦闘効果、対象指定、演算パラメータだけを `jsonb` に寄せる。
+* HP / MP / 行動モード / 行動可能ターンのような進行制御の骨格は通常カラムで持つ。
+* 種類追加が頻繁な状態異常、バフ、一時的な派生パラメータ、最新ターンの解決結果は `jsonb` に寄せる。
+* 行動入力の対象指定は、対象 actor id ではなく `BattlePosition` を基準に保持する。
 
 ### 4.5 1ルーム1出撃方針
 
@@ -136,6 +141,341 @@
 * 隊列射程の最終判定責務は `BattleActionResolver` 直書きではなく、専用の `BattleTargetingResolver` に分離する。
 * 現在の `BattleTargetingResolver` は、前衛を相手前衛まで、中衛を相手前衛・中衛まで、後衛を相手全行まで到達可能とみなし、プレイヤー/敵で同じルールを適用する。
 * 現在の `BattleTargetingResolver` は、物理/魔法/回復/バフで射程ルールを分けず、位置情報と `AttackRange` だけで対象を決める。
+* `BattleActionResult` はログ表示と演出再生のため、`ActorId` に加えて `ActionKind` と `MoveId` を持つ。
+* これによりクエスト側は、ターン解決後の各行動について「だれが」「何の行動を」「どの技で」行ったかを結果 DTO だけで把握できる。
+* 単体攻撃や単体対象技の入力は「どのマスを狙ったか」を `BattlePosition` で保持し、解決時にその座標にいる対象へ適用する。
+* 範囲攻撃は、入力時に選んだ `BattlePosition` を起点として、`AttackRange` と `BattleFieldContext` に従って最終対象を展開する。
+
+### 4.8 API / 通知方針
+
+* クライアント向けの進行状態は、ドメインモデルや永続化モデルをそのまま返さず、公開用 DTO として `QuestRunDetailResponse` に射影して返す。
+* `QuestRunDetailResponse` には、パーティ進行の把握、戦闘画面の再描画、直前ターン演出の再生に必要な情報を含める。
+* 一方で、未公開の内部管理情報、楽観ロック用 `version`、内部 ID 対応のうちクライアントで不要なもの、敵 AI 内部値やサーバー都合のメタ情報は含めない。
+* 直前ターンの解決結果は `QuestRunDetailResponse.LastTurnResults` として返し、`quest_runs.last_turn_results_json` をその公開用 View に対応づける。
+* 行動入力 API は `POST /quest/runs/{runId}/commands` を主入口とし、コマンド受信後に未入力者が 0 人なら、そのリクエスト内でターン解決まで行う。
+* ターン解決後の最新状態通知は SignalR を用いて行う。クライアントは `QuestRunHub` へ接続し、`runId` 単位のグループへ参加する。
+* サーバーはターン解決完了後、対象 `runId` グループへ `QuestRunDetailResponse` を broadcast する。
+* `POST /quest/runs/{runId}/commands` の HTTP 応答は受付結果の返却を主とし、画面更新の正本は SignalR 通知とする。
+* `GET /quest/runs/{runId}` は初期表示や再接続復元のために `QuestRunDetailResponse` を返す読み取り API として残す。
+* `POST /quest/runs/{runId}/manual-control/request` と `POST /quest/runs/{runId}/manual-control/approve` は、状態更新後に同様に `QuestRunDetailResponse` を SignalR 通知できる構成とする。
+
+### 4.9 `QuestRunHub` イベント契約
+
+`QuestRunHub` は SignalR Hub として実装し、クライアントは接続後に `runId` ごとのグループ購読を行う。
+
+#### クライアント -> サーバー
+
+* `SubscribeRun(runId)`
+  * 指定した `runId` のグループへ参加する。
+  * 参加成功後、サーバーは現在状態を `QuestRunSnapshot` で返してよい。
+* `UnsubscribeRun(runId)`
+  * 指定した `runId` のグループから離脱する。
+
+#### サーバー -> クライアント
+
+* `QuestRunSnapshot`
+  * 接続直後または購読直後に現在状態を 1 回返すイベント。
+  * payload は `QuestRunDetailResponse` とする。
+* `QuestRunUpdated`
+  * コマンド登録後のターン解決、手動復帰申請、手動復帰承認、その他進行状態変更時に返すイベント。
+  * payload は `QuestRunDetailResponse` とする。
+* `QuestRunError`
+  * 購読失敗、認可失敗、不正な `runId` 指定などを返すイベント。
+  * payload は `code`, `message` を持つ簡易エラー DTO とする。
+
+初期実装では `QuestRunSnapshot` と `QuestRunUpdated` の payload を統一し、クライアントは受信した `QuestRunDetailResponse` で画面状態を丸ごと差し替える前提とする。
+
+### 4.10 `QuestRunDetailResponse` View 案
+
+`QuestRunDetailResponse` は、クエスト画面の初期描画、再接続復元、進行中更新通知を同一形で扱うための公開 View とする。
+
+#### ルート項目
+
+* `RunId`
+* `RoomId`
+* `StageId`
+* `Status` (`InProgress`, `Succeeded`, `Failed`, `Aborted`)
+* `Floor`
+* `Turn`
+* `PartyMembers`
+* `Enemies`
+* `PendingCommands`
+* `ChatMessages`
+* `Rewards`
+* `LastTurnResults`
+
+#### `Floor`
+
+* `CurrentFloorNo`
+* `IsBossFloor`
+
+#### `Turn`
+
+* `CurrentTurnNo`
+* `ActionDeadlineAt`
+* `WaitingParticipantIds`
+
+#### `PartyMembers`
+
+各要素は `QuestPartyMemberView` とし、以下を持つ。
+
+* `ParticipantId`
+* `Type` (`Player`, `Npc`)
+* `DisplayName`
+* `ImagePath`
+* `Position`
+* `CurrentHp`
+* `CurrentMp`
+* `MaxHp`
+* `MaxMp`
+* `IsDead`
+* `CanActFromTurn`
+* `ActionMode` (`Manual`, `AutoAttackOnly`)
+* `ActiveEffects`
+
+#### `Enemies`
+
+各要素は `QuestEnemyView` とし、以下を持つ。
+
+* `EnemyInstanceId`
+* `EnemyDefinitionId`
+* `Name`
+* `ImagePath`
+* `Position`
+* `CurrentHp`
+* `CurrentMp`
+* `MaxHp`
+* `MaxMp`
+* `IsDead`
+* `ActiveEffects`
+
+#### `PendingCommands`
+
+各要素は `QuestPendingCommandView` とし、以下を持つ。
+
+* `ParticipantId`
+* `TurnNo`
+* `ActionKind` (`NormalAttack`, `UseMove`, `Guard`, `Wait`, `LeaveQuest`, `Escape`)
+* `MoveId`
+* `SelectedTargetPosition`
+* `IsAutoSubmitted`
+* `SubmittedAt`
+
+`PendingCommands` は初期実装では入力済みコマンド内容まで含めるが、後に秘匿要件が出た場合は `SubmittedParticipantIds` のような縮約 View へ差し替えられる余地を残す。
+
+#### `ChatMessages`
+
+各要素は `QuestChatMessageView` とし、以下を持つ。
+
+* `SenderParticipantId`
+* `DisplayName`
+* `ImagePath`
+* `Message`
+* `SentAt`
+
+#### `Rewards`
+
+`QuestRewardView` として以下を持つ。
+
+* `Exp`
+
+#### `ActiveEffects`
+
+パーティ / 敵の状態異常とバフは `QuestActiveEffectView` として表現し、以下を持つ。
+
+* `EffectType`
+* `DisplayName`
+* `RemainingTurns`
+* `Stacks`
+
+### 4.11 `LastTurnResults` View 案
+
+`LastTurnResults` は、直前ターンの演出再生、行動ログ表示、階層遷移 / クエスト終了演出の判断に必要な情報を返す。
+
+#### `QuestLastTurnResultsView`
+
+* `TurnNo`
+* `ResolvedAt`
+* `Actions`
+* `FloorTransition`
+* `RunTransition`
+
+#### `Actions`
+
+各要素は `QuestResolvedActionView` とし、以下を持つ。
+
+* `ActorParticipantId`
+* `ActorEnemyInstanceId`
+* `ActorDisplayName`
+* `ActionKind` (`NormalAttack`, `UseMove`, `Guard`, `Wait`, `LeaveQuest`, `Escape`)
+* `MoveId`
+* `MoveName`
+* `TargetSummaries`
+* `Logs`
+
+味方と敵のどちらが行動主体でも扱えるよう、`ActorParticipantId` と `ActorEnemyInstanceId` は排他的に利用する。
+
+#### `TargetSummaries`
+
+各要素は `QuestActionTargetResultView` とし、以下を持つ。
+
+* `TargetParticipantId`
+* `TargetEnemyInstanceId`
+* `TargetDisplayName`
+* `ResultType` (`Hit`, `Miss`, `Guarded`, `Healed`, `BuffApplied`, `AilmentApplied`, `Defeated`)
+* `HpChange`
+* `MpChange`
+* `AppliedEffects`
+* `RemovedEffects`
+* `IsDeadAfterAction`
+
+#### `FloorTransition`
+
+階層遷移が発生した場合のみ `QuestFloorTransitionView` を返し、以下を持つ。
+
+* `PreviousFloorNo`
+* `CurrentFloorNo`
+* `FloorCleared`
+* `BossFloorReached`
+
+#### `RunTransition`
+
+クエスト状態変化の有無を表す `QuestRunTransitionView` として、以下を持つ。
+
+* `PreviousStatus`
+* `CurrentStatus`
+* `QuestEnded`
+
+### 4.12 ルーム一覧 API 方針
+
+参加可能ルーム一覧の表示のため、`GET /quest/rooms` を追加する。
+
+#### 用途
+
+* 募集中ルームの一覧表示
+* 参加画面でのステージ選択後の候補表示
+* 再接続導線での自分の参加中ルーム確認
+
+#### クエリ条件案
+
+* `stageId`
+* `mode` (`Solo`, `Multi`)
+* `status` (`Recruiting`, `Closed`)
+* `ownerPlayerId`
+* `page`
+* `pageSize`
+
+初期実装では、`status` 未指定時は `Recruiting` を既定値とする。
+並び順は `createdAt desc` を既定とし、ページングは `page = 1`, `pageSize = 20` を初期値とする。
+`pageSize` は最大 100 までに丸める。
+
+#### レスポンス View
+
+`QuestRoomSummaryResponse` として、各要素に以下を持つ。
+
+* `RoomId`
+* `StageId`
+* `StageName`
+* `Mode`
+* `Status`
+* `OwnerPlayerId`
+* `OwnerDisplayName`
+* `ParticipantCount`
+* `MinPartyMemberCount`
+* `MaxPartyMemberCount`
+* `CreatedAt`
+
+一覧用途では詳細な配置情報や参加者全件は返さず、ルームカード描画に必要な情報へ絞る。
+
+### 4.13 手動復帰 API 方針
+
+手動復帰は HTTP API で要求を受け付け、状態更新後は SignalR で `QuestRunDetailResponse` を通知する。
+
+#### `POST /quest/runs/{runId}/manual-control/request`
+
+`AutoAttackOnly` に移行した参加者本人が、自分の手動復帰を申請するための API とする。
+
+リクエスト:
+
+* `ParticipantId`
+
+認可:
+
+* 実行者本人のみ呼び出せる。
+* 対象参加者が `AutoAttackOnly` である場合のみ受け付ける。
+
+結果:
+
+* 手動復帰申請中状態を `QuestRun` に反映する。
+* 更新後は `QuestRunUpdated` で `QuestRunDetailResponse` を対象 `runId` グループへ通知する。
+* HTTP 応答は受付成否のみを返す。
+
+#### `POST /quest/runs/{runId}/manual-control/approve`
+
+オーナーが手動復帰申請を承認するための API とする。
+
+リクエスト:
+
+* `ParticipantId`
+
+認可:
+
+* ルームオーナーのみ呼び出せる。
+* 対象参加者に未処理の手動復帰申請がある場合のみ受け付ける。
+
+結果:
+
+* 対象参加者の `ActionMode` を `Manual` へ戻す。
+* 更新後は `QuestRunUpdated` で `QuestRunDetailResponse` を対象 `runId` グループへ通知する。
+* HTTP 応答は受付成否のみを返す。
+
+#### 手動復帰表示のための View
+
+`QuestRunDetailResponse.PartyMembers` の各要素に、以下の復帰状態項目を追加してよい。
+
+* `ManualControlRequestStatus` (`None`, `Pending`)
+
+初期実装では申請履歴全件ではなく、現在ターン時点の最新状態だけを返せばよい。
+
+### 4.14 タイムアウト進行の起動方針
+
+未入力者が 0 人になった時点のターン解決は `POST /quest/runs/{runId}/commands` 内で実行する。
+一方で、誰も追加操作しないまま `ActionDeadlineAt` を超過したケースに備え、タイムアウト進行の起動契機を定める。
+
+初期実装では以下の方針を採る。
+
+* サーバー側に定期実行ジョブを用意し、期限切れの `QuestRun` を走査する。
+* 期限切れを検知した `QuestRun` について、未入力の `Manual` 参加者を `AutoAttackOnly` へ切り替え、自動コマンドを投入する。
+* その結果として未入力者が 0 人になれば、その場でターン解決まで行う。
+* 解決後は `QuestRunUpdated` で `QuestRunDetailResponse` を通知する。
+
+`GET /quest/runs/{runId}` では副作用を持たせず、読み取り専用とする。
+これにより、画面再表示やポーリング取得によって進行が偶発的に進むことを避ける。
+
+### 4.15 `QuestRun` 認可モデル方針
+
+初期実装では、進行中クエストの認可は `QuestRun` 単体では閉じず、`QuestRoom` の参加者情報を参照して判定する。
+将来的には `QuestRun` 側で完結できる形へ寄せる余地を残す。
+
+#### 方針
+
+* `commands`、`chat`、`manual-control/request` など本人起点 API は、`QuestRun.RoomId` から `QuestRoom` を参照し、`ParticipantId` と `PlayerId` の対応で認可する。
+* `manual-control/approve` のようなオーナー権限が必要な API も、`QuestRoom.OwnerId` を参照して判定する。
+* `QuestRun` 自体は進行画面用のスナップショット情報を持つが、認可用の `PlayerId` 対応表は初期実装では保持しない。
+
+#### 認可判断の例
+
+* `POST /quest/runs/{runId}/commands`
+  * `QuestRoom` 上で実行者に対応する `ParticipantId` のコマンド送信のみ許可する。
+* `POST /quest/runs/{runId}/manual-control/request`
+  * `QuestRoom` 上で実行者に対応する `ParticipantId` の復帰申請のみ許可する。
+* `POST /quest/runs/{runId}/manual-control/approve`
+  * `QuestRoom.OwnerId` と一致する実行者のみ許可する。
+* クエスト中チャット
+  * `QuestRoom` に紐づく参加者本人のみ投稿を許可する。
+
+この方針により、初期実装では既存のルーム参加情報をそのまま認可に利用する。
+将来 `QuestRun` 側へ認可スナップショットを持たせる場合は、この節を更新する。
 
 ## 5. ドメインモデル案
 
@@ -194,6 +534,7 @@
 * `StageCode` は API やフロントエンドから参照しやすい安定識別子であり、表示名とは別に持つ。例: `beginner-forest`。
 * `MinPartyMemberCount` は開始時に満たすべき最低出撃人数であり、本ドラフトでは 4 を想定する。
 * `MaxPartyMemberCount` は盤面に配置可能な最大人数であり、本ドラフトでは 6 を想定する。
+* `QuestStageId` / `QuestEnemyDefinitionId` / `QuestNpcTemplateId` は CSV マスタで人が扱いやすい連番 `int` を使う。
 * `QuestEnemyDefinitionId` は敵マスタを指す識別子であり、実行中の敵個体を指す `QuestEnemyInstanceId` と区別するため `Definition` を付ける。
 
 #### 主な責務
@@ -272,6 +613,7 @@
 * `QuestParticipantId ParticipantId`
 * `ParticipantType Type`
 * `string DisplayName`
+* `string? ImagePath`
 * `Job Job`
 * `Status BaseStatus`
 * `MoveSet MoveSet`
@@ -284,6 +626,7 @@
 * `QuestRun` はこのスナップショットだけを参照して開始できる。
 * 将来、装備補正や一時バフを開始時に織り込む拡張点にする。
 * `MoveSet` はクエスト開始時点で使用可能な技スロット構成を表す。詳細効果は `MoveDomain.Move` を参照し、クエスト固有の使用制約がある場合はスナップショット側で補助情報を持つ余地を残す。
+* `ImagePath` はクライアントの戦闘表示に使う見た目情報であり、進行中クエスト中のプレイヤー画像差し替えの影響を受けないよう開始時点で固定する。
 
 ### 5.6 `QuestRun` 案
 
@@ -312,6 +655,7 @@
   * `QuestTurnState TurnState`
   * `QuestTrapCollection Traps`
   * `QuestRewardAccumulator Rewards`
+  * `IReadOnlyList<QuestChatMessage> ChatMessages`
   * `DateTimeOffset StartedAt`
   * `DateTimeOffset? EndedAt`
 * `QuestFloorState`
@@ -347,7 +691,7 @@
   * `int TurnNo`
   * `ActionKind ActionKind` (`NormalAttack`, `UseMove`, `Guard`, `Wait`, `LeaveQuest`, `Escape`)
   * `MoveId? MoveId`
-  * `TargetSelector Target`
+  * `BattlePosition? SelectedTargetPosition`
   * `DateTimeOffset SubmittedAt`
   * `bool IsAutoSubmitted`
 * `QuestTrapState`
@@ -358,11 +702,24 @@
   * `bool IsTriggered`
 * `QuestRewardAccumulator`
   * `int Exp`
+* `QuestChatMessage`
+  * `QuestParticipantId SenderParticipantId`
+  * `string DisplayName`
+  * `string? ImagePath`
+  * `string Message`
+  * `DateTimeOffset SentAt`
 
 #### 行動の意味
 
 * `LeaveQuest`: 個人の退出を表す。
 * `Escape`: パーティ全体の撤退を表す。
+
+補足:
+
+* `QuestTurnCommand` は入力として保持するが、クライアントのログ表示や技エフェクト表示は、最終的には `BattleActionResult` に含まれる `ActorId` / `ActionKind` / `MoveId` を基準に行う。
+* これにより行動順の並び替え後でも、解決順どおりにログと演出を再生できる。
+* 単体攻撃は `SelectedTargetPosition` によって対象マスを指定する。通常攻撃でも「正面以外の敵マスを狙う」入力を許可できる。
+* 解決時に対象マスのユニットが不在または無効化されている場合の扱いは、戦闘ロジック側で不発または代替対象選択として判定する。
 
 #### 主な振る舞い
 
@@ -371,11 +728,13 @@
 * `RequestManualControl(participantId)`
 * `ApproveManualControl(participantId, ownerId)`
 * `ResolveTurn()`
+* `ApplyBattleResolution(resolution, actorMap)`
 * `AdvanceFloor()`
 * `ApplyTrapsOnFloorStart()`
 * `MarkSucceeded()`
 * `MarkFailed()`
 * `Abort(reason)`
+* `AddChatMessage(message)`
 
 #### 不変条件
 
@@ -387,6 +746,8 @@
 * 蘇生された場合は `CanActFromTurn = CurrentTurnNo + 1` とする。
 * `Failed` は、生存していて `LeaveQuest` しておらず、かつ `AutoAttackOnly` でもない参加者が 0 人になった時点で成立する。
 * `Escape` 成功時の終了区分は `Failed` とする。
+* そのターンで敵を全滅させた場合は `isFloorCleared = true` とし、最終階層であれば `Succeeded` を成立させる。
+* クエスト中チャットは `QuestRun` が保持し、送信者表示名、画像パス、本文、送信時刻を進行中状態として保持する。
 
 ### 5.7 補助マスタ案
 
@@ -414,6 +775,13 @@
 * `string ImagePath`
 * `EnemyAiType AiType`
 * `IReadOnlyList<MoveId> MoveIds`
+
+補足:
+
+* `QuestEnemyDefinition.ImagePath` は敵 CSV に保持する表示用画像パスであり、クライアントはこれを使って敵画像を描画する。
+* `EnemyAiType` はボス / 雑魚の区別ではなく、各敵がどの行動を優先するかを表す行動方針である。階層種別は `FloorType` で表し、同一階層内で単体火力役、盾役、支援役のような役割差を持つ敵編成を表現できるようにする。
+* 技演出は `MoveDomain.Move.EffectImagePath` を参照し、未設定ならエフェクト画像表示を行わない。
+* 技演出の再生契機はターン解決後の `BattleActionResult` とし、ダメージや状態変化の反映後にクライアントで表示する。
 
 ### 5.8 ドメインサービス案
 
@@ -459,99 +827,40 @@
 * `Escape` 成功時は `Failed` に含める。
 * `Aborted` は障害、運営操作、将来の明示的中断要求などに備えた状態として残す。
 
-## 7. データベース設計ドラフト
+## 7. 永続化設計ドラフト
 
-### 7.1 テーブル分類
+### 7.1 永続化分類
 
-* マスタ系: ステージ、階層、敵、NPC テンプレート
+* マスタ系: ステージ、階層、敵、NPC テンプレートは CSV で管理する
 * 募集系: ルーム、参加者
 * 進行系: クエスト実行、開始時スナップショット、戦闘状態、行動入力、罠、報酬
 
-### 7.2 マスタ系テーブル案
+### 7.2 マスタ系 CSV 案
 
-#### `internal.quest_stages`
+クエストのコンテンツ追加速度を優先し、ステージ・敵・NPC テンプレートは DB テーブルではなく CSV で管理する。
+既存の `CsvTrainingEnemyRepository` と同様に、クエストも CSV リポジトリを用いる。
 
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `id` | uuid | PK |
-| `stage_code` | varchar(50) | UNIQUE, 安定識別子 |
-| `name` | varchar(100) | NOT NULL |
-| `recommended_level` | int | NOT NULL |
-| `min_party_member_count` | int | NOT NULL, 初期値 4 |
-| `max_party_member_count` | int | NOT NULL, 初期値 6 |
-| `is_active` | boolean | NOT NULL |
+想定ファイル:
 
-#### `internal.quest_stage_floors`
+* `server/resources/quest/stages.csv`
+* `server/resources/quest/stage_floors.csv`
+* `server/resources/quest/floor_enemy_spawns.csv`
+* `server/resources/quest/enemies.csv`
+* `server/resources/quest/enemy_moves.csv`
+* `server/resources/quest/npc_templates.csv`
+* `server/resources/quest/npc_moves.csv`
 
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `stage_id` | uuid | PK, FK `quest_stages.id` |
-| `floor_no` | int | PK |
-| `floor_type` | int | `Normal` / `Boss` |
-| `reward_exp_rate` | numeric(5,2) | NOT NULL, 初期値 1.00 |
-| `reward_gold_rate` | numeric(5,2) | NOT NULL, 初期値 1.00 |
+想定リポジトリ:
 
-#### `internal.quest_enemy_definitions`
+* `CsvQuestStageRepository`
+* `CsvQuestEnemyDefinitionRepository`
+* `CsvQuestNpcTemplateRepository`
 
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `id` | uuid | PK |
-| `name` | varchar(100) | NOT NULL |
-| `level` | int | NOT NULL |
-| `max_hp` | int | NOT NULL |
-| `max_mp` | int | NOT NULL |
-| `strength` | int | NOT NULL |
-| `defense` | int | NOT NULL |
-| `intelligence` | int | NOT NULL |
-| `luck` | int | NOT NULL |
-| `speed` | int | NOT NULL |
-| `image_path` | varchar(255) | NULL |
-| `ai_type` | int | NOT NULL |
+CSV 採用理由:
 
-#### `internal.quest_enemy_moves`
-
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `enemy_definition_id` | uuid | PK, FK `quest_enemy_definitions.id` |
-| `slot_no` | int | PK |
-| `move_id` | int | 既存 `move_master.csv` を論理参照 |
-
-#### `internal.quest_floor_enemy_spawns`
-
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `stage_id` | uuid | PK |
-| `floor_no` | int | PK |
-| `placement_no` | int | PK |
-| `enemy_definition_id` | uuid | FK `quest_enemy_definitions.id` |
-| `battle_row` | int | NOT NULL |
-| `battle_column` | int | NOT NULL |
-
-#### `internal.quest_npc_templates`
-
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `id` | uuid | PK |
-| `name` | varchar(100) | NOT NULL |
-| `job` | int | NOT NULL |
-| `preferred_row` | int | NOT NULL |
-| `level` | int | NOT NULL |
-| `max_hp` | int | NOT NULL |
-| `max_mp` | int | NOT NULL |
-| `strength` | int | NOT NULL |
-| `defense` | int | NOT NULL |
-| `intelligence` | int | NOT NULL |
-| `luck` | int | NOT NULL |
-| `speed` | int | NOT NULL |
-| `role` | int | NOT NULL |
-
-#### `internal.quest_npc_moves`
-
-| カラム | 型 | 備考 |
-| --- | --- | --- |
-| `npc_template_id` | uuid | PK, FK `quest_npc_templates.id` |
-| `slot_no` | int | PK |
-| `move_id` | int | 既存 `move_master.csv` を論理参照 |
+* Git 管理下でコンテンツ差分をレビューしやすい。
+* ステージや敵を追加するたびに DB seed や migration を増やさずに済む。
+* 既存のトレーニング敵定義と同じ運用パターンに寄せられる。
 
 ### 7.3 募集系テーブル案
 
@@ -561,9 +870,10 @@
 | --- | --- | --- |
 | `id` | uuid | PK |
 | `owner_player_id` | uuid | FK `players.id` |
-| `stage_id` | uuid | FK `quest_stages.id` |
+| `stage_id` | int | CSV の `QuestStageDefinition.Id` を参照 |
 | `mode` | int | `Solo` / `Multi` |
 | `status` | int | `Recruiting` / `Closed` |
+| `version` | int | NOT NULL, 楽観ロック用の更新バージョン |
 | `close_reason` | int | `Started` / `Cancelled` / `Expired`, NULL 可 |
 | `created_at` | timestamptz | NOT NULL |
 | `closed_at` | timestamptz | NULL |
@@ -576,7 +886,7 @@
 | `room_id` | uuid | FK `quest_rooms.id` |
 | `participant_type` | int | `Player` / `Npc` |
 | `player_id` | uuid | NULL, FK `players.id` |
-| `npc_template_id` | uuid | NULL, FK `quest_npc_templates.id` |
+| `npc_template_id` | int | NULL, CSV の `QuestNpcTemplate.Id` を参照 |
 | `display_name` | varchar(100) | NOT NULL |
 | `battle_row` | int | NOT NULL |
 | `battle_column` | int | NOT NULL |
@@ -592,6 +902,7 @@
 * `npc_template_id` は `participant_type = Npc` のとき必須。
 * `UNIQUE(room_id, battle_row, battle_column)`。
 * `UNIQUE(room_id, player_id)` ただし `player_id IS NOT NULL`。
+* `quest_rooms.version` を楽観ロックに使い、同時参加更新は stale write を拒否する。
 
 ### 7.4 進行系テーブル案
 
@@ -601,11 +912,14 @@
 | --- | --- | --- |
 | `id` | uuid | PK |
 | `room_id` | uuid | UNIQUE, FK `quest_rooms.id` |
-| `stage_id` | uuid | FK `quest_stages.id` |
+| `stage_id` | int | CSV の `QuestStageDefinition.Id` を参照 |
 | `status` | int | `InProgress` / `Succeeded` / `Failed` / `Aborted` |
 | `current_floor_no` | int | NOT NULL |
 | `current_turn_no` | int | NOT NULL |
 | `action_deadline_at` | timestamptz | NOT NULL |
+| `last_resolved_turn_no` | int | NULL |
+| `last_turn_results_json` | jsonb | NULL, 最新ターンの解決結果のみ保持 |
+| `chat_messages_json` | jsonb | NOT NULL, クエスト中チャットのメッセージ配列 |
 | `started_at` | timestamptz | NOT NULL |
 | `ended_at` | timestamptz | NULL |
 
@@ -617,6 +931,7 @@
 | `participant_id` | uuid | PK, FK `quest_room_participants.id` |
 | `participant_type` | int | `Player` / `Npc` |
 | `display_name` | varchar(100) | NOT NULL |
+| `image_path` | varchar(255) | NULL |
 | `job` | int | NOT NULL |
 | `start_row` | int | NOT NULL |
 | `start_column` | int | NOT NULL |
@@ -642,6 +957,7 @@
 | `can_act_from_turn` | int | NOT NULL |
 | `action_mode` | int | `Manual` / `AutoAttackOnly` |
 | `active_effects_json` | jsonb | 状態異常・バフを保持 |
+| `derived_parameters_json` | jsonb | 一時的な補正値や将来拡張パラメータを保持 |
 | `updated_at` | timestamptz | NOT NULL |
 
 #### `internal.quest_run_enemies`
@@ -651,13 +967,14 @@
 | `run_id` | uuid | PK, FK `quest_runs.id` |
 | `enemy_instance_id` | uuid | PK |
 | `floor_no` | int | NOT NULL |
-| `enemy_definition_id` | uuid | FK `quest_enemy_definitions.id` |
+| `enemy_definition_id` | int | CSV の `QuestEnemyDefinition.Id` を参照 |
 | `battle_row` | int | NOT NULL |
 | `battle_column` | int | NOT NULL |
 | `current_hp` | int | NOT NULL |
 | `current_mp` | int | NOT NULL |
 | `is_dead` | boolean | NOT NULL |
 | `active_effects_json` | jsonb | 状態異常・バフを保持 |
+| `derived_parameters_json` | jsonb | 一時的な補正値や将来拡張パラメータを保持 |
 
 `quest_run_enemies` は進行中クエストの復元に必要な敵状態を保持するテーブルとし、完全な戦闘履歴保存は目的としない。
 
@@ -670,7 +987,8 @@
 | `participant_id` | uuid | PK, FK `quest_room_participants.id` |
 | `action_kind` | int | NOT NULL |
 | `move_id` | int | NULL |
-| `target_json` | jsonb | 対象指定 |
+| `target_row` | int | NULL |
+| `target_column` | int | NULL |
 | `submitted_at` | timestamptz | NOT NULL |
 | `is_auto_submitted` | boolean | NOT NULL |
 
@@ -699,6 +1017,32 @@
 クエスト中の HP / MP / バフ / 状態異常は `players` テーブルへ書かない。
 クエスト終了時に、今回は経験値のみを恒久情報へ反映する。
 
+#### 表示用画像は恒久情報とスナップショットを併用する
+
+`players.image_path` は恒久的なプロフィール兼戦闘表示画像として保持する。
+一方で進行中クエストの表示整合性を保つため、開始時点の `image_path` は `quest_run_party_snapshots` にも複製して固定する。
+
+#### 技エフェクト画像は CSV オプション項目として扱う
+
+技エフェクト画像は既存の技 CSV における任意項目として扱い、DB テーブル追加は行わない。
+クライアントは `EffectImagePath` が設定されている技だけ画像演出を表示し、未設定技は従来どおりテキストや既定演出のみで処理する。
+行動解決結果には `MoveId` を含め、クライアントはその `MoveId` を使って `EffectImagePath` を参照する。
+
+#### 行動解決結果はログ表示に必要な識別子を持つ
+
+`BattleActionResult` は `ActorId` に加えて `ActionKind` と `MoveId` を持つ。
+これによりクエスト側は入力コマンドの再解釈に依存せず、解決順どおりの行動ログと技演出を構築できる。
+
+#### サーバーは最新ターンの解決結果のみ保持する
+
+サーバーは完全な戦闘ログを永続化せず、`quest_runs.last_turn_results_json` に最新ターンの解決結果のみを保持する。
+クライアントは画面表示用に複数ターンのログをメモリ保持してよいが、再接続時の復元対象は最新ターン結果までとする。
+
+#### クエスト中チャットは JSON 配列で保持する
+
+クエスト中チャットは単なる文字列配列ではなく、送信者表示名、送信者画像パス、本文、送信時刻を持つメッセージ配列として `quest_runs.chat_messages_json` に保持する。
+これによりクライアントは、追加のプレイヤー参照なしにクエスト画面上でチャット投稿者名とアイコンをそのまま描画できる。
+
 #### 放置は参加者除外でなく行動モード変更で表現する
 
 冒険中のプレイヤーは `quest_room_participants` から削除しない。
@@ -723,13 +1067,25 @@
 
 ### 9.1 優先度高
 
-現時点で優先度高の未確定事項はなし。
+* 手動復帰申請状態を専用テーブルで持つか、既存の進行状態 JSON / 列へ畳み込むか。
+  API 契約は固めたが、永続化方式はまだ設計選択の余地がある。
+* タイムアウト進行ジョブの実行粒度。
+  何秒間隔で走査するか、1 回の処理で何件まで進めるか、排他制御をどう行うかは実装設計で決める必要がある。
+* 将来 `QuestRun` 側へ認可スナップショットを持たせるか。
+  初期実装では `QuestRoom` 参照で認可するが、進行中 API の独立性を高めるために `QuestRun` 側へ寄せるかは後続論点として残る。
+
+フロントエンド実装の初期段階では、最低でも次を先に解消することを推奨する。
+
+* `GET /quest/rooms`
+* `GET /quest/runs/{runId}` の `QuestRunDetailResponse`
+* `POST /quest/runs/{runId}/commands`
+* `POST /quest/runs/{runId}/manual-control/request`
+* `POST /quest/runs/{runId}/manual-control/approve`
+* `QuestRunHub`
 
 ### 9.2 優先度中
 
-* 中衛専用武器の条件は、装備システム実装前はどう表現するか。
 * ボス階層到達前の回復・準備フェーズを設けるか。
-* 戦闘ログをどこまで保存するか。
 * `QuestBattleState` など内部概念を将来別集約へ分離する必要があるか。
 
 ## 10. 次の更新対象

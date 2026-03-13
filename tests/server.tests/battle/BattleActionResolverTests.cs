@@ -274,6 +274,7 @@ public class BattleActionResolverTests
             mpCost,
             executionPriority,
             MoveCategory.Attack,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(1),
@@ -295,6 +296,7 @@ public class BattleActionResolverTests
             1,
             0,
             MoveCategory.Attack,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(1),
@@ -322,6 +324,7 @@ public class BattleActionResolverTests
             mpCost,
             executionPriority,
             MoveCategory.Attack,
+            effects:
             [
                 new MoveEffect(
                     new MoveEffectId(1),

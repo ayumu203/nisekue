@@ -2,6 +2,7 @@ erDiagram
     PLAYERS {
         uuid id PK "internal.players.id"
         varchar(20) name "NOT NULL"
+        varchar(255) image_path "NULL"
         int job "NOT NULL, DEFAULT 1 (Apprentice)"
         int level "NOT NULL, DEFAULT 1"
         int exp "NOT NULL, DEFAULT 0"
@@ -39,7 +40,122 @@ erDiagram
         int move_id_9 "NULL (references CSV move_id logically)"
         int move_id_10 "NULL (references CSV move_id logically)"
     }
+    QUEST_ROOMS {
+        uuid id PK "internal.quest_rooms.id"
+        uuid owner_player_id FK "internal.players.id"
+        int stage_id "references CSV quest stage id logically"
+        int mode "NOT NULL (Solo/Multi)"
+        int status "NOT NULL (Recruiting/Closed)"
+        int version "NOT NULL, optimistic concurrency token"
+        int close_reason "NULL (Started/Cancelled/Expired)"
+        timestamptz created_at "NOT NULL"
+        timestamptz closed_at "NULL"
+    }
+    QUEST_ROOM_PARTICIPANTS {
+        uuid id PK "internal.quest_room_participants.id"
+        uuid room_id FK "internal.quest_rooms.id"
+        int participant_type "NOT NULL (Player/Npc)"
+        uuid player_id FK "NULL, internal.players.id"
+        int npc_template_id "NULL, references CSV npc template id logically"
+        varchar(100) display_name "NOT NULL"
+        int battle_row "NOT NULL"
+        int battle_column "NOT NULL"
+        int participant_status "NOT NULL (Joined/Disconnected/Left)"
+        boolean is_owner "NOT NULL"
+        timestamptz joined_at "NOT NULL"
+        timestamptz last_seen_at "NULL"
+        timestamptz left_at "NULL"
+    }
+    QUEST_RUNS {
+        uuid id PK "internal.quest_runs.id"
+        uuid room_id FK "UNIQUE, internal.quest_rooms.id"
+        int stage_id "references CSV quest stage id logically"
+        int status "NOT NULL (InProgress/Succeeded/Failed/Aborted)"
+        int current_floor_no "NOT NULL"
+        int current_turn_no "NOT NULL"
+        timestamptz action_deadline_at "NOT NULL"
+        int last_resolved_turn_no "NULL"
+        jsonb last_turn_results_json "NULL, only latest turn result"
+        jsonb chat_messages_json "NOT NULL, quest chat message array"
+        timestamptz started_at "NOT NULL"
+        timestamptz ended_at "NULL"
+    }
+    QUEST_RUN_PARTY_SNAPSHOTS {
+        uuid run_id PK, FK "internal.quest_runs.id"
+        uuid participant_id PK, FK "internal.quest_room_participants.id"
+        int participant_type "NOT NULL (Player/Npc)"
+        varchar(100) display_name "NOT NULL"
+        varchar(255) image_path "NULL"
+        int job "NOT NULL"
+        int start_row "NOT NULL"
+        int start_column "NOT NULL"
+        int max_hp "NOT NULL"
+        int max_mp "NOT NULL"
+        int strength "NOT NULL"
+        int defense "NOT NULL"
+        int intelligence "NOT NULL"
+        int luck "NOT NULL"
+        int speed "NOT NULL"
+        jsonb move_set_json "NOT NULL"
+        int initial_action_mode "NOT NULL"
+    }
+    QUEST_RUN_PARTY_MEMBERS {
+        uuid run_id PK, FK "internal.quest_runs.id"
+        uuid participant_id PK, FK "internal.quest_room_participants.id"
+        int current_hp "NOT NULL"
+        int current_mp "NOT NULL"
+        boolean is_dead "NOT NULL"
+        int can_act_from_turn "NOT NULL"
+        int action_mode "NOT NULL (Manual/AutoAttackOnly)"
+        jsonb active_effects_json "NOT NULL, ailments and buffs"
+        jsonb derived_parameters_json "NOT NULL, temporary modifiers"
+        timestamptz updated_at "NOT NULL"
+    }
+    QUEST_RUN_ENEMIES {
+        uuid run_id PK, FK "internal.quest_runs.id"
+        uuid enemy_instance_id PK "generated per run"
+        int floor_no "NOT NULL"
+        int enemy_definition_id "references CSV enemy definition id logically"
+        int battle_row "NOT NULL"
+        int battle_column "NOT NULL"
+        int current_hp "NOT NULL"
+        int current_mp "NOT NULL"
+        boolean is_dead "NOT NULL"
+        jsonb active_effects_json "NOT NULL, ailments and buffs"
+        jsonb derived_parameters_json "NOT NULL, temporary modifiers"
+    }
+    QUEST_TURN_COMMANDS {
+        uuid run_id PK, FK "internal.quest_runs.id"
+        int turn_no PK "NOT NULL"
+        uuid participant_id PK, FK "internal.quest_room_participants.id"
+        int action_kind "NOT NULL"
+        int move_id "NULL, references CSV move id logically"
+        int target_row "NULL"
+        int target_column "NULL"
+        timestamptz submitted_at "NOT NULL"
+        boolean is_auto_submitted "NOT NULL"
+    }
+    QUEST_FLOOR_TRAPS {
+        uuid run_id PK, FK "internal.quest_runs.id"
+        uuid trap_id PK "generated per trap"
+        uuid source_participant_id FK "internal.quest_room_participants.id"
+        int move_id "NOT NULL, references CSV move id logically"
+        int expires_after_floor_no "NOT NULL"
+        boolean is_triggered "NOT NULL"
+    }
+    QUEST_REWARD_SUMMARIES {
+        uuid run_id PK, FK "internal.quest_runs.id"
+        int exp "NOT NULL"
+    }
 
     PLAYERS ||--|| CHAT_ROOMS : owns
     CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
     PLAYERS ||--|| PLAYER_MOVES : has_slots
+    PLAYERS ||--o{ QUEST_ROOMS : owns
+    QUEST_ROOMS ||--o{ QUEST_ROOM_PARTICIPANTS : has
+    QUEST_RUNS ||--o{ QUEST_RUN_PARTY_SNAPSHOTS : snapshots
+    QUEST_RUNS ||--o{ QUEST_RUN_PARTY_MEMBERS : tracks_party
+    QUEST_RUNS ||--o{ QUEST_RUN_ENEMIES : tracks_enemies
+    QUEST_RUNS ||--o{ QUEST_TURN_COMMANDS : receives
+    QUEST_RUNS ||--o{ QUEST_FLOOR_TRAPS : carries
+    QUEST_RUNS ||--|| QUEST_REWARD_SUMMARIES : awards

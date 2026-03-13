@@ -7,6 +7,7 @@ classDiagram
             +MoveId Id
             +string Name
             +string Description
+            +string? EffectImagePath
             +TargetType TargetType
             +AttackRange AttackRange
             +int MpCost
@@ -16,6 +17,7 @@ classDiagram
             +Validate() void
             +GetOrderedEffects() IReadOnlyList~MoveEffect~
             -ValidateName(name: string) string
+            -ValidateEffectImagePath(effectImagePath: string?) string?
             -ValidateMpCost(mpCost: int) int
         }
 

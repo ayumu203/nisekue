@@ -9,10 +9,12 @@ public class Player(
     int exp,
     Status status,
     Job job = Job.Apprentice,
+    string? imagePath = null,
     MoveSet? moveSet = null)
 {
     public PlayerId Id { get; } = id;
     public string Name { get; private set; } = ValidateName(name);
+    public string? ImagePath { get; private set; } = ValidateImagePath(imagePath);
     public Job Job { get; private set; } = job;
     public int Level { get; private set; } = ValidateLevel(level);
     public int Exp { get; private set; } = exp;
@@ -22,6 +24,11 @@ public class Player(
     public void UpdateName(string name)
     {
         Name = ValidateName(name);
+    }
+
+    public void UpdateImagePath(string? imagePath)
+    {
+        ImagePath = ValidateImagePath(imagePath);
     }
 
     public void UpdateJob(Job job)
@@ -45,6 +52,22 @@ public class Player(
         if (normalized.Length is < 1 or > PlayerConstants.NameMaxLength)
         {
             throw new ArgumentException($"プレイヤー名は1文字から{PlayerConstants.NameMaxLength}文字以内です.", nameof(name));
+        }
+
+        return normalized;
+    }
+
+    private static string? ValidateImagePath(string? imagePath)
+    {
+        if (string.IsNullOrWhiteSpace(imagePath))
+        {
+            return null;
+        }
+
+        var normalized = imagePath.Trim();
+        if (normalized.Length > PlayerConstants.ImagePathMaxLength)
+        {
+            throw new ArgumentException($"画像パスは{PlayerConstants.ImagePathMaxLength}文字以内です.", nameof(imagePath));
         }
 
         return normalized;

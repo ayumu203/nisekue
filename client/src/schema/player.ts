@@ -36,6 +36,7 @@ export const playerMoveSlotSchema = z.object({
   moveId: z.number().int().min(1).nullable(),
   moveName: z.string().min(1).nullable(),
   description: z.string().min(1).nullable(),
+  effectImagePath: z.string().min(1).nullable().optional(),
   elementType: moveElementTypeSchema.nullable(),
   targetType: moveTargetTypeSchema.nullable(),
   attackRange: moveAttackRangeSchema.nullable(),
@@ -46,6 +47,7 @@ export const playerMoveSlotSchema = z.object({
 export const getPlayerResponseSchema = z.object({
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
+  imagePath: z.string().min(1).nullable().optional(),
   job: playerJobSchema,
   level: z.number().int().min(1, 'レベルは1以上である必要があります'),
   exp: z.number().int().min(0, '経験値は0以上である必要があります'),
@@ -69,6 +71,7 @@ export const createPlayerResponseSchema = z.object({
   message: z.string().min(1, 'レスポンスメッセージが空です'),
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
+  imagePath: z.string().min(1).nullable().optional(),
   job: playerJobSchema,
 })
 

@@ -60,6 +60,7 @@ public class CsvMoveRepository : IMoveRepository
                 mpCost: master.MpCost,
                 executionPriority: master.ExecutionPriority,
                 category: master.MoveCategory,
+                effectImagePath: master.EffectImagePath,
                 effects: effects);
 
             map.Add(master.MoveId, move);
@@ -91,7 +92,7 @@ public class CsvMoveRepository : IMoveRepository
             }
 
             var columns = line.Split(',', StringSplitOptions.TrimEntries);
-            if (columns.Length != 8)
+            if (columns.Length is not (8 or 9))
             {
                 throw new InvalidOperationException($"move_master.csv の形式が不正です。行: {i + 1}");
             }
@@ -110,7 +111,8 @@ public class CsvMoveRepository : IMoveRepository
                 AttackRange: ParseEnum<AttackRange>(columns[4], "attack_range", i + 1),
                 MpCost: ParseInt(columns[5], "mp_cost", i + 1),
                 ExecutionPriority: ParseInt(columns[6], "execution_priority", i + 1),
-                MoveCategory: ParseEnum<MoveCategory>(columns[7], "move_category", i + 1)));
+                MoveCategory: ParseEnum<MoveCategory>(columns[7], "move_category", i + 1),
+                EffectImagePath: columns.Length == 9 ? ParseNullableString(columns[8]) : null));
         }
 
         if (map.Count == 0)
@@ -310,6 +312,11 @@ public class CsvMoveRepository : IMoveRepository
         return parsed;
     }
 
+    private static string? ParseNullableString(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
     private static T ParseEnum<T>(string value, string columnName, int lineNumber) where T : struct
     {
         if (!Enum.TryParse<T>(value, ignoreCase: false, out var parsed))
@@ -333,5 +340,6 @@ public class CsvMoveRepository : IMoveRepository
         AttackRange AttackRange,
         int MpCost,
         int ExecutionPriority,
-        MoveCategory MoveCategory);
+        MoveCategory MoveCategory,
+        string? EffectImagePath);
 }

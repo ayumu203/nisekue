@@ -43,13 +43,13 @@ export const greenOutlinedInputSx = {
   '& .MuiOutlinedInput-root': {
     backgroundColor: '#fffdf8',
     '& fieldset': {
-      borderColor: '#b7d9b9',
+      borderColor: '#d9cfb8',
     },
     '&:hover fieldset': {
-      borderColor: '#78c27d',
+      borderColor: '#d1c4aa',
     },
     '&.Mui-focused fieldset': {
-      borderColor: '#78c27d',
+      borderColor: '#c8b894',
     },
   },
   '& .MuiInputLabel-root.Mui-focused': {

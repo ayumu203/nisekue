@@ -161,6 +161,19 @@ public class CsvMoveRepositoryTests
         move.Effects[0].Damage!.AttackStat.Should().Be(BuffStat.Defense);
     }
 
+    /*
+    [Fact]
+    public async Task GetMoveAsync_WhenEffectImagePathConfigured_ReturnsPath()
+    {
+        var repository = new CsvMoveRepository();
+
+        var move = await repository.GetMoveAsync(new(18));
+
+        move.Should().NotBeNull();
+        move!.EffectImagePath.Should().Be("effects/plamia.png");
+    }
+    */
+
     public static TheoryData<int, string, TargetType, AttackRange, int, ElementType> AttackMoveDefinitions => new()
     {
         { 1, "ルーキーストライク", TargetType.Enemy, AttackRange.Single, 4, ElementType.Strike },
