@@ -370,6 +370,11 @@ classDiagram
             +CreateBattleFieldContext(partySnapshots: IEnumerable~QuestRunPartyMemberSnapshot~, placements: IEnumerable~QuestEnemyPlacement~) BattleFieldContext
         }
 
+        class QuestAllyNpcActionPolicy {
+            <<Domain Service>>
+            +SelectAction(run: QuestRun, participantId: QuestParticipantId, availableMoves: IReadOnlyList~Move~) QuestSubmittedCommand
+        }
+
         class QuestRunFactory {
             <<Application Service>>
             +Create(stageDefinition: QuestStageDefinition, snapshots: IEnumerable~QuestRunPartyMemberSnapshot~, now: DateTimeOffset) QuestRun
@@ -431,9 +436,14 @@ classDiagram
     QuestRoomService ..> QuestRun : starts
     QuestNpcAssignmentService ..> IQuestNpcTemplateRepository : use
     QuestNpcAssignmentService ..> QuestNpcTemplate : selects
+    QuestAllyNpcActionPolicy ..> QuestRun : use
+    QuestAllyNpcActionPolicy ..> QuestParticipantId : use
+    QuestAllyNpcActionPolicy ..> Move : use
     QuestSnapshotFactory ..> QuestRunPartyMemberSnapshot : builds
     QuestRunFactory ..> IQuestEnemyDefinitionRepository : use
     QuestRunFactory ..> QuestRun : builds
+    QuestBattleFactory ..> QuestAllyNpcActionPolicy : use
+    QuestBattleFactory ..> IMoveRepository : use
     QuestBattleFactory ..> QuestSubmittedCommand : use
     QuestRunOutcomeJudge ..> QuestRunResolutionSummary : returns
     QuestRunService ..> QuestRun : use
