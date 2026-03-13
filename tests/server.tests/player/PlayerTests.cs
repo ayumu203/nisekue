@@ -58,6 +58,17 @@ public class PlayerTests
         player.ImagePath.Should().BeNull();
     }
 
+    [Fact]
+    public void SetQuestCooldownUntil_WhenCalled_StoresValue()
+    {
+        var player = CreatePlayer(level: 1);
+        var until = DateTimeOffset.UtcNow.AddMinutes(3);
+
+        player.SetQuestCooldownUntil(until);
+
+        player.QuestCooldownUntil.Should().Be(until);
+    }
+
     // 経験値が閾値に達していない場合は、レベルもステータスも変化しない.
     [Fact]
     public void LevelUp_WhenExpIsInsufficient_ReturnsFalseAndKeepsValues()

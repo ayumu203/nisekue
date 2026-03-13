@@ -214,6 +214,36 @@ internal static class QuestEndpoints
             }
         });
 
+        questGroup.MapPost("/rooms/{roomId:guid}/cancel", async (
+            Guid roomId,
+            ClaimsPrincipal user,
+            QuestRoomService questRoomService) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                var room = await questRoomService.CancelRoomAsync(new QuestRoomId(roomId), playerId.Value);
+                return Results.Ok(EndpointHelpers.MapQuestRoom(room));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
+        });
+
         questGroup.MapGet("/runs/{runId:guid}", async (
             Guid runId,
             QuestRunService questRunService,
@@ -293,6 +323,40 @@ internal static class QuestEndpoints
                     accepted = true,
                     resolvedInThisRequest = result.ResolvedInThisRequest
                 });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
+        });
+
+        questGroup.MapPost("/runs/{runId:guid}/escape", async (
+            Guid runId,
+            ClaimsPrincipal user,
+            QuestRunService questRunService,
+            QuestResponseMapper responseMapper,
+            IHubContext<QuestRunHub> hubContext) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                var run = await questRunService.EscapeAsync(new QuestRunId(runId), playerId.Value);
+                var payload = await responseMapper.MapQuestRunDetailAsync(run);
+                await hubContext.Clients.Group(run.Id.Value.ToString()).SendAsync("QuestRunUpdated", payload);
+                return Results.Ok(payload);
             }
             catch (KeyNotFoundException ex)
             {

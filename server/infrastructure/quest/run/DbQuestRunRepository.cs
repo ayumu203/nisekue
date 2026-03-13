@@ -20,6 +20,21 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         return LoadAsync(x => x.RoomId == roomId.Value);
     }
 
+    public async Task<bool> ExistsActiveRunByPlayerAsync(PlayerId playerId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        return await (
+            from run in dbContext.QuestRuns.AsNoTracking()
+            join participant in dbContext.QuestRoomParticipants.AsNoTracking()
+                on run.RoomId equals participant.RoomId
+            where run.Status == (int)QuestRunStatus.InProgress
+                && participant.PlayerId == playerId.Value
+                && participant.ParticipantType == (int)ParticipantType.Player
+                && participant.ParticipantStatus != (int)ParticipantStatus.Left
+            select run.Id)
+            .AnyAsync();
+    }
+
     public async Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();

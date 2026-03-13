@@ -19,6 +19,7 @@ public class QuestRunService(
     QuestBattleFactory questBattleFactory)
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
 
     public async Task<QuestRun> GetDetailAsync(QuestRunId runId)
     {
@@ -48,6 +49,22 @@ public class QuestRunService(
     {
         var run = await GetDetailAsync(runId);
         run.ApproveManualControl(participantId, ownerId);
+        await questRunRepository.SaveAsync(run);
+        return run;
+    }
+
+    public async Task<QuestRun> EscapeAsync(QuestRunId runId, PlayerId ownerPlayerId)
+    {
+        var run = await GetDetailAsync(runId);
+        var room = await questRoomRepository.GetAsync(run.RoomId)
+            ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
+        if (room.OwnerId != ownerPlayerId)
+        {
+            throw new InvalidOperationException("ルームのオーナーのみ撤退を実行できます。");
+        }
+
+        run.EscapeByOwner();
+        await ApplyQuestCompletionEffectsAsync(run);
         await questRunRepository.SaveAsync(run);
         return run;
     }
@@ -170,7 +187,7 @@ public class QuestRunService(
 
         if (run.Status != QuestRunStatus.InProgress)
         {
-            await ApplyQuestRewardsAsync(run);
+            await ApplyQuestCompletionEffectsAsync(run);
         }
 
         return true;
@@ -191,13 +208,8 @@ public class QuestRunService(
         return (int)Math.Floor(baseExp * floor.RewardRule.ExpRate);
     }
 
-    private async Task ApplyQuestRewardsAsync(QuestRun run)
+    private async Task ApplyQuestCompletionEffectsAsync(QuestRun run)
     {
-        if (run.Rewards.Exp <= 0)
-        {
-            return;
-        }
-
         var room = await questRoomRepository.GetAsync(run.RoomId)
             ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
 
@@ -217,8 +229,13 @@ public class QuestRunService(
             var player = await playerRepository.GetPlayerAsync(playerId)
                 ?? throw new KeyNotFoundException($"プレイヤーが見つかりません。 playerId={playerId.Value}");
 
-            player.GainExp(run.Rewards.Exp);
-            player.LevelUp(growthValueRepository);
+            if (run.Rewards.Exp > 0)
+            {
+                player.GainExp(run.Rewards.Exp);
+                player.LevelUp(growthValueRepository);
+            }
+
+            player.SetQuestCooldownUntil((run.EndedAt ?? DateTimeOffset.UtcNow).Add(QuestCooldown));
             await playerRepository.SaveAsync(player);
         }
     }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.player;
@@ -20,29 +21,24 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
             return null;
         }
 
-        var participantEntities = await dbContext.QuestRoomParticipants
+        return await MapRoomAsync(dbContext, roomEntity);
+    }
+
+    public async Task<QuestRoom?> GetRecruitingByOwnerAsync(PlayerId ownerId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var roomEntity = await dbContext.QuestRooms
             .AsNoTracking()
-            .Where(x => x.RoomId == id.Value)
-            .OrderBy(x => x.JoinedAt)
-            .ToListAsync();
+            .Where(x => x.OwnerPlayerId == ownerId.Value && x.Status == (int)QuestRoomStatus.Recruiting)
+            .OrderByDescending(x => x.CreatedAt)
+            .FirstOrDefaultAsync();
 
-        var participants = participantEntities.Select(MapParticipant).ToArray();
-        var formation = new FormationLayout(participants
-            .Where(x => x.Status != ParticipantStatus.Left)
-            .Select(x => x.Position));
+        if (roomEntity is null)
+        {
+            return null;
+        }
 
-        return new QuestRoom(
-            new QuestRoomId(roomEntity.Id),
-            new PlayerId(roomEntity.OwnerPlayerId),
-            new QuestStageId(roomEntity.StageId),
-            (QuestRoomMode)roomEntity.Mode,
-            formation,
-            participants,
-            (QuestRoomStatus)roomEntity.Status,
-            roomEntity.Version,
-            roomEntity.CloseReason is null ? null : (QuestRoomCloseReason)roomEntity.CloseReason.Value,
-            roomEntity.CreatedAt,
-            roomEntity.ClosedAt);
+        return await MapRoomAsync(dbContext, roomEntity);
     }
 
     public async Task<IReadOnlyList<QuestRoom>> SearchAsync(QuestRoomSearchCondition condition)
@@ -181,6 +177,10 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
         {
             throw new InvalidOperationException("ルームが同時更新されました。最新状態を再取得してからやり直してください。", ex);
         }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            throw new InvalidOperationException("同じプレイヤーは同時に複数の募集中ルームを作成できません。", ex);
+        }
     }
 
     private static QuestParticipant MapParticipant(QuestRoomParticipantEntity entity)
@@ -197,5 +197,32 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
             (ParticipantStatus)entity.ParticipantStatus,
             entity.LastSeenAt,
             entity.LeftAt);
+    }
+
+    private static async Task<QuestRoom> MapRoomAsync(AppDbContext dbContext, QuestRoomEntity roomEntity)
+    {
+        var participantEntities = await dbContext.QuestRoomParticipants
+            .AsNoTracking()
+            .Where(x => x.RoomId == roomEntity.Id)
+            .OrderBy(x => x.JoinedAt)
+            .ToListAsync();
+
+        var participants = participantEntities.Select(MapParticipant).ToArray();
+        var formation = new FormationLayout(participants
+            .Where(x => x.Status != ParticipantStatus.Left)
+            .Select(x => x.Position));
+
+        return new QuestRoom(
+            new QuestRoomId(roomEntity.Id),
+            new PlayerId(roomEntity.OwnerPlayerId),
+            new QuestStageId(roomEntity.StageId),
+            (QuestRoomMode)roomEntity.Mode,
+            formation,
+            participants,
+            (QuestRoomStatus)roomEntity.Status,
+            roomEntity.Version,
+            roomEntity.CloseReason is null ? null : (QuestRoomCloseReason)roomEntity.CloseReason.Value,
+            roomEntity.CreatedAt,
+            roomEntity.ClosedAt);
     }
 }

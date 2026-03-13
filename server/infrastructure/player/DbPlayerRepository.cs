@@ -91,6 +91,7 @@ namespace server.infrastructure.player
                     Id = player.Id.Value,
                     Name = player.Name,
                     ImagePath = player.ImagePath,
+                    QuestCooldownUntil = player.QuestCooldownUntil,
                     Job = player.Job,
                     Level = player.Level,
                     Exp = player.Exp,
@@ -113,6 +114,7 @@ namespace server.infrastructure.player
                 existing.Name = player.Name;
                 existing.Job = player.Job;
                 existing.ImagePath = player.ImagePath;
+                existing.QuestCooldownUntil = player.QuestCooldownUntil;
                 existing.Level = player.Level;
                 existing.Exp = player.Exp;
                 existing.MaxHp = player.Status.MaxHp;
@@ -152,6 +154,7 @@ namespace server.infrastructure.player
                 new PlayerId(entity.Id),
                 entity.Name,
                 imagePath: entity.ImagePath,
+                questCooldownUntil: entity.QuestCooldownUntil,
                 job: entity.Job,
                 level: entity.Level,
                 exp: entity.Exp,

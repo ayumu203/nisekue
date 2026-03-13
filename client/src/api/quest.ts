@@ -199,6 +199,23 @@ export async function startQuestRoom(roomId: string, accessToken: string): Promi
   return endpoints.quest.startRoom.responseSchema.parse(json)
 }
 
+export async function cancelQuestRoom(roomId: string, accessToken: string): Promise<QuestRoomDetailResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.quest.cancelRoom.path(roomId)}`, {
+    method: endpoints.quest.cancelRoom.method,
+    headers: createAuthorizedHeaders(accessToken, null),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'ルームの募集キャンセルに失敗しました'))
+  }
+
+  return endpoints.quest.cancelRoom.responseSchema.parse(json)
+}
+
 export async function getQuestRun(runId: string, accessToken: string): Promise<QuestRunDetailResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
 
@@ -214,6 +231,23 @@ export async function getQuestRun(runId: string, accessToken: string): Promise<Q
   }
 
   return endpoints.quest.getRun.responseSchema.parse(json)
+}
+
+export async function escapeQuestRun(runId: string, accessToken: string): Promise<QuestRunDetailResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.quest.escapeRun.path(runId)}`, {
+    method: endpoints.quest.escapeRun.method,
+    headers: createAuthorizedHeaders(accessToken, null),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'クエスト撤退に失敗しました'))
+  }
+
+  return endpoints.quest.escapeRun.responseSchema.parse(json)
 }
 
 export async function submitQuestCommand(

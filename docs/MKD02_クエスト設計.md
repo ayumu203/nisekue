@@ -38,6 +38,13 @@
 * `QuestRoom` の参加者情報と、クエスト開始時の戦闘スナップショットは分離する。
 * 待機中の参加者は `QuestParticipant` が持ち、開始時点の戦闘能力は `QuestRunPartyMemberSnapshot` が持つ。
 
+### 2.5 クエスト後クールダウン
+
+* クエスト終了後、`LeaveQuest` していないプレイヤーには 3 分間のクエスト参加クールダウンを付与する。
+* クールダウン期限は `CoreDomain.Player` の恒久情報として保持する。
+* クールダウン中は `QuestRoomService.CreateRoomAsync()` と `JoinRoomAsync()` の両方を拒否する。
+* `Succeeded` / `Failed` / `Aborted` のいずれで終了した場合も同じルールを適用する。
+
 ## 3. 前提
 
 ### 3.1 既存ドメインの再利用
@@ -45,6 +52,7 @@
 * プレイヤーの恒久情報は既存の `CoreDomain.Player` を正とする。
 * 技マスタは既存の `MoveDomain.Move` を利用し、`move_id` は既存 CSV マスタを参照する。
 * `Player` はクライアント表示用の `ImagePath` を持ち、`internal.players` に保存する。
+* `Player` はクエスト再参加制御のため `QuestCooldownUntil` を持ち、`internal.players` に保存する。
 * `Move` は必要な場合だけクライアント表示用の `EffectImagePath` を持てる。値は既存 CSV マスタに保持し、未設定を許容する。
 * `QuestEnemyDefinition` は敵 CSV の `ImagePath` を参照し、クライアントで敵画像表示に利用する。
 * クエスト開始時に `Player` の `Job` / `Status` / `MoveSet` / `ImagePath` をスナップショット化し、クエスト中はそのスナップショットを参照する。
@@ -124,6 +132,11 @@
 * 1 つの `QuestRoom` は 1 回の出撃にのみ対応する。
 * 再挑戦時は新規 `QuestRoom` を作成する。
 * そのため `quest_runs.room_id` は `UNIQUE` を前提とする。
+* 1 プレイヤーが同時に所有できる `Recruiting` な `QuestRoom` は 1 件までとする。
+* 新規ルーム作成時、同じ `OwnerId` の `Recruiting` ルームが存在する場合は、その既存ルームを `Closed + Cancelled` に遷移させたうえで新規ルームを作成する。
+* 進行中の `QuestRun` に参加しているプレイヤーは、新規ルームを作成できない。
+* `Player.QuestCooldownUntil` が現在時刻より未来のプレイヤーは、新規ルームを作成できない。
+* これは「過去の募集を閉じて誤参加を防ぐ」ための募集制御であり、クエスト結果の `Succeeded` / `Failed` とは別概念として扱う。
 
 ### 4.6 配置責務とレイヤ配置
 
@@ -158,6 +171,8 @@
 * `POST /quest/runs/{runId}/commands` の HTTP 応答は受付結果の返却を主とし、画面更新の正本は SignalR 通知とする。
 * `GET /quest/runs/{runId}` は初期表示や再接続復元のために `QuestRunDetailResponse` を返す読み取り API として残す。
 * `POST /quest/runs/{runId}/manual-control/request` と `POST /quest/runs/{runId}/manual-control/approve` は、状態更新後に同様に `QuestRunDetailResponse` を SignalR 通知できる構成とする。
+* `POST /quest/rooms/{roomId}/cancel` は募集状態を `Closed + Cancelled` へ更新し、必要なら更新済みルーム情報を返す。
+* `POST /quest/runs/{runId}/escape` は進行中クエストを `Failed` へ更新し、更新後の `QuestRunDetailResponse` を SignalR 通知する。
 
 ### 4.9 `QuestRunHub` イベント契約
 
@@ -368,6 +383,7 @@
 初期実装では、`status` 未指定時は `Recruiting` を既定値とする。
 並び順は `createdAt desc` を既定とし、ページングは `page = 1`, `pageSize = 20` を初期値とする。
 `pageSize` は最大 100 までに丸める。
+他プレイヤー向けの参加候補表示では `Recruiting` のみを対象とし、`Closed + Cancelled` になった旧ルームは誤参加対象から除外する。
 
 #### レスポンス View
 
@@ -462,6 +478,7 @@
 * `commands`、`chat`、`manual-control/request` など本人起点 API は、`QuestRun.RoomId` から `QuestRoom` を参照し、`ParticipantId` と `PlayerId` の対応で認可する。
 * `manual-control/approve` のようなオーナー権限が必要な API も、`QuestRoom.OwnerId` を参照して判定する。
 * `QuestRun` 自体は進行画面用のスナップショット情報を持つが、認可用の `PlayerId` 対応表は初期実装では保持しない。
+* `rooms/{roomId}/cancel` と `runs/{runId}/escape` は、どちらも `QuestRoom.OwnerId` と一致する実行者のみ許可する。
 
 #### 認可判断の例
 
@@ -594,15 +611,19 @@
 * `CanStart()`
 * `AddNpcParticipants(npcTemplates)`
 * `CloseRecruitment(reason, at)`
+* `CancelForOwnerRoomReplacement(at)`
+* `CancelByOwner(at)`
 
 #### 不変条件
 
 * オーナーは常に 1 人。
 * `Recruiting` 中のみ参加者追加・配置変更が可能。
 * 同一マスに複数参加者は配置できない。
+* 同一 `OwnerId` が同時に所有できる `Recruiting` ルームは 1 件まで。
 * `Solo` はオーナー 1 人で開始可能。
 * `Multi` は人間プレイヤー 2 人以上で開始可能。
 * NPC 補充は `CloseRecruitment()` の前に行い、`Closed` になった後は参加者構成を変更できない。
+* オーナーは `Recruiting` ルームを `Closed + Cancelled` にできる。
 
 ### 5.5 開始時スナップショット
 
@@ -713,6 +734,7 @@
 
 * `LeaveQuest`: 個人の退出を表す。
 * `Escape`: パーティ全体の撤退を表す。
+* オーナーによる即時撤退 API は、内部的には `Escape` と同じ終了意味を持ち、`Failed` へ遷移させる。
 
 補足:
 
@@ -888,12 +910,12 @@
 
 | サービス | 役割 |
 | --- | --- |
-| `QuestRoomService` | ルーム作成、参加、配置変更、開始可否判定 |
+| `QuestRoomService` | ルーム作成、参加、募集キャンセル、配置変更、開始可否判定 |
 | `QuestNpcAssignmentService` | 最低出撃人数を満たすために NPC テンプレートを選択する |
 | `QuestSnapshotFactory` | `QuestParticipant` と `Player` / `QuestNpcTemplate` から開始時スナップショットを生成する |
 | `QuestAllyNpcActionPolicy` | 味方 NPC の職業別ルールに従って、そのターンの行動を選択する |
 | `QuestRunFactory` | 開始時スナップショットとステージ定義から `QuestRun` を生成する |
-| `QuestRunService` | 行動受付、放置による自動操作移行、ターン解決、階層遷移を行う |
+| `QuestRunService` | 行動受付、放置による自動操作移行、ターン解決、階層遷移、撤退処理、終了時クールダウン付与を行う |
 
 補足:
 
@@ -954,6 +976,10 @@
 * 開始可否は状態ではなく `QuestRoom.CanStart()` で判定する。
 * `Closed` は `Started` / `Cancelled` / `Expired` を `CloseReason` で区別する。
 * 開始後の成功失敗は `QuestRoom` では表現しない。
+* 新規ルーム作成に伴う旧ルームの終了は `Closed + Cancelled` とし、`QuestRun` の `Failed` へは変換しない。
+* 進行中クエスト参加者による新規ルーム作成要求は、状態遷移を起こさずリクエストを拒否する。
+* `QuestCooldownUntil` が現在時刻より未来のプレイヤーによるルーム作成・参加要求も、状態遷移を起こさずリクエストを拒否する。
+* `POST /quest/rooms/{roomId}/cancel` は、オーナーのみが `Recruiting` を `Closed + Cancelled` に遷移させる。
 
 ### 6.2 進行中クエスト
 
@@ -967,6 +993,8 @@
 * 本ドラフトでは `継続可能な味方` を「生存していて `LeaveQuest` しておらず、かつ `AutoAttackOnly` でもない参加者」と定義する。
 * `Escape` 成功時は `Failed` に含める。
 * `Aborted` は障害、運営操作、将来の明示的中断要求などに備えた状態として残す。
+* `Succeeded` / `Failed` / `Aborted` の終了時には、`LeaveQuest` していない参加者の `Player.QuestCooldownUntil = EndedAt + 3分` を更新する。
+* `POST /quest/runs/{runId}/escape` は、オーナーのみが進行中クエストを即時に `Failed` へ遷移させる。
 
 ## 7. 永続化設計ドラフト
 
@@ -1044,6 +1072,8 @@ CSV 採用理由:
 * `UNIQUE(room_id, battle_row, battle_column)`。
 * `UNIQUE(room_id, player_id)` ただし `player_id IS NOT NULL`。
 * `quest_rooms.version` を楽観ロックに使い、同時参加更新は stale write を拒否する。
+* `quest_rooms` には `status = Recruiting` を条件とする `owner_player_id` の部分ユニーク制約を設け、同一オーナーの同時募集中ルームを DB でも禁止する。
+* 進行中クエスト参加者の新規ルーム作成禁止は `QuestRun` と参加者対応を参照してアプリケーション層で検証する。
 
 ### 7.4 進行系テーブル案
 
@@ -1189,14 +1219,27 @@ CSV 採用理由:
 冒険中のプレイヤーは `quest_room_participants` から削除しない。
 放置状態は `quest_run_party_members.action_mode = AutoAttackOnly` によって表現する。
 
+#### クールダウン期限は `players` に保持する
+
+クエスト終了後の再参加クールダウンは、クエスト履歴検索ではなく恒久プレイヤー情報で判定する。
+そのため `internal.players.quest_cooldown_until` を追加し、`QuestRun` 終了時に対象プレイヤーへ `EndedAt + 3分` を反映する。
+`QuestRoomService.CreateRoomAsync()` と `JoinRoomAsync()` は、この値が現在時刻より未来なら要求を拒否する。
+
 ## 8. ルールと永続化の対応表
 
 | 要件 | 主担当集約 | 永続化先 |
 | --- | --- | --- |
 | オーナーのみ開始できる | `QuestRoom` | `quest_rooms`, `quest_room_participants` |
+| 同一プレイヤーの同時募集中ルームを 1 件までに制限する | `QuestRoom` | `quest_rooms` |
+| 新規ルーム作成時に同一オーナーの旧募集ルームを `Cancelled` で閉じる | `QuestRoom` | `quest_rooms` |
+| 進行中クエスト参加者は新規ルームを作成できない | `QuestRoom` + `QuestRun` | 募集系 + 進行系テーブル |
+| クエスト終了後 3 分間はルーム作成・参加を禁止する | `QuestRun` + `Player` + `QuestRoomService` | `players.quest_cooldown_until` |
+| オーナーが募集中ルームを明示的にキャンセルできる | `QuestRoom` + `QuestRoomService` | `quest_rooms` |
 | ソロは即開始、マルチは 2 人以上で開始 | `QuestRoom` | `quest_rooms` |
 | 開始時に不足人数だけ NPC を補充して最低 4 人編成にする | `QuestRoom` + `QuestSnapshotFactory` | `quest_room_participants`, `quest_run_party_snapshots` |
 | クエスト完了時に `LeaveQuest` していない参加者全員へ同一経験値を配る | `QuestRun` | `quest_reward_summaries` |
+| クエスト終了時に `LeaveQuest` していない参加者へ 3 分クールダウンを付与する | `QuestRun` + `Player` | `players.quest_cooldown_until` |
+| オーナーが進行中クエストを即時撤退させられる | `QuestRun` + `QuestRunService` | `quest_runs`, `players.quest_cooldown_until` |
 | オーナーが全体配置を決める | `QuestRoom` | `quest_room_participants` |
 | HP / MP / 状態異常を階層間で維持 | `QuestRun` | `quest_run_party_members`, `quest_run_enemies` |
 | 全員入力後に行動解決 | `QuestRun` | `quest_turn_commands` |

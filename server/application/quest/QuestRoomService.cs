@@ -13,15 +13,30 @@ public class QuestRoomService(
     QuestSnapshotFactory questSnapshotFactory,
     QuestRunFactory questRunFactory)
 {
+    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
+
     public async Task<QuestRoom> CreateRoomAsync(PlayerId ownerId, QuestStageId stageId, QuestRoomMode mode)
     {
         var player = await playerRepository.GetPlayerAsync(ownerId)
             ?? throw new KeyNotFoundException("オーナープレイヤーが見つかりません。");
+        EnsureQuestCooldownExpired(player, DateTimeOffset.UtcNow);
         var stage = await questStageRepository.GetAsync(stageId)
             ?? throw new KeyNotFoundException("ステージが見つかりません。");
         if (!stage.IsActive)
         {
             throw new InvalidOperationException("無効化されたステージではルームを作成できません。");
+        }
+
+        if (await questRunRepository.ExistsActiveRunByPlayerAsync(ownerId))
+        {
+            throw new InvalidOperationException("進行中クエストに参加しているためルームを作成できません。");
+        }
+
+        var existingRecruitingRoom = await questRoomRepository.GetRecruitingByOwnerAsync(ownerId);
+        if (existingRecruitingRoom is not null)
+        {
+            existingRecruitingRoom.CancelForOwnerRoomReplacement(DateTimeOffset.UtcNow);
+            await questRoomRepository.SaveAsync(existingRecruitingRoom);
         }
 
         var room = new QuestRoom(
@@ -41,8 +56,23 @@ public class QuestRoomService(
             ?? throw new KeyNotFoundException("ルームが見つかりません。");
         var player = await playerRepository.GetPlayerAsync(playerId)
             ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
+        EnsureQuestCooldownExpired(player, DateTimeOffset.UtcNow);
 
         room.AddPlayer(playerId, player.Name);
+        await questRoomRepository.SaveAsync(room);
+        return room;
+    }
+
+    public async Task<QuestRoom> CancelRoomAsync(QuestRoomId roomId, PlayerId ownerId)
+    {
+        var room = await questRoomRepository.GetAsync(roomId)
+            ?? throw new KeyNotFoundException("ルームが見つかりません。");
+        if (room.OwnerId != ownerId)
+        {
+            throw new InvalidOperationException("ルームのオーナーのみ募集をキャンセルできます。");
+        }
+
+        room.CancelByOwner(DateTimeOffset.UtcNow);
         await questRoomRepository.SaveAsync(room);
         return room;
     }
@@ -99,5 +129,13 @@ public class QuestRoomService(
         await questRoomRepository.SaveAsync(room);
         await questRunRepository.SaveAsync(run);
         return run;
+    }
+
+    private static void EnsureQuestCooldownExpired(Player player, DateTimeOffset now)
+    {
+        if (player.QuestCooldownUntil is not null && player.QuestCooldownUntil.Value > now)
+        {
+            throw new InvalidOperationException($"クエスト終了後{(int)QuestCooldown.TotalMinutes}分間は再参加できません。");
+        }
     }
 }

@@ -80,6 +80,35 @@ public class QuestRoomTests
     }
 
     [Fact]
+    public void CancelForOwnerRoomReplacement_WhenRecruiting_ClosesRoomAsCancelled()
+    {
+        var ownerId = new PlayerId(Guid.NewGuid());
+        var room = CreateRoom(ownerId, QuestRoomMode.Solo);
+        var at = DateTimeOffset.UtcNow;
+
+        room.CancelForOwnerRoomReplacement(at);
+
+        room.Status.Should().Be(QuestRoomStatus.Closed);
+        room.CloseReason.Should().Be(QuestRoomCloseReason.Cancelled);
+        room.ClosedAt.Should().Be(at);
+    }
+
+    [Fact]
+    public void CancelByOwner_WhenRecruiting_ClosesRoomAsCancelled()
+    {
+        var ownerId = new PlayerId(Guid.NewGuid());
+        var room = CreateRoom(ownerId, QuestRoomMode.Solo);
+        room.AddPlayer(ownerId, "Owner");
+        var at = DateTimeOffset.UtcNow;
+
+        room.CancelByOwner(at);
+
+        room.Status.Should().Be(QuestRoomStatus.Closed);
+        room.CloseReason.Should().Be(QuestRoomCloseReason.Cancelled);
+        room.ClosedAt.Should().Be(at);
+    }
+
+    [Fact]
     public void AssignPosition_WhenTargetPositionIsOccupied_ThrowsInvalidOperationException()
     {
         var ownerId = new PlayerId(Guid.NewGuid());
