@@ -38,6 +38,13 @@
 * `QuestRoom` の参加者情報と、クエスト開始時の戦闘スナップショットは分離する。
 * 待機中の参加者は `QuestParticipant` が持ち、開始時点の戦闘能力は `QuestRunPartyMemberSnapshot` が持つ。
 
+### 2.5 クエスト後クールダウン
+
+* クエスト終了後、`LeaveQuest` していないプレイヤーには 3 分間のクエスト参加クールダウンを付与する。
+* クールダウン期限は `CoreDomain.Player` の恒久情報として保持する。
+* クールダウン中は `QuestRoomService.CreateRoomAsync()` と `JoinRoomAsync()` の両方を拒否する。
+* `Succeeded` / `Failed` / `Aborted` のいずれで終了した場合も同じルールを適用する。
+
 ## 3. 前提
 
 ### 3.1 既存ドメインの再利用
@@ -45,6 +52,7 @@
 * プレイヤーの恒久情報は既存の `CoreDomain.Player` を正とする。
 * 技マスタは既存の `MoveDomain.Move` を利用し、`move_id` は既存 CSV マスタを参照する。
 * `Player` はクライアント表示用の `ImagePath` を持ち、`internal.players` に保存する。
+* `Player` はクエスト再参加制御のため `QuestCooldownUntil` を持ち、`internal.players` に保存する。
 * `Move` は必要な場合だけクライアント表示用の `EffectImagePath` を持てる。値は既存 CSV マスタに保持し、未設定を許容する。
 * `QuestEnemyDefinition` は敵 CSV の `ImagePath` を参照し、クライアントで敵画像表示に利用する。
 * クエスト開始時に `Player` の `Job` / `Status` / `MoveSet` / `ImagePath` をスナップショット化し、クエスト中はそのスナップショットを参照する。
@@ -127,6 +135,7 @@
 * 1 プレイヤーが同時に所有できる `Recruiting` な `QuestRoom` は 1 件までとする。
 * 新規ルーム作成時、同じ `OwnerId` の `Recruiting` ルームが存在する場合は、その既存ルームを `Closed + Cancelled` に遷移させたうえで新規ルームを作成する。
 * 進行中の `QuestRun` に参加しているプレイヤーは、新規ルームを作成できない。
+* `Player.QuestCooldownUntil` が現在時刻より未来のプレイヤーは、新規ルームを作成できない。
 * これは「過去の募集を閉じて誤参加を防ぐ」ための募集制御であり、クエスト結果の `Succeeded` / `Failed` とは別概念として扱う。
 
 ### 4.6 配置責務とレイヤ配置
@@ -798,7 +807,7 @@
 | `QuestNpcAssignmentService` | 最低出撃人数を満たすために NPC テンプレートを選択する |
 | `QuestSnapshotFactory` | `QuestParticipant` と `Player` / `QuestNpcTemplate` から開始時スナップショットを生成する |
 | `QuestRunFactory` | 開始時スナップショットとステージ定義から `QuestRun` を生成する |
-| `QuestRunService` | 行動受付、放置による自動操作移行、ターン解決、階層遷移を行う |
+| `QuestRunService` | 行動受付、放置による自動操作移行、ターン解決、階層遷移、終了時クールダウン付与を行う |
 
 ### 5.9 リポジトリ案
 
@@ -822,6 +831,7 @@
 * 開始後の成功失敗は `QuestRoom` では表現しない。
 * 新規ルーム作成に伴う旧ルームの終了は `Closed + Cancelled` とし、`QuestRun` の `Failed` へは変換しない。
 * 進行中クエスト参加者による新規ルーム作成要求は、状態遷移を起こさずリクエストを拒否する。
+* `QuestCooldownUntil` が現在時刻より未来のプレイヤーによるルーム作成・参加要求も、状態遷移を起こさずリクエストを拒否する。
 
 ### 6.2 進行中クエスト
 
@@ -835,6 +845,7 @@
 * 本ドラフトでは `継続可能な味方` を「生存していて `LeaveQuest` しておらず、かつ `AutoAttackOnly` でもない参加者」と定義する。
 * `Escape` 成功時は `Failed` に含める。
 * `Aborted` は障害、運営操作、将来の明示的中断要求などに備えた状態として残す。
+* `Succeeded` / `Failed` / `Aborted` の終了時には、`LeaveQuest` していない参加者の `Player.QuestCooldownUntil = EndedAt + 3分` を更新する。
 
 ## 7. 永続化設計ドラフト
 
@@ -1059,6 +1070,12 @@ CSV 採用理由:
 冒険中のプレイヤーは `quest_room_participants` から削除しない。
 放置状態は `quest_run_party_members.action_mode = AutoAttackOnly` によって表現する。
 
+#### クールダウン期限は `players` に保持する
+
+クエスト終了後の再参加クールダウンは、クエスト履歴検索ではなく恒久プレイヤー情報で判定する。
+そのため `internal.players.quest_cooldown_until` を追加し、`QuestRun` 終了時に対象プレイヤーへ `EndedAt + 3分` を反映する。
+`QuestRoomService.CreateRoomAsync()` と `JoinRoomAsync()` は、この値が現在時刻より未来なら要求を拒否する。
+
 ## 8. ルールと永続化の対応表
 
 | 要件 | 主担当集約 | 永続化先 |
@@ -1067,9 +1084,11 @@ CSV 採用理由:
 | 同一プレイヤーの同時募集中ルームを 1 件までに制限する | `QuestRoom` | `quest_rooms` |
 | 新規ルーム作成時に同一オーナーの旧募集ルームを `Cancelled` で閉じる | `QuestRoom` | `quest_rooms` |
 | 進行中クエスト参加者は新規ルームを作成できない | `QuestRoom` + `QuestRun` | 募集系 + 進行系テーブル |
+| クエスト終了後 3 分間はルーム作成・参加を禁止する | `QuestRun` + `Player` + `QuestRoomService` | `players.quest_cooldown_until` |
 | ソロは即開始、マルチは 2 人以上で開始 | `QuestRoom` | `quest_rooms` |
 | 開始時に不足人数だけ NPC を補充して最低 4 人編成にする | `QuestRoom` + `QuestSnapshotFactory` | `quest_room_participants`, `quest_run_party_snapshots` |
 | クエスト完了時に `LeaveQuest` していない参加者全員へ同一経験値を配る | `QuestRun` | `quest_reward_summaries` |
+| クエスト終了時に `LeaveQuest` していない参加者へ 3 分クールダウンを付与する | `QuestRun` + `Player` | `players.quest_cooldown_until` |
 | オーナーが全体配置を決める | `QuestRoom` | `quest_room_participants` |
 | HP / MP / 状態異常を階層間で維持 | `QuestRun` | `quest_run_party_members`, `quest_run_enemies` |
 | 全員入力後に行動解決 | `QuestRun` | `quest_turn_commands` |
