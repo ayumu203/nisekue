@@ -3,5 +3,7 @@
   "loading": "プレイヤー一覧を読み込み中...",
   "visit": "訪問",
   "backToHome": "ホームへ戻る",
-  "empty": "訪問できるプレイヤーがまだいません。"
+  "empty": "訪問できるプレイヤーがまだいません。",
+  "sessionInfoMissing": "セッション情報が不足しています",
+  "playerNotFoundMessage": "プレイヤーが見つかりません。"
 }

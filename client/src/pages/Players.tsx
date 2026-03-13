@@ -17,7 +17,7 @@ function Players() {
     isLoading: isCurrentPlayerLoading,
   } = useSWR(playerSWRKey, async () => {
     if (!session?.access_token) {
-      throw new Error('セッションが無効です')
+      throw new Error(locale.sessionInfoMissing)
     }
 
     try {
@@ -25,7 +25,7 @@ function Players() {
     } catch (error) {
       const message = error instanceof Error ? error.message : ''
 
-      if (!message.includes('プレイヤーが見つかりません')) {
+      if (!message.includes(locale.playerNotFoundMessage)) {
         throw error
       }
 
@@ -41,7 +41,7 @@ function Players() {
     isLoading: isPlayersLoading,
   } = useSWR(playersSWRKey, async () => {
     if (!session?.access_token) {
-      throw new Error('セッションが無効です')
+      throw new Error(locale.sessionInfoMissing)
     }
 
     return listPlayers(session.access_token)
