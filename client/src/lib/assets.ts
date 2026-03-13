@@ -18,9 +18,7 @@ export function resolveCharacterAssetPath(imagePath: string | null | undefined):
   }
 
   const normalizedPath = imagePath.replace(/^\/+/, '')
-  const characterPath = normalizedPath.startsWith('image/')
-    ? normalizedPath
-    : `image/character/${normalizedPath}`
+  const characterPath = normalizedPath.startsWith('image/') ? normalizedPath : `image/character/${normalizedPath}`
 
   return resolvePublicAssetPath(characterPath)
 }
