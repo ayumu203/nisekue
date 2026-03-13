@@ -137,6 +137,7 @@ classDiagram
             +AddNpcParticipants(npcTemplates: IEnumerable~QuestNpcTemplate~) void
             +CloseRecruitment(reason: QuestRoomCloseReason, at: DateTimeOffset) void
             +CancelForOwnerRoomReplacement(at: DateTimeOffset) void
+            +CancelByOwner(at: DateTimeOffset) void
         }
 
         class QuestRoomId {
@@ -227,6 +228,7 @@ classDiagram
             +ApplyBattleResolution(resolution: BattleTurnResolution, partyActorMap: IReadOnlyDictionary~BattleActorId, QuestParticipantId~, enemyActorMap: IReadOnlyDictionary~BattleActorId, QuestEnemyInstanceId~, finalFloorNo: int, nextDeadlineAt: DateTimeOffset) QuestRunResolutionSummary
             +AdvanceFloor() void
             +ApplyTrapsOnFloorStart() void
+            +EscapeByOwner() void
             +MarkSucceeded() void
             +MarkFailed() void
             +Abort(reason: string) void
@@ -350,6 +352,7 @@ classDiagram
             <<Application Service>>
             +Task~QuestRoom~ CreateRoomAsync(ownerId: PlayerId, stageId: QuestStageId, mode: QuestRoomMode)
             +Task~QuestRoom~ JoinRoomAsync(roomId: QuestRoomId, playerId: PlayerId)
+            +Task~QuestRoom~ CancelRoomAsync(roomId: QuestRoomId, ownerId: PlayerId)
             +Task~IReadOnlyList~QuestRoom~~ ListAsync(condition: QuestRoomSearchCondition)
             +Task~QuestRun~ StartAsync(roomId: QuestRoomId)
         }
@@ -387,6 +390,7 @@ classDiagram
             <<Application Service>>
             +Task~QuestRun~ GetDetailAsync(runId: QuestRunId, playerId: PlayerId)
             +Task~QuestRun~ SubmitCommandAsync(runId: QuestRunId, playerId: PlayerId, command: QuestSubmittedCommand)
+            +Task~QuestRun~ EscapeAsync(runId: QuestRunId, ownerPlayerId: PlayerId)
             +Task~QuestRun~ RequestManualControlAsync(runId: QuestRunId, playerId: PlayerId)
             +Task~QuestRun~ ApproveManualControlAsync(runId: QuestRunId, ownerPlayerId: PlayerId, participantId: QuestParticipantId)
             +Task ApplyQuestCooldownAsync(run: QuestRun, endedAt: DateTimeOffset)
