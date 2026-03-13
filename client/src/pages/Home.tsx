@@ -194,6 +194,8 @@ function Home() {
                   </Stack>
                 ) : chatError ? (
                   <Alert severity="warning">{chatError.message}</Alert>
+                ) : !player ? (
+                  <Alert severity="warning">{locale.chatFetchInfoMissing}</Alert>
                 ) : (
                   <Stack spacing={2}>
                     <ChatForm
@@ -213,7 +215,7 @@ function Home() {
                         await mutateChatRoom(updated, { revalidate: false })
                       }}
                     />
-                    <ChatMessages messages={chatRoom?.messages ?? []} />
+                    <ChatMessages messages={chatRoom?.messages ?? []} currentPlayerId={player.userId} />
                   </Stack>
                 )}
               </Stack>
