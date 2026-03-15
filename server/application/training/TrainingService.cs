@@ -136,7 +136,7 @@ public class TrainingService(
                 .Where(x => x.ActorId.Value == trainingBattleFactory.PlayerActorId)
                 .SelectMany(x => x.TargetResults)
                 .Where(x => x.TargetActorId.Value == trainingBattleFactory.PlayerActorId)
-                .Sum(x => x.RecoveredHp);
+                .Sum(x => Math.Max(0, x.HpChange));
             turn++;
             currentActors = BuildNextTurnActors(currentActors, resolution.UpdatedStates);
         }

@@ -449,7 +449,7 @@ public class QuestAllyNpcActionPolicy
         BattlePosition actorPosition,
         IReadOnlyList<BattlePosition> preferredPositions)
     {
-        var reachableRows = GetReachableRows(actorPosition.Row);
+        var reachableRows = QuestBattleReachability.GetReachableRows(actorPosition.Row);
         var reachableEnemies = run.BattleState.Enemies
             .Where(x => !x.IsDead && reachableRows.Contains(x.Position.Row))
             .ToArray();
@@ -472,17 +472,6 @@ public class QuestAllyNpcActionPolicy
             .ThenBy(x => (int)x.Position.Column)
             .FirstOrDefault();
         return fallback is null ? null : (fallback, fallback.Position);
-    }
-
-    private static IReadOnlySet<BattleRow> GetReachableRows(BattleRow actorRow)
-    {
-        return actorRow switch
-        {
-            BattleRow.Front => new HashSet<BattleRow> { BattleRow.Front },
-            BattleRow.Middle => new HashSet<BattleRow> { BattleRow.Front, BattleRow.Middle },
-            BattleRow.Back => new HashSet<BattleRow> { BattleRow.Front, BattleRow.Middle, BattleRow.Back },
-            _ => throw new ArgumentOutOfRangeException(nameof(actorRow), $"未対応の BattleRow: {actorRow}")
-        };
     }
 
     private static QuestSubmittedCommand CreateUseMove(

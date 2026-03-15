@@ -294,7 +294,7 @@ export default function Quest() {
     }
 
     if (!currentRun.turn.waitingParticipantIds.includes(selfParticipantId) || currentPendingCommand != null) {
-      setSubmitError('このターンの行動はすでに確定しています。最新の進行状況を待ってください。')
+      setSubmitError(locale.commandAlreadyConfirmed)
       return
     }
 

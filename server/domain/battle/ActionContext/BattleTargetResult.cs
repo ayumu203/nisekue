@@ -11,7 +11,7 @@ public class BattleTargetResult(
     AilmentType? appliedAilment)
 {
     public BattleActorId TargetActorId { get; } = targetActorId;
-    public int Damage { get; } = ValidateNonNegative(damage);
+    public int Damage { get; } = ValidateNonNegative(damage, nameof(damage));
     public int HpChange { get; } = hpChange;
     public int MpChange { get; } = mpChange;
     public bool IsDefeated { get; } = isDefeated;

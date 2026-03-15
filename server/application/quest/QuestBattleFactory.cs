@@ -135,7 +135,7 @@ public class QuestBattleFactory
             throw new InvalidOperationException("NPC のフォールバックコマンドには行動ポリシーを使用してください。");
         }
 
-        var reachableRows = GetReachableRows(snapshot.StartPosition.Row);
+        var reachableRows = QuestBattleReachability.GetReachableRows(snapshot.StartPosition.Row);
         var selectedTargetPosition = run.BattleState.Enemies
             .Where(x => !x.IsDead)
             .Where(x => reachableRows.Contains(x.Position.Row))
@@ -228,7 +228,7 @@ public class QuestBattleFactory
 
     private static BattleActionInput? CreateEnemyNormalAttack(QuestRun run, QuestEnemyState enemy)
     {
-        var reachableRows = GetReachableRows(enemy.Position.Row);
+        var reachableRows = QuestBattleReachability.GetReachableRows(enemy.Position.Row);
         var targetId = run.PartySnapshots
             .Join(
                 run.BattleState.PartyMembers,
@@ -279,16 +279,5 @@ public class QuestBattleFactory
     private static Guid ResolveEnemyActorId(QuestParticipantId participantId)
     {
         return participantId.Value;
-    }
-
-    private static IReadOnlySet<BattleRow> GetReachableRows(BattleRow actorRow)
-    {
-        return actorRow switch
-        {
-            BattleRow.Front => new HashSet<BattleRow> { BattleRow.Front },
-            BattleRow.Middle => new HashSet<BattleRow> { BattleRow.Front, BattleRow.Middle },
-            BattleRow.Back => new HashSet<BattleRow> { BattleRow.Front, BattleRow.Middle, BattleRow.Back },
-            _ => throw new ArgumentOutOfRangeException(nameof(actorRow), $"未対応の BattleRow: {actorRow}")
-        };
     }
 }
