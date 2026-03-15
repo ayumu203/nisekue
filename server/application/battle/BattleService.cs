@@ -46,7 +46,8 @@ public class BattleService
                 new BattleTargetSelector(
                     x.TargetType,
                     x.AttackRange,
-                    x.TargetActorIds?.Select(id => new BattleActorId(id))),
+                    x.TargetActorIds?.Select(id => new BattleActorId(id)),
+                    x.SelectedPosition),
                 x.MoveId is null ? null : new MoveId(x.MoveId.Value)))
             .ToArray();
 

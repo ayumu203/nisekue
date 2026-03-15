@@ -1,3 +1,4 @@
+using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.move.enums;
 
@@ -9,4 +10,5 @@ public record BattleActionInput(
     int? MoveId,
     TargetType TargetType,
     AttackRange AttackRange,
-    IReadOnlyList<Guid>? TargetActorIds = null);
+    IReadOnlyList<Guid>? TargetActorIds = null,
+    BattlePosition? SelectedPosition = null);

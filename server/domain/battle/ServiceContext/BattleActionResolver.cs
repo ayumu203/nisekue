@@ -123,7 +123,7 @@ public class BattleActionResolver(
         }
 
         var targets = ResolveTargets(
-            new BattleTargetSelector(move.TargetType, move.AttackRange, action.Target.TargetActorIds),
+            new BattleTargetSelector(move.TargetType, move.AttackRange, action.Target.TargetActorIds, action.Target.SelectedPosition),
             actorSnapshot,
             snapshotMap.Values,
             stateMap.Values,
