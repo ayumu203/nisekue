@@ -99,6 +99,19 @@ public class MoveDomainValidationTests
     }
 
     [Fact]
+    public void MoveEffect_ValidateByType_WhenRestoreMpWithoutDamageEffect_ThrowsInvalidOperationException()
+    {
+        var effect = new MoveEffect(
+            effectId: new MoveEffectId(1),
+            moveId: new MoveId(1),
+            sequence: 1,
+            effectType: MoveEffectType.RestoreMp);
+
+        var act = () => effect.ValidateByType();
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
     public void Move_Constructor_WhenEffectsEmpty_ThrowsInvalidOperationException()
     {
         var act = () => CreateMove([]);

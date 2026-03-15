@@ -177,6 +177,30 @@ public class BattleActionResolverTests
     }
 
     [Fact]
+    public void Resolve_WhenMoveRestoresMp_RecoversMpUpToMax()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var actorState = CreateState(actor.Id, currentMp: 5);
+        var targetState = CreateState(target.Id, currentMp: 2);
+        var move = CreateRestoreMpMove(1);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id]), new MoveId(1)),
+            [actor, target],
+            [actorState, targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].TargetActorId.Should().Be(target.Id);
+        result.TargetResults[0].Damage.Should().Be(0);
+        targetState.CurrentMp.Should().Be(10);
+        actorState.CurrentMp.Should().Be(4);
+    }
+
+    [Fact]
     public void Resolve_WhenActorIsDead_ReturnsFailure()
     {
         var resolver = CreateResolver();
@@ -338,6 +362,28 @@ public class BattleActionResolverTests
                         criticalRate: 0m,
                         elementType: ElementType.Strike,
                         attackStat: BuffStat.Defense))
+            ]);
+    }
+
+    private static Move CreateRestoreMpMove(int moveId)
+    {
+        return new Move(
+            new MoveId(moveId),
+            "Mana Gift",
+            "restore mp",
+            TargetType.Ally,
+            AttackRange.Single,
+            1,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    new MoveId(moveId),
+                    1,
+                    MoveEffectType.RestoreMp,
+                    damage: new DamageEffect(hitCount: 1, powerRate: 1m, fixedValue: 5, criticalRate: 0m, elementType: ElementType.None, attackStat: BuffStat.Intelligence))
             ]);
     }
 }

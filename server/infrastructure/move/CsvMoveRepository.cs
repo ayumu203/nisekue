@@ -195,7 +195,7 @@ public class CsvMoveRepository : IMoveRepository
 
     private static DamageEffect? BuildDamageEffect(string[] columns, MoveEffectType effectType, int lineNumber)
     {
-        if (effectType is not (MoveEffectType.Damage or MoveEffectType.Heal))
+        if (effectType is not (MoveEffectType.Damage or MoveEffectType.Heal or MoveEffectType.RestoreMp))
         {
             return null;
         }

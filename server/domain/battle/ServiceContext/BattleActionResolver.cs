@@ -189,6 +189,7 @@ public class BattleActionResolver(
         {
             MoveEffectType.Damage => ResolveDamageEffect(actorSnapshot, attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
             MoveEffectType.Heal => ResolveHealEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
+            MoveEffectType.RestoreMp => ResolveRestoreMpEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
             MoveEffectType.Ailment => ResolveAilmentEffect(actorSnapshot, attackerStatus, defenderStatus, targetState, effect),
             MoveEffectType.Buff => ResolveBuffEffect(actorSnapshot, attackerStatus, defenderStatus, targetState, effect),
             _ => throw new ArgumentOutOfRangeException(nameof(effect.EffectType), $"未対応の MoveEffectType: {effect.EffectType}")
@@ -248,6 +249,30 @@ public class BattleActionResolver(
         };
         var healValue = effect.Damage.FixedValue + (int)Math.Round(attackPower * effect.Damage.PowerRate, MidpointRounding.AwayFromZero);
         targetState.RestoreHp(Math.Max(1, healValue), defenderStatus.MaxHp);
+
+        return new BattleTargetResult(targetSnapshot.Id, 0, false, null);
+    }
+
+    private static BattleTargetResult ResolveRestoreMpEffect(
+        Status attackerStatus,
+        BattleActorSnapshot targetSnapshot,
+        Status defenderStatus,
+        BattleActorState targetState,
+        Move move,
+        MoveEffect effect,
+        bool isSupportMove)
+    {
+        ArgumentNullException.ThrowIfNull(effect.Damage);
+
+        var attackStat = ResolveAttackStat(move, effect.Damage, attackerStatus, isSupportMove);
+        var attackPower = attackStat switch
+        {
+            BuffStat.Intelligence => attackerStatus.Intelligence,
+            BuffStat.Defense => attackerStatus.Defense,
+            _ => attackerStatus.Strength
+        };
+        var restoreValue = effect.Damage.FixedValue + (int)Math.Round(attackPower * effect.Damage.PowerRate, MidpointRounding.AwayFromZero);
+        targetState.RestoreMp(Math.Max(1, restoreValue), defenderStatus.MaxMp);
 
         return new BattleTargetResult(targetSnapshot.Id, 0, false, null);
     }
