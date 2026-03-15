@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using server.application.chat;
+using server.application.player;
 using server.domain.move;
 using server.domain.player;
 using server.shared.constants.player;
@@ -214,7 +215,10 @@ internal static class PlayerEndpoints
             }
         }).RequireAuthorization();
 
-        app.MapPut("/player/job", async (ClaimsPrincipal user, UpdatePlayerJobRequest request, IPlayerRepository playerRepository) =>
+        app.MapPut("/player/job", async (
+            ClaimsPrincipal user,
+            UpdatePlayerJobRequest request,
+            PlayerJobService playerJobService) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -229,18 +233,8 @@ internal static class PlayerEndpoints
 
             try
             {
-                var player = await playerRepository.GetPlayerAsync(playerId.Value);
-                if (player is null)
-                {
-                    return Results.NotFound(new
-                    {
-                        message = "プレイヤーが見つかりません。",
-                        userId = playerId.Value.Value
-                    });
-                }
-
-                player.UpdateJob(request.Job);
-                await playerRepository.SaveAsync(player);
+                var result = await playerJobService.ChangeJobAsync(playerId.Value, request.Job);
+                var player = result.Player;
 
                 return Results.Ok(new
                 {
@@ -252,8 +246,17 @@ internal static class PlayerEndpoints
                         code = player.Job.ToString(),
                         value = (int)player.Job,
                         displayName = EndpointHelpers.GetJobDisplayName(player.Job)
-                    }
+                    },
+                    newlyLearnedMoves = result.NewlyLearnedMoves.Select(move => new
+                    {
+                        moveId = move.MoveId,
+                        moveName = move.MoveName
+                    })
                 });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message, userId = playerId.Value.Value });
             }
             catch (InvalidOperationException ex)
             {

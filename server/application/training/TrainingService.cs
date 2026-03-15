@@ -1,4 +1,5 @@
 using server.application.battle;
+using server.application.player;
 using server.domain.battle;
 using server.domain.move;
 using server.domain.player;
@@ -11,7 +12,9 @@ public class TrainingService(
     IPlayerRepository playerRepository,
     ITrainingEnemyRepository trainingEnemyRepository,
     IMoveRepository moveRepository,
-    IGrowthValueRepository growthValueRepository,
+    IJobProfileRepository jobProfileRepository,
+    IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
+    PlayerJobService playerJobService,
     BattleService battleService,
     TrainingBattleFactory trainingBattleFactory,
     TrainingOutcomeJudge trainingOutcomeJudge,
@@ -69,7 +72,7 @@ public class TrainingService(
         var (summary, metrics) = ResolveBattleUntilFinished(actors, playerMoves, moves);
 
         var exp = trainingExpCalculator.Calculate(player, enemy, metrics, summary.Outcome);
-        var isLevelUp = ApplyExp(player, exp);
+        var levelUpResult = ApplyExp(player, exp);
 
         await playerRepository.SaveAsync(player);
 
@@ -81,7 +84,8 @@ public class TrainingService(
             CurrentEnemyHp: summary.CurrentEnemyHp,
             MaxEnemyHp: enemy.Status.MaxHp,
             Exp: exp,
-            IsLevelUp: isLevelUp);
+            IsLevelUp: levelUpResult.HasLeveledUp,
+            NewlyLearnedMoves: await playerJobService.BuildLearnedMoveViewsAsync(levelUpResult.NewlyLearnedMoveIds));
     }
 
     private static int ResolveVisibleEnemyLevelCap(int playerLevel, IReadOnlyList<int> enemyLevels)
@@ -198,10 +202,12 @@ public class TrainingService(
             CurrentPlayerHp: summary.CurrentPlayerHp);
     }
 
-    private bool ApplyExp(Player player, int exp)
+    private LevelUpResult ApplyExp(Player player, int exp)
     {
         player.GainExp(exp);
-        return player.LevelUp(growthValueRepository);
+        var jobProfile = jobProfileRepository.GetByJob(player.Job);
+        var learningRule = jobMoveLearningRuleRepository.GetByJob(player.Job);
+        return player.LevelUp(jobProfile, learningRule);
     }
 
     private async Task<Move[]> LoadTrainingMovesAsync(Player player, IReadOnlyList<int?> playerMoveIds)

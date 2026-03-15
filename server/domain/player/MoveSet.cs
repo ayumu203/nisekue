@@ -42,6 +42,33 @@ public class MoveSet
             .ToArray();
     }
 
+    public bool Contains(MoveId moveId)
+    {
+        ArgumentNullException.ThrowIfNull(moveId);
+
+        return _slots.Any(x => x?.Id == moveId.Id);
+    }
+
+    public void AddLearnedMove(MoveId moveId)
+    {
+        ArgumentNullException.ThrowIfNull(moveId);
+
+        if (Contains(moveId))
+        {
+            return;
+        }
+
+        var emptyIndex = GetFirstEmptySlotIndex();
+        if (emptyIndex is not null)
+        {
+            _slots[emptyIndex.Value] = moveId;
+            return;
+        }
+
+        DropOldestMoveBySetLimit();
+        _slots[^1] = moveId;
+    }
+
     public int? GetFirstEmptySlotIndex()
     {
         for (var i = 0; i < _slots.Length; i++)
@@ -65,6 +92,16 @@ public class MoveSet
         var from = ValidateIndex(fromIndex);
         var to = ValidateIndex(toIndex);
         (_slots[from], _slots[to]) = (_slots[to], _slots[from]);
+    }
+
+    private void DropOldestMoveBySetLimit()
+    {
+        for (var i = 1; i < _slots.Length; i++)
+        {
+            _slots[i - 1] = _slots[i];
+        }
+
+        _slots[^1] = null;
     }
 
     private static int ValidateIndex(int index)

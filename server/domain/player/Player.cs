@@ -1,4 +1,5 @@
 using server.shared.constants.player;
+using server.domain.move;
 
 namespace server.domain.player;
 
@@ -11,7 +12,8 @@ public class Player(
     Job job = Job.Apprentice,
     string? imagePath = null,
     DateTimeOffset? questCooldownUntil = null,
-    MoveSet? moveSet = null)
+    MoveSet? moveSet = null,
+    IReadOnlySet<Job>? masteredJobs = null)
 {
     public PlayerId Id { get; } = id;
     public string Name { get; private set; } = ValidateName(name);
@@ -22,6 +24,7 @@ public class Player(
     public int Exp { get; private set; } = exp;
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
     public MoveSet MoveSet { get; private set; } = moveSet ?? new MoveSet();
+    public IReadOnlySet<Job> MasteredJobs { get; } = new HashSet<Job>(masteredJobs is null ? Array.Empty<Job>() : masteredJobs);
 
     public void UpdateName(string name)
     {
@@ -33,9 +36,25 @@ public class Player(
         ImagePath = ValidateImagePath(imagePath);
     }
 
-    public void UpdateJob(Job job)
+    public IReadOnlyList<MoveId> ChangeJob(Job nextJob, JobProfile nextProfile, JobMoveLearningRule learningRule)
     {
-        Job = job;
+        if (nextProfile.Job != nextJob)
+        {
+            throw new InvalidOperationException("転職先ジョブとジョブプロファイルが一致していません。");
+        }
+
+        if (learningRule.Job != nextJob)
+        {
+            throw new InvalidOperationException("転職先ジョブと技習得ルールが一致していません。");
+        }
+
+        if (!CanChangeJob(nextProfile))
+        {
+            throw new InvalidOperationException("転職条件を満たしていません。");
+        }
+
+        Job = nextJob;
+        return SynchronizeLearnableMoves(nextProfile, learningRule);
     }
 
     public void UpdateStatus(Status status)
@@ -95,10 +114,20 @@ public class Player(
         if (exp < 0) exp = 0;
         Exp += exp;
     }
-    public bool LevelUp(IGrowthValueRepository growthValueRepository)
+    public LevelUpResult LevelUp(JobProfile jobProfile, JobMoveLearningRule learningRule)
     {
-        var growth = growthValueRepository.GetByJob(Job);
-        bool flag = false;
+        if (jobProfile.Job != Job)
+        {
+            throw new InvalidOperationException("現在のジョブとジョブプロファイルが一致していません。");
+        }
+
+        if (learningRule.Job != Job)
+        {
+            throw new InvalidOperationException("現在のジョブと技習得ルールが一致していません。");
+        }
+
+        var growth = jobProfile.GrowthValue;
+        var hasLeveledUp = false;
         while (Exp >= Level * 10)
         {
             Exp -= Level * 10;
@@ -111,8 +140,61 @@ public class Player(
                 intelligence: Status.Intelligence + growth.Intelligence,
                 luck: Status.Luck + growth.Luck,
                 speed: Status.Speed + growth.Speed);
-            flag = true;
+            hasLeveledUp = true;
         }
-        return flag;
+
+        var hasMasteredCurrentJob = MarkCurrentJobAsMastered(jobProfile);
+        var newlyLearnedMoveIds = SynchronizeLearnableMoves(jobProfile, learningRule);
+        return new LevelUpResult(hasLeveledUp, hasMasteredCurrentJob, newlyLearnedMoveIds);
+    }
+
+    private bool CanChangeJob(JobProfile nextProfile)
+    {
+        if (nextProfile.Job == Job)
+        {
+            return false;
+        }
+
+        if (Job == Job.Apprentice &&
+            Level >= 5 &&
+            nextProfile.Job is Job.Warrior or Job.Guardian or Job.Mage or Job.Priest or Job.Ranger)
+        {
+            return true;
+        }
+
+        return nextProfile.RequiredMasterJobs.All(job => MasteredJobs.Contains(job));
+    }
+
+    private bool MarkCurrentJobAsMastered(JobProfile jobProfile)
+    {
+        if (Level < jobProfile.MasterLevel)
+        {
+            return false;
+        }
+
+        if (MasteredJobs.Contains(Job))
+        {
+            return false;
+        }
+
+        ((HashSet<Job>)MasteredJobs).Add(Job);
+        return true;
+    }
+
+    private IReadOnlyList<MoveId> SynchronizeLearnableMoves(JobProfile jobProfile, JobMoveLearningRule learningRule)
+    {
+        var newlyLearnedMoveIds = new List<MoveId>();
+        foreach (var moveId in learningRule.GetLearnableMoveIds(Level, jobProfile.MasterLevel))
+        {
+            if (MoveSet.Contains(moveId))
+            {
+                continue;
+            }
+
+            MoveSet.AddLearnedMove(moveId);
+            newlyLearnedMoveIds.Add(moveId);
+        }
+
+        return newlyLearnedMoveIds;
     }
 }

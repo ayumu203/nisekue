@@ -1,7 +1,7 @@
-id,job_code,job_name,max_hp,max_mp,strength,defense,intelligence,luck,speed
-1,Apprentice,見習い,4,2,2,2,2,1,1
-2,Warrior,戦士,6,1,3,2,0,1,1
-3,Guardian,盾使い,7,1,2,4,0,1,1
-4,Mage,魔法使い,3,4,0,1,4,1,1
-5,Priest,僧侶,4,4,0,1,3,2,1
-6,Ranger,レンジャー,5,2,2,1,1,2,3
+id,job_code,job_name,master_level,max_hp,max_mp,strength,defense,intelligence,luck,speed,required_master_job_1,required_master_job_2
+1,Apprentice,見習い,5,4,2,2,2,2,1,1,,
+2,Warrior,戦士,20,6,1,3,2,0,1,1,,
+3,Guardian,盾使い,20,7,1,2,4,0,1,1,,
+4,Mage,魔法使い,20,3,4,0,1,4,1,1,,
+5,Priest,僧侶,20,4,4,0,1,3,2,1,,
+6,Ranger,レンジャー,20,5,2,2,1,1,2,3,,

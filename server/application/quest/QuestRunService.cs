@@ -15,7 +15,8 @@ public class QuestRunService(
     IQuestEnemyDefinitionRepository questEnemyDefinitionRepository,
     IMoveRepository moveRepository,
     IPlayerRepository playerRepository,
-    IGrowthValueRepository growthValueRepository,
+    IJobProfileRepository jobProfileRepository,
+    IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
     BattleService battleService,
     QuestBattleFactory questBattleFactory)
 {
@@ -233,7 +234,9 @@ public class QuestRunService(
             if (run.Rewards.Exp > 0)
             {
                 player.GainExp(run.Rewards.Exp);
-                player.LevelUp(growthValueRepository);
+                var jobProfile = jobProfileRepository.GetByJob(player.Job);
+                var learningRule = jobMoveLearningRuleRepository.GetByJob(player.Job);
+                player.LevelUp(jobProfile, learningRule);
             }
 
             player.SetQuestCooldownUntil((run.EndedAt ?? DateTimeOffset.UtcNow).Add(QuestCooldown));

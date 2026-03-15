@@ -6,6 +6,7 @@ using server.application.battle;
 using server.application.chat;
 using server.application.quest;
 using server.application.training;
+using server.application.player;
 using server.domain.chat;
 using server.domain.move;
 using server.domain.player;
@@ -92,10 +93,11 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 });
 
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
-builder.Services.AddSingleton<IGrowthValueRepository, CsvGrowthValueRepository>();
+builder.Services.AddSingleton<IJobProfileRepository, CsvJobProfileRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
 builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
 builder.Services.AddSingleton<IMoveRepository, CsvMoveRepository>();
+builder.Services.AddSingleton<IJobMoveLearningRuleRepository, CsvJobMoveLearningRuleRepository>();
 builder.Services.AddSingleton<IQuestStageRepository, CsvQuestStageRepository>();
 builder.Services.AddSingleton<IQuestEnemyDefinitionRepository, CsvQuestEnemyDefinitionRepository>();
 builder.Services.AddSingleton<IQuestNpcTemplateRepository, CsvQuestNpcTemplateRepository>();
@@ -113,6 +115,7 @@ builder.Services.AddHostedService<QuestRunTimeoutBackgroundService>();
 builder.Services.AddScoped<TrainingBattleFactory>();
 builder.Services.AddScoped<TrainingOutcomeJudge>();
 builder.Services.AddScoped<TrainingExpCalculator>();
+builder.Services.AddScoped<PlayerJobService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<TrainingService>();
 

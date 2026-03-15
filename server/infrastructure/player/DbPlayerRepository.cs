@@ -24,7 +24,12 @@ namespace server.infrastructure.player
                 .AsNoTracking()
                 .SingleOrDefaultAsync(x => x.PlayerId == id.Value);
 
-            return MapToDomain(entity, moveEntity);
+            var masteredJobEntities = await dbContext.PlayerMasterJobs
+                .AsNoTracking()
+                .Where(x => x.PlayerId == id.Value)
+                .ToListAsync();
+
+            return MapToDomain(entity, moveEntity, masteredJobEntities);
         }
 
         public async Task<IReadOnlyList<Player>> GetAllAsync()
@@ -119,11 +124,15 @@ namespace server.infrastructure.player
                 });
 
                 dbContext.PlayerMoves.Add(CreateMoveEntity(player.Id, player.MoveSet));
+                ApplyMasteredJobs(dbContext, player, []);
             }
             else
             {
                 var existingMoves = await dbContext.PlayerMoves
                     .SingleOrDefaultAsync(x => x.PlayerId == player.Id.Value);
+                var existingMasteredJobs = await dbContext.PlayerMasterJobs
+                    .Where(x => x.PlayerId == player.Id.Value)
+                    .ToListAsync();
 
                 existing.Name = player.Name;
                 existing.Job = player.Job;
@@ -147,6 +156,9 @@ namespace server.infrastructure.player
                 {
                     ApplyMoveSet(existingMoves, player.MoveSet);
                 }
+
+                dbContext.PlayerMasterJobs.RemoveRange(existingMasteredJobs);
+                ApplyMasteredJobs(dbContext, player, existingMasteredJobs);
             }
 
             try
@@ -163,7 +175,10 @@ namespace server.infrastructure.player
             }
         }
 
-        private static Player MapToDomain(PlayerEntity entity, PlayerMoveEntity? moveEntity) =>
+        private static Player MapToDomain(
+            PlayerEntity entity,
+            PlayerMoveEntity? moveEntity,
+            IReadOnlyCollection<PlayerMasterJobEntity>? masteredJobEntities = null) =>
             new(
                 new PlayerId(entity.Id),
                 entity.Name,
@@ -180,7 +195,8 @@ namespace server.infrastructure.player
                     intelligence: entity.Intelligence,
                     luck: entity.Luck,
                     speed: entity.Speed),
-                moveSet: MapToMoveSet(moveEntity));
+                moveSet: MapToMoveSet(moveEntity),
+                masteredJobs: (masteredJobEntities ?? []).Select(x => x.Job).ToHashSet());
 
         private static MoveSet MapToMoveSet(PlayerMoveEntity? moveEntity)
         {
@@ -238,6 +254,20 @@ namespace server.infrastructure.player
         private static MoveId? ToMoveId(int? value)
         {
             return value.HasValue ? new MoveId(value.Value) : null;
+        }
+
+        private static void ApplyMasteredJobs(
+            AppDbContext dbContext,
+            Player player,
+            IReadOnlyCollection<PlayerMasterJobEntity> existingMasteredJobs)
+        {
+            var masteredAtByJob = existingMasteredJobs.ToDictionary(x => x.Job, x => x.MasteredAt);
+            dbContext.PlayerMasterJobs.AddRange(player.MasteredJobs.Select(job => new PlayerMasterJobEntity
+            {
+                PlayerId = player.Id.Value,
+                Job = job,
+                MasteredAt = masteredAtByJob.GetValueOrDefault(job, DateTimeOffset.UtcNow)
+            }));
         }
     }
 }
