@@ -921,6 +921,7 @@
 
 * `QuestAllyNpcActionPolicy` 自体は `IMoveRepository` を持たず、技定義の解決はアプリケーション層が行う。
 * `QuestBattleFactory` または同等の協調コンポーネントが `MoveSet` から `Move` を読み込み、`availableMoves` として `QuestAllyNpcActionPolicy` に渡す。
+* `QuestNpcAssignmentService` が補充用 NPC を選ぶ際の候補集合は `IQuestNpcTemplateRepository.GetForStartAsync(stageId, count)` に委譲する。候補集合は `stage_id -> npc_template_id[]` の CSV でステージごとに定義し、その中から重複なしでランダム抽出する。
 
 #### 味方 NPC 行動ロジックに関する追加実装項目
 

@@ -10,6 +10,7 @@ public class CsvQuestNpcTemplateRepository : IQuestNpcTemplateRepository
 {
     private readonly IReadOnlyDictionary<QuestNpcTemplateId, QuestNpcTemplate> templatesById;
     private readonly IReadOnlyList<QuestNpcTemplate> templates;
+    private readonly IReadOnlyDictionary<QuestStageId, QuestNpcTemplateId[]> templateIdsByStageId;
 
     public CsvQuestNpcTemplateRepository()
     {
@@ -17,13 +18,38 @@ public class CsvQuestNpcTemplateRepository : IQuestNpcTemplateRepository
         templatesById = LoadTemplates(
             Path.Combine(resourceDir, "npc_templates.csv"),
             Path.Combine(resourceDir, "npc_moves.csv"));
-        templates = templatesById.Values.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        templateIdsByStageId = LoadStageNpcTemplates(Path.Combine(resourceDir, "stage_npc_templates.csv"));
+        templates = templatesById.Values.OrderBy(x => x.Id.Value).ToArray();
     }
 
     public Task<IReadOnlyList<QuestNpcTemplate>> GetForStartAsync(QuestStageId stageId, int count)
     {
-        _ = stageId;
-        var selected = templates.Take(Math.Max(count, 0)).ToArray();
+        var requiredCount = Math.Max(count, 0);
+        if (requiredCount == 0)
+        {
+            return Task.FromResult<IReadOnlyList<QuestNpcTemplate>>([]);
+        }
+
+        if (!templateIdsByStageId.TryGetValue(stageId, out var candidateIds) || candidateIds.Length == 0)
+        {
+            throw new InvalidOperationException($"stage_npc_templates.csv に stage_id={stageId.Value} の候補定義がありません。");
+        }
+
+        var pool = candidateIds
+            .Distinct()
+            .Select(id => templatesById.TryGetValue(id, out var template)
+                ? template
+                : throw new InvalidOperationException($"npc_templates.csv に存在しない npc_template_id={id.Value} が stage_id={stageId.Value} に指定されています。"))
+            .ToArray();
+        if (pool.Length < requiredCount)
+        {
+            throw new InvalidOperationException($"stage_id={stageId.Value} の NPC 候補数が不足しています。required={requiredCount}, actual={pool.Length}");
+        }
+
+        var selected = pool
+            .OrderBy(_ => Random.Shared.Next())
+            .Take(requiredCount)
+            .ToArray();
         return Task.FromResult<IReadOnlyList<QuestNpcTemplate>>(selected);
     }
 
@@ -98,6 +124,39 @@ public class CsvQuestNpcTemplateRepository : IQuestNpcTemplateRepository
 
             var id = new QuestNpcTemplateId(CsvQuestParser.ParseInt(columns[0], "npc_template_id", i + 1));
             map[id] = CsvQuestParser.ParseIntList(columns[1], "move_ids", i + 1);
+        }
+
+        return map;
+    }
+
+    private static IReadOnlyDictionary<QuestStageId, QuestNpcTemplateId[]> LoadStageNpcTemplates(string csvPath)
+    {
+        var lines = CsvQuestParser.ReadDataLines(csvPath);
+        var map = new Dictionary<QuestStageId, QuestNpcTemplateId[]>();
+
+        for (var i = 1; i < lines.Length; i++)
+        {
+            var line = lines[i].Trim();
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            var columns = CsvQuestParser.SplitColumns(line);
+            if (columns.Length != 2)
+            {
+                throw new InvalidOperationException($"stage_npc_templates.csv の形式が不正です。行: {i + 1}");
+            }
+
+            var stageId = new QuestStageId(CsvQuestParser.ParseInt(columns[0], "stage_id", i + 1));
+            if (map.ContainsKey(stageId))
+            {
+                throw new InvalidOperationException($"stage_npc_templates.csv で stage_id が重複しています。stage_id={stageId.Value}, 行: {i + 1}");
+            }
+
+            map[stageId] = CsvQuestParser.ParseIntList(columns[1], "npc_template_ids", i + 1)
+                .Select(id => new QuestNpcTemplateId(id))
+                .ToArray();
         }
 
         return map;
