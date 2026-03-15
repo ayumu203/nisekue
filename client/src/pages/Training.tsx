@@ -55,6 +55,21 @@ function normalizeTrainingMoveIds(
   })
 }
 
+function areMoveIdArraysEqual(
+  left: Array<number | null> | null,
+  right: Array<number | null> | null,
+): boolean {
+  if (left === right) {
+    return true
+  }
+
+  if (!left || !right || left.length !== right.length) {
+    return false
+  }
+
+  return left.every((moveId, index) => moveId === right[index])
+}
+
 export default function Training() {
   const { session, isLoading } = useAuth()
   const theme = useTheme()
@@ -136,8 +151,18 @@ export default function Training() {
       return
     }
 
-    setPlannedMoveIds((current) => normalizeTrainingMoveIds(player, current ?? lastSubmittedMoveIds))
-    setLastSubmittedMoveIds((current) => (current ? normalizeTrainingMoveIds(player, current) : current))
+    setPlannedMoveIds((current) => {
+      const next = normalizeTrainingMoveIds(player, current ?? lastSubmittedMoveIds)
+      return areMoveIdArraysEqual(current, next) ? current : next
+    })
+    setLastSubmittedMoveIds((current) => {
+      if (!current) {
+        return current
+      }
+
+      const next = normalizeTrainingMoveIds(player, current)
+      return areMoveIdArraysEqual(current, next) ? current : next
+    })
   }, [lastSubmittedMoveIds, player])
 
   async function runTraining(enemy: TrainingEnemy, moveIds: Array<number | null>): Promise<void> {
