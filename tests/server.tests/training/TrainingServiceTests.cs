@@ -43,7 +43,7 @@ public class TrainingServiceTests
         result.Turn.Should().Be(3);
         result.CurrentPlayerHp.Should().Be(28);
         result.CurrentEnemyHp.Should().Be(0);
-        result.Exp.Should().Be(3);
+        result.Exp.Should().Be(12);
         result.IsLevelUp.Should().BeFalse();
         playerRepository.SaveCalled.Should().BeTrue();
     }
@@ -189,7 +189,7 @@ public class TrainingServiceTests
         result.Turn.Should().Be(3);
         result.CurrentPlayerHp.Should().Be(27);
         result.CurrentEnemyHp.Should().Be(27);
-        result.Exp.Should().Be(1);
+        result.Exp.Should().Be(4);
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public class TrainingServiceTests
         result.Turn.Should().Be(3);
         result.CurrentPlayerHp.Should().Be(21);
         result.CurrentEnemyHp.Should().Be(12);
-        result.Exp.Should().Be(1);
+        result.Exp.Should().Be(6);
     }
 
     [Fact]
@@ -268,13 +268,17 @@ public class TrainingServiceTests
             level: 12,
             status: new Status(maxHp: 55, maxMp: 0, strength: 8, defense: 5, intelligence: 3, luck: 0, speed: 4));
 
-        var exp = calculator.Calculate(player, enemy, TrainingOutcome.Win, playerDealtTotalDamage: 40);
+        var metrics = new TrainingContributionMetrics(
+            PlayerDealtTotalDamage: 40,
+            PlayerEffectiveHealTotal: 0,
+            CurrentPlayerHp: player.Status.MaxHp);
+        var exp = calculator.Calculate(player, enemy, metrics, TrainingOutcome.Win);
 
-        exp.Should().Be(6);
+        exp.Should().Be(25);
     }
 
     [Fact]
-    public void Calculate_WhenLoseWithLargeLevelDifference_ReturnsMinimumExperience()
+    public void Calculate_WhenLoseWithLargeLevelDifference_ReturnsContributionBasedExperience()
     {
         var calculator = new TrainingExpCalculator();
         var player = new Player(
@@ -291,9 +295,13 @@ public class TrainingServiceTests
             level: 30,
             status: new Status(maxHp: 100, maxMp: 0, strength: 20, defense: 10, intelligence: 10, luck: 0, speed: 10));
 
-        var exp = calculator.Calculate(player, enemy, TrainingOutcome.Lose, playerDealtTotalDamage: 1);
+        var metrics = new TrainingContributionMetrics(
+            PlayerDealtTotalDamage: 1,
+            PlayerEffectiveHealTotal: 0,
+            CurrentPlayerHp: 0);
+        var exp = calculator.Calculate(player, enemy, metrics, TrainingOutcome.Lose);
 
-        exp.Should().Be(1);
+        exp.Should().Be(19);
     }
 
     private static TrainingService CreateService(IPlayerRepository playerRepository, ITrainingEnemyRepository enemyRepository)
