@@ -81,6 +81,7 @@
   "actionKinds": {
     "NormalAttack": "通常攻撃",
     "UseMove": "技を使う",
+    "Prayer": "祈り",
     "Guard": "防御",
     "Wait": "待機",
     "LeaveQuest": "離脱",

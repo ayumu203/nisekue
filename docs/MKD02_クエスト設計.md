@@ -154,7 +154,7 @@
 * 隊列射程の最終判定責務は `BattleActionResolver` 直書きではなく、専用の `BattleTargetingResolver` に分離する。
 * 現在の `BattleTargetingResolver` は、前衛を相手前衛まで、中衛を相手前衛・中衛まで、後衛を相手全行まで到達可能とみなし、プレイヤー/敵で同じルールを適用する。
 * 現在の `BattleTargetingResolver` は、物理/魔法/回復/バフで射程ルールを分けず、位置情報と `AttackRange` だけで対象を決める。
-* `BattleActionResult` はログ表示と演出再生のため、`ActorId` に加えて `ActionKind` と `MoveId` を持つ。
+* `BattleActionResult` はログ表示と演出再生のため、`ActorId` に加えて `ActionKind` と `MoveId` を持つ。各 `BattleTargetResult` は行動単位の `HpChange` / `MpChange` を持ち、後続行動の影響を受けずにログ文言を生成できるようにする。
 * これによりクエスト側は、ターン解決後の各行動について「だれが」「何の行動を」「どの技で」行ったかを結果 DTO だけで把握できる。
 * 単体攻撃や単体対象技の入力は「どのマスを狙ったか」を `BattlePosition` で保持し、解決時にその座標にいる対象へ適用する。
 * 範囲攻撃は、入力時に選んだ `BattlePosition` を起点として、`AttackRange` と `BattleFieldContext` に従って最終対象を展開する。
@@ -1221,7 +1221,7 @@ CSV 採用理由:
 
 #### 行動解決結果はログ表示に必要な識別子を持つ
 
-`BattleActionResult` は `ActorId` に加えて `ActionKind` と `MoveId` を持つ。
+`BattleActionResult` は `ActorId` に加えて `ActionKind` と `MoveId` を持つ。`BattleTargetResult` は `HpChange` / `MpChange` を保持する。
 これによりクエスト側は入力コマンドの再解釈に依存せず、解決順どおりの行動ログと技演出を構築できる。
 
 #### サーバーは最新ターンの解決結果のみ保持する

@@ -92,7 +92,7 @@ public class BattleActionResolver(
                 attackStat: BuffStat.Strength));
 
             targetState.ReceiveDamage(damageResult.Damage);
-            targetResults.Add(new BattleTargetResult(targetId, damageResult.Damage, targetState.IsDead, null));
+            targetResults.Add(new BattleTargetResult(targetId, damageResult.Damage, -damageResult.Damage, 0, targetState.IsDead, null));
         }
 
         return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, targetResults.Count > 0, targetResults);
@@ -199,7 +199,7 @@ public class BattleActionResolver(
             }
 
             targetState.ApplyBuff(new BattleBuffState(BuffStat.Strength, BuffCalculationType.Mul, 1.5m, 1), canStack: true);
-            targetResults.Add(new BattleTargetResult(targetId, 0, false, null));
+            targetResults.Add(new BattleTargetResult(targetId, 0, 0, 0, false, null));
         }
 
         return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, targetResults.Count > 0, targetResults);
@@ -256,7 +256,7 @@ public class BattleActionResolver(
         }
 
         targetState.ReceiveDamage(totalDamage);
-        return new BattleTargetResult(targetSnapshot.Id, totalDamage, targetState.IsDead, null);
+        return new BattleTargetResult(targetSnapshot.Id, totalDamage, -totalDamage, 0, targetState.IsDead, null);
     }
 
     private static BattleTargetResult ResolveHealEffect(
@@ -277,10 +277,12 @@ public class BattleActionResolver(
             BuffStat.Defense => attackerStatus.Defense,
             _ => attackerStatus.Strength
         };
-        var healValue = effect.Damage.FixedValue + (int)Math.Round(attackPower * effect.Damage.PowerRate, MidpointRounding.AwayFromZero);
-        targetState.RestoreHp(Math.Max(1, healValue), defenderStatus.MaxHp);
+        var healValue = Math.Max(1, effect.Damage.FixedValue + (int)Math.Round(attackPower * effect.Damage.PowerRate, MidpointRounding.AwayFromZero));
+        var beforeHp = targetState.CurrentHp;
+        targetState.RestoreHp(healValue, defenderStatus.MaxHp);
+        var restoredHp = targetState.CurrentHp - beforeHp;
 
-        return new BattleTargetResult(targetSnapshot.Id, 0, false, null);
+        return new BattleTargetResult(targetSnapshot.Id, 0, restoredHp, 0, false, null);
     }
 
     private static BattleTargetResult ResolveRestoreMpEffect(
@@ -301,10 +303,12 @@ public class BattleActionResolver(
             BuffStat.Defense => attackerStatus.Defense,
             _ => attackerStatus.Strength
         };
-        var restoreValue = effect.Damage.FixedValue + (int)Math.Round(attackPower * effect.Damage.PowerRate, MidpointRounding.AwayFromZero);
-        targetState.RestoreMp(Math.Max(1, restoreValue), defenderStatus.MaxMp);
+        var restoreValue = Math.Max(1, effect.Damage.FixedValue + (int)Math.Round(attackPower * effect.Damage.PowerRate, MidpointRounding.AwayFromZero));
+        var beforeMp = targetState.CurrentMp;
+        targetState.RestoreMp(restoreValue, defenderStatus.MaxMp);
+        var restoredMp = targetState.CurrentMp - beforeMp;
 
-        return new BattleTargetResult(targetSnapshot.Id, 0, false, null);
+        return new BattleTargetResult(targetSnapshot.Id, 0, 0, restoredMp, false, null);
     }
 
     private static BattleTargetResult ResolveAilmentEffect(
@@ -323,7 +327,7 @@ public class BattleActionResolver(
             appliedAilment = effect.Ailment.AilmentType;
         }
 
-        return new BattleTargetResult(targetState.Id, 0, targetState.IsDead, appliedAilment);
+        return new BattleTargetResult(targetState.Id, 0, 0, 0, targetState.IsDead, appliedAilment);
     }
 
     private static BattleTargetResult ResolveBuffEffect(
@@ -342,7 +346,7 @@ public class BattleActionResolver(
                 effect.Buff.CanStack);
         }
 
-        return new BattleTargetResult(targetState.Id, 0, targetState.IsDead, null);
+        return new BattleTargetResult(targetState.Id, 0, 0, 0, targetState.IsDead, null);
     }
 
     private static BuffStat ResolveAttackStat(Move move, DamageEffect effect, Status attackerStatus, bool isSupportMove)

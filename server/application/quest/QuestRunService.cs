@@ -324,21 +324,16 @@ public class QuestRunService(
                 Guid? targetParticipantId = null;
                 Guid? targetEnemyInstanceId = null;
                 string targetDisplayName;
-                int hpChange = 0;
-                int mpChange = 0;
+                var hpChange = targetResult.HpChange;
+                var mpChange = targetResult.MpChange;
                 string[] appliedEffects = targetResult.AppliedAilment is null ? [] : [targetResult.AppliedAilment.Value.ToString()];
                 var removedEffects = Array.Empty<string>();
-                var isDeadAfterAction = false;
+                var isDeadAfterAction = targetResult.IsDefeated;
 
                 if (partyActorMap.TryGetValue(targetResult.TargetActorId, out var partyTargetId))
                 {
                     targetParticipantId = partyTargetId.Value;
                     targetDisplayName = snapshotByParticipantId[partyTargetId].DisplayName;
-                    var before = beforeParty[partyTargetId];
-                    var after = partyById[partyTargetId];
-                    hpChange = after.CurrentHp - before.CurrentHp;
-                    mpChange = after.CurrentMp - before.CurrentMp;
-                    isDeadAfterAction = after.IsDead;
                 }
                 else if (enemyActorMap.TryGetValue(targetResult.TargetActorId, out var enemyTargetId))
                 {
@@ -347,10 +342,6 @@ public class QuestRunService(
                     targetDisplayName = enemyDefinitions.TryGetValue(enemy.EnemyDefinitionId, out var enemyDefinition)
                         ? enemyDefinition.Name
                         : enemy.EnemyDefinitionId.ToString();
-                    var before = beforeEnemy[enemyTargetId];
-                    hpChange = enemy.CurrentHp - before.CurrentHp;
-                    mpChange = enemy.CurrentMp - before.CurrentMp;
-                    isDeadAfterAction = enemy.IsDead;
                 }
                 else
                 {
@@ -448,6 +439,28 @@ public class QuestRunService(
         }
 
         return targetSummaries
+            .GroupBy(target => new
+            {
+                target.TargetParticipantId,
+                target.TargetEnemyInstanceId,
+                target.TargetDisplayName
+            })
+            .Select(group => new QuestResolvedTargetSummary(
+                group.Key.TargetParticipantId,
+                group.Key.TargetEnemyInstanceId,
+                group.Key.TargetDisplayName,
+                group.Any(target => target.ResultType == "Defeated")
+                    ? "Defeated"
+                    : group.Any(target => target.ResultType == "AilmentApplied")
+                        ? "AilmentApplied"
+                        : group.Any(target => target.ResultType == "Hit")
+                            ? "Hit"
+                            : "Miss",
+                group.Sum(target => target.HpChange),
+                group.Sum(target => target.MpChange),
+                group.SelectMany(target => target.AppliedEffects).Distinct().ToArray(),
+                group.SelectMany(target => target.RemovedEffects).Distinct().ToArray(),
+                group.Any(target => target.IsDeadAfterAction)))
             .Select(target => BuildTargetLog(actorDisplayName, actionKind, moveName, target))
             .ToArray();
     }

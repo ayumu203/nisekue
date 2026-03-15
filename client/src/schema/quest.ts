@@ -18,7 +18,7 @@ export const questRoomStatusSchema = z.enum(['Recruiting', 'Closed'])
 export const questRunStatusSchema = z.enum(['InProgress', 'Succeeded', 'Failed', 'Aborted'])
 export const questParticipantTypeSchema = z.enum(['Player', 'Npc'])
 export const questActionModeSchema = z.enum(['Manual', 'AutoAttackOnly'])
-export const questActionKindSchema = z.enum(['NormalAttack', 'UseMove', 'Guard', 'Wait', 'LeaveQuest', 'Escape'])
+export const questActionKindSchema = z.enum(['NormalAttack', 'UseMove', 'Prayer', 'Guard', 'Wait', 'LeaveQuest', 'Escape'])
 export const questManualControlRequestStatusSchema = z.enum(['None', 'Pending'])
 export const questTargetResultTypeSchema = z.enum([
   'Hit',

@@ -149,8 +149,8 @@ public class QuestRunServiceTests
         var priestParticipantId = QuestParticipantId.New();
         var run = CreateRunWithParty(
             [
-                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet()),
-                new PartyMemberSeed(priestParticipantId, ParticipantType.Npc, "Priest", Job.Priest, new BattlePosition(BattleRow.Back, BattleColumn.Left), ActionMode.AutoAttackOnly, new Status(30, 10, 4, 4, 12, 3, 8), new MoveSet())
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 10),
+                new PartyMemberSeed(priestParticipantId, ParticipantType.Npc, "Priest", Job.Priest, new BattlePosition(BattleRow.Back, BattleColumn.Left), ActionMode.AutoAttackOnly, new Status(30, 10, 4, 4, 12, 3, 8), new MoveSet(), 30, 10)
             ],
             enemyHp: 20);
         var repository = new FakeQuestRunRepository(run);
@@ -186,8 +186,8 @@ public class QuestRunServiceTests
 
         var run = CreateRunWithParty(
             [
-                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet()),
-                new PartyMemberSeed(rangerParticipantId, ParticipantType.Npc, "Ranger", Job.Ranger, new BattlePosition(BattleRow.Middle, BattleColumn.Left), ActionMode.AutoAttackOnly, new Status(30, 10, 8, 4, 4, 3, 8), rangerMoveSet)
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 10),
+                new PartyMemberSeed(rangerParticipantId, ParticipantType.Npc, "Ranger", Job.Ranger, new BattlePosition(BattleRow.Middle, BattleColumn.Left), ActionMode.AutoAttackOnly, new Status(30, 10, 8, 4, 4, 3, 8), rangerMoveSet, 30, 10)
             ],
             enemyPositions:
             [
@@ -212,6 +212,12 @@ public class QuestRunServiceTests
                     new MoveEffectId(1),
                     trapMoveId,
                     1,
+                    MoveEffectType.Damage,
+                    damage: new DamageEffect(1, 0.1m, 0, 0m, ElementType.None)),
+                new MoveEffect(
+                    new MoveEffectId(2),
+                    trapMoveId,
+                    2,
                     MoveEffectType.Ailment,
                     ailment: new AilmentEffect(AilmentType.DamageTrap, 1m, 2, new DamageEffect(1, 0.1m, 0, 0m, ElementType.None)))
             ]);
@@ -232,7 +238,178 @@ public class QuestRunServiceTests
         repository.StoredRun.LastTurnResults!.Actions.Should().Contain(x =>
             x.ActorParticipantId == rangerParticipantId.Value &&
             x.MoveId == trapMoveId.Id &&
-            x.Logs.Contains("RangerはSlimeにTrapを使って2ダメージを与え、DamageTrapを付与した"));
+            x.Logs.Contains("RangerはSlimeにTrapを使って1ダメージを与え、DamageTrapを付与した"));
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_WhenPlayerUsesNormalAttack_StoresDamageLog()
+    {
+        var playerParticipantId = QuestParticipantId.New();
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 20);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), []);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            playerParticipantId,
+            new QuestSubmittedCommand(
+                playerParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        repository.StoredRun!.LastTurnResults!.Actions.Should().Contain(x =>
+            x.ActorParticipantId == playerParticipantId.Value &&
+            x.ActionKind == ActionKind.NormalAttack.ToString() &&
+            x.Logs.Contains("OwnerはSlimeに9ダメージを与えた"));
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_WhenPlayerUsesDamageMove_StoresMoveDamageLog()
+    {
+        var playerParticipantId = QuestParticipantId.New();
+        var moveId = new MoveId(101);
+        var moveSet = new MoveSet();
+        moveSet.SetSlot(0, moveId);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), moveSet, 40, 10)
+            ],
+            enemyHp: 20);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var move = new Move(
+            moveId,
+            "Slash",
+            "slash",
+            TargetType.Enemy,
+            AttackRange.Single,
+            3,
+            0,
+            MoveCategory.Attack,
+            effects:
+            [
+                new MoveEffect(new MoveEffectId(1), moveId, 1, MoveEffectType.Damage, damage: new DamageEffect(1, 1m, 1, 0m, ElementType.None))
+            ]);
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), [move]);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            playerParticipantId,
+            new QuestSubmittedCommand(
+                playerParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.UseMove,
+                DateTimeOffset.UtcNow,
+                moveId,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        repository.StoredRun!.LastTurnResults!.Actions.Should().Contain(x =>
+            x.ActorParticipantId == playerParticipantId.Value &&
+            x.MoveId == moveId.Id &&
+            x.Logs.Contains("OwnerはSlimeにSlashを使って10ダメージを与えた"));
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_WhenPlayerUsesHealMove_StoresHealLog()
+    {
+        var healerId = QuestParticipantId.New();
+        var targetId = QuestParticipantId.New();
+        var moveId = new MoveId(102);
+        var healerMoveSet = new MoveSet();
+        healerMoveSet.SetSlot(0, moveId);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(healerId, ParticipantType.Player, "Healer", Job.Priest, new BattlePosition(BattleRow.Back, BattleColumn.Left), ActionMode.Manual, new Status(30, 10, 3, 3, 12, 3, 8), healerMoveSet, 30, 10),
+                new PartyMemberSeed(targetId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.AutoAttackOnly, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 10, 10)
+            ],
+            enemyHp: 20);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var move = new Move(
+            moveId,
+            "Heal",
+            "heal",
+            TargetType.Ally,
+            AttackRange.Single,
+            3,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(new MoveEffectId(1), moveId, 1, MoveEffectType.Heal, damage: new DamageEffect(1, 1m, 5, 0m, ElementType.Holy, BuffStat.Intelligence))
+            ]);
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), [move]);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            healerId,
+            new QuestSubmittedCommand(
+                healerId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.UseMove,
+                DateTimeOffset.UtcNow,
+                moveId,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Left)));
+
+        repository.StoredRun!.LastTurnResults!.Actions.Should().Contain(x =>
+            x.ActorParticipantId == healerId.Value &&
+            x.MoveId == moveId.Id &&
+            x.Logs.Contains("HealerはOwnerにHealを使って17回復した"));
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_WhenPlayerUsesRestoreMpMove_StoresRestoreMpLog()
+    {
+        var mageId = QuestParticipantId.New();
+        var targetId = QuestParticipantId.New();
+        var moveId = new MoveId(103);
+        var mageMoveSet = new MoveSet();
+        mageMoveSet.SetSlot(0, moveId);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(mageId, ParticipantType.Player, "Mage", Job.Mage, new BattlePosition(BattleRow.Back, BattleColumn.Left), ActionMode.Manual, new Status(24, 10, 3, 3, 12, 3, 8), mageMoveSet, 24, 10),
+                new PartyMemberSeed(targetId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.AutoAttackOnly, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 2)
+            ],
+            enemyHp: 20);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var move = new Move(
+            moveId,
+            "Meditate",
+            "restore mp",
+            TargetType.Ally,
+            AttackRange.Single,
+            1,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(new MoveEffectId(1), moveId, 1, MoveEffectType.RestoreMp, damage: new DamageEffect(1, 1m, 5, 0m, ElementType.None, BuffStat.Intelligence))
+            ]);
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), [move]);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            mageId,
+            new QuestSubmittedCommand(
+                mageId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.UseMove,
+                DateTimeOffset.UtcNow,
+                moveId,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Left)));
+
+        repository.StoredRun!.LastTurnResults!.Actions.Should().Contain(x =>
+            x.ActorParticipantId == mageId.Value &&
+            x.MoveId == moveId.Id &&
+            x.Logs.Contains("MageはOwnerにMeditateを使ってMPを8回復した"));
     }
 
     private static QuestRunService CreateRunService(
@@ -345,8 +522,8 @@ public class QuestRunServiceTests
 
         var partyStates = partyMembers.Select(member => new QuestRunPartyMemberState(
             member.ParticipantId,
-            currentHp: member.Status.MaxHp,
-            currentMp: member.Status.MaxMp,
+            currentHp: member.CurrentHp,
+            currentMp: member.CurrentMp,
             isDead: false,
             canActFromTurn: 1,
             actionMode: member.ActionMode)).ToArray();
@@ -574,5 +751,7 @@ public class QuestRunServiceTests
         BattlePosition Position,
         ActionMode ActionMode,
         Status Status,
-        MoveSet MoveSet);
+        MoveSet MoveSet,
+        int CurrentHp,
+        int CurrentMp);
 }
