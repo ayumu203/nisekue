@@ -17,13 +17,20 @@ public class TrainingService(
     TrainingOutcomeJudge trainingOutcomeJudge,
     TrainingExpCalculator trainingExpCalculator)
 {
-    public async Task<TrainingEnemyView[]> GetTrainingEnemies()
+    public async Task<TrainingEnemyView[]> GetTrainingEnemies(PlayerId playerId)
     {
-        var enemies = await trainingEnemyRepository.GetTrainingEnemiesAsync();
+        var player = await playerRepository.GetPlayerAsync(playerId)
+            ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
 
-        return enemies
+        var enemies = await trainingEnemyRepository.GetTrainingEnemiesAsync();
+        var sortedEnemies = enemies
             .OrderBy(x => x.Level)
             .ThenBy(x => x.Id.Value)
+            .ToArray();
+        var visibleEnemyLevelCap = ResolveVisibleEnemyLevelCap(player.Level, sortedEnemies.Select(x => x.Level).ToArray());
+
+        return sortedEnemies
+            .Where(x => x.Level <= visibleEnemyLevelCap)
             .Select(x => new TrainingEnemyView(
                 Id: x.Id.Value,
                 Name: x.Name,
@@ -59,13 +66,9 @@ public class TrainingService(
         };
         var moves = trainingBattleFactory.CreateTrainingMoves(enemy, playerMoves);
 
-        var summary = ResolveBattleUntilFinished(actors, playerMoves, moves);
+        var (summary, metrics) = ResolveBattleUntilFinished(actors, playerMoves, moves);
 
-        var exp = trainingExpCalculator.Calculate(
-            player,
-            enemy,
-            summary.Outcome,
-            enemy.Status.MaxHp - summary.CurrentEnemyHp);
+        var exp = trainingExpCalculator.Calculate(player, enemy, metrics, summary.Outcome);
         var isLevelUp = ApplyExp(player, exp);
 
         await playerRepository.SaveAsync(player);
@@ -81,7 +84,25 @@ public class TrainingService(
             IsLevelUp: isLevelUp);
     }
 
-    private TrainingBattleSummary ResolveBattleUntilFinished(
+    private static int ResolveVisibleEnemyLevelCap(int playerLevel, IReadOnlyList<int> enemyLevels)
+    {
+        if (enemyLevels.Count == 0)
+        {
+            return 0;
+        }
+
+        foreach (var enemyLevel in enemyLevels)
+        {
+            if (enemyLevel > playerLevel)
+            {
+                return enemyLevel;
+            }
+        }
+
+        return enemyLevels[^1];
+    }
+
+    private (TrainingBattleSummary Summary, TrainingContributionMetrics Metrics) ResolveBattleUntilFinished(
         IReadOnlyList<BattleActorInput> actors,
         IReadOnlyList<Move> playerMoves,
         IReadOnlyList<Move> moves)
@@ -92,6 +113,8 @@ public class TrainingService(
 
         var currentActors = actors.ToArray();
         var turn = 0;
+        var playerDealtTotalDamage = 0;
+        var playerEffectiveHealTotal = 0;
 
         while (turn < TrainingConstants.Battle.MaxTurns && turn < playerMoves.Count)
         {
@@ -104,11 +127,23 @@ public class TrainingService(
 
             var actions = trainingBattleFactory.CreateTurnActions(playerActor, enemyActor.ActorId, playerMoves[turn]);
             var resolution = battleService.ResolveTurn(new BattleTurnRequest(currentActors, actions, moves));
+            playerDealtTotalDamage += resolution.ActionResults
+                .Where(x => x.ActorId.Value == trainingBattleFactory.PlayerActorId)
+                .SelectMany(x => x.TargetResults)
+                .Where(x => x.TargetActorId.Value == trainingBattleFactory.EnemyActorId)
+                .Sum(x => x.Damage);
+            playerEffectiveHealTotal += resolution.ActionResults
+                .Where(x => x.ActorId.Value == trainingBattleFactory.PlayerActorId)
+                .SelectMany(x => x.TargetResults)
+                .Where(x => x.TargetActorId.Value == trainingBattleFactory.PlayerActorId)
+                .Sum(x => x.RecoveredHp);
             turn++;
             currentActors = BuildNextTurnActors(currentActors, resolution.UpdatedStates);
         }
 
-        return BuildSummary(currentActors, turn);
+        var summary = BuildSummary(currentActors, turn);
+        var metrics = BuildContributionMetrics(summary, playerDealtTotalDamage, playerEffectiveHealTotal);
+        return (summary, metrics);
     }
 
     private BattleActorInput[] BuildNextTurnActors(
@@ -150,6 +185,17 @@ public class TrainingService(
             CurrentPlayerHp: playerActor.CurrentHp ?? playerActor.BaseStatus.MaxHp,
             CurrentEnemyHp: enemyActor.CurrentHp ?? enemyActor.BaseStatus.MaxHp,
             Outcome: outcome);
+    }
+
+    private static TrainingContributionMetrics BuildContributionMetrics(
+        TrainingBattleSummary summary,
+        int playerDealtTotalDamage,
+        int playerEffectiveHealTotal)
+    {
+        return new TrainingContributionMetrics(
+            PlayerDealtTotalDamage: playerDealtTotalDamage,
+            PlayerEffectiveHealTotal: playerEffectiveHealTotal,
+            CurrentPlayerHp: summary.CurrentPlayerHp);
     }
 
     private bool ApplyExp(Player player, int exp)
