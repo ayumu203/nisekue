@@ -27,6 +27,8 @@ import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import type { GetPlayerResponse } from '@/schema/player'
 
+const TRAINING_COOLDOWN_MS = 3000
+
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
   return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
 }
@@ -206,7 +208,7 @@ export default function Training() {
       }
     } finally {
       setIsTrainingSubmitting(false)
-      setTrainingLockUntilMs(Date.now() + 5000)
+      setTrainingLockUntilMs(Date.now() + TRAINING_COOLDOWN_MS)
     }
   }
 
