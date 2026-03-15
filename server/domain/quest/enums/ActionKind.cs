@@ -4,8 +4,9 @@ public enum ActionKind
 {
     NormalAttack = 1,
     UseMove = 2,
-    Guard = 3,
-    Wait = 4,
-    LeaveQuest = 5,
-    Escape = 6
+    Prayer = 3,
+    Guard = 4,
+    Wait = 5,
+    LeaveQuest = 6,
+    Escape = 7
 }

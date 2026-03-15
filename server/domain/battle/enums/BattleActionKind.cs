@@ -4,6 +4,7 @@ public enum BattleActionKind
 {
     NormalAttack = 1,
     UseMove = 2,
-    Guard = 3,
-    Wait = 4
+    Prayer = 3,
+    Guard = 4,
+    Wait = 5
 }

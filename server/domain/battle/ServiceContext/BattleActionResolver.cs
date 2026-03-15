@@ -46,6 +46,7 @@ public class BattleActionResolver(
         {
             BattleActionKind.NormalAttack => ResolveNormalAttack(action, actorSnapshot, actorState, snapshotMap, stateMap, fieldContext),
             BattleActionKind.UseMove => ResolveMove(action, actorSnapshot, actorState, snapshotMap, stateMap, moveMap, fieldContext),
+            BattleActionKind.Prayer => ResolvePrayer(action, actorSnapshot, snapshotMap, stateMap, fieldContext),
             BattleActionKind.Guard => ResolveGuard(action, actorSnapshot, actorState),
             BattleActionKind.Wait => new BattleActionResult(action.ActorId, action.Kind, action.MoveId, true),
             _ => throw new ArgumentOutOfRangeException(nameof(action.Kind), $"未対応の BattleActionKind: {action.Kind}")
@@ -173,6 +174,35 @@ public class BattleActionResolver(
         actorState.ApplyBuff(new BattleBuffState(BuffStat.Defense, BuffCalculationType.Mul, 1.5m, 1), canStack: false);
         actorState.ApplyBuff(new BattleBuffState(BuffStat.Intelligence, BuffCalculationType.Mul, 1.5m, 1), canStack: false);
         return new BattleActionResult(actorSnapshot.Id, action.Kind, action.MoveId, true);
+    }
+
+    private BattleActionResult ResolvePrayer(
+        BattleAction action,
+        BattleActorSnapshot actorSnapshot,
+        IReadOnlyDictionary<BattleActorId, BattleActorSnapshot> snapshotMap,
+        IReadOnlyDictionary<BattleActorId, BattleActorState> stateMap,
+        BattleFieldContext? fieldContext)
+    {
+        var targets = ResolveTargets(action.Target, actorSnapshot, snapshotMap.Values, stateMap.Values, fieldContext);
+        if (targets.Count == 0)
+        {
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+        }
+
+        var targetResults = new List<BattleTargetResult>();
+        foreach (var targetId in targets)
+        {
+            var targetState = stateMap[targetId];
+            if (targetState.IsDead)
+            {
+                continue;
+            }
+
+            targetState.ApplyBuff(new BattleBuffState(BuffStat.Strength, BuffCalculationType.Mul, 1.5m, 1), canStack: true);
+            targetResults.Add(new BattleTargetResult(targetId, 0, false, null));
+        }
+
+        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, targetResults.Count > 0, targetResults);
     }
 
     private BattleTargetResult? ResolveEffect(

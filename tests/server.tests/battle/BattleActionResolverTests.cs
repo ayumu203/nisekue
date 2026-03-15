@@ -136,6 +136,53 @@ public class BattleActionResolverTests
     }
 
     [Fact]
+    public void Resolve_WhenPrayer_AppliesStackableStrengthBuffToTarget()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var actorState = CreateState(actor.Id);
+        var targetState = CreateState(target.Id);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.Prayer, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id])),
+            [actor, target],
+            [actorState, targetState],
+            []);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].TargetActorId.Should().Be(target.Id);
+        result.TargetResults[0].Damage.Should().Be(0);
+        targetState.Buffs.Should().ContainSingle(x =>
+            x.Stat == BuffStat.Strength &&
+            x.CalculationType == BuffCalculationType.Mul &&
+            x.Value == 1.5m &&
+            x.RemainingTurns == 1);
+    }
+
+    [Fact]
+    public void Resolve_WhenPrayerIsUsedTwice_StacksStrengthBuffs()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var actorState = CreateState(actor.Id);
+        var targetState = CreateState(target.Id);
+        var action = new BattleAction(actor.Id, BattleActionKind.Prayer, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id]));
+
+        resolver.Resolve(action, [actor, target], [actorState, targetState], []);
+        resolver.Resolve(action, [actor, target], [actorState, targetState], []);
+
+        targetState.Buffs.Should().HaveCount(2);
+        targetState.Buffs.Should().OnlyContain(x =>
+            x.Stat == BuffStat.Strength &&
+            x.CalculationType == BuffCalculationType.Mul &&
+            x.Value == 1.5m &&
+            x.RemainingTurns == 1);
+    }
+
+    [Fact]
     public void Resolve_WhenWait_ReturnsSuccessWithoutTargetResults()
     {
         var resolver = CreateResolver();
