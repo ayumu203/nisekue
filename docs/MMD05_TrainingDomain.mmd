@@ -70,10 +70,10 @@ classDiagram
             <<Application Service>>
             +GetTrainingEnemies() TrainingEnemyView[]
             +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
-            -ResolveBattleUntilFinished(actors: IReadOnlyList~BattleActorInput~, actions: IReadOnlyList~BattleActionInput~, moves: IReadOnlyList~Move~) TrainingBattleSummary
+            -ResolveBattleUntilFinished(actors: IReadOnlyList~BattleActorInput~, moves: IReadOnlyList~Move~, playerMoves: IReadOnlyList~Move~) (TrainingBattleSummary, TrainingContributionMetrics)
             -BuildNextTurnActors(actors: IReadOnlyList~BattleActorInput~, states: IReadOnlyList~BattleActorState~) BattleActorInput[]
             -BuildSummary(actors: IReadOnlyList~BattleActorInput~, turn: int) TrainingBattleSummary
-            -BuildContributionMetrics(player: Player, enemy: TrainingEnemy, summary: TrainingBattleSummary) TrainingContributionMetrics
+            -BuildContributionMetrics(summary: TrainingBattleSummary, playerDealtTotalDamage: int, playerEffectiveHealTotal: int) TrainingContributionMetrics
             -ApplyExp(player: Player, exp: int) bool
         }
 

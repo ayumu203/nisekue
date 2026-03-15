@@ -59,13 +59,9 @@ public class TrainingService(
         };
         var moves = trainingBattleFactory.CreateTrainingMoves(enemy, playerMoves);
 
-        var summary = ResolveBattleUntilFinished(actors, playerMoves, moves);
+        var (summary, metrics) = ResolveBattleUntilFinished(actors, playerMoves, moves);
 
-        var exp = trainingExpCalculator.Calculate(
-            player,
-            enemy,
-            summary.Outcome,
-            enemy.Status.MaxHp - summary.CurrentEnemyHp);
+        var exp = trainingExpCalculator.Calculate(player, enemy, metrics, summary.Outcome);
         var isLevelUp = ApplyExp(player, exp);
 
         await playerRepository.SaveAsync(player);
@@ -81,7 +77,7 @@ public class TrainingService(
             IsLevelUp: isLevelUp);
     }
 
-    private TrainingBattleSummary ResolveBattleUntilFinished(
+    private (TrainingBattleSummary Summary, TrainingContributionMetrics Metrics) ResolveBattleUntilFinished(
         IReadOnlyList<BattleActorInput> actors,
         IReadOnlyList<Move> playerMoves,
         IReadOnlyList<Move> moves)
@@ -92,6 +88,8 @@ public class TrainingService(
 
         var currentActors = actors.ToArray();
         var turn = 0;
+        var playerDealtTotalDamage = 0;
+        var playerEffectiveHealTotal = 0;
 
         while (turn < TrainingConstants.Battle.MaxTurns && turn < playerMoves.Count)
         {
@@ -104,11 +102,23 @@ public class TrainingService(
 
             var actions = trainingBattleFactory.CreateTurnActions(playerActor, enemyActor.ActorId, playerMoves[turn]);
             var resolution = battleService.ResolveTurn(new BattleTurnRequest(currentActors, actions, moves));
+            playerDealtTotalDamage += resolution.ActionResults
+                .Where(x => x.ActorId.Value == trainingBattleFactory.PlayerActorId)
+                .SelectMany(x => x.TargetResults)
+                .Where(x => x.TargetActorId.Value == trainingBattleFactory.EnemyActorId)
+                .Sum(x => x.Damage);
+            playerEffectiveHealTotal += resolution.ActionResults
+                .Where(x => x.ActorId.Value == trainingBattleFactory.PlayerActorId)
+                .SelectMany(x => x.TargetResults)
+                .Where(x => x.TargetActorId.Value == trainingBattleFactory.PlayerActorId)
+                .Sum(x => x.RecoveredHp);
             turn++;
             currentActors = BuildNextTurnActors(currentActors, resolution.UpdatedStates);
         }
 
-        return BuildSummary(currentActors, turn);
+        var summary = BuildSummary(currentActors, turn);
+        var metrics = BuildContributionMetrics(summary, playerDealtTotalDamage, playerEffectiveHealTotal);
+        return (summary, metrics);
     }
 
     private BattleActorInput[] BuildNextTurnActors(
@@ -150,6 +160,17 @@ public class TrainingService(
             CurrentPlayerHp: playerActor.CurrentHp ?? playerActor.BaseStatus.MaxHp,
             CurrentEnemyHp: enemyActor.CurrentHp ?? enemyActor.BaseStatus.MaxHp,
             Outcome: outcome);
+    }
+
+    private static TrainingContributionMetrics BuildContributionMetrics(
+        TrainingBattleSummary summary,
+        int playerDealtTotalDamage,
+        int playerEffectiveHealTotal)
+    {
+        return new TrainingContributionMetrics(
+            PlayerDealtTotalDamage: playerDealtTotalDamage,
+            PlayerEffectiveHealTotal: playerEffectiveHealTotal,
+            CurrentPlayerHp: summary.CurrentPlayerHp);
     }
 
     private bool ApplyExp(Player player, int exp)

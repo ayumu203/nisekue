@@ -5,11 +5,13 @@ namespace server.domain.battle;
 public class BattleTargetResult(
     BattleActorId targetActorId,
     int damage,
+    int recoveredHp,
     bool isDefeated,
     AilmentType? appliedAilment)
 {
     public BattleActorId TargetActorId { get; } = targetActorId;
     public int Damage { get; } = ValidateNonNegative(damage);
+    public int RecoveredHp { get; } = ValidateNonNegative(recoveredHp);
     public bool IsDefeated { get; } = isDefeated;
     public AilmentType? AppliedAilment { get; } = appliedAilment;
 
