@@ -1,4 +1,4 @@
-import { Box, Button, LinearProgress, Paper, Stack, Typography } from '@mui/material'
+import { Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolvePublicAssetPath } from '@/lib/assets'
@@ -50,6 +50,11 @@ export default function TrainingBattleResult({
   const enemyHp = locale.enemyHp
     .replace('{{current}}', String(result.currentEnemyHp))
     .replace('{{max}}', String(result.maxEnemyHp))
+  const resultSummary = locale.resultSummary
+    .replace('{{trainingResult}}', result.trainingResult)
+    .replace('{{turn}}', String(result.turn))
+    .replace('{{exp}}', String(result.exp))
+  const expValue = locale.expValue.replace('{{exp}}', String(result.exp))
 
   return (
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2.5 }}>
@@ -70,6 +75,29 @@ export default function TrainingBattleResult({
         <Typography variant="subtitle1" fontWeight={700} textAlign="center">
           {battleAgainst}
         </Typography>
+        <Paper
+          variant="outlined"
+          sx={{
+            ...innerSurfaceSx,
+            p: 2,
+            borderRadius: 3,
+            background:
+              'linear-gradient(135deg, rgba(255, 244, 214, 0.95), rgba(255, 231, 182, 0.88))',
+          }}
+        >
+          <Stack spacing={1.25} alignItems="center">
+            <Typography variant="caption" color="text.secondary">
+              {locale.battleResultTitle}
+            </Typography>
+            <Typography variant="h4" fontWeight={900} color="warning.dark">
+              {expValue}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" textAlign="center">
+              {resultSummary}
+            </Typography>
+            {result.isLevelUp ? <Chip color="success" label={locale.levelUp} sx={{ fontWeight: 700 }} /> : null}
+          </Stack>
+        </Paper>
         <Box
           sx={{
             display: 'grid',
@@ -97,8 +125,8 @@ export default function TrainingBattleResult({
             <Typography variant="caption" color="text.secondary">
               {locale.expGained}
             </Typography>
-            <Typography variant="subtitle2" fontWeight={700}>
-              {result.exp}
+            <Typography variant="subtitle2" fontWeight={700} color="warning.dark">
+              {expValue}
             </Typography>
           </Paper>
         </Box>

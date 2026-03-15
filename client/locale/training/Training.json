@@ -30,6 +30,8 @@
   "result": "結果",
   "turn": "ターン",
   "expGained": "獲得経験値",
+  "expValue": "+{{exp}} EXP",
+  "levelUp": "レベルアップ！",
   "resultSummary": "結果: {{trainingResult}} / ターン: {{turn}} / 獲得経験値: {{exp}}",
   "playerHp": "プレイヤー HP: {{current}} / {{max}}",
   "enemyHp": "敵 HP: {{current}} / {{max}}",
