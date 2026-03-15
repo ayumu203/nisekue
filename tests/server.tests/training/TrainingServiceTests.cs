@@ -304,6 +304,60 @@ public class TrainingServiceTests
         exp.Should().Be(19);
     }
 
+    [Fact]
+    public void Calculate_WhenHealContributionIsPresent_IncreasesExperience()
+    {
+        var calculator = new TrainingExpCalculator();
+        var player = new Player(
+            new PlayerId(Guid.NewGuid()),
+            name: "Priest",
+            level: 10,
+            exp: 0,
+            status: new Status(maxHp: 40, maxMp: 20, strength: 4, defense: 6, intelligence: 10, luck: 0, speed: 6));
+
+        var enemy = new TrainingEnemy(
+            new TrainingEnemyId(1),
+            name: "Enemy",
+            imagePath: "/image/training/01_heishi.png",
+            level: 10,
+            status: new Status(maxHp: 40, maxMp: 0, strength: 8, defense: 5, intelligence: 3, luck: 0, speed: 4));
+
+        var metrics = new TrainingContributionMetrics(
+            PlayerDealtTotalDamage: 20,
+            PlayerEffectiveHealTotal: 20,
+            CurrentPlayerHp: 10);
+        var exp = calculator.Calculate(player, enemy, metrics, TrainingOutcome.Draw);
+
+        exp.Should().Be(14);
+    }
+
+    [Fact]
+    public void Calculate_WhenComputedExpIsZero_ReturnsMinimumExperience()
+    {
+        var calculator = new TrainingExpCalculator();
+        var player = new Player(
+            new PlayerId(Guid.NewGuid()),
+            name: "Tester",
+            level: 50,
+            exp: 0,
+            status: new Status(maxHp: 30, maxMp: 0, strength: 10, defense: 10, intelligence: 10, luck: 0, speed: 10));
+
+        var enemy = new TrainingEnemy(
+            new TrainingEnemyId(1),
+            name: "Slime",
+            imagePath: "/image/training/01_heishi.png",
+            level: 1,
+            status: new Status(maxHp: 10, maxMp: 0, strength: 1, defense: 1, intelligence: 1, luck: 0, speed: 1));
+
+        var metrics = new TrainingContributionMetrics(
+            PlayerDealtTotalDamage: 0,
+            PlayerEffectiveHealTotal: 0,
+            CurrentPlayerHp: 0);
+        var exp = calculator.Calculate(player, enemy, metrics, TrainingOutcome.Lose);
+
+        exp.Should().Be(1);
+    }
+
     private static TrainingService CreateService(IPlayerRepository playerRepository, ITrainingEnemyRepository enemyRepository)
     {
         return new TrainingService(

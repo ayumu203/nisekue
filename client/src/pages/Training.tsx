@@ -130,7 +130,8 @@ export default function Training() {
     }
   })
 
-  const trainingEnemiesSWRKey = session?.access_token ? ([`training-enemies`] as const) : null
+  const trainingEnemiesSWRKey =
+    session?.access_token && player ? ([`training-enemies`, session.user.id] as const) : null
   const {
     data: trainingEnemies,
     error: trainingEnemiesError,
