@@ -696,11 +696,7 @@ export default function Quest() {
                       <Button
                         variant="contained"
                         onClick={() => void handleSubmitCommand()}
-                        disabled={
-                          isCommandSubmitting ||
-                          isEscaping ||
-                          !canSubmitCurrentTurn
-                        }
+                        disabled={isCommandSubmitting || isEscaping || !canSubmitCurrentTurn}
                         sx={{ ...menuButtonSx, ...softGreenButtonSx }}
                       >
                         {isCommandSubmitting ? locale.submittingCommand : locale.submitCommand}
