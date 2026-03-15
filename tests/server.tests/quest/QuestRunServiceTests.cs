@@ -171,6 +171,7 @@ public class QuestRunServiceTests
         repository.StoredRun.LastTurnResults!.Actions.Should().Contain(x =>
             x.ActorParticipantId == priestParticipantId.Value &&
             x.ActionKind == ActionKind.Prayer.ToString() &&
+            x.Logs.Contains("PriestはOwnerに祈りを捧げた") &&
             x.TargetSummaries.Any(t => t.TargetParticipantId == playerParticipantId.Value));
     }
 
@@ -228,7 +229,10 @@ public class QuestRunServiceTests
         result.ResolvedInThisRequest.Should().BeTrue();
         repository.StoredRun!.BattleState.Enemies.Should().Contain(x => x.Ailments.Any(a => a.Type == AilmentType.DamageTrap));
         repository.StoredRun.LastTurnResults.Should().NotBeNull();
-        repository.StoredRun.LastTurnResults!.Actions.Should().Contain(x => x.ActorParticipantId == rangerParticipantId.Value && x.MoveId == trapMoveId.Id);
+        repository.StoredRun.LastTurnResults!.Actions.Should().Contain(x =>
+            x.ActorParticipantId == rangerParticipantId.Value &&
+            x.MoveId == trapMoveId.Id &&
+            x.Logs.Contains("RangerはSlimeにTrapを使って2ダメージを与え、DamageTrapを付与した"));
     }
 
     private static QuestRunService CreateRunService(

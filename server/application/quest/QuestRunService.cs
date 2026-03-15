@@ -386,7 +386,12 @@ public class QuestRunService(
                 actionResult.MoveId is null ? null : moveById.GetValueOrDefault(actionResult.MoveId.Id)?.Name,
                 actionResult.Succeeded,
                 targetSummaries,
-                []);
+                BuildActionLogs(
+                    actorDisplayName,
+                    MapActionKind(actionResult.ActionKind),
+                    actionResult.MoveId is null ? null : moveById.GetValueOrDefault(actionResult.MoveId.Id)?.Name,
+                    actionResult.Succeeded,
+                    targetSummaries));
         }).ToArray();
 
         var floorTransition = summary.IsFloorCleared
@@ -413,10 +418,92 @@ public class QuestRunService(
         {
             server.domain.battle.enums.BattleActionKind.NormalAttack => ActionKind.NormalAttack.ToString(),
             server.domain.battle.enums.BattleActionKind.UseMove => ActionKind.UseMove.ToString(),
+            server.domain.battle.enums.BattleActionKind.Prayer => ActionKind.Prayer.ToString(),
             server.domain.battle.enums.BattleActionKind.Guard => ActionKind.Guard.ToString(),
             server.domain.battle.enums.BattleActionKind.Wait => ActionKind.Wait.ToString(),
             _ => actionKind.ToString()
         };
+    }
+
+    private static IReadOnlyList<string> BuildActionLogs(
+        string actorDisplayName,
+        string actionKind,
+        string? moveName,
+        bool succeeded,
+        IReadOnlyList<QuestResolvedTargetSummary> targetSummaries)
+    {
+        if (!succeeded)
+        {
+            return [$"{actorDisplayName}は行動したが失敗した"];
+        }
+
+        if (targetSummaries.Count == 0)
+        {
+            return actionKind switch
+            {
+                nameof(ActionKind.Guard) => [$"{actorDisplayName}は身を守っている"],
+                nameof(ActionKind.Wait) => [$"{actorDisplayName}は様子を見ている"],
+                _ => [$"{actorDisplayName}は行動した"]
+            };
+        }
+
+        return targetSummaries
+            .Select(target => BuildTargetLog(actorDisplayName, actionKind, moveName, target))
+            .ToArray();
+    }
+
+    private static string BuildTargetLog(
+        string actorDisplayName,
+        string actionKind,
+        string? moveName,
+        QuestResolvedTargetSummary target)
+    {
+        if (actionKind == nameof(ActionKind.Prayer))
+        {
+            return $"{actorDisplayName}は{target.TargetDisplayName}に祈りを捧げた";
+        }
+
+        if (target.HpChange < 0)
+        {
+            var damage = Math.Abs(target.HpChange);
+            if (target.AppliedEffects.Count > 0)
+            {
+                var effectNames = string.Join("、", target.AppliedEffects);
+                return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+                    ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{damage}ダメージを与え、{effectNames}を付与した"
+                    : $"{actorDisplayName}は{target.TargetDisplayName}に{damage}ダメージを与え、{effectNames}を付与した";
+            }
+
+            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{damage}ダメージを与えた"
+                : $"{actorDisplayName}は{target.TargetDisplayName}に{damage}ダメージを与えた";
+        }
+
+        if (target.HpChange > 0)
+        {
+            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{target.HpChange}回復した"
+                : $"{actorDisplayName}は{target.TargetDisplayName}を{target.HpChange}回復した";
+        }
+
+        if (target.MpChange > 0)
+        {
+            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使ってMPを{target.MpChange}回復した"
+                : $"{actorDisplayName}は{target.TargetDisplayName}のMPを{target.MpChange}回復した";
+        }
+
+        if (target.AppliedEffects.Count > 0)
+        {
+            var effectNames = string.Join("、", target.AppliedEffects);
+            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{effectNames}を付与した"
+                : $"{actorDisplayName}は{target.TargetDisplayName}に{effectNames}を付与した";
+        }
+
+        return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+            ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使った"
+            : $"{actorDisplayName}は{target.TargetDisplayName}に行動した";
     }
 
     private sealed record ActorStateSnapshot(int CurrentHp, int CurrentMp, bool IsDead);
