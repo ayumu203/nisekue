@@ -107,6 +107,217 @@ public class QuestBattleFactoryTests
         moves.Should().ContainSingle(x => x.Id.Id == moveId.Id);
     }
 
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenNpcPriestHasNoHealTarget_UsesPrayer()
+    {
+        var participantId = QuestParticipantId.New();
+        var run = CreateNpcRun(
+            participantId,
+            Job.Priest,
+            actionMode: ActionMode.AutoAttackOnly,
+            initialActionMode: ActionMode.AutoAttackOnly,
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Npc, "Priest", Job.Priest, new BattlePosition(BattleRow.Back, BattleColumn.Left), 30, 10, 4, 4, 12),
+                new PartyMemberSeed(QuestParticipantId.New(), ParticipantType.Player, "Warrior", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), 40, 5, 10, 4, 3)
+            ],
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Front, BattleColumn.Right)
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([]));
+
+        actions.Should().ContainSingle(x =>
+            x.ActorId == participantId.Value &&
+            x.Kind == BattleActionKind.Prayer &&
+            x.SelectedPosition == new BattlePosition(BattleRow.Front, BattleColumn.Left));
+    }
+
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenNpcRangerHasNoTrap_UsesTrapMove()
+    {
+        var participantId = QuestParticipantId.New();
+        var trapMoveId = new MoveId(12);
+        var run = CreateNpcRun(
+            participantId,
+            Job.Ranger,
+            actionMode: ActionMode.AutoAttackOnly,
+            initialActionMode: ActionMode.AutoAttackOnly,
+            moveIds: [trapMoveId],
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Npc, "Ranger", Job.Ranger, new BattlePosition(BattleRow.Middle, BattleColumn.Left), 30, 10, 8, 4, 4)
+            ],
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Back, BattleColumn.Right),
+                new BattlePosition(BattleRow.Front, BattleColumn.Left)
+            ]);
+
+        var trapMove = new Move(
+            trapMoveId,
+            "Trap",
+            "trap",
+            TargetType.Enemy,
+            AttackRange.Single,
+            3,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    trapMoveId,
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(AilmentType.DamageTrap, 1m, 2, new DamageEffect(1, 0.1m, 0, 0m, ElementType.None)))
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([trapMove]));
+
+        actions.Should().ContainSingle(x =>
+            x.ActorId == participantId.Value &&
+            x.Kind == BattleActionKind.UseMove &&
+            x.MoveId == trapMoveId.Id &&
+            x.SelectedPosition == new BattlePosition(BattleRow.Back, BattleColumn.Right));
+    }
+
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenNpcWarriorOnBossFloor_UsesSingleAttackMove()
+    {
+        var participantId = QuestParticipantId.New();
+        var attackMoveId = new MoveId(1);
+        var run = CreateNpcRun(
+            participantId,
+            Job.Warrior,
+            actionMode: ActionMode.AutoAttackOnly,
+            initialActionMode: ActionMode.AutoAttackOnly,
+            moveIds: [attackMoveId],
+            isBossFloor: true,
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Npc, "Warrior", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), 40, 10, 12, 5, 3)
+            ],
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Front, BattleColumn.Right)
+            ]);
+
+        var attackMove = new Move(
+            attackMoveId,
+            "Strike",
+            "strike",
+            TargetType.Enemy,
+            AttackRange.Single,
+            4,
+            0,
+            MoveCategory.Attack,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    attackMoveId,
+                    1,
+                    MoveEffectType.Damage,
+                    damage: new DamageEffect(1, 1m, 1, 0m, ElementType.None))
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([attackMove]));
+
+        actions.Should().ContainSingle(x =>
+            x.ActorId == participantId.Value &&
+            x.Kind == BattleActionKind.UseMove &&
+            x.MoveId == attackMoveId.Id);
+    }
+
+    private static QuestRun CreateNpcRun(
+        QuestParticipantId actorId,
+        Job actorJob,
+        ActionMode actionMode,
+        ActionMode initialActionMode,
+        IReadOnlyList<MoveId>? moveIds = null,
+        IReadOnlyList<PartyMemberSeed>? party = null,
+        IReadOnlyList<BattlePosition>? enemyPositions = null,
+        bool isBossFloor = false)
+    {
+        moveIds ??= [];
+        party ??=
+        [
+            new PartyMemberSeed(actorId, ParticipantType.Npc, actorJob.ToString(), actorJob, new BattlePosition(BattleRow.Front, BattleColumn.Left), 30, 10, 10, 5, 5)
+        ];
+        enemyPositions ??= [new BattlePosition(BattleRow.Front, BattleColumn.Right)];
+
+        var snapshots = party.Select((member, index) =>
+        {
+            var set = new MoveSet();
+            if (member.ParticipantId == actorId)
+            {
+                for (var i = 0; i < moveIds.Count; i++)
+                {
+                    set.SetSlot(i, moveIds[i]);
+                }
+            }
+
+            return new QuestRunPartyMemberSnapshot(
+                member.ParticipantId,
+                member.Type,
+                member.DisplayName,
+                member.Type == ParticipantType.Player ? "/images/player.png" : null,
+                member.Job,
+                new Status(member.MaxHp, member.MaxMp, member.Strength, member.Defense, member.Intelligence, 3, 8),
+                set,
+                member.Position,
+                member.ParticipantId == actorId ? initialActionMode : ActionMode.Manual);
+        }).ToArray();
+
+        var partyStates = party.Select(member => new QuestRunPartyMemberState(
+            member.ParticipantId,
+            currentHp: member.MaxHp,
+            currentMp: member.MaxMp,
+            isDead: false,
+            canActFromTurn: 1,
+            actionMode: member.ParticipantId == actorId ? actionMode : ActionMode.Manual)).ToArray();
+
+        var enemies = enemyPositions.Select(position =>
+            new QuestEnemyState(QuestEnemyInstanceId.New(), new QuestEnemyDefinitionId(1), position, 20, 0, false)).ToArray();
+
+        return new QuestRun(
+            QuestRunId.New(),
+            QuestRoomId.New(),
+            new QuestStageId(1),
+            snapshots,
+            new QuestFloorState(
+                1,
+                isBossFloor,
+                enemyPositions.Select((position, index) => new QuestEnemyPlacement(index + 1, new QuestEnemyDefinitionId(1), position))),
+            new QuestBattleState(partyStates, enemies),
+            new QuestTurnState(1, DateTimeOffset.UtcNow.AddSeconds(30)),
+            new QuestTrapCollection(),
+            new QuestRewardAccumulator(),
+            lastTurnResults: null,
+            chatMessages: [],
+            startedAt: DateTimeOffset.UtcNow);
+    }
+
+    private readonly record struct PartyMemberSeed(
+        QuestParticipantId ParticipantId,
+        ParticipantType Type,
+        string DisplayName,
+        Job Job,
+        BattlePosition Position,
+        int MaxHp,
+        int MaxMp,
+        int Strength,
+        int Defense,
+        int Intelligence);
+
     private sealed class FakeMoveRepository(IReadOnlyList<Move> moves) : IMoveRepository
     {
         private readonly IReadOnlyDictionary<int, Move> moveById = moves.ToDictionary(x => x.Id.Id);

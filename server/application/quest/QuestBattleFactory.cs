@@ -10,6 +10,8 @@ namespace server.application.quest;
 
 public class QuestBattleFactory
 {
+    private readonly QuestAllyNpcActionPolicy allyNpcActionPolicy = new();
+
     public BattleActorInput[] CreateActorInputs(QuestRun run)
     {
         ArgumentNullException.ThrowIfNull(run);
@@ -98,7 +100,7 @@ public class QuestBattleFactory
 
             var command = pending.TryGetValue(member.ParticipantId, out var submitted)
                 ? submitted
-                : CreateFallbackPartyCommand(run, member);
+                : await CreateFallbackPartyCommandAsync(run, member, moveRepository, movesById);
 
             Move? move = null;
             if (command.ActionKind == ActionKind.UseMove && command.MoveId is not null)
@@ -125,6 +127,14 @@ public class QuestBattleFactory
 
     private static QuestSubmittedCommand CreateFallbackPartyCommand(QuestRun run, QuestRunPartyMemberState member)
     {
+        var snapshot = run.PartySnapshots.FirstOrDefault(x => x.ParticipantId == member.ParticipantId)
+            ?? throw new KeyNotFoundException($"参加者スナップショットが見つかりません。 participantId={member.ParticipantId.Value}");
+
+        if (snapshot.Type == ParticipantType.Npc)
+        {
+            throw new InvalidOperationException("NPC のフォールバックコマンドには行動ポリシーを使用してください。");
+        }
+
         var selectedTargetPosition = run.BattleState.Enemies
             .Where(x => !x.IsDead)
             .OrderBy(x => (int)x.Position.Row)
@@ -139,6 +149,28 @@ public class QuestBattleFactory
             DateTimeOffset.UtcNow,
             selectedTargetPosition: selectedTargetPosition,
             isAutoSubmitted: true);
+    }
+
+    private async Task<QuestSubmittedCommand> CreateFallbackPartyCommandAsync(
+        QuestRun run,
+        QuestRunPartyMemberState member,
+        IMoveRepository moveRepository,
+        IDictionary<int, Move> movesById)
+    {
+        var snapshot = run.PartySnapshots.FirstOrDefault(x => x.ParticipantId == member.ParticipantId)
+            ?? throw new KeyNotFoundException($"参加者スナップショットが見つかりません。 participantId={member.ParticipantId.Value}");
+        if (snapshot.Type != ParticipantType.Npc)
+        {
+            return CreateFallbackPartyCommand(run, member);
+        }
+
+        var availableMoves = new List<Move>();
+        foreach (var moveId in snapshot.MoveSet.GetLearnedMoveIds())
+        {
+            availableMoves.Add(await GetMoveAsync(moveId, moveRepository, movesById));
+        }
+
+        return allyNpcActionPolicy.SelectAction(run, member.ParticipantId, availableMoves, DateTimeOffset.UtcNow);
     }
 
     private static BattleActionInput? CreateBattleAction(QuestSubmittedCommand command, bool isEnemy, Move? move = null)
