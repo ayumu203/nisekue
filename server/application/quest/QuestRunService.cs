@@ -20,7 +20,7 @@ public class QuestRunService(
     QuestBattleFactory questBattleFactory)
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(60);
-    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
+    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(1);
 
     public async Task<QuestRun> GetDetailAsync(QuestRunId runId)
     {
