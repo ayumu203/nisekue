@@ -8,11 +8,26 @@ internal static class TrainingEndpoints
 {
     internal static WebApplication MapTrainingEndpoints(this WebApplication app)
     {
-        app.MapGet("/training/enemies", async (TrainingService trainingService) =>
+        app.MapGet("/training/enemies", async (ClaimsPrincipal user, TrainingService trainingService) =>
         {
-            var enemies = await trainingService.GetTrainingEnemies();
-            return Results.Ok(enemies);
-        }).RequireAuthorization();
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                var enemies = await trainingService.GetTrainingEnemies(playerId.Value);
+                return Results.Ok(enemies);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message });
+            }
+        }).RequireAuthorization()
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status404NotFound);
 
         app.MapPost("/training/execute", async (ClaimsPrincipal user, ExecuteTrainingRequest request, TrainingService trainingService) =>
         {

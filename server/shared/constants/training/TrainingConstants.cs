@@ -11,7 +11,7 @@ public static class TrainingConstants
     public static class Battle
     {
         public const int MaxTurns = 3;
-        public const int CooldownSeconds = 5;
+        public const int CooldownSeconds = 3;
     }
 
     public static class Exp

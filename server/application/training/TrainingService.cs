@@ -17,13 +17,20 @@ public class TrainingService(
     TrainingOutcomeJudge trainingOutcomeJudge,
     TrainingExpCalculator trainingExpCalculator)
 {
-    public async Task<TrainingEnemyView[]> GetTrainingEnemies()
+    public async Task<TrainingEnemyView[]> GetTrainingEnemies(PlayerId playerId)
     {
-        var enemies = await trainingEnemyRepository.GetTrainingEnemiesAsync();
+        var player = await playerRepository.GetPlayerAsync(playerId)
+            ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
 
-        return enemies
+        var enemies = await trainingEnemyRepository.GetTrainingEnemiesAsync();
+        var sortedEnemies = enemies
             .OrderBy(x => x.Level)
             .ThenBy(x => x.Id.Value)
+            .ToArray();
+        var visibleEnemyLevelCap = ResolveVisibleEnemyLevelCap(player.Level, sortedEnemies.Select(x => x.Level).ToArray());
+
+        return sortedEnemies
+            .Where(x => x.Level <= visibleEnemyLevelCap)
             .Select(x => new TrainingEnemyView(
                 Id: x.Id.Value,
                 Name: x.Name,
@@ -75,6 +82,24 @@ public class TrainingService(
             MaxEnemyHp: enemy.Status.MaxHp,
             Exp: exp,
             IsLevelUp: isLevelUp);
+    }
+
+    private static int ResolveVisibleEnemyLevelCap(int playerLevel, IReadOnlyList<int> enemyLevels)
+    {
+        if (enemyLevels.Count == 0)
+        {
+            return 0;
+        }
+
+        foreach (var enemyLevel in enemyLevels)
+        {
+            if (enemyLevel > playerLevel)
+            {
+                return enemyLevel;
+            }
+        }
+
+        return enemyLevels[^1];
     }
 
     private (TrainingBattleSummary Summary, TrainingContributionMetrics Metrics) ResolveBattleUntilFinished(
