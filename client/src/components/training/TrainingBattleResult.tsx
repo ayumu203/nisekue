@@ -86,9 +86,6 @@ export default function TrainingBattleResult({
           }}
         >
           <Stack spacing={1.25} alignItems="center">
-            <Typography variant="caption" color="text.secondary">
-              {locale.battleResultTitle}
-            </Typography>
             <Typography variant="h4" fontWeight={900} color="warning.dark">
               {expValue}
             </Typography>
