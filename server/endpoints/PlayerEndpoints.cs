@@ -78,7 +78,7 @@ internal static class PlayerEndpoints
                     request.UserName,
                     level: 1,
                     exp: 0,
-                    status: new Status(maxHp: 10, maxMp: 2, strength: 1, defense: 1, intelligence: 1, luck: 1, speed: 1),
+                    status: new Status(maxHp: 24, maxMp: 8, strength: 7, defense: 5, intelligence: 5, luck: 3, speed: 4),
                     job: Job.Apprentice,
                     imagePath: PlayerImageCatalog.DefaultFileName,
                     moveSet: moveSet);

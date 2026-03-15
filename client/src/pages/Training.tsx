@@ -27,6 +27,8 @@ import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import type { GetPlayerResponse } from '@/schema/player'
 
+const TRAINING_COOLDOWN_MS = 3000
+
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
   return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
 }
@@ -53,6 +55,18 @@ function normalizeTrainingMoveIds(
 
     return availableMoveIds.has(moveId) ? moveId : fallbackMoveIds[index]
   })
+}
+
+function areMoveIdArraysEqual(left: Array<number | null> | null, right: Array<number | null> | null): boolean {
+  if (left === right) {
+    return true
+  }
+
+  if (!left || !right || left.length !== right.length) {
+    return false
+  }
+
+  return left.every((moveId, index) => moveId === right[index])
 }
 
 export default function Training() {
@@ -116,7 +130,8 @@ export default function Training() {
     }
   })
 
-  const trainingEnemiesSWRKey = session?.access_token ? ([`training-enemies`] as const) : null
+  const trainingEnemiesSWRKey =
+    session?.access_token && player ? ([`training-enemies`, session.user.id] as const) : null
   const {
     data: trainingEnemies,
     error: trainingEnemiesError,
@@ -136,8 +151,18 @@ export default function Training() {
       return
     }
 
-    setPlannedMoveIds((current) => normalizeTrainingMoveIds(player, current ?? lastSubmittedMoveIds))
-    setLastSubmittedMoveIds((current) => (current ? normalizeTrainingMoveIds(player, current) : current))
+    setPlannedMoveIds((current) => {
+      const next = normalizeTrainingMoveIds(player, current ?? lastSubmittedMoveIds)
+      return areMoveIdArraysEqual(current, next) ? current : next
+    })
+    setLastSubmittedMoveIds((current) => {
+      if (!current) {
+        return current
+      }
+
+      const next = normalizeTrainingMoveIds(player, current)
+      return areMoveIdArraysEqual(current, next) ? current : next
+    })
   }, [lastSubmittedMoveIds, player])
 
   async function runTraining(enemy: TrainingEnemy, moveIds: Array<number | null>): Promise<void> {
@@ -181,7 +206,7 @@ export default function Training() {
       }
     } finally {
       setIsTrainingSubmitting(false)
-      setTrainingLockUntilMs(Date.now() + 5000)
+      setTrainingLockUntilMs(Date.now() + TRAINING_COOLDOWN_MS)
     }
   }
 
