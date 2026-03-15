@@ -48,7 +48,7 @@ classDiagram
 
         class TrainingExpCalculator {
             <<Domain Service>>
-            +Calculate(player: Player, enemy: TrainingEnemy, outcome: TrainingOutcome, playerDealtTotalDamage: int) int
+            +Calculate(player: Player, enemy: TrainingEnemy, metrics: TrainingContributionMetrics, outcome: TrainingOutcome) int
         }
 
         class TrainingBattleSummary {
@@ -59,6 +59,13 @@ classDiagram
             +TrainingOutcome Outcome
         }
 
+        class TrainingContributionMetrics {
+            <<Value Object>>
+            +int PlayerDealtTotalDamage
+            +int PlayerEffectiveHealTotal
+            +int CurrentPlayerHp
+        }
+
         class TrainingService {
             <<Application Service>>
             +GetTrainingEnemies() TrainingEnemyView[]
@@ -66,6 +73,7 @@ classDiagram
             -ResolveBattleUntilFinished(actors: IReadOnlyList~BattleActorInput~, actions: IReadOnlyList~BattleActionInput~, moves: IReadOnlyList~Move~) TrainingBattleSummary
             -BuildNextTurnActors(actors: IReadOnlyList~BattleActorInput~, states: IReadOnlyList~BattleActorState~) BattleActorInput[]
             -BuildSummary(actors: IReadOnlyList~BattleActorInput~, turn: int) TrainingBattleSummary
+            -BuildContributionMetrics(player: Player, enemy: TrainingEnemy, summary: TrainingBattleSummary) TrainingContributionMetrics
             -ApplyExp(player: Player, exp: int) bool
         }
 
@@ -98,5 +106,6 @@ classDiagram
     TrainingService ..> TrainingOutcomeJudge : use
     TrainingService ..> TrainingExpCalculator : use
     TrainingService ..> TrainingBattleSummary : builds
+    TrainingService ..> TrainingContributionMetrics : builds
     TrainingService ..> TrainingResultView : has
     TrainingService ..> TrainingEnemyView : has
