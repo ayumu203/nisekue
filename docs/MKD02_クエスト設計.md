@@ -40,7 +40,7 @@
 
 ### 2.5 クエスト後クールダウン
 
-* クエスト終了後、`LeaveQuest` していないプレイヤーには 3 分間のクエスト参加クールダウンを付与する。
+* クエスト終了後、`LeaveQuest` していないプレイヤーには 1分間のクエスト参加クールダウンを付与する。
 * クールダウン期限は `CoreDomain.Player` の恒久情報として保持する。
 * クールダウン中は `QuestRoomService.CreateRoomAsync()` と `JoinRoomAsync()` の両方を拒否する。
 * `Succeeded` / `Failed` / `Aborted` のいずれで終了した場合も同じルールを適用する。
@@ -1253,7 +1253,7 @@ CSV 採用理由:
 | 同一プレイヤーの同時募集中ルームを 1 件までに制限する | `QuestRoom` | `quest_rooms` |
 | 新規ルーム作成時に同一オーナーの旧募集ルームを `Cancelled` で閉じる | `QuestRoom` | `quest_rooms` |
 | 進行中クエスト参加者は新規ルームを作成できない | `QuestRoom` + `QuestRun` | 募集系 + 進行系テーブル |
-| クエスト終了後 3 分間はルーム作成・参加を禁止する | `QuestRun` + `Player` + `QuestRoomService` | `players.quest_cooldown_until` |
+| クエスト終了後 1分間はルーム作成・参加を禁止する | `QuestRun` + `Player` + `QuestRoomService` | `players.quest_cooldown_until` |
 | オーナーが募集中ルームを明示的にキャンセルできる | `QuestRoom` + `QuestRoomService` | `quest_rooms` |
 | ソロは即開始、マルチは 2 人以上で開始 | `QuestRoom` | `quest_rooms` |
 | 開始時に不足人数だけ NPC を補充して最低 4 人編成にする | `QuestRoom` + `QuestSnapshotFactory` | `quest_room_participants`, `quest_run_party_snapshots` |

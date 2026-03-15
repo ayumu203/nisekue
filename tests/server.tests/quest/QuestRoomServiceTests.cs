@@ -100,7 +100,7 @@ public class QuestRoomServiceTests
         var act = () => service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Solo);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("クエスト終了後3分間は再参加できません。");
+            .WithMessage("クエスト終了後1分間は再参加できません。");
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class QuestRoomServiceTests
         var act = () => service.JoinRoomAsync(room.Id, guest.Id);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("クエスト終了後3分間は再参加できません。");
+            .WithMessage("クエスト終了後1分間は再参加できません。");
     }
 
     [Fact]
