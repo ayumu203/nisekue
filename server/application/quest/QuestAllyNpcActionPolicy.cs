@@ -31,7 +31,7 @@ public class QuestAllyNpcActionPolicy
             Job.Mage => SelectMageAction(run, snapshot, state, orderedMoves, now),
             Job.Priest => SelectPriestAction(run, snapshot, state, orderedMoves, now),
             Job.Ranger => SelectRangerAction(run, snapshot, state, orderedMoves, now),
-            _ => CreateNormalAttack(run, participantId, now, EnemyFrontFirstOrder)
+            _ => CreateNormalAttack(run, participantId, snapshot.StartPosition, now, EnemyFrontFirstOrder)
         };
     }
 
@@ -57,7 +57,7 @@ public class QuestAllyNpcActionPolicy
             return CreateUseMove(snapshot.ParticipantId, run.TurnState.CurrentTurnNo, usableSingleAttack[0], target.Value.Position, now);
         }
 
-        return CreateNormalAttack(run, snapshot.ParticipantId, now, EnemyFrontFirstOrder);
+        return CreateNormalAttack(run, snapshot.ParticipantId, snapshot.StartPosition, now, EnemyFrontFirstOrder);
     }
 
     private static QuestSubmittedCommand SelectGuardianAction(
@@ -94,7 +94,7 @@ public class QuestAllyNpcActionPolicy
             }
         }
 
-        return CreateNormalAttack(run, snapshot.ParticipantId, now, EnemyFrontFirstOrder);
+        return CreateNormalAttack(run, snapshot.ParticipantId, snapshot.StartPosition, now, EnemyFrontFirstOrder);
     }
 
     private static QuestSubmittedCommand SelectMageAction(
@@ -147,7 +147,7 @@ public class QuestAllyNpcActionPolicy
             return CreateUseMove(snapshot.ParticipantId, run.TurnState.CurrentTurnNo, restoreMpMove, snapshot.StartPosition, now);
         }
 
-        return CreateNormalAttack(run, snapshot.ParticipantId, now, EnemyBackFirstOrder);
+        return CreateNormalAttack(run, snapshot.ParticipantId, snapshot.StartPosition, now, EnemyBackFirstOrder);
     }
 
     private static QuestSubmittedCommand SelectPriestAction(
@@ -192,7 +192,7 @@ public class QuestAllyNpcActionPolicy
                 isAutoSubmitted: true);
         }
 
-        return CreateNormalAttack(run, snapshot.ParticipantId, now, EnemyFrontFirstOrder);
+        return CreateNormalAttack(run, snapshot.ParticipantId, snapshot.StartPosition, now, EnemyFrontFirstOrder);
     }
 
     private static QuestSubmittedCommand SelectRangerAction(
@@ -236,7 +236,7 @@ public class QuestAllyNpcActionPolicy
             return CreateUseMove(snapshot.ParticipantId, run.TurnState.CurrentTurnNo, usableSingleAttack[0], statusTarget.Value.Position, now);
         }
 
-        return CreateNormalAttack(run, snapshot.ParticipantId, now, EnemyBackFirstOrder);
+        return CreateNormalAttack(run, snapshot.ParticipantId, snapshot.StartPosition, now, EnemyBackFirstOrder);
     }
 
     private static IReadOnlyList<Move> OrderMovesByMoveSet(MoveSet moveSet, IReadOnlyList<Move> availableMoves)
@@ -425,10 +425,16 @@ public class QuestAllyNpcActionPolicy
     private static QuestSubmittedCommand CreateNormalAttack(
         QuestRun run,
         QuestParticipantId participantId,
+        BattlePosition actorPosition,
         DateTimeOffset now,
         IReadOnlyList<BattlePosition> preferredPositions)
     {
-        var target = FindEnemy(run, preferredPositions);
+        var target = FindReachableEnemy(run, actorPosition, preferredPositions);
+        if (target is null)
+        {
+            return CreateWait(participantId, run.TurnState.CurrentTurnNo, now);
+        }
+
         return new QuestSubmittedCommand(
             participantId,
             run.TurnState.CurrentTurnNo,
@@ -436,6 +442,47 @@ public class QuestAllyNpcActionPolicy
             now,
             selectedTargetPosition: target?.Position,
             isAutoSubmitted: true);
+    }
+
+    private static (QuestEnemyState Enemy, BattlePosition Position)? FindReachableEnemy(
+        QuestRun run,
+        BattlePosition actorPosition,
+        IReadOnlyList<BattlePosition> preferredPositions)
+    {
+        var reachableRows = GetReachableRows(actorPosition.Row);
+        var reachableEnemies = run.BattleState.Enemies
+            .Where(x => !x.IsDead && reachableRows.Contains(x.Position.Row))
+            .ToArray();
+        if (reachableEnemies.Length == 0)
+        {
+            return null;
+        }
+
+        foreach (var preferredPosition in preferredPositions)
+        {
+            var enemy = reachableEnemies.FirstOrDefault(x => x.Position == preferredPosition);
+            if (enemy is not null)
+            {
+                return (enemy, enemy.Position);
+            }
+        }
+
+        var fallback = reachableEnemies
+            .OrderBy(x => (int)x.Position.Row)
+            .ThenBy(x => (int)x.Position.Column)
+            .FirstOrDefault();
+        return fallback is null ? null : (fallback, fallback.Position);
+    }
+
+    private static IReadOnlySet<BattleRow> GetReachableRows(BattleRow actorRow)
+    {
+        return actorRow switch
+        {
+            BattleRow.Front => new HashSet<BattleRow> { BattleRow.Front },
+            BattleRow.Middle => new HashSet<BattleRow> { BattleRow.Front, BattleRow.Middle },
+            BattleRow.Back => new HashSet<BattleRow> { BattleRow.Front, BattleRow.Middle, BattleRow.Back },
+            _ => throw new ArgumentOutOfRangeException(nameof(actorRow), $"未対応の BattleRow: {actorRow}")
+        };
     }
 
     private static QuestSubmittedCommand CreateUseMove(

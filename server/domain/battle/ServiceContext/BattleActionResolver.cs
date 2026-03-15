@@ -26,20 +26,24 @@ public class BattleActionResolver(
         var moveMap = moves?.ToDictionary(x => x.Id.Id) ?? throw new ArgumentNullException(nameof(moves));
 
         if (!snapshotMap.TryGetValue(action.ActorId, out var actorSnapshot) ||
-            !stateMap.TryGetValue(action.ActorId, out var actorState) ||
-            actorState.IsDead)
+            !stateMap.TryGetValue(action.ActorId, out var actorState))
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.ActorUnavailable);
+        }
+
+        if (actorState.IsDead)
+        {
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.ActorUnavailable);
         }
 
         if (!actorState.CanAct())
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.CannotAct);
         }
 
         if (ShouldSkipActionByParalysis(actorState))
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.Paralyzed);
         }
 
         return action.Kind switch
@@ -64,7 +68,7 @@ public class BattleActionResolver(
         var targets = battleTargetingResolver.ResolveTargets(action.Target, actorSnapshot, snapshotMap.Values, stateMap.Values, fieldContext);
         if (targets.Count == 0)
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.NoTarget);
         }
 
         var attackerStatus = battleStatusResolver.BuildEffectiveStatus(actorSnapshot, actorState);
@@ -95,7 +99,7 @@ public class BattleActionResolver(
             targetResults.Add(new BattleTargetResult(targetId, damageResult.Damage, -damageResult.Damage, 0, targetState.IsDead, null));
         }
 
-        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, targetResults.Count > 0, targetResults);
+        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, targetResults.Count > 0, targetResults: targetResults);
     }
 
     private BattleActionResult ResolveMove(
@@ -109,17 +113,17 @@ public class BattleActionResolver(
     {
         if (action.MoveId is null || !moveMap.TryGetValue(action.MoveId.Id, out var move))
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.MoveUnavailable);
         }
 
         if (!actorSnapshot.MoveSet.GetLearnedMoveIds().Any(x => x.Id == move.Id.Id))
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.MoveUnavailable);
         }
 
         if (actorState.CurrentMp < move.MpCost)
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.InsufficientMp);
         }
 
         var targets = ResolveTargets(
@@ -130,7 +134,7 @@ public class BattleActionResolver(
             fieldContext);
         if (targets.Count == 0)
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.NoTarget);
         }
 
         actorState.ConsumeMp(move.MpCost);
@@ -166,7 +170,7 @@ public class BattleActionResolver(
             }
         }
 
-        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, true, targetResults);
+        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, true, targetResults: targetResults);
     }
 
     private BattleActionResult ResolveGuard(BattleAction action, BattleActorSnapshot actorSnapshot, BattleActorState actorState)
@@ -186,7 +190,7 @@ public class BattleActionResolver(
         var targets = ResolveTargets(action.Target, actorSnapshot, snapshotMap.Values, stateMap.Values, fieldContext);
         if (targets.Count == 0)
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.NoTarget);
         }
 
         var targetResults = new List<BattleTargetResult>();
@@ -202,7 +206,7 @@ public class BattleActionResolver(
             targetResults.Add(new BattleTargetResult(targetId, 0, 0, 0, false, null));
         }
 
-        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, targetResults.Count > 0, targetResults);
+        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, targetResults.Count > 0, targetResults: targetResults);
     }
 
     private BattleTargetResult? ResolveEffect(

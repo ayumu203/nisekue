@@ -47,6 +47,7 @@ public class BattleActionResolverTests
             [move]);
 
         result.Succeeded.Should().BeFalse();
+        result.FailureReason.Should().Be(BattleActionFailureReason.MoveUnavailable);
     }
 
     [Fact]
@@ -65,6 +66,7 @@ public class BattleActionResolverTests
             [move]);
 
         result.Succeeded.Should().BeFalse();
+        result.FailureReason.Should().Be(BattleActionFailureReason.InsufficientMp);
         actorState.CurrentMp.Should().Be(0);
     }
 
@@ -261,6 +263,7 @@ public class BattleActionResolverTests
             []);
 
         result.Succeeded.Should().BeFalse();
+        result.FailureReason.Should().Be(BattleActionFailureReason.ActorUnavailable);
     }
 
     [Fact]
@@ -283,6 +286,7 @@ public class BattleActionResolverTests
             []);
 
         skippedResult.Succeeded.Should().BeFalse();
+        skippedResult.FailureReason.Should().Be(BattleActionFailureReason.Paralyzed);
         targetState.CurrentHp.Should().Be(30);
 
         var actingResolver = CreateResolver(() => 0.9d);
@@ -297,6 +301,22 @@ public class BattleActionResolverTests
             []);
 
         actingResult.Succeeded.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Resolve_WhenNormalAttackHasNoTarget_ReturnsNoTargetFailure()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.NormalAttack, EnemyTarget()),
+            [actor],
+            [CreateState(actor.Id)],
+            []);
+
+        result.Succeeded.Should().BeFalse();
+        result.FailureReason.Should().Be(BattleActionFailureReason.NoTarget);
     }
 
     private static BattleActionResolver CreateResolver(Func<double>? randomProvider = null)

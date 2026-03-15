@@ -135,12 +135,24 @@ public class QuestBattleFactory
             throw new InvalidOperationException("NPC のフォールバックコマンドには行動ポリシーを使用してください。");
         }
 
+        var reachableRows = GetReachableRows(snapshot.StartPosition.Row);
         var selectedTargetPosition = run.BattleState.Enemies
             .Where(x => !x.IsDead)
+            .Where(x => reachableRows.Contains(x.Position.Row))
             .OrderBy(x => (int)x.Position.Row)
             .ThenBy(x => (int)x.Position.Column)
             .Select(x => (BattlePosition?)x.Position)
             .FirstOrDefault();
+
+        if (selectedTargetPosition is null)
+        {
+            return new QuestSubmittedCommand(
+                member.ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Wait,
+                DateTimeOffset.UtcNow,
+                isAutoSubmitted: true);
+        }
 
         return new QuestSubmittedCommand(
             member.ParticipantId,
@@ -216,6 +228,7 @@ public class QuestBattleFactory
 
     private static BattleActionInput? CreateEnemyNormalAttack(QuestRun run, QuestEnemyState enemy)
     {
+        var reachableRows = GetReachableRows(enemy.Position.Row);
         var targetId = run.PartySnapshots
             .Join(
                 run.BattleState.PartyMembers,
@@ -223,13 +236,19 @@ public class QuestBattleFactory
                 state => state.ParticipantId,
                 (snapshot, state) => new { snapshot, state })
             .Where(x => !x.state.IsDead && !x.state.HasLeftQuest)
+            .Where(x => reachableRows.Contains(x.snapshot.StartPosition.Row))
             .OrderBy(x => (int)x.snapshot.StartPosition.Row)
             .ThenBy(x => (int)x.snapshot.StartPosition.Column)
             .Select(x => x.snapshot.ParticipantId.Value)
             .FirstOrDefault();
         if (targetId == Guid.Empty)
         {
-            return null;
+            return new BattleActionInput(
+                ActorId: enemy.Id.Value,
+                Kind: BattleActionKind.Wait,
+                MoveId: null,
+                TargetType: TargetType.Self,
+                AttackRange: AttackRange.Single);
         }
 
         return new BattleActionInput(
@@ -260,5 +279,16 @@ public class QuestBattleFactory
     private static Guid ResolveEnemyActorId(QuestParticipantId participantId)
     {
         return participantId.Value;
+    }
+
+    private static IReadOnlySet<BattleRow> GetReachableRows(BattleRow actorRow)
+    {
+        return actorRow switch
+        {
+            BattleRow.Front => new HashSet<BattleRow> { BattleRow.Front },
+            BattleRow.Middle => new HashSet<BattleRow> { BattleRow.Front, BattleRow.Middle },
+            BattleRow.Back => new HashSet<BattleRow> { BattleRow.Front, BattleRow.Middle, BattleRow.Back },
+            _ => throw new ArgumentOutOfRangeException(nameof(actorRow), $"未対応の BattleRow: {actorRow}")
+        };
     }
 }

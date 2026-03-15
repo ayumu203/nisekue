@@ -357,6 +357,60 @@ public class QuestBattleFactoryTests
             x.MoveId == areaMoveId.Id);
     }
 
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenNpcCannotReachEnemyWithNormalAttack_UsesWait()
+    {
+        var participantId = QuestParticipantId.New();
+        var run = CreateNpcRun(
+            participantId,
+            Job.Warrior,
+            actionMode: ActionMode.AutoAttackOnly,
+            initialActionMode: ActionMode.AutoAttackOnly,
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Npc, "Warrior", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), 40, 10, 12, 5, 3)
+            ],
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Back, BattleColumn.Right)
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([]));
+
+        actions.Should().ContainSingle(x =>
+            x.ActorId == participantId.Value &&
+            x.Kind == BattleActionKind.Wait);
+    }
+
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenEnemyCannotReachAnyAlly_UsesWait()
+    {
+        var participantId = QuestParticipantId.New();
+        var run = CreateNpcRun(
+            participantId,
+            Job.Warrior,
+            actionMode: ActionMode.Manual,
+            initialActionMode: ActionMode.Manual,
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Back, BattleColumn.Left), 40, 10, 12, 5, 3)
+            ],
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Front, BattleColumn.Right)
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([]));
+
+        actions.Should().Contain(x =>
+            x.ActorId != participantId.Value &&
+            x.Kind == BattleActionKind.Wait);
+    }
+
     private static QuestRun CreateNpcRun(
         QuestParticipantId actorId,
         Job actorJob,

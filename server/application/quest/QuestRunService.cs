@@ -1,5 +1,6 @@
 using server.application.battle;
 using server.domain.battle;
+using server.domain.battle.enums;
 using server.domain.move;
 using server.domain.player;
 using server.domain.quest;
@@ -382,6 +383,7 @@ public class QuestRunService(
                     MapActionKind(actionResult.ActionKind),
                     actionResult.MoveId is null ? null : moveById.GetValueOrDefault(actionResult.MoveId.Id)?.Name,
                     actionResult.Succeeded,
+                    actionResult.FailureReason,
                     targetSummaries));
         }).ToArray();
 
@@ -421,11 +423,12 @@ public class QuestRunService(
         string actionKind,
         string? moveName,
         bool succeeded,
+        BattleActionFailureReason? failureReason,
         IReadOnlyList<QuestResolvedTargetSummary> targetSummaries)
     {
         if (!succeeded)
         {
-            return [$"{actorDisplayName}は行動したが失敗した"];
+            return [BuildFailureLog(actorDisplayName, actionKind, moveName, failureReason)];
         }
 
         if (targetSummaries.Count == 0)
@@ -463,6 +466,34 @@ public class QuestRunService(
                 group.Any(target => target.IsDeadAfterAction)))
             .Select(target => BuildTargetLog(actorDisplayName, actionKind, moveName, target))
             .ToArray();
+    }
+
+    private static string BuildFailureLog(
+        string actorDisplayName,
+        string actionKind,
+        string? moveName,
+        BattleActionFailureReason? failureReason)
+    {
+        var actionLabel = actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+            ? moveName
+            : actionKind switch
+            {
+                nameof(ActionKind.NormalAttack) => "攻撃",
+                nameof(ActionKind.Prayer) => "祈り",
+                nameof(ActionKind.Guard) => "防御",
+                _ => "行動"
+            };
+
+        return failureReason switch
+        {
+            BattleActionFailureReason.ActorUnavailable => $"{actorDisplayName}は行動前に倒れた",
+            BattleActionFailureReason.NoTarget => $"{actorDisplayName}は{actionLabel}しようとしたが、対象がいなかった",
+            BattleActionFailureReason.Paralyzed => $"{actorDisplayName}は麻痺して動けなかった",
+            BattleActionFailureReason.CannotAct => $"{actorDisplayName}は行動できなかった",
+            BattleActionFailureReason.InsufficientMp => $"{actorDisplayName}はMPが足りず{actionLabel}できなかった",
+            BattleActionFailureReason.MoveUnavailable => $"{actorDisplayName}は{actionLabel}できなかった",
+            _ => $"{actorDisplayName}は行動したが失敗した"
+        };
     }
 
     private static string BuildTargetLog(
