@@ -40,7 +40,7 @@ public class BattleTargetingResolver
 
         return ApplyDefaultAttackRange(
             selector.AttackRange,
-            selector.SelectedPosition is null
+            selector.SelectedPosition is null || fieldContext is null || fieldContext.Positions.Count == 0
                 ? candidates.OrderBy(x => x.Id.Value).Select(x => x.Id).ToArray()
                 : candidates.Select(x => x.Id).ToArray());
     }

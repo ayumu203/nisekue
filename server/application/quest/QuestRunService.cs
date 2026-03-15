@@ -353,7 +353,7 @@ public class QuestRunService(
                     ? "Defeated"
                     : targetResult.AppliedAilment is not null
                         ? "AilmentApplied"
-                        : targetResult.Damage > 0
+                        : targetResult.Damage > 0 || hpChange != 0 || mpChange != 0
                             ? "Hit"
                             : "Miss";
 
