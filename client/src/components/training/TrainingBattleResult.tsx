@@ -81,8 +81,7 @@ export default function TrainingBattleResult({
             ...innerSurfaceSx,
             p: 2,
             borderRadius: 3,
-            background:
-              'linear-gradient(135deg, rgba(255, 244, 214, 0.95), rgba(255, 231, 182, 0.88))',
+            background: 'linear-gradient(135deg, rgba(255, 244, 214, 0.95), rgba(255, 231, 182, 0.88))',
           }}
         >
           <Stack spacing={1.25} alignItems="center">

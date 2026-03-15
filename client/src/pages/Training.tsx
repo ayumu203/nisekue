@@ -57,10 +57,7 @@ function normalizeTrainingMoveIds(
   })
 }
 
-function areMoveIdArraysEqual(
-  left: Array<number | null> | null,
-  right: Array<number | null> | null,
-): boolean {
+function areMoveIdArraysEqual(left: Array<number | null> | null, right: Array<number | null> | null): boolean {
   if (left === right) {
     return true
   }
