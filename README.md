@@ -76,6 +76,7 @@ $ dotnet test
 ### 開発環境での手動適用
 
 ```bash
+# /server で実行.
 # 初回のみ (dotnet-ef の導入)
 dotnet tool install --global dotnet-ef --version 10.0.3
 
@@ -86,6 +87,7 @@ dotnet ef database update
 ### 新しい migration を作る場合
 
 ```bash
+# /server で実行.
 dotnet ef migrations add <MigrationName>
 ```
 
@@ -119,7 +121,7 @@ $ pnpx supabase stop
     - ChatDomain: チャット機能のドメイン.
     - BattleDomain: 戦闘の共通ロジック.
     - TrainDomain: 訓練を回すためのドメイン.
-    - QuestDoamin: クエストを回すためのドメイン.
+    - QuestDomain: クエストを回すためのドメイン.
 
 ## 開発の手順
 
