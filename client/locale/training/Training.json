@@ -10,7 +10,7 @@
   "trainingFailed": "訓練の実行に失敗しました",
   "retryAfterSeconds": "{{seconds}}秒後に再試行できます",
   "enemySelectTitle": "訓練相手",
-  "enemyLevel": "Lv.{{level}}",
+  "enemyLevel": "想定Lv.{{level}}",
   "fight": "戦う",
   "turnLabel": "Turn {{turn}}",
   "moveLabel": "使用技",
