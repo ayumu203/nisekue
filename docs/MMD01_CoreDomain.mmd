@@ -9,20 +9,24 @@ classDiagram
             +string? ImagePath
             +DateTimeOffset? QuestCooldownUntil
             +Job Job
+            +IReadOnlySet~Job~ MasteredJobs
             +int Level
             +int Exp
             +Status Status
             +MoveSet MoveSet
             +UpdateName(name: string) void
             +UpdateImagePath(imagePath: string?) void
-            +UpdateJob(job: Job) void
+            +ChangeJob(nextJob: Job, nextProfile: JobProfile, learningRule: JobMoveLearningRule) IReadOnlyList~MoveId~
             +UpdateStatus(status: Status) void
             +UpdateMoveSet(moveSet: MoveSet) void
             +SetQuestCooldownUntil(until: DateTimeOffset?) void
             -ValidateName(name: string) string
             -ValidateImagePath(imagePath: string?) string?
             +GainExp(exp: int) void
-            +LevelUp(growthValueRepository: IGrowthValueRepository) bool
+            +LevelUp(jobProfile: JobProfile, learningRule: JobMoveLearningRule) LevelUpResult
+            -CanChangeJob(nextProfile: JobProfile) bool
+            -MarkCurrentJobAsMastered(jobProfile: JobProfile) bool
+            -SynchronizeLearnableMoves(jobProfile: JobProfile, learningRule: JobMoveLearningRule) IReadOnlyList~MoveId~
         }
 
         class PlayerId {
@@ -52,15 +56,32 @@ classDiagram
             +int Speed
         }
 
+        class JobProfile {
+            <<Value Object>>
+            +Job Job
+            +int MasterLevel
+            +IReadOnlyList~Job~ RequiredMasterJobs
+        }
+
+        class LevelUpResult {
+            <<Value Object>>
+            +bool HasLeveledUp
+            +bool HasMasteredCurrentJob
+            +IReadOnlyList~MoveId~ NewlyLearnedMoveIds
+        }
+
         class MoveSet {
             <<Value Object>>
             +IReadOnlyList~MoveId?~ Slots
             +SetSlot(index: int, moveId: MoveId?) void
             +GetSlot(index: int) MoveId?
             +GetLearnedMoveIds() IReadOnlyList~MoveId~
+            +Contains(moveId: MoveId) bool
+            +AddLearnedMove(moveId: MoveId) void
             +GetFirstEmptySlotIndex() int?
             +ClearSlot(index: int) void
             +SwapSlots(fromIndex: int, toIndex: int) void
+            -DropOldestMoveBySetLimit() void
         }
 
         class IPlayerRepository {
@@ -72,14 +93,15 @@ classDiagram
             +Task SaveAsync(player: Player)
         }
 
-        class IGrowthValueRepository {
-            +GrowthValue GetByJob(job: Job)
+        class IJobProfileRepository {
+            +JobProfile GetByJob(job: Job)
         }
     }
 
     Player *-- PlayerId : has
     Player *-- Status : has
     Player *-- MoveSet : has
-    Player ..> IGrowthValueRepository : uses at LevelUp
-    IGrowthValueRepository ..> GrowthValue : returns
+    Player ..> JobMoveLearningRule : uses
+    Player ..> LevelUpResult : returns
+    IJobProfileRepository ..> JobProfile : returns
     IPlayerRepository ..> Player : stores/loads

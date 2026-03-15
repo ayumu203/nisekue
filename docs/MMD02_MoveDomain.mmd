@@ -1,6 +1,22 @@
 classDiagram
     %% Enum 定義は docs/MMD21_Enum.mmd を参照
     namespace MoveDomain {
+        %% job_levelup_growths.csv:
+        %% - 既存の成長値・master_level を保持
+        %% - 将来の上級職向けに required_master_job_1 ... required_master_job_n を定義
+        %% job_moves.csv:
+        %% - job ごとの move_1 ... move_n を定義
+        %% - k番目の技の習得レベルは master_level * k / n
+
+        %% ジョブごとの習得技定義
+        class JobMoveLearningRule {
+            <<Value Object>>
+            +Job Job
+            +IReadOnlyList~MoveId~ MoveIds
+            +ResolveRequiredLevel(order: int, masterLevel: int) int
+            +GetLearnableMoveIds(level: int, masterLevel: int) IReadOnlyList~MoveId~
+        }
+
         %% 技データ
         class Move {
             <<Aggregate Root>>
@@ -91,8 +107,13 @@ classDiagram
             +Task~Move?~ GetMoveAsync(moveId: MoveId)
             +Task~IReadOnlyList~Move~~ GetAllMovesAsync()
         }
+
+        class IJobMoveLearningRuleRepository {
+            +JobMoveLearningRule GetByJob(job: Job)
+        }
     }
 
+    JobMoveLearningRule *-- MoveId : has ordered
     Move *-- MoveId : has
     Move *-- MoveEffect : 1..*
     MoveEffect *-- MoveEffectId : has
@@ -101,3 +122,4 @@ classDiagram
     AilmentEffect *-- DamageEffect : optional
     MoveEffect *-- BuffEffect : optional
     IMoveRepository ..> Move : loads
+    IJobMoveLearningRuleRepository ..> JobMoveLearningRule : returns
