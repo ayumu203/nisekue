@@ -26,26 +26,31 @@ public class BattleActionResolver(
         var moveMap = moves?.ToDictionary(x => x.Id.Id) ?? throw new ArgumentNullException(nameof(moves));
 
         if (!snapshotMap.TryGetValue(action.ActorId, out var actorSnapshot) ||
-            !stateMap.TryGetValue(action.ActorId, out var actorState) ||
-            actorState.IsDead)
+            !stateMap.TryGetValue(action.ActorId, out var actorState))
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.ActorUnavailable);
+        }
+
+        if (actorState.IsDead)
+        {
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.ActorUnavailable);
         }
 
         if (!actorState.CanAct())
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.CannotAct);
         }
 
         if (ShouldSkipActionByParalysis(actorState))
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.Paralyzed);
         }
 
         return action.Kind switch
         {
             BattleActionKind.NormalAttack => ResolveNormalAttack(action, actorSnapshot, actorState, snapshotMap, stateMap, fieldContext),
             BattleActionKind.UseMove => ResolveMove(action, actorSnapshot, actorState, snapshotMap, stateMap, moveMap, fieldContext),
+            BattleActionKind.Prayer => ResolvePrayer(action, actorSnapshot, snapshotMap, stateMap, fieldContext),
             BattleActionKind.Guard => ResolveGuard(action, actorSnapshot, actorState),
             BattleActionKind.Wait => new BattleActionResult(action.ActorId, action.Kind, action.MoveId, true),
             _ => throw new ArgumentOutOfRangeException(nameof(action.Kind), $"未対応の BattleActionKind: {action.Kind}")
@@ -63,7 +68,7 @@ public class BattleActionResolver(
         var targets = battleTargetingResolver.ResolveTargets(action.Target, actorSnapshot, snapshotMap.Values, stateMap.Values, fieldContext);
         if (targets.Count == 0)
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.NoTarget);
         }
 
         var attackerStatus = battleStatusResolver.BuildEffectiveStatus(actorSnapshot, actorState);
@@ -91,10 +96,10 @@ public class BattleActionResolver(
                 attackStat: BuffStat.Strength));
 
             targetState.ReceiveDamage(damageResult.Damage);
-            targetResults.Add(new BattleTargetResult(targetId, damageResult.Damage, 0, targetState.IsDead, null));
+            targetResults.Add(new BattleTargetResult(targetId, damageResult.Damage, -damageResult.Damage, 0, targetState.IsDead, null));
         }
 
-        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, targetResults.Count > 0, targetResults);
+        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, targetResults.Count > 0, targetResults: targetResults);
     }
 
     private BattleActionResult ResolveMove(
@@ -108,28 +113,28 @@ public class BattleActionResolver(
     {
         if (action.MoveId is null || !moveMap.TryGetValue(action.MoveId.Id, out var move))
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.MoveUnavailable);
         }
 
         if (!actorSnapshot.MoveSet.GetLearnedMoveIds().Any(x => x.Id == move.Id.Id))
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.MoveUnavailable);
         }
 
         if (actorState.CurrentMp < move.MpCost)
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.InsufficientMp);
         }
 
         var targets = ResolveTargets(
-            new BattleTargetSelector(move.TargetType, move.AttackRange, action.Target.TargetActorIds),
+            new BattleTargetSelector(move.TargetType, move.AttackRange, action.Target.TargetActorIds, action.Target.SelectedPosition),
             actorSnapshot,
             snapshotMap.Values,
             stateMap.Values,
             fieldContext);
         if (targets.Count == 0)
         {
-            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false);
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.NoTarget);
         }
 
         actorState.ConsumeMp(move.MpCost);
@@ -165,7 +170,7 @@ public class BattleActionResolver(
             }
         }
 
-        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, true, targetResults);
+        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, true, targetResults: targetResults);
     }
 
     private BattleActionResult ResolveGuard(BattleAction action, BattleActorSnapshot actorSnapshot, BattleActorState actorState)
@@ -173,6 +178,35 @@ public class BattleActionResolver(
         actorState.ApplyBuff(new BattleBuffState(BuffStat.Defense, BuffCalculationType.Mul, 1.5m, 1), canStack: false);
         actorState.ApplyBuff(new BattleBuffState(BuffStat.Intelligence, BuffCalculationType.Mul, 1.5m, 1), canStack: false);
         return new BattleActionResult(actorSnapshot.Id, action.Kind, action.MoveId, true);
+    }
+
+    private BattleActionResult ResolvePrayer(
+        BattleAction action,
+        BattleActorSnapshot actorSnapshot,
+        IReadOnlyDictionary<BattleActorId, BattleActorSnapshot> snapshotMap,
+        IReadOnlyDictionary<BattleActorId, BattleActorState> stateMap,
+        BattleFieldContext? fieldContext)
+    {
+        var targets = ResolveTargets(action.Target, actorSnapshot, snapshotMap.Values, stateMap.Values, fieldContext);
+        if (targets.Count == 0)
+        {
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.NoTarget);
+        }
+
+        var targetResults = new List<BattleTargetResult>();
+        foreach (var targetId in targets)
+        {
+            var targetState = stateMap[targetId];
+            if (targetState.IsDead)
+            {
+                continue;
+            }
+
+            targetState.ApplyBuff(new BattleBuffState(BuffStat.Strength, BuffCalculationType.Mul, 1.5m, 1), canStack: true);
+            targetResults.Add(new BattleTargetResult(targetId, 0, 0, 0, false, null));
+        }
+
+        return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, targetResults.Count > 0, targetResults: targetResults);
     }
 
     private BattleTargetResult? ResolveEffect(
@@ -189,6 +223,7 @@ public class BattleActionResolver(
         {
             MoveEffectType.Damage => ResolveDamageEffect(actorSnapshot, attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
             MoveEffectType.Heal => ResolveHealEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
+            MoveEffectType.RestoreMp => ResolveRestoreMpEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
             MoveEffectType.Ailment => ResolveAilmentEffect(actorSnapshot, attackerStatus, defenderStatus, targetState, effect),
             MoveEffectType.Buff => ResolveBuffEffect(actorSnapshot, attackerStatus, defenderStatus, targetState, effect),
             _ => throw new ArgumentOutOfRangeException(nameof(effect.EffectType), $"未対応の MoveEffectType: {effect.EffectType}")
@@ -225,7 +260,7 @@ public class BattleActionResolver(
         }
 
         targetState.ReceiveDamage(totalDamage);
-        return new BattleTargetResult(targetSnapshot.Id, totalDamage, 0, targetState.IsDead, null);
+        return new BattleTargetResult(targetSnapshot.Id, totalDamage, -totalDamage, 0, targetState.IsDead, null);
     }
 
     private static BattleTargetResult ResolveHealEffect(
@@ -247,11 +282,37 @@ public class BattleActionResolver(
             _ => attackerStatus.Strength
         };
         var healValue = Math.Max(1, effect.Damage.FixedValue + (int)Math.Round(attackPower * effect.Damage.PowerRate, MidpointRounding.AwayFromZero));
-        var currentHp = targetState.CurrentHp;
+        var beforeHp = targetState.CurrentHp;
         targetState.RestoreHp(healValue, defenderStatus.MaxHp);
-        var recoveredHp = targetState.CurrentHp - currentHp;
+        var restoredHp = targetState.CurrentHp - beforeHp;
 
-        return new BattleTargetResult(targetSnapshot.Id, 0, recoveredHp, false, null);
+        return new BattleTargetResult(targetSnapshot.Id, 0, restoredHp, 0, false, null);
+    }
+
+    private static BattleTargetResult ResolveRestoreMpEffect(
+        Status attackerStatus,
+        BattleActorSnapshot targetSnapshot,
+        Status defenderStatus,
+        BattleActorState targetState,
+        Move move,
+        MoveEffect effect,
+        bool isSupportMove)
+    {
+        ArgumentNullException.ThrowIfNull(effect.Damage);
+
+        var attackStat = ResolveAttackStat(move, effect.Damage, attackerStatus, isSupportMove);
+        var attackPower = attackStat switch
+        {
+            BuffStat.Intelligence => attackerStatus.Intelligence,
+            BuffStat.Defense => attackerStatus.Defense,
+            _ => attackerStatus.Strength
+        };
+        var restoreValue = Math.Max(1, effect.Damage.FixedValue + (int)Math.Round(attackPower * effect.Damage.PowerRate, MidpointRounding.AwayFromZero));
+        var beforeMp = targetState.CurrentMp;
+        targetState.RestoreMp(restoreValue, defenderStatus.MaxMp);
+        var restoredMp = targetState.CurrentMp - beforeMp;
+
+        return new BattleTargetResult(targetSnapshot.Id, 0, 0, restoredMp, false, null);
     }
 
     private static BattleTargetResult ResolveAilmentEffect(
@@ -270,7 +331,7 @@ public class BattleActionResolver(
             appliedAilment = effect.Ailment.AilmentType;
         }
 
-        return new BattleTargetResult(targetState.Id, 0, 0, targetState.IsDead, appliedAilment);
+        return new BattleTargetResult(targetState.Id, 0, 0, 0, targetState.IsDead, appliedAilment);
     }
 
     private static BattleTargetResult ResolveBuffEffect(
@@ -289,7 +350,7 @@ public class BattleActionResolver(
                 effect.Buff.CanStack);
         }
 
-        return new BattleTargetResult(targetState.Id, 0, 0, targetState.IsDead, null);
+        return new BattleTargetResult(targetState.Id, 0, 0, 0, targetState.IsDead, null);
     }
 
     private static BuffStat ResolveAttackStat(Move move, DamageEffect effect, Status attackerStatus, bool isSupportMove)

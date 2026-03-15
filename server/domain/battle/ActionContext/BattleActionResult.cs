@@ -8,6 +8,7 @@ public class BattleActionResult(
     BattleActionKind actionKind,
     MoveId? moveId,
     bool succeeded,
+    BattleActionFailureReason? failureReason = null,
     IEnumerable<BattleTargetResult>? targetResults = null)
 {
     private readonly BattleTargetResult[] _targetResults = targetResults?.ToArray() ?? [];
@@ -16,5 +17,6 @@ public class BattleActionResult(
     public BattleActionKind ActionKind { get; } = actionKind;
     public MoveId? MoveId { get; } = moveId;
     public bool Succeeded { get; } = succeeded;
+    public BattleActionFailureReason? FailureReason { get; } = failureReason;
     public IReadOnlyList<BattleTargetResult> TargetResults => _targetResults;
 }

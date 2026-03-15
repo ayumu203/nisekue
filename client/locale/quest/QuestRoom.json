@@ -30,6 +30,7 @@
   "commandPanelTitle": "コマンド送信",
   "commandPanelEmpty": "冒険開始後にコマンドを送信できます。",
   "commandUnavailable": "コマンドを送信できる冒険データがありません",
+  "commandAlreadyConfirmed": "このターンの行動はすでに確定しています。最新の進行状況を待ってください。",
   "commandSubmitFailed": "コマンド送信に失敗しました",
   "submitCommand": "コマンドを送信",
   "submittingCommand": "送信中...",
@@ -119,6 +120,7 @@
   "actionKinds": {
     "NormalAttack": "通常攻撃",
     "UseMove": "技を使う",
+    "Prayer": "祈り",
     "Guard": "防御",
     "Wait": "待機",
     "LeaveQuest": "離脱",

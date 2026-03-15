@@ -2,3 +2,5 @@ id,name,job,preferred_row,level,max_hp,max_mp,strength,defense,intelligence,luck
 1,臨時前衛ウォリアー,Warrior,Front,1,18,2,3,2,1,1,1,FrontGuard
 2,臨時支援レンジャー,Ranger,Middle,1,14,4,2,1,2,1,2,MidSupport
 3,臨時回復プリースト,Priest,Back,1,12,8,1,1,3,1,1,RearHealer
+4,臨戦前衛ガード,Guardian,Front,6,44,12,6,10,3,2,3,FrontGuard
+5,臨戦魔術マージ,Mage,Back,6,28,18,3,4,10,2,5,MidSupport

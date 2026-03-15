@@ -27,6 +27,7 @@ import {
   submitQuestCommand,
 } from '@/api/quest'
 import QuestBattleStatusPanel from '@/components/quest/QuestBattleStatusPanel'
+import QuestLastTurnResultsPanel from '@/components/quest/QuestLastTurnResultsPanel'
 import { useAuth } from '@/contexts/useAuth'
 import {
   greenOutlinedInputSx,
@@ -60,10 +61,6 @@ function formatDateTime(value: string): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
-}
-
-function formatDelta(value: number): string {
-  return value > 0 ? `+${value}` : String(value)
 }
 
 export default function Quest() {
@@ -262,6 +259,12 @@ export default function Quest() {
           (command) => command.participantId === selfParticipantId && command.turnNo === currentRun.turn.currentTurnNo,
         ) ?? null)
       : null
+  const canSubmitCurrentTurn =
+    currentRun != null &&
+    selfParticipantId != null &&
+    currentRun.status === 'InProgress' &&
+    currentRun.turn.waitingParticipantIds.includes(selfParticipantId) &&
+    currentPendingCommand == null
   const isRunFinished = currentRun != null && currentRun.status !== 'InProgress'
 
   useEffect(() => {
@@ -287,6 +290,11 @@ export default function Quest() {
 
     if (!currentRun || !selfParticipantId) {
       setSubmitError(locale.commandUnavailable)
+      return
+    }
+
+    if (!currentRun.turn.waitingParticipantIds.includes(selfParticipantId) || currentPendingCommand != null) {
+      setSubmitError(locale.commandAlreadyConfirmed)
       return
     }
 
@@ -592,6 +600,8 @@ export default function Quest() {
                 </Stack>
               </Paper>
 
+              <QuestLastTurnResultsPanel run={currentRun} locale={locale} />
+
               <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
                 <Stack spacing={2}>
                   <Typography variant="h5">{locale.commandPanelTitle}</Typography>
@@ -686,12 +696,7 @@ export default function Quest() {
                       <Button
                         variant="contained"
                         onClick={() => void handleSubmitCommand()}
-                        disabled={
-                          isCommandSubmitting ||
-                          isEscaping ||
-                          selfParticipantId == null ||
-                          currentRun.status !== 'InProgress'
-                        }
+                        disabled={isCommandSubmitting || isEscaping || !canSubmitCurrentTurn}
                         sx={{ ...menuButtonSx, ...softGreenButtonSx }}
                       >
                         {isCommandSubmitting ? locale.submittingCommand : locale.submitCommand}
@@ -750,63 +755,6 @@ export default function Quest() {
                   </Stack>
                 </Paper>
               ) : null}
-
-              <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-                <Stack spacing={2}>
-                  <Typography variant="h5">{locale.lastTurnResultsTitle}</Typography>
-                  {!currentRun?.lastTurnResults ? (
-                    <Typography variant="body2" color="text.secondary">
-                      {locale.lastTurnResultsEmpty}
-                    </Typography>
-                  ) : (
-                    <Stack spacing={1.5}>
-                      <Typography>{`${locale.turnNo}: ${currentRun.lastTurnResults.turnNo}`}</Typography>
-                      <Typography>{`${locale.resolvedAtLabel}: ${formatDateTime(currentRun.lastTurnResults.resolvedAt)}`}</Typography>
-                      {currentRun.lastTurnResults.actions.map((action, index) => (
-                        <Paper
-                          key={`${action.actorDisplayName}-${index}`}
-                          variant="outlined"
-                          sx={{
-                            borderRadius: 2,
-                            p: 1.5,
-                            backgroundColor: '#fffdf8',
-                          }}
-                        >
-                          <Typography variant="subtitle2">{action.actorDisplayName}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {`${locale.labels.actionKind}: ${locale.actionKinds[action.actionKind]}`}
-                          </Typography>
-                          {action.targetSummaries.map((target, targetIndex) => (
-                            <Paper
-                              key={`${action.actorDisplayName}-${index}-target-${targetIndex}`}
-                              variant="outlined"
-                              sx={{
-                                mt: 1,
-                                borderRadius: 2,
-                                p: 1.25,
-                                backgroundColor: '#fffaf0',
-                              }}
-                            >
-                              <Typography variant="body2">{target.targetDisplayName}</Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {`${locale.hpChangeLabel}: ${formatDelta(target.hpChange)}`}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {`${locale.mpChangeLabel}: ${formatDelta(target.mpChange)}`}
-                              </Typography>
-                            </Paper>
-                          ))}
-                          {action.logs.map((log, logIndex) => (
-                            <Typography key={`${action.actorDisplayName}-${index}-${logIndex}`} variant="body2">
-                              {log}
-                            </Typography>
-                          ))}
-                        </Paper>
-                      ))}
-                    </Stack>
-                  )}
-                </Stack>
-              </Paper>
             </Stack>
           </Box>
         </Stack>

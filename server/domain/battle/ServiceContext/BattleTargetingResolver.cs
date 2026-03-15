@@ -30,15 +30,19 @@ public class BattleTargetingResolver
                 .ToArray();
         }
 
+        candidates = ReorderCandidatesBySelectedPosition(selector, candidates, fieldContext).ToArray();
+
         if (ShouldApplyFormationRangeControl(selector, fieldContext))
         {
             candidates = FilterByFormationRange(actorSnapshot, candidates, fieldContext!).ToArray();
-            return ApplyFormationAttackRange(selector.AttackRange, candidates, fieldContext!);
+            return ApplyFormationAttackRange(selector, candidates, fieldContext!);
         }
 
         return ApplyDefaultAttackRange(
             selector.AttackRange,
-            candidates.OrderBy(x => x.Id.Value).Select(x => x.Id).ToArray());
+            selector.SelectedPosition is null || fieldContext is null || fieldContext.Positions.Count == 0
+                ? candidates.OrderBy(x => x.Id.Value).Select(x => x.Id).ToArray()
+                : candidates.Select(x => x.Id).ToArray());
     }
 
     private static bool ShouldApplyFormationRangeControl(BattleTargetSelector selector, BattleFieldContext? fieldContext)
@@ -94,7 +98,7 @@ public class BattleTargetingResolver
     }
 
     private static IReadOnlyList<BattleActorId> ApplyFormationAttackRange(
-        AttackRange attackRange,
+        BattleTargetSelector selector,
         IReadOnlyList<BattleActorSnapshot> orderedCandidates,
         BattleFieldContext fieldContext)
     {
@@ -104,8 +108,8 @@ public class BattleTargetingResolver
             return [];
         }
 
-        var anchor = positionMap[orderedCandidates[0].Id];
-        return attackRange switch
+        var anchor = ResolveAnchorPosition(selector, orderedCandidates, positionMap);
+        return selector.AttackRange switch
         {
             AttackRange.Single => [orderedCandidates[0].Id],
             AttackRange.Column => orderedCandidates
@@ -122,8 +126,49 @@ public class BattleTargetingResolver
                 .Select(x => x.Id)
                 .ToArray(),
             AttackRange.All => orderedCandidates.Select(x => x.Id).ToArray(),
-            _ => throw new ArgumentOutOfRangeException(nameof(attackRange), $"未対応の AttackRange: {attackRange}")
+            _ => throw new ArgumentOutOfRangeException(nameof(selector.AttackRange), $"未対応の AttackRange: {selector.AttackRange}")
         };
+    }
+
+    private static IReadOnlyList<BattleActorSnapshot> ReorderCandidatesBySelectedPosition(
+        BattleTargetSelector selector,
+        IReadOnlyList<BattleActorSnapshot> candidates,
+        BattleFieldContext? fieldContext)
+    {
+        if (selector.SelectedPosition is null || fieldContext is null || fieldContext.Positions.Count == 0 || candidates.Count == 0)
+        {
+            return candidates;
+        }
+
+        var positionMap = fieldContext.Positions.ToDictionary(x => x.ActorId, x => x.Position);
+        var anchor = candidates.FirstOrDefault(x =>
+            positionMap.TryGetValue(x.Id, out var position) &&
+            position == selector.SelectedPosition.Value);
+        if (anchor is null)
+        {
+            return candidates;
+        }
+
+        return [anchor, .. candidates.Where(x => x.Id != anchor.Id)];
+    }
+
+    private static BattlePosition ResolveAnchorPosition(
+        BattleTargetSelector selector,
+        IReadOnlyList<BattleActorSnapshot> orderedCandidates,
+        IReadOnlyDictionary<BattleActorId, BattlePosition> positionMap)
+    {
+        if (selector.SelectedPosition is not null)
+        {
+            var selectedCandidate = orderedCandidates.FirstOrDefault(x =>
+                positionMap.TryGetValue(x.Id, out var position) &&
+                position == selector.SelectedPosition.Value);
+            if (selectedCandidate is not null)
+            {
+                return selector.SelectedPosition.Value;
+            }
+        }
+
+        return positionMap[orderedCandidates[0].Id];
     }
 
     private static IReadOnlyList<BattleActorId> ApplyDefaultAttackRange(AttackRange attackRange, IReadOnlyList<BattleActorId> candidates)

@@ -36,7 +36,7 @@ type QuestBattleStatusPanelProps = {
     noActiveEffects: string
     pendingCommandTitle: string
     pendingCommandEmpty: string
-    actionKinds: Record<'NormalAttack' | 'UseMove' | 'Guard' | 'Wait' | 'LeaveQuest' | 'Escape', string>
+    actionKinds: Record<'NormalAttack' | 'UseMove' | 'Prayer' | 'Guard' | 'Wait' | 'LeaveQuest' | 'Escape', string>
   }
 }
 

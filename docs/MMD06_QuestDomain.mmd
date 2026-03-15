@@ -94,6 +94,12 @@ classDiagram
             <<Infrastructure>>
         }
 
+        class StageNpcTemplateRow {
+            <<CSV Row>>
+            +QuestStageId StageId
+            +QuestNpcTemplateId[] NpcTemplateIds
+        }
+
         class CsvQuestEnemyDefinitionRepository {
             <<Infrastructure>>
         }
@@ -437,6 +443,7 @@ classDiagram
     IQuestEnemyDefinitionRepository ..> QuestEnemyDefinition : loads
     CsvQuestStageRepository ..|> IQuestStageRepository : implements
     CsvQuestNpcTemplateRepository ..|> IQuestNpcTemplateRepository : implements
+    CsvQuestNpcTemplateRepository ..> StageNpcTemplateRow : loads
     CsvQuestEnemyDefinitionRepository ..|> IQuestEnemyDefinitionRepository : implements
     QuestRoomService ..> IQuestStageRepository : use
     QuestRoomService ..> IQuestRoomRepository : use

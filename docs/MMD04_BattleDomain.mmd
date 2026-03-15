@@ -26,6 +26,7 @@ classDiagram
             +ReceiveDamage(value: int) void
             +RestoreHp(value: int, maxHp: int) void
             +ConsumeMp(value: int) void
+            +RestoreMp(value: int, maxMp: int) void
             +ApplyAilment(ailment: BattleAilmentState) void
             +ApplyBuff(buff: BattleBuffState, canStack: bool) void
             +TickTurnEnd() void
@@ -84,6 +85,7 @@ classDiagram
             +TargetType TargetType
             +AttackRange AttackRange
             +IReadOnlyList~BattleActorId~ TargetActorIds
+            +BattlePosition? SelectedPosition
         }
 
         class BattleDamageInput {
@@ -109,7 +111,8 @@ classDiagram
             <<Value Object>>
             +BattleActorId TargetActorId
             +int Damage
-            +int RecoveredHp
+            +int HpChange
+            +int MpChange
             +bool IsDefeated
             +AilmentType? AppliedAilment
         }
@@ -120,7 +123,18 @@ classDiagram
             +BattleActionKind ActionKind
             +MoveId? MoveId
             +bool Succeeded
+            +BattleActionFailureReason? FailureReason
             +IReadOnlyList~BattleTargetResult~ TargetResults
+        }
+
+        class BattleActionFailureReason {
+            <<enumeration>>
+            ActorUnavailable
+            CannotAct
+            Paralyzed
+            NoTarget
+            MoveUnavailable
+            InsufficientMp
         }
 
         class BattleTurnResolution {

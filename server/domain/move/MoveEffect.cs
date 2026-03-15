@@ -26,6 +26,7 @@ public class MoveEffect(
         {
             case MoveEffectType.Damage:
             case MoveEffectType.Heal:
+            case MoveEffectType.RestoreMp:
                 ValidateOnlyDamage();
                 return;
             case MoveEffectType.Ailment:

@@ -1,3 +1,6 @@
 enemy_definition_id,move_ids
 1,1
 2,1|2
+3,1|2
+4,1|10
+5,1|2

@@ -1,5 +1,6 @@
 using server.application.battle;
 using server.domain.battle;
+using server.domain.battle.enums;
 using server.domain.move;
 using server.domain.player;
 using server.domain.quest;
@@ -19,7 +20,7 @@ public class QuestRunService(
     QuestBattleFactory questBattleFactory)
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(60);
-    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
+    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(1);
 
     public async Task<QuestRun> GetDetailAsync(QuestRunId runId)
     {
@@ -324,21 +325,16 @@ public class QuestRunService(
                 Guid? targetParticipantId = null;
                 Guid? targetEnemyInstanceId = null;
                 string targetDisplayName;
-                int hpChange = 0;
-                int mpChange = 0;
+                var hpChange = targetResult.HpChange;
+                var mpChange = targetResult.MpChange;
                 string[] appliedEffects = targetResult.AppliedAilment is null ? [] : [targetResult.AppliedAilment.Value.ToString()];
                 var removedEffects = Array.Empty<string>();
-                var isDeadAfterAction = false;
+                var isDeadAfterAction = targetResult.IsDefeated;
 
                 if (partyActorMap.TryGetValue(targetResult.TargetActorId, out var partyTargetId))
                 {
                     targetParticipantId = partyTargetId.Value;
                     targetDisplayName = snapshotByParticipantId[partyTargetId].DisplayName;
-                    var before = beforeParty[partyTargetId];
-                    var after = partyById[partyTargetId];
-                    hpChange = after.CurrentHp - before.CurrentHp;
-                    mpChange = after.CurrentMp - before.CurrentMp;
-                    isDeadAfterAction = after.IsDead;
                 }
                 else if (enemyActorMap.TryGetValue(targetResult.TargetActorId, out var enemyTargetId))
                 {
@@ -347,10 +343,6 @@ public class QuestRunService(
                     targetDisplayName = enemyDefinitions.TryGetValue(enemy.EnemyDefinitionId, out var enemyDefinition)
                         ? enemyDefinition.Name
                         : enemy.EnemyDefinitionId.ToString();
-                    var before = beforeEnemy[enemyTargetId];
-                    hpChange = enemy.CurrentHp - before.CurrentHp;
-                    mpChange = enemy.CurrentMp - before.CurrentMp;
-                    isDeadAfterAction = enemy.IsDead;
                 }
                 else
                 {
@@ -361,7 +353,7 @@ public class QuestRunService(
                     ? "Defeated"
                     : targetResult.AppliedAilment is not null
                         ? "AilmentApplied"
-                        : targetResult.Damage > 0
+                        : targetResult.Damage > 0 || hpChange != 0 || mpChange != 0
                             ? "Hit"
                             : "Miss";
 
@@ -386,7 +378,13 @@ public class QuestRunService(
                 actionResult.MoveId is null ? null : moveById.GetValueOrDefault(actionResult.MoveId.Id)?.Name,
                 actionResult.Succeeded,
                 targetSummaries,
-                []);
+                BuildActionLogs(
+                    actorDisplayName,
+                    MapActionKind(actionResult.ActionKind),
+                    actionResult.MoveId is null ? null : moveById.GetValueOrDefault(actionResult.MoveId.Id)?.Name,
+                    actionResult.Succeeded,
+                    actionResult.FailureReason,
+                    targetSummaries));
         }).ToArray();
 
         var floorTransition = summary.IsFloorCleared
@@ -413,10 +411,143 @@ public class QuestRunService(
         {
             server.domain.battle.enums.BattleActionKind.NormalAttack => ActionKind.NormalAttack.ToString(),
             server.domain.battle.enums.BattleActionKind.UseMove => ActionKind.UseMove.ToString(),
+            server.domain.battle.enums.BattleActionKind.Prayer => ActionKind.Prayer.ToString(),
             server.domain.battle.enums.BattleActionKind.Guard => ActionKind.Guard.ToString(),
             server.domain.battle.enums.BattleActionKind.Wait => ActionKind.Wait.ToString(),
             _ => actionKind.ToString()
         };
+    }
+
+    private static IReadOnlyList<string> BuildActionLogs(
+        string actorDisplayName,
+        string actionKind,
+        string? moveName,
+        bool succeeded,
+        BattleActionFailureReason? failureReason,
+        IReadOnlyList<QuestResolvedTargetSummary> targetSummaries)
+    {
+        if (!succeeded)
+        {
+            return [BuildFailureLog(actorDisplayName, actionKind, moveName, failureReason)];
+        }
+
+        if (targetSummaries.Count == 0)
+        {
+            return actionKind switch
+            {
+                nameof(ActionKind.Guard) => [$"{actorDisplayName}は身を守っている"],
+                nameof(ActionKind.Wait) => [$"{actorDisplayName}は様子を見ている"],
+                _ => [$"{actorDisplayName}は行動した"]
+            };
+        }
+
+        return targetSummaries
+            .GroupBy(target => new
+            {
+                target.TargetParticipantId,
+                target.TargetEnemyInstanceId,
+                target.TargetDisplayName
+            })
+            .Select(group => new QuestResolvedTargetSummary(
+                group.Key.TargetParticipantId,
+                group.Key.TargetEnemyInstanceId,
+                group.Key.TargetDisplayName,
+                group.Any(target => target.ResultType == "Defeated")
+                    ? "Defeated"
+                    : group.Any(target => target.ResultType == "AilmentApplied")
+                        ? "AilmentApplied"
+                        : group.Any(target => target.ResultType == "Hit")
+                            ? "Hit"
+                            : "Miss",
+                group.Sum(target => target.HpChange),
+                group.Sum(target => target.MpChange),
+                group.SelectMany(target => target.AppliedEffects).Distinct().ToArray(),
+                group.SelectMany(target => target.RemovedEffects).Distinct().ToArray(),
+                group.Any(target => target.IsDeadAfterAction)))
+            .Select(target => BuildTargetLog(actorDisplayName, actionKind, moveName, target))
+            .ToArray();
+    }
+
+    private static string BuildFailureLog(
+        string actorDisplayName,
+        string actionKind,
+        string? moveName,
+        BattleActionFailureReason? failureReason)
+    {
+        var actionLabel = actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+            ? moveName
+            : actionKind switch
+            {
+                nameof(ActionKind.NormalAttack) => "攻撃",
+                nameof(ActionKind.Prayer) => "祈り",
+                nameof(ActionKind.Guard) => "防御",
+                _ => "行動"
+            };
+
+        return failureReason switch
+        {
+            BattleActionFailureReason.ActorUnavailable => $"{actorDisplayName}は行動前に倒れた",
+            BattleActionFailureReason.NoTarget => $"{actorDisplayName}は{actionLabel}しようとしたが、対象がいなかった",
+            BattleActionFailureReason.Paralyzed => $"{actorDisplayName}は麻痺して動けなかった",
+            BattleActionFailureReason.CannotAct => $"{actorDisplayName}は行動できなかった",
+            BattleActionFailureReason.InsufficientMp => $"{actorDisplayName}はMPが足りず{actionLabel}できなかった",
+            BattleActionFailureReason.MoveUnavailable => $"{actorDisplayName}は{actionLabel}できなかった",
+            _ => $"{actorDisplayName}は行動したが失敗した"
+        };
+    }
+
+    private static string BuildTargetLog(
+        string actorDisplayName,
+        string actionKind,
+        string? moveName,
+        QuestResolvedTargetSummary target)
+    {
+        if (actionKind == nameof(ActionKind.Prayer))
+        {
+            return $"{actorDisplayName}は{target.TargetDisplayName}に祈りを捧げた";
+        }
+
+        if (target.HpChange < 0)
+        {
+            var damage = Math.Abs(target.HpChange);
+            if (target.AppliedEffects.Count > 0)
+            {
+                var effectNames = string.Join("、", target.AppliedEffects);
+                return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+                    ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{damage}ダメージを与え、{effectNames}を付与した"
+                    : $"{actorDisplayName}は{target.TargetDisplayName}に{damage}ダメージを与え、{effectNames}を付与した";
+            }
+
+            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{damage}ダメージを与えた"
+                : $"{actorDisplayName}は{target.TargetDisplayName}に{damage}ダメージを与えた";
+        }
+
+        if (target.HpChange > 0)
+        {
+            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{target.HpChange}回復した"
+                : $"{actorDisplayName}は{target.TargetDisplayName}を{target.HpChange}回復した";
+        }
+
+        if (target.MpChange > 0)
+        {
+            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使ってMPを{target.MpChange}回復した"
+                : $"{actorDisplayName}は{target.TargetDisplayName}のMPを{target.MpChange}回復した";
+        }
+
+        if (target.AppliedEffects.Count > 0)
+        {
+            var effectNames = string.Join("、", target.AppliedEffects);
+            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{effectNames}を付与した"
+                : $"{actorDisplayName}は{target.TargetDisplayName}に{effectNames}を付与した";
+        }
+
+        return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
+            ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使った"
+            : $"{actorDisplayName}は{target.TargetDisplayName}に行動した";
     }
 
     private sealed record ActorStateSnapshot(int CurrentHp, int CurrentMp, bool IsDead);

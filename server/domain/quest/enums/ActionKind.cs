@@ -7,5 +7,6 @@ public enum ActionKind
     Guard = 3,
     Wait = 4,
     LeaveQuest = 5,
-    Escape = 6
+    Escape = 6,
+    Prayer = 7
 }

@@ -47,6 +47,7 @@ public class BattleActionResolverTests
             [move]);
 
         result.Succeeded.Should().BeFalse();
+        result.FailureReason.Should().Be(BattleActionFailureReason.MoveUnavailable);
     }
 
     [Fact]
@@ -65,6 +66,7 @@ public class BattleActionResolverTests
             [move]);
 
         result.Succeeded.Should().BeFalse();
+        result.FailureReason.Should().Be(BattleActionFailureReason.InsufficientMp);
         actorState.CurrentMp.Should().Be(0);
     }
 
@@ -136,6 +138,53 @@ public class BattleActionResolverTests
     }
 
     [Fact]
+    public void Resolve_WhenPrayer_AppliesStackableStrengthBuffToTarget()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var actorState = CreateState(actor.Id);
+        var targetState = CreateState(target.Id);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.Prayer, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id])),
+            [actor, target],
+            [actorState, targetState],
+            []);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].TargetActorId.Should().Be(target.Id);
+        result.TargetResults[0].Damage.Should().Be(0);
+        targetState.Buffs.Should().ContainSingle(x =>
+            x.Stat == BuffStat.Strength &&
+            x.CalculationType == BuffCalculationType.Mul &&
+            x.Value == 1.5m &&
+            x.RemainingTurns == 1);
+    }
+
+    [Fact]
+    public void Resolve_WhenPrayerIsUsedTwice_StacksStrengthBuffs()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var actorState = CreateState(actor.Id);
+        var targetState = CreateState(target.Id);
+        var action = new BattleAction(actor.Id, BattleActionKind.Prayer, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id]));
+
+        resolver.Resolve(action, [actor, target], [actorState, targetState], []);
+        resolver.Resolve(action, [actor, target], [actorState, targetState], []);
+
+        targetState.Buffs.Should().HaveCount(2);
+        targetState.Buffs.Should().OnlyContain(x =>
+            x.Stat == BuffStat.Strength &&
+            x.CalculationType == BuffCalculationType.Mul &&
+            x.Value == 1.5m &&
+            x.RemainingTurns == 1);
+    }
+
+    [Fact]
     public void Resolve_WhenWait_ReturnsSuccessWithoutTargetResults()
     {
         var resolver = CreateResolver();
@@ -177,6 +226,30 @@ public class BattleActionResolverTests
     }
 
     [Fact]
+    public void Resolve_WhenMoveRestoresMp_RecoversMpUpToMax()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var actorState = CreateState(actor.Id, currentMp: 5);
+        var targetState = CreateState(target.Id, currentMp: 2);
+        var move = CreateRestoreMpMove(1);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id]), new MoveId(1)),
+            [actor, target],
+            [actorState, targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].TargetActorId.Should().Be(target.Id);
+        result.TargetResults[0].Damage.Should().Be(0);
+        targetState.CurrentMp.Should().Be(10);
+        actorState.CurrentMp.Should().Be(4);
+    }
+
+    [Fact]
     public void Resolve_WhenActorIsDead_ReturnsFailure()
     {
         var resolver = CreateResolver();
@@ -190,6 +263,7 @@ public class BattleActionResolverTests
             []);
 
         result.Succeeded.Should().BeFalse();
+        result.FailureReason.Should().Be(BattleActionFailureReason.ActorUnavailable);
     }
 
     [Fact]
@@ -212,6 +286,7 @@ public class BattleActionResolverTests
             []);
 
         skippedResult.Succeeded.Should().BeFalse();
+        skippedResult.FailureReason.Should().Be(BattleActionFailureReason.Paralyzed);
         targetState.CurrentHp.Should().Be(30);
 
         var actingResolver = CreateResolver(() => 0.9d);
@@ -226,6 +301,22 @@ public class BattleActionResolverTests
             []);
 
         actingResult.Succeeded.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Resolve_WhenNormalAttackHasNoTarget_ReturnsNoTargetFailure()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.NormalAttack, EnemyTarget()),
+            [actor],
+            [CreateState(actor.Id)],
+            []);
+
+        result.Succeeded.Should().BeFalse();
+        result.FailureReason.Should().Be(BattleActionFailureReason.NoTarget);
     }
 
     private static BattleActionResolver CreateResolver(Func<double>? randomProvider = null)
@@ -338,6 +429,28 @@ public class BattleActionResolverTests
                         criticalRate: 0m,
                         elementType: ElementType.Strike,
                         attackStat: BuffStat.Defense))
+            ]);
+    }
+
+    private static Move CreateRestoreMpMove(int moveId)
+    {
+        return new Move(
+            new MoveId(moveId),
+            "Mana Gift",
+            "restore mp",
+            TargetType.Ally,
+            AttackRange.Single,
+            1,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    new MoveId(moveId),
+                    1,
+                    MoveEffectType.RestoreMp,
+                    damage: new DamageEffect(hitCount: 1, powerRate: 1m, fixedValue: 5, criticalRate: 0m, elementType: ElementType.None, attackStat: BuffStat.Intelligence))
             ]);
     }
 }

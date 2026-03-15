@@ -118,6 +118,60 @@ public class BattleTargetingResolverTests
     }
 
     [Fact]
+    public void ResolveTargets_WhenSelectedPositionSpecifiedForEnemyRange_UsesItAsAnchor()
+    {
+        var resolver = new BattleTargetingResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var enemyFrontLeft = CreateSnapshot(2, BattleSide.Enemy);
+        var enemyFrontRight = CreateSnapshot(3, BattleSide.Enemy);
+        var enemyMiddleLeft = CreateSnapshot(4, BattleSide.Enemy);
+        var enemyMiddleRight = CreateSnapshot(5, BattleSide.Enemy);
+
+        var result = resolver.ResolveTargets(
+            new BattleTargetSelector(
+                TargetType.Enemy,
+                AttackRange.Column,
+                selectedPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)),
+            actor,
+            [actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft, enemyMiddleRight],
+            CreateStates(actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft, enemyMiddleRight),
+            new BattleFieldContext([
+                new BattleActorPosition(actor.Id, new BattlePosition(BattleRow.Back, BattleColumn.Left)),
+                new BattleActorPosition(enemyFrontLeft.Id, new BattlePosition(BattleRow.Front, BattleColumn.Left)),
+                new BattleActorPosition(enemyFrontRight.Id, new BattlePosition(BattleRow.Front, BattleColumn.Right)),
+                new BattleActorPosition(enemyMiddleLeft.Id, new BattlePosition(BattleRow.Middle, BattleColumn.Left)),
+                new BattleActorPosition(enemyMiddleRight.Id, new BattlePosition(BattleRow.Middle, BattleColumn.Right))
+            ]));
+
+        result.Should().Equal(enemyFrontRight.Id, enemyMiddleRight.Id);
+    }
+
+    [Fact]
+    public void ResolveTargets_WhenSelectedPositionSpecifiedForAllySingle_ReturnsThatTarget()
+    {
+        var resolver = new BattleTargetingResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var allyFront = CreateSnapshot(2, BattleSide.Ally);
+        var allyBack = CreateSnapshot(3, BattleSide.Ally);
+
+        var result = resolver.ResolveTargets(
+            new BattleTargetSelector(
+                TargetType.Ally,
+                AttackRange.Single,
+                selectedPosition: new BattlePosition(BattleRow.Back, BattleColumn.Right)),
+            actor,
+            [actor, allyFront, allyBack],
+            CreateStates(actor, allyFront, allyBack),
+            new BattleFieldContext([
+                new BattleActorPosition(actor.Id, new BattlePosition(BattleRow.Front, BattleColumn.Left)),
+                new BattleActorPosition(allyFront.Id, new BattlePosition(BattleRow.Front, BattleColumn.Right)),
+                new BattleActorPosition(allyBack.Id, new BattlePosition(BattleRow.Back, BattleColumn.Right))
+            ]));
+
+        result.Should().Equal(allyBack.Id);
+    }
+
+    [Fact]
     public void ResolveTargets_WhenTargetTypeIsAlly_DoesNotApplyFormationRangeControl()
     {
         var resolver = new BattleTargetingResolver();
