@@ -13,7 +13,7 @@ public class QuestRoomService(
     QuestSnapshotFactory questSnapshotFactory,
     QuestRunFactory questRunFactory)
 {
-    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(0);
+    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(1);
 
     public async Task<QuestRoom> CreateRoomAsync(PlayerId ownerId, QuestStageId stageId, QuestRoomMode mode)
     {
