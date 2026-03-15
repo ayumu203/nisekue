@@ -4,6 +4,7 @@ using server.application.quest;
 using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.move;
+using server.domain.move.enums;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
@@ -141,6 +142,95 @@ public class QuestRunServiceTests
         repository.SaveCount.Should().Be(1);
     }
 
+    [Fact]
+    public async Task SubmitCommandAsync_WhenNpcPriestIsPresent_ResolvesPrayerAutomatically()
+    {
+        var playerParticipantId = QuestParticipantId.New();
+        var priestParticipantId = QuestParticipantId.New();
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet()),
+                new PartyMemberSeed(priestParticipantId, ParticipantType.Npc, "Priest", Job.Priest, new BattlePosition(BattleRow.Back, BattleColumn.Left), ActionMode.AutoAttackOnly, new Status(30, 10, 4, 4, 12, 3, 8), new MoveSet())
+            ],
+            enemyHp: 20);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), []);
+
+        var result = await service.SubmitCommandAsync(
+            run.Id,
+            playerParticipantId,
+            new QuestSubmittedCommand(
+                playerParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Wait,
+                DateTimeOffset.UtcNow));
+
+        result.ResolvedInThisRequest.Should().BeTrue();
+        repository.StoredRun!.LastTurnResults.Should().NotBeNull();
+        repository.StoredRun.LastTurnResults!.Actions.Should().Contain(x =>
+            x.ActorParticipantId == priestParticipantId.Value &&
+            x.ActionKind == ActionKind.Prayer.ToString() &&
+            x.TargetSummaries.Any(t => t.TargetParticipantId == playerParticipantId.Value));
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_WhenNpcRangerIsPresent_UsesTrapMoveAutomatically()
+    {
+        var playerParticipantId = QuestParticipantId.New();
+        var rangerParticipantId = QuestParticipantId.New();
+        var trapMoveId = new MoveId(12);
+        var rangerMoveSet = new MoveSet();
+        rangerMoveSet.SetSlot(0, trapMoveId);
+
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet()),
+                new PartyMemberSeed(rangerParticipantId, ParticipantType.Npc, "Ranger", Job.Ranger, new BattlePosition(BattleRow.Middle, BattleColumn.Left), ActionMode.AutoAttackOnly, new Status(30, 10, 8, 4, 4, 3, 8), rangerMoveSet)
+            ],
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Back, BattleColumn.Right),
+                new BattlePosition(BattleRow.Front, BattleColumn.Right)
+            ],
+            enemyHp: 20);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var trapMove = new Move(
+            trapMoveId,
+            "Trap",
+            "trap",
+            TargetType.Enemy,
+            AttackRange.Single,
+            3,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    trapMoveId,
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(AilmentType.DamageTrap, 1m, 2, new DamageEffect(1, 0.1m, 0, 0m, ElementType.None)))
+            ]);
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), [trapMove]);
+
+        var result = await service.SubmitCommandAsync(
+            run.Id,
+            playerParticipantId,
+            new QuestSubmittedCommand(
+                playerParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Wait,
+                DateTimeOffset.UtcNow));
+
+        result.ResolvedInThisRequest.Should().BeTrue();
+        repository.StoredRun!.BattleState.Enemies.Should().Contain(x => x.Ailments.Any(a => a.Type == AilmentType.DamageTrap));
+        repository.StoredRun.LastTurnResults.Should().NotBeNull();
+        repository.StoredRun.LastTurnResults!.Actions.Should().Contain(x => x.ActorParticipantId == rangerParticipantId.Value && x.MoveId == trapMoveId.Id);
+    }
+
     private static QuestRunService CreateRunService(
         FakeQuestRunRepository runRepository,
         FakeQuestRoomRepository roomRepository,
@@ -230,28 +320,94 @@ public class QuestRunServiceTests
             startedAt: DateTimeOffset.UtcNow);
     }
 
+    private static QuestRun CreateRunWithParty(
+        IReadOnlyList<PartyMemberSeed> partyMembers,
+        IReadOnlyList<BattlePosition>? enemyPositions = null,
+        int enemyHp = 1,
+        DateTimeOffset? deadlineAt = null)
+    {
+        enemyPositions ??= [new BattlePosition(BattleRow.Front, BattleColumn.Right)];
+
+        var snapshots = partyMembers.Select(member => new QuestRunPartyMemberSnapshot(
+            member.ParticipantId,
+            member.Type,
+            member.DisplayName,
+            member.Type == ParticipantType.Player ? "/images/player.png" : null,
+            member.Job,
+            member.Status,
+            member.MoveSet,
+            member.Position,
+            member.ActionMode)).ToArray();
+
+        var partyStates = partyMembers.Select(member => new QuestRunPartyMemberState(
+            member.ParticipantId,
+            currentHp: member.Status.MaxHp,
+            currentMp: member.Status.MaxMp,
+            isDead: false,
+            canActFromTurn: 1,
+            actionMode: member.ActionMode)).ToArray();
+
+        return new QuestRun(
+            QuestRunId.New(),
+            QuestRoomId.New(),
+            new QuestStageId(1),
+            snapshots,
+            new QuestFloorState(
+                1,
+                false,
+                enemyPositions.Select((position, index) => new QuestEnemyPlacement(index + 1, new QuestEnemyDefinitionId(1), position))),
+            new QuestBattleState(
+                partyStates,
+                enemyPositions.Select(position => new QuestEnemyState(
+                    QuestEnemyInstanceId.New(),
+                    new QuestEnemyDefinitionId(1),
+                    position,
+                    currentHp: enemyHp,
+                    currentMp: 0,
+                    isDead: false)).ToArray()),
+            new QuestTurnState(1, deadlineAt ?? DateTimeOffset.UtcNow.AddSeconds(30)),
+            new QuestTrapCollection(),
+            new QuestRewardAccumulator(),
+            lastTurnResults: null,
+            chatMessages: [],
+            startedAt: DateTimeOffset.UtcNow);
+    }
+
     private static QuestRoom CreateRoom(QuestRun run)
     {
-        var snapshot = run.PartySnapshots[0];
-        var playerId = new PlayerId(Guid.NewGuid());
+        var playerIds = run.PartySnapshots
+            .Where(x => x.Type == ParticipantType.Player)
+            .Select(_ => new PlayerId(Guid.NewGuid()))
+            .ToArray();
+        var playerIndex = 0;
+        var ownerPlayerId = playerIds[0];
 
         return new QuestRoom(
             run.RoomId,
-            playerId,
+            ownerPlayerId,
             run.StageId,
             QuestRoomMode.Solo,
-            formation: new FormationLayout([snapshot.StartPosition]),
-            participants:
-            [
-                new QuestParticipant(
+            formation: new FormationLayout(run.PartySnapshots.Select(x => x.StartPosition)),
+            participants: run.PartySnapshots.Select((snapshot, index) =>
+            {
+                PlayerId? playerId = null;
+                var isOwner = false;
+                if (snapshot.Type == ParticipantType.Player)
+                {
+                    playerId = playerIds[playerIndex++];
+                    isOwner = playerId == ownerPlayerId;
+                }
+
+                return new QuestParticipant(
                     snapshot.ParticipantId,
-                    ParticipantType.Player,
+                    snapshot.Type,
                     snapshot.DisplayName,
                     snapshot.StartPosition,
                     DateTimeOffset.UtcNow,
-                    isOwner: true,
-                    playerId: playerId)
-            ]);
+                    isOwner: isOwner,
+                    playerId: playerId,
+                    npcTemplateId: snapshot.Type == ParticipantType.Npc ? new QuestNpcTemplateId(index + 1) : null);
+            }).ToArray());
     }
 
     private static QuestStageDefinition CreateStage(QuestStageId stageId)
@@ -405,4 +561,14 @@ public class QuestRunServiceTests
     {
         public GrowthValue GetByJob(Job job) => new(1, 1, 1, 1, 1, 1, 1);
     }
+
+    private readonly record struct PartyMemberSeed(
+        QuestParticipantId ParticipantId,
+        ParticipantType Type,
+        string DisplayName,
+        Job Job,
+        BattlePosition Position,
+        ActionMode ActionMode,
+        Status Status,
+        MoveSet MoveSet);
 }

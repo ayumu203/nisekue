@@ -27,6 +27,8 @@ public class QuestAllyNpcActionPolicy
         return snapshot.Job switch
         {
             Job.Warrior => SelectWarriorAction(run, snapshot, state, orderedMoves, now),
+            Job.Guardian => SelectGuardianAction(run, snapshot, state, orderedMoves, now),
+            Job.Mage => SelectMageAction(run, snapshot, state, orderedMoves, now),
             Job.Priest => SelectPriestAction(run, snapshot, state, orderedMoves, now),
             Job.Ranger => SelectRangerAction(run, snapshot, state, orderedMoves, now),
             _ => CreateNormalAttack(run, participantId, now, EnemyFrontFirstOrder)
@@ -56,6 +58,96 @@ public class QuestAllyNpcActionPolicy
         }
 
         return CreateNormalAttack(run, snapshot.ParticipantId, now, EnemyFrontFirstOrder);
+    }
+
+    private static QuestSubmittedCommand SelectGuardianAction(
+        QuestRun run,
+        QuestRunPartyMemberSnapshot snapshot,
+        QuestRunPartyMemberState state,
+        IReadOnlyList<Move> orderedMoves,
+        DateTimeOffset now)
+    {
+        var target = FindEnemy(run, EnemyFrontFirstOrder);
+        if (target is null)
+        {
+            return CreateWait(snapshot.ParticipantId, run.TurnState.CurrentTurnNo, now);
+        }
+
+        var hasTaunt = state.Ailments.Any(x => x.Type == AilmentType.Taunt);
+        var tauntMove = orderedMoves
+            .Where(move => CanUseMove(state, move))
+            .FirstOrDefault(IsTauntMove);
+        if (!hasTaunt && tauntMove is not null)
+        {
+            return CreateUseMove(snapshot.ParticipantId, run.TurnState.CurrentTurnNo, tauntMove, null, now);
+        }
+
+        var isMpConserving = state.CurrentMp <= (int)Math.Floor(snapshot.BaseStatus.MaxMp * 0.3m);
+        if (!isMpConserving)
+        {
+            var defenseAttackMove = orderedMoves
+                .Where(move => CanUseMove(state, move))
+                .FirstOrDefault(IsDefenseAttackMove);
+            if (run.FloorState.IsBossFloor && defenseAttackMove is not null)
+            {
+                return CreateUseMove(snapshot.ParticipantId, run.TurnState.CurrentTurnNo, defenseAttackMove, target.Value.Position, now);
+            }
+        }
+
+        return CreateNormalAttack(run, snapshot.ParticipantId, now, EnemyFrontFirstOrder);
+    }
+
+    private static QuestSubmittedCommand SelectMageAction(
+        QuestRun run,
+        QuestRunPartyMemberSnapshot snapshot,
+        QuestRunPartyMemberState state,
+        IReadOnlyList<Move> orderedMoves,
+        DateTimeOffset now)
+    {
+        var target = FindEnemy(run, EnemyBackFirstOrder);
+        if (target is null)
+        {
+            return CreateWait(snapshot.ParticipantId, run.TurnState.CurrentTurnNo, now);
+        }
+
+        var usableSingleAttacks = orderedMoves
+            .Where(move => CanUseMove(state, move))
+            .Where(IsSingleAttackMove)
+            .OrderBy(move => move.MpCost)
+            .ThenBy(move => GetMoveSlotIndex(snapshot.MoveSet, move.Id))
+            .ToArray();
+        var usableAreaAttacks = orderedMoves
+            .Where(move => CanUseMove(state, move))
+            .Where(IsAreaAttackMove)
+            .OrderByDescending(GetAttackRangePriority)
+            .ThenBy(move => GetMoveSlotIndex(snapshot.MoveSet, move.Id))
+            .ToArray();
+
+        if (run.FloorState.IsBossFloor && usableSingleAttacks.Length > 0)
+        {
+            return CreateUseMove(snapshot.ParticipantId, run.TurnState.CurrentTurnNo, usableSingleAttacks[0], target.Value.Position, now);
+        }
+
+        var hasHalfMp = state.CurrentMp >= (int)Math.Ceiling(snapshot.BaseStatus.MaxMp * 0.5m);
+        if (!run.FloorState.IsBossFloor && hasHalfMp && usableAreaAttacks.Length > 0)
+        {
+            return CreateUseMove(snapshot.ParticipantId, run.TurnState.CurrentTurnNo, usableAreaAttacks[0], target.Value.Position, now);
+        }
+
+        if (usableSingleAttacks.Length > 0)
+        {
+            return CreateUseMove(snapshot.ParticipantId, run.TurnState.CurrentTurnNo, usableSingleAttacks[0], target.Value.Position, now);
+        }
+
+        var restoreMpMove = orderedMoves
+            .Where(move => CanUseMove(state, move))
+            .FirstOrDefault(IsRestoreMpMove);
+        if (restoreMpMove is not null)
+        {
+            return CreateUseMove(snapshot.ParticipantId, run.TurnState.CurrentTurnNo, restoreMpMove, snapshot.StartPosition, now);
+        }
+
+        return CreateNormalAttack(run, snapshot.ParticipantId, now, EnemyBackFirstOrder);
     }
 
     private static QuestSubmittedCommand SelectPriestAction(
@@ -179,6 +271,27 @@ public class QuestAllyNpcActionPolicy
         return move.Effects.Any(effect => effect.EffectType == MoveEffectType.Heal);
     }
 
+    private static bool IsTauntMove(Move move)
+    {
+        return move.Effects.Any(effect =>
+            effect.EffectType == MoveEffectType.Ailment &&
+            effect.Ailment?.AilmentType == AilmentType.Taunt);
+    }
+
+    private static bool IsDefenseAttackMove(Move move)
+    {
+        return move.Effects.Any(effect =>
+            effect.EffectType == MoveEffectType.Damage &&
+            effect.Damage?.AttackStat == BuffStat.Defense);
+    }
+
+    private static bool IsAreaAttackMove(Move move)
+    {
+        return move.TargetType == TargetType.Enemy &&
+               move.AttackRange != AttackRange.Single &&
+               move.Effects.Any(effect => effect.EffectType == MoveEffectType.Damage);
+    }
+
     private static bool IsDefenseBuffMove(Move move)
     {
         return move.Effects.Any(effect =>
@@ -201,6 +314,11 @@ public class QuestAllyNpcActionPolicy
                    effect.EffectType == MoveEffectType.Ailment &&
                    effect.Ailment is not null &&
                    effect.Ailment.AilmentType is not (AilmentType.DamageTrap or AilmentType.PoisonTrap));
+    }
+
+    private static bool IsRestoreMpMove(Move move)
+    {
+        return move.Effects.Any(effect => effect.EffectType == MoveEffectType.RestoreMp);
     }
 
     private static Move SelectBestHealMove(

@@ -237,6 +237,126 @@ public class QuestBattleFactoryTests
             x.MoveId == attackMoveId.Id);
     }
 
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenNpcGuardianWithoutTaunt_UsesTauntMove()
+    {
+        var participantId = QuestParticipantId.New();
+        var tauntMoveId = new MoveId(7);
+        var run = CreateNpcRun(
+            participantId,
+            Job.Guardian,
+            actionMode: ActionMode.AutoAttackOnly,
+            initialActionMode: ActionMode.AutoAttackOnly,
+            moveIds: [tauntMoveId],
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Npc, "Guardian", Job.Guardian, new BattlePosition(BattleRow.Front, BattleColumn.Left), 40, 10, 8, 10, 3)
+            ],
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Front, BattleColumn.Right)
+            ]);
+
+        var tauntMove = new Move(
+            tauntMoveId,
+            "Taunt",
+            "taunt",
+            TargetType.Self,
+            AttackRange.Single,
+            3,
+            1,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    tauntMoveId,
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(AilmentType.Taunt, 1m, 1))
+            ]);
+
+        var factory = new QuestBattleFactory();
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([tauntMove]));
+
+        actions.Should().ContainSingle(x =>
+            x.ActorId == participantId.Value &&
+            x.Kind == BattleActionKind.UseMove &&
+            x.MoveId == tauntMoveId.Id);
+    }
+
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenNpcMageHasHalfMp_UsesAreaAttack()
+    {
+        var participantId = QuestParticipantId.New();
+        var areaMoveId = new MoveId(18);
+        var singleMoveId = new MoveId(19);
+        var restoreMoveId = new MoveId(50);
+        var run = CreateNpcRun(
+            participantId,
+            Job.Mage,
+            actionMode: ActionMode.AutoAttackOnly,
+            initialActionMode: ActionMode.AutoAttackOnly,
+            moveIds: [areaMoveId, singleMoveId, restoreMoveId],
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Npc, "Mage", Job.Mage, new BattlePosition(BattleRow.Back, BattleColumn.Left), 24, 10, 3, 3, 12)
+            ],
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Back, BattleColumn.Right),
+                new BattlePosition(BattleRow.Middle, BattleColumn.Right)
+            ]);
+
+        var areaMove = new Move(
+            areaMoveId,
+            "Area",
+            "area",
+            TargetType.Enemy,
+            AttackRange.Row,
+            6,
+            0,
+            MoveCategory.Attack,
+            effects:
+            [
+                new MoveEffect(new MoveEffectId(1), areaMoveId, 1, MoveEffectType.Damage, damage: new DamageEffect(1, 1m, 1, 0m, ElementType.Fire))
+            ]);
+        var singleMove = new Move(
+            singleMoveId,
+            "Single",
+            "single",
+            TargetType.Enemy,
+            AttackRange.Single,
+            3,
+            0,
+            MoveCategory.Attack,
+            effects:
+            [
+                new MoveEffect(new MoveEffectId(2), singleMoveId, 1, MoveEffectType.Damage, damage: new DamageEffect(1, 1m, 1, 0m, ElementType.Fire))
+            ]);
+        var restoreMove = new Move(
+            restoreMoveId,
+            "Restore",
+            "restore",
+            TargetType.Self,
+            AttackRange.Single,
+            1,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(new MoveEffectId(3), restoreMoveId, 1, MoveEffectType.RestoreMp, damage: new DamageEffect(1, 1m, 5, 0m, ElementType.None, BuffStat.Intelligence))
+            ]);
+
+        var factory = new QuestBattleFactory();
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([areaMove, singleMove, restoreMove]));
+
+        actions.Should().ContainSingle(x =>
+            x.ActorId == participantId.Value &&
+            x.Kind == BattleActionKind.UseMove &&
+            x.MoveId == areaMoveId.Id);
+    }
+
     private static QuestRun CreateNpcRun(
         QuestParticipantId actorId,
         Job actorJob,
