@@ -30,7 +30,7 @@ public class TrainingService(
             .OrderBy(x => x.Level)
             .ThenBy(x => x.Id.Value)
             .ToArray();
-        var visibleEnemyLevelCap = ResolveVisibleEnemyLevelCap(player.JobLevel, sortedEnemies.Select(x => x.Level).ToArray());
+        var visibleEnemyLevelCap = ResolveVisibleEnemyLevelCap(player.Level, sortedEnemies.Select(x => x.Level).ToArray());
 
         return sortedEnemies
             .Where(x => x.Level <= visibleEnemyLevelCap)
@@ -84,7 +84,8 @@ public class TrainingService(
             CurrentEnemyHp: summary.CurrentEnemyHp,
             MaxEnemyHp: enemy.Status.MaxHp,
             Exp: exp,
-            IsLevelUp: levelUpResult.HasLeveledUp,
+            IsPlayerLevelUp: levelUpResult.HasPlayerLeveledUp,
+            IsJobLevelUp: levelUpResult.HasJobLeveledUp,
             NewlyLearnedMoves: await playerJobService.BuildLearnedMoveViewsAsync(levelUpResult.NewlyLearnedMoveIds));
     }
 

@@ -6,6 +6,8 @@ namespace server.domain.player;
 public class Player(
     PlayerId id,
     string name,
+    int level,
+    int exp,
     int jobLevel,
     int jobExp,
     Status status,
@@ -20,6 +22,8 @@ public class Player(
     public string? ImagePath { get; private set; } = ValidateImagePath(imagePath);
     public DateTimeOffset? QuestCooldownUntil { get; private set; } = questCooldownUntil;
     public Job Job { get; private set; } = job;
+    public int Level { get; private set; } = ValidateLevel(level);
+    public int Exp { get; private set; } = exp;
     public int JobLevel { get; private set; } = ValidateLevel(jobLevel);
     public int JobExp { get; private set; } = jobExp;
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
@@ -105,7 +109,7 @@ public class Player(
     {
         if (level < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(level), "職業レベルは1以上である必要があります。");
+            throw new ArgumentOutOfRangeException(nameof(level), "レベルは1以上である必要があります。");
         }
 
         return level;
@@ -114,6 +118,7 @@ public class Player(
     public void GainExp(int exp)
     {
         if (exp < 0) exp = 0;
+        Exp += exp;
         JobExp += exp;
     }
     public LevelUpResult LevelUp(JobProfile jobProfile, JobMoveLearningRule learningRule)
@@ -129,7 +134,15 @@ public class Player(
         }
 
         var growth = jobProfile.GrowthValue;
-        var hasLeveledUp = false;
+        var hasPlayerLeveledUp = false;
+        while (Exp >= Level * 10)
+        {
+            Exp -= Level * 10;
+            Level++;
+            hasPlayerLeveledUp = true;
+        }
+
+        var hasJobLeveledUp = false;
         while (JobExp >= JobLevel * 10)
         {
             JobExp -= JobLevel * 10;
@@ -142,12 +155,12 @@ public class Player(
                 intelligence: Status.Intelligence + growth.Intelligence,
                 luck: Status.Luck + growth.Luck,
                 speed: Status.Speed + growth.Speed);
-            hasLeveledUp = true;
+            hasJobLeveledUp = true;
         }
 
         var hasMasteredCurrentJob = MarkCurrentJobAsMastered(jobProfile);
         var newlyLearnedMoveIds = SynchronizeLearnableMoves(jobProfile, learningRule);
-        return new LevelUpResult(hasLeveledUp, hasMasteredCurrentJob, newlyLearnedMoveIds);
+        return new LevelUpResult(hasPlayerLeveledUp, hasJobLeveledUp, hasMasteredCurrentJob, newlyLearnedMoveIds);
     }
 
     private bool CanChangeJob(JobProfile nextProfile)
@@ -164,7 +177,7 @@ public class Player(
 
         if (nextProfile.RequiredMasterJobs.Count == 0)
         {
-            return JobLevel >= 5;
+            return Level >= 5;
         }
 
         return nextProfile.RequiredMasterJobs.All(job => MasteredJobs.Contains(job));

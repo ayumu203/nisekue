@@ -45,6 +45,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasConversion<int>()
             .HasDefaultValue(Job.Apprentice)
             .IsRequired();
+        player.Property(x => x.Level)
+            .HasColumnName("level")
+            .IsRequired();
+        player.Property(x => x.Exp)
+            .HasColumnName("exp")
+            .IsRequired();
         player.Property(x => x.JobLevel)
             .HasColumnName("job_level")
             .IsRequired();
