@@ -92,6 +92,18 @@ export default function TrainingBattleResult({
               {resultSummary}
             </Typography>
             {result.isLevelUp ? <Chip color="success" label={locale.levelUp} sx={{ fontWeight: 700 }} /> : null}
+            {result.newlyLearnedMoves.length > 0 ? (
+              <Stack spacing={0.75} alignItems="center">
+                <Typography variant="body2" fontWeight={700}>
+                  {locale.newlyLearnedMoves}
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent="center">
+                  {result.newlyLearnedMoves.map((move) => (
+                    <Chip key={move.moveId} color="info" label={move.moveName} variant="outlined" />
+                  ))}
+                </Stack>
+              </Stack>
+            ) : null}
           </Stack>
         </Paper>
         <Box

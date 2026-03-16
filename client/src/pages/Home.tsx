@@ -61,6 +61,14 @@ function MoveSettingIcon(props: SvgIconProps) {
   )
 }
 
+function JobChangeIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M7 4h7v2H7zM7 8h10v2H7zm0 4h7v2H7zm8.5 1 4.5 4.5-4.5 4.5-1.41-1.41L16.17 18H11v-2h5.17l-2.08-2.09z" />
+    </SvgIcon>
+  )
+}
+
 function SpecialThanksIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
@@ -188,6 +196,15 @@ function Home() {
                 sx={menuButtonSx}
               >
                 {locale.moveSetting}
+              </Button>
+              <Button
+                component={Link}
+                to="/job-change"
+                variant="outlined"
+                startIcon={<JobChangeIcon />}
+                sx={menuButtonSx}
+              >
+                {locale.jobChange}
               </Button>
               <Button
                 component={Link}

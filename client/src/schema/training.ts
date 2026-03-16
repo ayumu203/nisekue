@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { learnedMoveSchema } from '@/schema/player'
 
 export const trainingEnemySchema = z.object({
   id: z.number().int().min(1, 'enemyIdは1以上である必要があります'),
@@ -23,6 +24,7 @@ export const executeTrainingResponseSchema = z.object({
   maxEnemyHp: z.number().int().min(1, '敵最大HPは1以上である必要があります'),
   exp: z.number().int().min(1, '獲得経験値は1以上である必要があります'),
   isLevelUp: z.boolean(),
+  newlyLearnedMoves: z.array(learnedMoveSchema),
 })
 
 export const trainingCooldownErrorSchema = z.object({

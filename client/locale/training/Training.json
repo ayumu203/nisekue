@@ -32,6 +32,7 @@
   "expGained": "獲得経験値",
   "expValue": "+{{exp}} EXP",
   "levelUp": "レベルアップ！",
+  "newlyLearnedMoves": "新しく覚えた技",
   "resultSummary": "結果: {{trainingResult}} / ターン: {{turn}} / 獲得経験値: {{exp}}",
   "playerHp": "プレイヤー HP: {{current}} / {{max}}",
   "enemyHp": "敵 HP: {{current}} / {{max}}",

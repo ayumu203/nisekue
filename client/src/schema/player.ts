@@ -44,6 +44,11 @@ export const playerMoveSlotSchema = z.object({
   category: moveCategorySchema.nullable(),
 })
 
+export const learnedMoveSchema = z.object({
+  moveId: z.number().int().min(1),
+  moveName: z.string().min(1),
+})
+
 export const getPlayerResponseSchema = z.object({
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
@@ -114,6 +119,7 @@ export const updatePlayerJobResponseSchema = z.object({
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
   job: playerJobSchema,
+  newlyLearnedMoves: z.array(learnedMoveSchema),
 })
 
 export type GetPlayerResponse = z.infer<typeof getPlayerResponseSchema>
