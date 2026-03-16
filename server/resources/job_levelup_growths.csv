@@ -1,7 +1,7 @@
-id,job_code,job_name,master_level,max_hp,max_mp,strength,defense,intelligence,luck,speed,required_master_job_1,required_master_job_2
-1,Apprentice,見習い,5,4,2,2,2,2,1,1,,
-2,Warrior,戦士,20,6,1,3,2,0,1,1,,
-3,Guardian,盾使い,20,7,1,2,4,0,1,1,,
-4,Mage,魔法使い,20,3,4,0,1,4,1,1,,
-5,Priest,僧侶,20,4,4,0,1,3,2,1,,
-6,Ranger,レンジャー,20,5,2,2,1,1,2,3,,
+id,job_code,job_name,description,master_level,max_hp,max_mp,strength,defense,intelligence,luck,speed,required_master_job_1,required_master_job_2
+1,Apprentice,見習い,基礎を学ぶ入門職。まずはここから戦い方を身につける。,5,4,2,2,2,2,1,1,,
+2,Warrior,戦士,高い攻撃力で前線を押し切る近接職。扱いやすく安定して強い。,20,6,1,3,2,0,1,1,,
+3,Guardian,盾使い,防御に優れた前衛職。味方を守りながら粘り強く戦える。,20,7,1,2,4,0,1,1,,
+4,Mage,魔法使い,知力を活かして強力な魔法を放つ後衛職。火力は高いが打たれ弱い。,20,3,4,0,1,4,1,1,,
+5,Priest,僧侶,回復と支援を得意とする補助職。長期戦で真価を発揮する。,20,4,4,0,1,3,2,1,,
+6,Ranger,レンジャー,素早さと器用さを活かす万能職。状況対応力に優れる。,20,5,2,2,1,1,2,3,,

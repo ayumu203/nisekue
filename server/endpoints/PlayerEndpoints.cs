@@ -23,7 +23,7 @@ internal static class PlayerEndpoints
             }));
         }).RequireAuthorization();
 
-        app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepository, IMoveRepository moveRepository) =>
+        app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepository, IMoveRepository moveRepository, IJobProfileRepository jobProfileRepository) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -42,10 +42,10 @@ internal static class PlayerEndpoints
             }
 
             var allMoves = await moveRepository.GetAllMovesAsync();
-            return Results.Ok(ToPlayerResponse(player, allMoves));
+            return Results.Ok(ToPlayerResponse(player, allMoves, jobProfileRepository));
         }).RequireAuthorization();
 
-        app.MapGet("/players/{playerId:guid}", async (Guid playerId, IPlayerRepository playerRepository, IMoveRepository moveRepository) =>
+        app.MapGet("/players/{playerId:guid}", async (Guid playerId, IPlayerRepository playerRepository, IMoveRepository moveRepository, IJobProfileRepository jobProfileRepository) =>
         {
             var player = await playerRepository.GetPlayerAsync(new PlayerId(playerId));
             if (player is null)
@@ -58,10 +58,10 @@ internal static class PlayerEndpoints
             }
 
             var allMoves = await moveRepository.GetAllMovesAsync();
-            return Results.Ok(ToPlayerResponse(player, allMoves));
+            return Results.Ok(ToPlayerResponse(player, allMoves, jobProfileRepository));
         }).RequireAuthorization();
 
-        app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request, IPlayerRepository playerRepository, ChatService chatService) =>
+        app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request, IPlayerRepository playerRepository, ChatService chatService, IJobProfileRepository jobProfileRepository) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -97,7 +97,8 @@ internal static class PlayerEndpoints
                     {
                         code = player.Job.ToString(),
                         value = (int)player.Job,
-                        displayName = EndpointHelpers.GetJobDisplayName(player.Job)
+                        displayName = EndpointHelpers.GetJobDisplayName(player.Job),
+                        description = jobProfileRepository.GetByJob(player.Job).Description
                     }
                 });
             }
@@ -111,7 +112,7 @@ internal static class PlayerEndpoints
             }
         }).RequireAuthorization();
 
-        app.MapPut("/player/name", async (ClaimsPrincipal user, UpdatePlayerNameRequest request, IPlayerRepository playerRepository) =>
+        app.MapPut("/player/name", async (ClaimsPrincipal user, UpdatePlayerNameRequest request, IPlayerRepository playerRepository, IJobProfileRepository jobProfileRepository) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -154,7 +155,8 @@ internal static class PlayerEndpoints
                     {
                         code = player.Job.ToString(),
                         value = (int)player.Job,
-                        displayName = EndpointHelpers.GetJobDisplayName(player.Job)
+                        displayName = EndpointHelpers.GetJobDisplayName(player.Job),
+                        description = jobProfileRepository.GetByJob(player.Job).Description
                     }
                 });
             }
@@ -220,7 +222,8 @@ internal static class PlayerEndpoints
         app.MapPut("/player/job", async (
             ClaimsPrincipal user,
             UpdatePlayerJobRequest request,
-            PlayerJobService playerJobService) =>
+            PlayerJobService playerJobService,
+            IJobProfileRepository jobProfileRepository) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -247,7 +250,8 @@ internal static class PlayerEndpoints
                     {
                         code = player.Job.ToString(),
                         value = (int)player.Job,
-                        displayName = EndpointHelpers.GetJobDisplayName(player.Job)
+                        displayName = EndpointHelpers.GetJobDisplayName(player.Job),
+                        description = jobProfileRepository.GetByJob(player.Job).Description
                     },
                     newlyLearnedMoves = result.NewlyLearnedMoves.Select(move => new
                     {
@@ -269,9 +273,10 @@ internal static class PlayerEndpoints
         return app;
     }
 
-    private static object ToPlayerResponse(Player player, IReadOnlyList<Move> allMoves)
+    private static object ToPlayerResponse(Player player, IReadOnlyList<Move> allMoves, IJobProfileRepository jobProfileRepository)
     {
         var moveById = allMoves.ToDictionary(x => x.Id.Id);
+        var jobProfile = jobProfileRepository.GetByJob(player.Job);
         var moveSlots = player.MoveSet.Slots
             .Select((moveId, index) =>
             {
@@ -307,7 +312,8 @@ internal static class PlayerEndpoints
             {
                 code = player.Job.ToString(),
                 value = (int)player.Job,
-                displayName = EndpointHelpers.GetJobDisplayName(player.Job)
+                displayName = EndpointHelpers.GetJobDisplayName(player.Job),
+                description = jobProfile.Description
             },
             level = player.Level,
             exp = player.Exp,

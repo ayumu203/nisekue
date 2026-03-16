@@ -73,6 +73,7 @@ public class CsvJobProfileRepository : IJobProfileRepository
 
             map.Add(job, new JobProfile(
                 job: job,
+                description: columns[GetRequiredColumnIndex(header, "description")],
                 masterLevel: ParseInt(columns[GetRequiredColumnIndex(header, "master_level")], "master_level", i + 1),
                 requiredMasterJobs: requiredMasterJobs,
                 growthValue: new GrowthValue(
