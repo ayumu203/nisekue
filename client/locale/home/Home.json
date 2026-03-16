@@ -21,6 +21,8 @@
     "job": "職業",
     "level": "レベル",
     "exp": "経験値",
+    "jobLevel": "職業レベル",
+    "jobExp": "職業経験値",
     "maxHp": "HP",
     "maxMp": "MP",
     "strength": "筋力",

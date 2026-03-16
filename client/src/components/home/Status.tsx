@@ -108,6 +108,10 @@ export default function Status({ player, compactTrainingMobile = false }: Status
   const characterImageSrc =
     player?.imagePath && player.imagePath !== failedImagePath ? resolveCharacterAssetPath(player.imagePath) : null
   const characterBackgroundSrc = resolveStatusAssetPath('back-image.jpg')
+  const currentJobLevelLabel =
+    typeof player?.jobLevel === 'number'
+      ? `${player?.job.displayName ?? locale.unknownValue} Lv.${player.jobLevel}`
+      : player?.job.displayName ?? locale.unknownValue
 
   return (
     <Paper
@@ -171,7 +175,7 @@ export default function Status({ player, compactTrainingMobile = false }: Status
                   {player?.userName ?? locale.notSet}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {player?.job.displayName ?? locale.unknownValue}
+                  {currentJobLevelLabel}
                 </Typography>
               </Box>
             )}
@@ -197,12 +201,20 @@ export default function Status({ player, compactTrainingMobile = false }: Status
           </Box>
 
           {compactTrainingMobile ? (
-            <StatusStatRow
-              label={locale.labels.exp}
-              value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
-              normalized={0}
-              hideGauge
-            />
+            <Stack spacing={1.5}>
+              <StatusStatRow
+                label={locale.labels.exp}
+                value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+                normalized={0}
+                hideGauge
+              />
+              <StatusStatRow
+                label={locale.labels.jobExp}
+                value={formatExpProgress(player?.jobExp, player?.jobLevel, locale.unknownValue)}
+                normalized={0}
+                hideGauge
+              />
+            </Stack>
           ) : (
             <Box>
               <Stack spacing={1.5}>
@@ -218,6 +230,12 @@ export default function Status({ player, compactTrainingMobile = false }: Status
                 <StatusStatRow
                   label={locale.labels.exp}
                   value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+                  normalized={0}
+                  hideGauge
+                />
+                <StatusStatRow
+                  label={locale.labels.jobExp}
+                  value={formatExpProgress(player?.jobExp, player?.jobLevel, locale.unknownValue)}
                   normalized={0}
                   hideGauge
                 />

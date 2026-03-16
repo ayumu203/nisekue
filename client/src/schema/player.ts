@@ -56,6 +56,8 @@ export const getPlayerResponseSchema = z.object({
   job: playerJobSchema,
   level: z.number().int().min(1, 'レベルは1以上である必要があります'),
   exp: z.number().int().min(0, '経験値は0以上である必要があります'),
+  jobLevel: z.number().int().min(1, '職業レベルは1以上である必要があります'),
+  jobExp: z.number().int().min(0, '職業経験値は0以上である必要があります'),
   status: z.object({
     maxHp: z.number().int().min(1, '最大HPは1以上である必要があります'),
     maxMp: z.number().int().min(0, '最大MPは0以上である必要があります'),
