@@ -77,8 +77,8 @@ internal static class PlayerEndpoints
                 var player = new Player(
                     playerId.Value,
                     request.UserName,
-                    level: 1,
-                    exp: 0,
+                    jobLevel: 1,
+                    jobExp: 0,
                     status: new Status(maxHp: 24, maxMp: 8, strength: 7, defense: 5, intelligence: 5, luck: 3, speed: 4),
                     job: Job.Apprentice,
                     imagePath: PlayerImageCatalog.DefaultFileName,
@@ -307,8 +307,8 @@ internal static class PlayerEndpoints
                 value = (int)player.Job,
                 displayName = EndpointHelpers.GetJobDisplayName(player.Job)
             },
-            level = player.Level,
-            exp = player.Exp,
+            level = player.JobLevel,
+            exp = player.JobExp,
             status = new
             {
                 maxHp = player.Status.MaxHp,

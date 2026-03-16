@@ -20,7 +20,7 @@ public class TrainingExpCalculator
         };
 
         var baseExp = enemy.Level * TrainingConstants.Exp.BaseExpPerEnemyLevel;
-        var levelDiff = enemy.Level - player.Level;
+        var levelDiff = enemy.Level - player.JobLevel;
         var levelRate = levelDiff switch
         {
             <= TrainingConstants.Exp.LevelRateVeryLowThreshold => TrainingConstants.Exp.LevelRateVeryLow,

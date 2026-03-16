@@ -30,7 +30,7 @@ public class TrainingService(
             .OrderBy(x => x.Level)
             .ThenBy(x => x.Id.Value)
             .ToArray();
-        var visibleEnemyLevelCap = ResolveVisibleEnemyLevelCap(player.Level, sortedEnemies.Select(x => x.Level).ToArray());
+        var visibleEnemyLevelCap = ResolveVisibleEnemyLevelCap(player.JobLevel, sortedEnemies.Select(x => x.Level).ToArray());
 
         return sortedEnemies
             .Where(x => x.Level <= visibleEnemyLevelCap)

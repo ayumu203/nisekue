@@ -10,8 +10,8 @@ classDiagram
             +DateTimeOffset? QuestCooldownUntil
             +Job Job
             +IReadOnlySet~Job~ MasteredJobs
-            +int Level
-            +int Exp
+            +int JobLevel
+            +int JobExp
             +Status Status
             +MoveSet MoveSet
             +UpdateName(name: string) void
@@ -35,6 +35,7 @@ classDiagram
         %% - required_master_job_* が未設定の現行ジョブは Lv5 以上で転職可能
         %% - 将来の上級職は required_master_job_* に定義した全ジョブの mastered を要求
         %% - 転職時に技は習得しない。技習得は LevelUp 時のみ行う
+        %% - JobLevel / JobExp は現在職専用の値で、転職時に 1 / 0 へリセットする
 
         class PlayerId {
             <<Value Object>>

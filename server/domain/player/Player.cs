@@ -6,8 +6,8 @@ namespace server.domain.player;
 public class Player(
     PlayerId id,
     string name,
-    int level,
-    int exp,
+    int jobLevel,
+    int jobExp,
     Status status,
     Job job = Job.Apprentice,
     string? imagePath = null,
@@ -20,8 +20,8 @@ public class Player(
     public string? ImagePath { get; private set; } = ValidateImagePath(imagePath);
     public DateTimeOffset? QuestCooldownUntil { get; private set; } = questCooldownUntil;
     public Job Job { get; private set; } = job;
-    public int Level { get; private set; } = ValidateLevel(level);
-    public int Exp { get; private set; } = exp;
+    public int JobLevel { get; private set; } = ValidateLevel(jobLevel);
+    public int JobExp { get; private set; } = jobExp;
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
     public MoveSet MoveSet { get; private set; } = moveSet ?? new MoveSet();
     public IReadOnlySet<Job> MasteredJobs { get; } = new HashSet<Job>(masteredJobs is null ? Array.Empty<Job>() : masteredJobs);
@@ -54,6 +54,8 @@ public class Player(
         }
 
         Job = nextJob;
+        JobLevel = 1;
+        JobExp = 0;
         return [];
     }
 
@@ -103,7 +105,7 @@ public class Player(
     {
         if (level < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(level), "プレイヤーレベルは1以上である必要があります。");
+            throw new ArgumentOutOfRangeException(nameof(level), "職業レベルは1以上である必要があります。");
         }
 
         return level;
@@ -112,7 +114,7 @@ public class Player(
     public void GainExp(int exp)
     {
         if (exp < 0) exp = 0;
-        Exp += exp;
+        JobExp += exp;
     }
     public LevelUpResult LevelUp(JobProfile jobProfile, JobMoveLearningRule learningRule)
     {
@@ -128,10 +130,10 @@ public class Player(
 
         var growth = jobProfile.GrowthValue;
         var hasLeveledUp = false;
-        while (Exp >= Level * 10)
+        while (JobExp >= JobLevel * 10)
         {
-            Exp -= Level * 10;
-            Level++;
+            JobExp -= JobLevel * 10;
+            JobLevel++;
             Status = new Status(
                 maxHp: Status.MaxHp + growth.MaxHp,
                 maxMp: Status.MaxMp + growth.MaxMp,
@@ -162,7 +164,7 @@ public class Player(
 
         if (nextProfile.RequiredMasterJobs.Count == 0)
         {
-            return Level >= 5;
+            return JobLevel >= 5;
         }
 
         return nextProfile.RequiredMasterJobs.All(job => MasteredJobs.Contains(job));
@@ -170,7 +172,7 @@ public class Player(
 
     private bool MarkCurrentJobAsMastered(JobProfile jobProfile)
     {
-        if (Level < jobProfile.MasterLevel)
+        if (JobLevel < jobProfile.MasterLevel)
         {
             return false;
         }
@@ -187,7 +189,7 @@ public class Player(
     private IReadOnlyList<MoveId> SynchronizeLearnableMoves(JobProfile jobProfile, JobMoveLearningRule learningRule)
     {
         var newlyLearnedMoveIds = new List<MoveId>();
-        foreach (var moveId in learningRule.GetLearnableMoveIds(Level, jobProfile.MasterLevel))
+        foreach (var moveId in learningRule.GetLearnableMoveIds(JobLevel, jobProfile.MasterLevel))
         {
             if (MoveSet.Contains(moveId))
             {
