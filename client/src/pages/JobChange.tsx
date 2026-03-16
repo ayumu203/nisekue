@@ -5,6 +5,7 @@ import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayerJob } from '@/api/player'
 import { innerSurfaceSx, mutedGreenButtonSx, outerPagePaperSx, softGreenButtonSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { resolveJobAssetPath } from '@/lib/assets'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-job/JobChange.json'
 
@@ -46,6 +47,7 @@ export default function JobChange() {
       return getPlayer(session.access_token)
     }
   })
+  const currentJobImageSrc = resolveJobAssetPath(player?.job.code)
 
   async function handleChangeJob(nextJobValue: number): Promise<void> {
     if (!session?.access_token) {
@@ -111,16 +113,45 @@ export default function JobChange() {
             <Stack spacing={2}>
               <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
                 <Stack spacing={1.5}>
-                  <Typography variant="h6">{locale.currentStatusTitle}</Typography>
                   <Typography>{locale.currentJob.replace('{{jobName}}', player.job.displayName)}</Typography>
+                  {currentJobImageSrc ? (
+                    <Box
+                      sx={{
+                        width: '100%',
+                        maxWidth: 220,
+                        aspectRatio: '1 / 1',
+                        alignSelf: 'flex-start',
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: '#fffdf8',
+                        overflow: 'hidden',
+                        display: 'grid',
+                        placeItems: 'center',
+                        p: 1,
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={currentJobImageSrc}
+                        alt={player.job.displayName}
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                          display: 'block',
+                        }}
+                      />
+                    </Box>
+                  ) : null}
                   <Typography>{locale.currentLevel.replace('{{level}}', String(player.level))}</Typography>
-                  {player.job.code === 'Apprentice' ? (
+                  {/* {player.job.code === 'Apprentice' ? (
                     <Typography color={player.level >= 5 ? 'success.main' : 'text.secondary'}>
                       {player.level >= 5 ? locale.canChange : locale.cannotChange}
                     </Typography>
                   ) : (
                     <Typography color="text.secondary">{locale.onlyApprentice}</Typography>
-                  )}
+                  )} */}
                 </Stack>
               </Paper>
 
@@ -148,6 +179,7 @@ export default function JobChange() {
                     const isCurrent = player.job.value === job.value
                     const isDisabled = player.job.code !== 'Apprentice' || player.level < 5 || isCurrent
                     const isSubmitting = isSubmittingJobValue === job.value
+                    const jobImageSrc = resolveJobAssetPath(job.code)
 
                     return (
                       <Paper
@@ -161,13 +193,45 @@ export default function JobChange() {
                           justifyContent="space-between"
                           alignItems={{ xs: 'stretch', sm: 'center' }}
                         >
-                          <Stack spacing={0.5}>
-                            <Typography variant="subtitle1" fontWeight={700}>
-                              {job.displayName}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {isCurrent ? locale.currentSelected : locale.jobDescription.replace('{{jobName}}', job.displayName)}
-                            </Typography>
+                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                            {jobImageSrc ? (
+                              <Box
+                                sx={{
+                                  width: { xs: '100%', sm: 112 },
+                                  minWidth: { sm: 112 },
+                                  aspectRatio: '1 / 1',
+                                  borderRadius: 2,
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  bgcolor: '#fff',
+                                  overflow: 'hidden',
+                                  display: 'grid',
+                                  placeItems: 'center',
+                                  p: 1,
+                                }}
+                              >
+                                <Box
+                                  component="img"
+                                  src={jobImageSrc}
+                                  alt={job.displayName}
+                                  loading="lazy"
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'contain',
+                                    display: 'block',
+                                  }}
+                                />
+                              </Box>
+                            ) : null}
+                            <Stack spacing={0.5}>
+                              <Typography variant="subtitle1" fontWeight={700}>
+                                {job.displayName}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {isCurrent ? locale.currentSelected : locale.jobDescription.replace('{{jobName}}', job.displayName)}
+                              </Typography>
+                            </Stack>
                           </Stack>
                           <Button
                             variant="contained"

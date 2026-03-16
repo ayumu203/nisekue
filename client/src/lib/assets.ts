@@ -29,3 +29,24 @@ export function resolveStatusAssetPath(fileName: string): string {
 
   return resolvePublicAssetPath(statusPath)
 }
+
+const jobAssetFileNameByCode = {
+  Warrior: '01_warior.png',
+  Guardian: '02_guard.png',
+  Mage: '03_mage.png',
+  Ranger: '04_ranger.png',
+  Priest: '05_priest.png',
+} as const
+
+export function resolveJobAssetPath(jobCode: string | null | undefined): string | null {
+  if (!jobCode) {
+    return null
+  }
+
+  const fileName = jobAssetFileNameByCode[jobCode as keyof typeof jobAssetFileNameByCode]
+  if (!fileName) {
+    return null
+  }
+
+  return resolvePublicAssetPath(`image/job/${fileName}`)
+}
