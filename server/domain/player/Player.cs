@@ -54,7 +54,7 @@ public class Player(
         }
 
         Job = nextJob;
-        return SynchronizeLearnableMoves(nextProfile, learningRule);
+        return [];
     }
 
     public void UpdateStatus(Status status)
@@ -155,11 +155,14 @@ public class Player(
             return false;
         }
 
-        if (Job == Job.Apprentice &&
-            Level >= 5 &&
-            nextProfile.Job is Job.Warrior or Job.Guardian or Job.Mage or Job.Priest or Job.Ranger)
+        if (nextProfile.Job == Job.Apprentice)
         {
-            return true;
+            return false;
+        }
+
+        if (nextProfile.RequiredMasterJobs.Count == 0)
+        {
+            return Level >= 5;
         }
 
         return nextProfile.RequiredMasterJobs.All(job => MasteredJobs.Contains(job));

@@ -29,6 +29,13 @@ classDiagram
             -SynchronizeLearnableMoves(jobProfile: JobProfile, learningRule: JobMoveLearningRule) IReadOnlyList~MoveId~
         }
 
+        %% 転職ルール:
+        %% - 同一ジョブへの転職は不可
+        %% - Apprentice は初期ジョブ専用で転職先には含めない
+        %% - required_master_job_* が未設定の現行ジョブは Lv5 以上で転職可能
+        %% - 将来の上級職は required_master_job_* に定義した全ジョブの mastered を要求
+        %% - 転職時に技は習得しない。技習得は LevelUp 時のみ行う
+
         class PlayerId {
             <<Value Object>>
             +Guid Id

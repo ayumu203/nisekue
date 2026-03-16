@@ -9,7 +9,7 @@ import { resolveJobAssetPath } from '@/lib/assets'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-job/JobChange.json'
 
-const basicJobs = [
+const currentJobs = [
   { value: 2, code: 'Warrior', displayName: '戦士' },
   { value: 3, code: 'Guardian', displayName: '盾使い' },
   { value: 4, code: 'Mage', displayName: '魔法使い' },
@@ -175,9 +175,9 @@ export default function JobChange() {
               <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
                 <Stack spacing={1.5}>
                   <Typography variant="h6">{locale.jobListTitle}</Typography>
-                  {basicJobs.map((job) => {
+                  {currentJobs.map((job) => {
                     const isCurrent = player.job.value === job.value
-                    const isDisabled = player.job.code !== 'Apprentice' || player.level < 5 || isCurrent
+                    const isDisabled = player.level < 5 || isCurrent
                     const isSubmitting = isSubmittingJobValue === job.value
                     const jobImageSrc = resolveJobAssetPath(job.code)
 

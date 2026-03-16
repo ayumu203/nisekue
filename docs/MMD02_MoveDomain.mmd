@@ -4,9 +4,12 @@ classDiagram
         %% job_levelup_growths.csv:
         %% - 既存の成長値・master_level を保持
         %% - 将来の上級職向けに required_master_job_1 ... required_master_job_n を定義
+        %% - required_master_job_* が空のジョブは Lv5 以上で転職可能な現行ジョブとして扱う
         %% job_moves.csv:
         %% - job ごとの move_1 ... move_n を定義
         %% - k番目の技の習得レベルは master_level * k / n
+        %% - 将来データで Lv1 習得が発生しないよう、実装側で不正設定を検知する
+        %% - 技習得判定はレベルアップ時のみ行い、転職時には行わない
 
         %% ジョブごとの習得技定義
         class JobMoveLearningRule {
@@ -15,6 +18,7 @@ classDiagram
             +IReadOnlyList~MoveId~ MoveIds
             +ResolveRequiredLevel(order: int, masterLevel: int) int
             +GetLearnableMoveIds(level: int, masterLevel: int) IReadOnlyList~MoveId~
+            +EnsureNoLevelOneUnlock(masterLevel: int) void
         }
 
         %% 技データ
