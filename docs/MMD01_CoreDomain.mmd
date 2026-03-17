@@ -108,6 +108,7 @@ classDiagram
 
         class IJobProfileRepository {
             +JobProfile GetByJob(job: Job)
+            +IReadOnlyList~JobProfile~ GetAll()
         }
     }
 

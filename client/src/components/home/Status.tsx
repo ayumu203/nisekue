@@ -111,7 +111,7 @@ export default function Status({ player, compactTrainingMobile = false }: Status
   const currentJobLevelLabel =
     typeof player?.jobLevel === 'number'
       ? `${player?.job.displayName ?? locale.unknownValue} Lv.${player.jobLevel}`
-      : player?.job.displayName ?? locale.unknownValue
+      : (player?.job.displayName ?? locale.unknownValue)
 
   return (
     <Paper

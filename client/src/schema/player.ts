@@ -55,6 +55,7 @@ export const getPlayerResponseSchema = z.object({
   userName: playerUserNameSchema.optional(),
   imagePath: z.string().min(1).nullable().optional(),
   job: playerJobSchema,
+  jobProfiles: z.array(playerJobSchema),
   level: z.number().int().min(1, 'レベルは1以上である必要があります'),
   exp: z.number().int().min(0, '経験値は0以上である必要があります'),
   jobLevel: z.number().int().min(1, '職業レベルは1以上である必要があります'),

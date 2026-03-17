@@ -277,6 +277,15 @@ internal static class PlayerEndpoints
     {
         var moveById = allMoves.ToDictionary(x => x.Id.Id);
         var jobProfile = jobProfileRepository.GetByJob(player.Job);
+        var jobProfiles = jobProfileRepository.GetAll()
+            .Select(profile => new
+            {
+                code = profile.Job.ToString(),
+                value = (int)profile.Job,
+                displayName = EndpointHelpers.GetJobDisplayName(profile.Job),
+                description = profile.Description
+            })
+            .ToArray();
         var moveSlots = player.MoveSet.Slots
             .Select((moveId, index) =>
             {
@@ -315,6 +324,7 @@ internal static class PlayerEndpoints
                 displayName = EndpointHelpers.GetJobDisplayName(player.Job),
                 description = jobProfile.Description
             },
+            jobProfiles,
             level = player.Level,
             exp = player.Exp,
             jobLevel = player.JobLevel,

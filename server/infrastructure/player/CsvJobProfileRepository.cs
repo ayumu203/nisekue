@@ -23,6 +23,13 @@ public class CsvJobProfileRepository : IJobProfileRepository
         throw new InvalidOperationException($"ジョブ {job} のプロファイルが定義されていません。");
     }
 
+    public IReadOnlyList<JobProfile> GetAll()
+    {
+        return profileByJob.Values
+            .OrderBy(profile => (int)profile.Job)
+            .ToArray();
+    }
+
     private static IReadOnlyDictionary<Job, JobProfile> LoadProfiles(string csvPath)
     {
         if (!File.Exists(csvPath))

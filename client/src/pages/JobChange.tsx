@@ -1,4 +1,15 @@
-import { Alert, Box, Button, Chip, CircularProgress, Container, Divider, LinearProgress, Paper, Stack, Typography } from '@mui/material'
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Container,
+  LinearProgress,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
@@ -9,13 +20,15 @@ import { resolveJobAssetPath } from '@/lib/assets'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-job/JobChange.json'
 
-const currentJobs = [
-  { value: 2, code: 'Warrior', displayName: '戦士' },
-  { value: 3, code: 'Guardian', displayName: '盾使い' },
-  { value: 4, code: 'Mage', displayName: '魔法使い' },
-  { value: 5, code: 'Priest', displayName: '僧侶' },
-  { value: 6, code: 'Ranger', displayName: 'レンジャー' },
-] as const
+function formatExpProgress(currentExp: number, level: number): { current: number; required: number; ratio: number } {
+  const required = Math.max(1, level * 10)
+  const current = Math.max(0, currentExp)
+  return {
+    current,
+    required,
+    ratio: Math.max(0, Math.min(100, (current / required) * 100)),
+  }
+}
 
 export default function JobChange() {
   const { session, isLoading } = useAuth()
@@ -48,11 +61,9 @@ export default function JobChange() {
     }
   })
   const currentJobImageSrc = resolveJobAssetPath(player?.job.code)
+  const currentJobs = (player?.jobProfiles ?? []).filter((job) => job.code !== 'Apprentice')
   const unlockThreshold = 5
-  const playerLevel = player?.level ?? 1
-  const remainingToUnlock = Math.max(0, unlockThreshold - playerLevel)
-  const unlockProgress = Math.max(0, Math.min(100, (playerLevel / unlockThreshold) * 100))
-  const canChangeAnyCurrentJob = playerLevel >= unlockThreshold
+  const jobExpProgress = formatExpProgress(player?.jobExp ?? 0, player?.jobLevel ?? 1)
 
   async function handleChangeJob(nextJobValue: number): Promise<void> {
     if (!session?.access_token) {
@@ -97,14 +108,8 @@ export default function JobChange() {
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Stack spacing={1}>
-            <Typography variant="h4" textAlign="center">
-              {locale.title}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" textAlign="center">
-              {locale.subtitle}
-            </Typography>
-            <Button component={Link} to="/move-setting" variant="outlined" sx={{ alignSelf: 'flex-end' }}>
-              {locale.backToMoveSetting}
+            <Button component={Link} to="/" variant="outlined" sx={{ alignSelf: 'flex-end' }}>
+              {locale.backToHome}
             </Button>
           </Stack>
 
@@ -135,18 +140,13 @@ export default function JobChange() {
                       justifyContent="space-between"
                     >
                       <Stack spacing={0.75}>
-                        <Typography variant="overline" color="text.secondary">
-                          {locale.currentJob.replace('{{jobName}}', player.job.displayName)}
-                        </Typography>
                         <Typography variant="h5" fontWeight={800}>
                           {player.job.displayName}
                         </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {player.job.description}
+                        </Typography>
                       </Stack>
-                      <Chip
-                        color={canChangeAnyCurrentJob ? 'success' : 'default'}
-                        label={canChangeAnyCurrentJob ? locale.canChange : locale.cannotChange}
-                        variant={canChangeAnyCurrentJob ? 'filled' : 'outlined'}
-                      />
                     </Stack>
 
                     <Box
@@ -161,17 +161,20 @@ export default function JobChange() {
                         <Box
                           sx={{
                             width: '100%',
-                            maxWidth: 220,
+                            maxWidth: 240,
                             aspectRatio: '1 / 1',
                             justifySelf: { sm: 'start' },
-                            borderRadius: 2,
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            bgcolor: '#fffdf8',
+                            borderRadius: 3,
+                            border: '2px solid',
+                            borderColor: '#d3a93a',
+                            bgcolor: '#fffaf0',
+                            boxShadow: '0 10px 24px rgba(120, 86, 24, 0.16)',
                             overflow: 'hidden',
                             display: 'grid',
                             placeItems: 'center',
-                            p: 1,
+                            p: 1.5,
+                            backgroundImage:
+                              'radial-gradient(circle at 50% 35%, rgba(255, 240, 184, 0.95), rgba(255, 250, 240, 0.85) 58%, rgba(245, 227, 176, 0.9))',
                           }}
                         >
                           <Box
@@ -183,6 +186,8 @@ export default function JobChange() {
                               height: '100%',
                               objectFit: 'contain',
                               display: 'block',
+                              filter: 'drop-shadow(0 10px 14px rgba(91, 63, 16, 0.18))',
+                              transform: 'scale(1.04)',
                             }}
                           />
                         </Box>
@@ -216,30 +221,24 @@ export default function JobChange() {
 
                         <Stack spacing={0.75}>
                           <Stack direction="row" justifyContent="space-between" spacing={1}>
-                            <Typography variant="body2" fontWeight={700}>
-                              {canChangeAnyCurrentJob ? locale.unlockReady : locale.cannotChange}
-                            </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              {player.level} / {unlockThreshold}
+                              {locale.jobExpProgress
+                                .replace('{{current}}', String(jobExpProgress.current))
+                                .replace('{{required}}', String(jobExpProgress.required))}
                             </Typography>
                           </Stack>
                           <LinearProgress
                             variant="determinate"
-                            value={unlockProgress}
+                            value={jobExpProgress.ratio}
                             sx={{
                               height: 10,
                               borderRadius: 999,
                               backgroundColor: '#ecdca8',
                               '& .MuiLinearProgress-bar': {
-                                backgroundColor: canChangeAnyCurrentJob ? '#78c27d' : '#d3a93a',
+                                backgroundColor: '#78c27d',
                               },
                             }}
                           />
-                          {!canChangeAnyCurrentJob ? (
-                            <Typography variant="body2" color="text.secondary">
-                              {locale.unlockProgress.replace('{{remaining}}', String(remainingToUnlock))}
-                            </Typography>
-                          ) : null}
                         </Stack>
                       </Stack>
                     </Box>
@@ -252,11 +251,6 @@ export default function JobChange() {
                     <Alert severity="warning" sx={{ alignItems: 'center' }}>
                       {locale.resetNoticeBody}
                     </Alert>
-                    <Divider />
-                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                      <Chip label={`Player Lv.${player.level}`} variant="outlined" />
-                      <Chip label={`${player.job.displayName} Lv.${player.jobLevel}`} color="primary" variant="outlined" />
-                    </Stack>
                   </Stack>
                 </Paper>
               </Box>
@@ -288,13 +282,13 @@ export default function JobChange() {
                     const isSubmitting = isSubmittingJobValue === job.value
                     const jobImageSrc = resolveJobAssetPath(job.code)
                     const statusLabel = isCurrent
-                      ? locale.currentSelected
+                      ? locale.currentBadge
                       : isLocked
                         ? locale.jobLocked
                         : locale.jobAvailable
                     const statusColor = isCurrent ? 'info' : isLocked ? 'default' : 'success'
                     const description = isCurrent
-                      ? locale.currentSelected
+                      ? locale.currentDetail
                       : isLocked
                         ? locale.jobLockedDetail
                         : locale.jobResetDetail.replace('{{jobName}}', job.displayName)
@@ -313,25 +307,35 @@ export default function JobChange() {
                       >
                         <Stack
                           direction={{ xs: 'column', sm: 'row' }}
-                          spacing={1.5}
+                          spacing={{ xs: 1.5, sm: 2.5 }}
                           justifyContent="space-between"
                           alignItems={{ xs: 'stretch', sm: 'center' }}
                         >
-                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                          <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={1.5}
+                            alignItems={{ xs: 'stretch', sm: 'center' }}
+                          >
                             {jobImageSrc ? (
                               <Box
                                 sx={{
-                                  width: { xs: '100%', sm: 112 },
-                                  minWidth: { sm: 112 },
+                                  width: { xs: '100%', sm: 132 },
+                                  minWidth: { sm: 132 },
                                   aspectRatio: '1 / 1',
-                                  borderRadius: 2,
-                                  border: '1px solid',
-                                  borderColor: 'divider',
-                                  bgcolor: '#fff',
+                                  borderRadius: 2.5,
+                                  border: '2px solid',
+                                  borderColor: isCurrent ? '#d3a93a' : '#d8c49a',
+                                  bgcolor: '#fffaf2',
                                   overflow: 'hidden',
                                   display: 'grid',
                                   placeItems: 'center',
-                                  p: 1,
+                                  p: 1.25,
+                                  boxShadow: isCurrent
+                                    ? '0 10px 18px rgba(120, 86, 24, 0.16)'
+                                    : '0 6px 12px rgba(120, 86, 24, 0.08)',
+                                  backgroundImage: isCurrent
+                                    ? 'radial-gradient(circle at 50% 35%, rgba(255, 238, 176, 0.95), rgba(255, 250, 240, 0.86) 58%, rgba(245, 227, 176, 0.88))'
+                                    : 'radial-gradient(circle at 50% 35%, rgba(255, 244, 214, 0.92), rgba(255, 250, 240, 0.84) 60%, rgba(239, 225, 189, 0.82))',
                                 }}
                               >
                                 <Box
@@ -344,6 +348,8 @@ export default function JobChange() {
                                     height: '100%',
                                     objectFit: 'contain',
                                     display: 'block',
+                                    filter: 'drop-shadow(0 8px 12px rgba(91, 63, 16, 0.14))',
+                                    transform: isCurrent ? 'scale(1.05)' : 'scale(1.02)',
                                   }}
                                 />
                               </Box>
@@ -353,32 +359,39 @@ export default function JobChange() {
                                 <Typography variant="subtitle1" fontWeight={700}>
                                   {job.displayName}
                                 </Typography>
-                                <Chip label={statusLabel} color={statusColor} size="small" variant={isLocked ? 'outlined' : 'filled'} />
+                                <Chip
+                                  label={statusLabel}
+                                  color={statusColor}
+                                  size="small"
+                                  variant={isLocked ? 'outlined' : 'filled'}
+                                />
                               </Stack>
                               <Typography variant="body2" color="text.secondary">
-                                {locale.jobDescription.replace('{{jobName}}', job.displayName)}
+                                {job.description}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
                                 {description}
                               </Typography>
                             </Stack>
                           </Stack>
-                          <Button
-                            variant="contained"
-                            sx={isDisabled ? mutedGreenButtonSx : softGreenButtonSx}
-                            disabled={isDisabled || isSubmittingJobValue !== null}
-                            onClick={() => {
-                              void handleChangeJob(job.value)
-                            }}
-                          >
-                            {isSubmitting
-                              ? locale.changing
-                              : isCurrent
-                                ? locale.currentJobButton
-                                : isLocked
-                                  ? locale.lockedButton
-                                  : locale.changeButton}
-                          </Button>
+                          {isCurrent ? null : (
+                            <Button
+                              variant="contained"
+                              sx={{
+                                ...(isDisabled ? mutedGreenButtonSx : softGreenButtonSx),
+                                minWidth: { sm: 116 },
+                                alignSelf: { sm: 'center' },
+                                whiteSpace: 'nowrap',
+                              }}
+                              disabled={isDisabled || isSubmittingJobValue !== null}
+                              fullWidth={false}
+                              onClick={() => {
+                                void handleChangeJob(job.value)
+                              }}
+                            >
+                              {isSubmitting ? locale.changing : isLocked ? locale.lockedButton : locale.changeButton}
+                            </Button>
+                          )}
                         </Stack>
                       </Paper>
                     )

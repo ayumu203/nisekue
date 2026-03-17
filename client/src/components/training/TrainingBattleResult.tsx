@@ -55,13 +55,14 @@ export default function TrainingBattleResult({
     .replace('{{turn}}', String(result.turn))
     .replace('{{exp}}', String(result.exp))
   const expValue = locale.expValue.replace('{{exp}}', String(result.exp))
-  const levelUpLabel = result.isPlayerLevelUp && result.isJobLevelUp
-    ? locale.playerAndJobLevelUp
-    : result.isPlayerLevelUp
-      ? locale.playerLevelUp
-      : result.isJobLevelUp
-        ? locale.levelUp
-        : null
+  const levelUpLabel =
+    result.isPlayerLevelUp && result.isJobLevelUp
+      ? locale.playerAndJobLevelUp
+      : result.isPlayerLevelUp
+        ? locale.playerLevelUp
+        : result.isJobLevelUp
+          ? locale.levelUp
+          : null
 
   return (
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2.5 }}>
