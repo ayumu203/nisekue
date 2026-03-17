@@ -6,6 +6,8 @@ erDiagram
         int job "NOT NULL, DEFAULT 1 (Apprentice)"
         int level "NOT NULL, DEFAULT 1"
         int exp "NOT NULL, DEFAULT 0"
+        int job_level "NOT NULL, DEFAULT 1"
+        int job_exp "NOT NULL, DEFAULT 0"
         int max_hp "NOT NULL, DEFAULT 1"
         int max_mp "NOT NULL, DEFAULT 0"
         int strength "NOT NULL, DEFAULT 0"
@@ -40,6 +42,11 @@ erDiagram
         int move_id_8 "NULL (references CSV move_id logically)"
         int move_id_9 "NULL (references CSV move_id logically)"
         int move_id_10 "NULL (references CSV move_id logically)"
+    }
+    PLAYER_MASTER_JOBS {
+        uuid player_id PK, FK "internal.players.id"
+        int job PK "mastered job enum value"
+        timestamptz mastered_at "NOT NULL"
     }
     QUEST_ROOMS {
         uuid id PK "internal.quest_rooms.id"
@@ -152,6 +159,7 @@ erDiagram
     PLAYERS ||--|| CHAT_ROOMS : owns
     CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
     PLAYERS ||--|| PLAYER_MOVES : has_slots
+    PLAYERS ||--o{ PLAYER_MASTER_JOBS : has_mastered
     PLAYERS ||--o{ QUEST_ROOMS : owns
     QUEST_ROOMS ||--o{ QUEST_ROOM_PARTICIPANTS : has
     QUEST_RUNS ||--o{ QUEST_RUN_PARTY_SNAPSHOTS : snapshots

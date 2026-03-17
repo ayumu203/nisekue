@@ -1,5 +1,6 @@
 using FluentAssertions;
 using server.application.battle;
+using server.application.player;
 using server.application.quest;
 using server.domain.battle;
 using server.domain.battle.enums;
@@ -493,7 +494,8 @@ public class QuestRunServiceTests
             new FakeQuestEnemyDefinitionRepository(),
             new FakeMoveRepository(moves),
             playerRepository,
-            new FakeGrowthValueRepository(),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
             new QuestBattleFactory());
     }
@@ -780,6 +782,8 @@ public class QuestRunServiceTests
                     "Owner",
                     level: 1,
                     exp: 0,
+                    jobLevel: 1,
+                    jobExp: 0,
                     status: new Status(10, 10, 10, 10, 10, 10, 10),
                     job: Job.Warrior,
                     imagePath: "/images/player.png",
@@ -805,9 +809,22 @@ public class QuestRunServiceTests
         }
     }
 
-    private sealed class FakeGrowthValueRepository : IGrowthValueRepository
+    private sealed class FakeJobProfileRepository : IJobProfileRepository
     {
-        public GrowthValue GetByJob(Job job) => new(1, 1, 1, 1, 1, 1, 1);
+        public JobProfile GetByJob(Job job)
+            => new(
+                job,
+                $"{job} profile",
+                5,
+                [],
+                new GrowthValue(1, 1, 1, 1, 1, 1, 1));
+
+        public IReadOnlyList<JobProfile> GetAll() => [GetByJob(Job.Apprentice)];
+    }
+
+    private sealed class FakeJobMoveLearningRuleRepository : IJobMoveLearningRuleRepository
+    {
+        public JobMoveLearningRule GetByJob(Job job) => new(job, []);
     }
 
     private readonly record struct PartyMemberSeed(

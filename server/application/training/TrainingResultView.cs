@@ -8,4 +8,6 @@ public sealed record TrainingResultView(
     int CurrentEnemyHp,
     int MaxEnemyHp,
     int Exp,
-    bool IsLevelUp);
+    bool IsPlayerLevelUp,
+    bool IsJobLevelUp,
+    IReadOnlyList<server.application.player.LearnedMoveView> NewlyLearnedMoves);

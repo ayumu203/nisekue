@@ -10,6 +10,8 @@ public class PlayerEntity
     public Job Job { get; set; } = Job.Apprentice;
     public int Level { get; set; }
     public int Exp { get; set; }
+    public int JobLevel { get; set; }
+    public int JobExp { get; set; }
     public int MaxHp { get; set; }
     public int MaxMp { get; set; }
     public int Strength { get; set; }

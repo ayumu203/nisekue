@@ -55,6 +55,14 @@ export default function TrainingBattleResult({
     .replace('{{turn}}', String(result.turn))
     .replace('{{exp}}', String(result.exp))
   const expValue = locale.expValue.replace('{{exp}}', String(result.exp))
+  const levelUpLabel =
+    result.isPlayerLevelUp && result.isJobLevelUp
+      ? locale.playerAndJobLevelUp
+      : result.isPlayerLevelUp
+        ? locale.playerLevelUp
+        : result.isJobLevelUp
+          ? locale.levelUp
+          : null
 
   return (
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2.5 }}>
@@ -91,7 +99,19 @@ export default function TrainingBattleResult({
             <Typography variant="body2" color="text.secondary" textAlign="center">
               {resultSummary}
             </Typography>
-            {result.isLevelUp ? <Chip color="success" label={locale.levelUp} sx={{ fontWeight: 700 }} /> : null}
+            {levelUpLabel ? <Chip color="success" label={levelUpLabel} sx={{ fontWeight: 700 }} /> : null}
+            {result.newlyLearnedMoves.length > 0 ? (
+              <Stack spacing={0.75} alignItems="center">
+                <Typography variant="body2" fontWeight={700}>
+                  {locale.newlyLearnedMoves}
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent="center">
+                  {result.newlyLearnedMoves.map((move) => (
+                    <Chip key={move.moveId} color="info" label={move.moveName} variant="outlined" />
+                  ))}
+                </Stack>
+              </Stack>
+            ) : null}
           </Stack>
         </Paper>
         <Box

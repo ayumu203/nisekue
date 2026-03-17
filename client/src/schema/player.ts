@@ -14,6 +14,7 @@ export const playerJobSchema = z.object({
   code: playerJobCodeSchema,
   value: z.number().int().min(1).max(6),
   displayName: z.string().min(1, 'ジョブ名が空です'),
+  description: z.string().min(1, 'ジョブ説明が空です'),
 })
 
 export const moveTargetTypeSchema = z.enum(['Enemy', 'Ally', 'Self'])
@@ -44,13 +45,21 @@ export const playerMoveSlotSchema = z.object({
   category: moveCategorySchema.nullable(),
 })
 
+export const learnedMoveSchema = z.object({
+  moveId: z.number().int().min(1),
+  moveName: z.string().min(1),
+})
+
 export const getPlayerResponseSchema = z.object({
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
   imagePath: z.string().min(1).nullable().optional(),
   job: playerJobSchema,
+  jobProfiles: z.array(playerJobSchema),
   level: z.number().int().min(1, 'レベルは1以上である必要があります'),
   exp: z.number().int().min(0, '経験値は0以上である必要があります'),
+  jobLevel: z.number().int().min(1, '職業レベルは1以上である必要があります'),
+  jobExp: z.number().int().min(0, '職業経験値は0以上である必要があります'),
   status: z.object({
     maxHp: z.number().int().min(1, '最大HPは1以上である必要があります'),
     maxMp: z.number().int().min(0, '最大MPは0以上である必要があります'),
@@ -114,6 +123,7 @@ export const updatePlayerJobResponseSchema = z.object({
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
   job: playerJobSchema,
+  newlyLearnedMoves: z.array(learnedMoveSchema),
 })
 
 export type GetPlayerResponse = z.infer<typeof getPlayerResponseSchema>

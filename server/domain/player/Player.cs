@@ -1,4 +1,5 @@
 using server.shared.constants.player;
+using server.domain.move;
 
 namespace server.domain.player;
 
@@ -7,12 +8,17 @@ public class Player(
     string name,
     int level,
     int exp,
+    int jobLevel,
+    int jobExp,
     Status status,
     Job job = Job.Apprentice,
     string? imagePath = null,
     DateTimeOffset? questCooldownUntil = null,
-    MoveSet? moveSet = null)
+    MoveSet? moveSet = null,
+    IReadOnlySet<Job>? masteredJobs = null)
 {
+    private readonly HashSet<Job> masteredJobs = masteredJobs is null ? [] : new HashSet<Job>(masteredJobs);
+
     public PlayerId Id { get; } = id;
     public string Name { get; private set; } = ValidateName(name);
     public string? ImagePath { get; private set; } = ValidateImagePath(imagePath);
@@ -20,8 +26,11 @@ public class Player(
     public Job Job { get; private set; } = job;
     public int Level { get; private set; } = ValidateLevel(level);
     public int Exp { get; private set; } = exp;
+    public int JobLevel { get; private set; } = ValidateLevel(jobLevel);
+    public int JobExp { get; private set; } = jobExp;
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
     public MoveSet MoveSet { get; private set; } = moveSet ?? new MoveSet();
+    public IReadOnlySet<Job> MasteredJobs => masteredJobs;
 
     public void UpdateName(string name)
     {
@@ -33,9 +42,27 @@ public class Player(
         ImagePath = ValidateImagePath(imagePath);
     }
 
-    public void UpdateJob(Job job)
+    public IReadOnlyList<MoveId> ChangeJob(Job nextJob, JobProfile nextProfile, JobMoveLearningRule learningRule)
     {
-        Job = job;
+        if (nextProfile.Job != nextJob)
+        {
+            throw new InvalidOperationException("転職先ジョブとジョブプロファイルが一致していません。");
+        }
+
+        if (learningRule.Job != nextJob)
+        {
+            throw new InvalidOperationException("転職先ジョブと技習得ルールが一致していません。");
+        }
+
+        if (!CanChangeJob(nextProfile))
+        {
+            throw new InvalidOperationException("転職条件を満たしていません。");
+        }
+
+        Job = nextJob;
+        JobLevel = 1;
+        JobExp = 0;
+        return [];
     }
 
     public void UpdateStatus(Status status)
@@ -84,7 +111,7 @@ public class Player(
     {
         if (level < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(level), "プレイヤーレベルは1以上である必要があります。");
+            throw new ArgumentOutOfRangeException(nameof(level), "レベルは1以上である必要があります。");
         }
 
         return level;
@@ -94,15 +121,34 @@ public class Player(
     {
         if (exp < 0) exp = 0;
         Exp += exp;
+        JobExp += exp;
     }
-    public bool LevelUp(IGrowthValueRepository growthValueRepository)
+    public LevelUpResult LevelUp(JobProfile jobProfile, JobMoveLearningRule learningRule)
     {
-        var growth = growthValueRepository.GetByJob(Job);
-        bool flag = false;
+        if (jobProfile.Job != Job)
+        {
+            throw new InvalidOperationException("現在のジョブとジョブプロファイルが一致していません。");
+        }
+
+        if (learningRule.Job != Job)
+        {
+            throw new InvalidOperationException("現在のジョブと技習得ルールが一致していません。");
+        }
+
+        var growth = jobProfile.GrowthValue;
+        var hasPlayerLeveledUp = false;
         while (Exp >= Level * 10)
         {
             Exp -= Level * 10;
             Level++;
+            hasPlayerLeveledUp = true;
+        }
+
+        var hasJobLeveledUp = false;
+        while (JobExp >= JobLevel * 10)
+        {
+            JobExp -= JobLevel * 10;
+            JobLevel++;
             Status = new Status(
                 maxHp: Status.MaxHp + growth.MaxHp,
                 maxMp: Status.MaxMp + growth.MaxMp,
@@ -111,8 +157,64 @@ public class Player(
                 intelligence: Status.Intelligence + growth.Intelligence,
                 luck: Status.Luck + growth.Luck,
                 speed: Status.Speed + growth.Speed);
-            flag = true;
+            hasJobLeveledUp = true;
         }
-        return flag;
+
+        var hasMasteredCurrentJob = MarkCurrentJobAsMastered(jobProfile);
+        var newlyLearnedMoveIds = SynchronizeLearnableMoves(jobProfile, learningRule);
+        return new LevelUpResult(hasPlayerLeveledUp, hasJobLeveledUp, hasMasteredCurrentJob, newlyLearnedMoveIds);
+    }
+
+    private bool CanChangeJob(JobProfile nextProfile)
+    {
+        if (nextProfile.Job == Job)
+        {
+            return false;
+        }
+
+        if (nextProfile.Job == Job.Apprentice)
+        {
+            return false;
+        }
+
+        if (nextProfile.RequiredMasterJobs.Count == 0)
+        {
+            return Level >= 5;
+        }
+
+        return nextProfile.RequiredMasterJobs.All(job => MasteredJobs.Contains(job));
+    }
+
+    private bool MarkCurrentJobAsMastered(JobProfile jobProfile)
+    {
+        if (JobLevel < jobProfile.MasterLevel)
+        {
+            return false;
+        }
+
+        if (MasteredJobs.Contains(Job))
+        {
+            return false;
+        }
+
+        masteredJobs.Add(Job);
+        return true;
+    }
+
+    private IReadOnlyList<MoveId> SynchronizeLearnableMoves(JobProfile jobProfile, JobMoveLearningRule learningRule)
+    {
+        var newlyLearnedMoveIds = new List<MoveId>();
+        foreach (var moveId in learningRule.GetLearnableMoveIds(JobLevel, jobProfile.MasterLevel))
+        {
+            if (MoveSet.Contains(moveId))
+            {
+                continue;
+            }
+
+            MoveSet.AddLearnedMove(moveId);
+            newlyLearnedMoveIds.Add(moveId);
+        }
+
+        return newlyLearnedMoveIds;
     }
 }

@@ -1,0 +1,407 @@
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Container,
+  LinearProgress,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import useSWR from 'swr'
+import { createPlayer, getPlayer, updatePlayerJob } from '@/api/player'
+import { innerSurfaceSx, mutedGreenButtonSx, outerPagePaperSx, softGreenButtonSx } from '@/constants/styles'
+import { useAuth } from '@/contexts/useAuth'
+import { resolveJobAssetPath } from '@/lib/assets'
+import { INITIAL_PLAYER_NAME } from '@/lib/player'
+import locale from '../../locale/player-job/JobChange.json'
+
+function formatExpProgress(currentExp: number, level: number): { current: number; required: number; ratio: number } {
+  const required = Math.max(1, level * 10)
+  const current = Math.max(0, currentExp)
+  return {
+    current,
+    required,
+    ratio: Math.max(0, Math.min(100, (current / required) * 100)),
+  }
+}
+
+export default function JobChange() {
+  const { session, isLoading } = useAuth()
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [learnedMoveNames, setLearnedMoveNames] = useState<string[]>([])
+  const [isSubmittingJobValue, setIsSubmittingJobValue] = useState<number | null>(null)
+
+  const playerSWRKey = session?.user.id ? (['job-change', session.user.id] as const) : null
+  const {
+    data: player,
+    error: playerError,
+    isLoading: isPlayerLoading,
+    mutate: mutatePlayer,
+  } = useSWR(playerSWRKey, async () => {
+    if (!session?.access_token) {
+      throw new Error(locale.sessionMissing)
+    }
+
+    try {
+      return await getPlayer(session.access_token)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ''
+      if (!message.includes(locale.playerNotFoundMessage)) {
+        throw error
+      }
+
+      await createPlayer({ userName: INITIAL_PLAYER_NAME }, session.access_token)
+      return getPlayer(session.access_token)
+    }
+  })
+  const currentJobImageSrc = resolveJobAssetPath(player?.job.code)
+  const currentJobs = (player?.jobProfiles ?? []).filter((job) => job.code !== 'Apprentice')
+  const unlockThreshold = 5
+  const jobExpProgress = formatExpProgress(player?.jobExp ?? 0, player?.jobLevel ?? 1)
+
+  async function handleChangeJob(nextJobValue: number): Promise<void> {
+    if (!session?.access_token) {
+      setSubmitError(locale.sessionMissing)
+      return
+    }
+
+    setSubmitError(null)
+    setSuccessMessage(null)
+    setLearnedMoveNames([])
+    setIsSubmittingJobValue(nextJobValue)
+
+    try {
+      const response = await updatePlayerJob({ job: nextJobValue }, session.access_token)
+      await mutatePlayer()
+      setLearnedMoveNames(response.newlyLearnedMoves.map((move) => move.moveName))
+      setSuccessMessage(
+        response.newlyLearnedMoves.length > 0
+          ? locale.changedWithMoves.replace('{{jobName}}', response.job.displayName)
+          : locale.changed.replace('{{jobName}}', response.job.displayName),
+      )
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : locale.changeFailed)
+    } finally {
+      setIsSubmittingJobValue(null)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <CircularProgress size={20} />
+          <Typography>{locale.loadingAuth}</Typography>
+        </Stack>
+      </Box>
+    )
+  }
+
+  return (
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
+      <Paper elevation={2} sx={outerPagePaperSx}>
+        <Stack spacing={{ xs: 1.5, sm: 2 }}>
+          <Stack spacing={1}>
+            <Button component={Link} to="/" variant="outlined" sx={{ alignSelf: 'flex-end' }}>
+              {locale.backToHome}
+            </Button>
+          </Stack>
+
+          {isPlayerLoading ? (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <CircularProgress size={16} />
+              <Typography variant="body2">{locale.loadingPlayer}</Typography>
+            </Stack>
+          ) : playerError ? (
+            <Alert severity="warning">{playerError.message}</Alert>
+          ) : !player ? (
+            <Alert severity="warning">{locale.loadingPlayer}</Alert>
+          ) : (
+            <Stack spacing={2}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.2fr) minmax(320px, 0.8fr)' },
+                  gap: 2,
+                }}
+              >
+                <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+                  <Stack spacing={2}>
+                    <Stack
+                      direction={{ xs: 'column', sm: 'row' }}
+                      spacing={2}
+                      alignItems={{ xs: 'stretch', sm: 'center' }}
+                      justifyContent="space-between"
+                    >
+                      <Stack spacing={0.75}>
+                        <Typography variant="h5" fontWeight={800}>
+                          {player.job.displayName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {player.job.description}
+                        </Typography>
+                      </Stack>
+                    </Stack>
+
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: '220px minmax(0, 1fr)' },
+                        gap: 2,
+                        alignItems: 'center',
+                      }}
+                    >
+                      {currentJobImageSrc ? (
+                        <Box
+                          sx={{
+                            width: '100%',
+                            maxWidth: 240,
+                            aspectRatio: '1 / 1',
+                            justifySelf: { sm: 'start' },
+                            borderRadius: 3,
+                            border: '2px solid',
+                            borderColor: '#d3a93a',
+                            bgcolor: '#fffaf0',
+                            boxShadow: '0 10px 24px rgba(120, 86, 24, 0.16)',
+                            overflow: 'hidden',
+                            display: 'grid',
+                            placeItems: 'center',
+                            p: 1.5,
+                            backgroundImage:
+                              'radial-gradient(circle at 50% 35%, rgba(255, 240, 184, 0.95), rgba(255, 250, 240, 0.85) 58%, rgba(245, 227, 176, 0.9))',
+                          }}
+                        >
+                          <Box
+                            component="img"
+                            src={currentJobImageSrc}
+                            alt={player.job.displayName}
+                            sx={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'contain',
+                              display: 'block',
+                              filter: 'drop-shadow(0 10px 14px rgba(91, 63, 16, 0.18))',
+                              transform: 'scale(1.04)',
+                            }}
+                          />
+                        </Box>
+                      ) : null}
+
+                      <Stack spacing={1.25}>
+                        <Box
+                          sx={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                            gap: 1,
+                          }}
+                        >
+                          <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 2, p: 1.5 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              {locale.currentLevel.replace('{{level}}', '')}
+                            </Typography>
+                            <Typography variant="h6" fontWeight={800}>
+                              Lv.{player.level}
+                            </Typography>
+                          </Paper>
+                          <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 2, p: 1.5 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              {locale.currentJobLevel.replace('{{level}}', '')}
+                            </Typography>
+                            <Typography variant="h6" fontWeight={800}>
+                              Lv.{player.jobLevel}
+                            </Typography>
+                          </Paper>
+                        </Box>
+
+                        <Stack spacing={0.75}>
+                          <Stack direction="row" justifyContent="space-between" spacing={1}>
+                            <Typography variant="body2" color="text.secondary">
+                              {locale.jobExpProgress
+                                .replace('{{current}}', String(jobExpProgress.current))
+                                .replace('{{required}}', String(jobExpProgress.required))}
+                            </Typography>
+                          </Stack>
+                          <LinearProgress
+                            variant="determinate"
+                            value={jobExpProgress.ratio}
+                            sx={{
+                              height: 10,
+                              borderRadius: 999,
+                              backgroundColor: '#ecdca8',
+                              '& .MuiLinearProgress-bar': {
+                                backgroundColor: '#78c27d',
+                              },
+                            }}
+                          />
+                        </Stack>
+                      </Stack>
+                    </Box>
+                  </Stack>
+                </Paper>
+
+                <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+                  <Stack spacing={1.5}>
+                    <Typography variant="h6">{locale.resetNoticeTitle}</Typography>
+                    <Alert severity="warning" sx={{ alignItems: 'center' }}>
+                      {locale.resetNoticeBody}
+                    </Alert>
+                  </Stack>
+                </Paper>
+              </Box>
+
+              {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
+              {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+              {learnedMoveNames.length > 0 ? (
+                <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2 }}>
+                  <Stack spacing={1}>
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      {locale.learnedMoves}
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                      {learnedMoveNames.map((moveName) => (
+                        <Chip key={moveName} label={moveName} color="info" variant="outlined" />
+                      ))}
+                    </Stack>
+                  </Stack>
+                </Paper>
+              ) : null}
+
+              <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+                <Stack spacing={1.5}>
+                  <Typography variant="h6">{locale.jobListTitle}</Typography>
+                  {currentJobs.map((job) => {
+                    const isCurrent = player.job.value === job.value
+                    const isLocked = player.level < unlockThreshold
+                    const isDisabled = isLocked || isCurrent
+                    const isSubmitting = isSubmittingJobValue === job.value
+                    const jobImageSrc = resolveJobAssetPath(job.code)
+                    const statusLabel = isCurrent
+                      ? locale.currentBadge
+                      : isLocked
+                        ? locale.jobLocked
+                        : locale.jobAvailable
+                    const statusColor = isCurrent ? 'info' : isLocked ? 'default' : 'success'
+                    const description = isCurrent
+                      ? locale.currentDetail
+                      : isLocked
+                        ? locale.jobLockedDetail
+                        : locale.jobResetDetail.replace('{{jobName}}', job.displayName)
+
+                    return (
+                      <Paper
+                        key={job.code}
+                        variant="outlined"
+                        sx={{
+                          ...innerSurfaceSx,
+                          borderRadius: 2,
+                          p: 2,
+                          backgroundColor: isCurrent ? '#fff9e8' : '#fffdf8',
+                          borderColor: isCurrent ? '#d3a93a' : innerSurfaceSx.borderColor,
+                        }}
+                      >
+                        <Stack
+                          direction={{ xs: 'column', sm: 'row' }}
+                          spacing={{ xs: 1.5, sm: 2.5 }}
+                          justifyContent="space-between"
+                          alignItems={{ xs: 'stretch', sm: 'center' }}
+                        >
+                          <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={1.5}
+                            alignItems={{ xs: 'stretch', sm: 'center' }}
+                          >
+                            {jobImageSrc ? (
+                              <Box
+                                sx={{
+                                  width: { xs: '100%', sm: 132 },
+                                  minWidth: { sm: 132 },
+                                  aspectRatio: '1 / 1',
+                                  borderRadius: 2.5,
+                                  border: '2px solid',
+                                  borderColor: isCurrent ? '#d3a93a' : '#d8c49a',
+                                  bgcolor: '#fffaf2',
+                                  overflow: 'hidden',
+                                  display: 'grid',
+                                  placeItems: 'center',
+                                  p: 1.25,
+                                  boxShadow: isCurrent
+                                    ? '0 10px 18px rgba(120, 86, 24, 0.16)'
+                                    : '0 6px 12px rgba(120, 86, 24, 0.08)',
+                                  backgroundImage: isCurrent
+                                    ? 'radial-gradient(circle at 50% 35%, rgba(255, 238, 176, 0.95), rgba(255, 250, 240, 0.86) 58%, rgba(245, 227, 176, 0.88))'
+                                    : 'radial-gradient(circle at 50% 35%, rgba(255, 244, 214, 0.92), rgba(255, 250, 240, 0.84) 60%, rgba(239, 225, 189, 0.82))',
+                                }}
+                              >
+                                <Box
+                                  component="img"
+                                  src={jobImageSrc}
+                                  alt={job.displayName}
+                                  loading="lazy"
+                                  sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'contain',
+                                    display: 'block',
+                                    filter: 'drop-shadow(0 8px 12px rgba(91, 63, 16, 0.14))',
+                                    transform: isCurrent ? 'scale(1.05)' : 'scale(1.02)',
+                                  }}
+                                />
+                              </Box>
+                            ) : null}
+                            <Stack spacing={0.5}>
+                              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                <Typography variant="subtitle1" fontWeight={700}>
+                                  {job.displayName}
+                                </Typography>
+                                <Chip
+                                  label={statusLabel}
+                                  color={statusColor}
+                                  size="small"
+                                  variant={isLocked ? 'outlined' : 'filled'}
+                                />
+                              </Stack>
+                              <Typography variant="body2" color="text.secondary">
+                                {job.description}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {description}
+                              </Typography>
+                            </Stack>
+                          </Stack>
+                          {isCurrent ? null : (
+                            <Button
+                              variant="contained"
+                              sx={{
+                                ...(isDisabled ? mutedGreenButtonSx : softGreenButtonSx),
+                                minWidth: { sm: 116 },
+                                alignSelf: { sm: 'center' },
+                                whiteSpace: 'nowrap',
+                              }}
+                              disabled={isDisabled || isSubmittingJobValue !== null}
+                              fullWidth={false}
+                              onClick={() => {
+                                void handleChangeJob(job.value)
+                              }}
+                            >
+                              {isSubmitting ? locale.changing : isLocked ? locale.lockedButton : locale.changeButton}
+                            </Button>
+                          )}
+                        </Stack>
+                      </Paper>
+                    )
+                  })}
+                </Stack>
+              </Paper>
+            </Stack>
+          )}
+        </Stack>
+      </Paper>
+    </Container>
+  )
+}

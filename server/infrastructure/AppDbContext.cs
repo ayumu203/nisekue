@@ -14,6 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<PlayerEntity> Players => Set<PlayerEntity>();
     public DbSet<PlayerMoveEntity> PlayerMoves => Set<PlayerMoveEntity>();
+    public DbSet<PlayerMasterJobEntity> PlayerMasterJobs => Set<PlayerMasterJobEntity>();
     public DbSet<ChatRoomEntity> ChatRooms => Set<ChatRoomEntity>();
     public DbSet<ChatMessageEntity> ChatMessages => Set<ChatMessageEntity>();
     public DbSet<QuestRoomEntity> QuestRooms => Set<QuestRoomEntity>();
@@ -49,6 +50,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired();
         player.Property(x => x.Exp)
             .HasColumnName("exp")
+            .IsRequired();
+        player.Property(x => x.JobLevel)
+            .HasColumnName("job_level")
+            .IsRequired();
+        player.Property(x => x.JobExp)
+            .HasColumnName("job_exp")
             .IsRequired();
         player.Property(x => x.MaxHp)
             .HasColumnName("max_hp")
@@ -101,6 +108,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne<PlayerEntity>()
             .WithOne()
             .HasForeignKey<PlayerMoveEntity>(x => x.PlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        var playerMasterJobs = modelBuilder.Entity<PlayerMasterJobEntity>();
+        playerMasterJobs.ToTable("player_master_jobs", "internal");
+        playerMasterJobs.HasKey(x => new { x.PlayerId, x.Job });
+        playerMasterJobs.Property(x => x.PlayerId)
+            .HasColumnName("player_id")
+            .HasColumnType("uuid")
+            .IsRequired();
+        playerMasterJobs.Property(x => x.Job)
+            .HasColumnName("job")
+            .HasConversion<int>()
+            .IsRequired();
+        playerMasterJobs.Property(x => x.MasteredAt)
+            .HasColumnName("mastered_at")
+            .HasDefaultValueSql("CURRENT_TIMESTAMP")
+            .IsRequired();
+        playerMasterJobs
+            .HasOne<PlayerEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.PlayerId)
             .OnDelete(DeleteBehavior.Cascade);
 
         var chatRoom = modelBuilder.Entity<ChatRoomEntity>();
