@@ -57,6 +57,33 @@ export default function Thanks() {
             </Stack>
           </Paper>
 
+          <Paper variant="outlined" sx={{ borderRadius: 2, p: { xs: 2, sm: 2.5 } }}>
+            <Stack spacing={0.5}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                三日月アルペジオ 様
+              </Typography>
+              <MuiLink
+                href="https://roughsketch.en-grey.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="hover"
+              >
+                https://roughsketch.en-grey.com/
+              </MuiLink>
+            </Stack>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ borderRadius: 2, p: { xs: 2, sm: 2.5 } }}>
+            <Stack spacing={0.5}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                らぬきの立ち絵保管庫
+              </Typography>
+              <MuiLink href="https://ranuking.ko-me.com/" target="_blank" rel="noopener noreferrer" underline="hover">
+                https://ranuking.ko-me.com/
+              </MuiLink>
+            </Stack>
+          </Paper>
+
           <Button component={Link} to="/" variant="outlined">
             ホームへ戻る
           </Button>
