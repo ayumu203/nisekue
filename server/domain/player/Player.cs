@@ -17,6 +17,8 @@ public class Player(
     MoveSet? moveSet = null,
     IReadOnlySet<Job>? masteredJobs = null)
 {
+    private readonly HashSet<Job> masteredJobs = masteredJobs is null ? [] : new HashSet<Job>(masteredJobs);
+
     public PlayerId Id { get; } = id;
     public string Name { get; private set; } = ValidateName(name);
     public string? ImagePath { get; private set; } = ValidateImagePath(imagePath);
@@ -28,7 +30,7 @@ public class Player(
     public int JobExp { get; private set; } = jobExp;
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
     public MoveSet MoveSet { get; private set; } = moveSet ?? new MoveSet();
-    public IReadOnlySet<Job> MasteredJobs { get; } = new HashSet<Job>(masteredJobs is null ? Array.Empty<Job>() : masteredJobs);
+    public IReadOnlySet<Job> MasteredJobs => masteredJobs;
 
     public void UpdateName(string name)
     {
@@ -195,7 +197,7 @@ public class Player(
             return false;
         }
 
-        ((HashSet<Job>)MasteredJobs).Add(Job);
+        masteredJobs.Add(Job);
         return true;
     }
 
