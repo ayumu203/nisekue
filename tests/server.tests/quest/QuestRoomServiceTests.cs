@@ -210,6 +210,8 @@ public class QuestRoomServiceTests
             name,
             level: 5,
             exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
             status: new Status(30, 10, 12, 8, 6, 3, 10),
             job: Job.Warrior,
             imagePath: "/images/player.png",

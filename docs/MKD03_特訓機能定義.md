@@ -119,7 +119,7 @@
 * 各ターン入力はプレイヤーが使用したい `MoveId` を持つ。
 * 指定した `MoveId` が未習得である場合の扱いは今後定義する。少なくとも MP 不足時はエラーにせず `Wait` とする。
 * 正常時レスポンスは `TrainingResultView` とする。
-* レスポンスは `TrainingResult`、`Turn`、`CurrentPlayerHp`、`MaxPlayerHp`、`CurrentEnemyHp`、`MaxEnemyHp`、`Exp`、`IsLevelUp` を持つ。
+* レスポンスは `TrainingResult`、`Turn`、`CurrentPlayerHp`、`MaxPlayerHp`、`CurrentEnemyHp`、`MaxEnemyHp`、`Exp`、`IsPlayerLevelUp`、`IsJobLevelUp`、`NewlyLearnedMoves` を持つ。
 
 ## 現状実装に基づく制約
 

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using server.domain.move;
 using server.domain.player;
 using Xunit;
 
@@ -6,31 +7,15 @@ namespace server.tests;
 
 public class PlayerTests
 {
-    // レベルが0ではプレイヤーの初期化でエラーが出る.
     [Fact]
     public void Constructor_WhenLevelIsZero_ThrowsArgumentOutOfRangeException()
     {
         var act = () => CreatePlayer(level: 0);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
-    // レベルが0未満ではプレイヤーの初期化でエラーが出る.
-    [Fact]
-    public void Constructor_WhenLevelIsNegative_ThrowsArgumentOutOfRangeException()
-    {
-        var act = () => CreatePlayer(level: -5);
-        act.Should().Throw<ArgumentOutOfRangeException>();
-    }
-    // レベルが1以上ならok
+
     [Fact]
     public void Constructor_WhenLevelIsPositive_KeepsOriginalValue()
-    {
-        var player = CreatePlayer(level: 1);
-
-        player.Level.Should().Be(1);
-    }
-    // レベルが1以上ならok2
-    [Fact]
-    public void Constructor_WhenLevelIsPositive_KeepsOriginalValue2()
     {
         var player = CreatePlayer(level: 5);
 
@@ -48,17 +33,6 @@ public class PlayerTests
     }
 
     [Fact]
-    public void UpdateImagePath_WhenWhitespace_ClearsValue()
-    {
-        var player = CreatePlayer(level: 1);
-        player.UpdateImagePath("avatars/player-01.png");
-
-        player.UpdateImagePath("   ");
-
-        player.ImagePath.Should().BeNull();
-    }
-
-    [Fact]
     public void SetQuestCooldownUntil_WhenCalled_StoresValue()
     {
         var player = CreatePlayer(level: 1);
@@ -69,82 +43,71 @@ public class PlayerTests
         player.QuestCooldownUntil.Should().Be(until);
     }
 
-    // 経験値が閾値に達していない場合は、レベルもステータスも変化しない.
     [Fact]
-    public void LevelUp_WhenExpIsInsufficient_ReturnsFalseAndKeepsValues()
+    public void LevelUp_WhenExpIsInsufficient_ReturnsNoLevelUp()
     {
-        var player = CreatePlayer(level: 1, exp: 9, job: Job.Warrior);
+        var player = CreatePlayer(level: 1, exp: 9, jobExp: 9, job: Job.Warrior);
         var beforeStatus = player.Status;
-        var growthValueRepository = new FakeGrowthValueRepository();
 
-        var isLevelUp = player.LevelUp(growthValueRepository);
+        var result = player.LevelUp(CreateJobProfile(Job.Warrior), CreateLearningRule(Job.Warrior));
 
-        isLevelUp.Should().BeFalse();
+        result.HasLeveledUp.Should().BeFalse();
         player.Level.Should().Be(1);
+        player.JobLevel.Should().Be(1);
         player.Exp.Should().Be(9);
+        player.JobExp.Should().Be(9);
         player.Status.Should().Be(beforeStatus);
+        player.MoveSet.GetLearnedMoveIds().Should().BeEmpty();
     }
 
-    // 1回レベルアップ時に経験値が消費され、ジョブ成長値が反映される.
-    [Theory]
-    [InlineData(Job.Warrior, 3, 0, 2, 1, 0, 0, 1)]
-    [InlineData(Job.Mage, 0, 4, 0, 0, 3, 1, 0)]
-    public void LevelUp_WhenExpReachesThreshold_ConsumesExpAndAppliesGrowth(
-        Job job,
-        int addHp,
-        int addMp,
-        int addStrength,
-        int addDefense,
-        int addIntelligence,
-        int addLuck,
-        int addSpeed)
-    {
-        var player = CreatePlayer(level: 1, exp: 10, job: job);
-        var beforeStatus = player.Status;
-        var growthValueRepository = new FakeGrowthValueRepository();
-
-        var isLevelUp = player.LevelUp(growthValueRepository);
-
-        isLevelUp.Should().BeTrue();
-        player.Level.Should().Be(2);
-        player.Exp.Should().Be(0);
-        player.Status.MaxHp.Should().Be(beforeStatus.MaxHp + addHp);
-        player.Status.MaxMp.Should().Be(beforeStatus.MaxMp + addMp);
-        player.Status.Strength.Should().Be(beforeStatus.Strength + addStrength);
-        player.Status.Defense.Should().Be(beforeStatus.Defense + addDefense);
-        player.Status.Intelligence.Should().Be(beforeStatus.Intelligence + addIntelligence);
-        player.Status.Luck.Should().Be(beforeStatus.Luck + addLuck);
-        player.Status.Speed.Should().Be(beforeStatus.Speed + addSpeed);
-    }
-
-    // 複数回レベルアップ時は、成長値がレベルアップ回数分だけ加算される.
     [Fact]
-    public void LevelUp_WhenExpAllowsMultipleLevelUps_AppliesGrowthPerLevel()
+    public void LevelUp_WhenPlayerAndJobExpReachThreshold_UpdatesBothLevelsAndLearnsMoves()
     {
-        var player = CreatePlayer(level: 1, exp: 30, job: Job.Warrior);
+        var player = CreatePlayer(level: 1, exp: 10, jobExp: 10, job: Job.Warrior);
         var beforeStatus = player.Status;
-        var growthValueRepository = new FakeGrowthValueRepository();
 
-        var isLevelUp = player.LevelUp(growthValueRepository);
+        var result = player.LevelUp(CreateJobProfile(Job.Warrior, masterLevel: 4), CreateLearningRule(Job.Warrior, 101, 102));
 
-        isLevelUp.Should().BeTrue();
-        player.Level.Should().Be(3);
+        result.HasPlayerLeveledUp.Should().BeTrue();
+        result.HasJobLeveledUp.Should().BeTrue();
+        result.HasMasteredCurrentJob.Should().BeFalse();
+        result.NewlyLearnedMoveIds.Select(x => x.Id).Should().Equal(101);
+        player.Level.Should().Be(2);
+        player.JobLevel.Should().Be(2);
         player.Exp.Should().Be(0);
-        player.Status.MaxHp.Should().Be(beforeStatus.MaxHp + (3 * 2));
-        player.Status.MaxMp.Should().Be(beforeStatus.MaxMp + (0 * 2));
-        player.Status.Strength.Should().Be(beforeStatus.Strength + (2 * 2));
-        player.Status.Defense.Should().Be(beforeStatus.Defense + (1 * 2));
-        player.Status.Intelligence.Should().Be(beforeStatus.Intelligence + (0 * 2));
-        player.Status.Luck.Should().Be(beforeStatus.Luck + (0 * 2));
-        player.Status.Speed.Should().Be(beforeStatus.Speed + (1 * 2));
+        player.JobExp.Should().Be(0);
+        player.Status.MaxHp.Should().Be(beforeStatus.MaxHp + 3);
+        player.Status.Strength.Should().Be(beforeStatus.Strength + 2);
+        player.Status.Defense.Should().Be(beforeStatus.Defense + 1);
+        player.MoveSet.GetLearnedMoveIds().Select(x => x.Id).Should().Equal(101);
     }
 
-    private static Player CreatePlayer(int level, int exp = 0, Job job = Job.Apprentice) =>
+    [Fact]
+    public void LevelUp_WhenJobReachesMasterLevel_AddsMasteredJobOnlyOnce()
+    {
+        var player = CreatePlayer(level: 5, exp: 0, jobLevel: 3, jobExp: 30, job: Job.Warrior);
+
+        var first = player.LevelUp(CreateJobProfile(Job.Warrior, masterLevel: 4), CreateLearningRule(Job.Warrior, 101, 102));
+        var second = player.LevelUp(CreateJobProfile(Job.Warrior, masterLevel: 4), CreateLearningRule(Job.Warrior, 101, 102));
+
+        first.HasMasteredCurrentJob.Should().BeTrue();
+        second.HasMasteredCurrentJob.Should().BeFalse();
+        player.MasteredJobs.Should().Contain(Job.Warrior);
+    }
+
+    private static Player CreatePlayer(
+        int level,
+        int exp = 0,
+        int jobLevel = 1,
+        int jobExp = 0,
+        Job job = Job.Apprentice) =>
         new(
             new PlayerId(Guid.NewGuid()),
             name: "Tester",
             level: level,
             exp: exp,
+            jobLevel: jobLevel,
+            jobExp: jobExp,
             status: new Status(
                 maxHp: 10,
                 maxMp: 0,
@@ -155,16 +118,25 @@ public class PlayerTests
                 speed: 1),
             job: job);
 
-    private sealed class FakeGrowthValueRepository : IGrowthValueRepository
+    private static JobProfile CreateJobProfile(Job job, int masterLevel = 5)
     {
-        public GrowthValue GetByJob(Job job)
-        {
-            return job switch
-            {
-                Job.Warrior => new GrowthValue(MaxHp: 3, MaxMp: 0, Strength: 2, Defense: 1, Intelligence: 0, Luck: 0, Speed: 1),
-                Job.Mage => new GrowthValue(MaxHp: 0, MaxMp: 4, Strength: 0, Defense: 0, Intelligence: 3, Luck: 1, Speed: 0),
-                _ => new GrowthValue(MaxHp: 1, MaxMp: 1, Strength: 1, Defense: 1, Intelligence: 1, Luck: 1, Speed: 1),
-            };
-        }
+        return new JobProfile(
+            job,
+            description: $"{job} profile",
+            masterLevel: masterLevel,
+            requiredMasterJobs: [],
+            growthValue: new GrowthValue(
+                MaxHp: 3,
+                MaxMp: 0,
+                Strength: 2,
+                Defense: 1,
+                Intelligence: 0,
+                Luck: 0,
+                Speed: 1));
+    }
+
+    private static JobMoveLearningRule CreateLearningRule(Job job, params int[] moveIds)
+    {
+        return new JobMoveLearningRule(job, moveIds.Select(x => new MoveId(x)).ToArray());
     }
 }

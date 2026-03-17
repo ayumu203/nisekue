@@ -102,6 +102,11 @@ public class CsvJobMoveLearningRuleRepository : IJobMoveLearningRuleRepository
             map.Add(job, new JobMoveLearningRule(job, moveIds));
         }
 
+        if (map.Count == 0)
+        {
+            throw new InvalidOperationException($"CSVファイルに有効なジョブ技データがありません: {csvPath}");
+        }
+
         return map;
     }
 
