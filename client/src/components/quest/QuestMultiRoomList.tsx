@@ -18,7 +18,7 @@ type QuestMultiRoomListProps = {
     joinRoom: string
     joiningRoom: string
     recommendedLevel: string
-    noImage: string
+    noImage?: string
   }
   onJoinRoom: (roomId: string) => Promise<void>
 }
@@ -78,7 +78,7 @@ function QuestMultiRoomCard({
             />
           ) : (
             <Typography variant="caption" color="text.secondary">
-              {locale.noImage}
+              {locale.noImage ?? 'No Image'}
             </Typography>
           )}
         </Box>
