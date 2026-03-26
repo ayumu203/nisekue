@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, Paper, Stack, Typography } from '@mui/material'
+import { Box, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material'
 import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx } from '@/constants/styles'
 import type { GetPlayerResponse } from '@/schema/player'
 import locale from '../../../locale/home/Home.json'
@@ -47,6 +47,7 @@ function formatExpProgress(exp: number | undefined, level: number | undefined, f
 
 export default function Status({ player, compactTrainingMobile = false }: StatusProps) {
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
   const maxResourceValue = Math.max(player?.status.maxHp ?? 0, player?.status.maxMp ?? 0, 1)
   const maxAttributeValue = Math.max(
     player?.status.strength ?? 0,
@@ -113,7 +114,7 @@ export default function Status({ player, compactTrainingMobile = false }: Status
       ? `${player?.job.displayName ?? locale.unknownValue} Lv.${player.jobLevel}`
       : (player?.job.displayName ?? locale.unknownValue)
 
-  return (
+  const statusPaper = (
     <Paper
       variant="outlined"
       sx={{
@@ -245,5 +246,38 @@ export default function Status({ player, compactTrainingMobile = false }: Status
         </Stack>
       </Stack>
     </Paper>
+  )
+
+  return (
+    <Box>
+      <Box sx={{ display: { xs: 'flex', sm: 'none' }, justifyContent: 'flex-end', mb: 0.5 }}>
+        <IconButton
+          onClick={() => setIsMobileOpen((current) => !current)}
+          aria-label={isMobileOpen ? 'ステータスを閉じる' : 'ステータスを開く'}
+          sx={{
+            width: 44,
+            height: 44,
+            border: '2px solid #ffffff',
+            color: '#ffffff',
+            backgroundColor: 'rgba(122, 77, 25, 0.9)',
+            '&:hover': {
+              backgroundColor: 'rgba(110, 68, 21, 0.94)',
+            },
+          }}
+        >
+          <Typography component="span" fontSize="1.1rem" fontWeight={900}>
+            {isMobileOpen ? '−' : '+'}
+          </Typography>
+        </IconButton>
+      </Box>
+
+      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+        {statusPaper}
+      </Box>
+
+      <Collapse in={isMobileOpen} sx={{ display: { xs: 'block', sm: 'none' } }}>
+        {statusPaper}
+      </Collapse>
+    </Box>
   )
 }
