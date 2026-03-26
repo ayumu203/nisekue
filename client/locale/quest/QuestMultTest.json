@@ -3,7 +3,7 @@
   "sessionInfoMissing": "セッション情報が不足しています",
   "playerNotFoundMessage": "プレイヤーが見つかりません",
   "backToHome": "ホームへ戻る",
-  "toSoloTest": "ソロテストへ",
+  "toSoloTest": "本番クエストへ",
   "roomPageTitle": "クエストマルチテスト",
   "roomPageSubtitle": "マルチルーム作成の動作確認用ページです。まずはルーム作成のみを扱います。",
   "roomPageLoading": "ルーム作成に必要な情報を読み込み中...",
