@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { playerIdSchema, playerUserNameSchema } from '@/schema/player'
+import { playerIdSchema, playerJobCodeSchema, playerUserNameSchema } from '@/schema/player'
 
 export const questRoomIdSchema = z.string().uuid('ルームIDの形式が不正です')
 export const questRunIdSchema = z.string().uuid('クエスト実行IDの形式が不正です')
@@ -63,6 +63,12 @@ export const questRoomParticipantSchema = z.object({
   playerId: playerIdSchema.nullable().optional(),
   npcTemplateId: z.number().int().positive().nullable().optional(),
   displayName: z.string().min(1),
+  imagePath: z.string().min(1).nullable().optional(),
+  level: z.number().int().positive().nullable().optional(),
+  job: z.object({
+    code: playerJobCodeSchema,
+    displayName: z.string().min(1),
+  }).nullable().optional(),
   status: z.enum(['Joined', 'Disconnected', 'Left']),
   isOwner: z.boolean(),
   position: battlePositionSchema,
