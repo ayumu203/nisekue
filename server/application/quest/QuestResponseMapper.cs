@@ -80,7 +80,7 @@ public class QuestResponseMapper(
                         : new
                         {
                             code = player.Job.ToString(),
-                            displayName = EndpointHelpers.GetJobDisplayName(player.Job)
+                            displayName = ToJobDisplayName(player.Job)
                         },
                     status = participant.Status.ToString(),
                     isOwner = participant.IsOwner,
@@ -274,4 +274,16 @@ public class QuestResponseMapper(
                 }
         };
     }
+
+    private static string ToJobDisplayName(Job job) =>
+        job switch
+        {
+            Job.Apprentice => "見習い",
+            Job.Warrior => "戦士",
+            Job.Guardian => "盾使い",
+            Job.Mage => "魔法使い",
+            Job.Priest => "僧侶",
+            Job.Ranger => "レンジャー",
+            _ => job.ToString()
+        };
 }
