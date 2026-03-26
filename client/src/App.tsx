@@ -10,7 +10,6 @@ import PlayerImageList from '@/pages/PlayerImageList'
 import MoveSetting from '@/pages/MoveSetting'
 import JobChange from '@/pages/JobChange'
 import Quest from '@/pages/Quest'
-import QuestMultTest from '@/pages/QuestMultTest'
 import VisitPlayer from '@/pages/VisitPlayer'
 import { useAuth } from '@/contexts/useAuth'
 
@@ -30,7 +29,6 @@ function App() {
       <Route path="/quest" element={user ? <Quest /> : <Navigate to="/auth" replace />} />
       <Route path="/quest/quest-solo-test" element={<Navigate to="/quest" replace />} />
       <Route path="/quest/quest-mult-test" element={<Navigate to="/quest" replace />} />
-      <Route path="/test/quest/multiplayer" element={user ? <QuestMultTest /> : <Navigate to="/auth" replace />} />
       <Route path="/training" element={user ? <Training /> : <Navigate to="/auth" replace />} />
       <Route path="/player-setting" element={user ? <PlayerSetting /> : <Navigate to="/auth" replace />} />
       <Route path="/player-images" element={user ? <PlayerImageList /> : <Navigate to="/auth" replace />} />
