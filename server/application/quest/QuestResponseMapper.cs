@@ -31,6 +31,72 @@ public class QuestResponseMapper(
         };
     }
 
+    public async Task<object> MapQuestRoomDetailAsync(QuestRoom room)
+    {
+        var players = (await Task.WhenAll(
+                room.Participants
+                    .Where(x => x.PlayerId is not null)
+                    .Select(x => x.PlayerId!.Value)
+                    .Distinct()
+                    .Select(playerRepository.GetPlayerAsync)))
+            .Where(x => x is not null)
+            .ToDictionary(x => x!.Id, x => x!);
+
+        return new
+        {
+            roomId = room.Id.Value,
+            ownerPlayerId = room.OwnerId.Value,
+            stageId = room.StageId.Value,
+            mode = room.Mode.ToString(),
+            status = room.Status.ToString(),
+            version = room.Version,
+            closeReason = room.CloseReason?.ToString(),
+            createdAt = room.CreatedAt,
+            closedAt = room.ClosedAt,
+            canStart = room.CanStart(),
+            formation = new
+            {
+                occupiedPositions = room.Formation.OccupiedPositions.Select(position => new
+                {
+                    row = position.Row.ToString(),
+                    column = position.Column.ToString()
+                })
+            },
+            participants = room.Participants.Select(participant =>
+            {
+                players.TryGetValue(participant.PlayerId ?? default, out var player);
+
+                return new
+                {
+                    participantId = participant.Id.Value,
+                    type = participant.Type.ToString(),
+                    playerId = participant.PlayerId?.Value,
+                    npcTemplateId = participant.NpcTemplateId?.Value,
+                    displayName = participant.DisplayName,
+                    imagePath = player?.ImagePath,
+                    level = player?.Level,
+                    job = player is null
+                        ? null
+                        : new
+                        {
+                            code = player.Job.ToString(),
+                            displayName = EndpointHelpers.GetJobDisplayName(player.Job)
+                        },
+                    status = participant.Status.ToString(),
+                    isOwner = participant.IsOwner,
+                    position = new
+                    {
+                        row = participant.Position.Row.ToString(),
+                        column = participant.Position.Column.ToString()
+                    },
+                    joinedAt = participant.JoinedAt,
+                    lastSeenAt = participant.LastSeenAt,
+                    leftAt = participant.LeftAt
+                };
+            })
+        };
+    }
+
     public async Task<object> MapQuestRunDetailAsync(QuestRun run)
     {
         var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync())
