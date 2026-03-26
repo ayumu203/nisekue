@@ -20,12 +20,10 @@ type QuestRunSectionProps = {
   selectedMoveId: number | ''
   selectedTargetRow: BattleRow | ''
   selectedTargetColumn: BattleColumn | ''
-  currentPendingCommand:
-    | {
-        actionKind: QuestActionKind
-        submittedAt: string
-      }
-    | null
+  currentPendingCommand: {
+    actionKind: QuestActionKind
+    submittedAt: string
+  } | null
   canSubmitCurrentTurn: boolean
   isRunLoading: boolean
   isCommandSubmitting: boolean

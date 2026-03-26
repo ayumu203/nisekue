@@ -65,11 +65,12 @@ export default function QuestRoomFormationPreview({
             sx={{
               borderRadius: 2.5,
               p: { xs: 1.25, sm: 1.5 },
-              background: row === 'Front'
-                ? 'linear-gradient(180deg, #fff5ea 0%, #fffdf8 100%)'
-                : row === 'Middle'
-                  ? 'linear-gradient(180deg, #f6fbf3 0%, #fffdf8 100%)'
-                  : 'linear-gradient(180deg, #eef6fb 0%, #fffdf8 100%)',
+              background:
+                row === 'Front'
+                  ? 'linear-gradient(180deg, #fff5ea 0%, #fffdf8 100%)'
+                  : row === 'Middle'
+                    ? 'linear-gradient(180deg, #f6fbf3 0%, #fffdf8 100%)'
+                    : 'linear-gradient(180deg, #eef6fb 0%, #fffdf8 100%)',
             }}
           >
             <Stack spacing={1.25}>
@@ -79,8 +80,7 @@ export default function QuestRoomFormationPreview({
                 {columnOrder.map((column) => {
                   const members = playerParticipants.filter(
                     (participant) =>
-                      participant.previewPosition.row === row &&
-                      participant.previewPosition.column === column,
+                      participant.previewPosition.row === row && participant.previewPosition.column === column,
                   )
 
                   return (
@@ -135,14 +135,16 @@ export default function QuestRoomFormationPreview({
                                         <Chip
                                           size="small"
                                           label={participant.job.displayName}
-                                          icon={jobImageSrc ? (
-                                            <Box
-                                              component="img"
-                                              src={jobImageSrc}
-                                              alt={participant.job.displayName}
-                                              sx={{ width: 16, height: 16, objectFit: 'contain' }}
-                                            />
-                                          ) : undefined}
+                                          icon={
+                                            jobImageSrc ? (
+                                              <Box
+                                                component="img"
+                                                src={jobImageSrc}
+                                                alt={participant.job.displayName}
+                                                sx={{ width: 16, height: 16, objectFit: 'contain' }}
+                                              />
+                                            ) : undefined
+                                          }
                                         />
                                       ) : null}
                                       {isSelf ? <Chip size="small" label={locale.selfBadge} /> : null}

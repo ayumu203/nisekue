@@ -1,9 +1,5 @@
 import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material'
-import {
-  innerSurfaceSx,
-  menuButtonSx,
-  softGreenButtonSx,
-} from '@/constants/styles'
+import { innerSurfaceSx, menuButtonSx, softGreenButtonSx } from '@/constants/styles'
 import locale from '../../../locale/quest/QuestRoom.json'
 import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/quest'
 import QuestStageModeCard from './QuestStageModeCard'

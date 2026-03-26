@@ -51,10 +51,7 @@ export default function QuestLastTurnResultsPanel({ run, locale }: QuestLastTurn
                   borderBottom: '1px solid #c9c2b7',
                 }}
               >
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 600, color: getLogColor(log), lineHeight: 1.5 }}
-                >
+                <Typography variant="body2" sx={{ fontWeight: 600, color: getLogColor(log), lineHeight: 1.5 }}>
                   {log}
                 </Typography>
               </Box>

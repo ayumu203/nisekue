@@ -66,10 +66,13 @@ export const questRoomParticipantSchema = z.object({
   displayName: z.string().min(1),
   imagePath: z.string().min(1).nullable().optional(),
   level: z.number().int().positive().nullable().optional(),
-  job: z.object({
-    code: playerJobCodeSchema,
-    displayName: z.string().min(1),
-  }).nullable().optional(),
+  job: z
+    .object({
+      code: playerJobCodeSchema,
+      displayName: z.string().min(1),
+    })
+    .nullable()
+    .optional(),
   status: z.enum(['Joined', 'Disconnected', 'Left']),
   isOwner: z.boolean(),
   position: battlePositionSchema,

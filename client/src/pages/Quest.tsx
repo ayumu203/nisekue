@@ -1,13 +1,4 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
@@ -31,14 +22,17 @@ import QuestMultiRoomList from '@/components/quest/QuestMultiRoomList'
 import QuestRunSection from '@/components/quest/QuestRunSection'
 import Status from '@/components/home/Status'
 import { useAuth } from '@/contexts/useAuth'
-import {
-  menuButtonSx,
-  outerPagePaperSx,
-  twoColumnContentGridSx,
-} from '@/constants/styles'
+import { menuButtonSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/quest/QuestRoom.json'
-import type { BattleColumn, BattleRow, CreateQuestRoomRequest, QuestActionKind, QuestRoomDetailResponse, QuestRunDetailResponse } from '@/schema/quest'
+import type {
+  BattleColumn,
+  BattleRow,
+  CreateQuestRoomRequest,
+  QuestActionKind,
+  QuestRoomDetailResponse,
+  QuestRunDetailResponse,
+} from '@/schema/quest'
 
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
@@ -161,7 +155,10 @@ export default function Quest() {
     }
   }
 
-  const roomsSWRKey = session?.access_token && mode === 'Multi' && createdRoom == null && startedRun == null ? ([`quest-rooms`, mode, selectedStageId] as const) : null
+  const roomsSWRKey =
+    session?.access_token && mode === 'Multi' && createdRoom == null && startedRun == null
+      ? ([`quest-rooms`, mode, selectedStageId] as const)
+      : null
   const {
     data: latestRooms,
     error: roomsError,
@@ -185,7 +182,10 @@ export default function Quest() {
     return [...rooms].sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
   })
 
-  const roomSWRKey = session?.access_token && createdRoom?.roomId && startedRun == null ? ([`quest-room`, createdRoom.roomId] as const) : null
+  const roomSWRKey =
+    session?.access_token && createdRoom?.roomId && startedRun == null
+      ? ([`quest-room`, createdRoom.roomId] as const)
+      : null
   const {
     data: liveRoom,
     error: roomError,
@@ -394,13 +394,10 @@ export default function Quest() {
       ),
     )
 
-    return aliveEnemies
-      .filter((enemy) => reachableRows.has(enemy.position.row))
-      .map((enemy) => enemy.position)
+    return aliveEnemies.filter((enemy) => reachableRows.has(enemy.position.row)).map((enemy) => enemy.position)
   }, [currentRun, selfParticipantId])
   const isEnemyTargetingAction =
-    selectedActionKind === 'NormalAttack' ||
-    (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
+    selectedActionKind === 'NormalAttack' || (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
 
   useEffect(() => {
     if (!isEnemyTargetingAction) {
@@ -425,12 +422,7 @@ export default function Quest() {
 
     setSelectedTargetRow(nextTarget.row)
     setSelectedTargetColumn(nextTarget.column)
-  }, [
-    isEnemyTargetingAction,
-    reachableEnemyPositions,
-    selectedTargetColumn,
-    selectedTargetRow,
-  ])
+  }, [isEnemyTargetingAction, reachableEnemyPositions, selectedTargetColumn, selectedTargetRow])
 
   useEffect(() => {
     if (selectedActionKind !== 'UseMove') {
@@ -510,17 +502,18 @@ export default function Quest() {
     setSubmitError(null)
 
     try {
-      const selectedTargetPosition =
-        isEnemyTargetingAction
-          ? reachableEnemyPositions.find(
-              (position) => position.row === selectedTargetRow && position.column === selectedTargetColumn,
-            ) ?? reachableEnemyPositions[0] ?? null
-          : selectedTargetRow !== '' && selectedTargetColumn !== ''
-            ? {
-                row: selectedTargetRow,
-                column: selectedTargetColumn,
-              }
-            : null
+      const selectedTargetPosition = isEnemyTargetingAction
+        ? (reachableEnemyPositions.find(
+            (position) => position.row === selectedTargetRow && position.column === selectedTargetColumn,
+          ) ??
+          reachableEnemyPositions[0] ??
+          null)
+        : selectedTargetRow !== '' && selectedTargetColumn !== ''
+          ? {
+              row: selectedTargetRow,
+              column: selectedTargetColumn,
+            }
+          : null
 
       const requestTargetPosition =
         selectedTargetPosition != null

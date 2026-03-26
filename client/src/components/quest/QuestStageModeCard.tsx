@@ -19,12 +19,7 @@ const modeButtonSx = {
   px: 2,
 } as const
 
-export default function QuestStageModeCard({
-  stage,
-  isSelected,
-  selectedMode,
-  onSelect,
-}: QuestStageModeCardProps) {
+export default function QuestStageModeCard({ stage, isSelected, selectedMode, onSelect }: QuestStageModeCardProps) {
   const isSoloSelected = isSelected && selectedMode === 'Solo'
   const isMultiSelected = isSelected && selectedMode === 'Multi'
 
@@ -87,12 +82,7 @@ export default function QuestStageModeCard({
             </Typography>
           </Stack>
 
-          <Stack
-            direction="row"
-            spacing={1}
-            justifyContent="flex-end"
-            sx={{ width: '100%' }}
-          >
+          <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ width: '100%' }}>
             <Button
               variant={isSoloSelected ? 'contained' : 'outlined'}
               onClick={() => onSelect(stage.stageId, 'Solo')}

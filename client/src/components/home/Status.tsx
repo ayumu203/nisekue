@@ -271,9 +271,7 @@ export default function Status({ player, compactTrainingMobile = false }: Status
         </IconButton>
       </Box>
 
-      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-        {statusPaper}
-      </Box>
+      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{statusPaper}</Box>
 
       <Collapse in={isMobileOpen} sx={{ display: { xs: 'block', sm: 'none' } }}>
         {statusPaper}

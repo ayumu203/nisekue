@@ -1,4 +1,16 @@
-import { Box, Button, Chip, CircularProgress, FormControl, InputLabel, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Typography,
+} from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { useRef } from 'react'
 import {
@@ -43,11 +55,12 @@ export default function QuestRoomLobbySection({
   onCancelRoom,
 }: QuestRoomLobbySectionProps) {
   const positionEditorRef = useRef<HTMLDivElement | null>(null)
-  const isOwner = currentRoom != null && selfParticipantId != null
-    ? currentRoom.participants.some(
-        (participant) => participant.participantId === selfParticipantId && participant.isOwner,
-      )
-    : false
+  const isOwner =
+    currentRoom != null && selfParticipantId != null
+      ? currentRoom.participants.some(
+          (participant) => participant.participantId === selfParticipantId && participant.isOwner,
+        )
+      : false
 
   function handleRowChange(
     participantId: string,
@@ -89,13 +102,8 @@ export default function QuestRoomLobbySection({
           </Stack>
         ) : (
           <Stack spacing={1.5}>
-            <Stack
-              spacing={0.75}
-              alignItems="flex-start"
-            >
-              <Typography variant="h5">
-                {stageLabel ?? `${locale.stage} ${currentRoom.stageId}`}
-              </Typography>
+            <Stack spacing={0.75} alignItems="flex-start">
+              <Typography variant="h5">{stageLabel ?? `${locale.stage} ${currentRoom.stageId}`}</Typography>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
                 <Chip
                   size="small"
@@ -125,17 +133,14 @@ export default function QuestRoomLobbySection({
             {isOwner ? (
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                 <Button
-                variant="contained"
-                onClick={() => void onStartQuest()}
-                disabled={
-                  isStarting ||
-                  isCancellingRoom ||
-                  !currentRoom.canStart ||
-                  currentRoom.status !== 'Recruiting'
-                }
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-              >
-                {isStarting ? locale.startingQuest : locale.startQuest}
+                  variant="contained"
+                  onClick={() => void onStartQuest()}
+                  disabled={
+                    isStarting || isCancellingRoom || !currentRoom.canStart || currentRoom.status !== 'Recruiting'
+                  }
+                  sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                >
+                  {isStarting ? locale.startingQuest : locale.startQuest}
                 </Button>
                 <Button
                   variant="outlined"
@@ -149,9 +154,7 @@ export default function QuestRoomLobbySection({
             ) : null}
 
             <div ref={positionEditorRef}>
-              <Typography variant="h6">
-                {isOwner ? locale.ownerPositionTitle : locale.waitingForOwnerTitle}
-              </Typography>
+              <Typography variant="h6">{isOwner ? locale.ownerPositionTitle : locale.waitingForOwnerTitle}</Typography>
               <Typography variant="body2" color="text.secondary">
                 {isOwner ? locale.ownerPositionSubtitle : locale.waitingForOwnerSubtitle}
               </Typography>
@@ -216,23 +219,47 @@ export default function QuestRoomLobbySection({
                             {isSelf ? <Chip size="small" label={locale.selfBadge} /> : null}
                           </Stack>
 
-                          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: 'nowrap', minWidth: 0 }}>
+                          <Stack
+                            direction="row"
+                            spacing={1.5}
+                            alignItems="center"
+                            sx={{ flexWrap: 'nowrap', minWidth: 0 }}
+                          >
                             {participant.level != null ? (
-                              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                              >
                                 {`${locale.levelLabel}.${participant.level}`}
                               </Typography>
                             ) : null}
                             {participant.job?.displayName ? (
-                              <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'nowrap', minWidth: 0, overflow: 'hidden' }}>
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                                sx={{ flexWrap: 'nowrap', minWidth: 0, overflow: 'hidden' }}
+                              >
                                 {jobImageSrc ? (
                                   <Box
                                     component="img"
                                     src={jobImageSrc}
                                     alt={participant.job.displayName}
-                                    sx={{ width: 20, height: 20, objectFit: 'contain', display: 'block', flexShrink: 0 }}
+                                    sx={{
+                                      width: 20,
+                                      height: 20,
+                                      objectFit: 'contain',
+                                      display: 'block',
+                                      flexShrink: 0,
+                                    }}
                                   />
                                 ) : null}
-                                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                >
                                   {`${locale.jobLabel}: ${participant.job.displayName}`}
                                 </Typography>
                               </Stack>
@@ -282,7 +309,10 @@ export default function QuestRoomLobbySection({
                             <Button
                               variant="contained"
                               onClick={() => void onUpdateParticipantPosition(participant.participantId)}
-                              disabled={isUpdatingParticipantId === participant.participantId || currentRoom.status !== 'Recruiting'}
+                              disabled={
+                                isUpdatingParticipantId === participant.participantId ||
+                                currentRoom.status !== 'Recruiting'
+                              }
                               sx={{ ...menuButtonSx, ...softGreenButtonSx }}
                             >
                               {isUpdatingParticipantId === participant.participantId

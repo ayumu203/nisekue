@@ -1,4 +1,15 @@
-import { Box, Button, Chip, FormControl, LinearProgress, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  Chip,
+  FormControl,
+  LinearProgress,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Typography,
+} from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
@@ -20,12 +31,10 @@ type QuestBattleStatusPanelProps = {
   selectedMoveId: number | ''
   selectedTargetRow: BattleRow | ''
   selectedTargetColumn: BattleColumn | ''
-  currentPendingCommand:
-    | {
-        actionKind: QuestActionKind
-        submittedAt: string
-      }
-    | null
+  currentPendingCommand: {
+    actionKind: QuestActionKind
+    submittedAt: string
+  } | null
   canSubmitCurrentTurn: boolean
   isCommandSubmitting: boolean
   isRunFinished: boolean
@@ -117,9 +126,7 @@ function BattleSprite({
   left,
   bottom,
 }: BattleSpriteProps) {
-  const spriteSrc = isAlly
-    ? resolveCharacterAssetPath(imagePath)
-    : (imagePath ? resolvePublicAssetPath(imagePath) : null)
+  const spriteSrc = isAlly ? resolveCharacterAssetPath(imagePath) : imagePath ? resolvePublicAssetPath(imagePath) : null
 
   return (
     <Box
@@ -210,23 +217,23 @@ function BattleSprite({
                   ? '3px solid #6df075'
                   : targetState === 'affected'
                     ? '2px solid rgba(109, 240, 117, 0.92)'
-                  : targetState === 'reachable'
-                    ? '2px dashed rgba(109, 240, 117, 0.92)'
-                    : '2px dashed rgba(160, 160, 160, 0.88)',
+                    : targetState === 'reachable'
+                      ? '2px dashed rgba(109, 240, 117, 0.92)'
+                      : '2px dashed rgba(160, 160, 160, 0.88)',
               boxShadow:
                 targetState === 'preview'
                   ? '0 0 0 4px rgba(109, 240, 117, 0.22), 0 12px 20px rgba(16, 52, 18, 0.28)'
                   : targetState === 'affected'
                     ? '0 0 0 3px rgba(109, 240, 117, 0.14)'
-                  : 'none',
+                    : 'none',
               backgroundColor:
                 targetState === 'preview'
                   ? 'rgba(109, 240, 117, 0.12)'
                   : targetState === 'affected'
                     ? 'rgba(109, 240, 117, 0.08)'
-                  : targetState === 'blocked'
-                    ? 'rgba(80, 80, 80, 0.18)'
-                    : 'transparent',
+                    : targetState === 'blocked'
+                      ? 'rgba(80, 80, 80, 0.18)'
+                      : 'transparent',
               pointerEvents: 'none',
             }}
           />
@@ -263,7 +270,6 @@ function BattleSprite({
           />
         ) : null}
       </Box>
-
     </Box>
   )
 }
@@ -297,9 +303,7 @@ export default function QuestBattleStatusPanel({
   ]
 
   const selectedTargetKey =
-    selectedTargetRow !== '' && selectedTargetColumn !== ''
-      ? `${selectedTargetRow}:${selectedTargetColumn}`
-      : null
+    selectedTargetRow !== '' && selectedTargetColumn !== '' ? `${selectedTargetRow}:${selectedTargetColumn}` : null
   const selectedMove = availableMoves.find((move) => move.moveId === selectedMoveId) ?? null
   const selfPartyMember = selfParticipantId
     ? (run.partyMembers.find((member) => member.participantId === selfParticipantId) ?? null)
@@ -334,11 +338,11 @@ export default function QuestBattleStatusPanel({
   const selectedAnchorEnemy =
     selectedTargetKey == null
       ? null
-      : (reachableEnemies.find((enemy) => `${enemy.position.row}:${enemy.position.column}` === selectedTargetKey) ?? null)
+      : (reachableEnemies.find((enemy) => `${enemy.position.row}:${enemy.position.column}` === selectedTargetKey) ??
+        null)
   const anchorEnemy = selectedAnchorEnemy ?? reachableEnemies[0] ?? null
   const isEnemyTargetingAction =
-    selectedActionKind === 'NormalAttack' ||
-    (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
+    selectedActionKind === 'NormalAttack' || (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
   const effectiveAttackRange =
     selectedActionKind === 'NormalAttack'
       ? 'Single'
@@ -411,7 +415,8 @@ export default function QuestBattleStatusPanel({
                 ? '0 10px 20px rgba(62, 31, 5, 0.32)'
                 : 'inset 0 1px 0 rgba(255,255,255,0.28)',
             transform: selectedActionKind === option.value ? 'translateY(-1px) scale(1.03)' : 'none',
-            transition: 'background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease',
+            transition:
+              'background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease',
             '&:hover': {
               backgroundColor: selectedActionKind === option.value ? '#7c4011' : '#ffcf52',
               boxShadow:
@@ -448,7 +453,12 @@ export default function QuestBattleStatusPanel({
         variant="contained"
         onClick={() => void onSubmitCommand()}
         disabled={isCommandSubmitting || !canSubmitCurrentTurn}
-        sx={{ minWidth: 124, minHeight: 46, ml: selectedActionKind === 'UseMove' ? 0 : { sm: 'auto' }, ...softGreenButtonSx }}
+        sx={{
+          minWidth: 124,
+          minHeight: 46,
+          ml: selectedActionKind === 'UseMove' ? 0 : { sm: 'auto' },
+          ...softGreenButtonSx,
+        }}
       >
         {isCommandSubmitting ? locale.submittingCommand : locale.submitCommand}
       </Button>
@@ -472,12 +482,7 @@ export default function QuestBattleStatusPanel({
           ) : null}
         </Stack>
 
-        <Stack
-          direction="column"
-          spacing={1}
-          useFlexGap
-          sx={{ display: { xs: 'flex', sm: 'none' } }}
-        >
+        <Stack direction="column" spacing={1} useFlexGap sx={{ display: { xs: 'flex', sm: 'none' } }}>
           {commandControls}
           {currentPendingCommand ? (
             <Chip
@@ -536,7 +541,8 @@ export default function QuestBattleStatusPanel({
             sx={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 24%, rgba(0,0,0,0.04) 100%)',
+              background:
+                'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 24%, rgba(0,0,0,0.04) 100%)',
             }}
           />
 

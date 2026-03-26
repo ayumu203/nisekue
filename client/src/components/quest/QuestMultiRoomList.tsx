@@ -32,14 +32,7 @@ type QuestMultiRoomCardProps = {
   onJoinRoom: (roomId: string) => Promise<void>
 }
 
-function QuestMultiRoomCard({
-  room,
-  stages,
-  accessToken,
-  isJoining,
-  locale,
-  onJoinRoom,
-}: QuestMultiRoomCardProps) {
+function QuestMultiRoomCard({ room, stages, accessToken, isJoining, locale, onJoinRoom }: QuestMultiRoomCardProps) {
   const stage = stages.find((item) => item.stageId === room.stageId)
   const ownerSWRKey = accessToken ? (['quest-room-owner', room.ownerPlayerId] as const) : null
   const { data: owner } = useSWR(ownerSWRKey, async () => getPlayerById(room.ownerPlayerId, accessToken!))
