@@ -14,6 +14,15 @@ classDiagram
             +bool IsActive
         }
 
+        class QuestStageSummaryView {
+            <<Application DTO>>
+            +QuestStageId StageId
+            +string StageCode
+            +string Name
+            +int RecommendedLevel
+            +string? PreviewEnemyImagePath
+        }
+
         class QuestStageId {
             <<Value Object>>
             +int Id
@@ -103,6 +112,8 @@ classDiagram
         class CsvQuestEnemyDefinitionRepository {
             <<Infrastructure>>
         }
+
+        QuestStageDefinition ..> QuestStageSummaryView : first placement enemy image for UI preview
     }
 
     namespace RoomContext {

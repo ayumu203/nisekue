@@ -10,6 +10,24 @@ public class QuestResponseMapper(
     IQuestEnemyDefinitionRepository questEnemyDefinitionRepository,
     IPlayerRepository playerRepository)
 {
+    public async Task<object> MapQuestStageSummaryAsync(QuestStageDefinition stage)
+    {
+        var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync())
+            .ToDictionary(x => x.Id);
+
+        return MapQuestStageSummary(stage, enemyDefinitions);
+    }
+
+    public async Task<IReadOnlyList<object>> MapQuestStageSummariesAsync(IEnumerable<QuestStageDefinition> stages)
+    {
+        var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync())
+            .ToDictionary(x => x.Id);
+
+        return stages
+            .Select(stage => MapQuestStageSummary(stage, enemyDefinitions))
+            .ToArray();
+    }
+
     public async Task<object> MapQuestRoomSummaryAsync(QuestRoom room)
     {
         var stage = await questStageRepository.GetAsync(room.StageId);
@@ -286,4 +304,33 @@ public class QuestResponseMapper(
             Job.Ranger => "レンジャー",
             _ => job.ToString()
         };
+
+    private static object MapQuestStageSummary(
+        QuestStageDefinition stage,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+    {
+        var previewEnemyImagePath = stage.Floors
+            .OrderBy(floor => floor.FloorNo)
+            .SelectMany(floor => floor.Placements.OrderBy(placement => placement.PlacementNo))
+            .Select(placement => enemyDefinitions.TryGetValue(placement.EnemyDefinitionId, out var definition) ? definition.ImagePath : null)
+            .FirstOrDefault(path => !string.IsNullOrWhiteSpace(path));
+
+        return new
+        {
+            stageId = stage.Id.Value,
+            stageCode = stage.StageCode,
+            name = stage.Name,
+            recommendedLevel = stage.RecommendedLevel,
+            previewEnemyImagePath,
+            minPartyMemberCount = stage.MinPartyMemberCount,
+            maxPartyMemberCount = stage.MaxPartyMemberCount,
+            isActive = stage.IsActive,
+            floors = stage.Floors.Select(floor => new
+            {
+                floorNo = floor.FloorNo,
+                floorType = floor.FloorType.ToString(),
+                enemyCount = floor.Placements.Count
+            })
+        };
+    }
 }

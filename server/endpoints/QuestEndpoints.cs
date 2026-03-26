@@ -15,12 +15,11 @@ internal static class QuestEndpoints
     {
         var questGroup = app.MapGroup("/quest").RequireAuthorization();
 
-        questGroup.MapGet("/stages", async (IQuestStageRepository questStageRepository) =>
+        questGroup.MapGet("/stages", async (IQuestStageRepository questStageRepository, QuestResponseMapper responseMapper) =>
         {
             var stages = await questStageRepository.GetAllAsync();
-            return Results.Ok(stages
-                .Where(x => x.IsActive)
-                .Select(EndpointHelpers.MapQuestStage));
+            var payload = await responseMapper.MapQuestStageSummariesAsync(stages.Where(x => x.IsActive));
+            return Results.Ok(payload);
         });
 
         questGroup.MapPost("/rooms", async (ClaimsPrincipal user, CreateQuestRoomRequest request, QuestRoomService questRoomService, QuestResponseMapper responseMapper) =>
