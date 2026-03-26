@@ -354,6 +354,13 @@ classDiagram
     }
 
     namespace ServiceContext {
+        class QuestResponseMapper {
+            <<Application Service>>
+            +Task~object~ MapQuestRoomSummaryAsync(room: QuestRoom)
+            +Task~object~ MapQuestRoomDetailAsync(room: QuestRoom)
+            +Task~object~ MapQuestRunDetailAsync(run: QuestRun)
+        }
+
         class QuestRoomService {
             <<Application Service>>
             +Task~QuestRoom~ CreateRoomAsync(ownerId: PlayerId, stageId: QuestStageId, mode: QuestRoomMode)
@@ -449,6 +456,11 @@ classDiagram
     QuestRoomService ..> IQuestRoomRepository : use
     QuestRoomService ..> QuestRoom : use
     QuestRoomService ..> QuestRun : starts
+    QuestResponseMapper ..> IQuestStageRepository : use
+    QuestResponseMapper ..> IQuestEnemyDefinitionRepository : use
+    QuestResponseMapper ..> IPlayerRepository : use
+    QuestResponseMapper ..> QuestRoom : map detail/summary
+    QuestResponseMapper ..> QuestRun : map detail
     QuestNpcAssignmentService ..> IQuestNpcTemplateRepository : use
     QuestNpcAssignmentService ..> QuestNpcTemplate : selects
     QuestAllyNpcActionPolicy ..> QuestRun : use

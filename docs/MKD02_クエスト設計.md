@@ -567,6 +567,9 @@
 `QuestRoom` は待機室の集約であり、クエスト開始前の募集・参加・配置だけを扱う。
 開始後の進行状態は持たない。
 
+待機画面での表示用プロフィール情報は `QuestRoom` 自体には保持せず、ルーム詳細レスポンス生成時に `Player` から参照して投影する。
+これにより募集状態の参加者一覧で、表示名に加えて画像・レベル・ジョブを返せるようにする。
+
 #### エンティティ
 
 * `QuestRoom`
@@ -600,6 +603,19 @@
 * `QuestParticipantId` はルーム参加単位の識別子であり、NPC も含めて一意に扱うため `PlayerId` とは分ける。
 * 同一プレイヤーでも別ルームに参加すれば別の `QuestParticipantId` を持つ。
 * `QuestParticipant.Status` の `Disconnected` は募集フェーズにおける接続状態を表し、開始後の放置 / 自動操作状態とは無関係とする。
+* 待機画面用の `ImagePath` / `Level` / `Job` は `QuestParticipant` の永続属性には含めず、`Player` 参照から組み立てる。
+
+#### ルーム詳細レスポンス補足
+
+`GET /quest/rooms/{roomId}` の `participants` は待機画面描画のため、以下の表示用項目を追加してよい。
+
+* `ImagePath`
+* `Level`
+* `Job`
+  * `Code`
+  * `DisplayName`
+
+これらは `ParticipantType = Player` の場合に `Player` 集約から補完し、NPC や未解決データでは `null` を許容する。
 
 #### 主な振る舞い
 
