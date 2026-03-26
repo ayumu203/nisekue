@@ -388,6 +388,73 @@ export default function QuestBattleStatusPanel({
     onMoveChange(nextValue === '' ? '' : Number(nextValue))
   }
 
+  const commandControls = (
+    <>
+      {actionOptions.map((option) => (
+        <Button
+          key={option.value}
+          variant="contained"
+          disableRipple
+          onClick={() => onActionKindChange(option.value)}
+          sx={{
+            minWidth: 92,
+            minHeight: 46,
+            borderRadius: 2.5,
+            px: 1.75,
+            fontWeight: 700,
+            letterSpacing: '0.02em',
+            color: selectedActionKind === option.value ? '#fffdf4' : '#6a4300',
+            backgroundColor: selectedActionKind === option.value ? '#8c4b16' : '#ffc83d',
+            border: selectedActionKind === option.value ? '2px solid #8c4b16' : '2px solid #d89a17',
+            boxShadow:
+              selectedActionKind === option.value
+                ? '0 10px 20px rgba(62, 31, 5, 0.32)'
+                : 'inset 0 1px 0 rgba(255,255,255,0.28)',
+            transform: selectedActionKind === option.value ? 'translateY(-1px) scale(1.03)' : 'none',
+            transition: 'background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease',
+            '&:hover': {
+              backgroundColor: selectedActionKind === option.value ? '#7c4011' : '#ffcf52',
+              boxShadow:
+                selectedActionKind === option.value
+                  ? '0 12px 24px rgba(62, 31, 5, 0.34)'
+                  : 'inset 0 1px 0 rgba(255,255,255,0.3)',
+            },
+          }}
+        >
+          {option.label}
+        </Button>
+      ))}
+
+      {selectedActionKind === 'UseMove' ? (
+        <FormControl sx={{ minWidth: 180, ml: { sm: 'auto' }, ...greenOutlinedInputSx }}>
+          <Select
+            displayEmpty
+            value={selectedMoveId === '' ? '' : String(selectedMoveId)}
+            onChange={handleMoveChange}
+            size="small"
+            sx={{ backgroundColor: '#fff8e2' }}
+          >
+            <MenuItem value="">{locale.labels.none}</MenuItem>
+            {availableMoves.map((move) => (
+              <MenuItem key={move.slot} value={move.moveId!}>
+                {move.moveName}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      ) : null}
+
+      <Button
+        variant="contained"
+        onClick={() => void onSubmitCommand()}
+        disabled={isCommandSubmitting || !canSubmitCurrentTurn}
+        sx={{ minWidth: 124, minHeight: 46, ml: selectedActionKind === 'UseMove' ? 0 : { sm: 'auto' }, ...softGreenButtonSx }}
+      >
+        {isCommandSubmitting ? locale.submittingCommand : locale.submitCommand}
+      </Button>
+    </>
+  )
+
   return (
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
       <Stack spacing={2}>
@@ -405,12 +472,27 @@ export default function QuestBattleStatusPanel({
           ) : null}
         </Stack>
 
+        <Stack
+          direction="column"
+          spacing={1}
+          useFlexGap
+          sx={{ display: { xs: 'flex', sm: 'none' } }}
+        >
+          {commandControls}
+          {currentPendingCommand ? (
+            <Chip
+              color="success"
+              label={`${locale.pendingCommandTitle}: ${locale.actionKinds[currentPendingCommand.actionKind]}`}
+            />
+          ) : null}
+        </Stack>
+
         <Box
           sx={{
             position: 'relative',
             overflow: 'hidden',
             borderRadius: 4,
-            minHeight: { xs: 430, sm: 500, md: 540 },
+            minHeight: { xs: 360, sm: 500, md: 540 },
             border: '1px solid #c7a96f',
             backgroundImage: `url(${resolvePublicAssetPath('image/quest/dummy-battlefield.svg')})`,
             backgroundSize: 'cover',
@@ -424,6 +506,7 @@ export default function QuestBattleStatusPanel({
             useFlexGap
             flexWrap="wrap"
             sx={{
+              display: { xs: 'none', sm: 'flex' },
               position: 'absolute',
               top: 14,
               left: 16,
@@ -432,68 +515,7 @@ export default function QuestBattleStatusPanel({
               alignItems: { sm: 'center' },
             }}
           >
-            {actionOptions.map((option) => (
-              <Button
-                key={option.value}
-                variant="contained"
-                disableRipple
-                onClick={() => onActionKindChange(option.value)}
-                sx={{
-                  minWidth: 92,
-                  minHeight: 46,
-                  borderRadius: 2.5,
-                  px: 1.75,
-                  fontWeight: 700,
-                  letterSpacing: '0.02em',
-                  color: selectedActionKind === option.value ? '#fffdf4' : '#6a4300',
-                  backgroundColor: selectedActionKind === option.value ? '#8c4b16' : '#ffc83d',
-                  border: selectedActionKind === option.value ? '2px solid #8c4b16' : '2px solid #d89a17',
-                  boxShadow:
-                    selectedActionKind === option.value
-                      ? '0 10px 20px rgba(62, 31, 5, 0.32)'
-                      : 'inset 0 1px 0 rgba(255,255,255,0.28)',
-                  transform: selectedActionKind === option.value ? 'translateY(-1px) scale(1.03)' : 'none',
-                  transition: 'background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease',
-                  '&:hover': {
-                    backgroundColor: selectedActionKind === option.value ? '#7c4011' : '#ffcf52',
-                    boxShadow:
-                      selectedActionKind === option.value
-                        ? '0 12px 24px rgba(62, 31, 5, 0.34)'
-                        : 'inset 0 1px 0 rgba(255,255,255,0.3)',
-                  },
-                }}
-              >
-                {option.label}
-              </Button>
-            ))}
-
-            {selectedActionKind === 'UseMove' ? (
-              <FormControl sx={{ minWidth: 180, ml: { sm: 'auto' }, ...greenOutlinedInputSx }}>
-                <Select
-                  displayEmpty
-                  value={selectedMoveId === '' ? '' : String(selectedMoveId)}
-                  onChange={handleMoveChange}
-                  size="small"
-                  sx={{ backgroundColor: '#fff8e2' }}
-                >
-                  <MenuItem value="">{locale.labels.none}</MenuItem>
-                  {availableMoves.map((move) => (
-                    <MenuItem key={move.slot} value={move.moveId!}>
-                      {move.moveName}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            ) : null}
-
-            <Button
-              variant="contained"
-              onClick={() => void onSubmitCommand()}
-              disabled={isCommandSubmitting || !canSubmitCurrentTurn}
-              sx={{ minWidth: 124, minHeight: 46, ml: selectedActionKind === 'UseMove' ? 0 : { sm: 'auto' }, ...softGreenButtonSx }}
-            >
-              {isCommandSubmitting ? locale.submittingCommand : locale.submitCommand}
-            </Button>
+            {commandControls}
           </Stack>
 
           {currentPendingCommand ? (
@@ -501,8 +523,9 @@ export default function QuestBattleStatusPanel({
               color="success"
               label={`${locale.pendingCommandTitle}: ${locale.actionKinds[currentPendingCommand.actionKind]}`}
               sx={{
+                display: { xs: 'none', sm: 'inline-flex' },
                 position: 'absolute',
-                top: { xs: selectedActionKind === 'UseMove' ? 116 : 72, sm: 72 },
+                top: 72,
                 right: 16,
                 zIndex: 4,
               }}
