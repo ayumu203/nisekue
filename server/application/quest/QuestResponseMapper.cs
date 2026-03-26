@@ -91,7 +91,9 @@ public class QuestResponseMapper(
                     playerId = participant.PlayerId?.Value,
                     npcTemplateId = participant.NpcTemplateId?.Value,
                     displayName = participant.DisplayName,
-                    imagePath = player?.ImagePath,
+                    imagePath = participant.Type == ParticipantType.Npc
+                        ? QuestNpcImageAssignmentPolicy.Resolve(participant.Id, participant.NpcTemplateId)
+                        : player?.ImagePath,
                     level = player?.Level,
                     job = player is null
                         ? null

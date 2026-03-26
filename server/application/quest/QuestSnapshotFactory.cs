@@ -54,7 +54,7 @@ public class QuestSnapshotFactory
                     participant.Id,
                     participant.Type,
                     participant.DisplayName,
-                    imagePath: null,
+                    imagePath: QuestNpcImageAssignmentPolicy.Resolve(participant.Id, participant.NpcTemplateId),
                     npcTemplate.Job,
                     npcTemplate.BaseStatus,
                     moveSet,
