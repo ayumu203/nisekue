@@ -12,7 +12,6 @@ type QuestRoomCreateSectionProps = {
   activeStages: GetQuestStagesResponse
   selectedStageId: number | ''
   mode: CreateQuestRoomRequest['mode']
-  selectedStage: GetQuestStagesResponse[number] | null
   isLoading: boolean
   isSubmitting: boolean
   isCreateDisabled: boolean
@@ -25,7 +24,6 @@ export default function QuestRoomCreateSection({
   activeStages,
   selectedStageId,
   mode,
-  selectedStage,
   isLoading,
   isSubmitting,
   isCreateDisabled,

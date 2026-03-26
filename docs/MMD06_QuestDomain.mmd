@@ -117,6 +117,11 @@ classDiagram
     }
 
     namespace RoomContext {
+        class QuestNpcImageAssignmentPolicy {
+            <<Application Policy>>
+            +Resolve(participantId: QuestParticipantId, npcTemplateId: QuestNpcTemplateId?) string
+        }
+
         class BattlePosition {
             <<Value Object>>
             +BattleRow Row
@@ -176,6 +181,8 @@ classDiagram
             +DateTimeOffset? LastSeenAt
             +DateTimeOffset? LeftAt
         }
+
+        QuestParticipant ..> QuestNpcImageAssignmentPolicy : UI image for npc participants
 
         class QuestParticipantId {
             <<Value Object>>

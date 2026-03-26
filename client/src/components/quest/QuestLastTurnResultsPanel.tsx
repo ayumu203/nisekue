@@ -1,4 +1,4 @@
-import { Paper, Stack, Typography } from '@mui/material'
+import { Box, Paper, Stack, Typography } from '@mui/material'
 import { innerSurfaceSx } from '@/constants/styles'
 import type { QuestRunDetailResponse } from '@/schema/quest'
 
@@ -7,92 +7,57 @@ type QuestLastTurnResultsPanelProps = {
   locale: {
     lastTurnResultsTitle: string
     lastTurnResultsEmpty: string
-    turnNo: string
-    resolvedAtLabel: string
-    labels: {
-      actionKind: string
-    }
-    actionKinds: Record<string, string>
-    hpChangeLabel: string
-    mpChangeLabel: string
   }
 }
 
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
-}
+function getLogColor(log: string): string {
+  if (log.includes('倒した') || log.includes('撃破')) {
+    return '#111111'
+  }
 
-function formatDelta(value: number): string {
-  return value > 0 ? `+${value}` : String(value)
+  if (log.includes('ダメージ') || log.includes('反動')) {
+    return '#d32f2f'
+  }
+
+  if (log.includes('使った') || log.includes('発動')) {
+    return '#1565c0'
+  }
+
+  if (log.includes('回復')) {
+    return '#2e7d32'
+  }
+
+  return '#3b2f1f'
 }
 
 export default function QuestLastTurnResultsPanel({ run, locale }: QuestLastTurnResultsPanelProps) {
+  const logs = run?.lastTurnResults?.actions.flatMap((action) => action.logs) ?? []
+
   return (
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
       <Stack spacing={2}>
-        <Typography variant="h5">{locale.lastTurnResultsTitle}</Typography>
-        {!run?.lastTurnResults ? (
+        {logs.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
             {locale.lastTurnResultsEmpty}
           </Typography>
         ) : (
-          <Stack spacing={1.5}>
-            <Typography>{`${locale.turnNo}: ${run.lastTurnResults.turnNo}`}</Typography>
-            <Typography>{`${locale.resolvedAtLabel}: ${formatDateTime(run.lastTurnResults.resolvedAt)}`}</Typography>
-            {run.lastTurnResults.actions.map((action, index) => (
-              <Paper
-                key={`${action.actorDisplayName}-${index}`}
-                variant="outlined"
+          <Stack spacing={0.5}>
+            {logs.map((log, index) => (
+              <Box
+                key={`${log}-${index}`}
                 sx={{
-                  borderRadius: 2,
-                  p: 1.5,
-                  backgroundColor: '#fffdf8',
+                  px: 0.5,
+                  py: 0.75,
+                  borderBottom: '1px solid #c9c2b7',
                 }}
               >
-                <Typography variant="subtitle2">{action.actorDisplayName}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {`${locale.labels.actionKind}: ${locale.actionKinds[action.actionKind] ?? action.actionKind}`}
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: getLogColor(log), lineHeight: 1.5 }}
+                >
+                  {log}
                 </Typography>
-                {action.logs.length > 0 ? (
-                  <Stack spacing={0.75} sx={{ mt: 1.25 }}>
-                    {action.logs.map((log, logIndex) => (
-                      <Typography
-                        key={`${action.actorDisplayName}-${index}-${logIndex}`}
-                        variant="body2"
-                        sx={{ fontWeight: 600, color: '#3b2f1f' }}
-                      >
-                        {log}
-                      </Typography>
-                    ))}
-                  </Stack>
-                ) : null}
-                {action.targetSummaries.map((target, targetIndex) => (
-                  <Paper
-                    key={`${action.actorDisplayName}-${index}-target-${targetIndex}`}
-                    variant="outlined"
-                    sx={{
-                      mt: 1,
-                      borderRadius: 2,
-                      p: 1.25,
-                      backgroundColor: '#fffaf0',
-                    }}
-                  >
-                    <Typography variant="body2">{target.targetDisplayName}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {`${locale.hpChangeLabel}: ${formatDelta(target.hpChange)}`}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {`${locale.mpChangeLabel}: ${formatDelta(target.mpChange)}`}
-                    </Typography>
-                  </Paper>
-                ))}
-              </Paper>
+              </Box>
             ))}
           </Stack>
         )}

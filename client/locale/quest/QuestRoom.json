@@ -64,7 +64,7 @@
   "battleStatusSubtitle": "味方・敵・入力状態をまとめて確認できます。",
   "finishedRunActionsTitle": "冒険終了後の操作",
   "finishedRunActionsSubtitle": "結果確認後にこの冒険表示を閉じて、ルーム作成画面へ戻れます。",
-  "leaveFinishedRun": "ルームから抜ける",
+  "leaveFinishedRun": "クエストを終了",
   "pendingCommandTitle": "送信済みコマンド",
   "pendingCommandEmpty": "未送信",
   "submittedAtLabel": "送信時刻",

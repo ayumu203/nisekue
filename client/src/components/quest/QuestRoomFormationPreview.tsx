@@ -164,7 +164,7 @@ export default function QuestRoomFormationPreview({
                                       {participant.imagePath ? (
                                         <Box
                                           component="img"
-                                          src={resolveCharacterAssetPath(participant.imagePath)}
+                                          src={resolveCharacterAssetPath(participant.imagePath) ?? undefined}
                                           alt={participant.displayName}
                                           sx={{
                                             width: 'auto',

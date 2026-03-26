@@ -84,6 +84,7 @@
   "activeEffectsLabel": "状態異常",
   "noActiveEffects": "なし",
   "pendingCommandTitle": "送信済みコマンド",
+  "leaveFinishedRun": "クエストを終了",
   "pendingCommandEmpty": "未送信",
   "stagesEmpty": "公開中のステージがありません",
   "selectStageFirst": "ステージを選択してください",

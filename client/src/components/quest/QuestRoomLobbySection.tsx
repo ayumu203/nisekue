@@ -192,7 +192,7 @@ export default function QuestRoomLobbySection({
                           {participant.imagePath ? (
                             <Box
                               component="img"
-                              src={resolveCharacterAssetPath(participant.imagePath)}
+                              src={resolveCharacterAssetPath(participant.imagePath) ?? undefined}
                               alt={participant.displayName}
                               sx={{
                                 width: '100%',

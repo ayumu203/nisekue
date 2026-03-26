@@ -203,7 +203,19 @@ export default function QuestMultTest() {
     player && currentRoom
       ? (currentRoom.participants.find((participant) => participant.playerId === player.userId)?.participantId ?? null)
       : null
-  const availableMoves = useMemo(() => (player?.moveSlots ?? []).filter((slot) => slot.moveId != null), [player])
+  const availableMoves = useMemo(
+    () =>
+      (player?.moveSlots ?? [])
+        .filter((slot) => slot.moveId != null && slot.moveName != null)
+        .map((slot) => ({
+          slot: slot.slot,
+          moveId: slot.moveId,
+          moveName: slot.moveName!,
+          targetType: slot.targetType,
+          attackRange: slot.attackRange,
+        })),
+    [player],
+  )
   const firstEnemyPosition = currentRun?.enemies[0]?.position ?? null
   const currentPendingCommand =
     currentRun && selfParticipantId
@@ -211,6 +223,14 @@ export default function QuestMultTest() {
           (command) => command.participantId === selfParticipantId && command.turnNo === currentRun.turn.currentTurnNo,
         ) ?? null)
       : null
+  const canSubmitCurrentTurn =
+    currentRun != null &&
+    currentRun.status === 'InProgress' &&
+    selfParticipantId != null &&
+    currentRun.turn.waitingParticipantIds.includes(selfParticipantId) &&
+    currentPendingCommand == null &&
+    !isCommandSubmitting
+  const isRunFinished = currentRun != null && currentRun.status !== 'InProgress'
 
   useEffect(() => {
     if (!firstEnemyPosition) {
@@ -463,6 +483,16 @@ export default function QuestMultTest() {
     }
   }
 
+  function handleLeaveFinishedRun(): void {
+    setCreatedRoom(null)
+    setSubmitError(null)
+    setCommandMessage(null)
+    setSelectedActionKind('NormalAttack')
+    setSelectedMoveId('')
+    setSelectedTargetRow('')
+    setSelectedTargetColumn('')
+  }
+
   if (isLoading) {
     return (
       <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
@@ -483,7 +513,7 @@ export default function QuestMultTest() {
               <Button component={Link} to="/" variant="outlined" sx={menuButtonSx}>
                 {locale.backToHome}
               </Button>
-              <Button component={Link} to="/quest/quest-solo-test" variant="outlined" sx={menuButtonSx}>
+              <Button component={Link} to="/quest" variant="outlined" sx={menuButtonSx}>
                 {locale.toSoloTest}
               </Button>
             </Stack>
@@ -635,6 +665,8 @@ export default function QuestMultTest() {
               {currentRoom == null ? (
                 <QuestMultiRoomList
                   rooms={latestRooms ?? []}
+                  stages={activeStages}
+                  accessToken={session?.access_token}
                   isLoading={isRoomsLoading}
                   error={roomsError instanceof Error ? roomsError : null}
                   isJoiningRoomId={isJoiningRoomId}
@@ -768,7 +800,26 @@ export default function QuestMultTest() {
                           {isEscaping ? locale.escapingRun : locale.escapeRun}
                         </Button>
                       ) : null}
-                      <QuestBattleStatusPanel run={currentRun} selfParticipantId={selfParticipantId} locale={locale} />
+                      <QuestBattleStatusPanel
+                        run={currentRun}
+                        selfParticipantId={selfParticipantId}
+                        availableMoves={availableMoves}
+                        selectedActionKind={selectedActionKind}
+                        selectedMoveId={selectedMoveId}
+                        selectedTargetRow={selectedTargetRow}
+                        selectedTargetColumn={selectedTargetColumn}
+                        currentPendingCommand={currentPendingCommand}
+                        canSubmitCurrentTurn={canSubmitCurrentTurn}
+                        isCommandSubmitting={isCommandSubmitting}
+                        isRunFinished={isRunFinished}
+                        onActionKindChange={setSelectedActionKind}
+                        onMoveChange={setSelectedMoveId}
+                        onTargetRowChange={setSelectedTargetRow}
+                        onTargetColumnChange={setSelectedTargetColumn}
+                        onSubmitCommand={handleSubmitCommand}
+                        onLeaveFinishedRun={handleLeaveFinishedRun}
+                        locale={locale}
+                      />
                     </Stack>
                   ) : (
                     <Typography variant="body2" color="text.secondary">
