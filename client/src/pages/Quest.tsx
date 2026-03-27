@@ -13,6 +13,7 @@ import {
   getQuestStages,
   joinQuestRoom,
   listQuestRooms,
+  postQuestChatMessage,
   startQuestRoom,
   submitQuestCommand,
   updateQuestRoomPosition,
@@ -57,6 +58,8 @@ export default function Quest() {
   const [positionDrafts, setPositionDrafts] = useState<Record<string, { row: BattleRow; column: BattleColumn }>>({})
   const [isUpdatingParticipantId, setIsUpdatingParticipantId] = useState<string | null>(null)
   const [isJoiningRoomId, setIsJoiningRoomId] = useState<string | null>(null)
+  const [chatMessage, setChatMessage] = useState('')
+  const [isChatSubmitting, setIsChatSubmitting] = useState(false)
   const [isRecoveringQuest, setIsRecoveringQuest] = useState(false)
   const [hasTriedQuestRecovery, setHasTriedQuestRecovery] = useState(false)
   const hasAttemptedQuestRecoveryRef = useRef(false)
@@ -590,10 +593,48 @@ export default function Quest() {
     }
   }
 
+  async function handleSubmitChatMessage(): Promise<void> {
+    if (!session?.access_token) {
+      setSubmitError(locale.sessionInfoMissing)
+      return
+    }
+
+    if (!currentRun || !selfParticipantId) {
+      setSubmitError(locale.commandUnavailable)
+      return
+    }
+
+    const normalizedMessage = chatMessage.trim()
+    if (normalizedMessage.length === 0) {
+      return
+    }
+
+    setIsChatSubmitting(true)
+    setSubmitError(null)
+
+    try {
+      await postQuestChatMessage(
+        currentRun.runId,
+        {
+          participantId: selfParticipantId,
+          message: normalizedMessage,
+        },
+        session.access_token,
+      )
+      setChatMessage('')
+      await mutateRun()
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : locale.chatSubmitFailed)
+    } finally {
+      setIsChatSubmitting(false)
+    }
+  }
+
   function handleLeaveFinishedRun(): void {
     setCreatedRoom(null)
     setStartedRun(null)
     setSubmitError(null)
+    setChatMessage('')
     setSelectedActionKind('NormalAttack')
     setSelectedMoveId('')
     setSelectedTargetRow('')
@@ -744,7 +785,6 @@ export default function Quest() {
 
               {showRunSection ? (
                 <QuestRunSection
-                  startedRun={startedRun}
                   currentRun={currentRun}
                   selfParticipantId={selfParticipantId}
                   availableMoves={availableMoves}
@@ -753,14 +793,17 @@ export default function Quest() {
                   selectedTargetRow={selectedTargetRow}
                   selectedTargetColumn={selectedTargetColumn}
                   currentPendingCommand={currentPendingCommand}
+                  chatMessage={chatMessage}
                   canSubmitCurrentTurn={canSubmitCurrentTurn}
-                  isRunLoading={isRunLoading}
                   isCommandSubmitting={isCommandSubmitting}
+                  isChatSubmitting={isChatSubmitting}
                   onActionKindChange={setSelectedActionKind}
                   onMoveChange={setSelectedMoveId}
                   onTargetRowChange={setSelectedTargetRow}
                   onTargetColumnChange={setSelectedTargetColumn}
+                  onChatMessageChange={setChatMessage}
                   onSubmitCommand={handleSubmitCommand}
+                  onSubmitChatMessage={handleSubmitChatMessage}
                   onLeaveFinishedRun={handleLeaveFinishedRun}
                 />
               ) : null}

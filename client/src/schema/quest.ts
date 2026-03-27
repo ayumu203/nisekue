@@ -183,6 +183,7 @@ export const questPendingCommandViewSchema = z.object({
 })
 
 export const questChatMessageViewSchema = z.object({
+  turnNo: z.number().int().positive(),
   senderParticipantId: questParticipantIdSchema,
   displayName: z.string().min(1),
   imagePath: z.string().min(1).nullable().optional(),
@@ -234,6 +235,7 @@ export const questRunTransitionViewSchema = z.object({
 export const questLastTurnResultsViewSchema = z.object({
   turnNo: z.number().int().positive(),
   resolvedAt: z.string().datetime({ offset: true }),
+  chatMessages: z.array(questChatMessageViewSchema),
   actions: z.array(questResolvedActionViewSchema),
   floorTransition: questFloorTransitionViewSchema.nullable(),
   runTransition: questRunTransitionViewSchema.nullable(),

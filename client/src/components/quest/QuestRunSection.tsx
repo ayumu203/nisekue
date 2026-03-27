@@ -13,7 +13,6 @@ type AvailableMove = {
 }
 
 type QuestRunSectionProps = {
-  startedRun: QuestRunDetailResponse | null
   currentRun: QuestRunDetailResponse | null | undefined
   selfParticipantId: string | null
   availableMoves: AvailableMove[]
@@ -25,14 +24,17 @@ type QuestRunSectionProps = {
     actionKind: QuestActionKind
     submittedAt: string
   } | null
+  chatMessage: string
   canSubmitCurrentTurn: boolean
-  isRunLoading: boolean
   isCommandSubmitting: boolean
+  isChatSubmitting: boolean
   onActionKindChange: (actionKind: QuestActionKind) => void
   onMoveChange: (moveId: number | '') => void
   onTargetRowChange: (row: BattleRow | '') => void
   onTargetColumnChange: (column: BattleColumn | '') => void
+  onChatMessageChange: (value: string) => void
   onSubmitCommand: () => void | Promise<void>
+  onSubmitChatMessage: () => void | Promise<void>
   onLeaveFinishedRun: () => void
 }
 
@@ -45,13 +47,17 @@ export default function QuestRunSection({
   selectedTargetRow,
   selectedTargetColumn,
   currentPendingCommand,
+  chatMessage,
   canSubmitCurrentTurn,
   isCommandSubmitting,
+  isChatSubmitting,
   onActionKindChange,
   onMoveChange,
   onTargetRowChange,
   onTargetColumnChange,
+  onChatMessageChange,
   onSubmitCommand,
+  onSubmitChatMessage,
   onLeaveFinishedRun,
 }: QuestRunSectionProps) {
   return (
@@ -81,7 +87,17 @@ export default function QuestRunSection({
         />
       ) : null}
 
-      {currentRun?.status === 'InProgress' ? <QuestLastTurnResultsPanel run={currentRun} locale={locale} /> : null}
+      {currentRun?.status === 'InProgress' ? (
+        <QuestLastTurnResultsPanel
+          run={currentRun}
+          chatMessage={chatMessage}
+          isChatSubmitting={isChatSubmitting}
+          canPostChat={selfParticipantId != null}
+          onChatMessageChange={onChatMessageChange}
+          onSubmitChatMessage={onSubmitChatMessage}
+          locale={locale}
+        />
+      ) : null}
     </>
   )
 }

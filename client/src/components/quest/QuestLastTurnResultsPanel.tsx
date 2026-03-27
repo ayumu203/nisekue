@@ -1,12 +1,24 @@
-import { Box, Paper, Stack, Typography } from '@mui/material'
-import { innerSurfaceSx } from '@/constants/styles'
+import { Box, Button, Paper, Stack, TextField, Typography } from '@mui/material'
+import { greenOutlinedInputSx, innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
+import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { QuestRunDetailResponse } from '@/schema/quest'
 
 type QuestLastTurnResultsPanelProps = {
   run: QuestRunDetailResponse | null | undefined
+  chatMessage: string
+  isChatSubmitting: boolean
+  canPostChat: boolean
+  onChatMessageChange: (value: string) => void
+  onSubmitChatMessage: () => void | Promise<void>
   locale: {
+    chatPlaceholder: string
+    chatSend: string
+    chatSending: string
+    currentTurnMessagesTitle: string
+    lastTurnMessagesTitle: string
     lastTurnResultsTitle: string
     lastTurnResultsEmpty: string
+    noImage: string
   }
 }
 
@@ -30,32 +42,182 @@ function getLogColor(log: string): string {
   return '#3b2f1f'
 }
 
-export default function QuestLastTurnResultsPanel({ run, locale }: QuestLastTurnResultsPanelProps) {
-  const logs = run?.lastTurnResults?.actions.flatMap((action) => action.logs) ?? []
+function ChatMessageItem({
+  displayName,
+  imagePath,
+  message,
+  noImageLabel,
+}: {
+  displayName: string
+  imagePath: string | null | undefined
+  message: string
+  noImageLabel: string
+}) {
+  const imageSrc = resolveCharacterAssetPath(imagePath)
 
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{
+        px: 0.75,
+        py: 0.85,
+        borderRadius: 2,
+        backgroundColor: 'rgba(255, 251, 241, 0.92)',
+        border: '1px solid #dbcba7',
+      }}
+    >
+      <Box
+        sx={{
+          width: 42,
+          minWidth: 42,
+          height: 42,
+          borderRadius: 1.5,
+          overflow: 'hidden',
+          backgroundColor: '#f5efe2',
+          border: '1px solid #d7c7a0',
+          display: 'grid',
+          placeItems: 'center',
+        }}
+      >
+        {imageSrc ? (
+          <Box
+            component="img"
+            src={imageSrc}
+            alt={displayName}
+            sx={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              objectPosition: 'center bottom',
+              display: 'block',
+            }}
+          />
+        ) : (
+          <Typography variant="caption" color="text.secondary" textAlign="center" sx={{ px: 0.5, lineHeight: 1.1 }}>
+            {noImageLabel}
+          </Typography>
+        )}
+      </Box>
+
+      <Stack spacing={0.3} sx={{ minWidth: 0 }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, color: '#5a4421' }}>
+          {displayName}
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#322617', lineHeight: 1.45, wordBreak: 'break-word' }}>
+          {message}
+        </Typography>
+      </Stack>
+    </Stack>
+  )
+}
+
+export default function QuestLastTurnResultsPanel({
+  run,
+  chatMessage,
+  isChatSubmitting,
+  canPostChat,
+  onChatMessageChange,
+  onSubmitChatMessage,
+  locale,
+}: QuestLastTurnResultsPanelProps) {
+  const currentTurnMessages = run?.chatMessages ?? []
+  const lastTurnMessages = run?.lastTurnResults?.chatMessages ?? []
+  const logs = run?.lastTurnResults?.actions.flatMap((action) => action.logs) ?? []
+  const hasContent = currentTurnMessages.length > 0 || lastTurnMessages.length > 0 || logs.length > 0
+
+  return (
+    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
       <Stack spacing={2}>
-        {logs.length === 0 ? (
+        <Stack direction="row" spacing={1} alignItems="flex-start">
+          <TextField
+            value={chatMessage}
+            onChange={(event) => onChatMessageChange(event.target.value)}
+            placeholder={locale.chatPlaceholder}
+            size="small"
+            multiline
+            maxRows={3}
+            fullWidth
+            disabled={!canPostChat || isChatSubmitting}
+            sx={{
+              ...greenOutlinedInputSx,
+              '& .MuiInputBase-root': {
+                backgroundColor: '#fffdf8',
+              },
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={() => void onSubmitChatMessage()}
+            disabled={!canPostChat || isChatSubmitting || chatMessage.trim().length === 0}
+            sx={{ minWidth: 78, minHeight: 40, ...softGreenButtonSx }}
+          >
+            {isChatSubmitting ? locale.chatSending : locale.chatSend}
+          </Button>
+        </Stack>
+
+        {!hasContent ? (
           <Typography variant="body2" color="text.secondary">
             {locale.lastTurnResultsEmpty}
           </Typography>
         ) : (
-          <Stack spacing={0.5}>
-            {logs.map((log, index) => (
-              <Box
-                key={`${log}-${index}`}
-                sx={{
-                  px: 0.5,
-                  py: 0.75,
-                  borderBottom: '1px solid #c9c2b7',
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 600, color: getLogColor(log), lineHeight: 1.5 }}>
-                  {log}
+          <Stack spacing={1}>
+            {currentTurnMessages.length > 0 ? (
+              <Stack spacing={0.75}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5a4421' }}>
+                  {locale.currentTurnMessagesTitle}
                 </Typography>
-              </Box>
-            ))}
+                <Stack spacing={0.6}>
+                  {currentTurnMessages.map((message, index) => (
+                    <ChatMessageItem
+                      key={`${message.senderParticipantId}-${message.sentAt}-${index}`}
+                      displayName={message.displayName}
+                      imagePath={message.imagePath}
+                      message={message.message}
+                      noImageLabel={locale.noImage}
+                    />
+                  ))}
+                </Stack>
+              </Stack>
+            ) : null}
+
+            {lastTurnMessages.length > 0 ? (
+              <Stack spacing={0.75}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5a4421' }}>
+                  {locale.lastTurnMessagesTitle}
+                </Typography>
+                <Stack spacing={0.6}>
+                  {lastTurnMessages.map((message, index) => (
+                    <ChatMessageItem
+                      key={`${message.senderParticipantId}-${message.sentAt}-${index}`}
+                      displayName={message.displayName}
+                      imagePath={message.imagePath}
+                      message={message.message}
+                      noImageLabel={locale.noImage}
+                    />
+                  ))}
+                </Stack>
+              </Stack>
+            ) : null}
+
+            {logs.length > 0 ? (
+              <Stack spacing={0.5}>
+                {logs.map((log, index) => (
+                  <Box
+                    key={`${log}-${index}`}
+                    sx={{
+                      px: 0.5,
+                      py: 0.75,
+                      borderBottom: '1px solid #c9c2b7',
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: getLogColor(log), lineHeight: 1.5 }}>
+                      {log}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+            ) : null}
           </Stack>
         )}
       </Stack>
