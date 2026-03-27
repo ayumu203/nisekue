@@ -100,7 +100,7 @@ export const greenOutlinedInputSx = {
 } as const
 
 export const playerHpBarSx = {
-  height: 8,
+  height: 5,
   borderRadius: 999,
   backgroundColor: '#dcefdc',
   '& .MuiLinearProgress-bar': {
@@ -109,7 +109,7 @@ export const playerHpBarSx = {
 } as const
 
 export const playerMpBarSx = {
-  height: 8,
+  height: 5,
   borderRadius: 999,
   backgroundColor: '#d9ebf6',
   '& .MuiLinearProgress-bar': {

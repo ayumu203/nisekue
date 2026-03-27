@@ -149,8 +149,10 @@ function BattleSprite({
         sx={{
           mb: 0.4,
           px: 0.25,
-          width: isAlly ? 'calc(100% - 10px)' : 'calc(100% + 10px)',
-          ml: isAlly ? '5px' : '-5px',
+          width: isAlly
+            ? { xs: 'calc(100% - 34px)', sm: 'calc(100% - 10px)' }
+            : { xs: 'calc(100% - 14px)', sm: 'calc(100% + 10px)' },
+          ml: isAlly ? { xs: '17px', sm: '5px' } : { xs: '7px', sm: '-5px' },
         }}
       >
         <Typography
@@ -160,6 +162,7 @@ function BattleSprite({
           title={name}
           textAlign="center"
           sx={{
+            fontSize: { xs: '0.46rem', sm: '0.75rem' },
             color: isDead ? 'rgba(90,90,90,0.92)' : '#3f2f16',
             textShadow: '0 1px 0 rgba(255,255,255,0.55)',
           }}
@@ -170,7 +173,7 @@ function BattleSprite({
           variant="caption"
           color="text.secondary"
           textAlign="center"
-          sx={{ textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
+          sx={{ fontSize: { xs: '0.43rem', sm: '0.75rem' }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
         >
           HP {hp}/{maxHp ?? '-'}
         </Typography>
@@ -181,7 +184,7 @@ function BattleSprite({
               variant="caption"
               color="text.secondary"
               textAlign="center"
-              sx={{ textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
+              sx={{ fontSize: { xs: '0.43rem', sm: '0.75rem' }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
             >
               MP {mp}/{maxMp}
             </Typography>
@@ -422,11 +425,17 @@ export default function QuestBattleStatusPanel({
           disableRipple
           onClick={() => onActionKindChange(option.value)}
           sx={{
-            minWidth: 92,
-            minHeight: 46,
+            minWidth: { xs: 38, sm: 92 },
+            width: { xs: 38, sm: 'auto' },
+            minHeight: { xs: 38, sm: 46 },
             borderRadius: 2.5,
-            px: 1.75,
+            px: { xs: 0.2, sm: 1.75 },
+            py: { xs: 0.15, sm: 0.75 },
             fontWeight: 700,
+            fontSize: { xs: '0.52rem', sm: '0.9375rem' },
+            lineHeight: { xs: 1.02, sm: 1.3 },
+            textAlign: 'center',
+            whiteSpace: 'normal',
             letterSpacing: '0.02em',
             color: selectedActionKind === option.value ? '#fffdf4' : '#6a4300',
             backgroundColor: selectedActionKind === option.value ? '#8c4b16' : '#ffc83d',
@@ -452,7 +461,7 @@ export default function QuestBattleStatusPanel({
       ))}
 
       {selectedActionKind === 'UseMove' ? (
-        <FormControl sx={{ minWidth: 180, ml: { sm: 'auto' }, ...greenOutlinedInputSx }}>
+        <FormControl sx={{ minWidth: { xs: 116, sm: 180 }, ml: { sm: 'auto' }, ...greenOutlinedInputSx }}>
           <Select
             displayEmpty
             value={selectedMoveId === '' ? '' : String(selectedMoveId)}
@@ -475,9 +484,10 @@ export default function QuestBattleStatusPanel({
         onClick={() => void onSubmitCommand()}
         disabled={isCommandSubmitting || !canSubmitCurrentTurn}
         sx={{
-          minWidth: 124,
-          minHeight: 46,
+          minWidth: { xs: 64, sm: 124 },
+          minHeight: { xs: 38, sm: 46 },
           ml: selectedActionKind === 'UseMove' ? 0 : { sm: 'auto' },
+          fontSize: { xs: '0.56rem', sm: '0.9375rem' },
           ...softGreenButtonSx,
         }}
       >
@@ -487,20 +497,10 @@ export default function QuestBattleStatusPanel({
   )
 
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
       <Stack spacing={2}>
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           <Chip label={`${locale.waitingParticipantsLabel}: ${run.turn.waitingParticipantIds.length}`} />
-        </Stack>
-
-        <Stack direction="column" spacing={1} useFlexGap sx={{ display: { xs: 'flex', sm: 'none' } }}>
-          {commandControls}
-          {currentPendingCommand ? (
-            <Chip
-              color="success"
-              label={`${locale.pendingCommandTitle}: ${locale.actionKinds[currentPendingCommand.actionKind]}`}
-            />
-          ) : null}
         </Stack>
 
         <Box
@@ -508,7 +508,7 @@ export default function QuestBattleStatusPanel({
             position: 'relative',
             overflow: 'hidden',
             borderRadius: 4,
-            minHeight: { xs: 360, sm: 500, md: 540 },
+            minHeight: { xs: 520, sm: 600, md: 640 },
             border: '1px solid #c7a96f',
             backgroundImage: `url(${resolvePublicAssetPath('image/quest/dummy-battlefield.svg')})`,
             backgroundSize: 'cover',
@@ -517,18 +517,18 @@ export default function QuestBattleStatusPanel({
           }}
         >
           <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1}
+            direction="row"
+            spacing={0.25}
             useFlexGap
             flexWrap="wrap"
             sx={{
-              display: { xs: 'none', sm: 'flex' },
+              display: 'flex',
               position: 'absolute',
-              top: 14,
-              left: 16,
-              right: 16,
+              top: { xs: 10, sm: 14 },
+              left: { xs: 10, sm: 16 },
+              right: { xs: 10, sm: 16 },
               zIndex: 4,
-              alignItems: { sm: 'center' },
+              alignItems: 'center',
             }}
           >
             {commandControls}
@@ -539,11 +539,12 @@ export default function QuestBattleStatusPanel({
               color="success"
               label={`${locale.pendingCommandTitle}: ${locale.actionKinds[currentPendingCommand.actionKind]}`}
               sx={{
-                display: { xs: 'none', sm: 'inline-flex' },
+                display: 'inline-flex',
                 position: 'absolute',
-                top: 72,
-                right: 16,
+                top: { xs: 58, sm: 72 },
+                right: { xs: 10, sm: 16 },
                 zIndex: 4,
+                maxWidth: { xs: 'calc(100% - 20px)', sm: 'none' },
               }}
             />
           ) : null}

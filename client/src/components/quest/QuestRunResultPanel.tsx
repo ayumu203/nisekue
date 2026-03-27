@@ -49,7 +49,7 @@ export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }:
             : 'linear-gradient(180deg, #fff3f1 0%, #fde5e1 52%, #f8d4ce 100%)',
       }}
     >
-      <Stack spacing={2.5} sx={{ p: { xs: 2, sm: 2.75 } }}>
+      <Stack spacing={2} sx={{ p: { xs: 1.5, sm: 2.75 } }}>
         <Box>
           <Typography
             variant="h4"
@@ -59,6 +59,7 @@ export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }:
               textAlign: 'center',
               color: isSucceeded ? '#8b5a00' : '#9b2c1d',
               textShadow: '0 2px 0 rgba(255,255,255,0.45)',
+              fontSize: { xs: '1.6rem', sm: '2.125rem' },
             }}
           >
             {isSucceeded ? locale.clearTitle : locale.failedTitle}
@@ -73,11 +74,11 @@ export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }:
             const imageSrc = resolveCharacterAssetPath(member.imagePath)
 
             return (
-              <Stack key={member.participantId} spacing={0.75} alignItems="center" sx={{ width: { xs: 104, sm: 124 } }}>
+              <Stack key={member.participantId} spacing={0.75} alignItems="center" sx={{ width: { xs: 112, sm: 124 } }}>
                 <Box
                   sx={{
                     width: '100%',
-                    height: { xs: 112, sm: 136 },
+                    height: { xs: 120, sm: 136 },
                     borderRadius: 2.5,
                     border: '1px solid rgba(124, 91, 25, 0.2)',
                     background:

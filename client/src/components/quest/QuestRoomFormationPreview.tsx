@@ -12,7 +12,7 @@ type QuestRoomFormationPreviewProps = {
 
 const rowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const columnOrder: BattleColumn[] = ['Left', 'Right']
-const positionSlotHeight = 260
+const positionSlotHeight = 220
 
 function GearIcon() {
   return (
@@ -57,14 +57,14 @@ export default function QuestRoomFormationPreview({
         </Tooltip>
       </Stack>
 
-      <Stack spacing={1.25}>
+      <Stack spacing={1}>
         {rowOrder.map((row) => (
           <Paper
             key={row}
             variant="outlined"
             sx={{
               borderRadius: 2.5,
-              p: { xs: 1.25, sm: 1.5 },
+              p: { xs: 1, sm: 1.5 },
               background:
                 row === 'Front'
                   ? 'linear-gradient(180deg, #fff5ea 0%, #fffdf8 100%)'
@@ -76,7 +76,7 @@ export default function QuestRoomFormationPreview({
             <Stack spacing={1.25}>
               <Typography variant="subtitle2">{locale.rows[row]}</Typography>
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
+              <Stack direction="row" spacing={1}>
                 {columnOrder.map((column) => {
                   const members = playerParticipants.filter(
                     (participant) =>
@@ -152,7 +152,7 @@ export default function QuestRoomFormationPreview({
 
                                     <Box
                                       sx={{
-                                        width: 140,
+                                        width: { xs: 112, sm: 140 },
                                         maxWidth: '100%',
                                         aspectRatio: '4 / 5',
                                         borderRadius: 1.5,

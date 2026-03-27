@@ -571,18 +571,15 @@ export default function Quest() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
+    <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 3 }, py: { xs: 1.25, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={{ xs: 1.5, sm: 2 }}>
+        <Stack spacing={{ xs: 1.25, sm: 2 }}>
           <Box sx={twoColumnContentGridSx}>
-            <Stack spacing={{ xs: 1.5, sm: 2 }}>
+            <Stack spacing={{ xs: 1.25, sm: 2 }}>
               <Status player={player} />
-              <Button component={Link} to="/" variant="outlined" sx={menuButtonSx}>
-                {locale.backToHome}
-              </Button>
             </Stack>
 
-            <Stack spacing={{ xs: 1.5, sm: 2 }}>
+            <Stack spacing={{ xs: 1.25, sm: 2 }}>
               {playerError ? <Alert severity="warning">{playerError.message}</Alert> : null}
               {stagesError ? <Alert severity="warning">{stagesError.message}</Alert> : null}
               {roomsError ? <Alert severity="warning">{roomsError.message}</Alert> : null}
@@ -718,6 +715,10 @@ export default function Quest() {
               ) : null}
             </Stack>
           </Box>
+
+          <Button component={Link} to="/" variant="outlined" sx={menuButtonSx}>
+            {locale.backToHome}
+          </Button>
         </Stack>
       </Paper>
     </Container>

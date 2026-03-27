@@ -89,7 +89,7 @@ export default function QuestRoomLobbySection({
   }
 
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
       <Stack spacing={2}>
         {currentRoom == null ? (
           <Typography variant="body2" color="text.secondary">
@@ -131,7 +131,7 @@ export default function QuestRoomLobbySection({
             ) : null}
 
             {isOwner ? (
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+              <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
                 <Button
                   variant="contained"
                   onClick={() => void onStartQuest()}
@@ -177,11 +177,11 @@ export default function QuestRoomLobbySection({
                     }}
                   >
                     <Stack spacing={1.5}>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                      <Stack direction="row" spacing={1.25} alignItems="flex-start">
                         <Box
                           sx={{
-                            width: { xs: '100%', sm: 110 },
-                            minWidth: { sm: 110 },
+                            width: { xs: 92, sm: 110 },
+                            minWidth: { xs: 92, sm: 110 },
                             aspectRatio: '4 / 5',
                             borderRadius: 2,
                             border: '1px solid',
@@ -267,7 +267,7 @@ export default function QuestRoomLobbySection({
                           </Stack>
 
                           {isOwner ? (
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                            <Stack direction="row" spacing={1.25}>
                               <FormControl fullWidth sx={greenOutlinedInputSx}>
                                 <InputLabel id={`participant-row-${participant.participantId}`}>
                                   {locale.positionRow}
