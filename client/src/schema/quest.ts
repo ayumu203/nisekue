@@ -126,6 +126,7 @@ export const questRoomSummaryResponseSchema = z.object({
   status: questRoomStatusSchema,
   ownerPlayerId: playerIdSchema,
   ownerDisplayName: playerUserNameSchema.nullable().optional(),
+  ownerImagePath: z.string().min(1).nullable().optional(),
   participantCount: z.number().int().nonnegative(),
   minPartyMemberCount: z.number().int().positive().nullable().optional(),
   maxPartyMemberCount: z.number().int().positive().nullable().optional(),

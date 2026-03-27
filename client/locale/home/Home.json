@@ -16,6 +16,8 @@
   "baseStatusTitle": "基本ステータス",
   "notSet": "未設定",
   "unknownValue": "-",
+  "statusMobileToggleOpenAriaLabel": "ステータスを開く",
+  "statusMobileToggleCloseAriaLabel": "ステータスを閉じる",
   "labels": {
     "userName": "ユーザー名",
     "job": "職業",

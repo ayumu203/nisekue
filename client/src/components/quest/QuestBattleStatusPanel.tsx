@@ -325,11 +325,11 @@ export default function QuestBattleStatusPanel({
   locale,
 }: QuestBattleStatusPanelProps) {
   const actionOptions: Array<{ value: QuestActionKind; label: string }> = [
-    { value: 'UseMove', label: 'スキル' },
-    { value: 'NormalAttack', label: '攻撃' },
-    { value: 'Guard', label: '防御' },
-    { value: 'Wait', label: '待機' },
-    { value: 'Escape', label: '撤退' },
+    { value: 'UseMove', label: locale.actionKinds.UseMove },
+    { value: 'NormalAttack', label: locale.actionKinds.NormalAttack },
+    { value: 'Guard', label: locale.actionKinds.Guard },
+    { value: 'Wait', label: locale.actionKinds.Wait },
+    { value: 'Escape', label: locale.actionKinds.Escape },
   ]
 
   const selectedTargetKey =

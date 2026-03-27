@@ -1,6 +1,4 @@
 import { Alert, Avatar, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material'
-import useSWR from 'swr'
-import { getPlayerById } from '@/api/player'
 import { innerSurfaceSx, menuButtonSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import type { GetQuestStagesResponse, ListQuestRoomsResponse } from '@/schema/quest'
@@ -8,7 +6,6 @@ import type { GetQuestStagesResponse, ListQuestRoomsResponse } from '@/schema/qu
 type QuestMultiRoomListProps = {
   rooms: ListQuestRoomsResponse
   stages: GetQuestStagesResponse
-  accessToken: string | null | undefined
   isLoading: boolean
   error: Error | null
   isJoiningRoomId: string | null
@@ -26,18 +23,14 @@ type QuestMultiRoomListProps = {
 type QuestMultiRoomCardProps = {
   room: ListQuestRoomsResponse[number]
   stages: GetQuestStagesResponse
-  accessToken: string | null | undefined
   isJoining: boolean
   locale: QuestMultiRoomListProps['locale']
   onJoinRoom: (roomId: string) => Promise<void>
 }
 
-function QuestMultiRoomCard({ room, stages, accessToken, isJoining, locale, onJoinRoom }: QuestMultiRoomCardProps) {
+function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: QuestMultiRoomCardProps) {
   const stage = stages.find((item) => item.stageId === room.stageId)
-  const ownerSWRKey = accessToken ? (['quest-room-owner', room.ownerPlayerId] as const) : null
-  const { data: owner } = useSWR(ownerSWRKey, async () => getPlayerById(room.ownerPlayerId, accessToken!))
-
-  const ownerImageSrc = resolveCharacterAssetPath(owner?.imagePath)
+  const ownerImageSrc = resolveCharacterAssetPath(room.ownerImagePath)
 
   return (
     <Paper
@@ -97,19 +90,19 @@ function QuestMultiRoomCard({ room, stages, accessToken, isJoining, locale, onJo
         <Stack spacing={0.5} alignItems="center" sx={{ flexShrink: 0, minWidth: 72 }}>
           <Avatar
             src={ownerImageSrc ?? undefined}
-            alt={owner?.userName ?? room.ownerDisplayName ?? 'owner'}
+            alt={room.ownerDisplayName ?? 'owner'}
             sx={{ width: 56, height: 56, bgcolor: '#efe4cf', color: '#6a5320', fontWeight: 700 }}
           >
-            {(owner?.userName ?? room.ownerDisplayName ?? '?').slice(0, 1)}
+            {(room.ownerDisplayName ?? '?').slice(0, 1)}
           </Avatar>
           <Typography
             variant="caption"
             color="text.secondary"
             sx={{ maxWidth: 72, textAlign: 'center' }}
             noWrap
-            title={owner?.userName ?? room.ownerDisplayName ?? '---'}
+            title={room.ownerDisplayName ?? '---'}
           >
-            {owner?.userName ?? room.ownerDisplayName ?? '---'}
+            {room.ownerDisplayName ?? '---'}
           </Typography>
         </Stack>
       </Stack>
@@ -120,7 +113,6 @@ function QuestMultiRoomCard({ room, stages, accessToken, isJoining, locale, onJo
 export default function QuestMultiRoomList({
   rooms,
   stages,
-  accessToken,
   isLoading,
   error,
   isJoiningRoomId,
@@ -144,14 +136,13 @@ export default function QuestMultiRoomList({
         ) : (
           <Stack spacing={1.5}>
             {rooms.map((room) => (
-              <QuestMultiRoomCard
-                key={room.roomId}
-                room={room}
-                stages={stages}
-                accessToken={accessToken}
-                isJoining={isJoiningRoomId === room.roomId}
-                locale={locale}
-                onJoinRoom={onJoinRoom}
+                <QuestMultiRoomCard
+                  key={room.roomId}
+                  room={room}
+                  stages={stages}
+                  isJoining={isJoiningRoomId === room.roomId}
+                  locale={locale}
+                  onJoinRoom={onJoinRoom}
               />
             ))}
           </Stack>

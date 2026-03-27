@@ -112,7 +112,7 @@ export default function QuestRoomLobbySection({
                   variant="filled"
                 />
                 <Typography variant="body2" color="text.secondary">
-                  {`${currentRoom.participants.length}人参加中`}
+                  {locale.participantCountLabel.replace('{{count}}', String(currentRoom.participants.length))}
                 </Typography>
               </Stack>
             </Stack>

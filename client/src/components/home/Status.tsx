@@ -329,7 +329,7 @@ export default function Status({ player, compactTrainingMobile = false, showDesk
         </IconButton>
         <IconButton
           onClick={() => setIsMobileOpen((current) => !current)}
-          aria-label={isMobileOpen ? 'ステータスを閉じる' : 'ステータスを開く'}
+          aria-label={isMobileOpen ? locale.statusMobileToggleCloseAriaLabel : locale.statusMobileToggleOpenAriaLabel}
           sx={{
             display: { xs: 'inline-flex', sm: 'none' },
             width: 44,

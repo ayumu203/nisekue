@@ -42,6 +42,7 @@ public class QuestResponseMapper(
             status = room.Status.ToString(),
             ownerPlayerId = room.OwnerId.Value,
             ownerDisplayName = owner?.Name ?? room.Participants.FirstOrDefault(x => x.IsOwner)?.DisplayName,
+            ownerImagePath = owner?.ImagePath,
             participantCount = room.Participants.Count(x => x.Status != ParticipantStatus.Left),
             minPartyMemberCount = stage?.MinPartyMemberCount,
             maxPartyMemberCount = stage?.MaxPartyMemberCount,
@@ -82,7 +83,9 @@ public class QuestResponseMapper(
             },
             participants = room.Participants.Select(participant =>
             {
-                players.TryGetValue(participant.PlayerId ?? default, out var player);
+                var player = participant.PlayerId is not null && players.TryGetValue(participant.PlayerId.Value, out var foundPlayer)
+                    ? foundPlayer
+                    : null;
 
                 return new
                 {

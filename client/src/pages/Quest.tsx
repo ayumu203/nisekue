@@ -869,7 +869,6 @@ export default function Quest() {
                     <QuestMultiRoomList
                       rooms={latestRooms ?? []}
                       stages={activeStages}
-                      accessToken={session?.access_token}
                       isLoading={isRoomsLoading}
                       error={roomsError instanceof Error ? roomsError : null}
                       isJoiningRoomId={isJoiningRoomId}
