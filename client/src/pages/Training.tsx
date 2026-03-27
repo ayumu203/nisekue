@@ -93,6 +93,7 @@ export default function Training() {
   const { session, isLoading } = useAuth()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const battleResultRef = useRef<HTMLDivElement | null>(null)
   const trainingMovePlanRef = useRef<HTMLDivElement | null>(null)
   const [selectedEnemy, setSelectedEnemy] = useState<TrainingEnemy | null>(null)
   const [trainingResult, setTrainingResult] = useState<ExecuteTrainingResponse | null>(null)
