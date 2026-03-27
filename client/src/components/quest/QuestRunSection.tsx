@@ -1,5 +1,6 @@
 import QuestBattleStatusPanel from '@/components/quest/QuestBattleStatusPanel'
 import QuestLastTurnResultsPanel from '@/components/quest/QuestLastTurnResultsPanel'
+import QuestRunResultPanel from '@/components/quest/QuestRunResultPanel'
 import locale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestActionKind, QuestRunDetailResponse } from '@/schema/quest'
 
@@ -27,7 +28,6 @@ type QuestRunSectionProps = {
   canSubmitCurrentTurn: boolean
   isRunLoading: boolean
   isCommandSubmitting: boolean
-  isRunFinished: boolean
   onActionKindChange: (actionKind: QuestActionKind) => void
   onMoveChange: (moveId: number | '') => void
   onTargetRowChange: (row: BattleRow | '') => void
@@ -47,7 +47,6 @@ export default function QuestRunSection({
   currentPendingCommand,
   canSubmitCurrentTurn,
   isCommandSubmitting,
-  isRunFinished,
   onActionKindChange,
   onMoveChange,
   onTargetRowChange,
@@ -57,7 +56,11 @@ export default function QuestRunSection({
 }: QuestRunSectionProps) {
   return (
     <>
-      {currentRun ? (
+      {currentRun?.status === 'Succeeded' || currentRun?.status === 'Failed' ? (
+        <QuestRunResultPanel run={currentRun} onLeaveFinishedRun={onLeaveFinishedRun} locale={locale} />
+      ) : null}
+
+      {currentRun?.status === 'InProgress' ? (
         <QuestBattleStatusPanel
           run={currentRun}
           selfParticipantId={selfParticipantId}
@@ -69,18 +72,16 @@ export default function QuestRunSection({
           currentPendingCommand={currentPendingCommand}
           canSubmitCurrentTurn={canSubmitCurrentTurn}
           isCommandSubmitting={isCommandSubmitting}
-          isRunFinished={isRunFinished}
           onActionKindChange={onActionKindChange}
           onMoveChange={onMoveChange}
           onTargetRowChange={onTargetRowChange}
           onTargetColumnChange={onTargetColumnChange}
           onSubmitCommand={onSubmitCommand}
-          onLeaveFinishedRun={onLeaveFinishedRun}
           locale={locale}
         />
       ) : null}
 
-      <QuestLastTurnResultsPanel run={currentRun} locale={locale} />
+      {currentRun?.status === 'InProgress' ? <QuestLastTurnResultsPanel run={currentRun} locale={locale} /> : null}
     </>
   )
 }

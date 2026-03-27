@@ -108,6 +108,15 @@ export const playerHpBarSx = {
   },
 } as const
 
+export const playerMpBarSx = {
+  height: 8,
+  borderRadius: 999,
+  backgroundColor: '#d9ebf6',
+  '& .MuiLinearProgress-bar': {
+    backgroundColor: '#4f9ed8',
+  },
+} as const
+
 export const innerSurfaceSx = {
   backgroundColor: '#fff7e8',
   borderColor: '#e7d9b6',

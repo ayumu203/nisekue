@@ -361,7 +361,6 @@ export default function Quest() {
     currentRun.status === 'InProgress' &&
     currentRun.turn.waitingParticipantIds.includes(selfParticipantId) &&
     currentPendingCommand == null
-  const isRunFinished = currentRun != null && currentRun.status !== 'InProgress'
   const reachableEnemyPositions = useMemo(() => {
     if (!currentRun || !selfParticipantId) {
       return []
@@ -709,7 +708,6 @@ export default function Quest() {
                   canSubmitCurrentTurn={canSubmitCurrentTurn}
                   isRunLoading={isRunLoading}
                   isCommandSubmitting={isCommandSubmitting}
-                  isRunFinished={isRunFinished}
                   onActionKindChange={setSelectedActionKind}
                   onMoveChange={setSelectedMoveId}
                   onTargetRowChange={setSelectedTargetRow}

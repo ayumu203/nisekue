@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
-import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
+import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, playerMpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import type { BattleColumn, BattleRow, QuestActionKind, QuestRunDetailResponse } from '@/schema/quest'
 
@@ -37,13 +37,11 @@ type QuestBattleStatusPanelProps = {
   } | null
   canSubmitCurrentTurn: boolean
   isCommandSubmitting: boolean
-  isRunFinished: boolean
   onActionKindChange: (actionKind: QuestActionKind) => void
   onMoveChange: (moveId: number | '') => void
   onTargetRowChange: (row: BattleRow | '') => void
   onTargetColumnChange: (column: BattleColumn | '') => void
   onSubmitCommand: () => void | Promise<void>
-  onLeaveFinishedRun: () => void
   locale: {
     runStatus: Record<'InProgress' | 'Succeeded' | 'Failed' | 'Aborted', string>
     waitingParticipantsLabel: string
@@ -91,12 +89,12 @@ const enemyPositions: Record<BattleRow, Record<BattleColumn, { left: string; bot
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
 
-function getHpRate(currentHp: number, maxHp: number | null | undefined): number {
-  if (!maxHp || maxHp <= 0) {
+function getStatusRate(current: number, max: number | null | undefined): number {
+  if (!max || max <= 0) {
     return 0
   }
 
-  return Math.max(0, Math.min(100, (currentHp / maxHp) * 100))
+  return Math.max(0, Math.min(100, (current / max) * 100))
 }
 
 type BattleSpriteProps = {
@@ -104,6 +102,8 @@ type BattleSpriteProps = {
   imagePath: string | null | undefined
   hp: number
   maxHp: number | null | undefined
+  mp?: number | null
+  maxMp?: number | null
   isDead: boolean
   isAlly: boolean
   isSelected?: boolean
@@ -118,6 +118,8 @@ function BattleSprite({
   imagePath,
   hp,
   maxHp,
+  mp,
+  maxMp,
   isDead,
   isAlly,
   isSelected = false,
@@ -142,7 +144,15 @@ function BattleSprite({
       }}
       onClick={onClick}
     >
-      <Stack spacing={0.35} sx={{ mb: 0.4, px: 0.25 }}>
+      <Stack
+        spacing={0.35}
+        sx={{
+          mb: 0.4,
+          px: 0.25,
+          width: isAlly ? 'calc(100% - 10px)' : 'calc(100% + 10px)',
+          ml: isAlly ? '5px' : '-5px',
+        }}
+      >
         <Typography
           variant="caption"
           fontWeight={700}
@@ -164,7 +174,20 @@ function BattleSprite({
         >
           HP {hp}/{maxHp ?? '-'}
         </Typography>
-        <LinearProgress variant="determinate" value={getHpRate(hp, maxHp)} sx={playerHpBarSx} />
+        <LinearProgress variant="determinate" value={getStatusRate(hp, maxHp)} sx={playerHpBarSx} />
+        {mp != null && maxMp != null ? (
+          <>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              textAlign="center"
+              sx={{ textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
+            >
+              MP {mp}/{maxMp}
+            </Typography>
+            <LinearProgress variant="determinate" value={getStatusRate(mp, maxMp)} sx={playerMpBarSx} />
+          </>
+        ) : null}
       </Stack>
 
       <Box
@@ -285,17 +308,15 @@ export default function QuestBattleStatusPanel({
   currentPendingCommand,
   canSubmitCurrentTurn,
   isCommandSubmitting,
-  isRunFinished,
   onActionKindChange,
   onMoveChange,
   onTargetRowChange,
   onTargetColumnChange,
   onSubmitCommand,
-  onLeaveFinishedRun,
   locale,
 }: QuestBattleStatusPanelProps) {
   const actionOptions: Array<{ value: QuestActionKind; label: string }> = [
-    { value: 'UseMove', label: '技・魔法' },
+    { value: 'UseMove', label: 'スキル' },
     { value: 'NormalAttack', label: '攻撃' },
     { value: 'Guard', label: '防御' },
     { value: 'Wait', label: '待機' },
@@ -469,17 +490,7 @@ export default function QuestBattleStatusPanel({
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
       <Stack spacing={2}>
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-          <Chip color="primary" label={locale.runStatus[run.status]} />
           <Chip label={`${locale.waitingParticipantsLabel}: ${run.turn.waitingParticipantIds.length}`} />
-          {isRunFinished ? (
-            <Button
-              variant="contained"
-              onClick={onLeaveFinishedRun}
-              sx={{ minWidth: 132, ml: 'auto', ...softGreenButtonSx }}
-            >
-              {locale.leaveFinishedRun}
-            </Button>
-          ) : null}
         </Stack>
 
         <Stack direction="column" spacing={1} useFlexGap sx={{ display: { xs: 'flex', sm: 'none' } }}>
@@ -568,6 +579,8 @@ export default function QuestBattleStatusPanel({
                 imagePath={member.imagePath}
                 hp={member.currentHp}
                 maxHp={member.maxHp}
+                mp={member.currentMp}
+                maxMp={member.maxMp}
                 isDead={member.isDead}
                 isAlly
                 left={position.left}
@@ -587,6 +600,8 @@ export default function QuestBattleStatusPanel({
                 imagePath={enemy.imagePath}
                 hp={enemy.currentHp}
                 maxHp={enemy.maxHp}
+                mp={enemy.currentMp}
+                maxMp={enemy.maxMp}
                 isDead={enemy.isDead}
                 isAlly={false}
                 isSelected={targetKey === anchorTargetKey}

@@ -4,18 +4,20 @@ import {
   Button,
   CircularProgress,
   Container,
+  IconButton,
   Paper,
   Stack,
+  SvgIcon,
   Typography,
   useMediaQuery,
   useTheme,
+  type SvgIconProps,
 } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { executeTraining, getTrainingEnemies, TrainingCooldownError } from '@/api/training'
 import { createPlayer, getPlayer } from '@/api/player'
-import SignOut from '@/components/auth/SignOut'
 import Status from '@/components/home/Status'
 import TrainingBattleResult from '@/components/training/TrainingBattleResult'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
@@ -23,11 +25,29 @@ import TrainingMovePlanForm from '@/components/training/TrainingMovePlanForm'
 import { useAuth } from '@/contexts/useAuth'
 import { innerSurfaceSx, menuButtonSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
+import { supabase } from '@/lib/supabase'
+import signOutLocale from '../../locale/auth/SignOut.json'
 import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import type { GetPlayerResponse } from '@/schema/player'
 
 const TRAINING_COOLDOWN_MS = 3000
+
+function SettingGearIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42H10.1a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.12.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.41 1.05.72 1.63.94l.36 2.54c.04.24.25.42.5.42h3.8c.25 0 .46-.18.5-.42l.36-2.54c.58-.22 1.12-.53 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7" />
+    </SvgIcon>
+  )
+}
+
+function SignOutDoorIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M6 3h9a2 2 0 0 1 2 2v4h-2V5H6v14h9v-4h2v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2m9.59 4.59L21 13l-5.41 5.41L14.17 17 17.17 14H9v-2h8.17l-3-3z" />
+    </SvgIcon>
+  )
+}
 
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
   return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
@@ -82,6 +102,8 @@ export default function Training() {
   const [trainingLockRemainingSeconds, setTrainingLockRemainingSeconds] = useState(0)
   const [plannedMoveIds, setPlannedMoveIds] = useState<Array<number | null> | null>(null)
   const [lastSubmittedMoveIds, setLastSubmittedMoveIds] = useState<Array<number | null> | null>(null)
+  const [isSigningOut, setIsSigningOut] = useState(false)
+  const [signOutError, setSignOutError] = useState<string | null>(null)
 
   useEffect(() => {
     if (trainingLockUntilMs <= Date.now()) {
@@ -230,6 +252,20 @@ export default function Training() {
     })
   }
 
+  const handleSignOut = async () => {
+    setIsSigningOut(true)
+    setSignOutError(null)
+
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      setSignOutError(error.message || signOutLocale.toastFailed)
+      setIsSigningOut(false)
+      return
+    }
+
+    setIsSigningOut(false)
+  }
+
   if (isLoading) {
     return (
       <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
@@ -255,16 +291,58 @@ export default function Training() {
               ) : playerError ? (
                 <Alert severity="warning">{playerError.message}</Alert>
               ) : (
-                <Status player={player} compactTrainingMobile={isMobile} />
+                <Status player={player} compactTrainingMobile={isMobile} showDesktopActions={false} />
               )}
               <Button component={Link} to="/" variant="outlined" sx={menuButtonSx}>
                 {locale.backToHome}
               </Button>
-              <SignOut buttonSx={menuButtonSx} />
             </Stack>
 
             <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
               <Stack spacing={{ xs: 1.5, sm: 2 }}>
+                <Stack direction="row" justifyContent="flex-end" sx={{ display: { xs: 'none', sm: 'flex' } }}>
+                  <Stack direction="row" spacing={1}>
+                    <IconButton
+                      component={Link}
+                      to="/player-setting"
+                      aria-label="プレイヤー設定へ移動"
+                      sx={{
+                        width: 44,
+                        height: 44,
+                        border: '2px solid #ffffff',
+                        color: '#ffffff',
+                        backgroundColor: 'rgba(122, 77, 25, 0.9)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(110, 68, 21, 0.94)',
+                        },
+                      }}
+                    >
+                      <SettingGearIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => void handleSignOut()}
+                      disabled={isSigningOut}
+                      aria-label="ログアウト"
+                      sx={{
+                        width: 44,
+                        height: 44,
+                        border: '2px solid #ffffff',
+                        color: '#ffffff',
+                        backgroundColor: 'rgba(122, 77, 25, 0.9)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(110, 68, 21, 0.94)',
+                        },
+                        '&.Mui-disabled': {
+                          color: 'rgba(255,255,255,0.56)',
+                          backgroundColor: 'rgba(122, 77, 25, 0.62)',
+                        },
+                      }}
+                    >
+                      <SignOutDoorIcon />
+                    </IconButton>
+                  </Stack>
+                </Stack>
+                {signOutError ? <Alert severity="error">{signOutError}</Alert> : null}
                 {selectedEnemy && trainingResult ? (
                   <Box ref={battleResultRef}>
                     <TrainingBattleResult
