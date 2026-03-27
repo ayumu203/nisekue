@@ -136,13 +136,13 @@ export default function QuestMultiRoomList({
         ) : (
           <Stack spacing={1.5}>
             {rooms.map((room) => (
-                <QuestMultiRoomCard
-                  key={room.roomId}
-                  room={room}
-                  stages={stages}
-                  isJoining={isJoiningRoomId === room.roomId}
-                  locale={locale}
-                  onJoinRoom={onJoinRoom}
+              <QuestMultiRoomCard
+                key={room.roomId}
+                room={room}
+                stages={stages}
+                isJoining={isJoiningRoomId === room.roomId}
+                locale={locale}
+                onJoinRoom={onJoinRoom}
               />
             ))}
           </Stack>
