@@ -1,11 +1,12 @@
 import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import {
   cancelQuestRoom,
   createQuestRoom,
+  getActiveQuestRun,
   getQuestRoom,
   getQuestRunByRoom,
   getQuestRun,
@@ -56,6 +57,15 @@ export default function Quest() {
   const [positionDrafts, setPositionDrafts] = useState<Record<string, { row: BattleRow; column: BattleColumn }>>({})
   const [isUpdatingParticipantId, setIsUpdatingParticipantId] = useState<string | null>(null)
   const [isJoiningRoomId, setIsJoiningRoomId] = useState<string | null>(null)
+  const [isRecoveringQuest, setIsRecoveringQuest] = useState(false)
+  const [hasTriedQuestRecovery, setHasTriedQuestRecovery] = useState(false)
+  const hasAttemptedQuestRecoveryRef = useRef(false)
+
+  useEffect(() => {
+    hasAttemptedQuestRecoveryRef.current = false
+    setHasTriedQuestRecovery(false)
+    setIsRecoveringQuest(false)
+  }, [session?.user.id])
 
   const playerSWRKey = session?.user.id ? ([`quest-player`, session.user.id] as const) : null
   const {
@@ -399,6 +409,41 @@ export default function Quest() {
     selectedActionKind === 'NormalAttack' || (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
 
   useEffect(() => {
+    if (!session?.access_token || !player || isPlayerLoading || hasAttemptedQuestRecoveryRef.current) {
+      return
+    }
+
+    if (createdRoom || startedRun || liveRoom || liveRun) {
+      setHasTriedQuestRecovery(true)
+      hasAttemptedQuestRecoveryRef.current = true
+      return
+    }
+
+    hasAttemptedQuestRecoveryRef.current = true
+
+    const recoverQuest = async () => {
+      setIsRecoveringQuest(true)
+
+      try {
+        const activeRun = await getActiveQuestRun(session.access_token)
+        const room = await getQuestRoom(activeRun.roomId, session.access_token)
+        setCreatedRoom(room)
+        setStartedRun(activeRun)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : ''
+        if (message && !message.includes('進行中クエストが見つかりません')) {
+          setSubmitError(message)
+        }
+      } finally {
+        setIsRecoveringQuest(false)
+        setHasTriedQuestRecovery(true)
+      }
+    }
+
+    void recoverQuest()
+  }, [createdRoom, isPlayerLoading, liveRoom, liveRun, player, session?.access_token, startedRun])
+
+  useEffect(() => {
     if (!isEnemyTargetingAction) {
       return
     }
@@ -555,7 +600,7 @@ export default function Quest() {
     setSelectedTargetColumn('')
   }
 
-  const showCreateSection = currentRoom == null && currentRun == null
+  const showCreateSection = currentRoom == null && currentRun == null && !isRecoveringQuest && hasTriedQuestRecovery
   const showWaitingSection = currentRoom != null && currentRun == null
   const showRunSection = currentRun != null
 
@@ -586,6 +631,12 @@ export default function Quest() {
               {roomError ? <Alert severity="warning">{roomError.message}</Alert> : null}
               {runError ? <Alert severity="warning">{runError.message}</Alert> : null}
               {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+              {isRecoveringQuest ? (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CircularProgress size={16} />
+                  <Typography variant="body2">{locale.runLoading}</Typography>
+                </Stack>
+              ) : null}
               {showCreateSection ? (
                 <>
                   <Paper

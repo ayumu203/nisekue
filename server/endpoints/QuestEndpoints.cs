@@ -261,6 +261,23 @@ internal static class QuestEndpoints
             }
         });
 
+        questGroup.MapGet("/runs/active", async (
+            ClaimsPrincipal user,
+            IQuestRunRepository questRunRepository,
+            QuestResponseMapper responseMapper) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            var run = await questRunRepository.GetActiveByPlayerAsync(playerId.Value);
+            return run is null
+                ? Results.NotFound(new { message = "進行中クエストが見つかりません。" })
+                : Results.Ok(await responseMapper.MapQuestRunDetailAsync(run));
+        });
+
         questGroup.MapPost("/runs/{runId:guid}/commands", async (
             Guid runId,
             ClaimsPrincipal user,
