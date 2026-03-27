@@ -236,14 +236,14 @@ public class QuestResponseMapper(
             chatMessages = run.ChatMessages
                 .Where(message => message.TurnNo == run.TurnState.CurrentTurnNo)
                 .Select(message => new
-            {
-                turnNo = message.TurnNo,
-                senderParticipantId = message.SenderParticipantId.Value,
-                displayName = message.DisplayName,
-                imagePath = message.ImagePath,
-                message = message.Message,
-                sentAt = message.SentAt
-            }),
+                {
+                    turnNo = message.TurnNo,
+                    senderParticipantId = message.SenderParticipantId.Value,
+                    displayName = message.DisplayName,
+                    imagePath = message.ImagePath,
+                    message = message.Message,
+                    sentAt = message.SentAt
+                }),
             rewards = new
             {
                 exp = run.Rewards.Exp
