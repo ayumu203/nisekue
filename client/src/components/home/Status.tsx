@@ -354,7 +354,11 @@ export default function Status({ player, compactTrainingMobile = false, showDesk
         {statusPaper}
       </Collapse>
 
-      {signOutError ? <Alert severity="error" sx={{ mt: 1 }}>{signOutError}</Alert> : null}
+      {signOutError ? (
+        <Alert severity="error" sx={{ mt: 1 }}>
+          {signOutError}
+        </Alert>
+      ) : null}
     </Box>
   )
 }

@@ -190,7 +190,9 @@ export default function TrainingMovePlanForm({
                           }}
                         >
                           {locale.mpCost.replace('{{cost}}', String(turn.mpCost))} /{' '}
-                          {resolveTargetTypeLabel(availableMoves.find((move) => String(move.moveId) === String(value))?.targetType ?? 'Enemy')}
+                          {resolveTargetTypeLabel(
+                            availableMoves.find((move) => String(move.moveId) === String(value))?.targetType ?? 'Enemy',
+                          )}
                         </Typography>
                       </>
                     )}
@@ -230,7 +232,8 @@ export default function TrainingMovePlanForm({
                     <Stack spacing={0.2} sx={{ minWidth: 0 }}>
                       <Typography sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}>{move.moveName}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {locale.mpCost.replace('{{cost}}', String(move.mpCost ?? 0))} / {resolveTargetTypeLabel(move.targetType)}
+                        {locale.mpCost.replace('{{cost}}', String(move.mpCost ?? 0))} /{' '}
+                        {resolveTargetTypeLabel(move.targetType)}
                       </Typography>
                     </Stack>
                   </MenuItem>

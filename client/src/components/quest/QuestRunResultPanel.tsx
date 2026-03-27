@@ -43,10 +43,9 @@ export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }:
         overflow: 'hidden',
         borderRadius: 3,
         borderColor: isSucceeded ? '#d9c36f' : '#d8b3b0',
-        background:
-          isSucceeded
-            ? 'linear-gradient(180deg, #fff6d6 0%, #fff1cf 48%, #ffe7b0 100%)'
-            : 'linear-gradient(180deg, #fff3f1 0%, #fde5e1 52%, #f8d4ce 100%)',
+        background: isSucceeded
+          ? 'linear-gradient(180deg, #fff6d6 0%, #fff1cf 48%, #ffe7b0 100%)'
+          : 'linear-gradient(180deg, #fff3f1 0%, #fde5e1 52%, #f8d4ce 100%)',
       }}
     >
       <Stack spacing={2} sx={{ p: { xs: 1.5, sm: 2.75 } }}>
@@ -81,10 +80,9 @@ export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }:
                     height: { xs: 120, sm: 136 },
                     borderRadius: 2.5,
                     border: '1px solid rgba(124, 91, 25, 0.2)',
-                    background:
-                      isSucceeded
-                        ? 'linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,241,196,0.86) 100%)'
-                        : 'linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(246,219,214,0.88) 100%)',
+                    background: isSucceeded
+                      ? 'linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,241,196,0.86) 100%)'
+                      : 'linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(246,219,214,0.88) 100%)',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45)',
                     overflow: 'hidden',
                     display: 'flex',

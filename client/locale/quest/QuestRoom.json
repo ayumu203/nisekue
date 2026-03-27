@@ -58,7 +58,7 @@
   "chatSubmitFailed": "メッセージ送信に失敗しました",
   "submitCommand": "送信",
   "submittingCommand": "送信中...",
-  "chatPlaceholder": "このターンの連絡を書く",
+  "chatPlaceholder": "メッセージを送る",
   "chatSend": "発言",
   "chatSending": "送信中...",
   "currentTurnMessagesTitle": "このターンのメッセージ",

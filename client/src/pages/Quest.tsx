@@ -38,6 +38,54 @@ import type {
 
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
+const questSessionStorageKeyPrefix = 'nisekue:quest-session'
+
+type PersistedQuestSession = {
+  roomId: string | null
+  runId: string | null
+}
+
+function getQuestSessionStorageKey(userId: string): string {
+  return `${questSessionStorageKeyPrefix}:${userId}`
+}
+
+function readPersistedQuestSession(userId: string): PersistedQuestSession | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const raw = window.localStorage.getItem(getQuestSessionStorageKey(userId))
+  if (!raw) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<PersistedQuestSession>
+    return {
+      roomId: typeof parsed.roomId === 'string' ? parsed.roomId : null,
+      runId: typeof parsed.runId === 'string' ? parsed.runId : null,
+    }
+  } catch {
+    window.localStorage.removeItem(getQuestSessionStorageKey(userId))
+    return null
+  }
+}
+
+function writePersistedQuestSession(userId: string, value: PersistedQuestSession): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(getQuestSessionStorageKey(userId), JSON.stringify(value))
+}
+
+function clearPersistedQuestSession(userId: string): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.removeItem(getQuestSessionStorageKey(userId))
+}
 
 export default function Quest() {
   const { session, isLoading } = useAuth()
@@ -170,7 +218,7 @@ export default function Quest() {
 
   const roomsSWRKey =
     session?.access_token && mode === 'Multi' && createdRoom == null && startedRun == null
-      ? ([`quest-rooms`, mode, selectedStageId] as const)
+      ? ([`quest-rooms`, mode] as const)
       : null
   const {
     data: latestRooms,
@@ -186,7 +234,6 @@ export default function Quest() {
       {
         mode: 'Multi',
         status: 'Recruiting',
-        stageId: selectedStageId === '' ? undefined : selectedStageId,
         pageSize: 10,
       },
       session.access_token,
@@ -313,7 +360,6 @@ export default function Quest() {
   const {
     data: liveRun,
     error: runError,
-    isLoading: isRunLoading,
     mutate: mutateRun,
   } = useSWR(
     runSWRKey,
@@ -412,6 +458,30 @@ export default function Quest() {
     selectedActionKind === 'NormalAttack' || (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
 
   useEffect(() => {
+    if (!session?.user.id) {
+      return
+    }
+
+    if (currentRun) {
+      writePersistedQuestSession(session.user.id, {
+        roomId: currentRun.roomId,
+        runId: currentRun.runId,
+      })
+      return
+    }
+
+    if (currentRoom?.status === 'Recruiting') {
+      writePersistedQuestSession(session.user.id, {
+        roomId: currentRoom.roomId,
+        runId: null,
+      })
+      return
+    }
+
+    clearPersistedQuestSession(session.user.id)
+  }, [currentRoom, currentRun, session?.user.id])
+
+  useEffect(() => {
     if (!session?.access_token || !player || isPlayerLoading || hasAttemptedQuestRecoveryRef.current) {
       return
     }
@@ -428,13 +498,58 @@ export default function Quest() {
       setIsRecoveringQuest(true)
 
       try {
-        const activeRun = await getActiveQuestRun(session.access_token)
-        const room = await getQuestRoom(activeRun.roomId, session.access_token)
-        setCreatedRoom(room)
-        setStartedRun(activeRun)
+        try {
+          const activeRun = await getActiveQuestRun(session.access_token)
+          const room = await getQuestRoom(activeRun.roomId, session.access_token)
+          setCreatedRoom(room)
+          setStartedRun(activeRun)
+          return
+        } catch (error) {
+          const message = error instanceof Error ? error.message : ''
+          if (message && !message.includes('進行中クエストが見つかりません')) {
+            throw error
+          }
+        }
+
+        const persistedQuestSession = readPersistedQuestSession(player.userId)
+        if (!persistedQuestSession?.roomId) {
+          return
+        }
+
+        try {
+          const room = await getQuestRoom(persistedQuestSession.roomId, session.access_token)
+          const isJoinedParticipant = room.participants.some(
+            (participant) => participant.playerId === player.userId && participant.status !== 'Left',
+          )
+
+          if (!isJoinedParticipant) {
+            clearPersistedQuestSession(player.userId)
+            return
+          }
+
+          setCreatedRoom(room)
+
+          if (room.closeReason !== 'Started') {
+            return
+          }
+
+          const run = await getQuestRunByRoom(room.roomId, session.access_token)
+          setStartedRun(run)
+        } catch (error) {
+          clearPersistedQuestSession(player.userId)
+
+          const message = error instanceof Error ? error.message : ''
+          if (
+            message &&
+            !message.includes('ルームが見つかりません') &&
+            !message.includes('進行中クエストが見つかりません')
+          ) {
+            throw error
+          }
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : ''
-        if (message && !message.includes('進行中クエストが見つかりません')) {
+        if (message) {
           setSubmitError(message)
         }
       } finally {
@@ -631,6 +746,10 @@ export default function Quest() {
   }
 
   function handleLeaveFinishedRun(): void {
+    if (session?.user.id) {
+      clearPersistedQuestSession(session.user.id)
+    }
+
     setCreatedRoom(null)
     setStartedRun(null)
     setSubmitError(null)
