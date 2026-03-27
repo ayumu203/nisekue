@@ -73,7 +73,7 @@
   "pendingCommandEmpty": "未送信",
   "submittedAtLabel": "送信時刻",
   "lastTurnResultsTitle": "直前ターン結果",
-  "lastTurnResultsEmpty": "まだターン結果はありません。",
+  "lastTurnResultsEmpty": "",
   "resolvedAtLabel": "解決時刻",
   "hpChangeLabel": "HP変化",
   "mpChangeLabel": "MP変化",
