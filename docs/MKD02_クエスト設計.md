@@ -280,8 +280,11 @@
 
 #### `ChatMessages`
 
+トップレベルの `ChatMessages` は「現在ターンに送られたメッセージ一覧」とする。
+
 各要素は `QuestChatMessageView` とし、以下を持つ。
 
+* `TurnNo`
 * `SenderParticipantId`
 * `DisplayName`
 * `ImagePath`
@@ -311,9 +314,13 @@
 
 * `TurnNo`
 * `ResolvedAt`
+* `ChatMessages`
 * `Actions`
 * `FloorTransition`
 * `RunTransition`
+
+`ChatMessages` には、`TurnNo` に対応する直前ターン中に送られたメッセージ一覧を含める。
+これにより、クライアントは直前ターンのチャットと行動ログを同じ表示領域で扱える。
 
 #### `Actions`
 

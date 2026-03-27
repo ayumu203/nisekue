@@ -93,7 +93,7 @@ export default function Training() {
   const { session, isLoading } = useAuth()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const battleResultRef = useRef<HTMLDivElement | null>(null)
+  const trainingMovePlanRef = useRef<HTMLDivElement | null>(null)
   const [selectedEnemy, setSelectedEnemy] = useState<TrainingEnemy | null>(null)
   const [trainingResult, setTrainingResult] = useState<ExecuteTrainingResponse | null>(null)
   const [trainingError, setTrainingError] = useState<string | null>(null)
@@ -121,12 +121,12 @@ export default function Training() {
   }, [trainingLockUntilMs])
 
   useEffect(() => {
-    if (!isMobile || !selectedEnemy || !trainingResult) {
+    if (!isMobile || !selectedEnemy || trainingResult || !plannedMoveIds) {
       return
     }
 
-    battleResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [isMobile, selectedEnemy, trainingResult])
+    trainingMovePlanRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [isMobile, plannedMoveIds, selectedEnemy, trainingResult])
 
   const playerSWRKey = session?.user.id ? ([`training-player`, session.user.id] as const) : null
   const {
@@ -377,17 +377,19 @@ export default function Training() {
                 ) : null}
 
                 {selectedEnemy && player && plannedMoveIds && !trainingResult ? (
-                  <TrainingMovePlanForm
-                    enemy={selectedEnemy}
-                    player={player}
-                    moveIds={plannedMoveIds}
-                    isActionDisabled={isTrainingActionDisabled}
-                    lockRemainingSeconds={trainingLockRemainingSeconds}
-                    onChangeMoveId={handleChangePlannedMoveId}
-                    onSubmit={async () => {
-                      await runTraining(selectedEnemy, plannedMoveIds)
-                    }}
-                  />
+                  <Box ref={trainingMovePlanRef}>
+                    <TrainingMovePlanForm
+                      enemy={selectedEnemy}
+                      player={player}
+                      moveIds={plannedMoveIds}
+                      isActionDisabled={isTrainingActionDisabled}
+                      lockRemainingSeconds={trainingLockRemainingSeconds}
+                      onChangeMoveId={handleChangePlannedMoveId}
+                      onSubmit={async () => {
+                        await runTraining(selectedEnemy, plannedMoveIds)
+                      }}
+                    />
+                  </Box>
                 ) : null}
 
                 {isTrainingEnemiesLoading ? (
