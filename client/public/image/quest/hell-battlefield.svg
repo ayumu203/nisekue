@@ -1,0 +1,16 @@
+<svg width="1200" height="520" viewBox="0 0 1200 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="520" fill="#3C0E0F"/>
+  <rect y="286" width="1200" height="234" fill="#611414"/>
+  <rect y="444" width="1200" height="76" fill="#250607"/>
+  <path d="M0 120C64 84 128 70 196 70C278 70 334 108 412 108C496 108 556 60 650 60C742 60 818 112 898 112C1016 112 1084 58 1200 44V0H0V120Z" fill="#22080A"/>
+  <path d="M0 286C102 260 192 238 292 238C414 238 482 284 590 284C706 284 760 224 876 224C1010 224 1096 274 1200 252V286H0Z" fill="#8D2121"/>
+  <path d="M0 324C102 308 188 304 292 308C414 312 506 346 612 348C736 350 816 304 930 302C1036 300 1122 320 1200 314V444H0V324Z" fill="#A73124"/>
+  <path d="M0 404C94 394 188 388 284 388C410 388 496 428 612 428C734 428 806 384 914 384C1022 384 1110 412 1200 404V444H0V404Z" fill="#FF7A1A"/>
+  <path d="M92 444L132 360L168 444H92Z" fill="#FFD24A"/>
+  <path d="M246 444L286 330L322 444H246Z" fill="#FFB22C"/>
+  <path d="M886 444L930 344L968 444H886Z" fill="#FFD24A"/>
+  <path d="M1030 444L1070 314L1110 444H1030Z" fill="#FF9D1F"/>
+  <ellipse cx="196" cy="118" rx="58" ry="22" fill="#FFB56A" fill-opacity="0.2"/>
+  <ellipse cx="988" cy="102" rx="94" ry="26" fill="#FF9A4D" fill-opacity="0.16"/>
+  <rect x="0" y="442" width="1200" height="8" fill="#FFE17A" fill-opacity="0.45"/>
+</svg>

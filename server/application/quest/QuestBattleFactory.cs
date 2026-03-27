@@ -271,7 +271,7 @@ public class QuestBattleFactory
         }
 
         var move = await moveRepository.GetMoveAsync(moveId)
-            ?? throw new KeyNotFoundException($"技定義が見つかりません。 moveId={moveId.Id}");
+            ?? throw new KeyNotFoundException($"スキル定義が見つかりません。 moveId={moveId.Id}");
         movesById[moveId.Id] = move;
         return move;
     }

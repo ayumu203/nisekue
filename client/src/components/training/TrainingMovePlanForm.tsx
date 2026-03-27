@@ -1,4 +1,4 @@
-import { Alert, Box, Button, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, FormControl, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import { innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
@@ -92,8 +92,11 @@ export default function TrainingMovePlanForm({
   const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
 
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2.5 }}>
-      <Stack spacing={2}>
+    <Paper
+      variant="outlined"
+      sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2.5, width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+    >
+      <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
         {showEnemyHeader ? (
           <Stack spacing={1.25}>
             <Box
@@ -128,28 +131,115 @@ export default function TrainingMovePlanForm({
         )}
 
         {plannedTurns.map((turn, index) => (
-          <Stack key={`training-turn-${index}`} spacing={0.75}>
+          <Stack key={`training-turn-${index}`} spacing={0.75} sx={{ width: '100%', minWidth: 0 }}>
             <Typography variant="subtitle2" fontWeight={700}>
               {locale.turnLabel.replace('{{turn}}', String(index + 1))}
             </Typography>
-            <Select
-              size="small"
-              value={turn.moveId === null ? 'normal-attack' : String(turn.moveId)}
-              inputProps={{
-                'aria-label': `${locale.turnLabel.replace('{{turn}}', String(index + 1))} ${locale.moveLabel}`,
-              }}
-              onChange={(event: SelectChangeEvent<string>) =>
-                onChangeMoveId(index, event.target.value === 'normal-attack' ? null : Number(event.target.value))
-              }
-            >
-              <MenuItem value="normal-attack">{locale.normalAttack}</MenuItem>
-              {availableMoves.map((move) => (
-                <MenuItem key={move.moveId} value={String(move.moveId)}>
-                  {move.moveName} / {locale.mpCost.replace('{{cost}}', String(move.mpCost ?? 0))} /{' '}
-                  {resolveTargetTypeLabel(move.targetType)}
-                </MenuItem>
-              ))}
-            </Select>
+            <FormControl fullWidth sx={{ minWidth: 0, maxWidth: '100%' }}>
+              <Select
+                size="small"
+                value={turn.moveId === null ? 'normal-attack' : String(turn.moveId)}
+                renderValue={(value) => (
+                  <Stack
+                    component="span"
+                    spacing={0.2}
+                    sx={{
+                      display: 'block',
+                      minWidth: 0,
+                      maxWidth: '100%',
+                      overflow: 'hidden',
+                      py: 0.25,
+                    }}
+                  >
+                    {turn.moveId === null ? (
+                      <Typography
+                        component="span"
+                        sx={{
+                          display: 'block',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {locale.normalAttack}
+                      </Typography>
+                    ) : (
+                      <>
+                        <Typography
+                          component="span"
+                          sx={{
+                            display: 'block',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            lineHeight: 1.25,
+                          }}
+                        >
+                          {turn.moveName}
+                        </Typography>
+                        <Typography
+                          component="span"
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{
+                            display: 'block',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {locale.mpCost.replace('{{cost}}', String(turn.mpCost))} /{' '}
+                          {resolveTargetTypeLabel(
+                            availableMoves.find((move) => String(move.moveId) === String(value))?.targetType ?? 'Enemy',
+                          )}
+                        </Typography>
+                      </>
+                    )}
+                  </Stack>
+                )}
+                inputProps={{
+                  'aria-label': `${locale.turnLabel.replace('{{turn}}', String(index + 1))} ${locale.moveLabel}`,
+                }}
+                onChange={(event: SelectChangeEvent<string>) =>
+                  onChangeMoveId(index, event.target.value === 'normal-attack' ? null : Number(event.target.value))
+                }
+                sx={{
+                  width: '100%',
+                  minWidth: 0,
+                  maxWidth: '100%',
+                  boxSizing: 'border-box',
+                  '& .MuiSelect-select': {
+                    minWidth: 0,
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    whiteSpace: 'normal',
+                    pr: 4,
+                    py: 1.1,
+                  },
+                }}
+              >
+                <MenuItem value="normal-attack">{locale.normalAttack}</MenuItem>
+                {availableMoves.map((move) => (
+                  <MenuItem
+                    key={move.moveId}
+                    value={String(move.moveId)}
+                    sx={{
+                      whiteSpace: 'normal',
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    <Stack spacing={0.2} sx={{ minWidth: 0 }}>
+                      <Typography sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}>{move.moveName}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {locale.mpCost.replace('{{cost}}', String(move.mpCost ?? 0))} /{' '}
+                        {resolveTargetTypeLabel(move.targetType)}
+                      </Typography>
+                    </Stack>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             {turn.warning ? <Alert severity="warning">{turn.warning}</Alert> : null}
           </Stack>
         ))}

@@ -284,7 +284,7 @@ ch221_gw.png
     public static readonly IReadOnlyList<string> FileNames = Array.AsReadOnly(
         FileNamesText.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
-    public static string DefaultFileName => FileNames[0];
+    public static string DefaultFileName => FileNames[249];
 
     public static bool TryResolveFileName(int imageNo, out string? fileName)
     {

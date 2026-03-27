@@ -111,7 +111,11 @@ public class BattleTargetingResolver
         var anchor = ResolveAnchorPosition(selector, orderedCandidates, positionMap);
         return selector.AttackRange switch
         {
-            AttackRange.Single => [orderedCandidates[0].Id],
+            AttackRange.Single => orderedCandidates
+                .Where(x => positionMap[x.Id] == anchor)
+                .Select(x => x.Id)
+                .Take(1)
+                .ToArray(),
             AttackRange.Column => orderedCandidates
                 .Where(x => positionMap[x.Id].Column == anchor.Column)
                 .Select(x => x.Id)

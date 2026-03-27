@@ -1,0 +1,15 @@
+<svg width="1200" height="520" viewBox="0 0 1200 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="520" fill="#261A1B"/>
+  <rect y="292" width="1200" height="228" fill="#5D493D"/>
+  <rect y="438" width="1200" height="82" fill="#2E211C"/>
+  <path d="M0 0H1200V108C1128 86 1040 88 964 118C885 149 797 150 720 122C634 91 556 88 468 120C395 147 312 147 234 122C160 99 84 96 0 116V0Z" fill="#140E10"/>
+  <path d="M0 290C104 262 208 234 318 236C415 238 493 272 592 276C700 280 784 238 890 236C1004 234 1094 268 1200 250V292H0V290Z" fill="#786453"/>
+  <path d="M0 332C128 308 225 298 344 300C447 302 532 344 638 348C759 352 840 308 954 308C1043 308 1119 328 1200 320V438H0V332Z" fill="#8D7867"/>
+  <ellipse cx="212" cy="170" rx="66" ry="28" fill="#9FD7FF" fill-opacity="0.22"/>
+  <ellipse cx="924" cy="148" rx="94" ry="36" fill="#89CBFF" fill-opacity="0.17"/>
+  <path d="M154 0L192 118L126 98L90 0H154Z" fill="#120C0E"/>
+  <path d="M402 0L458 92L392 120L336 0H402Z" fill="#181012"/>
+  <path d="M742 0L808 124L726 104L678 0H742Z" fill="#130D0F"/>
+  <path d="M1038 0L1110 102L1042 132L964 0H1038Z" fill="#171012"/>
+  <rect x="0" y="438" width="1200" height="7" fill="#B89C73" fill-opacity="0.55"/>
+</svg>

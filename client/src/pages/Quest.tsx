@@ -1,72 +1,97 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Container,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  Typography,
-} from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
+import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import {
   cancelQuestRoom,
   createQuestRoom,
-  escapeQuestRun,
+  getActiveQuestRun,
+  getQuestRoom,
+  getQuestRunByRoom,
   getQuestRun,
   getQuestStages,
+  joinQuestRoom,
+  listQuestRooms,
+  postQuestChatMessage,
   startQuestRoom,
   submitQuestCommand,
+  updateQuestRoomPosition,
 } from '@/api/quest'
-import QuestBattleStatusPanel from '@/components/quest/QuestBattleStatusPanel'
-import QuestLastTurnResultsPanel from '@/components/quest/QuestLastTurnResultsPanel'
+import QuestRoomCreateSection from '@/components/quest/QuestRoomCreateSection'
+import QuestRoomLobbySection from '@/components/quest/QuestRoomLobbySection'
+import QuestMultiRoomList from '@/components/quest/QuestMultiRoomList'
+import QuestRunSection from '@/components/quest/QuestRunSection'
+import Status from '@/components/home/Status'
 import { useAuth } from '@/contexts/useAuth'
-import {
-  greenOutlinedInputSx,
-  innerSurfaceSx,
-  menuButtonSx,
-  outerPagePaperSx,
-  softGreenButtonSx,
-  twoColumnContentGridSx,
-} from '@/constants/styles'
+import { menuButtonSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/quest/QuestRoom.json'
 import type {
   BattleColumn,
   BattleRow,
   CreateQuestRoomRequest,
-  GetQuestStagesResponse,
   QuestActionKind,
   QuestRoomDetailResponse,
   QuestRunDetailResponse,
 } from '@/schema/quest'
 
-function formatStagePartyRange(stage: GetQuestStagesResponse[number]): string {
-  return `${stage.minPartyMemberCount} - ${stage.maxPartyMemberCount}`
+const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
+const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
+const questSessionStorageKeyPrefix = 'nisekue:quest-session'
+
+type PersistedQuestSession = {
+  roomId: string | null
+  runId: string | null
 }
 
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
+function getQuestSessionStorageKey(userId: string): string {
+  return `${questSessionStorageKeyPrefix}:${userId}`
+}
+
+function readPersistedQuestSession(userId: string): PersistedQuestSession | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const raw = window.localStorage.getItem(getQuestSessionStorageKey(userId))
+  if (!raw) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<PersistedQuestSession>
+    return {
+      roomId: typeof parsed.roomId === 'string' ? parsed.roomId : null,
+      runId: typeof parsed.runId === 'string' ? parsed.runId : null,
+    }
+  } catch {
+    window.localStorage.removeItem(getQuestSessionStorageKey(userId))
+    return null
+  }
+}
+
+function writePersistedQuestSession(userId: string, value: PersistedQuestSession): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(getQuestSessionStorageKey(userId), JSON.stringify(value))
+}
+
+function clearPersistedQuestSession(userId: string): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.removeItem(getQuestSessionStorageKey(userId))
 }
 
 export default function Quest() {
   const { session, isLoading } = useAuth()
   const [selectedStageId, setSelectedStageId] = useState<number | ''>('')
   const [mode, setMode] = useState<CreateQuestRoomRequest['mode']>('Solo')
+  const [multiEntryView, setMultiEntryView] = useState<'create' | 'list'>('create')
   const [createdRoom, setCreatedRoom] = useState<QuestRoomDetailResponse | null>(null)
   const [startedRun, setStartedRun] = useState<QuestRunDetailResponse | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -77,9 +102,21 @@ export default function Quest() {
   const [selectedMoveId, setSelectedMoveId] = useState<number | ''>('')
   const [selectedTargetRow, setSelectedTargetRow] = useState<BattleRow | ''>('')
   const [selectedTargetColumn, setSelectedTargetColumn] = useState<BattleColumn | ''>('')
-  const [commandMessage, setCommandMessage] = useState<string | null>(null)
   const [isCommandSubmitting, setIsCommandSubmitting] = useState(false)
-  const [isEscaping, setIsEscaping] = useState(false)
+  const [positionDrafts, setPositionDrafts] = useState<Record<string, { row: BattleRow; column: BattleColumn }>>({})
+  const [isUpdatingParticipantId, setIsUpdatingParticipantId] = useState<string | null>(null)
+  const [isJoiningRoomId, setIsJoiningRoomId] = useState<string | null>(null)
+  const [chatMessage, setChatMessage] = useState('')
+  const [isChatSubmitting, setIsChatSubmitting] = useState(false)
+  const [isRecoveringQuest, setIsRecoveringQuest] = useState(false)
+  const [hasTriedQuestRecovery, setHasTriedQuestRecovery] = useState(false)
+  const hasAttemptedQuestRecoveryRef = useRef(false)
+
+  useEffect(() => {
+    hasAttemptedQuestRecoveryRef.current = false
+    setHasTriedQuestRecovery(false)
+    setIsRecoveringQuest(false)
+  }, [session?.user.id])
 
   const playerSWRKey = session?.user.id ? ([`quest-player`, session.user.id] as const) : null
   const {
@@ -117,8 +154,13 @@ export default function Quest() {
     return getQuestStages(session.access_token)
   })
 
-  const activeStages = useMemo(() => (stages ?? []).filter((stage) => stage.isActive), [stages])
-  const selectedStage = activeStages.find((stage) => stage.stageId === selectedStageId) ?? null
+  const activeStages = useMemo(
+    () =>
+      [...(stages ?? [])]
+        .filter((stage) => stage.isActive)
+        .sort((left, right) => left.recommendedLevel - right.recommendedLevel),
+    [stages],
+  )
   const isCreateDisabled =
     isSubmitting ||
     isPlayerLoading ||
@@ -134,6 +176,12 @@ export default function Quest() {
 
     setSelectedStageId(activeStages[0]!.stageId)
   }, [activeStages, selectedStageId])
+
+  useEffect(() => {
+    if (mode === 'Solo') {
+      setMultiEntryView('create')
+    }
+  }, [mode])
 
   async function handleCreateRoom(): Promise<void> {
     if (!session?.access_token) {
@@ -159,10 +207,86 @@ export default function Quest() {
       )
       setCreatedRoom(room)
       setStartedRun(null)
+      setMultiEntryView('create')
+      await mutateRooms()
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : locale.createRoomFailed)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const roomsSWRKey =
+    session?.access_token && mode === 'Multi' && createdRoom == null && startedRun == null
+      ? ([`quest-rooms`, mode] as const)
+      : null
+  const {
+    data: latestRooms,
+    error: roomsError,
+    isLoading: isRoomsLoading,
+    mutate: mutateRooms,
+  } = useSWR(roomsSWRKey, async () => {
+    if (!session?.access_token) {
+      throw new Error(locale.sessionInfoMissing)
+    }
+
+    const rooms = await listQuestRooms(
+      {
+        mode: 'Multi',
+        status: 'Recruiting',
+        pageSize: 10,
+      },
+      session.access_token,
+    )
+
+    return [...rooms].sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+  })
+
+  const roomSWRKey =
+    session?.access_token && createdRoom?.roomId && startedRun == null
+      ? ([`quest-room`, createdRoom.roomId] as const)
+      : null
+  const {
+    data: liveRoom,
+    error: roomError,
+    isLoading: isRoomLoading,
+    mutate: mutateRoom,
+  } = useSWR(
+    roomSWRKey,
+    async () => {
+      if (!session?.access_token || !createdRoom?.roomId) {
+        throw new Error(locale.sessionInfoMissing)
+      }
+
+      return getQuestRoom(createdRoom.roomId, session.access_token)
+    },
+    {
+      refreshInterval: createdRoom?.status === 'Recruiting' && startedRun == null ? 2000 : 0,
+    },
+  )
+
+  const currentRoom = liveRoom ?? createdRoom
+
+  async function handleJoinRoom(roomId: string): Promise<void> {
+    if (!session?.access_token) {
+      setSubmitError(locale.sessionInfoMissing)
+      return
+    }
+
+    setIsJoiningRoomId(roomId)
+    setSubmitError(null)
+
+    try {
+      const room = await joinQuestRoom(roomId, session.access_token)
+      setCreatedRoom(room)
+      setStartedRun(null)
+      setMultiEntryView('list')
+      await mutateRoom(room, { revalidate: false })
+      await mutateRooms()
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : locale.joinRoomFailed)
+    } finally {
+      setIsJoiningRoomId(null)
     }
   }
 
@@ -172,7 +296,7 @@ export default function Quest() {
       return
     }
 
-    if (!createdRoom) {
+    if (!currentRoom) {
       setSubmitError(locale.createRoomFirst)
       return
     }
@@ -181,7 +305,7 @@ export default function Quest() {
     setSubmitError(null)
 
     try {
-      const run = await startQuestRoom(createdRoom.roomId, session.access_token)
+      const run = await startQuestRoom(currentRoom.roomId, session.access_token)
       setStartedRun(run)
       setCreatedRoom((current) =>
         current
@@ -193,6 +317,7 @@ export default function Quest() {
             }
           : current,
       )
+      await mutateRooms()
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : locale.startQuestFailed)
     } finally {
@@ -206,19 +331,19 @@ export default function Quest() {
       return
     }
 
-    if (!createdRoom) {
+    if (!currentRoom) {
       setSubmitError(locale.createRoomFirst)
       return
     }
 
     setIsCancellingRoom(true)
     setSubmitError(null)
-    setCommandMessage(null)
 
     try {
-      const room = await cancelQuestRoom(createdRoom.roomId, session.access_token)
+      const room = await cancelQuestRoom(currentRoom.roomId, session.access_token)
       setCreatedRoom(room)
-      setCommandMessage(locale.roomCancelled)
+      await mutateRoom(room, { revalidate: false })
+      await mutateRooms()
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : locale.cancelRoomFailed)
     } finally {
@@ -226,33 +351,63 @@ export default function Quest() {
     }
   }
 
-  const runSWRKey = session?.access_token && startedRun?.runId ? ([`quest-run`, startedRun.runId] as const) : null
+  const runSWRKey =
+    session?.access_token && startedRun?.runId
+      ? ([`quest-run`, startedRun.runId] as const)
+      : session?.access_token && currentRoom?.roomId && currentRoom.closeReason === 'Started'
+        ? ([`quest-room-run`, currentRoom.roomId] as const)
+        : null
   const {
     data: liveRun,
     error: runError,
-    isLoading: isRunLoading,
     mutate: mutateRun,
   } = useSWR(
     runSWRKey,
     async () => {
-      if (!session?.access_token || !startedRun?.runId) {
+      if (!session?.access_token) {
         throw new Error(locale.sessionInfoMissing)
       }
 
-      return getQuestRun(startedRun.runId, session.access_token)
+      if (startedRun?.runId) {
+        return getQuestRun(startedRun.runId, session.access_token)
+      }
+
+      if (currentRoom?.roomId && currentRoom.closeReason === 'Started') {
+        return getQuestRunByRoom(currentRoom.roomId, session.access_token)
+      }
+
+      throw new Error(locale.commandUnavailable)
     },
     {
-      refreshInterval: startedRun?.status === 'InProgress' ? 2000 : 0,
+      refreshInterval: currentRoom?.closeReason === 'Started' || startedRun?.status === 'InProgress' ? 2000 : 0,
     },
   )
 
   const currentRun = liveRun ?? startedRun
+  const currentRoomStage = currentRoom
+    ? (activeStages.find((stage) => stage.stageId === currentRoom.stageId) ?? null)
+    : null
   const selfParticipantId =
-    player && createdRoom
-      ? (createdRoom.participants.find((participant) => participant.playerId === player.userId)?.participantId ?? null)
+    player && currentRoom
+      ? (currentRoom.participants.find((participant) => participant.playerId === player.userId)?.participantId ?? null)
       : null
-  const availableMoves = useMemo(() => (player?.moveSlots ?? []).filter((slot) => slot.moveId != null), [player])
-  const firstEnemyPosition = currentRun?.enemies[0]?.position ?? null
+  const availableMoves = useMemo(
+    () =>
+      (player?.moveSlots ?? [])
+        .filter((slot) => slot.moveId != null && slot.moveName != null)
+        .map((slot) => ({
+          slot: slot.slot,
+          moveId: slot.moveId,
+          moveName: slot.moveName!,
+          targetType: slot.targetType,
+          attackRange: slot.attackRange,
+        })),
+    [player],
+  )
+  const selectedMove = useMemo(
+    () => availableMoves.find((move) => move.moveId === selectedMoveId) ?? null,
+    [availableMoves, selectedMoveId],
+  )
   const currentPendingCommand =
     currentRun && selfParticipantId
       ? (currentRun.pendingCommands.find(
@@ -265,22 +420,229 @@ export default function Quest() {
     currentRun.status === 'InProgress' &&
     currentRun.turn.waitingParticipantIds.includes(selfParticipantId) &&
     currentPendingCommand == null
-  const isRunFinished = currentRun != null && currentRun.status !== 'InProgress'
+  const reachableEnemyPositions = useMemo(() => {
+    if (!currentRun || !selfParticipantId) {
+      return []
+    }
+
+    const selfPartyMember = currentRun.partyMembers.find((member) => member.participantId === selfParticipantId)
+    if (!selfPartyMember) {
+      return []
+    }
+
+    const aliveEnemies = currentRun.enemies
+      .filter((enemy) => !enemy.isDead)
+      .sort((left, right) => {
+        if (left.position.row !== right.position.row) {
+          return battleRowOrder.indexOf(left.position.row) - battleRowOrder.indexOf(right.position.row)
+        }
+
+        return battleColumnOrder.indexOf(left.position.column) - battleColumnOrder.indexOf(right.position.column)
+      })
+
+    const occupiedRows = Array.from(new Set(aliveEnemies.map((enemy) => enemy.position.row)))
+    const reachableRows = new Set<BattleRow>(
+      occupiedRows.slice(
+        0,
+        selfPartyMember.position.row === 'Front'
+          ? 1
+          : selfPartyMember.position.row === 'Middle'
+            ? 2
+            : occupiedRows.length,
+      ),
+    )
+
+    return aliveEnemies.filter((enemy) => reachableRows.has(enemy.position.row)).map((enemy) => enemy.position)
+  }, [currentRun, selfParticipantId])
+  const isEnemyTargetingAction =
+    selectedActionKind === 'NormalAttack' || (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
 
   useEffect(() => {
-    if (!firstEnemyPosition) {
+    if (!session?.user.id) {
       return
     }
 
-    setSelectedTargetRow((current) => current || firstEnemyPosition.row)
-    setSelectedTargetColumn((current) => current || firstEnemyPosition.column)
-  }, [firstEnemyPosition])
+    if (currentRun) {
+      writePersistedQuestSession(session.user.id, {
+        roomId: currentRun.roomId,
+        runId: currentRun.runId,
+      })
+      return
+    }
+
+    if (currentRoom?.status === 'Recruiting') {
+      writePersistedQuestSession(session.user.id, {
+        roomId: currentRoom.roomId,
+        runId: null,
+      })
+      return
+    }
+
+    clearPersistedQuestSession(session.user.id)
+  }, [currentRoom, currentRun, session?.user.id])
+
+  useEffect(() => {
+    if (!session?.access_token || !player || isPlayerLoading || hasAttemptedQuestRecoveryRef.current) {
+      return
+    }
+
+    if (createdRoom || startedRun || liveRoom || liveRun) {
+      setHasTriedQuestRecovery(true)
+      hasAttemptedQuestRecoveryRef.current = true
+      return
+    }
+
+    hasAttemptedQuestRecoveryRef.current = true
+
+    const recoverQuest = async () => {
+      setIsRecoveringQuest(true)
+
+      try {
+        try {
+          const activeRun = await getActiveQuestRun(session.access_token)
+          const room = await getQuestRoom(activeRun.roomId, session.access_token)
+          setCreatedRoom(room)
+          setStartedRun(activeRun)
+          return
+        } catch (error) {
+          const message = error instanceof Error ? error.message : ''
+          if (message && !message.includes('進行中クエストが見つかりません')) {
+            throw error
+          }
+        }
+
+        const persistedQuestSession = readPersistedQuestSession(player.userId)
+        if (!persistedQuestSession?.roomId) {
+          return
+        }
+
+        try {
+          const room = await getQuestRoom(persistedQuestSession.roomId, session.access_token)
+          const isJoinedParticipant = room.participants.some(
+            (participant) => participant.playerId === player.userId && participant.status !== 'Left',
+          )
+
+          if (!isJoinedParticipant) {
+            clearPersistedQuestSession(player.userId)
+            return
+          }
+
+          setCreatedRoom(room)
+
+          if (room.closeReason !== 'Started') {
+            return
+          }
+
+          const run = await getQuestRunByRoom(room.roomId, session.access_token)
+          setStartedRun(run)
+        } catch (error) {
+          clearPersistedQuestSession(player.userId)
+
+          const message = error instanceof Error ? error.message : ''
+          if (
+            message &&
+            !message.includes('ルームが見つかりません') &&
+            !message.includes('進行中クエストが見つかりません')
+          ) {
+            throw error
+          }
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : ''
+        if (message) {
+          setSubmitError(message)
+        }
+      } finally {
+        setIsRecoveringQuest(false)
+        setHasTriedQuestRecovery(true)
+      }
+    }
+
+    void recoverQuest()
+  }, [createdRoom, isPlayerLoading, liveRoom, liveRun, player, session?.access_token, startedRun])
+
+  useEffect(() => {
+    if (!isEnemyTargetingAction) {
+      return
+    }
+
+    const currentTargetIsReachable =
+      selectedTargetRow !== '' &&
+      selectedTargetColumn !== '' &&
+      reachableEnemyPositions.some(
+        (position) => position.row === selectedTargetRow && position.column === selectedTargetColumn,
+      )
+
+    if (currentTargetIsReachable) {
+      return
+    }
+
+    const nextTarget = reachableEnemyPositions[0]
+    if (!nextTarget) {
+      return
+    }
+
+    setSelectedTargetRow(nextTarget.row)
+    setSelectedTargetColumn(nextTarget.column)
+  }, [isEnemyTargetingAction, reachableEnemyPositions, selectedTargetColumn, selectedTargetRow])
 
   useEffect(() => {
     if (selectedActionKind !== 'UseMove') {
       setSelectedMoveId('')
     }
   }, [selectedActionKind])
+
+  useEffect(() => {
+    if (!currentRoom) {
+      setPositionDrafts({})
+      return
+    }
+
+    setPositionDrafts((current) =>
+      Object.fromEntries(
+        currentRoom.participants.map((participant) => [
+          participant.participantId,
+          current[participant.participantId] ?? {
+            row: participant.position.row,
+            column: participant.position.column,
+          },
+        ]),
+      ),
+    )
+  }, [currentRoom])
+
+  async function handleUpdateParticipantPosition(participantId: string): Promise<void> {
+    if (!session?.access_token || !currentRoom) {
+      setSubmitError(locale.sessionInfoMissing)
+      return
+    }
+
+    const draft = positionDrafts[participantId]
+    if (!draft) {
+      return
+    }
+
+    setIsUpdatingParticipantId(participantId)
+    setSubmitError(null)
+
+    try {
+      const room = await updateQuestRoomPosition(
+        currentRoom.roomId,
+        {
+          participantId,
+          row: draft.row,
+          column: draft.column,
+        },
+        session.access_token,
+      )
+      setCreatedRoom(room)
+      await mutateRoom(room, { revalidate: false })
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : locale.updatePositionFailed)
+    } finally {
+      setIsUpdatingParticipantId(null)
+    }
+  }
 
   async function handleSubmitCommand(): Promise<void> {
     if (!session?.access_token) {
@@ -300,34 +662,45 @@ export default function Quest() {
 
     setIsCommandSubmitting(true)
     setSubmitError(null)
-    setCommandMessage(null)
 
     try {
-      const selectedTargetPosition =
-        selectedTargetRow !== '' && selectedTargetColumn !== ''
+      const selectedTargetPosition = isEnemyTargetingAction
+        ? (reachableEnemyPositions.find(
+            (position) => position.row === selectedTargetRow && position.column === selectedTargetColumn,
+          ) ??
+          reachableEnemyPositions[0] ??
+          null)
+        : selectedTargetRow !== '' && selectedTargetColumn !== ''
           ? {
-              targetRow: selectedTargetRow,
-              targetColumn: selectedTargetColumn,
+              row: selectedTargetRow,
+              column: selectedTargetColumn,
+            }
+          : null
+
+      const requestTargetPosition =
+        selectedTargetPosition != null
+          ? {
+              targetRow: selectedTargetPosition.row,
+              targetColumn: selectedTargetPosition.column,
             }
           : {
               targetRow: null,
               targetColumn: null,
             }
 
-      const result = await submitQuestCommand(
+      await submitQuestCommand(
         currentRun.runId,
         {
           participantId: selfParticipantId,
           turnNo: currentRun.turn.currentTurnNo,
           actionKind: selectedActionKind,
           moveId: selectedActionKind === 'UseMove' && selectedMoveId !== '' ? selectedMoveId : null,
-          targetRow: selectedTargetPosition.targetRow,
-          targetColumn: selectedTargetPosition.targetColumn,
+          targetRow: requestTargetPosition.targetRow,
+          targetColumn: requestTargetPosition.targetColumn,
         },
         session.access_token,
       )
       await mutateRun()
-      setCommandMessage(result.resolvedInThisRequest ? locale.commandResolved : locale.commandAccepted)
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : locale.commandSubmitFailed)
     } finally {
@@ -335,43 +708,61 @@ export default function Quest() {
     }
   }
 
-  async function handleEscapeRun(): Promise<void> {
+  async function handleSubmitChatMessage(): Promise<void> {
     if (!session?.access_token) {
       setSubmitError(locale.sessionInfoMissing)
       return
     }
 
-    if (!currentRun) {
+    if (!currentRun || !selfParticipantId) {
       setSubmitError(locale.commandUnavailable)
       return
     }
 
-    setIsEscaping(true)
+    const normalizedMessage = chatMessage.trim()
+    if (normalizedMessage.length === 0) {
+      return
+    }
+
+    setIsChatSubmitting(true)
     setSubmitError(null)
-    setCommandMessage(null)
 
     try {
-      const run = await escapeQuestRun(currentRun.runId, session.access_token)
-      setStartedRun(run)
-      await mutateRun(run, { revalidate: false })
-      setCommandMessage(locale.runEscaped)
+      await postQuestChatMessage(
+        currentRun.runId,
+        {
+          participantId: selfParticipantId,
+          message: normalizedMessage,
+        },
+        session.access_token,
+      )
+      setChatMessage('')
+      await mutateRun()
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.escapeRunFailed)
+      setSubmitError(error instanceof Error ? error.message : locale.chatSubmitFailed)
     } finally {
-      setIsEscaping(false)
+      setIsChatSubmitting(false)
     }
   }
 
   function handleLeaveFinishedRun(): void {
+    if (session?.user.id) {
+      clearPersistedQuestSession(session.user.id)
+    }
+
     setCreatedRoom(null)
     setStartedRun(null)
     setSubmitError(null)
-    setCommandMessage(null)
+    setChatMessage('')
     setSelectedActionKind('NormalAttack')
     setSelectedMoveId('')
     setSelectedTargetRow('')
     setSelectedTargetColumn('')
   }
+
+  const showCreateSection = currentRoom == null && currentRun == null && !isRecoveringQuest && hasTriedQuestRecovery
+  const showWaitingSection = currentRoom != null && currentRun == null
+  const showRunSection = currentRun != null
 
   if (isLoading) {
     return (
@@ -385,378 +776,161 @@ export default function Quest() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
+    <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 3 }, py: { xs: 1.25, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={{ xs: 1.5, sm: 2 }}>
+        <Stack spacing={{ xs: 1.25, sm: 2 }}>
           <Box sx={twoColumnContentGridSx}>
-            <Stack spacing={{ xs: 1.5, sm: 2 }}>
-              <Button component={Link} to="/" variant="outlined" sx={menuButtonSx}>
-                {locale.backToHome}
-              </Button>
+            <Stack spacing={{ xs: 1.25, sm: 2 }}>
+              <Status player={player} />
             </Stack>
 
-            <Stack spacing={{ xs: 1.5, sm: 2 }}>
-              <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-                <Stack spacing={2}>
-                  <div>
-                    <Typography variant="h4">{locale.roomPageTitle}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {locale.roomPageSubtitle}
-                    </Typography>
-                  </div>
-
-                  {playerError ? <Alert severity="warning">{playerError.message}</Alert> : null}
-                  {stagesError ? <Alert severity="warning">{stagesError.message}</Alert> : null}
-                  {runError ? <Alert severity="warning">{runError.message}</Alert> : null}
-                  {submitError ? <Alert severity="error">{submitError}</Alert> : null}
-                  {commandMessage ? <Alert severity="success">{commandMessage}</Alert> : null}
-
-                  {isPlayerLoading || isStagesLoading ? (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <CircularProgress size={18} />
-                      <Typography variant="body2">{locale.roomPageLoading}</Typography>
-                    </Stack>
-                  ) : activeStages.length === 0 ? (
-                    <Alert severity="info">{locale.stagesEmpty}</Alert>
-                  ) : (
-                    <Stack spacing={2}>
-                      <FormControl fullWidth sx={greenOutlinedInputSx}>
-                        <InputLabel id="quest-stage-select-label">{locale.labels.stageSelect}</InputLabel>
-                        <Select
-                          labelId="quest-stage-select-label"
-                          value={selectedStageId}
-                          label={locale.labels.stageSelect}
-                          onChange={(event) => {
-                            const nextValue = event.target.value
-                            setSelectedStageId(typeof nextValue === 'number' ? nextValue : Number(nextValue))
-                          }}
-                        >
-                          {activeStages.map((stage) => (
-                            <MenuItem key={stage.stageId} value={stage.stageId}>
-                              {stage.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-
-                      <FormControl fullWidth sx={greenOutlinedInputSx}>
-                        <InputLabel id="quest-mode-select-label">{locale.labels.modeSelect}</InputLabel>
-                        <Select
-                          labelId="quest-mode-select-label"
-                          value={mode}
-                          label={locale.labels.modeSelect}
-                          onChange={(event) => {
-                            setMode(event.target.value as CreateQuestRoomRequest['mode'])
-                          }}
-                        >
-                          <MenuItem value="Solo">{locale.modeSolo}</MenuItem>
-                          <MenuItem value="Multi">{locale.modeMulti}</MenuItem>
-                        </Select>
-                      </FormControl>
-
-                      {selectedStage ? (
-                        <Paper
-                          variant="outlined"
-                          sx={{
-                            ...innerSurfaceSx,
-                            borderRadius: 3,
-                            p: 2,
-                          }}
-                        >
-                          <Stack spacing={1}>
-                            <Typography variant="h6">{selectedStage.name}</Typography>
-                            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                              <Chip label={`${locale.recommendedLevel}: ${selectedStage.recommendedLevel}`} />
-                              <Chip label={`${locale.partyRange}: ${formatStagePartyRange(selectedStage)}`} />
-                              <Chip label={`${locale.floorCount}: ${selectedStage.floors.length}`} />
-                            </Stack>
-                          </Stack>
-                        </Paper>
-                      ) : null}
-
+            <Stack spacing={{ xs: 1.25, sm: 2 }}>
+              {playerError ? <Alert severity="warning">{playerError.message}</Alert> : null}
+              {stagesError ? <Alert severity="warning">{stagesError.message}</Alert> : null}
+              {roomsError ? <Alert severity="warning">{roomsError.message}</Alert> : null}
+              {roomError ? <Alert severity="warning">{roomError.message}</Alert> : null}
+              {runError ? <Alert severity="warning">{runError.message}</Alert> : null}
+              {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+              {isRecoveringQuest ? (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CircularProgress size={16} />
+                  <Typography variant="body2">{locale.runLoading}</Typography>
+                </Stack>
+              ) : null}
+              {showCreateSection ? (
+                <>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 999,
+                      borderColor: '#d3a93a',
+                      backgroundColor: '#f4e4bf',
+                      p: 0.5,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                        gap: 0.5,
+                      }}
+                    >
                       <Button
-                        variant="contained"
-                        onClick={() => void handleCreateRoom()}
-                        disabled={isCreateDisabled}
-                        sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                        onClick={() => setMultiEntryView('create')}
+                        disableRipple
+                        sx={{
+                          minHeight: 44,
+                          borderRadius: 999,
+                          fontWeight: 700,
+                          color: multiEntryView === 'create' ? '#ffffff' : '#6a5320',
+                          backgroundColor: multiEntryView === 'create' ? '#7a4d19' : 'transparent',
+                          boxShadow: multiEntryView === 'create' ? '0 4px 12px rgba(94, 60, 16, 0.24)' : 'none',
+                          transition: 'none',
+                        }}
                       >
-                        {isSubmitting ? locale.creatingRoom : locale.createRoom}
-                      </Button>
-                    </Stack>
-                  )}
-                </Stack>
-              </Paper>
-
-              <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-                <Stack spacing={2}>
-                  <Typography variant="h5">{locale.createdRoomTitle}</Typography>
-                  {createdRoom == null ? (
-                    <Typography variant="body2" color="text.secondary">
-                      {locale.createdRoomEmpty}
-                    </Typography>
-                  ) : (
-                    <Stack spacing={1.5}>
-                      <Typography>{`${locale.roomId}: ${createdRoom.roomId}`}</Typography>
-                      <Typography>{`${locale.stage}: ${createdRoom.stageId}`}</Typography>
-                      <Typography>{`${locale.createdAt}: ${formatDateTime(createdRoom.createdAt)}`}</Typography>
-                      <Typography>{`${locale.roomVersion}: ${createdRoom.version}`}</Typography>
-                      <Typography>{`${locale.participants}: ${createdRoom.participants.length}`}</Typography>
-                      <Typography>{`${locale.canStartLabel}: ${createdRoom.canStart ? locale.yes : locale.no}`}</Typography>
-                      <Typography>{`${locale.roomStatusLabel}: ${locale.roomStatus[createdRoom.status]}`}</Typography>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                        <Button
-                          variant="contained"
-                          onClick={() => void handleStartQuest()}
-                          disabled={
-                            isStarting ||
-                            isCancellingRoom ||
-                            !createdRoom.canStart ||
-                            createdRoom.mode !== 'Solo' ||
-                            createdRoom.status !== 'Recruiting'
-                          }
-                          sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                        >
-                          {isStarting ? locale.startingQuest : locale.startQuest}
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="inherit"
-                          onClick={() => void handleCancelRoom()}
-                          disabled={isStarting || isCancellingRoom || createdRoom.status !== 'Recruiting'}
-                          sx={menuButtonSx}
-                        >
-                          {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
-                        </Button>
-                      </Stack>
-                      {createdRoom.mode !== 'Solo' ? (
-                        <Typography variant="body2" color="text.secondary">
-                          {locale.startSoloOnly}
-                        </Typography>
-                      ) : null}
-                      <Stack spacing={1}>
-                        {createdRoom.participants.map((participant) => (
-                          <Paper
-                            key={participant.participantId}
-                            variant="outlined"
-                            sx={{
-                              borderRadius: 2,
-                              p: 1.5,
-                              backgroundColor: '#fffdf8',
-                            }}
-                          >
-                            <Typography variant="subtitle2">{participant.displayName}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {`${locale.positionRow}: ${locale.rows[participant.position.row]} / ${locale.positionColumn}: ${locale.columns[participant.position.column]}`}
-                            </Typography>
-                          </Paper>
-                        ))}
-                      </Stack>
-                    </Stack>
-                  )}
-                </Stack>
-              </Paper>
-
-              <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-                <Stack spacing={2}>
-                  <Typography variant="h5">{locale.startedRunTitle}</Typography>
-                  {startedRun == null ? (
-                    <Typography variant="body2" color="text.secondary">
-                      {locale.startedRunEmpty}
-                    </Typography>
-                  ) : (
-                    <Stack spacing={1.5}>
-                      <Typography>{`${locale.runId}: ${startedRun.runId}`}</Typography>
-                      <Typography>{`${locale.stage}: ${startedRun.stageId}`}</Typography>
-                      <Typography>{`${locale.runStatusLabel}: ${locale.runStatus[startedRun.status]}`}</Typography>
-                      <Typography>{`${locale.currentFloorLabel}: ${startedRun.floor.currentFloorNo}`}</Typography>
-                      <Typography>{`${locale.turnNo}: ${startedRun.turn.currentTurnNo}`}</Typography>
-                      <Typography>{`${locale.deadline}: ${formatDateTime(startedRun.turn.actionDeadlineAt)}`}</Typography>
-                      <Typography>{`${locale.waitingParticipantsLabel}: ${startedRun.turn.waitingParticipantIds.length}`}</Typography>
-                      <Typography>{`${locale.partyMembersLabel}: ${startedRun.partyMembers.length}`}</Typography>
-                      <Typography>{`${locale.enemiesLabel}: ${startedRun.enemies.length}`}</Typography>
-                      <Stack spacing={1}>
-                        {startedRun.partyMembers.map((member) => (
-                          <Paper
-                            key={member.participantId}
-                            variant="outlined"
-                            sx={{
-                              borderRadius: 2,
-                              p: 1.5,
-                              backgroundColor: '#fffdf8',
-                            }}
-                          >
-                            <Typography variant="subtitle2">{member.displayName}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {`${locale.positionRow}: ${locale.rows[member.position.row]} / ${locale.positionColumn}: ${locale.columns[member.position.column]}`}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {`HP ${member.currentHp} / MP ${member.currentMp}`}
-                            </Typography>
-                          </Paper>
-                        ))}
-                      </Stack>
-                    </Stack>
-                  )}
-                </Stack>
-              </Paper>
-
-              <QuestLastTurnResultsPanel run={currentRun} locale={locale} />
-
-              <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-                <Stack spacing={2}>
-                  <Typography variant="h5">{locale.commandPanelTitle}</Typography>
-                  {!currentRun ? (
-                    <Typography variant="body2" color="text.secondary">
-                      {locale.commandPanelEmpty}
-                    </Typography>
-                  ) : isRunLoading ? (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <CircularProgress size={18} />
-                      <Typography variant="body2">{locale.runLoading}</Typography>
-                    </Stack>
-                  ) : (
-                    <Stack spacing={2}>
-                      <Typography variant="body2" color="text.secondary">
-                        {`${locale.currentTurnLabel}: ${currentRun.turn.currentTurnNo}`}
-                      </Typography>
-                      <FormControl fullWidth sx={greenOutlinedInputSx}>
-                        <InputLabel id="quest-action-kind-select-label">{locale.labels.actionKind}</InputLabel>
-                        <Select
-                          labelId="quest-action-kind-select-label"
-                          value={selectedActionKind}
-                          label={locale.labels.actionKind}
-                          onChange={(event) => {
-                            setSelectedActionKind(event.target.value as QuestActionKind)
-                          }}
-                        >
-                          <MenuItem value="NormalAttack">{locale.actionKinds.NormalAttack}</MenuItem>
-                          <MenuItem value="UseMove">{locale.actionKinds.UseMove}</MenuItem>
-                          <MenuItem value="Guard">{locale.actionKinds.Guard}</MenuItem>
-                          <MenuItem value="Wait">{locale.actionKinds.Wait}</MenuItem>
-                          <MenuItem value="LeaveQuest">{locale.actionKinds.LeaveQuest}</MenuItem>
-                          <MenuItem value="Escape">{locale.actionKinds.Escape}</MenuItem>
-                        </Select>
-                      </FormControl>
-
-                      <FormControl fullWidth sx={greenOutlinedInputSx} disabled={selectedActionKind !== 'UseMove'}>
-                        <InputLabel id="quest-move-select-label">{locale.labels.move}</InputLabel>
-                        <Select
-                          labelId="quest-move-select-label"
-                          value={selectedMoveId === '' ? '' : String(selectedMoveId)}
-                          label={locale.labels.move}
-                          onChange={(event) => {
-                            const nextValue = String(event.target.value)
-                            setSelectedMoveId(nextValue === '' ? '' : Number(nextValue))
-                          }}
-                        >
-                          <MenuItem value="">{locale.labels.none}</MenuItem>
-                          {availableMoves.map((move) => (
-                            <MenuItem key={move.slot} value={move.moveId!}>
-                              {move.moveName}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                        <FormControl fullWidth sx={greenOutlinedInputSx}>
-                          <InputLabel id="quest-target-row-select-label">{locale.labels.targetRow}</InputLabel>
-                          <Select
-                            labelId="quest-target-row-select-label"
-                            value={selectedTargetRow}
-                            label={locale.labels.targetRow}
-                            onChange={(event) => {
-                              setSelectedTargetRow(event.target.value as BattleRow | '')
-                            }}
-                          >
-                            <MenuItem value="">{locale.labels.none}</MenuItem>
-                            <MenuItem value="Front">{locale.rows.Front}</MenuItem>
-                            <MenuItem value="Middle">{locale.rows.Middle}</MenuItem>
-                            <MenuItem value="Back">{locale.rows.Back}</MenuItem>
-                          </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth sx={greenOutlinedInputSx}>
-                          <InputLabel id="quest-target-column-select-label">{locale.labels.targetColumn}</InputLabel>
-                          <Select
-                            labelId="quest-target-column-select-label"
-                            value={selectedTargetColumn}
-                            label={locale.labels.targetColumn}
-                            onChange={(event) => {
-                              setSelectedTargetColumn(event.target.value as BattleColumn | '')
-                            }}
-                          >
-                            <MenuItem value="">{locale.labels.none}</MenuItem>
-                            <MenuItem value="Left">{locale.columns.Left}</MenuItem>
-                            <MenuItem value="Right">{locale.columns.Right}</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Stack>
-
-                      <Button
-                        variant="contained"
-                        onClick={() => void handleSubmitCommand()}
-                        disabled={isCommandSubmitting || isEscaping || !canSubmitCurrentTurn}
-                        sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                      >
-                        {isCommandSubmitting ? locale.submittingCommand : locale.submitCommand}
+                        {locale.showCreateRoom}
                       </Button>
                       <Button
-                        variant="outlined"
-                        color="inherit"
-                        onClick={() => void handleEscapeRun()}
-                        disabled={isEscaping || isCommandSubmitting || currentRun.status !== 'InProgress'}
-                        sx={menuButtonSx}
+                        onClick={() => {
+                          setMode('Multi')
+                          setMultiEntryView('list')
+                        }}
+                        disableRipple
+                        sx={{
+                          minHeight: 44,
+                          borderRadius: 999,
+                          fontWeight: 700,
+                          color: multiEntryView === 'list' ? '#ffffff' : '#6a5320',
+                          backgroundColor: multiEntryView === 'list' ? '#7a4d19' : 'transparent',
+                          boxShadow: multiEntryView === 'list' ? '0 4px 12px rgba(94, 60, 16, 0.24)' : 'none',
+                          transition: 'none',
+                        }}
                       >
-                        {isEscaping ? locale.escapingRun : locale.escapeRun}
+                        {locale.showRecruitingRooms}
                       </Button>
+                    </Box>
+                  </Paper>
 
-                      {currentPendingCommand ? (
-                        <Paper
-                          variant="outlined"
-                          sx={{
-                            borderRadius: 2,
-                            p: 1.5,
-                            backgroundColor: '#fffdf8',
-                          }}
-                        >
-                          <Typography variant="subtitle2">{locale.pendingCommandTitle}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {`${locale.labels.actionKind}: ${locale.actionKinds[currentPendingCommand.actionKind]}`}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {`${locale.submittedAtLabel}: ${formatDateTime(currentPendingCommand.submittedAt)}`}
-                          </Typography>
-                        </Paper>
-                      ) : null}
-                    </Stack>
-                  )}
-                </Stack>
-              </Paper>
+                  {mode === 'Solo' || multiEntryView === 'create' ? (
+                    <QuestRoomCreateSection
+                      activeStages={activeStages}
+                      selectedStageId={selectedStageId}
+                      mode={mode}
+                      isLoading={isPlayerLoading || isStagesLoading}
+                      isSubmitting={isSubmitting}
+                      isCreateDisabled={isCreateDisabled}
+                      onStageChange={setSelectedStageId}
+                      onModeChange={setMode}
+                      onCreateRoom={handleCreateRoom}
+                    />
+                  ) : null}
 
-              {currentRun ? (
-                <QuestBattleStatusPanel run={currentRun} selfParticipantId={selfParticipantId} locale={locale} />
+                  {mode === 'Multi' && multiEntryView === 'list' ? (
+                    <QuestMultiRoomList
+                      rooms={latestRooms ?? []}
+                      stages={activeStages}
+                      isLoading={isRoomsLoading}
+                      error={roomsError instanceof Error ? roomsError : null}
+                      isJoiningRoomId={isJoiningRoomId}
+                      locale={locale}
+                      onJoinRoom={handleJoinRoom}
+                    />
+                  ) : null}
+                </>
               ) : null}
 
-              {isRunFinished ? (
-                <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-                  <Stack spacing={2}>
-                    <Typography variant="h5">{locale.finishedRunActionsTitle}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {locale.finishedRunActionsSubtitle}
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={handleLeaveFinishedRun}
-                      sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                    >
-                      {locale.leaveFinishedRun}
-                    </Button>
-                  </Stack>
-                </Paper>
+              {showWaitingSection ? (
+                <QuestRoomLobbySection
+                  currentRoom={currentRoom}
+                  stageLabel={currentRoomStage?.name ?? null}
+                  selfParticipantId={selfParticipantId}
+                  positionDrafts={positionDrafts}
+                  isLoading={isRoomLoading && liveRoom == null}
+                  isStarting={isStarting}
+                  isCancellingRoom={isCancellingRoom}
+                  isUpdatingParticipantId={isUpdatingParticipantId}
+                  onPositionDraftChange={(participantId, nextPosition) => {
+                    setPositionDrafts((current) => ({
+                      ...current,
+                      [participantId]: nextPosition,
+                    }))
+                  }}
+                  onUpdateParticipantPosition={handleUpdateParticipantPosition}
+                  onStartQuest={handleStartQuest}
+                  onCancelRoom={handleCancelRoom}
+                />
+              ) : null}
+
+              {showRunSection ? (
+                <QuestRunSection
+                  currentRun={currentRun}
+                  selfParticipantId={selfParticipantId}
+                  availableMoves={availableMoves}
+                  selectedActionKind={selectedActionKind}
+                  selectedMoveId={selectedMoveId}
+                  selectedTargetRow={selectedTargetRow}
+                  selectedTargetColumn={selectedTargetColumn}
+                  currentPendingCommand={currentPendingCommand}
+                  chatMessage={chatMessage}
+                  canSubmitCurrentTurn={canSubmitCurrentTurn}
+                  isCommandSubmitting={isCommandSubmitting}
+                  isChatSubmitting={isChatSubmitting}
+                  onActionKindChange={setSelectedActionKind}
+                  onMoveChange={setSelectedMoveId}
+                  onTargetRowChange={setSelectedTargetRow}
+                  onTargetColumnChange={setSelectedTargetColumn}
+                  onChatMessageChange={setChatMessage}
+                  onSubmitCommand={handleSubmitCommand}
+                  onSubmitChatMessage={handleSubmitChatMessage}
+                  onLeaveFinishedRun={handleLeaveFinishedRun}
+                />
               ) : null}
             </Stack>
           </Box>
+
+          <Button component={Link} to="/" variant="outlined" sx={menuButtonSx}>
+            {locale.backToHome}
+          </Button>
         </Stack>
       </Paper>
     </Container>

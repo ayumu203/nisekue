@@ -20,7 +20,7 @@ public class CsvJobMoveLearningRuleRepository : IJobMoveLearningRuleRepository
             return rule;
         }
 
-        throw new InvalidOperationException($"ジョブ {job} の技習得ルールが定義されていません。");
+        throw new InvalidOperationException($"ジョブ {job} のスキル習得ルールが定義されていません。");
     }
 
     private static IReadOnlyDictionary<Job, JobMoveLearningRule> LoadRules(string csvPath)
@@ -33,7 +33,7 @@ public class CsvJobMoveLearningRuleRepository : IJobMoveLearningRuleRepository
         var lines = File.ReadAllLines(csvPath);
         if (lines.Length <= 1)
         {
-            throw new InvalidOperationException($"CSVファイルにジョブ技データがありません: {csvPath}");
+            throw new InvalidOperationException($"CSVファイルにジョブスキルデータがありません: {csvPath}");
         }
 
         var header = lines[0].Split(',', StringSplitOptions.TrimEntries);
@@ -104,7 +104,7 @@ public class CsvJobMoveLearningRuleRepository : IJobMoveLearningRuleRepository
 
         if (map.Count == 0)
         {
-            throw new InvalidOperationException($"CSVファイルに有効なジョブ技データがありません: {csvPath}");
+            throw new InvalidOperationException($"CSVファイルに有効なジョブスキルデータがありません: {csvPath}");
         }
 
         return map;

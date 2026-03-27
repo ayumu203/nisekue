@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { playerIdSchema, playerUserNameSchema } from '@/schema/player'
+import { playerIdSchema, playerJobCodeSchema, playerUserNameSchema } from '@/schema/player'
 
 export const questRoomIdSchema = z.string().uuid('ルームIDの形式が不正です')
 export const questRunIdSchema = z.string().uuid('クエスト実行IDの形式が不正です')
@@ -43,6 +43,7 @@ export const questStageSummarySchema = z.object({
   stageCode: z.string().min(1),
   name: z.string().min(1),
   recommendedLevel: z.number().int().nonnegative(),
+  previewEnemyImagePath: z.string().min(1).nullable().optional(),
   minPartyMemberCount: z.number().int().positive(),
   maxPartyMemberCount: z.number().int().positive(),
   isActive: z.boolean(),
@@ -63,6 +64,15 @@ export const questRoomParticipantSchema = z.object({
   playerId: playerIdSchema.nullable().optional(),
   npcTemplateId: z.number().int().positive().nullable().optional(),
   displayName: z.string().min(1),
+  imagePath: z.string().min(1).nullable().optional(),
+  level: z.number().int().positive().nullable().optional(),
+  job: z
+    .object({
+      code: playerJobCodeSchema,
+      displayName: z.string().min(1),
+    })
+    .nullable()
+    .optional(),
   status: z.enum(['Joined', 'Disconnected', 'Left']),
   isOwner: z.boolean(),
   position: battlePositionSchema,
@@ -116,6 +126,7 @@ export const questRoomSummaryResponseSchema = z.object({
   status: questRoomStatusSchema,
   ownerPlayerId: playerIdSchema,
   ownerDisplayName: playerUserNameSchema.nullable().optional(),
+  ownerImagePath: z.string().min(1).nullable().optional(),
   participantCount: z.number().int().nonnegative(),
   minPartyMemberCount: z.number().int().positive().nullable().optional(),
   maxPartyMemberCount: z.number().int().positive().nullable().optional(),
@@ -173,6 +184,7 @@ export const questPendingCommandViewSchema = z.object({
 })
 
 export const questChatMessageViewSchema = z.object({
+  turnNo: z.number().int().positive(),
   senderParticipantId: questParticipantIdSchema,
   displayName: z.string().min(1),
   imagePath: z.string().min(1).nullable().optional(),
@@ -224,6 +236,7 @@ export const questRunTransitionViewSchema = z.object({
 export const questLastTurnResultsViewSchema = z.object({
   turnNo: z.number().int().positive(),
   resolvedAt: z.string().datetime({ offset: true }),
+  chatMessages: z.array(questChatMessageViewSchema),
   actions: z.array(questResolvedActionViewSchema),
   floorTransition: questFloorTransitionViewSchema.nullable(),
   runTransition: questRunTransitionViewSchema.nullable(),

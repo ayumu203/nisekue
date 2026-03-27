@@ -63,6 +63,7 @@ internal static class QuestJsonSerializer
     public static string SerializeChatMessages(IEnumerable<QuestChatMessage> messages)
     {
         return JsonSerializer.Serialize(messages.Select(x => new ChatMessageDto(
+            x.TurnNo,
             x.SenderParticipantId.Value,
             x.DisplayName,
             x.ImagePath,
@@ -74,6 +75,7 @@ internal static class QuestJsonSerializer
     {
         var messages = JsonSerializer.Deserialize<ChatMessageDto[]>(json, Options) ?? [];
         return messages.Select(x => new QuestChatMessage(
+            x.TurnNo <= 0 ? 1 : x.TurnNo,
             new QuestParticipantId(x.SenderParticipantId),
             x.DisplayName,
             x.ImagePath,
@@ -88,6 +90,13 @@ internal static class QuestJsonSerializer
             : JsonSerializer.Serialize(new LastTurnResultsDto(
                 results.TurnNo,
                 results.ResolvedAt,
+                results.ChatMessages.Select(message => new ChatMessageDto(
+                    message.TurnNo,
+                    message.SenderParticipantId.Value,
+                    message.DisplayName,
+                    message.ImagePath,
+                    message.Message,
+                    message.SentAt)).ToArray(),
                 results.Actions.Select(action => new ResolvedActionDto(
                     action.ActorParticipantId,
                     action.ActorEnemyInstanceId,
@@ -135,6 +144,13 @@ internal static class QuestJsonSerializer
             : new QuestLastTurnResults(
                 dto.TurnNo,
                 dto.ResolvedAt,
+                (dto.ChatMessages ?? []).Select(message => new QuestChatMessage(
+                    message.TurnNo <= 0 ? dto.TurnNo : message.TurnNo,
+                    new QuestParticipantId(message.SenderParticipantId),
+                    message.DisplayName,
+                    message.ImagePath,
+                    message.Message,
+                    message.SentAt)).ToArray(),
                 dto.Actions.Select(action => new QuestResolvedAction(
                     action.ActorParticipantId,
                     action.ActorEnemyInstanceId,
@@ -178,10 +194,11 @@ internal static class QuestJsonSerializer
     private sealed record AilmentDto(int Type, int RemainingTurns, DamageDto? TriggerDamage);
     private sealed record DamageDto(int HitCount, decimal PowerRate, int FixedValue, decimal CriticalRate, int ElementType, int? AttackStat);
     private sealed record BuffDto(int Stat, int CalculationType, decimal Value, int RemainingTurns);
-    private sealed record ChatMessageDto(Guid SenderParticipantId, string DisplayName, string? ImagePath, string Message, DateTimeOffset SentAt);
+    private sealed record ChatMessageDto(int TurnNo, Guid SenderParticipantId, string DisplayName, string? ImagePath, string Message, DateTimeOffset SentAt);
     private sealed record LastTurnResultsDto(
         int TurnNo,
         DateTimeOffset ResolvedAt,
+        ChatMessageDto[]? ChatMessages,
         ResolvedActionDto[] Actions,
         FloorTransitionDto? FloorTransition,
         RunTransitionDto? RunTransition);

@@ -79,7 +79,7 @@ public class CsvMoveRepository : IMoveRepository
         var lines = File.ReadAllLines(csvPath);
         if (lines.Length <= 1)
         {
-            throw new InvalidOperationException($"CSVファイルに技データがありません: {csvPath}");
+            throw new InvalidOperationException($"CSVファイルにスキルデータがありません: {csvPath}");
         }
 
         var map = new Dictionary<int, MoveMasterRow>();
@@ -117,7 +117,7 @@ public class CsvMoveRepository : IMoveRepository
 
         if (map.Count == 0)
         {
-            throw new InvalidOperationException($"move_master.csv に有効な技データがありません: {csvPath}");
+            throw new InvalidOperationException($"move_master.csv に有効なスキルデータがありません: {csvPath}");
         }
 
         return map;
@@ -133,7 +133,7 @@ public class CsvMoveRepository : IMoveRepository
         var lines = File.ReadAllLines(csvPath);
         if (lines.Length <= 1)
         {
-            throw new InvalidOperationException($"CSVファイルに技効果データがありません: {csvPath}");
+            throw new InvalidOperationException($"CSVファイルにスキル効果データがありません: {csvPath}");
         }
 
         var map = new Dictionary<int, List<MoveEffect>>();
@@ -185,7 +185,7 @@ public class CsvMoveRepository : IMoveRepository
 
         if (map.Count == 0)
         {
-            throw new InvalidOperationException($"move_effects.csv に有効な技効果データがありません: {csvPath}");
+            throw new InvalidOperationException($"move_effects.csv に有効なスキル効果データがありません: {csvPath}");
         }
 
         return map.ToDictionary(

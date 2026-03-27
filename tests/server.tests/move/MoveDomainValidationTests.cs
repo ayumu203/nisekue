@@ -174,8 +174,8 @@ public class MoveDomainValidationTests
     private static Move CreateMove(IEnumerable<MoveEffect> effects) =>
         new(
             id: new MoveId(1),
-            name: "テスト技",
-            description: "テスト用の技説明",
+            name: "テストスキル",
+            description: "テスト用のスキル説明",
             targetType: TargetType.Enemy,
             attackRange: AttackRange.Single,
             mpCost: 3,

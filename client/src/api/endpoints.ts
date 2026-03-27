@@ -209,6 +209,11 @@ export const endpoints = {
       method: 'GET',
       responseSchema: questRunDetailResponseSchema,
     },
+    getActiveRun: {
+      path: '/quest/runs/active',
+      method: 'GET',
+      responseSchema: questRunDetailResponseSchema,
+    },
     escapeRun: {
       path: (runId: string) => `/quest/runs/${runId}/escape`,
       method: 'POST',

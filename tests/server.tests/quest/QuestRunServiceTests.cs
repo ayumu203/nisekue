@@ -60,6 +60,7 @@ public class QuestRunServiceTests
         var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), []);
 
         var message = new QuestChatMessage(
+            run.TurnState.CurrentTurnNo,
             run.PartySnapshots[0].ParticipantId,
             "Owner",
             "/images/player.png",
@@ -694,6 +695,9 @@ public class QuestRunServiceTests
 
         public Task<QuestRun?> GetByRoomIdAsync(QuestRoomId roomId)
             => Task.FromResult(StoredRun?.RoomId == roomId ? StoredRun : null);
+
+        public Task<QuestRun?> GetActiveByPlayerAsync(PlayerId playerId)
+            => Task.FromResult(StoredRun);
 
         public Task<bool> ExistsActiveRunByPlayerAsync(PlayerId playerId)
             => Task.FromResult(false);

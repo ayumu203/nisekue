@@ -38,7 +38,7 @@ public class PlayerJobService(
         foreach (var moveId in moveIds)
         {
             var move = await moveRepository.GetMoveAsync(moveId)
-                ?? throw new InvalidOperationException($"技が見つかりません。 moveId={moveId.Id}");
+                ?? throw new InvalidOperationException($"スキルが見つかりません。 moveId={moveId.Id}");
             views.Add(new LearnedMoveView(move.Id.Id, move.Name));
         }
 

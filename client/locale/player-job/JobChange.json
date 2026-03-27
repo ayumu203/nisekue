@@ -28,6 +28,6 @@
   "changing": "転職中...",
   "changeFailed": "転職に失敗しました",
   "changed": "{{jobName}}に転職しました。",
-  "changedWithMoves": "{{jobName}}に転職し、技を習得しました。",
-  "learnedMoves": "習得した技"
+  "changedWithMoves": "{{jobName}}に転職し、スキルを習得しました。",
+  "learnedMoves": "習得したスキル"
 }

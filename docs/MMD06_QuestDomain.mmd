@@ -14,6 +14,15 @@ classDiagram
             +bool IsActive
         }
 
+        class QuestStageSummaryView {
+            <<Application DTO>>
+            +QuestStageId StageId
+            +string StageCode
+            +string Name
+            +int RecommendedLevel
+            +string? PreviewEnemyImagePath
+        }
+
         class QuestStageId {
             <<Value Object>>
             +int Id
@@ -103,9 +112,16 @@ classDiagram
         class CsvQuestEnemyDefinitionRepository {
             <<Infrastructure>>
         }
+
+        QuestStageDefinition ..> QuestStageSummaryView : first placement enemy image for UI preview
     }
 
     namespace RoomContext {
+        class QuestNpcImageAssignmentPolicy {
+            <<Application Policy>>
+            +Resolve(participantId: QuestParticipantId, npcTemplateId: QuestNpcTemplateId?) string
+        }
+
         class BattlePosition {
             <<Value Object>>
             +BattleRow Row
@@ -165,6 +181,8 @@ classDiagram
             +DateTimeOffset? LastSeenAt
             +DateTimeOffset? LeftAt
         }
+
+        QuestParticipant ..> QuestNpcImageAssignmentPolicy : UI image for npc participants
 
         class QuestParticipantId {
             <<Value Object>>
@@ -310,6 +328,7 @@ classDiagram
 
         class QuestChatMessage {
             <<Value Object>>
+            +int TurnNo
             +QuestParticipantId SenderParticipantId
             +string DisplayName
             +string? ImagePath
@@ -354,6 +373,13 @@ classDiagram
     }
 
     namespace ServiceContext {
+        class QuestResponseMapper {
+            <<Application Service>>
+            +Task~object~ MapQuestRoomSummaryAsync(room: QuestRoom)
+            +Task~object~ MapQuestRoomDetailAsync(room: QuestRoom)
+            +Task~object~ MapQuestRunDetailAsync(run: QuestRun)
+        }
+
         class QuestRoomService {
             <<Application Service>>
             +Task~QuestRoom~ CreateRoomAsync(ownerId: PlayerId, stageId: QuestStageId, mode: QuestRoomMode)
@@ -449,6 +475,11 @@ classDiagram
     QuestRoomService ..> IQuestRoomRepository : use
     QuestRoomService ..> QuestRoom : use
     QuestRoomService ..> QuestRun : starts
+    QuestResponseMapper ..> IQuestStageRepository : use
+    QuestResponseMapper ..> IQuestEnemyDefinitionRepository : use
+    QuestResponseMapper ..> IPlayerRepository : use
+    QuestResponseMapper ..> QuestRoom : map detail/summary
+    QuestResponseMapper ..> QuestRun : map detail
     QuestNpcAssignmentService ..> IQuestNpcTemplateRepository : use
     QuestNpcAssignmentService ..> QuestNpcTemplate : selects
     QuestAllyNpcActionPolicy ..> QuestRun : use

@@ -1,41 +1,118 @@
-import { Alert, Button, Chip, CircularProgress, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Avatar, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material'
 import { innerSurfaceSx, menuButtonSx, softGreenButtonSx } from '@/constants/styles'
-import type { ListQuestRoomsResponse } from '@/schema/quest'
+import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
+import type { GetQuestStagesResponse, ListQuestRoomsResponse } from '@/schema/quest'
 
 type QuestMultiRoomListProps = {
   rooms: ListQuestRoomsResponse
+  stages: GetQuestStagesResponse
   isLoading: boolean
   error: Error | null
   isJoiningRoomId: string | null
   locale: {
-    latestRoomsTitle: string
-    latestRoomsSubtitle: string
     latestRoomsLoading: string
     latestRoomsEmpty: string
     joinRoom: string
     joiningRoom: string
-    stage: string
-    participants: string
-    createdAt: string
-    roomStatus: Record<'Recruiting' | 'Closed', string>
-    modeMultiFixed: string
-    roomStatusLabel: string
+    recommendedLevel: string
+    noImage?: string
   }
   onJoinRoom: (roomId: string) => Promise<void>
 }
 
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
+type QuestMultiRoomCardProps = {
+  room: ListQuestRoomsResponse[number]
+  stages: GetQuestStagesResponse
+  isJoining: boolean
+  locale: QuestMultiRoomListProps['locale']
+  onJoinRoom: (roomId: string) => Promise<void>
+}
+
+function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: QuestMultiRoomCardProps) {
+  const stage = stages.find((item) => item.stageId === room.stageId)
+  const ownerImageSrc = resolveCharacterAssetPath(room.ownerImagePath)
+
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        borderRadius: 3,
+        p: 1.5,
+        backgroundColor: '#fffdf8',
+      }}
+    >
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Box
+          sx={{
+            width: 64,
+            height: 64,
+            borderRadius: '50%',
+            overflow: 'hidden',
+            flexShrink: 0,
+            display: 'grid',
+            placeItems: 'center',
+            background: 'radial-gradient(circle at 30% 30%, #fff6de 0%, #f0d5a0 100%)',
+            border: '2px solid #e2bf7b',
+          }}
+        >
+          {stage?.previewEnemyImagePath ? (
+            <Box
+              component="img"
+              src={resolvePublicAssetPath(stage.previewEnemyImagePath)}
+              alt={stage.name}
+              sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <Typography variant="caption" color="text.secondary">
+              {locale.noImage ?? 'No Image'}
+            </Typography>
+          )}
+        </Box>
+
+        <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="h6" noWrap title={stage?.name ?? room.stageName ?? String(room.stageId)}>
+            {stage?.name ?? room.stageName ?? String(room.stageId)}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {`${locale.recommendedLevel} ${stage?.recommendedLevel ?? '-'}`}
+          </Typography>
+        </Stack>
+
+        <Button
+          variant="contained"
+          onClick={() => void onJoinRoom(room.roomId)}
+          disabled={isJoining}
+          sx={{ ...menuButtonSx, ...softGreenButtonSx, width: 'auto', minWidth: 104, px: 2 }}
+        >
+          {isJoining ? locale.joiningRoom : locale.joinRoom}
+        </Button>
+
+        <Stack spacing={0.5} alignItems="center" sx={{ flexShrink: 0, minWidth: 72 }}>
+          <Avatar
+            src={ownerImageSrc ?? undefined}
+            alt={room.ownerDisplayName ?? 'owner'}
+            sx={{ width: 56, height: 56, bgcolor: '#efe4cf', color: '#6a5320', fontWeight: 700 }}
+          >
+            {(room.ownerDisplayName ?? '?').slice(0, 1)}
+          </Avatar>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ maxWidth: 72, textAlign: 'center' }}
+            noWrap
+            title={room.ownerDisplayName ?? '---'}
+          >
+            {room.ownerDisplayName ?? '---'}
+          </Typography>
+        </Stack>
+      </Stack>
+    </Paper>
+  )
 }
 
 export default function QuestMultiRoomList({
   rooms,
+  stages,
   isLoading,
   error,
   isJoiningRoomId,
@@ -45,13 +122,6 @@ export default function QuestMultiRoomList({
   return (
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
       <Stack spacing={2}>
-        <div>
-          <Typography variant="h5">{locale.latestRoomsTitle}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {locale.latestRoomsSubtitle}
-          </Typography>
-        </div>
-
         {isLoading ? (
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={18} />
@@ -66,40 +136,14 @@ export default function QuestMultiRoomList({
         ) : (
           <Stack spacing={1.5}>
             {rooms.map((room) => (
-              <Paper
+              <QuestMultiRoomCard
                 key={room.roomId}
-                variant="outlined"
-                sx={{
-                  borderRadius: 2,
-                  p: 1.5,
-                  backgroundColor: '#fffdf8',
-                }}
-              >
-                <Stack spacing={1.25}>
-                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                    <Chip size="small" label={locale.modeMultiFixed} />
-                    <Chip size="small" label={`${locale.roomStatusLabel}: ${locale.roomStatus[room.status]}`} />
-                  </Stack>
-                  <Typography variant="subtitle2">{room.stageName ?? `${locale.stage}: ${room.stageId}`}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {`${locale.stage}: ${room.stageId}`}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {`${locale.participants}: ${room.participantCount}`}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {`${locale.createdAt}: ${formatDateTime(room.createdAt)}`}
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    onClick={() => void onJoinRoom(room.roomId)}
-                    disabled={isJoiningRoomId === room.roomId}
-                    sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                  >
-                    {isJoiningRoomId === room.roomId ? locale.joiningRoom : locale.joinRoom}
-                  </Button>
-                </Stack>
-              </Paper>
+                room={room}
+                stages={stages}
+                isJoining={isJoiningRoomId === room.roomId}
+                locale={locale}
+                onJoinRoom={onJoinRoom}
+              />
             ))}
           </Stack>
         )}

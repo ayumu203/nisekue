@@ -219,7 +219,7 @@ public class BattleTurnOrderResolverTests
     {
         return new Move(
             id: new MoveId(moveId),
-            name: "テスト技",
+            name: "テストスキル",
             description: "優先度確認用",
             targetType: TargetType.Enemy,
             attackRange: AttackRange.Single,

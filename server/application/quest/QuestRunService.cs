@@ -399,10 +399,14 @@ public class QuestRunService(
             : null;
 
         var runTransition = new QuestRunTransition(previousStatus, run.Status.ToString(), run.Status != QuestRunStatus.InProgress);
+        var turnChatMessages = run.ChatMessages
+            .Where(message => message.TurnNo == summary.Turn)
+            .ToArray();
 
         return new QuestLastTurnResults(
             summary.Turn,
             DateTimeOffset.UtcNow,
+            turnChatMessages,
             actions,
             floorTransition,
             runTransition);

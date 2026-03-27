@@ -11,7 +11,7 @@ public sealed class JobMoveLearningRule(Job job, IReadOnlyList<MoveId> moveIds)
     {
         if (order < 1 || order > MoveIds.Count)
         {
-            throw new ArgumentOutOfRangeException(nameof(order), "order は1以上、技数以下である必要があります。");
+            throw new ArgumentOutOfRangeException(nameof(order), "order は1以上、スキル数以下である必要があります。");
         }
 
         if (masterLevel < 1)

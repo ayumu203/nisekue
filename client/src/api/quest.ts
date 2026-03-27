@@ -233,6 +233,23 @@ export async function getQuestRun(runId: string, accessToken: string): Promise<Q
   return endpoints.quest.getRun.responseSchema.parse(json)
 }
 
+export async function getActiveQuestRun(accessToken: string): Promise<QuestRunDetailResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.quest.getActiveRun.path}`, {
+    method: endpoints.quest.getActiveRun.method,
+    headers: createAuthorizedHeaders(accessToken, null),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '進行中クエストの取得に失敗しました'))
+  }
+
+  return endpoints.quest.getActiveRun.responseSchema.parse(json)
+}
+
 export async function escapeQuestRun(runId: string, accessToken: string): Promise<QuestRunDetailResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
 

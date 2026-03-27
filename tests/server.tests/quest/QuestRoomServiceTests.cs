@@ -330,6 +330,9 @@ public class QuestRoomServiceTests
             return Task.FromResult(run);
         }
 
+        public Task<QuestRun?> GetActiveByPlayerAsync(PlayerId playerId)
+            => Task.FromResult(HasActiveRunForAnyPlayer ? runs.Values.FirstOrDefault() : null);
+
         public Task<bool> ExistsActiveRunByPlayerAsync(PlayerId playerId)
             => Task.FromResult(HasActiveRunForAnyPlayer);
 

@@ -217,7 +217,7 @@ public class TrainingService(
 
         if (playerMoveIds.Count != TrainingConstants.Battle.MaxTurns)
         {
-            throw new ArgumentException($"特訓で指定できる技は{TrainingConstants.Battle.MaxTurns}ターン分固定です。", nameof(playerMoveIds));
+            throw new ArgumentException($"特訓で指定できるスキルは{TrainingConstants.Battle.MaxTurns}ターン分固定です。", nameof(playerMoveIds));
         }
 
         var learnedMoveIds = player.MoveSet.GetLearnedMoveIds()
@@ -235,13 +235,13 @@ public class TrainingService(
 
             if (!learnedMoveIds.Contains(moveId.Value))
             {
-                throw new ArgumentException($"未習得の技は指定できません。 moveId={moveId}", nameof(playerMoveIds));
+                throw new ArgumentException($"未習得のスキルは指定できません。 moveId={moveId}", nameof(playerMoveIds));
             }
 
             var move = await moveRepository.GetMoveAsync(new MoveId(moveId.Value));
             if (move is null)
             {
-                throw new ArgumentException($"存在しない技は指定できません。 moveId={moveId}", nameof(playerMoveIds));
+                throw new ArgumentException($"存在しないスキルは指定できません。 moveId={moveId}", nameof(playerMoveIds));
             }
 
             moves.Add(move);

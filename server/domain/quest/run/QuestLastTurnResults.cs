@@ -3,14 +3,17 @@ namespace server.domain.quest;
 public class QuestLastTurnResults(
     int turnNo,
     DateTimeOffset resolvedAt,
+    IEnumerable<QuestChatMessage>? chatMessages = null,
     IEnumerable<QuestResolvedAction>? actions = null,
     QuestFloorTransition? floorTransition = null,
     QuestRunTransition? runTransition = null)
 {
+    private readonly QuestChatMessage[] chatMessages = chatMessages?.ToArray() ?? [];
     private readonly QuestResolvedAction[] actions = actions?.ToArray() ?? [];
 
     public int TurnNo { get; } = turnNo;
     public DateTimeOffset ResolvedAt { get; } = resolvedAt;
+    public IReadOnlyList<QuestChatMessage> ChatMessages => chatMessages;
     public IReadOnlyList<QuestResolvedAction> Actions => actions;
     public QuestFloorTransition? FloorTransition { get; } = floorTransition;
     public QuestRunTransition? RunTransition { get; } = runTransition;

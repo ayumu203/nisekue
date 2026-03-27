@@ -1,99 +1,223 @@
-import { Paper, Stack, Typography } from '@mui/material'
-import { innerSurfaceSx } from '@/constants/styles'
+import { Box, Button, Paper, Stack, TextField, Typography } from '@mui/material'
+import { greenOutlinedInputSx, innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
+import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { QuestRunDetailResponse } from '@/schema/quest'
 
 type QuestLastTurnResultsPanelProps = {
   run: QuestRunDetailResponse | null | undefined
+  chatMessage: string
+  isChatSubmitting: boolean
+  canPostChat: boolean
+  onChatMessageChange: (value: string) => void
+  onSubmitChatMessage: () => void | Promise<void>
   locale: {
+    chatPlaceholder: string
+    chatSend: string
+    chatSending: string
+    currentTurnMessagesTitle: string
+    lastTurnMessagesTitle: string
     lastTurnResultsTitle: string
     lastTurnResultsEmpty: string
-    turnNo: string
-    resolvedAtLabel: string
-    labels: {
-      actionKind: string
-    }
-    actionKinds: Record<string, string>
-    hpChangeLabel: string
-    mpChangeLabel: string
+    noImage: string
   }
 }
 
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
+function getLogColor(log: string): string {
+  if (log.includes('倒した') || log.includes('撃破')) {
+    return '#111111'
+  }
+
+  if (log.includes('ダメージ') || log.includes('反動')) {
+    return '#d32f2f'
+  }
+
+  if (log.includes('使った') || log.includes('発動')) {
+    return '#1565c0'
+  }
+
+  if (log.includes('回復')) {
+    return '#2e7d32'
+  }
+
+  return '#3b2f1f'
 }
 
-function formatDelta(value: number): string {
-  return value > 0 ? `+${value}` : String(value)
-}
+function ChatMessageItem({
+  displayName,
+  imagePath,
+  message,
+  noImageLabel,
+}: {
+  displayName: string
+  imagePath: string | null | undefined
+  message: string
+  noImageLabel: string
+}) {
+  const imageSrc = resolveCharacterAssetPath(imagePath)
 
-export default function QuestLastTurnResultsPanel({ run, locale }: QuestLastTurnResultsPanelProps) {
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{
+        px: 0.75,
+        py: 0.85,
+        borderRadius: 2,
+        backgroundColor: 'rgba(255, 251, 241, 0.92)',
+        border: '1px solid #dbcba7',
+      }}
+    >
+      <Box
+        sx={{
+          width: 42,
+          minWidth: 42,
+          height: 42,
+          borderRadius: 1.5,
+          overflow: 'hidden',
+          backgroundColor: '#f5efe2',
+          border: '1px solid #d7c7a0',
+          display: 'grid',
+          placeItems: 'center',
+        }}
+      >
+        {imageSrc ? (
+          <Box
+            component="img"
+            src={imageSrc}
+            alt={displayName}
+            sx={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              objectPosition: 'center bottom',
+              display: 'block',
+            }}
+          />
+        ) : (
+          <Typography variant="caption" color="text.secondary" textAlign="center" sx={{ px: 0.5, lineHeight: 1.1 }}>
+            {noImageLabel}
+          </Typography>
+        )}
+      </Box>
+
+      <Stack spacing={0.3} sx={{ minWidth: 0 }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, color: '#5a4421' }}>
+          {displayName}
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#322617', lineHeight: 1.45, wordBreak: 'break-word' }}>
+          {message}
+        </Typography>
+      </Stack>
+    </Stack>
+  )
+}
+
+export default function QuestLastTurnResultsPanel({
+  run,
+  chatMessage,
+  isChatSubmitting,
+  canPostChat,
+  onChatMessageChange,
+  onSubmitChatMessage,
+  locale,
+}: QuestLastTurnResultsPanelProps) {
+  const currentTurnMessages = run?.chatMessages ?? []
+  const lastTurnMessages = run?.lastTurnResults?.chatMessages ?? []
+  const logs = run?.lastTurnResults?.actions.flatMap((action) => action.logs) ?? []
+  const hasContent = currentTurnMessages.length > 0 || lastTurnMessages.length > 0 || logs.length > 0
+
+  return (
+    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
       <Stack spacing={2}>
-        <Typography variant="h5">{locale.lastTurnResultsTitle}</Typography>
-        {!run?.lastTurnResults ? (
+        <Stack direction="row" spacing={1} alignItems="flex-start">
+          <TextField
+            value={chatMessage}
+            onChange={(event) => onChatMessageChange(event.target.value)}
+            placeholder={locale.chatPlaceholder}
+            size="small"
+            multiline
+            maxRows={3}
+            fullWidth
+            disabled={!canPostChat || isChatSubmitting}
+            sx={{
+              ...greenOutlinedInputSx,
+              '& .MuiInputBase-root': {
+                backgroundColor: '#fffdf8',
+              },
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={() => void onSubmitChatMessage()}
+            disabled={!canPostChat || isChatSubmitting || chatMessage.trim().length === 0}
+            sx={{ minWidth: 78, minHeight: 40, ...softGreenButtonSx }}
+          >
+            {isChatSubmitting ? locale.chatSending : locale.chatSend}
+          </Button>
+        </Stack>
+
+        {!hasContent ? (
           <Typography variant="body2" color="text.secondary">
             {locale.lastTurnResultsEmpty}
           </Typography>
         ) : (
-          <Stack spacing={1.5}>
-            <Typography>{`${locale.turnNo}: ${run.lastTurnResults.turnNo}`}</Typography>
-            <Typography>{`${locale.resolvedAtLabel}: ${formatDateTime(run.lastTurnResults.resolvedAt)}`}</Typography>
-            {run.lastTurnResults.actions.map((action, index) => (
-              <Paper
-                key={`${action.actorDisplayName}-${index}`}
-                variant="outlined"
-                sx={{
-                  borderRadius: 2,
-                  p: 1.5,
-                  backgroundColor: '#fffdf8',
-                }}
-              >
-                <Typography variant="subtitle2">{action.actorDisplayName}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {`${locale.labels.actionKind}: ${locale.actionKinds[action.actionKind] ?? action.actionKind}`}
+          <Stack spacing={1}>
+            {currentTurnMessages.length > 0 ? (
+              <Stack spacing={0.75}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5a4421' }}>
+                  {locale.currentTurnMessagesTitle}
                 </Typography>
-                {action.logs.length > 0 ? (
-                  <Stack spacing={0.75} sx={{ mt: 1.25 }}>
-                    {action.logs.map((log, logIndex) => (
-                      <Typography
-                        key={`${action.actorDisplayName}-${index}-${logIndex}`}
-                        variant="body2"
-                        sx={{ fontWeight: 600, color: '#3b2f1f' }}
-                      >
-                        {log}
-                      </Typography>
-                    ))}
-                  </Stack>
-                ) : null}
-                {action.targetSummaries.map((target, targetIndex) => (
-                  <Paper
-                    key={`${action.actorDisplayName}-${index}-target-${targetIndex}`}
-                    variant="outlined"
+                <Stack spacing={0.6}>
+                  {currentTurnMessages.map((message, index) => (
+                    <ChatMessageItem
+                      key={`${message.senderParticipantId}-${message.sentAt}-${index}`}
+                      displayName={message.displayName}
+                      imagePath={message.imagePath}
+                      message={message.message}
+                      noImageLabel={locale.noImage}
+                    />
+                  ))}
+                </Stack>
+              </Stack>
+            ) : null}
+
+            {lastTurnMessages.length > 0 ? (
+              <Stack spacing={0.75}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5a4421' }}>
+                  {locale.lastTurnMessagesTitle}
+                </Typography>
+                <Stack spacing={0.6}>
+                  {lastTurnMessages.map((message, index) => (
+                    <ChatMessageItem
+                      key={`${message.senderParticipantId}-${message.sentAt}-${index}`}
+                      displayName={message.displayName}
+                      imagePath={message.imagePath}
+                      message={message.message}
+                      noImageLabel={locale.noImage}
+                    />
+                  ))}
+                </Stack>
+              </Stack>
+            ) : null}
+
+            {logs.length > 0 ? (
+              <Stack spacing={0.5}>
+                {logs.map((log, index) => (
+                  <Box
+                    key={`${log}-${index}`}
                     sx={{
-                      mt: 1,
-                      borderRadius: 2,
-                      p: 1.25,
-                      backgroundColor: '#fffaf0',
+                      px: 0.5,
+                      py: 0.75,
+                      borderBottom: '1px solid #c9c2b7',
                     }}
                   >
-                    <Typography variant="body2">{target.targetDisplayName}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {`${locale.hpChangeLabel}: ${formatDelta(target.hpChange)}`}
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: getLogColor(log), lineHeight: 1.5 }}>
+                      {log}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {`${locale.mpChangeLabel}: ${formatDelta(target.mpChange)}`}
-                    </Typography>
-                  </Paper>
+                  </Box>
                 ))}
-              </Paper>
-            ))}
+              </Stack>
+            ) : null}
           </Stack>
         )}
       </Stack>

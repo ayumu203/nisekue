@@ -80,6 +80,7 @@ public class QuestRunTests
     {
         var run = CreateRun();
         var message = new QuestChatMessage(
+            run.TurnState.CurrentTurnNo,
             run.PartySnapshots[0].ParticipantId,
             "Owner",
             "owner.png",
