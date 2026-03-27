@@ -60,6 +60,7 @@ public class QuestRunServiceTests
         var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), []);
 
         var message = new QuestChatMessage(
+            run.TurnState.CurrentTurnNo,
             run.PartySnapshots[0].ParticipantId,
             "Owner",
             "/images/player.png",
