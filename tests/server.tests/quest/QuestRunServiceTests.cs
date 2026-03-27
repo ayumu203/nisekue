@@ -695,6 +695,9 @@ public class QuestRunServiceTests
         public Task<QuestRun?> GetByRoomIdAsync(QuestRoomId roomId)
             => Task.FromResult(StoredRun?.RoomId == roomId ? StoredRun : null);
 
+        public Task<QuestRun?> GetActiveByPlayerAsync(PlayerId playerId)
+            => Task.FromResult(StoredRun);
+
         public Task<bool> ExistsActiveRunByPlayerAsync(PlayerId playerId)
             => Task.FromResult(false);
 
