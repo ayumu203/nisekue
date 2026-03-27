@@ -233,8 +233,11 @@ public class QuestResponseMapper(
                 isAutoSubmitted = command.IsAutoSubmitted,
                 submittedAt = command.SubmittedAt
             }),
-            chatMessages = run.ChatMessages.Select(message => new
+            chatMessages = run.ChatMessages
+                .Where(message => message.TurnNo == run.TurnState.CurrentTurnNo)
+                .Select(message => new
             {
+                turnNo = message.TurnNo,
                 senderParticipantId = message.SenderParticipantId.Value,
                 displayName = message.DisplayName,
                 imagePath = message.ImagePath,
@@ -251,6 +254,15 @@ public class QuestResponseMapper(
                 {
                     turnNo = run.LastTurnResults.TurnNo,
                     resolvedAt = run.LastTurnResults.ResolvedAt,
+                    chatMessages = run.LastTurnResults.ChatMessages.Select(message => new
+                    {
+                        turnNo = message.TurnNo,
+                        senderParticipantId = message.SenderParticipantId.Value,
+                        displayName = message.DisplayName,
+                        imagePath = message.ImagePath,
+                        message = message.Message,
+                        sentAt = message.SentAt
+                    }),
                     actions = run.LastTurnResults.Actions.Select(action => new
                     {
                         actorParticipantId = action.ActorParticipantId,

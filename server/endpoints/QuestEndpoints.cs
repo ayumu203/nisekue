@@ -549,6 +549,7 @@ internal static class QuestEndpoints
             try
             {
                 var message = new QuestChatMessage(
+                    run.TurnState.CurrentTurnNo,
                     participantId,
                     snapshot.DisplayName,
                     snapshot.ImagePath,
