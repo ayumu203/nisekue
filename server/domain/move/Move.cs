@@ -62,7 +62,7 @@ public class Move
     {
         if (_effects.Count == 0)
         {
-            throw new InvalidOperationException("技には最低1つの効果が必要です。");
+            throw new InvalidOperationException("スキルには最低1つの効果が必要です。");
         }
 
         foreach (var effect in _effects)
@@ -77,12 +77,12 @@ public class Move
 
         if (_effects.Select(x => x.Sequence).Distinct().Count() != _effects.Count)
         {
-            throw new InvalidOperationException("同じ技に同一 sequence の効果は設定できません。");
+            throw new InvalidOperationException("同じスキルに同一 sequence の効果は設定できません。");
         }
 
         if (_effects.Select(x => x.EffectId.Id).Distinct().Count() != _effects.Count)
         {
-            throw new InvalidOperationException("同じ技に同一 EffectId の効果は設定できません。");
+            throw new InvalidOperationException("同じスキルに同一 EffectId の効果は設定できません。");
         }
     }
 
@@ -92,7 +92,7 @@ public class Move
         if (normalized.Length is < 1 or > MoveConstants.Constraints.NameMaxLength)
         {
             throw new ArgumentException(
-                $"技名は1文字から{MoveConstants.Constraints.NameMaxLength}文字以内です。",
+                $"スキル名は1文字から{MoveConstants.Constraints.NameMaxLength}文字以内です。",
                 nameof(name));
         }
 
@@ -120,7 +120,7 @@ public class Move
         if (normalized.Length > MoveConstants.Constraints.ImagePathMaxLength)
         {
             throw new ArgumentException(
-                $"技エフェクト画像パスは{MoveConstants.Constraints.ImagePathMaxLength}文字以内です。",
+                $"スキルエフェクト画像パスは{MoveConstants.Constraints.ImagePathMaxLength}文字以内です。",
                 nameof(effectImagePath));
         }
 
@@ -133,7 +133,7 @@ public class Move
         if (normalized.Length is < 1 or > MoveConstants.Constraints.DescriptionMaxLength)
         {
             throw new ArgumentException(
-                $"技説明は1文字から{MoveConstants.Constraints.DescriptionMaxLength}文字以内です。",
+                $"スキル説明は1文字から{MoveConstants.Constraints.DescriptionMaxLength}文字以内です。",
                 nameof(description));
         }
 

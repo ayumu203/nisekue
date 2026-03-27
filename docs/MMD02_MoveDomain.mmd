@@ -1,7 +1,7 @@
 classDiagram
     namespace MoveDomain {
 
-        %% ジョブごとの習得技定義
+        %% ジョブごとの習得スキル定義
         class JobMoveLearningRule {
             <<Value Object>>
             +Job Job
@@ -10,7 +10,7 @@ classDiagram
             +GetLearnableMoveIds(level: int, masterLevel: int) IReadOnlyList~MoveId~
         }
 
-        %% 技データ
+        %% スキルデータ
         class Move {
             <<Aggregate Root>>
             +MoveId Id

@@ -51,7 +51,7 @@ public class Player(
 
         if (learningRule.Job != nextJob)
         {
-            throw new InvalidOperationException("転職先ジョブと技習得ルールが一致していません。");
+            throw new InvalidOperationException("転職先ジョブとスキル習得ルールが一致していません。");
         }
 
         if (!CanChangeJob(nextProfile))
@@ -132,7 +132,7 @@ public class Player(
 
         if (learningRule.Job != Job)
         {
-            throw new InvalidOperationException("現在のジョブと技習得ルールが一致していません。");
+            throw new InvalidOperationException("現在のジョブとスキル習得ルールが一致していません。");
         }
 
         var growth = jobProfile.GrowthValue;

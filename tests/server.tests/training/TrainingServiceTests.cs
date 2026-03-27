@@ -525,7 +525,7 @@ public class TrainingServiceTests
         return new Move(
             new MoveId(moveId),
             name,
-            $"{name}のテスト技",
+            $"{name}のテストスキル",
             TargetType.Enemy,
             AttackRange.Single,
             mpCost,

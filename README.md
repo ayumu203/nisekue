@@ -117,7 +117,7 @@ $ pnpx supabase stop
   - ルールは特にないのですが、主要なクラスへのAPIとなるものは記載、前述のもので使用するようなプライベートなメソッドは記載しないことが多いです.
   - 各ドメインの概要は以下のとおりです.
     - CoreDomain: プレイヤーのドメイン.
-    - MoveDomain: 技関係のドメイン.
+    - MoveDomain: スキル関係のドメイン.
     - ChatDomain: チャット機能のドメイン.
     - BattleDomain: 戦闘の共通ロジック.
     - TrainDomain: 訓練を回すためのドメイン.
