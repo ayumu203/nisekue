@@ -388,6 +388,8 @@ public class TrainingServiceTests
     {
         return new TrainingService(
             playerRepository,
+            new FakePlayerEquipmentRepository(),
+            new FakeEquipmentRepository(),
             enemyRepository,
             new FakeMoveRepository(),
             new FakeJobProfileRepository(),
@@ -400,7 +402,8 @@ public class TrainingServiceTests
             new BattleService(),
             new TrainingBattleFactory(),
             new TrainingOutcomeJudge(),
-            new TrainingExpCalculator());
+            new TrainingExpCalculator(),
+            new EquipmentStatusResolver());
     }
 
     private static MoveSet CreateMoveSet(params int[] moveIds)
@@ -433,6 +436,27 @@ public class TrainingServiceTests
         {
             return Task.FromResult((IReadOnlyList<Move>)moveById.Values.ToArray());
         }
+    }
+
+    private sealed class FakePlayerEquipmentRepository : IPlayerEquipmentRepository
+    {
+        public Task<IReadOnlyList<PlayerEquipment>> GetByPlayerAsync(PlayerId playerId)
+            => Task.FromResult((IReadOnlyList<PlayerEquipment>)[]);
+
+        public Task<PlayerEquipment?> GetAsync(PlayerEquipmentId playerEquipmentId)
+            => Task.FromResult<PlayerEquipment?>(null);
+
+        public Task SaveAsync(IReadOnlyList<PlayerEquipment> playerEquipments)
+            => Task.CompletedTask;
+    }
+
+    private sealed class FakeEquipmentRepository : IEquipmentRepository
+    {
+        public Task<Equipment?> GetAsync(EquipmentId id)
+            => Task.FromResult<Equipment?>(null);
+
+        public Task<IReadOnlyList<Equipment>> GetAllAsync()
+            => Task.FromResult((IReadOnlyList<Equipment>)[]);
     }
 
     private sealed class FakePlayerRepository(Player player) : IPlayerRepository

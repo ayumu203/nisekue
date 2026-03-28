@@ -495,6 +495,7 @@ public class QuestRunServiceTests
             new FakeQuestEnemyDefinitionRepository(),
             new FakeMoveRepository(moves),
             playerRepository,
+            new FakePlayerEquipmentRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -526,6 +527,8 @@ public class QuestRunServiceTests
             "/images/player.png",
             Job.Warrior,
             new Status(40, 10, 50, 5, 1, 1, 50),
+            weaponEquipmentId: null,
+            armorEquipmentId: null,
             moveSet,
             new BattlePosition(BattleRow.Front, BattleColumn.Left),
             ActionMode.Manual);
@@ -586,6 +589,8 @@ public class QuestRunServiceTests
             member.Type == ParticipantType.Player ? "/images/player.png" : null,
             member.Job,
             member.Status,
+            weaponEquipmentId: null,
+            armorEquipmentId: null,
             member.MoveSet,
             member.Position,
             member.ActionMode)).ToArray();

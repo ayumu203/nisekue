@@ -113,6 +113,8 @@ public class QuestRunTests
             "owner.png",
             Job.Warrior,
             new Status(20, 5, 5, 3, 1, 1, 2),
+            weaponEquipmentId: null,
+            armorEquipmentId: null,
             new MoveSet(),
             new BattlePosition(BattleRow.Front, BattleColumn.Left),
             ActionMode.Manual);
