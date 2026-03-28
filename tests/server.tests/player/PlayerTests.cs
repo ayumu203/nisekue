@@ -95,6 +95,37 @@ public class PlayerTests
         player.MasteredJobs.Should().Contain(Job.Warrior);
     }
 
+    [Fact]
+    public void GainGold_WhenPositiveValue_AddsGold()
+    {
+        var player = CreatePlayer(level: 1);
+
+        player.GainGold(25);
+
+        player.Gold.Should().Be(125);
+    }
+
+    [Fact]
+    public void SpendGold_WhenEnoughGold_DecreasesGold()
+    {
+        var player = CreatePlayer(level: 1);
+
+        player.SpendGold(40);
+
+        player.Gold.Should().Be(60);
+    }
+
+    [Fact]
+    public void SpendGold_WhenGoldIsInsufficient_Throws()
+    {
+        var player = CreatePlayer(level: 1);
+
+        var act = () => player.SpendGold(101);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*所持 Gold が不足しています*");
+    }
+
     private static Player CreatePlayer(
         int level,
         int exp = 0,
@@ -108,6 +139,7 @@ public class PlayerTests
             exp: exp,
             jobLevel: jobLevel,
             jobExp: jobExp,
+            gold: 100,
             status: new Status(
                 maxHp: 10,
                 maxMp: 0,

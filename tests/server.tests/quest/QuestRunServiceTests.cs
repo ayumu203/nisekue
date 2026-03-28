@@ -447,6 +447,9 @@ public class QuestRunServiceTests
             new FakeMoveRepository([]),
             playerRepository,
             playerEquipmentRepository,
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -501,6 +504,9 @@ public class QuestRunServiceTests
             new FakeMoveRepository([]),
             playerRepository,
             playerEquipmentRepository,
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -520,6 +526,344 @@ public class QuestRunServiceTests
         stored.Should().NotBeNull();
         stored!.Durability.Should().Be(0);
         stored.Status.Should().Be(EquipmentStatus.Broken);
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenQuestSucceedsWithGuaranteedEquipmentReward_GrantsRewardToPlayer()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var participantId = QuestParticipantId.New();
+        var rewardEquipment = new Equipment(
+            new EquipmentId(2001),
+            "報酬の剣",
+            "勝者に授けられる剣。",
+            EquipmentType.Weapon,
+            12,
+            20,
+            10,
+            new EquipmentStatusBonus(0, 0, 2, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice, Job.Warrior });
+        var stage = CreateStage(
+            new QuestStageId(1),
+            [new QuestStageEquipmentRewardEntry(rewardEquipment.Id, weight: 100, isMiss: false)]);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Apprentice, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 50, 5, 1, 1, 50), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 1);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run, playerId));
+        var playerRepository = new FakePlayerRepository(playerId);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository();
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            playerEquipmentRepository,
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(rewardEquipment),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            new BattleService(),
+            new QuestBattleFactory());
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        repository.StoredRun!.Rewards.EquipmentRewardId.Should().Be(rewardEquipment.Id);
+        repository.StoredRun.Rewards.SkippedRewardPlayerIds.Should().BeEmpty();
+        var grantedEquipments = await playerEquipmentRepository.GetByPlayerAsync(playerId);
+        grantedEquipments.Should().ContainSingle();
+        grantedEquipments[0].EquipmentId.Should().Be(rewardEquipment.Id);
+        grantedEquipments[0].Status.Should().Be(EquipmentStatus.Inventory);
+        grantedEquipments[0].Durability.Should().Be(rewardEquipment.MaxDurability);
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenRewardPlayerInventoryIsFull_SkipsGrantAndRecordsPlayerId()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var participantId = QuestParticipantId.New();
+        var rewardEquipment = new Equipment(
+            new EquipmentId(2001),
+            "報酬の剣",
+            "勝者に授けられる剣。",
+            EquipmentType.Weapon,
+            12,
+            20,
+            10,
+            new EquipmentStatusBonus(0, 0, 2, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice, Job.Warrior });
+        var stage = CreateStage(
+            new QuestStageId(1),
+            [new QuestStageEquipmentRewardEntry(rewardEquipment.Id, weight: 100, isMiss: false)]);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Apprentice, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 50, 5, 1, 1, 50), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 1);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run, playerId));
+        var playerRepository = new FakePlayerRepository(playerId);
+        var inventoryEquipments = Enumerable.Range(1, 20)
+            .Select(i => new PlayerEquipment(
+                PlayerEquipmentId.New(),
+                playerId,
+                new EquipmentId(1000 + i),
+                EquipmentType.Weapon,
+                EquipmentStatus.Inventory,
+                durability: 10,
+                mastery: 0,
+                acquiredAt: DateTimeOffset.UtcNow,
+                updatedAt: DateTimeOffset.UtcNow))
+            .ToArray();
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository(inventoryEquipments);
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            playerEquipmentRepository,
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(rewardEquipment),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            new BattleService(),
+            new QuestBattleFactory());
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        repository.StoredRun!.Rewards.EquipmentRewardId.Should().Be(rewardEquipment.Id);
+        repository.StoredRun.Rewards.SkippedRewardPlayerIds.Should().Contain(playerId);
+        var grantedEquipments = await playerEquipmentRepository.GetByPlayerAsync(playerId);
+        grantedEquipments.Should().HaveCount(20);
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenRewardRollIsMiss_DoesNotGrantEquipment()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var participantId = QuestParticipantId.New();
+        var stage = CreateStage(
+            new QuestStageId(1),
+            [new QuestStageEquipmentRewardEntry(equipmentId: null, weight: 100, isMiss: true)]);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Apprentice, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 50, 5, 1, 1, 50), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 1);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run, playerId));
+        var playerRepository = new FakePlayerRepository(playerId);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository();
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            playerEquipmentRepository,
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            new BattleService(),
+            new QuestBattleFactory());
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        repository.StoredRun!.Rewards.EquipmentRewardId.Should().BeNull();
+        repository.StoredRun.Rewards.SkippedRewardPlayerIds.Should().BeEmpty();
+        var grantedEquipments = await playerEquipmentRepository.GetByPlayerAsync(playerId);
+        grantedEquipments.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenQuestSucceedsWithTwoPlayers_GrantsSameRewardToBothPlayers()
+    {
+        var ownerPlayerId = new PlayerId(Guid.NewGuid());
+        var memberPlayerId = new PlayerId(Guid.NewGuid());
+        var ownerParticipantId = QuestParticipantId.New();
+        var memberParticipantId = QuestParticipantId.New();
+        var rewardEquipment = new Equipment(
+            new EquipmentId(2001),
+            "報酬の剣",
+            "勝者に授けられる剣。",
+            EquipmentType.Weapon,
+            12,
+            20,
+            10,
+            new EquipmentStatusBonus(0, 0, 2, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice, Job.Warrior });
+        var stage = CreateStage(
+            new QuestStageId(1),
+            [new QuestStageEquipmentRewardEntry(rewardEquipment.Id, weight: 100, isMiss: false)]);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(ownerParticipantId, ParticipantType.Player, "Owner", Job.Apprentice, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 50, 5, 1, 1, 50), new MoveSet(), 40, 10),
+                new PartyMemberSeed(memberParticipantId, ParticipantType.Player, "Member", Job.Apprentice, new BattlePosition(BattleRow.Middle, BattleColumn.Left), ActionMode.AutoAttackOnly, new Status(40, 10, 10, 5, 1, 1, 10), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 1);
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run, ownerPlayerId);
+        room = ReplaceSecondPlayer(room, memberPlayerId);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerRepository = new FakePlayerRepository(ownerPlayerId, memberPlayerId);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository();
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            playerEquipmentRepository,
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(rewardEquipment),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            new BattleService(),
+            new QuestBattleFactory());
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            ownerParticipantId,
+            new QuestSubmittedCommand(
+                ownerParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        var ownerEquipments = await playerEquipmentRepository.GetByPlayerAsync(ownerPlayerId);
+        var memberEquipments = await playerEquipmentRepository.GetByPlayerAsync(memberPlayerId);
+        ownerEquipments.Should().ContainSingle(x => x.EquipmentId == rewardEquipment.Id);
+        memberEquipments.Should().ContainSingle(x => x.EquipmentId == rewardEquipment.Id);
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenOneInventoryEquipmentIsListed_ExcludesItFromCapacityCheckAndStillGrantsReward()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var participantId = QuestParticipantId.New();
+        var rewardEquipment = new Equipment(
+            new EquipmentId(2001),
+            "報酬の剣",
+            "勝者に授けられる剣。",
+            EquipmentType.Weapon,
+            12,
+            20,
+            10,
+            new EquipmentStatusBonus(0, 0, 2, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice, Job.Warrior });
+        var stage = CreateStage(
+            new QuestStageId(1),
+            [new QuestStageEquipmentRewardEntry(rewardEquipment.Id, weight: 100, isMiss: false)]);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Apprentice, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 50, 5, 1, 1, 50), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 1);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run, playerId));
+        var playerRepository = new FakePlayerRepository(playerId);
+        var listedEquipment = new PlayerEquipment(
+            PlayerEquipmentId.New(),
+            playerId,
+            new EquipmentId(9999),
+            EquipmentType.Weapon,
+            EquipmentStatus.Inventory,
+            durability: 10,
+            mastery: 0,
+            acquiredAt: DateTimeOffset.UtcNow,
+            updatedAt: DateTimeOffset.UtcNow);
+        var otherEquipments = Enumerable.Range(1, 19)
+            .Select(i => new PlayerEquipment(
+                PlayerEquipmentId.New(),
+                playerId,
+                new EquipmentId(1000 + i),
+                EquipmentType.Weapon,
+                EquipmentStatus.Inventory,
+                durability: 10,
+                mastery: 0,
+                acquiredAt: DateTimeOffset.UtcNow,
+                updatedAt: DateTimeOffset.UtcNow))
+            .ToArray();
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository(otherEquipments.Append(listedEquipment).ToArray());
+        var listedMarketEntry = new MarketListing(
+            MarketListingId.New(),
+            playerId,
+            listedEquipment.Id,
+            itemId: null,
+            itemName: "出品中の剣",
+            flavorText: "出品中。",
+            quantity: 1,
+            remainingQuantity: 1,
+            unitPrice: 50,
+            listedAt: DateTimeOffset.UtcNow,
+            expiresAt: DateTimeOffset.UtcNow.AddDays(15));
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            playerEquipmentRepository,
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(listedMarketEntry),
+            new FakeEquipmentRepository(rewardEquipment),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            new BattleService(),
+            new QuestBattleFactory());
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        repository.StoredRun!.Rewards.SkippedRewardPlayerIds.Should().BeEmpty();
+        var grantedEquipments = await playerEquipmentRepository.GetByPlayerAsync(playerId);
+        grantedEquipments.Should().Contain(x => x.EquipmentId == rewardEquipment.Id);
     }
 
     [Fact]
@@ -604,6 +948,9 @@ public class QuestRunServiceTests
             new FakeMoveRepository(moves),
             playerRepository,
             new FakePlayerEquipmentRepository(),
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -780,7 +1127,37 @@ public class QuestRunServiceTests
             }).ToArray());
     }
 
-    private static QuestStageDefinition CreateStage(QuestStageId stageId)
+    private static QuestRoom ReplaceSecondPlayer(QuestRoom room, PlayerId secondPlayerId)
+    {
+        var participants = room.Participants.ToArray();
+        var secondPlayer = participants.First(x => x.PlayerId is not null && !x.IsOwner);
+        participants[Array.IndexOf(participants, secondPlayer)] = new QuestParticipant(
+            secondPlayer.Id,
+            secondPlayer.Type,
+            secondPlayer.DisplayName,
+            secondPlayer.Position,
+            secondPlayer.JoinedAt,
+            isOwner: false,
+            playerId: secondPlayerId,
+            npcTemplateId: secondPlayer.NpcTemplateId);
+
+        return new QuestRoom(
+            room.Id,
+            room.OwnerId,
+            room.StageId,
+            room.Mode,
+            formation: room.Formation,
+            participants: participants,
+            status: room.Status,
+            version: room.Version,
+            closeReason: room.CloseReason,
+            createdAt: room.CreatedAt,
+            closedAt: room.ClosedAt);
+    }
+
+    private static QuestStageDefinition CreateStage(
+        QuestStageId stageId,
+        IReadOnlyList<QuestStageEquipmentRewardEntry>? equipmentRewards = null)
     {
         return new QuestStageDefinition(
             stageId,
@@ -802,6 +1179,7 @@ public class QuestRunServiceTests
                     ],
                     new QuestFloorRewardRule(0, 0))
             ],
+            equipmentRewards: equipmentRewards ?? [],
             true);
     }
 
@@ -908,6 +1286,7 @@ public class QuestRunServiceTests
                     exp: 0,
                     jobLevel: 1,
                     jobExp: 0,
+                    gold: 100,
                     status: new Status(10, 10, 10, 10, 10, 10, 10),
                     job: Job.Warrior,
                     imagePath: "/images/player.png",
@@ -929,6 +1308,74 @@ public class QuestRunServiceTests
         public Task SaveAsync(Player player)
         {
             players[player.Id] = player;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakePlayerItemStackRepository(params PlayerItemStack[] stacks) : IPlayerItemStackRepository
+    {
+        private readonly Dictionary<PlayerId, List<PlayerItemStack>> stacksByPlayerId = stacks
+            .GroupBy(x => x.PlayerId)
+            .ToDictionary(x => x.Key, x => x.ToList());
+
+        public Task<IReadOnlyList<PlayerItemStack>> GetByPlayerAsync(PlayerId playerId)
+            => Task.FromResult((IReadOnlyList<PlayerItemStack>)(stacksByPlayerId.TryGetValue(playerId, out var playerStacks)
+                ? playerStacks.ToArray()
+                : []));
+
+        public Task<PlayerItemStack?> GetAsync(PlayerItemStackId id)
+            => Task.FromResult(stacksByPlayerId.Values.SelectMany(x => x).FirstOrDefault(x => x.Id == id));
+
+        public Task SaveAsync(IReadOnlyList<PlayerItemStack> playerItemStacks)
+        {
+            foreach (var group in playerItemStacks.GroupBy(x => x.PlayerId))
+            {
+                stacksByPlayerId[group.Key] = group.ToList();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(PlayerItemStackId id)
+        {
+            foreach (var group in stacksByPlayerId.ToArray())
+            {
+                var filtered = group.Value.Where(x => x.Id != id).ToList();
+                if (filtered.Count != group.Value.Count)
+                {
+                    stacksByPlayerId[group.Key] = filtered;
+                    break;
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeMarketListingRepository(params MarketListing[] listings) : IMarketListingRepository
+    {
+        private readonly Dictionary<MarketListingId, MarketListing> listingsById = listings.ToDictionary(x => x.Id);
+
+        public Task<MarketListing?> GetAsync(MarketListingId id)
+            => Task.FromResult(listingsById.GetValueOrDefault(id));
+
+        public Task<IReadOnlyList<MarketListing>> GetActiveAsync(DateTimeOffset now)
+            => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values.Where(x => !x.IsExpired(now) && !x.IsSoldOut).ToArray());
+
+        public Task<IReadOnlyList<MarketListing>> GetBySellerAsync(PlayerId sellerId, DateTimeOffset now)
+            => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values
+                .Where(x => x.SellerId == sellerId && !x.IsExpired(now) && !x.IsSoldOut)
+                .ToArray());
+
+        public Task SaveAsync(MarketListing listing)
+        {
+            listingsById[listing.Id] = listing;
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(MarketListingId id)
+        {
+            listingsById.Remove(id);
             return Task.CompletedTask;
         }
     }
