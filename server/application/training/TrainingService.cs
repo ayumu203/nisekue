@@ -54,7 +54,7 @@ public class TrainingService(
             ?? throw new KeyNotFoundException("敵が見つかりません。");
         var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(playerId)).ToList();
         var equipments = await equipmentRepository.GetAllAsync();
-        var effectiveStatus = equipmentStatusResolver.BuildEffectiveStatus(player.Status, playerEquipments, equipments);
+        var effectiveStatus = equipmentStatusResolver.BuildEffectiveStatus(player.Status, player.Job, playerEquipments, equipments);
 
         var playerMoves = await LoadTrainingMovesAsync(player, effectiveStatus, playerMoveIds);
 

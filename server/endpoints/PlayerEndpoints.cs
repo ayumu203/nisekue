@@ -84,6 +84,7 @@ internal static class PlayerEndpoints
             CreatePlayerRequest request,
             IPlayerRepository playerRepository,
             IPlayerEquipmentRepository playerEquipmentRepository,
+            IEquipmentRepository equipmentRepository,
             ChatService chatService,
             IJobProfileRepository jobProfileRepository) =>
         {
@@ -110,7 +111,8 @@ internal static class PlayerEndpoints
                     imagePath: PlayerImageCatalog.DefaultFileName,
                     moveSet: moveSet);
                 await playerRepository.SaveAsync(player);
-                await playerEquipmentRepository.SaveAsync(CreateStarterEquipments(player.Id, DateTimeOffset.UtcNow));
+                var equipments = await equipmentRepository.GetAllAsync();
+                await playerEquipmentRepository.SaveAsync(CreateStarterEquipments(player, equipments, DateTimeOffset.UtcNow));
                 await chatService.EnsureRoomAsync(player.Id);
                 return Results.Ok(new
                 {
@@ -383,7 +385,7 @@ internal static class PlayerEndpoints
         var moveById = allMoves.ToDictionary(x => x.Id.Id);
         var equipmentById = equipments.ToDictionary(x => x.Id);
         var jobProfile = jobProfileRepository.GetByJob(player.Job);
-        var effectiveStatus = equipmentStatusResolver.BuildEffectiveStatus(player.Status, playerEquipments, equipments);
+        var effectiveStatus = equipmentStatusResolver.BuildEffectiveStatus(player.Status, player.Job, playerEquipments, equipments);
         var jobProfiles = jobProfileRepository.GetAll()
             .Select(profile => new
             {
@@ -418,32 +420,39 @@ internal static class PlayerEndpoints
                     category = move?.Category.ToString()
                 };
             });
-        var equipmentItems = playerEquipments.Select(playerEquipment =>
-        {
-            var equipment = equipmentById[playerEquipment.EquipmentId];
-            return new
+        var equipmentItems = playerEquipments
+            .Select(playerEquipment =>
             {
-                playerEquipmentId = playerEquipment.Id.Value,
-                equipmentId = equipment.Id.Value,
-                name = equipment.Name,
-                equipmentType = equipment.Type.ToString(),
-                status = playerEquipment.Status.ToString(),
-                durability = playerEquipment.Durability,
-                maxDurability = equipment.MaxDurability,
-                mastery = playerEquipment.Mastery,
-                canEquipCurrentJob = equipment.CanEquip(player.Job),
-                bonusValues = new
+                if (!equipmentById.TryGetValue(playerEquipment.EquipmentId, out var equipment))
                 {
-                    maxHp = equipment.BonusValues.MaxHp,
-                    maxMp = equipment.BonusValues.MaxMp,
-                    strength = equipment.BonusValues.Strength,
-                    defense = equipment.BonusValues.Defense,
-                    intelligence = equipment.BonusValues.Intelligence,
-                    luck = equipment.BonusValues.Luck,
-                    speed = equipment.BonusValues.Speed
+                    return null;
                 }
-            };
-        }).ToArray();
+
+                return new
+                {
+                    playerEquipmentId = playerEquipment.Id.Value,
+                    equipmentId = equipment.Id.Value,
+                    name = equipment.Name,
+                    equipmentType = equipment.Type.ToString(),
+                    status = playerEquipment.Status.ToString(),
+                    durability = playerEquipment.Durability,
+                    maxDurability = equipment.MaxDurability,
+                    mastery = playerEquipment.Mastery,
+                    canEquipCurrentJob = equipment.CanEquip(player.Job),
+                    bonusValues = new
+                    {
+                        maxHp = equipment.BonusValues.MaxHp,
+                        maxMp = equipment.BonusValues.MaxMp,
+                        strength = equipment.BonusValues.Strength,
+                        defense = equipment.BonusValues.Defense,
+                        intelligence = equipment.BonusValues.Intelligence,
+                        luck = equipment.BonusValues.Luck,
+                        speed = equipment.BonusValues.Speed
+                    }
+                };
+            })
+            .OfType<object>()
+            .ToArray();
 
         return new
         {
@@ -490,30 +499,43 @@ internal static class PlayerEndpoints
         };
     }
 
-    private static IReadOnlyList<PlayerEquipment> CreateStarterEquipments(PlayerId playerId, DateTimeOffset now)
+    private static IReadOnlyList<PlayerEquipment> CreateStarterEquipments(Player player, IReadOnlyList<Equipment> equipments, DateTimeOffset now)
     {
+        ArgumentNullException.ThrowIfNull(player);
+        ArgumentNullException.ThrowIfNull(equipments);
+
+        var equipmentById = equipments.ToDictionary(x => x.Id);
+
         return
         [
-            new PlayerEquipment(
-                PlayerEquipmentId.New(),
-                playerId,
-                new EquipmentId(1001),
-                EquipmentType.Weapon,
-                EquipmentStatus.Equipped,
-                durability: 10,
-                mastery: 0,
-                acquiredAt: now,
-                updatedAt: now),
-            new PlayerEquipment(
-                PlayerEquipmentId.New(),
-                playerId,
-                new EquipmentId(2001),
-                EquipmentType.Armor,
-                EquipmentStatus.Equipped,
-                durability: 10,
-                mastery: 0,
-                acquiredAt: now,
-                updatedAt: now)
+            CreateStarterEquipment(player, equipmentById, new EquipmentId(1001), EquipmentType.Weapon, now),
+            CreateStarterEquipment(player, equipmentById, new EquipmentId(2001), EquipmentType.Armor, now)
         ];
+    }
+
+    private static PlayerEquipment CreateStarterEquipment(
+        Player player,
+        IReadOnlyDictionary<EquipmentId, Equipment> equipmentById,
+        EquipmentId equipmentId,
+        EquipmentType equipmentType,
+        DateTimeOffset now)
+    {
+        if (!equipmentById.TryGetValue(equipmentId, out var equipment))
+        {
+            throw new InvalidOperationException($"初期装備マスタが見つかりません。 equipmentId={equipmentId.Value}");
+        }
+
+        var playerEquipment = new PlayerEquipment(
+            PlayerEquipmentId.New(),
+            player.Id,
+            equipmentId,
+            equipmentType,
+            EquipmentStatus.Inventory,
+            durability: equipment.MaxDurability,
+            mastery: 0,
+            acquiredAt: now,
+            updatedAt: now);
+        playerEquipment.Equip(equipment, player.Job, now);
+        return playerEquipment;
     }
 }

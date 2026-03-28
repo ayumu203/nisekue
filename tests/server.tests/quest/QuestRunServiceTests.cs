@@ -415,6 +415,114 @@ public class QuestRunServiceTests
     }
 
     [Fact]
+    public async Task ResolveTurnAsync_WhenRunEnds_ConsumesSnapshottedEquipmentDurability()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var participantId = QuestParticipantId.New();
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Apprentice, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 50, 5, 1, 1, 50), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 1,
+            weaponEquipmentId: PlayerEquipmentId.New());
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run, playerId));
+        var playerRepository = new FakePlayerRepository(playerId);
+        var playerEquipment = new PlayerEquipment(
+            run.PartySnapshots[0].WeaponEquipmentId!.Value,
+            playerId,
+            new EquipmentId(1001),
+            EquipmentType.Weapon,
+            EquipmentStatus.Equipped,
+            durability: 2,
+            mastery: 0,
+            acquiredAt: DateTimeOffset.UtcNow,
+            updatedAt: DateTimeOffset.UtcNow);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(CreateStage(run.StageId)),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            playerEquipmentRepository,
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            new BattleService(),
+            new QuestBattleFactory());
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        var stored = await playerEquipmentRepository.GetAsync(run.PartySnapshots[0].WeaponEquipmentId!.Value);
+        stored.Should().NotBeNull();
+        stored!.Durability.Should().Be(1);
+        stored.Status.Should().Be(EquipmentStatus.Equipped);
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenRunEndsWithLastDurabilityEquipment_MarksBroken()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var participantId = QuestParticipantId.New();
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Apprentice, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 50, 5, 1, 1, 50), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 1,
+            weaponEquipmentId: PlayerEquipmentId.New());
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run, playerId));
+        var playerRepository = new FakePlayerRepository(playerId);
+        var playerEquipment = new PlayerEquipment(
+            run.PartySnapshots[0].WeaponEquipmentId!.Value,
+            playerId,
+            new EquipmentId(1001),
+            EquipmentType.Weapon,
+            EquipmentStatus.Equipped,
+            durability: 1,
+            mastery: 0,
+            acquiredAt: DateTimeOffset.UtcNow,
+            updatedAt: DateTimeOffset.UtcNow);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(CreateStage(run.StageId)),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            playerEquipmentRepository,
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            new BattleService(),
+            new QuestBattleFactory());
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        var stored = await playerEquipmentRepository.GetAsync(run.PartySnapshots[0].WeaponEquipmentId!.Value);
+        stored.Should().NotBeNull();
+        stored!.Durability.Should().Be(0);
+        stored.Status.Should().Be(EquipmentStatus.Broken);
+    }
+
+    [Fact]
     public async Task SubmitCommandAsync_WhenNpcCannotReachEnemyWithNormalAttack_StoresWaitLog()
     {
         var playerParticipantId = QuestParticipantId.New();
@@ -578,7 +686,9 @@ public class QuestRunServiceTests
         IReadOnlyList<PartyMemberSeed> partyMembers,
         IReadOnlyList<BattlePosition>? enemyPositions = null,
         int enemyHp = 1,
-        DateTimeOffset? deadlineAt = null)
+        DateTimeOffset? deadlineAt = null,
+        PlayerEquipmentId? weaponEquipmentId = null,
+        PlayerEquipmentId? armorEquipmentId = null)
     {
         enemyPositions ??= [new BattlePosition(BattleRow.Front, BattleColumn.Right)];
 
@@ -589,8 +699,8 @@ public class QuestRunServiceTests
             member.Type == ParticipantType.Player ? "/images/player.png" : null,
             member.Job,
             member.Status,
-            weaponEquipmentId: null,
-            armorEquipmentId: null,
+            weaponEquipmentId: weaponEquipmentId,
+            armorEquipmentId: armorEquipmentId,
             member.MoveSet,
             member.Position,
             member.ActionMode)).ToArray();
@@ -629,18 +739,22 @@ public class QuestRunServiceTests
             startedAt: DateTimeOffset.UtcNow);
     }
 
-    private static QuestRoom CreateRoom(QuestRun run)
+    private static QuestRoom CreateRoom(QuestRun run, PlayerId? ownerPlayerId = null)
     {
         var playerIds = run.PartySnapshots
             .Where(x => x.Type == ParticipantType.Player)
             .Select(_ => new PlayerId(Guid.NewGuid()))
             .ToArray();
         var playerIndex = 0;
-        var ownerPlayerId = playerIds[0];
+        var resolvedOwnerPlayerId = ownerPlayerId ?? playerIds[0];
+        if (playerIds.Length > 0)
+        {
+            playerIds[0] = resolvedOwnerPlayerId;
+        }
 
         return new QuestRoom(
             run.RoomId,
-            ownerPlayerId,
+            resolvedOwnerPlayerId,
             run.StageId,
             QuestRoomMode.Solo,
             formation: new FormationLayout(run.PartySnapshots.Select(x => x.StartPosition)),
@@ -651,7 +765,7 @@ public class QuestRunServiceTests
                 if (snapshot.Type == ParticipantType.Player)
                 {
                     playerId = playerIds[playerIndex++];
-                    isOwner = playerId == ownerPlayerId;
+                    isOwner = playerId == resolvedOwnerPlayerId;
                 }
 
                 return new QuestParticipant(

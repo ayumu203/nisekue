@@ -21,7 +21,7 @@ public class EquipmentStatusBonus(
     {
         if (value < 0)
         {
-            throw new ArgumentOutOfRangeException(paramName, "装備補正値に負数は代入できないです.");
+            throw new ArgumentOutOfRangeException(paramName, "装備補正値に負数は代入できません。");
         }
 
         return value;

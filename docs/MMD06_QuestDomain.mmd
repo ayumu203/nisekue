@@ -432,8 +432,6 @@ classDiagram
             +Task~QuestRun~ EscapeAsync(runId: QuestRunId, ownerPlayerId: PlayerId)
             +Task~QuestRun~ RequestManualControlAsync(runId: QuestRunId, playerId: PlayerId)
             +Task~QuestRun~ ApproveManualControlAsync(runId: QuestRunId, ownerPlayerId: PlayerId, participantId: QuestParticipantId)
-            +Task ConsumeEquipmentDurabilityAsync(run: QuestRun)
-            +Task ApplyQuestCooldownAsync(run: QuestRun, endedAt: DateTimeOffset)
             +Task~int~ ProcessExpiredRunsAsync(now: DateTimeOffset)
         }
     }

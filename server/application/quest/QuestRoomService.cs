@@ -101,18 +101,18 @@ public class QuestRoomService(
         room.CloseRecruitment(QuestRoomCloseReason.Started, DateTimeOffset.UtcNow);
 
         var activeParticipants = room.Participants.Where(x => x.Status != ParticipantStatus.Left).ToArray();
-        var players = new List<Player>(activeParticipants.Length);
-        foreach (var participant in activeParticipants.Where(x => x.Type == ParticipantType.Player))
+        var playerParticipants = activeParticipants.Where(x => x.Type == ParticipantType.Player).ToArray();
+        var playerTasks = playerParticipants.Select(async participant =>
         {
             if (participant.PlayerId is null)
             {
                 throw new InvalidOperationException($"プレイヤー参加者に playerId がありません。 participantId={participant.Id}");
             }
 
-            var player = await playerRepository.GetPlayerAsync(participant.PlayerId.Value)
+            return await playerRepository.GetPlayerAsync(participant.PlayerId.Value)
                 ?? throw new KeyNotFoundException($"プレイヤーが見つかりません。 participantId={participant.Id}");
-            players.Add(player);
-        }
+        });
+        var players = await Task.WhenAll(playerTasks);
 
         var snapshotNpcs = npcTemplates.Count == 0
             ? []
@@ -125,11 +125,10 @@ public class QuestRoomService(
                 })
                 .ToArray();
 
-        var playerEquipments = new List<PlayerEquipment>();
-        foreach (var player in players)
-        {
-            playerEquipments.AddRange(await playerEquipmentRepository.GetByPlayerAsync(player.Id));
-        }
+        var playerEquipmentTasks = players.Select(player => playerEquipmentRepository.GetByPlayerAsync(player.Id));
+        var playerEquipments = (await Task.WhenAll(playerEquipmentTasks))
+            .SelectMany(x => x)
+            .ToList();
 
         var equipments = await equipmentRepository.GetAllAsync();
         var snapshots = questSnapshotFactory.Create(activeParticipants, players, snapshotNpcs, playerEquipments, equipments);

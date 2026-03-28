@@ -35,7 +35,7 @@ public class QuestSnapshotFactory(EquipmentStatusResolver equipmentStatusResolve
                     var ownedEquipments = participant.PlayerId is not null && equipmentsByPlayerId.TryGetValue(participant.PlayerId.Value, out var foundEquipments)
                         ? foundEquipments
                         : Array.Empty<PlayerEquipment>();
-                    var effectiveStatus = equipmentStatusResolver.BuildEffectiveStatus(player.Status, ownedEquipments, equipments);
+                    var effectiveStatus = equipmentStatusResolver.BuildEffectiveStatus(player.Status, player.Job, ownedEquipments, equipments);
                     var weaponEquipmentId = ownedEquipments.FirstOrDefault(x => x.Status == EquipmentStatus.Equipped && x.Type == EquipmentType.Weapon)?.Id;
                     var armorEquipmentId = ownedEquipments.FirstOrDefault(x => x.Status == EquipmentStatus.Equipped && x.Type == EquipmentType.Armor)?.Id;
 

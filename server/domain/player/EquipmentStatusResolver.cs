@@ -4,6 +4,7 @@ public class EquipmentStatusResolver
 {
     public Status BuildEffectiveStatus(
         Status baseStatus,
+        Job playerJob,
         IEnumerable<PlayerEquipment> playerEquipments,
         IEnumerable<Equipment> equipments)
     {
@@ -23,6 +24,11 @@ public class EquipmentStatusResolver
         foreach (var playerEquipment in playerEquipments.Where(x => x.Status == EquipmentStatus.Equipped && !x.IsBroken))
         {
             if (!equipmentById.TryGetValue(playerEquipment.EquipmentId, out var equipment))
+            {
+                continue;
+            }
+
+            if (!equipment.CanEquip(playerJob))
             {
                 continue;
             }
