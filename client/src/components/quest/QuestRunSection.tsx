@@ -14,6 +14,7 @@ type AvailableMove = {
 
 type QuestRunSectionProps = {
   currentRun: QuestRunDetailResponse | null | undefined
+  battlefieldImagePath: string | null
   selfParticipantId: string | null
   availableMoves: AvailableMove[]
   selectedActionKind: QuestActionKind
@@ -40,6 +41,7 @@ type QuestRunSectionProps = {
 
 export default function QuestRunSection({
   currentRun,
+  battlefieldImagePath,
   selfParticipantId,
   availableMoves,
   selectedActionKind,
@@ -69,6 +71,7 @@ export default function QuestRunSection({
       {currentRun?.status === 'InProgress' ? (
         <QuestBattleStatusPanel
           run={currentRun}
+          battlefieldImagePath={battlefieldImagePath}
           selfParticipantId={selfParticipantId}
           availableMoves={availableMoves}
           selectedActionKind={selectedActionKind}

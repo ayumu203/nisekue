@@ -387,6 +387,7 @@ export default function Quest() {
   const currentRoomStage = currentRoom
     ? (activeStages.find((stage) => stage.stageId === currentRoom.stageId) ?? null)
     : null
+  const currentRunStage = currentRun ? (activeStages.find((stage) => stage.stageId === currentRun.stageId) ?? null) : null
   const selfParticipantId =
     player && currentRoom
       ? (currentRoom.participants.find((participant) => participant.playerId === player.userId)?.participantId ?? null)
@@ -904,6 +905,7 @@ export default function Quest() {
               {showRunSection ? (
                 <QuestRunSection
                   currentRun={currentRun}
+                  battlefieldImagePath={currentRunStage?.battlefieldImagePath ?? currentRoomStage?.battlefieldImagePath ?? null}
                   selfParticipantId={selfParticipantId}
                   availableMoves={availableMoves}
                   selectedActionKind={selectedActionKind}
