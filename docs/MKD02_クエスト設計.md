@@ -833,6 +833,24 @@
 * スキル演出は `MoveDomain.Move.EffectImagePath` を参照し、未設定ならエフェクト画像表示を行わない。
 * スキル演出の再生契機はターン解決後の `BattleActionResult` とし、ダメージや状態変化の反映後にクライアントで表示する。
 
+#### `QuestStageDefinition`
+
+* `QuestStageId Id`
+* `string StageCode`
+* `string Name`
+* `string BattlefieldImagePath`
+* `int RecommendedLevel`
+* `int MinPartyMemberCount`
+* `int MaxPartyMemberCount`
+* `IReadOnlyList<QuestFloorDefinition> Floors`
+* `bool IsActive`
+
+補足:
+
+* `QuestStageDefinition.BattlefieldImagePath` はステージ CSV に保持する背景画像パスであり、クライアントはクエスト戦闘画面の背景描画に利用する。
+* 背景画像はフロントエンドのハードコードではなく、`stages.csv` を唯一の設定元とする。
+* ステージ一覧 API では `BattlefieldImagePath` を返し、戦闘画面は選択中または進行中ステージの値をそのまま使用する。
+
 #### 味方 NPC 行動方針
 
 味方 NPC の自動行動は、`QuestRun` を入力として受け取り、その内部に保持された開始時スナップショットと現在戦闘状態を参照して決定する。
@@ -1073,6 +1091,7 @@ CSV 採用理由:
 
 * Git 管理下でコンテンツ差分をレビューしやすい。
 * ステージや敵を追加するたびに DB seed や migration を増やさずに済む。
+* `stages.csv` は少なくとも `stage_code`, `name`, `battlefield_image_path`, `recommended_level`, `min_party_member_count`, `max_party_member_count`, `is_active` を持ち、背景画像を含むステージ表示設定を一元管理する。
 * 既存のトレーニング敵定義と同じ運用パターンに寄せられる。
 
 ### 7.3 募集系テーブル案
