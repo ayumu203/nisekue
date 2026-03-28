@@ -209,6 +209,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             DisplayName = x.DisplayName,
             ImagePath = x.ImagePath,
             Job = (int)x.Job,
+            WeaponPlayerEquipmentId = x.WeaponEquipmentId?.Value,
+            ArmorPlayerEquipmentId = x.ArmorEquipmentId?.Value,
             StartRow = (int)x.StartPosition.Row,
             StartColumn = (int)x.StartPosition.Column,
             MaxHp = x.BaseStatus.MaxHp,
@@ -317,6 +319,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                 entity.Intelligence,
                 entity.Luck,
                 entity.Speed),
+            entity.WeaponPlayerEquipmentId is null ? null : new PlayerEquipmentId(entity.WeaponPlayerEquipmentId.Value),
+            entity.ArmorPlayerEquipmentId is null ? null : new PlayerEquipmentId(entity.ArmorPlayerEquipmentId.Value),
             QuestJsonSerializer.DeserializeMoveSet(entity.MoveSetJson),
             new BattlePosition((BattleRow)entity.StartRow, (BattleColumn)entity.StartColumn),
             (ActionMode)entity.InitialActionMode);

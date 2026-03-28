@@ -9,6 +9,8 @@ public class QuestRoomService(
     IQuestRoomRepository questRoomRepository,
     IQuestRunRepository questRunRepository,
     IPlayerRepository playerRepository,
+    IPlayerEquipmentRepository playerEquipmentRepository,
+    IEquipmentRepository equipmentRepository,
     QuestNpcAssignmentService questNpcAssignmentService,
     QuestSnapshotFactory questSnapshotFactory,
     QuestRunFactory questRunFactory)
@@ -123,7 +125,14 @@ public class QuestRoomService(
                 })
                 .ToArray();
 
-        var snapshots = questSnapshotFactory.Create(activeParticipants, players, snapshotNpcs);
+        var playerEquipments = new List<PlayerEquipment>();
+        foreach (var player in players)
+        {
+            playerEquipments.AddRange(await playerEquipmentRepository.GetByPlayerAsync(player.Id));
+        }
+
+        var equipments = await equipmentRepository.GetAllAsync();
+        var snapshots = questSnapshotFactory.Create(activeParticipants, players, snapshotNpcs, playerEquipments, equipments);
         var run = await questRunFactory.Create(room, stage, snapshots, DateTimeOffset.UtcNow);
 
         await questRoomRepository.SaveAsync(room);

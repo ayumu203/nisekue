@@ -17,19 +17,20 @@ public class TrainingBattleFactory
     public Guid PlayerActorId => PlayerBattleActorId;
     public Guid EnemyActorId => EnemyBattleActorId;
 
-    public BattleActorInput CreatePlayerActor(Player player, IEnumerable<Move> selectedPlayerMoves)
+    public BattleActorInput CreatePlayerActor(Player player, Status effectiveStatus, IEnumerable<Move> selectedPlayerMoves)
     {
         ArgumentNullException.ThrowIfNull(player);
+        ArgumentNullException.ThrowIfNull(effectiveStatus);
         ArgumentNullException.ThrowIfNull(selectedPlayerMoves);
 
         return new BattleActorInput(
             PlayerBattleActorId,
             player.Name,
             BattleSide.Ally,
-            player.Status,
+            effectiveStatus,
             CreatePlayerMoveSet(selectedPlayerMoves),
-            CurrentHp: player.Status.MaxHp,
-            CurrentMp: player.Status.MaxMp);
+            CurrentHp: effectiveStatus.MaxHp,
+            CurrentMp: effectiveStatus.MaxMp);
     }
 
     public BattleActorInput CreateEnemyActor(TrainingEnemy enemy)

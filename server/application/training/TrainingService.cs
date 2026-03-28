@@ -10,6 +10,8 @@ namespace server.application.training;
 
 public class TrainingService(
     IPlayerRepository playerRepository,
+    IPlayerEquipmentRepository playerEquipmentRepository,
+    IEquipmentRepository equipmentRepository,
     ITrainingEnemyRepository trainingEnemyRepository,
     IMoveRepository moveRepository,
     IJobProfileRepository jobProfileRepository,
@@ -18,7 +20,8 @@ public class TrainingService(
     BattleService battleService,
     TrainingBattleFactory trainingBattleFactory,
     TrainingOutcomeJudge trainingOutcomeJudge,
-    TrainingExpCalculator trainingExpCalculator)
+    TrainingExpCalculator trainingExpCalculator,
+    EquipmentStatusResolver equipmentStatusResolver)
 {
     public async Task<TrainingEnemyView[]> GetTrainingEnemies(PlayerId playerId)
     {
@@ -49,8 +52,11 @@ public class TrainingService(
 
         var enemy = await trainingEnemyRepository.GetTrainingEnemyAsync(enemyId)
             ?? throw new KeyNotFoundException("敵が見つかりません。");
+        var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(playerId)).ToList();
+        var equipments = await equipmentRepository.GetAllAsync();
+        var effectiveStatus = equipmentStatusResolver.BuildEffectiveStatus(player.Status, playerEquipments, equipments);
 
-        var playerMoves = await LoadTrainingMovesAsync(player, playerMoveIds);
+        var playerMoves = await LoadTrainingMovesAsync(player, effectiveStatus, playerMoveIds);
 
         var nowUtc = DateTimeOffset.UtcNow;
         var cooldownUntil = await playerRepository.TryStartTrainingCooldownAsync(
@@ -64,7 +70,7 @@ public class TrainingService(
 
         var actors = new[]
         {
-            trainingBattleFactory.CreatePlayerActor(player, playerMoves),
+            trainingBattleFactory.CreatePlayerActor(player, effectiveStatus, playerMoves),
             trainingBattleFactory.CreateEnemyActor(enemy)
         };
         var moves = trainingBattleFactory.CreateTrainingMoves(enemy, playerMoves);
@@ -74,13 +80,15 @@ public class TrainingService(
         var exp = trainingExpCalculator.Calculate(player, enemy, metrics, summary.Outcome);
         var levelUpResult = ApplyExp(player, exp);
 
+        ConsumeEquippedDurability(playerEquipments, nowUtc);
         await playerRepository.SaveAsync(player);
+        await playerEquipmentRepository.SaveAsync(playerEquipments);
 
         return new TrainingResultView(
             TrainingResult: summary.Outcome.ToString(),
             Turn: summary.Turn,
             CurrentPlayerHp: summary.CurrentPlayerHp,
-            MaxPlayerHp: player.Status.MaxHp,
+            MaxPlayerHp: effectiveStatus.MaxHp,
             CurrentEnemyHp: summary.CurrentEnemyHp,
             MaxEnemyHp: enemy.Status.MaxHp,
             Exp: exp,
@@ -211,7 +219,7 @@ public class TrainingService(
         return player.LevelUp(jobProfile, learningRule);
     }
 
-    private async Task<Move[]> LoadTrainingMovesAsync(Player player, IReadOnlyList<int?> playerMoveIds)
+    private async Task<Move[]> LoadTrainingMovesAsync(Player player, Status effectiveStatus, IReadOnlyList<int?> playerMoveIds)
     {
         ArgumentNullException.ThrowIfNull(playerMoveIds);
 
@@ -229,7 +237,7 @@ public class TrainingService(
         {
             if (moveId is null)
             {
-                moves.Add(trainingBattleFactory.CreatePlayerTrainingNormalAttack(player.Status));
+                moves.Add(trainingBattleFactory.CreatePlayerTrainingNormalAttack(effectiveStatus));
                 continue;
             }
 
@@ -248,5 +256,13 @@ public class TrainingService(
         }
 
         return moves.ToArray();
+    }
+
+    private static void ConsumeEquippedDurability(IReadOnlyList<PlayerEquipment> playerEquipments, DateTimeOffset now)
+    {
+        foreach (var equipment in playerEquipments.Where(x => x.Status == EquipmentStatus.Equipped))
+        {
+            equipment.ConsumeDurability(1, now);
+        }
     }
 }

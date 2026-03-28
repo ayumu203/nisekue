@@ -23,7 +23,14 @@ internal static class PlayerEndpoints
             }));
         }).RequireAuthorization();
 
-        app.MapGet("/player", async (ClaimsPrincipal user, IPlayerRepository playerRepository, IMoveRepository moveRepository, IJobProfileRepository jobProfileRepository) =>
+        app.MapGet("/player", async (
+            ClaimsPrincipal user,
+            IPlayerRepository playerRepository,
+            IPlayerEquipmentRepository playerEquipmentRepository,
+            IEquipmentRepository equipmentRepository,
+            IMoveRepository moveRepository,
+            IJobProfileRepository jobProfileRepository,
+            EquipmentStatusResolver equipmentStatusResolver) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -42,10 +49,19 @@ internal static class PlayerEndpoints
             }
 
             var allMoves = await moveRepository.GetAllMovesAsync();
-            return Results.Ok(ToPlayerResponse(player, allMoves, jobProfileRepository));
+            var playerEquipments = await playerEquipmentRepository.GetByPlayerAsync(player.Id);
+            var equipments = await equipmentRepository.GetAllAsync();
+            return Results.Ok(ToPlayerResponse(player, allMoves, jobProfileRepository, playerEquipments, equipments, equipmentStatusResolver));
         }).RequireAuthorization();
 
-        app.MapGet("/players/{playerId:guid}", async (Guid playerId, IPlayerRepository playerRepository, IMoveRepository moveRepository, IJobProfileRepository jobProfileRepository) =>
+        app.MapGet("/players/{playerId:guid}", async (
+            Guid playerId,
+            IPlayerRepository playerRepository,
+            IPlayerEquipmentRepository playerEquipmentRepository,
+            IEquipmentRepository equipmentRepository,
+            IMoveRepository moveRepository,
+            IJobProfileRepository jobProfileRepository,
+            EquipmentStatusResolver equipmentStatusResolver) =>
         {
             var player = await playerRepository.GetPlayerAsync(new PlayerId(playerId));
             if (player is null)
@@ -58,10 +74,18 @@ internal static class PlayerEndpoints
             }
 
             var allMoves = await moveRepository.GetAllMovesAsync();
-            return Results.Ok(ToPlayerResponse(player, allMoves, jobProfileRepository));
+            var playerEquipments = await playerEquipmentRepository.GetByPlayerAsync(player.Id);
+            var equipments = await equipmentRepository.GetAllAsync();
+            return Results.Ok(ToPlayerResponse(player, allMoves, jobProfileRepository, playerEquipments, equipments, equipmentStatusResolver));
         }).RequireAuthorization();
 
-        app.MapPost("/player", async (ClaimsPrincipal user, CreatePlayerRequest request, IPlayerRepository playerRepository, ChatService chatService, IJobProfileRepository jobProfileRepository) =>
+        app.MapPost("/player", async (
+            ClaimsPrincipal user,
+            CreatePlayerRequest request,
+            IPlayerRepository playerRepository,
+            IPlayerEquipmentRepository playerEquipmentRepository,
+            ChatService chatService,
+            IJobProfileRepository jobProfileRepository) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -86,6 +110,7 @@ internal static class PlayerEndpoints
                     imagePath: PlayerImageCatalog.DefaultFileName,
                     moveSet: moveSet);
                 await playerRepository.SaveAsync(player);
+                await playerEquipmentRepository.SaveAsync(CreateStarterEquipments(player.Id, DateTimeOffset.UtcNow));
                 await chatService.EnsureRoomAsync(player.Id);
                 return Results.Ok(new
                 {
@@ -110,6 +135,80 @@ internal static class PlayerEndpoints
             {
                 return Results.Conflict(new { message = ex.Message });
             }
+        }).RequireAuthorization();
+
+        app.MapPut("/player/equipment", async (
+            ClaimsPrincipal user,
+            UpdatePlayerEquipmentRequest request,
+            IPlayerRepository playerRepository,
+            IPlayerEquipmentRepository playerEquipmentRepository,
+            IEquipmentRepository equipmentRepository,
+            IMoveRepository moveRepository,
+            IJobProfileRepository jobProfileRepository,
+            EquipmentStatusResolver equipmentStatusResolver) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            var player = await playerRepository.GetPlayerAsync(playerId.Value);
+            if (player is null)
+            {
+                return Results.NotFound(new
+                {
+                    message = "プレイヤーが見つかりません。",
+                    userId = playerId.Value.Value
+                });
+            }
+
+            var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(player.Id)).ToList();
+            var equipments = await equipmentRepository.GetAllAsync();
+            var equipmentById = equipments.ToDictionary(x => x.Id);
+            var now = DateTimeOffset.UtcNow;
+
+            foreach (var equipped in playerEquipments.Where(x => x.Type == request.EquipmentType && x.Status == EquipmentStatus.Equipped))
+            {
+                equipped.Unequip(now);
+            }
+
+            if (request.PlayerEquipmentId is not null)
+            {
+                var target = playerEquipments.FirstOrDefault(x => x.Id == new PlayerEquipmentId(request.PlayerEquipmentId.Value));
+                if (target is null)
+                {
+                    return Results.NotFound(new { message = "指定された装備個体が見つかりません。" });
+                }
+
+                if (target.Type != request.EquipmentType)
+                {
+                    return Results.BadRequest(new { message = "装備スロットと装備種別が一致しません。" });
+                }
+
+                if (!equipmentById.TryGetValue(target.EquipmentId, out var equipment))
+                {
+                    return Results.BadRequest(new { message = "装備マスタが見つかりません。" });
+                }
+
+                try
+                {
+                    target.Equip(equipment, player.Job, now);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.BadRequest(new { message = ex.Message });
+                }
+            }
+
+            await playerEquipmentRepository.SaveAsync(playerEquipments);
+            var allMoves = await moveRepository.GetAllMovesAsync();
+
+            return Results.Ok(new
+            {
+                message = "装備を更新しました。",
+                player = ToPlayerResponse(player, allMoves, jobProfileRepository, playerEquipments, equipments, equipmentStatusResolver)
+            });
         }).RequireAuthorization();
 
         app.MapPut("/player/name", async (ClaimsPrincipal user, UpdatePlayerNameRequest request, IPlayerRepository playerRepository, IJobProfileRepository jobProfileRepository) =>
@@ -273,10 +372,18 @@ internal static class PlayerEndpoints
         return app;
     }
 
-    private static object ToPlayerResponse(Player player, IReadOnlyList<Move> allMoves, IJobProfileRepository jobProfileRepository)
+    private static object ToPlayerResponse(
+        Player player,
+        IReadOnlyList<Move> allMoves,
+        IJobProfileRepository jobProfileRepository,
+        IReadOnlyList<PlayerEquipment> playerEquipments,
+        IReadOnlyList<Equipment> equipments,
+        EquipmentStatusResolver equipmentStatusResolver)
     {
         var moveById = allMoves.ToDictionary(x => x.Id.Id);
+        var equipmentById = equipments.ToDictionary(x => x.Id);
         var jobProfile = jobProfileRepository.GetByJob(player.Job);
+        var effectiveStatus = equipmentStatusResolver.BuildEffectiveStatus(player.Status, playerEquipments, equipments);
         var jobProfiles = jobProfileRepository.GetAll()
             .Select(profile => new
             {
@@ -311,6 +418,32 @@ internal static class PlayerEndpoints
                     category = move?.Category.ToString()
                 };
             });
+        var equipmentItems = playerEquipments.Select(playerEquipment =>
+        {
+            var equipment = equipmentById[playerEquipment.EquipmentId];
+            return new
+            {
+                playerEquipmentId = playerEquipment.Id.Value,
+                equipmentId = equipment.Id.Value,
+                name = equipment.Name,
+                equipmentType = equipment.Type.ToString(),
+                status = playerEquipment.Status.ToString(),
+                durability = playerEquipment.Durability,
+                maxDurability = equipment.MaxDurability,
+                mastery = playerEquipment.Mastery,
+                canEquipCurrentJob = equipment.CanEquip(player.Job),
+                bonusValues = new
+                {
+                    maxHp = equipment.BonusValues.MaxHp,
+                    maxMp = equipment.BonusValues.MaxMp,
+                    strength = equipment.BonusValues.Strength,
+                    defense = equipment.BonusValues.Defense,
+                    intelligence = equipment.BonusValues.Intelligence,
+                    luck = equipment.BonusValues.Luck,
+                    speed = equipment.BonusValues.Speed
+                }
+            };
+        }).ToArray();
 
         return new
         {
@@ -331,15 +464,56 @@ internal static class PlayerEndpoints
             jobExp = player.JobExp,
             status = new
             {
-                maxHp = player.Status.MaxHp,
-                maxMp = player.Status.MaxMp,
-                strength = player.Status.Strength,
-                defense = player.Status.Defense,
-                intelligence = player.Status.Intelligence,
-                luck = player.Status.Luck,
-                speed = player.Status.Speed
+                baseValues = new
+                {
+                    maxHp = player.Status.MaxHp,
+                    maxMp = player.Status.MaxMp,
+                    strength = player.Status.Strength,
+                    defense = player.Status.Defense,
+                    intelligence = player.Status.Intelligence,
+                    luck = player.Status.Luck,
+                    speed = player.Status.Speed
+                },
+                effectiveValues = new
+                {
+                    maxHp = effectiveStatus.MaxHp,
+                    maxMp = effectiveStatus.MaxMp,
+                    strength = effectiveStatus.Strength,
+                    defense = effectiveStatus.Defense,
+                    intelligence = effectiveStatus.Intelligence,
+                    luck = effectiveStatus.Luck,
+                    speed = effectiveStatus.Speed
+                }
             },
-            moveSlots
+            moveSlots,
+            equipments = equipmentItems
         };
+    }
+
+    private static IReadOnlyList<PlayerEquipment> CreateStarterEquipments(PlayerId playerId, DateTimeOffset now)
+    {
+        return
+        [
+            new PlayerEquipment(
+                PlayerEquipmentId.New(),
+                playerId,
+                new EquipmentId(1001),
+                EquipmentType.Weapon,
+                EquipmentStatus.Equipped,
+                durability: 10,
+                mastery: 0,
+                acquiredAt: now,
+                updatedAt: now),
+            new PlayerEquipment(
+                PlayerEquipmentId.New(),
+                playerId,
+                new EquipmentId(2001),
+                EquipmentType.Armor,
+                EquipmentStatus.Equipped,
+                durability: 10,
+                mastery: 0,
+                acquiredAt: now,
+                updatedAt: now)
+        ];
     }
 }

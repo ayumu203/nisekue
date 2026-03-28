@@ -15,6 +15,7 @@ public class QuestRunService(
     IQuestEnemyDefinitionRepository questEnemyDefinitionRepository,
     IMoveRepository moveRepository,
     IPlayerRepository playerRepository,
+    IPlayerEquipmentRepository playerEquipmentRepository,
     IJobProfileRepository jobProfileRepository,
     IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
     BattleService battleService,
@@ -242,6 +243,46 @@ public class QuestRunService(
             player.SetQuestCooldownUntil((run.EndedAt ?? DateTimeOffset.UtcNow).Add(QuestCooldown));
             await playerRepository.SaveAsync(player);
         }
+
+        var now = run.EndedAt ?? DateTimeOffset.UtcNow;
+        foreach (var participant in room.Participants.Where(x => x.PlayerId is not null && x.Type == ParticipantType.Player))
+        {
+            var snapshot = run.PartySnapshots.FirstOrDefault(x => x.ParticipantId == participant.Id);
+            if (snapshot is null)
+            {
+                continue;
+            }
+
+            var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(participant.PlayerId!.Value)).ToList();
+            var consumed = false;
+            consumed |= ConsumeEquipmentDurability(playerEquipments, snapshot.WeaponEquipmentId, now);
+            consumed |= ConsumeEquipmentDurability(playerEquipments, snapshot.ArmorEquipmentId, now);
+
+            if (consumed)
+            {
+                await playerEquipmentRepository.SaveAsync(playerEquipments);
+            }
+        }
+    }
+
+    private static bool ConsumeEquipmentDurability(
+        IReadOnlyList<PlayerEquipment> playerEquipments,
+        PlayerEquipmentId? playerEquipmentId,
+        DateTimeOffset now)
+    {
+        if (playerEquipmentId is null)
+        {
+            return false;
+        }
+
+        var equipment = playerEquipments.FirstOrDefault(x => x.Id == playerEquipmentId.Value);
+        if (equipment is null)
+        {
+            return false;
+        }
+
+        equipment.ConsumeDurability(1, now);
+        return true;
     }
 
     private async Task<QuestEnemyState[]> CreateEnemyStatesAsync(QuestFloorDefinition floor)
