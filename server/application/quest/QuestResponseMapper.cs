@@ -337,6 +337,7 @@ public class QuestResponseMapper(
             stageId = stage.Id.Value,
             stageCode = stage.StageCode,
             name = stage.Name,
+            battlefieldImagePath = stage.BattlefieldImagePath,
             recommendedLevel = stage.RecommendedLevel,
             previewEnemyImagePath,
             minPartyMemberCount = stage.MinPartyMemberCount,

@@ -4,6 +4,7 @@ public class QuestStageDefinition(
     QuestStageId id,
     string stageCode,
     string name,
+    string battlefieldImagePath,
     int recommendedLevel,
     int minPartyMemberCount,
     int maxPartyMemberCount,
@@ -16,6 +17,7 @@ public class QuestStageDefinition(
     public QuestStageId Id { get; } = id;
     public string StageCode { get; } = ValidateText(stageCode, nameof(stageCode));
     public string Name { get; } = ValidateText(name, nameof(name));
+    public string BattlefieldImagePath { get; } = ValidateText(battlefieldImagePath, nameof(battlefieldImagePath));
     public int RecommendedLevel { get; } = ValidateNonNegative(recommendedLevel, nameof(recommendedLevel));
     public int MinPartyMemberCount { get; } = ValidatePartyCount(minPartyMemberCount, nameof(minPartyMemberCount));
     public int MaxPartyMemberCount { get; } = ValidatePartyCount(maxPartyMemberCount, nameof(maxPartyMemberCount));
