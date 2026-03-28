@@ -14,6 +14,10 @@ type QuestRunResultPanelProps = {
     failedSubtitle: string
     leaveFinishedRun: string
     noImage: string
+    rewardTitle: string
+    rewardEquipmentLabel: string
+    rewardMiss: string
+    rewardInventoryFullSkipped: string
   }
 }
 
@@ -34,6 +38,7 @@ export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }:
   })
 
   const isSucceeded = run.status === 'Succeeded'
+  const skippedCount = run.rewards.inventoryFullSkippedPlayerIds?.length ?? 0
 
   return (
     <Paper
@@ -130,6 +135,35 @@ export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }:
             )
           })}
         </Stack>
+
+        {isSucceeded ? (
+          <Paper
+            variant="outlined"
+            sx={{
+              px: 2,
+              py: 1.5,
+              borderRadius: 2,
+              borderColor: 'rgba(124, 91, 25, 0.28)',
+              background: 'rgba(255,255,255,0.55)',
+            }}
+          >
+            <Stack spacing={0.75} alignItems="center">
+              <Typography variant="subtitle1" fontWeight={800} color="#6f4d11">
+                {locale.rewardTitle}
+              </Typography>
+              <Typography variant="body1" fontWeight={700} color="#4b391c" textAlign="center">
+                {run.rewards.equipmentRewardName
+                  ? `${locale.rewardEquipmentLabel} ${run.rewards.equipmentRewardName}`
+                  : locale.rewardMiss}
+              </Typography>
+              {skippedCount > 0 ? (
+                <Typography variant="body2" color="#7b5e2f" textAlign="center">
+                  {locale.rewardInventoryFullSkipped.replace('{{count}}', String(skippedCount))}
+                </Typography>
+              ) : null}
+            </Stack>
+          </Paper>
+        ) : null}
 
         <Box sx={{ display: 'flex', justifyContent: 'center', pt: 0.5 }}>
           <Button variant="contained" onClick={onLeaveFinishedRun} sx={{ minWidth: 156, ...softGreenButtonSx }}>

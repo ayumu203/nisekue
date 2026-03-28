@@ -8,7 +8,8 @@ namespace server.application.quest;
 public class QuestResponseMapper(
     IQuestStageRepository questStageRepository,
     IQuestEnemyDefinitionRepository questEnemyDefinitionRepository,
-    IPlayerRepository playerRepository)
+    IPlayerRepository playerRepository,
+    IEquipmentRepository equipmentRepository)
 {
     public async Task<object> MapQuestStageSummaryAsync(QuestStageDefinition stage)
     {
@@ -124,6 +125,9 @@ public class QuestResponseMapper(
     {
         var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync())
             .ToDictionary(x => x.Id);
+        var rewardEquipment = run.Rewards.EquipmentRewardId is not null
+            ? await equipmentRepository.GetAsync(run.Rewards.EquipmentRewardId.Value)
+            : null;
 
         var waitingParticipantIds = run.BattleState.PartyMembers
             .Where(x => x.CanAcceptManualCommand(run.TurnState.CurrentTurnNo))
@@ -251,6 +255,7 @@ public class QuestResponseMapper(
             {
                 exp = run.Rewards.Exp,
                 equipmentRewardId = run.Rewards.EquipmentRewardId?.Value,
+                equipmentRewardName = rewardEquipment?.Name,
                 inventoryFullSkippedPlayerIds = run.Rewards.SkippedRewardPlayerIds.Select(x => x.Value)
             },
             lastTurnResults = run.LastTurnResults is null

@@ -1,3 +1,7 @@
 equipment_id,name,flavor_text,equipment_type,max_durability,mastery_cap,synthesis_gold_cost,bonus_max_hp,bonus_max_mp,bonus_strength,bonus_defense,bonus_intelligence,bonus_luck,bonus_speed,equippable_jobs
 1001,旅立ちの剣,旅立ちの日に渡される軽い剣,Weapon,10,50,10,0,0,3,0,0,0,0,Apprentice|Warrior|Guardian|Mage|Priest|Ranger
 2001,旅立ちの服,旅立ちの日に支給される丈夫な服,Armor,10,50,10,4,0,0,2,0,0,0,Apprentice|Warrior|Guardian|Mage|Priest|Ranger
+1002,ぬま鉄の剣,ぬまちの鉄を打って作られた重めの剣,Weapon,16,80,30,0,0,6,1,0,0,0,Apprentice|Warrior|Guardian|Mage|Priest|Ranger
+2002,旅人の外套,長旅に耐えるよう仕立てられた外套,Armor,16,80,30,8,0,0,5,0,0,0,Apprentice|Warrior|Guardian|Mage|Priest|Ranger
+1003,花園の細剣,魔力を帯びた花弁のように鋭い剣,Weapon,24,120,60,0,2,10,2,2,0,1,Apprentice|Warrior|Guardian|Mage|Priest|Ranger
+2003,精霊樹の衣,精霊樹の加護が宿る軽やかな衣,Armor,24,120,60,14,4,0,8,2,1,1,Apprentice|Warrior|Guardian|Mage|Priest|Ranger
