@@ -56,6 +56,8 @@
 * `Move` は必要な場合だけクライアント表示用の `EffectImagePath` を持てる。値は既存 CSV マスタに保持し、未設定を許容する。
 * `QuestEnemyDefinition` は敵 CSV の `ImagePath` を参照し、クライアントで敵画像表示に利用する。
 * クエスト開始時に `Player` の `Job` / `Status` / `MoveSet` / `ImagePath` をスナップショット化し、クエスト中はそのスナップショットを参照する。
+* 装備は `Player` の素の `Status` へ直接上書きせず、クエスト開始時に装備補正込み `Status` を生成して `QuestRunPartyMemberSnapshot` へ閉じ込める。
+* 装備は武器・防具を共通の装備マスタで管理し、装備可能職業は CSV 定義を参照する。
 
 ### 3.2 配置方針
 
@@ -82,7 +84,8 @@
 * クエスト報酬の最終反映先テーブル
 * 敵 AI の詳細アルゴリズム
 * 戦闘ログの完全リプレイ
-* 装備システムの詳細
+* 装備の入手経路の拡張
+* 修理システム
 
 ## 4. 設計方針
 
@@ -106,6 +109,7 @@
 3. `QuestRoom.AddNpcParticipants(npcTemplates)` で NPC 参加者を確定追加する。
 4. `QuestRoom.CloseRecruitment()` で募集を締める。
 5. `QuestSnapshotFactory.Create(roomParticipants, players, npcTemplates)` が、開始時点の `QuestRunPartyMemberSnapshot` を生成する。
+   この時点でプレイヤーの装備補正込み `Status` と装備中個体 ID をスナップショットへ反映する。
 6. `QuestRunFactory.Create(stageDefinition, snapshots, now)` が `QuestRun` を生成する。
 7. `QuestRun.InitializeFirstFloor()` が初期敵配置、初期ターン、初期行動期限を設定する。
 
@@ -114,11 +118,21 @@
 ### 4.3 スナップショット方針
 
 クエスト中にプレイヤー本体の `Status` や `MoveSet` や `ImagePath` が変更されても、進行中クエストには反映しない。
+装備変更や耐久変化も同様に進行中クエストへは反映しない。
 理由は以下の通り。
 
 * ページ再接続時に同一状態を復元しやすい。
 * クエスト途中で外部更新が入ると再現性と整合性が崩れる。
 * 将来的に装備や一時バフが増えても、開始時点の戦闘能力として閉じ込められる。
+
+### 4.3.1 装備の扱い
+
+* 初期スコープの装備枠は `武器 1`、`防具 1` のみとする。
+* クエスト開始時、装備中の武器・防具の固定値補正を `Status` に加算した値を `QuestRunPartyMemberSnapshot.BaseStatus` として保持する。
+* `QuestRunPartyMemberSnapshot` には表示復元と終了時耐久更新のため、装備中個体 ID も保持する。
+* クエスト中の装備変更は禁止する。
+* クエスト終了時、装備中だった各装備個体の耐久値を一律 `1` 減らす。
+* 耐久値が `0` になった装備個体は削除せず `Broken` として保持し、次回以降は装備不可とする。
 
 ### 4.4 JSON 利用方針
 
