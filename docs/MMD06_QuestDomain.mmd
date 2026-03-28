@@ -216,6 +216,8 @@ classDiagram
             +string? ImagePath
             +Job Job
             +Status BaseStatus
+            +PlayerEquipmentId? WeaponEquipmentId
+            +PlayerEquipmentId? ArmorEquipmentId
             +MoveSet MoveSet
             +BattlePosition StartPosition
             +ActionMode InitialActionMode
@@ -396,7 +398,7 @@ classDiagram
 
         class QuestSnapshotFactory {
             <<Application Service>>
-            +Create(participants: IEnumerable~QuestParticipant~, players: IEnumerable~Player~, npcTemplates: IEnumerable~QuestNpcTemplate~) QuestRunPartyMemberSnapshot[]
+            +Create(participants: IEnumerable~QuestParticipant~, players: IEnumerable~Player~, npcTemplates: IEnumerable~QuestNpcTemplate~, playerEquipments: IEnumerable~PlayerEquipment~, equipments: IEnumerable~Equipment~) QuestRunPartyMemberSnapshot[]
         }
 
         class QuestBattleFactory {
@@ -430,6 +432,7 @@ classDiagram
             +Task~QuestRun~ EscapeAsync(runId: QuestRunId, ownerPlayerId: PlayerId)
             +Task~QuestRun~ RequestManualControlAsync(runId: QuestRunId, playerId: PlayerId)
             +Task~QuestRun~ ApproveManualControlAsync(runId: QuestRunId, ownerPlayerId: PlayerId, participantId: QuestParticipantId)
+            +Task ConsumeEquipmentDurabilityAsync(run: QuestRun)
             +Task ApplyQuestCooldownAsync(run: QuestRun, endedAt: DateTimeOffset)
             +Task~int~ ProcessExpiredRunsAsync(now: DateTimeOffset)
         }
@@ -486,6 +489,9 @@ classDiagram
     QuestAllyNpcActionPolicy ..> QuestParticipantId : use
     QuestAllyNpcActionPolicy ..> Move : use
     QuestSnapshotFactory ..> QuestRunPartyMemberSnapshot : builds
+    QuestSnapshotFactory ..> EquipmentStatusResolver : use
+    QuestSnapshotFactory ..> PlayerEquipment : use
+    QuestSnapshotFactory ..> Equipment : use
     QuestRunFactory ..> IQuestEnemyDefinitionRepository : use
     QuestRunFactory ..> QuestRun : builds
     QuestBattleFactory ..> QuestAllyNpcActionPolicy : use

@@ -24,7 +24,7 @@ classDiagram
 
         class TrainingBattleFactory {
             <<Application Service>>
-            +CreatePlayerActor(player: Player) BattleActorInput
+            +CreatePlayerActor(player: Player, effectiveStatus: Status) BattleActorInput
             +CreateEnemyActor(enemy: TrainingEnemy) BattleActorInput
             +CreateTurnActions(playerActorId: Guid, enemyActorId: Guid) BattleActionInput[]
             +CreateTrainingMoves(player: Player, enemy: TrainingEnemy) Move[]
@@ -70,6 +70,8 @@ classDiagram
             <<Application Service>>
             +GetTrainingEnemies(playerId: PlayerId) TrainingEnemyView[]
             +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
+            -BuildEffectivePlayerStatus(player: Player, equipments: IReadOnlyList~PlayerEquipment~, masters: IReadOnlyList~Equipment~) Status
+            -ConsumeEquippedDurability(player: Player, playerEquipments: IReadOnlyList~PlayerEquipment~) void
             -ResolveBattleUntilFinished(actors: IReadOnlyList~BattleActorInput~, playerMoves: IReadOnlyList~Move~, moves: IReadOnlyList~Move~) (TrainingBattleSummary, TrainingContributionMetrics)
             -BuildNextTurnActors(actors: IReadOnlyList~BattleActorInput~, states: IReadOnlyList~BattleActorState~) BattleActorInput[]
             -BuildSummary(actors: IReadOnlyList~BattleActorInput~, turn: int) TrainingBattleSummary
@@ -108,6 +110,9 @@ classDiagram
     TrainingService ..> TrainingBattleFactory : use
     TrainingService ..> TrainingOutcomeJudge : use
     TrainingService ..> TrainingExpCalculator : use
+    TrainingService ..> EquipmentStatusResolver : use
+    TrainingService ..> IEquipmentRepository : use
+    TrainingService ..> IPlayerEquipmentRepository : use
     TrainingService ..> TrainingBattleSummary : builds
     TrainingService ..> TrainingContributionMetrics : builds
     TrainingService ..> TrainingResultView : has

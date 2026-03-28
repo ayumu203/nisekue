@@ -16,11 +16,13 @@ classDiagram
             +int JobExp
             +Status Status
             +MoveSet MoveSet
+            +PlayerEquipmentLoadout EquipmentLoadout
             +UpdateName(name: string) void
             +UpdateImagePath(imagePath: string?) void
             +ChangeJob(nextJob: Job, nextProfile: JobProfile, learningRule: JobMoveLearningRule) IReadOnlyList~MoveId~
             +UpdateStatus(status: Status) void
             +UpdateMoveSet(moveSet: MoveSet) void
+            +UpdateEquipmentLoadout(loadout: PlayerEquipmentLoadout) void
             +SetQuestCooldownUntil(until: DateTimeOffset?) void
             -ValidateName(name: string) string
             -ValidateImagePath(imagePath: string?) string?
@@ -29,6 +31,11 @@ classDiagram
             -CanChangeJob(nextProfile: JobProfile) bool
             -MarkCurrentJobAsMastered(jobProfile: JobProfile) bool
             -SynchronizeLearnableMoves(jobProfile: JobProfile, learningRule: JobMoveLearningRule) IReadOnlyList~MoveId~
+        }
+
+        class PlayerId {
+            <<Value Object>>
+            +Guid Id
         }
 
         %% 転職ルール:
@@ -41,11 +48,6 @@ classDiagram
         %% - JobLevel / JobExp は現在職専用の値で、転職時に 1 / 0 へリセットする
         %% - ステータス成長、スキル習得、ジョブマスター判定は JobLevel を使う
 
-        class PlayerId {
-            <<Value Object>>
-            +Guid Id
-        }
-
         class Status {
             <<Value Object>>
             +int MaxHp
@@ -55,6 +57,70 @@ classDiagram
             +int Intelligence
             +int Luck
             +int Speed
+        }
+
+        class EquipmentType {
+            <<enumeration>>
+            Weapon
+            Armor
+        }
+
+        class EquipmentStatus {
+            <<enumeration>>
+            Inventory
+            Equipped
+            Broken
+        }
+
+        class EquipmentId {
+            <<Value Object>>
+            +int Id
+        }
+
+        class PlayerEquipmentId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class Equipment {
+            <<Aggregate Root>>
+            +EquipmentId Id
+            +string Name
+            +EquipmentType Type
+            +int MaxDurability
+            +Status BonusValues
+            +IReadOnlySet~Job~ EquippableJobs
+            +bool CanEquip(job: Job) bool
+        }
+
+        class PlayerEquipment {
+            <<Entity>>
+            +PlayerEquipmentId Id
+            +PlayerId PlayerId
+            +EquipmentId EquipmentId
+            +EquipmentType Type
+            +EquipmentStatus Status
+            +int Durability
+            +int Mastery
+            +bool IsBroken
+            +Equip(equipmentType: EquipmentType, equipment: Equipment) void
+            +Unequip() void
+            +ConsumeDurability(value: int) void
+            +IncreaseMastery(value: int) void
+            +MarkBroken() void
+        }
+
+        class PlayerEquipmentLoadout {
+            <<Value Object>>
+            +PlayerEquipmentId? WeaponEquipmentId
+            +PlayerEquipmentId? ArmorEquipmentId
+            +Assign(equipmentType: EquipmentType, equipmentId: PlayerEquipmentId?) PlayerEquipmentLoadout
+            +GetEquippedIds() IReadOnlyList~PlayerEquipmentId~
+        }
+
+        class EquipmentStatusResolver {
+            <<Domain Service>>
+            +BuildEffectiveStatus(baseStatus: Status, equipments: IEnumerable~PlayerEquipment~, masters: IEnumerable~Equipment~) Status
         }
 
         class GrowthValue {
@@ -106,6 +172,17 @@ classDiagram
             +Task SaveAsync(player: Player)
         }
 
+        class IEquipmentRepository {
+            +Task~Equipment?~ GetAsync(id: EquipmentId)
+            +Task~IReadOnlyList~Equipment~~ GetAllAsync()
+        }
+
+        class IPlayerEquipmentRepository {
+            +Task~IReadOnlyList~PlayerEquipment~~ GetByPlayerAsync(playerId: PlayerId)
+            +Task~PlayerEquipment?~ GetAsync(playerEquipmentId: PlayerEquipmentId)
+            +Task SaveAsync(playerEquipments: IReadOnlyList~PlayerEquipment~)
+        }
+
         class IJobProfileRepository {
             +JobProfile GetByJob(job: Job)
             +IReadOnlyList~JobProfile~ GetAll()
@@ -115,7 +192,18 @@ classDiagram
     Player *-- PlayerId : has
     Player *-- Status : has
     Player *-- MoveSet : has
+    Player *-- PlayerEquipmentLoadout : has
+    PlayerEquipment *-- PlayerEquipmentId : has
+    PlayerEquipment ..> Equipment : refers
+    PlayerEquipment ..> EquipmentStatus : has
+    Equipment *-- EquipmentId : has
+    Equipment ..> EquipmentType : has
+    PlayerEquipmentLoadout ..> PlayerEquipmentId : refers
     Player ..> JobMoveLearningRule : uses
     Player ..> LevelUpResult : returns
+    EquipmentStatusResolver ..> Equipment : uses
+    EquipmentStatusResolver ..> PlayerEquipment : uses
     IJobProfileRepository ..> JobProfile : returns
     IPlayerRepository ..> Player : stores/loads
+    IEquipmentRepository ..> Equipment : stores/loads
+    IPlayerEquipmentRepository ..> PlayerEquipment : stores/loads
