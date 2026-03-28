@@ -1,6 +1,7 @@
-import { Chip, Paper, Stack, Typography } from '@mui/material'
+import { Box, Chip, Paper, Stack, Typography } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import type { PlayerMoveSlot } from '@/schema/player'
+import { resolvePublicAssetPath } from '@/lib/assets'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
 
 type MoveItemProps = {
@@ -83,12 +84,45 @@ function resolveElementTypeChipSx(elementType: PlayerMoveSlot['elementType']): S
   }
 }
 
+function resolveTargetTypeLabel(targetType: PlayerMoveSlot['targetType']): string | null {
+  switch (targetType) {
+    case 'Enemy':
+      return '敵対象'
+    case 'Ally':
+      return '味方対象'
+    case 'Self':
+      return '自分対象'
+    default:
+      return null
+  }
+}
+
+function resolveAttackRangeLabel(attackRange: PlayerMoveSlot['attackRange']): string | null {
+  switch (attackRange) {
+    case 'Single':
+      return '単体'
+    case 'Column':
+      return '縦列'
+    case 'Row':
+      return '横列'
+    case 'Square':
+      return '範囲'
+    case 'All':
+      return '全体'
+    default:
+      return null
+  }
+}
+
 export default function MoveItem({ slot }: MoveItemProps) {
   const isEmpty = slot.moveId === null
   const moveName = slot.moveName ?? (slot.moveId === null ? locale.emptySlot : locale.unknownMove)
   const moveDescription = slot.description ?? locale.unknownMoveDescription
   const categoryLabel = resolveCategoryLabel(slot.category)
   const elementTypeLabel = resolveElementTypeLabel(slot.elementType)
+  const targetTypeLabel = resolveTargetTypeLabel(slot.targetType)
+  const attackRangeLabel = resolveAttackRangeLabel(slot.attackRange)
+  const effectImageSrc = slot.effectImagePath ? resolvePublicAssetPath(slot.effectImagePath) : null
 
   return (
     <Paper
@@ -96,16 +130,66 @@ export default function MoveItem({ slot }: MoveItemProps) {
       sx={{
         borderRadius: 2,
         p: 1.5,
+        backgroundColor: isEmpty ? '#fffdf8' : '#fff9ef',
+        borderColor: '#dacb9d',
       }}
     >
       <Stack spacing={1}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-end">
-          <Typography variant="subtitle1" fontWeight={700}>
+        {isEmpty || !effectImageSrc ? null : (
+          <Box
+            sx={{
+              borderRadius: 2,
+              border: '1px solid #ead9b2',
+              background:
+                'linear-gradient(135deg, rgba(255,252,245,0.95), rgba(246,235,205,0.82))',
+              height: 84,
+              display: 'grid',
+              placeItems: 'center',
+              overflow: 'hidden',
+            }}
+          >
+            <Box
+              component="img"
+              src={effectImageSrc}
+              alt={moveName}
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                p: 1,
+              }}
+            />
+          </Box>
+        )}
+
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          spacing={1}
+          sx={{
+            p: 1,
+            borderRadius: 1.5,
+            backgroundColor: '#4a6c51',
+            border: '1px solid #c0b07a',
+          }}
+        >
+          <Typography variant="h6" fontWeight={900} sx={{ lineHeight: 1.2, color: '#fff8e8' }}>
             {moveName}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {typeof slot.mpCost === 'number' ? `MP ${slot.mpCost}` : ''}
-          </Typography>
+          {typeof slot.mpCost === 'number' ? (
+            <Chip
+              size="small"
+              label={`消費MP ${slot.mpCost}`}
+              sx={{
+                fontWeight: 800,
+                bgcolor: '#eedb9b',
+                color: '#5b4717',
+                borderRadius: 1,
+                border: '1px solid #cfb067',
+              }}
+            />
+          ) : null}
         </Stack>
 
         {isEmpty ? null : (
@@ -126,6 +210,17 @@ export default function MoveItem({ slot }: MoveItemProps) {
             ) : null}
             {elementTypeLabel ? (
               <Chip size="small" label={elementTypeLabel} sx={resolveElementTypeChipSx(slot.elementType)} />
+            ) : null}
+            {targetTypeLabel ? (
+              <Chip size="small" label={targetTypeLabel} variant="outlined" sx={{ borderRadius: 1 }} />
+            ) : null}
+            {attackRangeLabel ? (
+              <Chip
+                size="small"
+                label={attackRangeLabel}
+                variant="outlined"
+                sx={{ borderRadius: 1, bgcolor: 'rgba(255,255,255,0.7)' }}
+              />
             ) : null}
           </Stack>
         )}

@@ -18,7 +18,7 @@
   "jobDescription": "{{jobName}}へ転職します。",
   "jobAvailable": "転職可能",
   "jobLocked": "未解放",
-  "jobLockedDetail": "プレイヤーレベル5で解放",
+  "jobLockedDetail": "プレイヤーレベル5で解放。",
   "jobResetDetail": "転職後は {{jobName}} の職業レベル1から開始します。",
   "currentBadge": "現在の職業",
   "currentDetail": "現在の職業です。",
