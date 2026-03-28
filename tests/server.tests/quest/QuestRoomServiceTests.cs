@@ -224,6 +224,7 @@ public class QuestRoomServiceTests
             new QuestStageId(1),
             "quest-001",
             "Test Quest",
+            "image/quest/test-battlefield.svg",
             1,
             minPartyMemberCount,
             maxPartyMemberCount,

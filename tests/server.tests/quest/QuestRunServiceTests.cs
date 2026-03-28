@@ -667,6 +667,7 @@ public class QuestRunServiceTests
             stageId,
             "quest-001",
             "Test Quest",
+            "image/quest/test-battlefield.svg",
             1,
             1,
             6,
