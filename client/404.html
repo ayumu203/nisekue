@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting...</title>
+  </head>
+  <body>
+    <script>
+      (function () {
+        var pathname = window.location.pathname
+        var repoBase = '/nisekue'
+        var appPath = pathname.indexOf(repoBase) === 0 ? pathname.slice(repoBase.length) : pathname
+        var nextPath = appPath || '/'
+        var nextSearch = window.location.search || ''
+        var nextHash = window.location.hash || ''
+        var redirectUrl = repoBase + '/?p=' + encodeURIComponent(nextPath + nextSearch) + nextHash
+        window.location.replace(redirectUrl)
+      })()
+    </script>
+  </body>
+</html>

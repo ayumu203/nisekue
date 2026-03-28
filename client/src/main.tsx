@@ -6,6 +6,28 @@ import './index.css'
 import App from '@/App'
 import { AuthProvider } from '@/contexts/AuthProvider'
 
+function getRouterBasename(): string | undefined {
+  const normalizedBaseUrl = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
+  return normalizedBaseUrl === '' || normalizedBaseUrl === '/' ? undefined : normalizedBaseUrl
+}
+
+function restoreGithubPagesPath(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const locationUrl = new URL(window.location.href)
+  const redirectedPath = locationUrl.searchParams.get('p')
+  if (!redirectedPath) {
+    return
+  }
+
+  const nextPath = redirectedPath.startsWith('/') ? redirectedPath : `/${redirectedPath}`
+  window.history.replaceState(null, '', `${nextPath}${locationUrl.hash}`)
+}
+
+restoreGithubPagesPath()
+
 const theme = createTheme({
   palette: {
     primary: {
@@ -61,7 +83,7 @@ createRoot(document.getElementById('root')!).render(
     <AuthProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <BrowserRouter>
+        <BrowserRouter basename={getRouterBasename()}>
           <App />
         </BrowserRouter>
       </ThemeProvider>
