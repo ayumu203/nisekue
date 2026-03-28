@@ -124,36 +124,36 @@ internal static class ItemEndpoints
                 switch (item.EffectType)
                 {
                     case ItemEffectType.StatBoost:
-                    {
-                        var bonus = item.StatusBonus ?? new StatusBonus(0, 0, 0, 0, 0, 0, 0);
-                        var quantity = request.Quantity;
-                        player.UpdateStatus(new Status(
-                            player.Status.MaxHp + bonus.MaxHp * quantity,
-                            player.Status.MaxMp + bonus.MaxMp * quantity,
-                            player.Status.Strength + bonus.Strength * quantity,
-                            player.Status.Defense + bonus.Defense * quantity,
-                            player.Status.Intelligence + bonus.Intelligence * quantity,
-                            player.Status.Luck + bonus.Luck * quantity,
-                            player.Status.Speed + bonus.Speed * quantity));
-                        break;
-                    }
+                        {
+                            var bonus = item.StatusBonus ?? new StatusBonus(0, 0, 0, 0, 0, 0, 0);
+                            var quantity = request.Quantity;
+                            player.UpdateStatus(new Status(
+                                player.Status.MaxHp + bonus.MaxHp * quantity,
+                                player.Status.MaxMp + bonus.MaxMp * quantity,
+                                player.Status.Strength + bonus.Strength * quantity,
+                                player.Status.Defense + bonus.Defense * quantity,
+                                player.Status.Intelligence + bonus.Intelligence * quantity,
+                                player.Status.Luck + bonus.Luck * quantity,
+                                player.Status.Speed + bonus.Speed * quantity));
+                            break;
+                        }
                     case ItemEffectType.ChangeJob:
-                    {
-                        if (request.Quantity != 1)
                         {
-                            return Results.BadRequest(new { message = "転職アイテムは1個ずつのみ使用できます。" });
-                        }
+                            if (request.Quantity != 1)
+                            {
+                                return Results.BadRequest(new { message = "転職アイテムは1個ずつのみ使用できます。" });
+                            }
 
-                        if (item.ChangeJobTo is null)
-                        {
-                            return Results.BadRequest(new { message = "転職先ジョブが定義されていません。" });
-                        }
+                            if (item.ChangeJobTo is null)
+                            {
+                                return Results.BadRequest(new { message = "転職先ジョブが定義されていません。" });
+                            }
 
-                        var jobProfile = jobProfileRepository.GetByJob(item.ChangeJobTo.Value);
-                        var learningRule = jobMoveLearningRuleRepository.GetByJob(item.ChangeJobTo.Value);
-                        player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
-                        break;
-                    }
+                            var jobProfile = jobProfileRepository.GetByJob(item.ChangeJobTo.Value);
+                            var learningRule = jobMoveLearningRuleRepository.GetByJob(item.ChangeJobTo.Value);
+                            player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
+                            break;
+                        }
                     default:
                         return Results.BadRequest(new { message = "未対応のアイテム効果です。" });
                 }

@@ -389,9 +389,7 @@ export default function Status({
         </Box>
       </Box>
 
-      <Collapse in={isOpen}>
-        {statusPaper}
-      </Collapse>
+      <Collapse in={isOpen}>{statusPaper}</Collapse>
 
       {signOutError ? (
         <Alert severity="error" sx={{ mt: 1 }}>
