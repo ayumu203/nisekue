@@ -56,9 +56,6 @@ export default function Thanks() {
                 <Typography variant="h4" fontWeight={900} color="#fff8ea" lineHeight={1.1}>
                   スペシャルサンクス
                 </Typography>
-                <Typography sx={{ color: 'rgba(243, 238, 220, 0.84)' }}>
-                  このゲームで使用している素材・音楽・イラストの提供元です。
-                </Typography>
               </Stack>
 
               <Box

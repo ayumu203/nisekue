@@ -11,7 +11,7 @@ internal static class PlayerEndpoints
 {
     internal static WebApplication MapPlayerEndpoints(this WebApplication app)
     {
-        app.MapGet("/players", async (IPlayerRepository playerRepository) =>
+        app.MapGet("/players", async (IPlayerRepository playerRepository, IJobProfileRepository jobProfileRepository) =>
         {
             var players = await playerRepository.GetAllAsync();
 
@@ -19,7 +19,15 @@ internal static class PlayerEndpoints
             {
                 userId = player.Id.Value,
                 userName = player.Name,
-                imagePath = player.ImagePath
+                imagePath = player.ImagePath,
+                level = player.Level,
+                job = new
+                {
+                    code = player.Job.ToString(),
+                    value = (int)player.Job,
+                    displayName = EndpointHelpers.GetJobDisplayName(player.Job),
+                    description = jobProfileRepository.GetByJob(player.Job).Description
+                }
             }));
         }).RequireAuthorization();
 

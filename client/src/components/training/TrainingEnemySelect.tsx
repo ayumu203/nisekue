@@ -94,9 +94,6 @@ export default function TrainingEnemySelect({
                     >
                       {enemy.name}
                     </Typography>
-                    <Typography variant="caption" textAlign="center" sx={{ color: 'rgba(245, 240, 223, 0.66)' }}>
-                      反復訓練向けの仮想敵
-                    </Typography>
                   </Stack>
                   <Button
                     variant="contained"

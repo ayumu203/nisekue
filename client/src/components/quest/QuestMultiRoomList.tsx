@@ -208,9 +208,6 @@ export default function QuestMultiRoomList({
           <Typography variant="h6" fontWeight={900} sx={{ color: '#ffffff' }}>
             参加募集一覧
           </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.74)' }}>
-            出発先とリーダーを見比べながら、途中参加する部屋を選べます。
-          </Typography>
         </Stack>
         {isLoading ? (
           <Stack direction="row" spacing={1} alignItems="center">

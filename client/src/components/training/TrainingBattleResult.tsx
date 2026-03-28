@@ -72,8 +72,8 @@ export default function TrainingBattleResult({
         borderRadius: 3,
         p: 2.5,
         color: '#f5f0df',
-        backgroundColor: '#182228',
-        borderColor: 'rgba(227, 188, 111, 0.34)',
+        backgroundColor: '#261819',
+        borderColor: 'rgba(214, 146, 112, 0.34)',
       }}
     >
       <Stack spacing={2}>
@@ -85,8 +85,8 @@ export default function TrainingBattleResult({
             height: 220,
             objectFit: 'contain',
             borderRadius: 12,
-            backgroundColor: '#0f171b',
-            border: '1px solid rgba(227, 188, 111, 0.22)',
+            backgroundColor: '#1d1112',
+            border: '1px solid rgba(214, 146, 112, 0.22)',
             padding: 10,
             boxSizing: 'border-box',
           }}
@@ -101,12 +101,12 @@ export default function TrainingBattleResult({
             p: 2,
             borderRadius: 3,
             color: '#fff7dd',
-            backgroundColor: '#233038',
-            borderColor: 'rgba(227, 188, 111, 0.34)',
+            backgroundColor: '#382526',
+            borderColor: 'rgba(214, 146, 112, 0.34)',
           }}
         >
           <Stack spacing={1.25} alignItems="center">
-            <Typography variant="h4" fontWeight={900} sx={{ color: '#f2c66f' }}>
+            <Typography variant="h4" fontWeight={900} sx={{ color: '#f3b38d' }}>
               {expValue}
             </Typography>
             <Typography variant="body2" textAlign="center" sx={{ color: 'rgba(245, 240, 223, 0.72)' }}>
@@ -135,7 +135,7 @@ export default function TrainingBattleResult({
                       variant="outlined"
                       sx={{
                         color: '#f5f0df',
-                        borderColor: 'rgba(227, 188, 111, 0.38)',
+                        borderColor: 'rgba(214, 146, 112, 0.38)',
                       }}
                     />
                   ))}
@@ -153,7 +153,7 @@ export default function TrainingBattleResult({
         >
           <Paper
             variant="outlined"
-            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#233038', borderColor: 'rgba(227, 188, 111, 0.22)' }}
+            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#382526', borderColor: 'rgba(214, 146, 112, 0.22)' }}
           >
             <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.62)' }}>
               {locale.result}
@@ -164,7 +164,7 @@ export default function TrainingBattleResult({
           </Paper>
           <Paper
             variant="outlined"
-            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#233038', borderColor: 'rgba(227, 188, 111, 0.22)' }}
+            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#382526', borderColor: 'rgba(214, 146, 112, 0.22)' }}
           >
             <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.62)' }}>
               {locale.turn}
@@ -175,12 +175,12 @@ export default function TrainingBattleResult({
           </Paper>
           <Paper
             variant="outlined"
-            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#233038', borderColor: 'rgba(227, 188, 111, 0.22)' }}
+            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#382526', borderColor: 'rgba(214, 146, 112, 0.22)' }}
           >
             <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.62)' }}>
               {locale.expGained}
             </Typography>
-            <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#f2c66f' }}>
+            <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#f3b38d' }}>
               {expValue}
             </Typography>
           </Paper>
@@ -207,7 +207,7 @@ export default function TrainingBattleResult({
               borderRadius: 999,
               backgroundColor: 'rgba(245, 240, 223, 0.14)',
               '& .MuiLinearProgress-bar': {
-                backgroundColor: '#d8b064',
+                backgroundColor: '#b65f49',
               },
             }}
           />
@@ -221,16 +221,16 @@ export default function TrainingBattleResult({
             borderRadius: 999,
             py: 1.1,
             fontWeight: 800,
-            color: '#1f2326',
-            backgroundColor: '#d8b064',
+            color: '#fff5ef',
+            backgroundColor: '#b65f49',
             boxShadow: 'none',
             '&:hover': {
-              backgroundColor: '#e2bb70',
+              backgroundColor: '#c96a52',
               boxShadow: 'none',
             },
             '&.Mui-disabled': {
-              color: 'rgba(255, 247, 221, 0.58)',
-              backgroundColor: 'rgba(216, 176, 100, 0.24)',
+              color: 'rgba(255, 238, 229, 0.58)',
+              backgroundColor: 'rgba(182, 95, 73, 0.24)',
             },
           }}
         >

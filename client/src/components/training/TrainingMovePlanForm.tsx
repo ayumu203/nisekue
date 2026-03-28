@@ -102,8 +102,8 @@ export default function TrainingMovePlanForm({
         minWidth: 0,
         boxSizing: 'border-box',
         color: '#f5f0df',
-        backgroundColor: '#182228',
-        borderColor: 'rgba(227, 188, 111, 0.34)',
+        backgroundColor: '#261819',
+        borderColor: 'rgba(214, 146, 112, 0.34)',
       }}
     >
       <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
@@ -118,8 +118,8 @@ export default function TrainingMovePlanForm({
                 height: 180,
                 objectFit: 'contain',
                 borderRadius: 2,
-                backgroundColor: '#0f171b',
-                border: '1px solid rgba(227, 188, 111, 0.22)',
+                backgroundColor: '#1d1112',
+                border: '1px solid rgba(214, 146, 112, 0.22)',
                 p: 1.1,
                 boxSizing: 'border-box',
               }}
@@ -223,15 +223,15 @@ export default function TrainingMovePlanForm({
                   maxWidth: '100%',
                   boxSizing: 'border-box',
                   color: '#fff7dd',
-                  backgroundColor: '#233038',
+                  backgroundColor: '#382526',
                   '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'rgba(227, 188, 111, 0.34)',
+                    borderColor: 'rgba(214, 146, 112, 0.34)',
                   },
                   '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'rgba(227, 188, 111, 0.58)',
+                    borderColor: 'rgba(214, 146, 112, 0.58)',
                   },
                   '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#d8b064',
+                    borderColor: '#c96a52',
                   },
                   '& .MuiSvgIcon-root': {
                     color: 'rgba(245, 240, 223, 0.82)',
@@ -296,16 +296,16 @@ export default function TrainingMovePlanForm({
               borderRadius: 999,
               py: 1.1,
               fontWeight: 800,
-              color: '#1f2326',
-              backgroundColor: '#d8b064',
+              color: '#fff5ef',
+              backgroundColor: '#b65f49',
               boxShadow: 'none',
               '&:hover': {
-                backgroundColor: '#e2bb70',
+                backgroundColor: '#c96a52',
                 boxShadow: 'none',
               },
               '&.Mui-disabled': {
-                color: 'rgba(255, 247, 221, 0.58)',
-                backgroundColor: 'rgba(216, 176, 100, 0.24)',
+                color: 'rgba(255, 238, 229, 0.58)',
+                backgroundColor: 'rgba(182, 95, 73, 0.24)',
               },
             }}
           >

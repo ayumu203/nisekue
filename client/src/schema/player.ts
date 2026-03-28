@@ -76,6 +76,8 @@ export const playerSummarySchema = z.object({
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
   imagePath: z.string().min(1).nullable().optional(),
+  level: z.number().int().min(1, 'レベルは1以上である必要があります'),
+  job: playerJobSchema,
 })
 
 export const listPlayersResponseSchema = z.array(playerSummarySchema)

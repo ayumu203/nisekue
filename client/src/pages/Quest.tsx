@@ -1,6 +1,6 @@
 import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import {
   cancelQuestRoom,
@@ -89,6 +89,7 @@ function clearPersistedQuestSession(userId: string): void {
 
 export default function Quest() {
   const { session, isLoading } = useAuth()
+  const { mutate: mutateCache } = useSWRConfig()
   const [selectedStageId, setSelectedStageId] = useState<number | ''>('')
   const [mode, setMode] = useState<CreateQuestRoomRequest['mode']>('Solo')
   const [multiEntryView, setMultiEntryView] = useState<'create' | 'list'>('create')
@@ -123,6 +124,7 @@ export default function Quest() {
     data: player,
     error: playerError,
     isLoading: isPlayerLoading,
+    mutate: mutatePlayer,
   } = useSWR(playerSWRKey, async () => {
     if (!session?.access_token) {
       throw new Error(locale.sessionInfoMissing)
@@ -140,6 +142,19 @@ export default function Quest() {
       return getPlayer(session.access_token)
     }
   })
+
+  async function refreshPlayerStatus(): Promise<void> {
+    if (!session?.user.id) {
+      return
+    }
+
+    await Promise.all([
+      mutatePlayer(),
+      mutateCache([`player`, session.user.id]),
+      mutateCache([`quest-player`, session.user.id]),
+      mutateCache([`training-player`, session.user.id]),
+    ])
+  }
 
   const stagesSWRKey = session?.access_token ? ([`quest-stages`] as const) : null
   const {
@@ -565,6 +580,14 @@ export default function Quest() {
   }, [createdRoom, isPlayerLoading, liveRoom, liveRun, player, session?.access_token, startedRun])
 
   useEffect(() => {
+    if (currentRun?.status !== 'Succeeded' && currentRun?.status !== 'Failed') {
+      return
+    }
+
+    void refreshPlayerStatus()
+  }, [currentRun?.status])
+
+  useEffect(() => {
     if (!isEnemyTargetingAction) {
       return
     }
@@ -748,11 +771,12 @@ export default function Quest() {
     }
   }
 
-  function handleLeaveFinishedRun(): void {
+  async function handleLeaveFinishedRun(): Promise<void> {
     if (session?.user.id) {
       clearPersistedQuestSession(session.user.id)
     }
 
+    await refreshPlayerStatus()
     setCreatedRoom(null)
     setStartedRun(null)
     setSubmitError(null)
@@ -805,6 +829,7 @@ export default function Quest() {
                 p: { xs: 1.5, sm: 2 },
                 backgroundColor: '#172742',
                 borderColor: 'rgba(152, 192, 255, 0.34)',
+                mt: '48px',
               }}
             >
               <Stack spacing={{ xs: 1.25, sm: 2 }}>

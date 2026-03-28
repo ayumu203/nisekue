@@ -10,7 +10,7 @@ import {
   useTheme,
 } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 import { executeTraining, getTrainingEnemies, TrainingCooldownError } from '@/api/training'
 import { createPlayer, getPlayer } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
@@ -69,8 +69,10 @@ function areMoveIdArraysEqual(left: Array<number | null> | null, right: Array<nu
 
 export default function Training() {
   const { session, isLoading } = useAuth()
+  const { mutate: mutateCache } = useSWRConfig()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const trainingPanelRef = useRef<HTMLDivElement | null>(null)
   const battleResultRef = useRef<HTMLDivElement | null>(null)
   const trainingMovePlanRef = useRef<HTMLDivElement | null>(null)
   const [selectedEnemy, setSelectedEnemy] = useState<TrainingEnemy | null>(null)
@@ -102,8 +104,16 @@ export default function Training() {
       return
     }
 
-    trainingMovePlanRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    trainingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [isMobile, plannedMoveIds, selectedEnemy, trainingResult])
+
+  useEffect(() => {
+    if (!isMobile || !trainingResult) {
+      return
+    }
+
+    trainingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [isMobile, trainingResult])
 
   const playerSWRKey = session?.user.id ? ([`training-player`, session.user.id] as const) : null
   const {
@@ -142,6 +152,19 @@ export default function Training() {
 
     return getTrainingEnemies(session.access_token)
   })
+
+  async function refreshPlayerStatus(): Promise<void> {
+    if (!session?.user.id) {
+      return
+    }
+
+    await Promise.all([
+      mutatePlayer(),
+      mutateCache([`player`, session.user.id]),
+      mutateCache([`quest-player`, session.user.id]),
+      mutateCache([`training-player`, session.user.id]),
+    ])
+  }
 
   const isTrainingActionDisabled = isTrainingSubmitting || trainingLockRemainingSeconds > 0
 
@@ -193,7 +216,7 @@ export default function Training() {
       setLastSubmittedMoveIds(normalizedMoveIds)
       setPlannedMoveIds(normalizedMoveIds)
       setTrainingResult(result)
-      await mutatePlayer()
+      await refreshPlayerStatus()
     } catch (error) {
       if (error instanceof TrainingCooldownError) {
         const retryAfterMessage = locale.retryAfterSeconds.replace('{{seconds}}', String(error.retryAfterSeconds))
@@ -271,11 +294,13 @@ export default function Training() {
             </Stack>
 
             <Paper
+              ref={trainingPanelRef}
               variant="outlined"
               sx={{
                 ...innerSurfaceSx,
                 borderRadius: 3,
                 p: { xs: 2, sm: 2.5 },
+                mt: '48px',
                 color: '#f5f0df',
                 backgroundColor: '#2d1d1e',
                 borderColor: 'rgba(214, 146, 112, 0.55)',
