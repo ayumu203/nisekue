@@ -808,8 +808,7 @@ export default function Quest() {
         elevation={2}
         sx={{
           ...outerPagePaperSx,
-          background:
-            'linear-gradient(180deg, rgba(106, 194, 176, 0.98) 0%, rgba(57, 138, 154, 0.96) 100%)',
+          background: 'linear-gradient(180deg, rgba(106, 194, 176, 0.98) 0%, rgba(57, 138, 154, 0.96) 100%)',
         }}
       >
         <Stack spacing={{ xs: 1.25, sm: 2 }}>

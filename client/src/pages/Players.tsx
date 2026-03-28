@@ -145,7 +145,11 @@ function Players() {
                             {(player.userName ?? '?').slice(0, 1)}
                           </Avatar>
                           <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="h6" fontWeight={800} sx={{ wordBreak: 'break-word', color: '#2f646c' }}>
+                            <Typography
+                              variant="h6"
+                              fontWeight={800}
+                              sx={{ wordBreak: 'break-word', color: '#2f646c' }}
+                            >
                               {player.userName ?? '-'}
                             </Typography>
                             <Typography variant="body2" sx={{ color: 'rgba(47, 100, 108, 0.76)' }}>

@@ -153,7 +153,13 @@ export default function TrainingBattleResult({
         >
           <Paper
             variant="outlined"
-            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#382526', borderColor: 'rgba(214, 146, 112, 0.22)' }}
+            sx={{
+              ...innerSurfaceSx,
+              p: 1.25,
+              color: '#f5f0df',
+              backgroundColor: '#382526',
+              borderColor: 'rgba(214, 146, 112, 0.22)',
+            }}
           >
             <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.62)' }}>
               {locale.result}
@@ -164,7 +170,13 @@ export default function TrainingBattleResult({
           </Paper>
           <Paper
             variant="outlined"
-            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#382526', borderColor: 'rgba(214, 146, 112, 0.22)' }}
+            sx={{
+              ...innerSurfaceSx,
+              p: 1.25,
+              color: '#f5f0df',
+              backgroundColor: '#382526',
+              borderColor: 'rgba(214, 146, 112, 0.22)',
+            }}
           >
             <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.62)' }}>
               {locale.turn}
@@ -175,7 +187,13 @@ export default function TrainingBattleResult({
           </Paper>
           <Paper
             variant="outlined"
-            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#382526', borderColor: 'rgba(214, 146, 112, 0.22)' }}
+            sx={{
+              ...innerSurfaceSx,
+              p: 1.25,
+              color: '#f5f0df',
+              backgroundColor: '#382526',
+              borderColor: 'rgba(214, 146, 112, 0.22)',
+            }}
           >
             <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.62)' }}>
               {locale.expGained}

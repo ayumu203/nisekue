@@ -269,8 +269,7 @@ export default function Training() {
         elevation={2}
         sx={{
           ...outerPagePaperSx,
-          background:
-            'linear-gradient(180deg, rgba(157, 69, 52, 0.98) 0%, rgba(100, 40, 34, 0.96) 100%)',
+          background: 'linear-gradient(180deg, rgba(157, 69, 52, 0.98) 0%, rgba(100, 40, 34, 0.96) 100%)',
         }}
       >
         <Stack spacing={{ xs: 1.5, sm: 2 }}>

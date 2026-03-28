@@ -16,9 +16,7 @@ const trainingEnemyBackgroundPaths = [
 ] as const
 
 function getTrainingEnemyBackgroundPath(enemyId: number): string {
-  return resolvePublicAssetPath(
-    trainingEnemyBackgroundPaths[Math.abs(enemyId) % trainingEnemyBackgroundPaths.length],
-  )
+  return resolvePublicAssetPath(trainingEnemyBackgroundPaths[Math.abs(enemyId) % trainingEnemyBackgroundPaths.length])
 }
 
 type TrainingEnemySelectProps = {

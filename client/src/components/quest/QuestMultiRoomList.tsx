@@ -34,7 +34,9 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
   const ownerImageSrc = resolveCharacterAssetPath(room.ownerImagePath)
   const battlefieldImageSrc = resolvePublicAssetPath(stage?.battlefieldImagePath ?? 'image/quest/dummy-battlefield.svg')
   const participantSummary =
-    room.maxPartyMemberCount != null ? `${room.participantCount} / ${room.maxPartyMemberCount}人` : `${room.participantCount}人`
+    room.maxPartyMemberCount != null
+      ? `${room.participantCount} / ${room.maxPartyMemberCount}人`
+      : `${room.participantCount}人`
   const roomModeLabel = room.mode === 'Solo' ? 'ソロ' : 'マルチ'
 
   return (

@@ -259,8 +259,8 @@ export default function TrainingMovePlanForm({
                       overflowWrap: 'anywhere',
                     }}
                   >
-                      <Stack spacing={0.2} sx={{ minWidth: 0 }}>
-                        <Typography sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}>{move.moveName}</Typography>
+                    <Stack spacing={0.2} sx={{ minWidth: 0 }}>
+                      <Typography sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}>{move.moveName}</Typography>
                       <Typography variant="caption" color="text.secondary">
                         {locale.mpCost.replace('{{cost}}', String(move.mpCost ?? 0))} /{' '}
                         {resolveTargetTypeLabel(move.targetType)}

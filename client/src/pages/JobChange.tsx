@@ -206,13 +206,13 @@ export default function JobChange() {
                     ) : null}
 
                     <Stack spacing={1.25}>
-                        <Box
-                          sx={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                            gap: 1,
-                          }}
-                        >
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                          gap: 1,
+                        }}
+                      >
                         <Paper
                           variant="outlined"
                           sx={{ borderRadius: 2, p: 1.5, borderColor: '#d2c08b', bgcolor: 'rgba(255, 249, 232, 0.92)' }}

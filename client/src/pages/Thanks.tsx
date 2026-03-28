@@ -1,6 +1,7 @@
 import { Box, Container, Link as MuiLink, Paper, Stack, Typography } from '@mui/material'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { outerPagePaperSx } from '@/constants/styles'
+import locale from '../../locale/thanks/Thanks.json'
 
 const creditEntries = [
   {
@@ -36,7 +37,7 @@ export default function Thanks() {
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2.5 }}>
           <Stack direction="row" justifyContent="flex-start">
-            <HomeNavIconButton ariaLabel="ホームへ戻る" />
+            <HomeNavIconButton ariaLabel={locale.backToHome} />
           </Stack>
 
           <Paper

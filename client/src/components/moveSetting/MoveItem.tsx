@@ -140,8 +140,7 @@ export default function MoveItem({ slot }: MoveItemProps) {
             sx={{
               borderRadius: 2,
               border: '1px solid #ead9b2',
-              background:
-                'linear-gradient(135deg, rgba(255,252,245,0.95), rgba(246,235,205,0.82))',
+              background: 'linear-gradient(135deg, rgba(255,252,245,0.95), rgba(246,235,205,0.82))',
               height: 84,
               display: 'grid',
               placeItems: 'center',

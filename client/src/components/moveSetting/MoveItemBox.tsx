@@ -36,11 +36,7 @@ export default function MoveItemBox({ player }: MoveItemBoxProps) {
           }}
         >
           <Stack spacing={1.5}>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={2}
-              alignItems={{ xs: 'stretch', sm: 'center' }}
-            >
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
               <Box
                 sx={{
                   width: { xs: '100%', sm: 140 },
@@ -157,7 +153,6 @@ export default function MoveItemBox({ player }: MoveItemBoxProps) {
                 </Typography>
               </Paper>
             </Box>
-
           </Stack>
         </Paper>
 
