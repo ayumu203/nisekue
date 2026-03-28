@@ -140,3 +140,14 @@ export const twoColumnContentGridSx = {
   gap: { xs: 1.5, sm: 3 },
   alignItems: 'start',
 } as const
+
+export const topNavigationIconButtonSx = {
+  width: 44,
+  height: 44,
+  border: '2px solid #ffffff',
+  color: '#ffffff',
+  backgroundColor: 'rgba(122, 77, 25, 0.9)',
+  '&:hover': {
+    backgroundColor: 'rgba(110, 68, 21, 0.94)',
+  },
+} as const

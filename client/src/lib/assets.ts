@@ -31,6 +31,7 @@ export function resolveStatusAssetPath(fileName: string): string {
 }
 
 const jobAssetFileNameByCode = {
+  Apprentice: '00_apprentice.png',
   Warrior: '01_warior.png',
   Guardian: '02_guard.png',
   Mage: '03_mage.png',

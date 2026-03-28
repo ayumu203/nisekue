@@ -2,6 +2,7 @@ import { Alert, Avatar, Box, Button, CircularProgress, Container, Paper, Stack, 
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, listPlayers } from '@/api/player'
+import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { resolveCharacterAssetPath } from '@/lib/assets'
@@ -64,6 +65,9 @@ function Players() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={2}>
+          <Stack direction="row" justifyContent="flex-start">
+            <HomeNavIconButton ariaLabel={locale.backToHome} />
+          </Stack>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1.5}
@@ -71,9 +75,6 @@ function Players() {
             alignItems={{ xs: 'stretch', sm: 'center' }}
           >
             <Typography variant="h4">{locale.title}</Typography>
-            <Button component={Link} to="/" variant="outlined">
-              {locale.backToHome}
-            </Button>
           </Stack>
 
           {isCurrentPlayerLoading || isPlayersLoading ? (

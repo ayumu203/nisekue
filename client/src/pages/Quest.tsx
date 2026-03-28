@@ -1,6 +1,5 @@
 import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import {
@@ -18,13 +17,14 @@ import {
   submitQuestCommand,
   updateQuestRoomPosition,
 } from '@/api/quest'
+import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import QuestRoomCreateSection from '@/components/quest/QuestRoomCreateSection'
 import QuestRoomLobbySection from '@/components/quest/QuestRoomLobbySection'
 import QuestMultiRoomList from '@/components/quest/QuestMultiRoomList'
 import QuestRunSection from '@/components/quest/QuestRunSection'
 import Status from '@/components/home/Status'
 import { useAuth } from '@/contexts/useAuth'
-import { menuButtonSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
+import { outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/quest/QuestRoom.json'
 import type {
@@ -387,7 +387,9 @@ export default function Quest() {
   const currentRoomStage = currentRoom
     ? (activeStages.find((stage) => stage.stageId === currentRoom.stageId) ?? null)
     : null
-  const currentRunStage = currentRun ? (activeStages.find((stage) => stage.stageId === currentRun.stageId) ?? null) : null
+  const currentRunStage = currentRun
+    ? (activeStages.find((stage) => stage.stageId === currentRun.stageId) ?? null)
+    : null
   const selfParticipantId =
     player && currentRoom
       ? (currentRoom.participants.find((participant) => participant.playerId === player.userId)?.participantId ?? null)
@@ -782,7 +784,11 @@ export default function Quest() {
         <Stack spacing={{ xs: 1.25, sm: 2 }}>
           <Box sx={twoColumnContentGridSx}>
             <Stack spacing={{ xs: 1.25, sm: 2 }}>
-              <Status player={player} />
+              <Status
+                player={player}
+                showDesktopActions={false}
+                topAction={<HomeNavIconButton ariaLabel={locale.backToHome} />}
+              />
             </Stack>
 
             <Stack spacing={{ xs: 1.25, sm: 2 }}>
@@ -905,7 +911,9 @@ export default function Quest() {
               {showRunSection ? (
                 <QuestRunSection
                   currentRun={currentRun}
-                  battlefieldImagePath={currentRunStage?.battlefieldImagePath ?? currentRoomStage?.battlefieldImagePath ?? null}
+                  battlefieldImagePath={
+                    currentRunStage?.battlefieldImagePath ?? currentRoomStage?.battlefieldImagePath ?? null
+                  }
                   selfParticipantId={selfParticipantId}
                   availableMoves={availableMoves}
                   selectedActionKind={selectedActionKind}
@@ -929,10 +937,6 @@ export default function Quest() {
               ) : null}
             </Stack>
           </Box>
-
-          <Button component={Link} to="/" variant="outlined" sx={menuButtonSx}>
-            {locale.backToHome}
-          </Button>
         </Stack>
       </Paper>
     </Container>

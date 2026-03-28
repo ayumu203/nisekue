@@ -1,5 +1,5 @@
-import { Button, Container, Link as MuiLink, Paper, Stack, Typography } from '@mui/material'
-import { Link } from 'react-router-dom'
+import { Container, Link as MuiLink, Paper, Stack, Typography } from '@mui/material'
+import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { outerPagePaperSx } from '@/constants/styles'
 
 export default function Thanks() {
@@ -7,6 +7,9 @@ export default function Thanks() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
+          <Stack direction="row" justifyContent="flex-end">
+            <HomeNavIconButton ariaLabel="ホームへ戻る" />
+          </Stack>
           <Typography variant="h4">スペシャルサンクス</Typography>
 
           <Paper variant="outlined" sx={{ borderRadius: 2, p: { xs: 2, sm: 2.5 } }}>
@@ -83,10 +86,6 @@ export default function Thanks() {
               </MuiLink>
             </Stack>
           </Paper>
-
-          <Button component={Link} to="/" variant="outlined">
-            ホームへ戻る
-          </Button>
         </Stack>
       </Paper>
     </Container>

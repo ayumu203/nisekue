@@ -11,9 +11,9 @@ import {
   Typography,
 } from '@mui/material'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayerJob } from '@/api/player'
+import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { innerSurfaceSx, mutedGreenButtonSx, outerPagePaperSx, softGreenButtonSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { resolveJobAssetPath } from '@/lib/assets'
@@ -107,10 +107,8 @@ export default function JobChange() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Stack spacing={1}>
-            <Button component={Link} to="/" variant="outlined" sx={{ alignSelf: 'flex-end' }}>
-              {locale.backToHome}
-            </Button>
+          <Stack direction="row" justifyContent="flex-start">
+            <HomeNavIconButton ariaLabel={locale.backToHome} />
           </Stack>
 
           {isPlayerLoading ? (
@@ -124,23 +122,22 @@ export default function JobChange() {
             <Alert severity="warning">{locale.loadingPlayer}</Alert>
           ) : (
             <Stack spacing={2}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.2fr) minmax(320px, 0.8fr)' },
-                  gap: 2,
-                }}
-              >
-                <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-                  <Stack spacing={2}>
-                    <Stack
-                      direction={{ xs: 'column', sm: 'row' }}
-                      spacing={2}
-                      alignItems={{ xs: 'stretch', sm: 'center' }}
-                      justifyContent="space-between"
-                    >
+              <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+                <Stack spacing={2}>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={2}
+                    alignItems={{ xs: 'stretch', sm: 'center' }}
+                    justifyContent="space-between"
+                  >
+                    <Stack spacing={1}>
+                      <Chip
+                        label={locale.currentBadge}
+                        color="info"
+                        sx={{ fontWeight: 700, alignSelf: 'flex-start' }}
+                      />
                       <Stack spacing={0.75}>
-                        <Typography variant="h5" fontWeight={800}>
+                        <Typography variant="h4" fontWeight={900} lineHeight={1.1}>
                           {player.job.displayName}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
@@ -148,112 +145,110 @@ export default function JobChange() {
                         </Typography>
                       </Stack>
                     </Stack>
+                  </Stack>
 
-                    <Box
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', sm: '220px minmax(0, 1fr)' },
-                        gap: 2,
-                        alignItems: 'center',
-                      }}
-                    >
-                      {currentJobImageSrc ? (
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', sm: '220px minmax(0, 1fr)' },
+                      gap: 2,
+                      alignItems: 'center',
+                    }}
+                  >
+                    {currentJobImageSrc ? (
+                      <Box
+                        sx={{
+                          width: '100%',
+                          maxWidth: 240,
+                          aspectRatio: '1 / 1',
+                          justifySelf: { sm: 'start' },
+                          borderRadius: 3,
+                          border: '2px solid',
+                          borderColor: '#d3a93a',
+                          bgcolor: '#fffaf0',
+                          boxShadow: '0 10px 24px rgba(120, 86, 24, 0.16)',
+                          overflow: 'hidden',
+                          display: 'grid',
+                          placeItems: 'center',
+                          p: 1.5,
+                          backgroundImage:
+                            'radial-gradient(circle at 50% 35%, rgba(255, 240, 184, 0.95), rgba(255, 250, 240, 0.85) 58%, rgba(245, 227, 176, 0.9))',
+                        }}
+                      >
                         <Box
+                          component="img"
+                          src={currentJobImageSrc}
+                          alt={player.job.displayName}
                           sx={{
                             width: '100%',
-                            maxWidth: 240,
-                            aspectRatio: '1 / 1',
-                            justifySelf: { sm: 'start' },
-                            borderRadius: 3,
-                            border: '2px solid',
-                            borderColor: '#d3a93a',
-                            bgcolor: '#fffaf0',
-                            boxShadow: '0 10px 24px rgba(120, 86, 24, 0.16)',
-                            overflow: 'hidden',
-                            display: 'grid',
-                            placeItems: 'center',
-                            p: 1.5,
-                            backgroundImage:
-                              'radial-gradient(circle at 50% 35%, rgba(255, 240, 184, 0.95), rgba(255, 250, 240, 0.85) 58%, rgba(245, 227, 176, 0.9))',
+                            height: '100%',
+                            objectFit: 'contain',
+                            display: 'block',
+                            filter: 'drop-shadow(0 10px 14px rgba(91, 63, 16, 0.18))',
+                            transform: 'scale(1.04)',
                           }}
-                        >
-                          <Box
-                            component="img"
-                            src={currentJobImageSrc}
-                            alt={player.job.displayName}
-                            sx={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'contain',
-                              display: 'block',
-                              filter: 'drop-shadow(0 10px 14px rgba(91, 63, 16, 0.18))',
-                              transform: 'scale(1.04)',
-                            }}
-                          />
-                        </Box>
-                      ) : null}
+                        />
+                      </Box>
+                    ) : null}
 
-                      <Stack spacing={1.25}>
-                        <Box
-                          sx={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                            gap: 1,
-                          }}
-                        >
-                          <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 2, p: 1.5 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              {locale.currentLevel.replace('{{level}}', '')}
-                            </Typography>
-                            <Typography variant="h6" fontWeight={800}>
-                              Lv.{player.level}
-                            </Typography>
-                          </Paper>
-                          <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 2, p: 1.5 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              {locale.currentJobLevel.replace('{{level}}', '')}
-                            </Typography>
-                            <Typography variant="h6" fontWeight={800}>
-                              Lv.{player.jobLevel}
-                            </Typography>
-                          </Paper>
-                        </Box>
+                    <Stack spacing={1.25}>
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                          gap: 1,
+                        }}
+                      >
+                        <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 2, p: 1.5 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {locale.currentLevel.replace('{{level}}', '')}
+                          </Typography>
+                          <Typography variant="h6" fontWeight={800}>
+                            Lv.{player.level}
+                          </Typography>
+                        </Paper>
+                        <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 2, p: 1.5 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {locale.currentJobLevel.replace('{{level}}', '')}
+                          </Typography>
+                          <Typography variant="h6" fontWeight={800}>
+                            Lv.{player.jobLevel}
+                          </Typography>
+                        </Paper>
+                      </Box>
 
-                        <Stack spacing={0.75}>
-                          <Stack direction="row" justifyContent="space-between" spacing={1}>
-                            <Typography variant="body2" color="text.secondary">
-                              {locale.jobExpProgress
-                                .replace('{{current}}', String(jobExpProgress.current))
-                                .replace('{{required}}', String(jobExpProgress.required))}
-                            </Typography>
-                          </Stack>
-                          <LinearProgress
-                            variant="determinate"
-                            value={jobExpProgress.ratio}
-                            sx={{
-                              height: 10,
-                              borderRadius: 999,
-                              backgroundColor: '#ecdca8',
-                              '& .MuiLinearProgress-bar': {
-                                backgroundColor: '#78c27d',
-                              },
-                            }}
-                          />
+                      <Stack spacing={0.75}>
+                        <Stack direction="row" justifyContent="space-between" spacing={1}>
+                          <Typography variant="body2" color="text.secondary">
+                            {locale.jobExpProgress
+                              .replace('{{current}}', String(jobExpProgress.current))
+                              .replace('{{required}}', String(jobExpProgress.required))}
+                          </Typography>
+                          <Typography variant="body2" fontWeight={700} color="#7a4d19">
+                            {Math.round(jobExpProgress.ratio)}%
+                          </Typography>
                         </Stack>
+                        <LinearProgress
+                          variant="determinate"
+                          value={jobExpProgress.ratio}
+                          sx={{
+                            height: 10,
+                            borderRadius: 999,
+                            backgroundColor: '#ecdca8',
+                            '& .MuiLinearProgress-bar': {
+                              backgroundColor: '#78c27d',
+                            },
+                          }}
+                        />
                       </Stack>
-                    </Box>
-                  </Stack>
-                </Paper>
+                    </Stack>
+                  </Box>
 
-                <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-                  <Stack spacing={1.5}>
-                    <Typography variant="h6">{locale.resetNoticeTitle}</Typography>
-                    <Alert severity="warning" sx={{ alignItems: 'center' }}>
-                      {locale.resetNoticeBody}
-                    </Alert>
-                  </Stack>
-                </Paper>
-              </Box>
+                  <Alert severity="warning" sx={{ alignItems: 'center', borderRadius: 2 }}>
+                    {locale.resetNoticeBody}
+                  </Alert>
+                </Stack>
+              </Paper>
 
               {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
               {submitError ? <Alert severity="error">{submitError}</Alert> : null}
