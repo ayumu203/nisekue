@@ -249,7 +249,9 @@ public class QuestResponseMapper(
                 }),
             rewards = new
             {
-                exp = run.Rewards.Exp
+                exp = run.Rewards.Exp,
+                equipmentRewardId = run.Rewards.EquipmentRewardId?.Value,
+                inventoryFullSkippedPlayerIds = run.Rewards.SkippedRewardPlayerIds.Select(x => x.Value)
             },
             lastTurnResults = run.LastTurnResults is null
                 ? null

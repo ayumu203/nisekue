@@ -1,0 +1,3 @@
+stage_id,equipment_id,weight,is_miss
+1,,75,true
+1,1001,25,false

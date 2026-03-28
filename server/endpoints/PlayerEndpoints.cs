@@ -114,6 +114,7 @@ internal static class PlayerEndpoints
                     exp: 0,
                     jobLevel: 1,
                     jobExp: 0,
+                    gold: 100,
                     status: new Status(maxHp: 24, maxMp: 8, strength: 7, defense: 5, intelligence: 5, luck: 3, speed: 4),
                     job: Job.Apprentice,
                     imagePath: PlayerImageCatalog.DefaultFileName,
@@ -441,11 +442,14 @@ internal static class PlayerEndpoints
                     playerEquipmentId = playerEquipment.Id.Value,
                     equipmentId = equipment.Id.Value,
                     name = equipment.Name,
+                    flavorText = equipment.FlavorText,
                     equipmentType = equipment.Type.ToString(),
                     status = playerEquipment.Status.ToString(),
                     durability = playerEquipment.Durability,
                     maxDurability = equipment.MaxDurability,
                     mastery = playerEquipment.Mastery,
+                    masteryCap = equipment.MasteryCap,
+                    synthesisGoldCost = equipment.SynthesisGoldCost,
                     canEquipCurrentJob = equipment.CanEquip(player.Job),
                     bonusValues = new
                     {
@@ -479,6 +483,7 @@ internal static class PlayerEndpoints
             exp = player.Exp,
             jobLevel = player.JobLevel,
             jobExp = player.JobExp,
+            gold = player.Gold,
             status = new
             {
                 baseValues = new

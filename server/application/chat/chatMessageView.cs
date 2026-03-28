@@ -4,7 +4,8 @@ namespace server.application.chat;
 
 public sealed record ChatMessageView(
     int ChatId,
-    PlayerId SenderId,
+    string SenderType,
+    PlayerId? SenderId,
     string SenderName,
     string? ImagePath,
     string Message,

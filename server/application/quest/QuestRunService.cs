@@ -16,6 +16,9 @@ public class QuestRunService(
     IMoveRepository moveRepository,
     IPlayerRepository playerRepository,
     IPlayerEquipmentRepository playerEquipmentRepository,
+    IPlayerItemStackRepository playerItemStackRepository,
+    IMarketListingRepository marketListingRepository,
+    IEquipmentRepository equipmentRepository,
     IJobProfileRepository jobProfileRepository,
     IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
     BattleService battleService,
@@ -23,6 +26,7 @@ public class QuestRunService(
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(1);
+    private const int ItemCapacity = 20;
 
     public async Task<QuestRun> GetDetailAsync(QuestRunId runId)
     {
@@ -215,6 +219,8 @@ public class QuestRunService(
     {
         var room = await questRoomRepository.GetAsync(run.RoomId)
             ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
+        var stage = await questStageRepository.GetAsync(run.StageId)
+            ?? throw new KeyNotFoundException($"ステージ定義が見つかりません。 stageId={run.StageId.Value}");
 
         var rewardedPlayerIds = room.Participants
             .Where(participant => participant.PlayerId is not null)
@@ -226,6 +232,12 @@ public class QuestRunService(
             .Select(participant => participant.PlayerId!.Value)
             .Distinct()
             .ToArray();
+
+        var rewardEquipmentId = run.Status == QuestRunStatus.Succeeded
+            ? DrawEquipmentReward(stage)
+            : null;
+        run.Rewards.SetEquipmentReward(rewardEquipmentId);
+        var skippedRewardPlayerIds = new List<PlayerId>();
 
         foreach (var playerId in rewardedPlayerIds)
         {
@@ -242,7 +254,44 @@ public class QuestRunService(
 
             player.SetQuestCooldownUntil((run.EndedAt ?? DateTimeOffset.UtcNow).Add(QuestCooldown));
             await playerRepository.SaveAsync(player);
+
+            if (run.Status == QuestRunStatus.Succeeded && rewardEquipmentId is not null)
+            {
+                var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(playerId)).ToList();
+                var playerItemStacks = await playerItemStackRepository.GetByPlayerAsync(playerId);
+                var listings = await marketListingRepository.GetBySellerAsync(playerId, DateTimeOffset.UtcNow);
+                var listedEquipmentIds = listings
+                    .Where(x => x.PlayerEquipmentId is not null)
+                    .Select(x => x.PlayerEquipmentId!.Value)
+                    .ToHashSet();
+                var usedSlots = playerEquipments.Count(x => x.Status != EquipmentStatus.Equipped && !listedEquipmentIds.Contains(x.Id))
+                                + playerItemStacks.Count;
+
+                if (usedSlots >= ItemCapacity)
+                {
+                    skippedRewardPlayerIds.Add(playerId);
+                }
+                else
+                {
+                    var rewardMaster = await equipmentRepository.GetAsync(rewardEquipmentId.Value)
+                        ?? throw new KeyNotFoundException($"装備マスタが見つかりません。 equipmentId={rewardEquipmentId.Value.Value}");
+                    var rewardGrantedAt = run.EndedAt ?? DateTimeOffset.UtcNow;
+                    playerEquipments.Add(new PlayerEquipment(
+                        PlayerEquipmentId.New(),
+                        playerId,
+                        rewardMaster.Id,
+                        rewardMaster.Type,
+                        EquipmentStatus.Inventory,
+                        rewardMaster.MaxDurability,
+                        0,
+                        rewardGrantedAt,
+                        rewardGrantedAt));
+                    await playerEquipmentRepository.SaveAsync(playerEquipments);
+                }
+            }
         }
+
+        run.Rewards.SetSkippedRewardPlayerIds(skippedRewardPlayerIds);
 
         var now = run.EndedAt ?? DateTimeOffset.UtcNow;
         foreach (var participant in room.Participants.Where(x => x.PlayerId is not null && x.Type == ParticipantType.Player))
@@ -263,6 +312,35 @@ public class QuestRunService(
                 await playerEquipmentRepository.SaveAsync(playerEquipments);
             }
         }
+    }
+
+    private static EquipmentId? DrawEquipmentReward(QuestStageDefinition stage)
+    {
+        if (stage.EquipmentRewards.Count == 0)
+        {
+            return null;
+        }
+
+        var totalWeight = stage.EquipmentRewards.Sum(x => x.Weight);
+        if (totalWeight <= 0)
+        {
+            return null;
+        }
+
+        var roll = Random.Shared.Next(1, totalWeight + 1);
+        var cumulative = 0;
+        foreach (var entry in stage.EquipmentRewards)
+        {
+            cumulative += entry.Weight;
+            if (roll > cumulative)
+            {
+                continue;
+            }
+
+            return entry.IsMiss ? null : entry.EquipmentId;
+        }
+
+        return null;
     }
 
     private static bool ConsumeEquipmentDurability(

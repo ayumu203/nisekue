@@ -9,10 +9,12 @@ public class QuestStageDefinition(
     int minPartyMemberCount,
     int maxPartyMemberCount,
     IEnumerable<QuestFloorDefinition> floors,
+    IEnumerable<QuestStageEquipmentRewardEntry>? equipmentRewards,
     bool isActive)
 {
     private readonly QuestFloorDefinition[] floors = floors?.OrderBy(x => x.FloorNo).ToArray()
         ?? throw new ArgumentNullException(nameof(floors));
+    private readonly QuestStageEquipmentRewardEntry[] equipmentRewards = equipmentRewards?.ToArray() ?? [];
 
     public QuestStageId Id { get; } = id;
     public string StageCode { get; } = ValidateText(stageCode, nameof(stageCode));
@@ -22,6 +24,7 @@ public class QuestStageDefinition(
     public int MinPartyMemberCount { get; } = ValidatePartyCount(minPartyMemberCount, nameof(minPartyMemberCount));
     public int MaxPartyMemberCount { get; } = ValidatePartyCount(maxPartyMemberCount, nameof(maxPartyMemberCount));
     public IReadOnlyList<QuestFloorDefinition> Floors => floors;
+    public IReadOnlyList<QuestStageEquipmentRewardEntry> EquipmentRewards => equipmentRewards;
     public bool IsActive { get; } = isActive;
 
     private static string ValidateText(string value, string paramName)

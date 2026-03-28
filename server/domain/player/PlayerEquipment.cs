@@ -12,7 +12,7 @@ public class PlayerEquipment(
     DateTimeOffset updatedAt)
 {
     public PlayerEquipmentId Id { get; } = id;
-    public PlayerId PlayerId { get; } = playerId;
+    public PlayerId PlayerId { get; private set; } = playerId;
     public EquipmentId EquipmentId { get; } = equipmentId;
     public EquipmentType Type { get; } = type;
     public EquipmentStatus Status { get; private set; } = status;
@@ -81,6 +81,38 @@ public class PlayerEquipment(
         }
     }
 
+    public void RepairDurability(int value, int maxDurability, DateTimeOffset now)
+    {
+        if (value < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), "耐久値の回復量に負数は指定できません。");
+        }
+
+        if (maxDurability < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxDurability), "耐久値上限は1以上である必要があります。");
+        }
+
+        if (IsBroken)
+        {
+            throw new InvalidOperationException("破損した装備は修復対象にできません。");
+        }
+
+        Durability = Math.Min(maxDurability, Durability + value);
+        UpdatedAt = now;
+    }
+
+    public void TransferOwnership(PlayerId playerId, DateTimeOffset now)
+    {
+        PlayerId = playerId;
+        if (Status != EquipmentStatus.Broken)
+        {
+            Status = EquipmentStatus.Inventory;
+        }
+
+        UpdatedAt = now;
+    }
+
     public void IncreaseMastery(int value, DateTimeOffset now)
     {
         if (value < 0)
@@ -89,6 +121,22 @@ public class PlayerEquipment(
         }
 
         Mastery += value;
+        UpdatedAt = now;
+    }
+
+    public void IncreaseMastery(int value, int masteryCap, DateTimeOffset now)
+    {
+        if (value < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), "熟練度の増加量に負数は指定できません。");
+        }
+
+        if (masteryCap < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(masteryCap), "熟練度上限は0以上である必要があります。");
+        }
+
+        Mastery = Math.Min(masteryCap, Mastery + value);
         UpdatedAt = now;
     }
 

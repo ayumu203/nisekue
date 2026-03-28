@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.move;
@@ -169,7 +170,10 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             new QuestBattleState(partyMembers, enemies),
             new QuestTurnState(runEntity.CurrentTurnNo, runEntity.ActionDeadlineAt, turnCommands, runEntity.LastResolvedTurnNo),
             new QuestTrapCollection(traps),
-            new QuestRewardAccumulator(rewardEntity?.Exp ?? 0),
+            new QuestRewardAccumulator(
+                rewardEntity?.Exp ?? 0,
+                rewardEntity?.EquipmentRewardId is null ? null : new EquipmentId(rewardEntity.EquipmentRewardId.Value),
+                DeserializeSkippedRewardPlayerIds(rewardEntity?.SkippedRewardPlayerIdsJson)),
             lastTurnResults,
             chatMessages,
             runEntity.StartedAt,
@@ -193,12 +197,16 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             dbContext.QuestRewardSummaries.Add(new QuestRewardSummaryEntity
             {
                 RunId = runId,
-                Exp = run.Rewards.Exp
+                Exp = run.Rewards.Exp,
+                EquipmentRewardId = run.Rewards.EquipmentRewardId?.Value,
+                SkippedRewardPlayerIdsJson = SerializeSkippedRewardPlayerIds(run.Rewards.SkippedRewardPlayerIds)
             });
         }
         else
         {
             reward.Exp = run.Rewards.Exp;
+            reward.EquipmentRewardId = run.Rewards.EquipmentRewardId?.Value;
+            reward.SkippedRewardPlayerIdsJson = SerializeSkippedRewardPlayerIds(run.Rewards.SkippedRewardPlayerIds);
         }
 
         dbContext.QuestRunPartySnapshots.AddRange(run.PartySnapshots.Select(x => new QuestRunPartySnapshotEntity
@@ -366,5 +374,21 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             new MoveId(entity.MoveId),
             entity.ExpiresAfterFloorNo,
             entity.IsTriggered);
+    }
+
+    private static string SerializeSkippedRewardPlayerIds(IReadOnlySet<PlayerId> playerIds)
+    {
+        return JsonSerializer.Serialize(playerIds.Select(x => x.Value));
+    }
+
+    private static IReadOnlyList<PlayerId> DeserializeSkippedRewardPlayerIds(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+
+        var values = JsonSerializer.Deserialize<Guid[]>(json) ?? [];
+        return values.Select(x => new PlayerId(x)).ToArray();
     }
 }

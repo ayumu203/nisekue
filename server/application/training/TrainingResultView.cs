@@ -10,4 +10,5 @@ public sealed record TrainingResultView(
     int Exp,
     bool IsPlayerLevelUp,
     bool IsJobLevelUp,
+    int WeaponMasteryDelta,
     IReadOnlyList<server.application.player.LearnedMoveView> NewlyLearnedMoves);

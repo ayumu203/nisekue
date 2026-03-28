@@ -57,12 +57,26 @@ public class DbPlayerEquipmentRepository(IDbContextFactory<AppDbContext> dbConte
                 continue;
             }
 
+            existing.PlayerId = playerEquipment.PlayerId.Value;
             existing.EquipmentStatus = (int)playerEquipment.Status;
             existing.Durability = playerEquipment.Durability;
             existing.Mastery = playerEquipment.Mastery;
             existing.UpdatedAt = playerEquipment.UpdatedAt;
         }
 
+        await dbContext.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(PlayerEquipmentId playerEquipmentId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var existing = await dbContext.PlayerEquipments.SingleOrDefaultAsync(x => x.Id == playerEquipmentId.Value);
+        if (existing is null)
+        {
+            return;
+        }
+
+        dbContext.PlayerEquipments.Remove(existing);
         await dbContext.SaveChangesAsync();
     }
 

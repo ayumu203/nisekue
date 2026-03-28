@@ -116,6 +116,7 @@ namespace server.infrastructure.player
                     Exp = player.Exp,
                     JobLevel = player.JobLevel,
                     JobExp = player.JobExp,
+                    Gold = player.Gold,
                     MaxHp = player.Status.MaxHp,
                     MaxMp = player.Status.MaxMp,
                     Strength = player.Status.Strength,
@@ -144,6 +145,7 @@ namespace server.infrastructure.player
                 existing.Exp = player.Exp;
                 existing.JobLevel = player.JobLevel;
                 existing.JobExp = player.JobExp;
+                existing.Gold = player.Gold;
                 existing.MaxHp = player.Status.MaxHp;
                 existing.MaxMp = player.Status.MaxMp;
                 existing.Strength = player.Status.Strength;
@@ -193,6 +195,7 @@ namespace server.infrastructure.player
                 exp: entity.Exp,
                 jobLevel: entity.JobLevel,
                 jobExp: entity.JobExp,
+                gold: entity.Gold,
                 status: new Status(
                     maxHp: entity.MaxHp,
                     maxMp: entity.MaxMp,

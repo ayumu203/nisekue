@@ -10,6 +10,7 @@ public class Player(
     int exp,
     int jobLevel,
     int jobExp,
+    int gold,
     Status status,
     Job job = Job.Apprentice,
     string? imagePath = null,
@@ -28,6 +29,7 @@ public class Player(
     public int Exp { get; private set; } = exp;
     public int JobLevel { get; private set; } = ValidateLevel(jobLevel);
     public int JobExp { get; private set; } = jobExp;
+    public int Gold { get; private set; } = ValidateNonNegative(gold, nameof(gold));
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
     public MoveSet MoveSet { get; private set; } = moveSet ?? new MoveSet();
     public IReadOnlySet<Job> MasteredJobs => masteredJobs;
@@ -123,6 +125,23 @@ public class Player(
         Exp += exp;
         JobExp += exp;
     }
+
+    public void GainGold(int gold)
+    {
+        Gold += ValidateNonNegative(gold, nameof(gold));
+    }
+
+    public void SpendGold(int gold)
+    {
+        var validated = ValidateNonNegative(gold, nameof(gold));
+        if (Gold < validated)
+        {
+            throw new InvalidOperationException("所持 Gold が不足しています。");
+        }
+
+        Gold -= validated;
+    }
+
     public LevelUpResult LevelUp(JobProfile jobProfile, JobMoveLearningRule learningRule)
     {
         if (jobProfile.Job != Job)
@@ -216,5 +235,15 @@ public class Player(
         }
 
         return newlyLearnedMoveIds;
+    }
+
+    private static int ValidateNonNegative(int value, string paramName)
+    {
+        if (value < 0)
+        {
+            throw new ArgumentOutOfRangeException(paramName, "0以上である必要があります。");
+        }
+
+        return value;
     }
 }
