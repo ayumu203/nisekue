@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using server.application.chat;
 using server.domain.move;
 using server.domain.player;
@@ -150,7 +151,7 @@ internal static class ItemEndpoints
 
                         var jobProfile = jobProfileRepository.GetByJob(item.ChangeJobTo.Value);
                         var learningRule = jobMoveLearningRuleRepository.GetByJob(item.ChangeJobTo.Value);
-                        player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule);
+                        player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
                         break;
                     }
                     default:
@@ -282,7 +283,7 @@ internal static class ItemEndpoints
         app.MapDelete("/items/stacks/{itemStackId:guid}", async (
             ClaimsPrincipal user,
             Guid itemStackId,
-            UseItemRequest request,
+            [FromBody] UseItemRequest request,
             IPlayerItemStackRepository playerItemStackRepository,
             IItemDeletionLogRepository itemDeletionLogRepository) =>
         {
@@ -700,7 +701,17 @@ internal static class ItemEndpoints
             maxDurability = equipment.MaxDurability,
             mastery = playerEquipment.Mastery,
             masteryCap = equipment.MasteryCap,
-            synthesisGoldCost = equipment.SynthesisGoldCost
+            synthesisGoldCost = equipment.SynthesisGoldCost,
+            statusBonus = new
+            {
+                maxHp = equipment.BonusValues.MaxHp,
+                maxMp = equipment.BonusValues.MaxMp,
+                strength = equipment.BonusValues.Strength,
+                defense = equipment.BonusValues.Defense,
+                intelligence = equipment.BonusValues.Intelligence,
+                luck = equipment.BonusValues.Luck,
+                speed = equipment.BonusValues.Speed
+            }
         };
     }
 

@@ -92,6 +92,7 @@ internal static class PlayerEndpoints
             CreatePlayerRequest request,
             IPlayerRepository playerRepository,
             IPlayerEquipmentRepository playerEquipmentRepository,
+            IPlayerItemStackRepository playerItemStackRepository,
             IEquipmentRepository equipmentRepository,
             ChatService chatService,
             IJobProfileRepository jobProfileRepository) =>
@@ -122,6 +123,7 @@ internal static class PlayerEndpoints
                 await playerRepository.SaveAsync(player);
                 var equipments = await equipmentRepository.GetAllAsync();
                 await playerEquipmentRepository.SaveAsync(CreateStarterEquipments(player, equipments, DateTimeOffset.UtcNow));
+                await playerItemStackRepository.SaveAsync(CreateStarterItemStacks());
                 await chatService.EnsureRoomAsync(player.Id);
                 return Results.Ok(new
                 {
@@ -526,6 +528,11 @@ internal static class PlayerEndpoints
         ];
     }
 
+    private static IReadOnlyList<PlayerItemStack> CreateStarterItemStacks()
+    {
+        return [];
+    }
+
     private static PlayerEquipment CreateStarterEquipment(
         Player player,
         IReadOnlyDictionary<EquipmentId, Equipment> equipmentById,
@@ -551,4 +558,5 @@ internal static class PlayerEndpoints
         playerEquipment.Equip(equipment, player.Job, now);
         return playerEquipment;
     }
+
 }

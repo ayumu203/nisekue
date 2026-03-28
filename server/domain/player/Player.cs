@@ -44,7 +44,11 @@ public class Player(
         ImagePath = ValidateImagePath(imagePath);
     }
 
-    public IReadOnlyList<MoveId> ChangeJob(Job nextJob, JobProfile nextProfile, JobMoveLearningRule learningRule)
+    public IReadOnlyList<MoveId> ChangeJob(
+        Job nextJob,
+        JobProfile nextProfile,
+        JobMoveLearningRule learningRule,
+        bool ignoreRequirements = false)
     {
         if (nextProfile.Job != nextJob)
         {
@@ -56,7 +60,17 @@ public class Player(
             throw new InvalidOperationException("転職先ジョブとスキル習得ルールが一致していません。");
         }
 
-        if (!CanChangeJob(nextProfile))
+        if (nextProfile.Job == Job)
+        {
+            throw new InvalidOperationException("転職条件を満たしていません。");
+        }
+
+        if (nextProfile.Job == Job.Apprentice)
+        {
+            throw new InvalidOperationException("転職条件を満たしていません。");
+        }
+
+        if (!ignoreRequirements && !CanChangeJob(nextProfile))
         {
             throw new InvalidOperationException("転職条件を満たしていません。");
         }
