@@ -26,7 +26,7 @@ import {
   getMyMarketListings,
   purchaseMarketListing,
   synthesizeEquipment,
-  useItem,
+  useItem as consumeItem,
 } from '@/api/item'
 import { createPlayer } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
@@ -1006,7 +1006,7 @@ export default function Items() {
     if (!session?.access_token) return
 
     await runAction(`use:${item.itemStackId}`, () =>
-      useItem(
+      consumeItem(
         item.itemStackId,
         { quantity: parsePositiveInteger(quantities[item.itemStackId], 1) },
         session.access_token,

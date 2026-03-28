@@ -1,5 +1,5 @@
 import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import {
@@ -143,7 +143,7 @@ export default function Quest() {
     }
   })
 
-  async function refreshPlayerStatus(): Promise<void> {
+  const refreshPlayerStatus = useCallback(async (): Promise<void> => {
     if (!session?.user.id) {
       return
     }
@@ -154,7 +154,7 @@ export default function Quest() {
       mutateCache([`quest-player`, session.user.id]),
       mutateCache([`training-player`, session.user.id]),
     ])
-  }
+  }, [mutateCache, mutatePlayer, session?.user.id])
 
   const stagesSWRKey = session?.access_token ? ([`quest-stages`] as const) : null
   const {
@@ -585,7 +585,7 @@ export default function Quest() {
     }
 
     void refreshPlayerStatus()
-  }, [currentRun?.status])
+  }, [currentRun?.status, refreshPlayerStatus])
 
   useEffect(() => {
     if (!isEnemyTargetingAction) {
