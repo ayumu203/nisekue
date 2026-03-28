@@ -24,10 +24,6 @@ type StatusProps = {
   showDesktopActions?: boolean
 }
 
-function toStatValue(value: number | undefined, fallback: string): StatValue {
-  return typeof value === 'number' ? value : fallback
-}
-
 function toNormalized(value: number | undefined, maxValue: number): number {
   if (typeof value !== 'number' || maxValue <= 0) {
     return 0
@@ -47,6 +43,19 @@ function formatExpProgress(exp: number | undefined, level: number | undefined, f
 
   const requiredExp = level * 10
   return `${exp} / ${requiredExp}`
+}
+
+function formatStatusValue(baseValue: number | undefined, effectiveValue: number | undefined, fallback: string): StatValue {
+  if (typeof baseValue !== 'number' || typeof effectiveValue !== 'number') {
+    return fallback
+  }
+
+  const diff = effectiveValue - baseValue
+  if (diff === 0) {
+    return effectiveValue
+  }
+
+  return `${effectiveValue} (${diff > 0 ? '+' : ''}${diff})`
 }
 
 function SettingGearIcon(props: SvgIconProps) {
@@ -70,6 +79,12 @@ export default function Status({ player, compactTrainingMobile = false, showDesk
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState<string | null>(null)
+  const equippedWeapon = player?.equipments.find(
+    (equipment) => equipment.equipmentType === 'Weapon' && equipment.status === 'Equipped',
+  )
+  const equippedArmor = player?.equipments.find(
+    (equipment) => equipment.equipmentType === 'Armor' && equipment.status === 'Equipped',
+  )
   const maxResourceValue = Math.max(player?.status.maxHp ?? 0, player?.status.maxMp ?? 0, 1)
   const maxAttributeValue = Math.max(
     player?.status.strength ?? 0,
@@ -84,13 +99,13 @@ export default function Status({ player, compactTrainingMobile = false, showDesk
     {
       key: 'maxHp',
       label: locale.labels.maxHp,
-      value: toStatValue(player?.status.maxHp, locale.unknownValue),
+      value: formatStatusValue(player?.baseStatus?.maxHp, player?.status.maxHp, locale.unknownValue),
       normalized: toNormalized(player?.status.maxHp, maxResourceValue),
     },
     {
       key: 'maxMp',
       label: locale.labels.maxMp,
-      value: toStatValue(player?.status.maxMp, locale.unknownValue),
+      value: formatStatusValue(player?.baseStatus?.maxMp, player?.status.maxMp, locale.unknownValue),
       normalized: toNormalized(player?.status.maxMp, maxResourceValue),
     },
   ]
@@ -99,31 +114,31 @@ export default function Status({ player, compactTrainingMobile = false, showDesk
     {
       key: 'strength',
       label: locale.labels.strength,
-      value: toStatValue(player?.status.strength, locale.unknownValue),
+      value: formatStatusValue(player?.baseStatus?.strength, player?.status.strength, locale.unknownValue),
       normalized: toNormalized(player?.status.strength, maxAttributeValue),
     },
     {
       key: 'defense',
       label: locale.labels.defense,
-      value: toStatValue(player?.status.defense, locale.unknownValue),
+      value: formatStatusValue(player?.baseStatus?.defense, player?.status.defense, locale.unknownValue),
       normalized: toNormalized(player?.status.defense, maxAttributeValue),
     },
     {
       key: 'intelligence',
       label: locale.labels.intelligence,
-      value: toStatValue(player?.status.intelligence, locale.unknownValue),
+      value: formatStatusValue(player?.baseStatus?.intelligence, player?.status.intelligence, locale.unknownValue),
       normalized: toNormalized(player?.status.intelligence, maxAttributeValue),
     },
     {
       key: 'luck',
       label: locale.labels.luck,
-      value: toStatValue(player?.status.luck, locale.unknownValue),
+      value: formatStatusValue(player?.baseStatus?.luck, player?.status.luck, locale.unknownValue),
       normalized: toNormalized(player?.status.luck, maxAttributeValue),
     },
     {
       key: 'speed',
       label: locale.labels.speed,
-      value: toStatValue(player?.status.speed, locale.unknownValue),
+      value: formatStatusValue(player?.baseStatus?.speed, player?.status.speed, locale.unknownValue),
       normalized: toNormalized(player?.status.speed, maxAttributeValue),
     },
   ]
@@ -251,6 +266,18 @@ export default function Status({ player, compactTrainingMobile = false, showDesk
                 normalized={0}
                 hideGauge
               />
+              <StatusStatRow
+                label={locale.labels.weapon}
+                value={equippedWeapon?.name ?? locale.notSet}
+                normalized={0}
+                hideGauge
+              />
+              <StatusStatRow
+                label={locale.labels.armor}
+                value={equippedArmor?.name ?? locale.notSet}
+                normalized={0}
+                hideGauge
+              />
             </Stack>
           ) : (
             <Box>
@@ -273,6 +300,18 @@ export default function Status({ player, compactTrainingMobile = false, showDesk
                 <StatusStatRow
                   label={locale.labels.jobExp}
                   value={formatExpProgress(player?.jobExp, player?.jobLevel, locale.unknownValue)}
+                  normalized={0}
+                  hideGauge
+                />
+                <StatusStatRow
+                  label={locale.labels.weapon}
+                  value={equippedWeapon?.name ?? locale.notSet}
+                  normalized={0}
+                  hideGauge
+                />
+                <StatusStatRow
+                  label={locale.labels.armor}
+                  value={equippedArmor?.name ?? locale.notSet}
                   normalized={0}
                   hideGauge
                 />

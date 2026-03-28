@@ -50,6 +50,42 @@ export const learnedMoveSchema = z.object({
   moveName: z.string().min(1),
 })
 
+const playerStatusValuesSchema = z.object({
+  maxHp: z.number().int().min(1, '最大HPは1以上である必要があります'),
+  maxMp: z.number().int().min(0, '最大MPは0以上である必要があります'),
+  strength: z.number().int().min(0, 'Strengthは0以上である必要があります'),
+  defense: z.number().int().min(0, 'Defenseは0以上である必要があります'),
+  intelligence: z.number().int().min(0, 'Intelligenceは0以上である必要があります'),
+  luck: z.number().int().min(0, 'Luckは0以上である必要があります'),
+  speed: z.number().int().min(0, 'Speedは0以上である必要があります'),
+})
+
+const playerEquipmentBonusValuesSchema = z.object({
+  maxHp: z.number().int().min(0),
+  maxMp: z.number().int().min(0),
+  strength: z.number().int().min(0),
+  defense: z.number().int().min(0),
+  intelligence: z.number().int().min(0),
+  luck: z.number().int().min(0),
+  speed: z.number().int().min(0),
+})
+
+const playerEquipmentTypeSchema = z.enum(['Weapon', 'Armor'])
+const playerEquipmentStatusSchema = z.enum(['Inventory', 'Equipped', 'Broken'])
+
+const playerEquipmentSchema = z.object({
+  playerEquipmentId: z.string().uuid('装備IDの形式が不正です'),
+  equipmentId: z.number().int().min(1),
+  name: z.string().trim().min(1, '装備名が空です'),
+  equipmentType: playerEquipmentTypeSchema,
+  status: playerEquipmentStatusSchema,
+  durability: z.number().int().min(0),
+  maxDurability: z.number().int().min(1),
+  mastery: z.number().int().min(0),
+  canEquipCurrentJob: z.boolean(),
+  bonusValues: playerEquipmentBonusValuesSchema,
+})
+
 export const getPlayerResponseSchema = z.object({
   userId: playerIdSchema,
   userName: playerUserNameSchema.optional(),
@@ -61,16 +97,17 @@ export const getPlayerResponseSchema = z.object({
   jobLevel: z.number().int().min(1, '職業レベルは1以上である必要があります'),
   jobExp: z.number().int().min(0, '職業経験値は0以上である必要があります'),
   status: z.object({
-    maxHp: z.number().int().min(1, '最大HPは1以上である必要があります'),
-    maxMp: z.number().int().min(0, '最大MPは0以上である必要があります'),
-    strength: z.number().int().min(0, 'Strengthは0以上である必要があります'),
-    defense: z.number().int().min(0, 'Defenseは0以上である必要があります'),
-    intelligence: z.number().int().min(0, 'Intelligenceは0以上である必要があります'),
-    luck: z.number().int().min(0, 'Luckは0以上である必要があります'),
-    speed: z.number().int().min(0, 'Speedは0以上である必要があります'),
+    baseValues: playerStatusValuesSchema,
+    effectiveValues: playerStatusValuesSchema,
   }),
   moveSlots: z.array(playerMoveSlotSchema).length(10),
-})
+  equipments: z.array(playerEquipmentSchema),
+}).transform((value) => ({
+  ...value,
+  baseStatus: value.status.baseValues,
+  effectiveStatus: value.status.effectiveValues,
+  status: value.status.effectiveValues,
+}))
 
 export const playerSummarySchema = z.object({
   userId: playerIdSchema,
