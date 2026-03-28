@@ -31,6 +31,7 @@ type AvailableMove = {
 
 type QuestBattleStatusPanelProps = {
   run: QuestRunDetailResponse
+  battlefieldImagePath: string | null
   selfParticipantId: string | null
   availableMoves: AvailableMove[]
   selectedActionKind: QuestActionKind
@@ -308,6 +309,7 @@ function BattleSprite({
 
 export default function QuestBattleStatusPanel({
   run,
+  battlefieldImagePath,
   selfParticipantId,
   availableMoves,
   selectedActionKind,
@@ -324,6 +326,7 @@ export default function QuestBattleStatusPanel({
   onSubmitCommand,
   locale,
 }: QuestBattleStatusPanelProps) {
+  const battlefieldImageSrc = resolvePublicAssetPath(battlefieldImagePath ?? 'image/quest/dummy-battlefield.svg')
   const actionOptions: Array<{ value: QuestActionKind; label: string }> = [
     { value: 'UseMove', label: locale.actionKinds.UseMove },
     { value: 'NormalAttack', label: locale.actionKinds.NormalAttack },
@@ -516,12 +519,35 @@ export default function QuestBattleStatusPanel({
             borderRadius: 4,
             minHeight: { xs: 520, sm: 600, md: 640 },
             border: '1px solid #c7a96f',
-            backgroundImage: `url(${resolvePublicAssetPath('image/quest/dummy-battlefield.svg')})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
+            backgroundColor: '#d9e6df',
           }}
         >
+          <Box
+            component="img"
+            src={battlefieldImageSrc}
+            alt=""
+            aria-hidden="true"
+            onError={(event) => {
+              const fallbackSrc = resolvePublicAssetPath('image/quest/dummy-battlefield.svg')
+              if (event.currentTarget.getAttribute('src') === fallbackSrc) {
+                return
+              }
+
+              event.currentTarget.setAttribute('src', fallbackSrc)
+            }}
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              zIndex: 0,
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          />
+
           <Stack
             direction="row"
             spacing={0.25}

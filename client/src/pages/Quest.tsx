@@ -1,7 +1,6 @@
 import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import {
   cancelQuestRoom,
@@ -18,13 +17,14 @@ import {
   submitQuestCommand,
   updateQuestRoomPosition,
 } from '@/api/quest'
+import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import QuestRoomCreateSection from '@/components/quest/QuestRoomCreateSection'
 import QuestRoomLobbySection from '@/components/quest/QuestRoomLobbySection'
 import QuestMultiRoomList from '@/components/quest/QuestMultiRoomList'
 import QuestRunSection from '@/components/quest/QuestRunSection'
 import Status from '@/components/home/Status'
 import { useAuth } from '@/contexts/useAuth'
-import { menuButtonSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
+import { outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/quest/QuestRoom.json'
 import type {
@@ -89,6 +89,7 @@ function clearPersistedQuestSession(userId: string): void {
 
 export default function Quest() {
   const { session, isLoading } = useAuth()
+  const { mutate: mutateCache } = useSWRConfig()
   const [selectedStageId, setSelectedStageId] = useState<number | ''>('')
   const [mode, setMode] = useState<CreateQuestRoomRequest['mode']>('Solo')
   const [multiEntryView, setMultiEntryView] = useState<'create' | 'list'>('create')
@@ -123,6 +124,7 @@ export default function Quest() {
     data: player,
     error: playerError,
     isLoading: isPlayerLoading,
+    mutate: mutatePlayer,
   } = useSWR(playerSWRKey, async () => {
     if (!session?.access_token) {
       throw new Error(locale.sessionInfoMissing)
@@ -140,6 +142,19 @@ export default function Quest() {
       return getPlayer(session.access_token)
     }
   })
+
+  async function refreshPlayerStatus(): Promise<void> {
+    if (!session?.user.id) {
+      return
+    }
+
+    await Promise.all([
+      mutatePlayer(),
+      mutateCache([`player`, session.user.id]),
+      mutateCache([`quest-player`, session.user.id]),
+      mutateCache([`training-player`, session.user.id]),
+    ])
+  }
 
   const stagesSWRKey = session?.access_token ? ([`quest-stages`] as const) : null
   const {
@@ -387,6 +402,9 @@ export default function Quest() {
   const currentRoomStage = currentRoom
     ? (activeStages.find((stage) => stage.stageId === currentRoom.stageId) ?? null)
     : null
+  const currentRunStage = currentRun
+    ? (activeStages.find((stage) => stage.stageId === currentRun.stageId) ?? null)
+    : null
   const selfParticipantId =
     player && currentRoom
       ? (currentRoom.participants.find((participant) => participant.playerId === player.userId)?.participantId ?? null)
@@ -560,6 +578,14 @@ export default function Quest() {
 
     void recoverQuest()
   }, [createdRoom, isPlayerLoading, liveRoom, liveRun, player, session?.access_token, startedRun])
+
+  useEffect(() => {
+    if (currentRun?.status !== 'Succeeded' && currentRun?.status !== 'Failed') {
+      return
+    }
+
+    void refreshPlayerStatus()
+  }, [currentRun?.status])
 
   useEffect(() => {
     if (!isEnemyTargetingAction) {
@@ -745,11 +771,12 @@ export default function Quest() {
     }
   }
 
-  function handleLeaveFinishedRun(): void {
+  async function handleLeaveFinishedRun(): Promise<void> {
     if (session?.user.id) {
       clearPersistedQuestSession(session.user.id)
     }
 
+    await refreshPlayerStatus()
     setCreatedRoom(null)
     setStartedRun(null)
     setSubmitError(null)
@@ -777,160 +804,202 @@ export default function Quest() {
 
   return (
     <Container maxWidth="lg" sx={{ px: { xs: 1, sm: 3 }, py: { xs: 1.25, sm: 8 } }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
+      <Paper
+        elevation={2}
+        sx={{
+          ...outerPagePaperSx,
+          background: 'linear-gradient(180deg, rgba(106, 194, 176, 0.98) 0%, rgba(57, 138, 154, 0.96) 100%)',
+        }}
+      >
         <Stack spacing={{ xs: 1.25, sm: 2 }}>
           <Box sx={twoColumnContentGridSx}>
-            <Stack spacing={{ xs: 1.25, sm: 2 }}>
-              <Status player={player} />
+            <Stack spacing={0}>
+              <Status
+                player={player}
+                showDesktopActions={false}
+                topAction={<HomeNavIconButton ariaLabel={locale.backToHome} />}
+              />
             </Stack>
 
-            <Stack spacing={{ xs: 1.25, sm: 2 }}>
-              {playerError ? <Alert severity="warning">{playerError.message}</Alert> : null}
-              {stagesError ? <Alert severity="warning">{stagesError.message}</Alert> : null}
-              {roomsError ? <Alert severity="warning">{roomsError.message}</Alert> : null}
-              {roomError ? <Alert severity="warning">{roomError.message}</Alert> : null}
-              {runError ? <Alert severity="warning">{runError.message}</Alert> : null}
-              {submitError ? <Alert severity="error">{submitError}</Alert> : null}
-              {isRecoveringQuest ? (
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <CircularProgress size={16} />
-                  <Typography variant="body2">{locale.runLoading}</Typography>
-                </Stack>
-              ) : null}
-              {showCreateSection ? (
-                <>
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 999,
-                      borderColor: '#d3a93a',
-                      backgroundColor: '#f4e4bf',
-                      p: 0.5,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                        gap: 0.5,
-                      }}
-                    >
-                      <Button
-                        onClick={() => setMultiEntryView('create')}
-                        disableRipple
-                        sx={{
-                          minHeight: 44,
-                          borderRadius: 999,
-                          fontWeight: 700,
-                          color: multiEntryView === 'create' ? '#ffffff' : '#6a5320',
-                          backgroundColor: multiEntryView === 'create' ? '#7a4d19' : 'transparent',
-                          boxShadow: multiEntryView === 'create' ? '0 4px 12px rgba(94, 60, 16, 0.24)' : 'none',
-                          transition: 'none',
-                        }}
-                      >
-                        {locale.showCreateRoom}
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setMode('Multi')
-                          setMultiEntryView('list')
-                        }}
-                        disableRipple
-                        sx={{
-                          minHeight: 44,
-                          borderRadius: 999,
-                          fontWeight: 700,
-                          color: multiEntryView === 'list' ? '#ffffff' : '#6a5320',
-                          backgroundColor: multiEntryView === 'list' ? '#7a4d19' : 'transparent',
-                          boxShadow: multiEntryView === 'list' ? '0 4px 12px rgba(94, 60, 16, 0.24)' : 'none',
-                          transition: 'none',
-                        }}
-                      >
-                        {locale.showRecruitingRooms}
-                      </Button>
-                    </Box>
-                  </Paper>
-
-                  {mode === 'Solo' || multiEntryView === 'create' ? (
-                    <QuestRoomCreateSection
-                      activeStages={activeStages}
-                      selectedStageId={selectedStageId}
-                      mode={mode}
-                      isLoading={isPlayerLoading || isStagesLoading}
-                      isSubmitting={isSubmitting}
-                      isCreateDisabled={isCreateDisabled}
-                      onStageChange={setSelectedStageId}
-                      onModeChange={setMode}
-                      onCreateRoom={handleCreateRoom}
-                    />
-                  ) : null}
-
-                  {mode === 'Multi' && multiEntryView === 'list' ? (
-                    <QuestMultiRoomList
-                      rooms={latestRooms ?? []}
-                      stages={activeStages}
-                      isLoading={isRoomsLoading}
-                      error={roomsError instanceof Error ? roomsError : null}
-                      isJoiningRoomId={isJoiningRoomId}
-                      locale={locale}
-                      onJoinRoom={handleJoinRoom}
-                    />
-                  ) : null}
-                </>
-              ) : null}
-
-              {showWaitingSection ? (
-                <QuestRoomLobbySection
-                  currentRoom={currentRoom}
-                  stageLabel={currentRoomStage?.name ?? null}
-                  selfParticipantId={selfParticipantId}
-                  positionDrafts={positionDrafts}
-                  isLoading={isRoomLoading && liveRoom == null}
-                  isStarting={isStarting}
-                  isCancellingRoom={isCancellingRoom}
-                  isUpdatingParticipantId={isUpdatingParticipantId}
-                  onPositionDraftChange={(participantId, nextPosition) => {
-                    setPositionDrafts((current) => ({
-                      ...current,
-                      [participantId]: nextPosition,
-                    }))
+            <Paper
+              variant="outlined"
+              sx={{
+                borderRadius: 3,
+                p: { xs: 1.5, sm: 2 },
+                backgroundColor: '#172742',
+                borderColor: 'rgba(152, 192, 255, 0.34)',
+                mt: '48px',
+              }}
+            >
+              <Stack spacing={{ xs: 1.25, sm: 2 }}>
+                <Stack
+                  spacing={0.6}
+                  sx={{
+                    px: { xs: 0.25, sm: 0.5 },
+                    pb: 1.5,
+                    borderBottom: '1px solid rgba(152, 192, 255, 0.18)',
                   }}
-                  onUpdateParticipantPosition={handleUpdateParticipantPosition}
-                  onStartQuest={handleStartQuest}
-                  onCancelRoom={handleCancelRoom}
-                />
-              ) : null}
+                >
+                  <Typography
+                    variant="overline"
+                    sx={{ color: 'rgba(222, 236, 255, 0.72)', letterSpacing: '0.18em', lineHeight: 1.2 }}
+                  >
+                    QUEST BOARD
+                  </Typography>
+                  <Typography variant="h5" fontWeight={900} sx={{ color: '#ffffff', lineHeight: 1.15 }}>
+                    クエスト
+                  </Typography>
+                </Stack>
+                <Stack spacing={{ xs: 1.25, sm: 2 }}>
+                  {playerError ? <Alert severity="warning">{playerError.message}</Alert> : null}
+                  {stagesError ? <Alert severity="warning">{stagesError.message}</Alert> : null}
+                  {roomsError ? <Alert severity="warning">{roomsError.message}</Alert> : null}
+                  {roomError ? <Alert severity="warning">{roomError.message}</Alert> : null}
+                  {runError ? <Alert severity="warning">{runError.message}</Alert> : null}
+                  {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+                  {isRecoveringQuest ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CircularProgress size={16} />
+                      <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.82)' }}>
+                        {locale.runLoading}
+                      </Typography>
+                    </Stack>
+                  ) : null}
+                  {showCreateSection ? (
+                    <>
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 999,
+                          borderColor: 'rgba(145, 183, 241, 0.42)',
+                          backgroundColor: '#d7e4fb',
+                          p: 0.5,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                            gap: 0.5,
+                          }}
+                        >
+                          <Button
+                            onClick={() => setMultiEntryView('create')}
+                            disableRipple
+                            sx={{
+                              minHeight: 44,
+                              borderRadius: 999,
+                              fontWeight: 800,
+                              color: multiEntryView === 'create' ? '#ffffff' : '#274163',
+                              backgroundColor: multiEntryView === 'create' ? '#284a74' : 'transparent',
+                              boxShadow: multiEntryView === 'create' ? '0 4px 12px rgba(26, 49, 87, 0.22)' : 'none',
+                              transition: 'none',
+                            }}
+                          >
+                            {locale.showCreateRoom}
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setMode('Multi')
+                              setMultiEntryView('list')
+                            }}
+                            disableRipple
+                            sx={{
+                              minHeight: 44,
+                              borderRadius: 999,
+                              fontWeight: 800,
+                              color: multiEntryView === 'list' ? '#ffffff' : '#274163',
+                              backgroundColor: multiEntryView === 'list' ? '#284a74' : 'transparent',
+                              boxShadow: multiEntryView === 'list' ? '0 4px 12px rgba(26, 49, 87, 0.22)' : 'none',
+                              transition: 'none',
+                            }}
+                          >
+                            {locale.showRecruitingRooms}
+                          </Button>
+                        </Box>
+                      </Paper>
 
-              {showRunSection ? (
-                <QuestRunSection
-                  currentRun={currentRun}
-                  selfParticipantId={selfParticipantId}
-                  availableMoves={availableMoves}
-                  selectedActionKind={selectedActionKind}
-                  selectedMoveId={selectedMoveId}
-                  selectedTargetRow={selectedTargetRow}
-                  selectedTargetColumn={selectedTargetColumn}
-                  currentPendingCommand={currentPendingCommand}
-                  chatMessage={chatMessage}
-                  canSubmitCurrentTurn={canSubmitCurrentTurn}
-                  isCommandSubmitting={isCommandSubmitting}
-                  isChatSubmitting={isChatSubmitting}
-                  onActionKindChange={setSelectedActionKind}
-                  onMoveChange={setSelectedMoveId}
-                  onTargetRowChange={setSelectedTargetRow}
-                  onTargetColumnChange={setSelectedTargetColumn}
-                  onChatMessageChange={setChatMessage}
-                  onSubmitCommand={handleSubmitCommand}
-                  onSubmitChatMessage={handleSubmitChatMessage}
-                  onLeaveFinishedRun={handleLeaveFinishedRun}
-                />
-              ) : null}
-            </Stack>
+                      {mode === 'Solo' || multiEntryView === 'create' ? (
+                        <QuestRoomCreateSection
+                          activeStages={activeStages}
+                          selectedStageId={selectedStageId}
+                          mode={mode}
+                          isLoading={isPlayerLoading || isStagesLoading}
+                          isSubmitting={isSubmitting}
+                          isCreateDisabled={isCreateDisabled}
+                          onStageChange={setSelectedStageId}
+                          onModeChange={setMode}
+                          onCreateRoom={handleCreateRoom}
+                        />
+                      ) : null}
+
+                      {mode === 'Multi' && multiEntryView === 'list' ? (
+                        <QuestMultiRoomList
+                          rooms={latestRooms ?? []}
+                          stages={activeStages}
+                          isLoading={isRoomsLoading}
+                          error={roomsError instanceof Error ? roomsError : null}
+                          isJoiningRoomId={isJoiningRoomId}
+                          locale={locale}
+                          onJoinRoom={handleJoinRoom}
+                        />
+                      ) : null}
+                    </>
+                  ) : null}
+
+                  {showWaitingSection ? (
+                    <QuestRoomLobbySection
+                      currentRoom={currentRoom}
+                      stageLabel={currentRoomStage?.name ?? null}
+                      selfParticipantId={selfParticipantId}
+                      positionDrafts={positionDrafts}
+                      isLoading={isRoomLoading && liveRoom == null}
+                      isStarting={isStarting}
+                      isCancellingRoom={isCancellingRoom}
+                      isUpdatingParticipantId={isUpdatingParticipantId}
+                      onPositionDraftChange={(participantId, nextPosition) => {
+                        setPositionDrafts((current) => ({
+                          ...current,
+                          [participantId]: nextPosition,
+                        }))
+                      }}
+                      onUpdateParticipantPosition={handleUpdateParticipantPosition}
+                      onStartQuest={handleStartQuest}
+                      onCancelRoom={handleCancelRoom}
+                    />
+                  ) : null}
+
+                  {showRunSection ? (
+                    <QuestRunSection
+                      currentRun={currentRun}
+                      battlefieldImagePath={
+                        currentRunStage?.battlefieldImagePath ?? currentRoomStage?.battlefieldImagePath ?? null
+                      }
+                      selfParticipantId={selfParticipantId}
+                      availableMoves={availableMoves}
+                      selectedActionKind={selectedActionKind}
+                      selectedMoveId={selectedMoveId}
+                      selectedTargetRow={selectedTargetRow}
+                      selectedTargetColumn={selectedTargetColumn}
+                      currentPendingCommand={currentPendingCommand}
+                      chatMessage={chatMessage}
+                      canSubmitCurrentTurn={canSubmitCurrentTurn}
+                      isCommandSubmitting={isCommandSubmitting}
+                      isChatSubmitting={isChatSubmitting}
+                      onActionKindChange={setSelectedActionKind}
+                      onMoveChange={setSelectedMoveId}
+                      onTargetRowChange={setSelectedTargetRow}
+                      onTargetColumnChange={setSelectedTargetColumn}
+                      onChatMessageChange={setChatMessage}
+                      onSubmitCommand={handleSubmitCommand}
+                      onSubmitChatMessage={handleSubmitChatMessage}
+                      onLeaveFinishedRun={handleLeaveFinishedRun}
+                    />
+                  ) : null}
+                </Stack>
+              </Stack>
+            </Paper>
           </Box>
-
-          <Button component={Link} to="/" variant="outlined" sx={menuButtonSx}>
-            {locale.backToHome}
-          </Button>
         </Stack>
       </Paper>
     </Container>

@@ -89,10 +89,20 @@ export default function QuestRoomLobbySection({
   }
 
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
+    <Paper
+      variant="outlined"
+      sx={{
+        ...innerSurfaceSx,
+        borderRadius: 3,
+        p: { xs: 1.5, sm: 2.5 },
+        color: '#eef4ff',
+        backgroundColor: '#1d2d4a',
+        borderColor: 'rgba(152, 192, 255, 0.34)',
+      }}
+    >
       <Stack spacing={2}>
         {currentRoom == null ? (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
             {locale.createdRoomEmpty}
           </Typography>
         ) : isLoading ? (
@@ -103,15 +113,20 @@ export default function QuestRoomLobbySection({
         ) : (
           <Stack spacing={1.5}>
             <Stack spacing={0.75} alignItems="flex-start">
-              <Typography variant="h5">{stageLabel ?? `${locale.stage} ${currentRoom.stageId}`}</Typography>
+              <Typography variant="h5" fontWeight={900} sx={{ color: '#ffffff' }}>
+                {stageLabel ?? `${locale.stage} ${currentRoom.stageId}`}
+              </Typography>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
                 <Chip
                   size="small"
                   label={locale.roomStatus[currentRoom.status]}
-                  color={currentRoom.status === 'Recruiting' ? 'success' : 'error'}
-                  variant="filled"
+                  sx={{
+                    fontWeight: 800,
+                    color: currentRoom.status === 'Recruiting' ? '#173a34' : '#4d1e2a',
+                    backgroundColor: currentRoom.status === 'Recruiting' ? '#9ed8ce' : '#f0b7c0',
+                  }}
                 />
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
                   {locale.participantCountLabel.replace('{{count}}', String(currentRoom.participants.length))}
                 </Typography>
               </Stack>
@@ -125,7 +140,7 @@ export default function QuestRoomLobbySection({
             />
 
             {currentRoom.status !== 'Recruiting' ? (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
                 {locale.roomClosedMessage}
               </Typography>
             ) : null}
@@ -138,7 +153,17 @@ export default function QuestRoomLobbySection({
                   disabled={
                     isStarting || isCancellingRoom || !currentRoom.canStart || currentRoom.status !== 'Recruiting'
                   }
-                  sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                  sx={{
+                    ...menuButtonSx,
+                    ...softGreenButtonSx,
+                    color: '#ffffff',
+                    backgroundColor: '#4f79b5',
+                    boxShadow: 'none',
+                    '&:hover': {
+                      backgroundColor: '#5a86c5',
+                      boxShadow: 'none',
+                    },
+                  }}
                 >
                   {isStarting ? locale.startingQuest : locale.startQuest}
                 </Button>
@@ -146,7 +171,13 @@ export default function QuestRoomLobbySection({
                   variant="outlined"
                   onClick={() => void onCancelRoom()}
                   disabled={isStarting || isCancellingRoom || currentRoom.status !== 'Recruiting'}
-                  sx={{ ...menuButtonSx, ...mutedRedButtonSx }}
+                  sx={{
+                    ...menuButtonSx,
+                    ...mutedRedButtonSx,
+                    color: '#f7f1f2',
+                    borderColor: 'rgba(240, 183, 192, 0.44)',
+                    backgroundColor: 'rgba(116, 46, 61, 0.22)',
+                  }}
                 >
                   {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
                 </Button>
@@ -154,8 +185,10 @@ export default function QuestRoomLobbySection({
             ) : null}
 
             <div ref={positionEditorRef}>
-              <Typography variant="h6">{isOwner ? locale.ownerPositionTitle : locale.waitingForOwnerTitle}</Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="h6" fontWeight={900} sx={{ color: '#ffffff' }}>
+                {isOwner ? locale.ownerPositionTitle : locale.waitingForOwnerTitle}
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
                 {isOwner ? locale.ownerPositionSubtitle : locale.waitingForOwnerSubtitle}
               </Typography>
             </div>
@@ -173,7 +206,9 @@ export default function QuestRoomLobbySection({
                     sx={{
                       borderRadius: 2,
                       p: 1.5,
-                      backgroundColor: isSelf ? '#fffaf0' : '#fffdf8',
+                      color: '#eef4ff',
+                      backgroundColor: isSelf ? '#24395d' : '#223452',
+                      borderColor: isSelf ? 'rgba(158, 216, 206, 0.42)' : 'rgba(152, 192, 255, 0.22)',
                     }}
                   >
                     <Stack spacing={1.5}>
@@ -185,8 +220,8 @@ export default function QuestRoomLobbySection({
                             aspectRatio: '4 / 5',
                             borderRadius: 2,
                             border: '1px solid',
-                            borderColor: 'divider',
-                            backgroundColor: '#f5efe2',
+                            borderColor: 'rgba(152, 192, 255, 0.22)',
+                            backgroundColor: '#172742',
                             overflow: 'hidden',
                             display: 'grid',
                             placeItems: 'center',
@@ -206,7 +241,7 @@ export default function QuestRoomLobbySection({
                               }}
                             />
                           ) : (
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{ color: 'rgba(222, 236, 255, 0.64)' }}>
                               {locale.noImage}
                             </Typography>
                           )}
@@ -214,9 +249,23 @@ export default function QuestRoomLobbySection({
 
                         <Stack spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
                           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
-                            <Typography variant="subtitle2">{participant.displayName}</Typography>
-                            {participant.isOwner ? <Chip size="small" label={locale.ownerBadge} /> : null}
-                            {isSelf ? <Chip size="small" label={locale.selfBadge} /> : null}
+                            <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#ffffff' }}>
+                              {participant.displayName}
+                            </Typography>
+                            {participant.isOwner ? (
+                              <Chip
+                                size="small"
+                                label={locale.ownerBadge}
+                                sx={{ color: '#173a34', backgroundColor: '#9ed8ce', fontWeight: 700 }}
+                              />
+                            ) : null}
+                            {isSelf ? (
+                              <Chip
+                                size="small"
+                                label={locale.selfBadge}
+                                sx={{ color: '#173252', backgroundColor: '#d8e8ff', fontWeight: 700 }}
+                              />
+                            ) : null}
                           </Stack>
 
                           <Stack
@@ -228,8 +277,7 @@ export default function QuestRoomLobbySection({
                             {participant.level != null ? (
                               <Typography
                                 variant="body2"
-                                color="text.secondary"
-                                sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                                sx={{ whiteSpace: 'nowrap', flexShrink: 0, color: 'rgba(222, 236, 255, 0.76)' }}
                               >
                                 {`${locale.levelLabel}.${participant.level}`}
                               </Typography>
@@ -257,8 +305,12 @@ export default function QuestRoomLobbySection({
                                 ) : null}
                                 <Typography
                                   variant="body2"
-                                  color="text.secondary"
-                                  sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                  sx={{
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    color: 'rgba(222, 236, 255, 0.76)',
+                                  }}
                                 >
                                   {`${locale.jobLabel}: ${participant.job.displayName}`}
                                 </Typography>
@@ -268,7 +320,31 @@ export default function QuestRoomLobbySection({
 
                           {isOwner ? (
                             <Stack direction="row" spacing={1.25}>
-                              <FormControl fullWidth sx={greenOutlinedInputSx}>
+                              <FormControl
+                                fullWidth
+                                sx={{
+                                  ...greenOutlinedInputSx,
+                                  '& .MuiInputLabel-root': {
+                                    color: 'rgba(222, 236, 255, 0.68)',
+                                  },
+                                  '& .MuiOutlinedInput-root': {
+                                    color: '#eef4ff',
+                                    backgroundColor: '#172742',
+                                    '& fieldset': {
+                                      borderColor: 'rgba(152, 192, 255, 0.28)',
+                                    },
+                                    '&:hover fieldset': {
+                                      borderColor: 'rgba(152, 192, 255, 0.46)',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                      borderColor: '#7ab4ff',
+                                    },
+                                  },
+                                  '& .MuiSvgIcon-root': {
+                                    color: 'rgba(222, 236, 255, 0.76)',
+                                  },
+                                }}
+                              >
                                 <InputLabel id={`participant-row-${participant.participantId}`}>
                                   {locale.positionRow}
                                 </InputLabel>
@@ -284,7 +360,31 @@ export default function QuestRoomLobbySection({
                                 </Select>
                               </FormControl>
 
-                              <FormControl fullWidth sx={greenOutlinedInputSx}>
+                              <FormControl
+                                fullWidth
+                                sx={{
+                                  ...greenOutlinedInputSx,
+                                  '& .MuiInputLabel-root': {
+                                    color: 'rgba(222, 236, 255, 0.68)',
+                                  },
+                                  '& .MuiOutlinedInput-root': {
+                                    color: '#eef4ff',
+                                    backgroundColor: '#172742',
+                                    '& fieldset': {
+                                      borderColor: 'rgba(152, 192, 255, 0.28)',
+                                    },
+                                    '&:hover fieldset': {
+                                      borderColor: 'rgba(152, 192, 255, 0.46)',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                      borderColor: '#7ab4ff',
+                                    },
+                                  },
+                                  '& .MuiSvgIcon-root': {
+                                    color: 'rgba(222, 236, 255, 0.76)',
+                                  },
+                                }}
+                              >
                                 <InputLabel id={`participant-column-${participant.participantId}`}>
                                   {locale.positionColumn}
                                 </InputLabel>
@@ -300,7 +400,7 @@ export default function QuestRoomLobbySection({
                               </FormControl>
                             </Stack>
                           ) : (
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
                               {`${locale.positionRow}: ${locale.rows[participant.position.row]} / ${locale.positionColumn}: ${locale.columns[participant.position.column]}`}
                             </Typography>
                           )}
@@ -313,7 +413,17 @@ export default function QuestRoomLobbySection({
                                 isUpdatingParticipantId === participant.participantId ||
                                 currentRoom.status !== 'Recruiting'
                               }
-                              sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                              sx={{
+                                ...menuButtonSx,
+                                ...softGreenButtonSx,
+                                color: '#ffffff',
+                                backgroundColor: '#4f79b5',
+                                boxShadow: 'none',
+                                '&:hover': {
+                                  backgroundColor: '#5a86c5',
+                                  boxShadow: 'none',
+                                },
+                              }}
                             >
                               {isUpdatingParticipantId === participant.participantId
                                 ? locale.updatingPosition

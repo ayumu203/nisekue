@@ -42,6 +42,7 @@ export const questStageSummarySchema = z.object({
   stageId: z.number().int().positive(),
   stageCode: z.string().min(1),
   name: z.string().min(1),
+  battlefieldImagePath: z.string().min(1),
   recommendedLevel: z.number().int().nonnegative(),
   previewEnemyImagePath: z.string().min(1).nullable().optional(),
   minPartyMemberCount: z.number().int().positive(),

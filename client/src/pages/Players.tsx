@@ -2,6 +2,7 @@ import { Alert, Avatar, Box, Button, CircularProgress, Container, Paper, Stack, 
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, listPlayers } from '@/api/player'
+import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { resolveCharacterAssetPath } from '@/lib/assets'
@@ -62,77 +63,124 @@ function Players() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
+      <Paper
+        elevation={2}
+        sx={{
+          ...outerPagePaperSx,
+          backgroundColor: '#bfe5dd',
+        }}
+      >
         <Stack spacing={2}>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1.5}
-            justifyContent="space-between"
-            alignItems={{ xs: 'stretch', sm: 'center' }}
-          >
-            <Typography variant="h4">{locale.title}</Typography>
-            <Button component={Link} to="/" variant="outlined">
-              {locale.backToHome}
-            </Button>
+          <Stack direction="row" justifyContent="flex-start">
+            <HomeNavIconButton ariaLabel={locale.backToHome} />
           </Stack>
+          <Paper
+            variant="outlined"
+            sx={{
+              ...innerSurfaceSx,
+              borderRadius: 3,
+              p: { xs: 1.75, sm: 2.25 },
+              color: '#274d54',
+              backgroundColor: '#f8fffd',
+              borderColor: 'rgba(126, 189, 181, 0.42)',
+            }}
+          >
+            <Stack spacing={2}>
+              <Stack spacing={0.5} alignItems="flex-start">
+                <Typography variant="overline" sx={{ color: 'rgba(57, 103, 109, 0.72)', letterSpacing: '0.18em' }}>
+                  PLAYERS ROOM
+                </Typography>
+                <Typography variant="h4" fontWeight={900} sx={{ color: '#2f646c' }}>
+                  {locale.title}
+                </Typography>
+              </Stack>
 
-          {isCurrentPlayerLoading || isPlayersLoading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={16} />
-              <Typography variant="body2">{locale.loading}</Typography>
-            </Stack>
-          ) : currentPlayerError ? (
-            <Alert severity="warning">{currentPlayerError.message}</Alert>
-          ) : playersError ? (
-            <Alert severity="warning">{playersError.message}</Alert>
-          ) : visitTargets.length === 0 ? (
-            <Alert severity="info">{locale.empty}</Alert>
-          ) : (
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-                gap: 2,
-              }}
-            >
-              {visitTargets.map((player) => (
-                <Paper key={player.userId} variant="outlined" sx={{ ...innerSurfaceSx, p: 2, borderRadius: 3 }}>
-                  <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
-                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-                      <Avatar
-                        src={resolveCharacterAssetPath(player.imagePath) ?? undefined}
-                        alt={player.userName ?? player.userId}
-                        sx={{
-                          width: 56,
-                          height: 56,
-                          bgcolor: 'grey.300',
-                          '& .MuiAvatar-img': {
-                            objectFit: 'cover',
-                            objectPosition: 'center top',
-                          },
-                        }}
-                      >
-                        {(player.userName ?? '?').slice(0, 1)}
-                      </Avatar>
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="h6" sx={{ wordBreak: 'break-word' }}>
-                          {player.userName ?? '-'}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <Button
-                      component={Link}
-                      to={`/players/${player.userId}/visit`}
-                      variant="contained"
-                      sx={softGreenButtonSx}
+              {isCurrentPlayerLoading || isPlayersLoading ? (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CircularProgress size={16} />
+                  <Typography variant="body2">{locale.loading}</Typography>
+                </Stack>
+              ) : currentPlayerError ? (
+                <Alert severity="warning">{currentPlayerError.message}</Alert>
+              ) : playersError ? (
+                <Alert severity="warning">{playersError.message}</Alert>
+              ) : visitTargets.length === 0 ? (
+                <Alert severity="info">{locale.empty}</Alert>
+              ) : (
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                    gap: 2,
+                  }}
+                >
+                  {visitTargets.map((player) => (
+                    <Paper
+                      key={player.userId}
+                      variant="outlined"
+                      sx={{
+                        ...innerSurfaceSx,
+                        p: 2,
+                        borderRadius: 3,
+                        backgroundColor: '#fbfffe',
+                        borderColor: 'rgba(126, 189, 181, 0.34)',
+                      }}
                     >
-                      {locale.visit}
-                    </Button>
-                  </Stack>
-                </Paper>
-              ))}
-            </Box>
-          )}
+                      <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
+                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+                          <Avatar
+                            src={resolveCharacterAssetPath(player.imagePath) ?? undefined}
+                            alt={player.userName ?? player.userId}
+                            sx={{
+                              width: 56,
+                              height: 56,
+                              bgcolor: '#d8f0eb',
+                              color: '#2f646c',
+                              '& .MuiAvatar-img': {
+                                objectFit: 'cover',
+                                objectPosition: 'center top',
+                              },
+                            }}
+                          >
+                            {(player.userName ?? '?').slice(0, 1)}
+                          </Avatar>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              variant="h6"
+                              fontWeight={800}
+                              sx={{ wordBreak: 'break-word', color: '#2f646c' }}
+                            >
+                              {player.userName ?? '-'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'rgba(47, 100, 108, 0.76)' }}>
+                              {`${player.job.displayName} / Lv.${player.level}`}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                        <Button
+                          component={Link}
+                          to={`/players/${player.userId}/visit`}
+                          variant="contained"
+                          sx={{
+                            ...softGreenButtonSx,
+                            color: '#fff',
+                            backgroundColor: '#68b7a7',
+                            boxShadow: 'none',
+                            '&:hover': {
+                              backgroundColor: '#75c3b4',
+                              boxShadow: 'none',
+                            },
+                          }}
+                        >
+                          {locale.visit}
+                        </Button>
+                      </Stack>
+                    </Paper>
+                  ))}
+                </Box>
+              )}
+            </Stack>
+          </Paper>
         </Stack>
       </Paper>
     </Container>

@@ -1,4 +1,4 @@
-id,stage_code,name,recommended_level,min_party_member_count,max_party_member_count,is_active
-1,twilight-bog,はじまりのぬまち,5,4,6,true
-2,thunderpeak-pass,やまみちのぬけ道,20,4,6,true
-3,arcane-garden-core,ふしぎな花園,50,4,6,true
+id,stage_code,name,battlefield_image_path,recommended_level,min_party_member_count,max_party_member_count,is_active
+1,twilight-bog,はじまりのぬまち,image/quest/riverbank-battlefield.svg,5,4,6,true
+2,thunderpeak-pass,やまみちのぬけ道,image/quest/cave-battlefield.svg,20,4,6,true
+3,arcane-garden-core,ふしぎな花園,image/quest/enchanted-forest-battlefield.svg,50,4,6,true

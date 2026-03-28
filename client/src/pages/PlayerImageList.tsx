@@ -1,5 +1,6 @@
 import { Alert, Box, Button, Container, Paper, Stack, Typography } from '@mui/material'
 import { Link } from 'react-router-dom'
+import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { outerPagePaperSx } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import { PLAYER_IMAGE_OPTIONS } from '@/lib/playerImages'
@@ -10,6 +11,9 @@ export default function PlayerImageList() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={2}>
+          <Stack direction="row" justifyContent="flex-end">
+            <HomeNavIconButton ariaLabel={locale.backToHome} />
+          </Stack>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1.5}
@@ -17,14 +21,9 @@ export default function PlayerImageList() {
             alignItems={{ xs: 'stretch', sm: 'center' }}
           >
             <Typography variant="h4">{locale.title}</Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-              <Button component={Link} to="/player-setting" variant="outlined">
-                {locale.backToSettings}
-              </Button>
-              <Button component={Link} to="/" variant="outlined">
-                {locale.backToHome}
-              </Button>
-            </Stack>
+            <Button component={Link} to="/player-setting" variant="outlined">
+              {locale.backToSettings}
+            </Button>
           </Stack>
 
           <Alert severity="warning">{locale.rightsNotice}</Alert>

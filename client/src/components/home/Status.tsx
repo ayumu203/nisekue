@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Alert, Box, Collapse, IconButton, Paper, Stack, SvgIcon, Typography, type SvgIconProps } from '@mui/material'
 import { Link } from 'react-router-dom'
-import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx } from '@/constants/styles'
+import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx, topNavigationIconButtonSx } from '@/constants/styles'
 import type { GetPlayerResponse } from '@/schema/player'
 import signOutLocale from '../../../locale/auth/SignOut.json'
 import locale from '../../../locale/home/Home.json'
@@ -22,6 +23,8 @@ type StatusProps = {
   player: GetPlayerResponse | undefined
   compactTrainingMobile?: boolean
   showDesktopActions?: boolean
+  topAction?: ReactNode
+  actionAlign?: 'start' | 'end'
 }
 
 function toStatValue(value: number | undefined, fallback: string): StatValue {
@@ -65,9 +68,15 @@ function SignOutDoorIcon(props: SvgIconProps) {
   )
 }
 
-export default function Status({ player, compactTrainingMobile = false, showDesktopActions = true }: StatusProps) {
+export default function Status({
+  player,
+  compactTrainingMobile = false,
+  showDesktopActions = true,
+  topAction,
+  actionAlign = 'end',
+}: StatusProps) {
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
-  const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(true)
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState<string | null>(null)
   const maxResourceValue = Math.max(player?.status.maxHp ?? 0, player?.status.maxMp ?? 0, 1)
@@ -284,68 +293,58 @@ export default function Status({ player, compactTrainingMobile = false, showDesk
     </Paper>
   )
 
+  const statusActionButtons = (
+    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+      <IconButton
+        component={Link}
+        to="/player-setting"
+        aria-label="プレイヤー設定へ移動"
+        sx={{
+          display: showDesktopActions ? 'inline-flex' : 'none',
+          ...topNavigationIconButtonSx,
+        }}
+      >
+        <SettingGearIcon />
+      </IconButton>
+      <IconButton
+        onClick={() => void handleSignOut()}
+        disabled={isSigningOut}
+        aria-label="ログアウト"
+        sx={{
+          display: showDesktopActions ? 'inline-flex' : 'none',
+          ...topNavigationIconButtonSx,
+          '&.Mui-disabled': {
+            color: 'rgba(255,255,255,0.56)',
+            backgroundColor: 'rgba(122, 77, 25, 0.62)',
+          },
+        }}
+      >
+        <SignOutDoorIcon />
+      </IconButton>
+      <IconButton
+        onClick={() => setIsMobileOpen((current) => !current)}
+        aria-label={isMobileOpen ? locale.statusMobileToggleCloseAriaLabel : locale.statusMobileToggleOpenAriaLabel}
+        sx={{
+          display: { xs: 'inline-flex', sm: 'none' },
+          ...topNavigationIconButtonSx,
+        }}
+      >
+        <Typography component="span" fontSize="1.1rem" fontWeight={900}>
+          {isMobileOpen ? '−' : '+'}
+        </Typography>
+      </IconButton>
+    </Box>
+  )
+
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 0.5 }}>
-        <IconButton
-          component={Link}
-          to="/player-setting"
-          aria-label="プレイヤー設定へ移動"
-          sx={{
-            display: { xs: 'inline-flex', sm: showDesktopActions ? 'inline-flex' : 'none' },
-            width: 44,
-            height: 44,
-            border: '2px solid #ffffff',
-            color: '#ffffff',
-            backgroundColor: 'rgba(122, 77, 25, 0.9)',
-            '&:hover': {
-              backgroundColor: 'rgba(110, 68, 21, 0.94)',
-            },
-          }}
-        >
-          <SettingGearIcon />
-        </IconButton>
-        <IconButton
-          onClick={() => void handleSignOut()}
-          disabled={isSigningOut}
-          aria-label="ログアウト"
-          sx={{
-            display: { xs: 'inline-flex', sm: showDesktopActions ? 'inline-flex' : 'none' },
-            width: 44,
-            height: 44,
-            border: '2px solid #ffffff',
-            color: '#ffffff',
-            backgroundColor: 'rgba(122, 77, 25, 0.9)',
-            '&:hover': {
-              backgroundColor: 'rgba(110, 68, 21, 0.94)',
-            },
-            '&.Mui-disabled': {
-              color: 'rgba(255,255,255,0.56)',
-              backgroundColor: 'rgba(122, 77, 25, 0.62)',
-            },
-          }}
-        >
-          <SignOutDoorIcon />
-        </IconButton>
-        <IconButton
-          onClick={() => setIsMobileOpen((current) => !current)}
-          aria-label={isMobileOpen ? locale.statusMobileToggleCloseAriaLabel : locale.statusMobileToggleOpenAriaLabel}
-          sx={{
-            display: { xs: 'inline-flex', sm: 'none' },
-            width: 44,
-            height: 44,
-            border: '2px solid #ffffff',
-            color: '#ffffff',
-            backgroundColor: 'rgba(122, 77, 25, 0.9)',
-            '&:hover': {
-              backgroundColor: 'rgba(110, 68, 21, 0.94)',
-            },
-          }}
-        >
-          <Typography component="span" fontSize="1.1rem" fontWeight={900}>
-            {isMobileOpen ? '−' : '+'}
-          </Typography>
-        </IconButton>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 44 }}>
+          {actionAlign === 'start' ? statusActionButtons : topAction}
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 44 }}>
+          {actionAlign === 'start' ? topAction : statusActionButtons}
+        </Box>
       </Box>
 
       <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{statusPaper}</Box>

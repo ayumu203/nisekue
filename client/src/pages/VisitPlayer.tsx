@@ -5,6 +5,7 @@ import { getChatRoom, postChatMessage } from '@/api/chat'
 import { createPlayer, getPlayer, getPlayerById } from '@/api/player'
 import ChatForm from '@/components/chat/ChatForm'
 import ChatMessages from '@/components/chat/ChatMessages'
+import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import Status from '@/components/home/Status'
 import { useAuth } from '@/contexts/useAuth'
 import { innerSurfaceSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
@@ -82,6 +83,9 @@ function VisitPlayer() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
+          <Stack direction="row" justifyContent="flex-end">
+            <HomeNavIconButton ariaLabel={locale.backToHome} />
+          </Stack>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1.5}
@@ -91,14 +95,9 @@ function VisitPlayer() {
             <Typography variant="h4">
               {visitedPlayer?.userName ? `${visitedPlayer.userName}${locale.chatTitleSuffix}` : locale.loading}
             </Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-              <Button component={Link} to="/players" variant="outlined">
-                {locale.backToPlayers}
-              </Button>
-              <Button component={Link} to="/" variant="outlined">
-                {locale.backToHome}
-              </Button>
-            </Stack>
+            <Button component={Link} to="/players" variant="outlined">
+              {locale.backToPlayers}
+            </Button>
           </Stack>
 
           <Box sx={twoColumnContentGridSx}>

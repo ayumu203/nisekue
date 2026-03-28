@@ -4,6 +4,7 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayer, updatePlayerImage } from '@/api/player'
+import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import {
   greenOutlinedInputSx,
   innerSurfaceSx,
@@ -152,13 +153,13 @@ export default function PlayerSetting() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
+          <Stack direction="row" justifyContent="flex-end">
+            <HomeNavIconButton ariaLabel={locale.backToHome} />
+          </Stack>
           <Stack spacing={1}>
             <Typography variant="h4" textAlign="center">
               {locale.title}
             </Typography>
-            <Button component={Link} to="/" variant="outlined" sx={{ alignSelf: 'flex-end' }}>
-              {locale.backToHome}
-            </Button>
           </Stack>
 
           {isPlayerLoading ? (

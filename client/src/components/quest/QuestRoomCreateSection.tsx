@@ -33,7 +33,17 @@ export default function QuestRoomCreateSection({
   }
 
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+    <Paper
+      variant="outlined"
+      sx={{
+        ...innerSurfaceSx,
+        borderRadius: 3,
+        p: { xs: 2, sm: 2.5 },
+        color: '#eef4ff',
+        backgroundColor: '#1d2d4a',
+        borderColor: 'rgba(152, 192, 255, 0.34)',
+      }}
+    >
       <Stack spacing={2}>
         {isLoading ? (
           <Stack direction="row" spacing={1} alignItems="center">
@@ -65,7 +75,17 @@ export default function QuestRoomCreateSection({
               variant="contained"
               onClick={() => void onCreateRoom()}
               disabled={isCreateDisabled}
-              sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+              sx={{
+                ...menuButtonSx,
+                ...softGreenButtonSx,
+                color: '#ffffff',
+                backgroundColor: '#4f79b5',
+                boxShadow: 'none',
+                '&:hover': {
+                  backgroundColor: '#5a86c5',
+                  boxShadow: 'none',
+                },
+              }}
             >
               {isSubmitting ? locale.creatingRoom : locale.createRoom}
             </Button>

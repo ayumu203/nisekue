@@ -1,7 +1,7 @@
-import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
-import { Link } from 'react-router-dom'
+import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
+import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import MoveItemBox from '@/components/moveSetting/MoveItemBox'
 import { outerPagePaperSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
@@ -49,10 +49,8 @@ export default function MoveSetting() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Stack spacing={1} alignItems="flex-end">
-            <Button component={Link} to="/" variant="outlined" sx={{ alignSelf: 'flex-end' }}>
-              {locale.backToHome}
-            </Button>
+          <Stack direction="row" justifyContent="flex-start">
+            <HomeNavIconButton ariaLabel={locale.backToHome} />
           </Stack>
 
           {isPlayerLoading ? (
