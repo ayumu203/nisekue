@@ -22,24 +22,36 @@ const modeButtonSx = {
 export default function QuestStageModeCard({ stage, isSelected, selectedMode, onSelect }: QuestStageModeCardProps) {
   const isSoloSelected = isSelected && selectedMode === 'Solo'
   const isMultiSelected = isSelected && selectedMode === 'Multi'
+  const battlefieldImageSrc = resolvePublicAssetPath(stage.battlefieldImagePath)
 
   return (
     <Card
       variant="outlined"
       sx={{
         ...innerSurfaceSx,
+        position: 'relative',
+        overflow: 'hidden',
         height: '100%',
         borderRadius: 3,
         borderWidth: isSelected ? 2 : 1,
         borderColor: isSelected ? '#c58f2b' : innerSurfaceSx.borderColor,
         boxShadow: isSelected ? '0 10px 24px rgba(120, 88, 32, 0.14)' : 'none',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `linear-gradient(135deg, rgba(255, 250, 240, 0.9), rgba(255, 247, 232, 0.74)), url(${battlefieldImageSrc})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: isSelected ? 1 : 0.92,
+        },
       }}
     >
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={2}
         alignItems={{ xs: 'flex-start', sm: 'center' }}
-        sx={{ p: 2 }}
+        sx={{ position: 'relative', zIndex: 1, p: 2 }}
       >
         <Box
           sx={{
