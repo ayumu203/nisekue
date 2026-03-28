@@ -89,7 +89,7 @@ export default function Status({
   actionAlign = 'end',
 }: StatusProps) {
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
-  const [isMobileOpen, setIsMobileOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(true)
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState<string | null>(null)
   const equippedWeapon = player?.equipments.find(
@@ -365,15 +365,14 @@ export default function Status({
         <SignOutDoorIcon />
       </IconButton>
       <IconButton
-        onClick={() => setIsMobileOpen((current) => !current)}
-        aria-label={isMobileOpen ? locale.statusMobileToggleCloseAriaLabel : locale.statusMobileToggleOpenAriaLabel}
+        onClick={() => setIsOpen((current) => !current)}
+        aria-label={isOpen ? locale.statusMobileToggleCloseAriaLabel : locale.statusMobileToggleOpenAriaLabel}
         sx={{
-          display: { xs: 'inline-flex', sm: 'none' },
           ...topNavigationIconButtonSx,
         }}
       >
         <Typography component="span" fontSize="1.1rem" fontWeight={900}>
-          {isMobileOpen ? '−' : '+'}
+          {isOpen ? '−' : '+'}
         </Typography>
       </IconButton>
     </Box>
@@ -390,9 +389,7 @@ export default function Status({
         </Box>
       </Box>
 
-      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{statusPaper}</Box>
-
-      <Collapse in={isMobileOpen} sx={{ display: { xs: 'block', sm: 'none' } }}>
+      <Collapse in={isOpen}>
         {statusPaper}
       </Collapse>
 

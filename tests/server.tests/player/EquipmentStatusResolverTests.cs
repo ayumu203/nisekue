@@ -1,0 +1,89 @@
+using FluentAssertions;
+using server.domain.player;
+using Xunit;
+
+namespace server.tests;
+
+public class EquipmentStatusResolverTests
+{
+    [Fact]
+    public void BuildEffectiveStatus_WhenEquippedWeaponMasteryIsBelowTen_DoesNotAddMasteryBonus()
+    {
+        var resolver = new EquipmentStatusResolver();
+        var baseStatus = new Status(20, 10, 5, 4, 3, 2, 1);
+        var weapon = CreateWeapon(strength: 20);
+        var playerWeapon = CreatePlayerEquipment(weapon.Id, EquipmentType.Weapon, mastery: 9);
+
+        var actual = resolver.BuildEffectiveStatus(baseStatus, Job.Apprentice, [playerWeapon], [weapon]);
+
+        actual.Strength.Should().Be(25);
+    }
+
+    [Fact]
+    public void BuildEffectiveStatus_WhenEquippedWeaponMasteryReachesTen_AddsOnePercentBonus()
+    {
+        var resolver = new EquipmentStatusResolver();
+        var baseStatus = new Status(20, 10, 5, 4, 3, 2, 1);
+        var weapon = CreateWeapon(strength: 100);
+        var playerWeapon = CreatePlayerEquipment(weapon.Id, EquipmentType.Weapon, mastery: 10);
+
+        var actual = resolver.BuildEffectiveStatus(baseStatus, Job.Apprentice, [playerWeapon], [weapon]);
+
+        actual.Strength.Should().Be(106);
+    }
+
+    [Fact]
+    public void BuildEffectiveStatus_WhenEquipmentIsArmor_DoesNotApplyMasteryBonus()
+    {
+        var resolver = new EquipmentStatusResolver();
+        var baseStatus = new Status(20, 10, 5, 4, 3, 2, 1);
+        var armor = CreateArmor(defense: 100);
+        var playerArmor = CreatePlayerEquipment(armor.Id, EquipmentType.Armor, mastery: 50);
+
+        var actual = resolver.BuildEffectiveStatus(baseStatus, Job.Apprentice, [playerArmor], [armor]);
+
+        actual.Defense.Should().Be(104);
+    }
+
+    private static Equipment CreateWeapon(int strength)
+    {
+        return new Equipment(
+            new EquipmentId(1001),
+            "テスト剣",
+            "test",
+            EquipmentType.Weapon,
+            maxDurability: 10,
+            masteryCap: 100,
+            synthesisGoldCost: 10,
+            new EquipmentStatusBonus(0, 0, strength, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice });
+    }
+
+    private static Equipment CreateArmor(int defense)
+    {
+        return new Equipment(
+            new EquipmentId(2001),
+            "テスト鎧",
+            "test",
+            EquipmentType.Armor,
+            maxDurability: 10,
+            masteryCap: 100,
+            synthesisGoldCost: 10,
+            new EquipmentStatusBonus(0, 0, 0, defense, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice });
+    }
+
+    private static PlayerEquipment CreatePlayerEquipment(EquipmentId equipmentId, EquipmentType type, int mastery)
+    {
+        return new PlayerEquipment(
+            PlayerEquipmentId.New(),
+            new PlayerId(Guid.NewGuid()),
+            equipmentId,
+            type,
+            EquipmentStatus.Equipped,
+            durability: 10,
+            mastery: mastery,
+            acquiredAt: DateTimeOffset.UtcNow,
+            updatedAt: DateTimeOffset.UtcNow);
+    }
+}

@@ -2,6 +2,8 @@ namespace server.domain.player;
 
 public class EquipmentStatusResolver
 {
+    private const int MasteryStep = 10;
+
     public Status BuildEffectiveStatus(
         Status baseStatus,
         Job playerJob,
@@ -33,13 +35,17 @@ public class EquipmentStatusResolver
                 continue;
             }
 
-            bonusMaxHp += equipment.BonusValues.MaxHp;
-            bonusMaxMp += equipment.BonusValues.MaxMp;
-            bonusStrength += equipment.BonusValues.Strength;
-            bonusDefense += equipment.BonusValues.Defense;
-            bonusIntelligence += equipment.BonusValues.Intelligence;
-            bonusLuck += equipment.BonusValues.Luck;
-            bonusSpeed += equipment.BonusValues.Speed;
+            var masteryRate = equipment.Type == EquipmentType.Weapon
+                ? ResolveMasteryRate(playerEquipment.Mastery)
+                : 0m;
+
+            bonusMaxHp += ApplyMasteryBonus(equipment.BonusValues.MaxHp, masteryRate);
+            bonusMaxMp += ApplyMasteryBonus(equipment.BonusValues.MaxMp, masteryRate);
+            bonusStrength += ApplyMasteryBonus(equipment.BonusValues.Strength, masteryRate);
+            bonusDefense += ApplyMasteryBonus(equipment.BonusValues.Defense, masteryRate);
+            bonusIntelligence += ApplyMasteryBonus(equipment.BonusValues.Intelligence, masteryRate);
+            bonusLuck += ApplyMasteryBonus(equipment.BonusValues.Luck, masteryRate);
+            bonusSpeed += ApplyMasteryBonus(equipment.BonusValues.Speed, masteryRate);
         }
 
         return new Status(
@@ -50,5 +56,26 @@ public class EquipmentStatusResolver
             baseStatus.Intelligence + bonusIntelligence,
             baseStatus.Luck + bonusLuck,
             baseStatus.Speed + bonusSpeed);
+    }
+
+    private static int ApplyMasteryBonus(int baseBonus, decimal masteryRate)
+    {
+        if (baseBonus == 0 || masteryRate <= 0)
+        {
+            return baseBonus;
+        }
+
+        return baseBonus + (int)Math.Floor(baseBonus * masteryRate);
+    }
+
+    private static decimal ResolveMasteryRate(int mastery)
+    {
+        if (mastery < MasteryStep)
+        {
+            return 0m;
+        }
+
+        var masteryTier = mastery / MasteryStep;
+        return masteryTier / 100m;
     }
 }
