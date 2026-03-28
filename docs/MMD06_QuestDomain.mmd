@@ -12,6 +12,7 @@ classDiagram
             +int MinPartyMemberCount
             +int MaxPartyMemberCount
             +IReadOnlyList~QuestFloorDefinition~ Floors
+            +IReadOnlyList~QuestStageEquipmentRewardEntry~ EquipmentRewards
             +bool IsActive
         }
 
@@ -42,6 +43,13 @@ classDiagram
             <<Value Object>>
             +decimal ExpRate
             +decimal GoldRate
+        }
+
+        class QuestStageEquipmentRewardEntry {
+            <<Value Object>>
+            +EquipmentId? EquipmentId
+            +int Weight
+            +bool IsMiss
         }
 
         class QuestEnemyPlacement {
@@ -357,7 +365,18 @@ classDiagram
         class QuestRewardAccumulator {
             <<Value Object>>
             +int Exp
+            +int Gold
+            +EquipmentId? RewardEquipmentId
             +AddExp(value: int) void
+            +AddGold(value: int) void
+            +SetRewardEquipment(equipmentId: EquipmentId?) void
+        }
+
+        class QuestRewardEquipmentGrant {
+            <<Value Object>>
+            +PlayerId PlayerId
+            +EquipmentId? EquipmentId
+            +bool IsSkippedByInventoryFull
         }
 
         class QuestRunResolutionSummary {
@@ -435,11 +454,18 @@ classDiagram
             +Task~QuestRun~ RequestManualControlAsync(runId: QuestRunId, playerId: PlayerId)
             +Task~QuestRun~ ApproveManualControlAsync(runId: QuestRunId, ownerPlayerId: PlayerId, participantId: QuestParticipantId)
             +Task~int~ ProcessExpiredRunsAsync(now: DateTimeOffset)
+            -GrantStageRewardsAsync(run: QuestRun, now: DateTimeOffset) IReadOnlyList~QuestRewardEquipmentGrant~
+        }
+
+        class QuestStageRewardLotteryService {
+            <<Domain Service>>
+            +Draw(stage: QuestStageDefinition) EquipmentId?
         }
     }
 
     QuestStageDefinition *-- QuestStageId : has
     QuestStageDefinition *-- QuestFloorDefinition : 1..*
+    QuestStageDefinition *-- QuestStageEquipmentRewardEntry : 0..*
     QuestFloorDefinition *-- QuestFloorRewardRule : has
     QuestFloorDefinition *-- QuestEnemyPlacement : 0..*
     QuestEnemyDefinition *-- QuestEnemyDefinitionId : has
@@ -455,6 +481,7 @@ classDiagram
     QuestRun *-- QuestTurnState : has
     QuestRun *-- QuestTrapCollection : has
     QuestRun *-- QuestRewardAccumulator : has
+    QuestRun *-- QuestRewardEquipmentGrant : 0..*
     QuestRun *-- QuestRunParticipantIdentity : 1..*
     QuestRun *-- QuestChatMessage : 0..*
     QuestFloorState *-- QuestEnemyPlacement : 0..*
@@ -500,3 +527,6 @@ classDiagram
     QuestRunOutcomeJudge ..> QuestRunResolutionSummary : returns
     QuestRunService ..> QuestRun : use
     QuestRunService ..> IQuestRunRepository : use
+    QuestRunService ..> QuestStageRewardLotteryService : use
+    QuestRunService ..> IPlayerEquipmentRepository : use
+    QuestRunService ..> QuestRewardEquipmentGrant : builds

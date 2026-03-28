@@ -15,6 +15,7 @@ erDiagram
         int intelligence "NOT NULL, DEFAULT 0"
         int luck "NOT NULL, DEFAULT 0"
         int speed "NOT NULL, DEFAULT 0"
+        int gold "NOT NULL, DEFAULT 100"
         int training_battle_count "NOT NULL, DEFAULT 0"
         timestamptz training_cooldown_until "NULL"
         timestamptz quest_cooldown_until "NULL"
@@ -25,7 +26,8 @@ erDiagram
     }
     CHAT_MESSAGES {
         uuid owner_id PK, FK "internal.chat_rooms.owner_id"
-        uuid sender_id FK "internal.players.id, NOT NULL"
+        int sender_type "NOT NULL (Player/System)"
+        uuid sender_id FK "internal.players.id, NULL when system"
         int chat_id PK "NOT NULL"
         varchar(200) message "NOT NULL"
         timestamptz created_at "NOT NULL, DEFAULT CURRENT_TIMESTAMP"
@@ -58,6 +60,43 @@ erDiagram
         int mastery "NOT NULL, DEFAULT 0"
         timestamptz acquired_at "NOT NULL"
         timestamptz updated_at "NOT NULL"
+    }
+    PLAYER_ITEM_STACKS {
+        uuid id PK "internal.player_item_stacks.id"
+        uuid player_id FK "internal.players.id"
+        int item_id "NOT NULL, references CSV item_id logically"
+        int quantity "NOT NULL"
+        timestamptz updated_at "NOT NULL"
+    }
+    MARKET_LISTINGS {
+        uuid id PK "internal.market_listings.id"
+        uuid seller_id FK "internal.players.id"
+        uuid player_equipment_id FK "NULL, internal.player_equipments.id"
+        int item_id "NULL, references CSV item_id logically"
+        varchar(100) item_name "NOT NULL"
+        varchar(500) flavor_text "NOT NULL"
+        int quantity "NOT NULL"
+        int remaining_quantity "NOT NULL"
+        int unit_price "NOT NULL"
+        timestamptz listed_at "NOT NULL"
+        timestamptz expires_at "NOT NULL"
+    }
+    MARKET_TRADE_HISTORIES {
+        uuid id PK "internal.market_trade_histories.id"
+        uuid seller_id FK "internal.players.id"
+        uuid buyer_id FK "internal.players.id"
+        varchar(50) item_id "NOT NULL, equipment_id or item_id as persisted identifier"
+        int quantity "NOT NULL"
+        int unit_price "NOT NULL"
+        timestamptz purchased_at "NOT NULL"
+    }
+    ITEM_DELETE_LOGS {
+        uuid id PK "internal.item_delete_logs.id"
+        uuid player_id FK "internal.players.id"
+        varchar(50) item_id "NOT NULL, equipment_id or item_id as persisted identifier"
+        int quantity "NOT NULL"
+        varchar(50) reason "NOT NULL"
+        timestamptz deleted_at "NOT NULL"
     }
     QUEST_ROOMS {
         uuid id PK "internal.quest_rooms.id"
@@ -167,6 +206,13 @@ erDiagram
     QUEST_REWARD_SUMMARIES {
         uuid run_id PK, FK "internal.quest_runs.id"
         int exp "NOT NULL"
+        int gold "NOT NULL, DEFAULT 0"
+    }
+    QUEST_REWARD_EQUIPMENTS {
+        uuid run_id PK, FK "internal.quest_runs.id"
+        uuid player_id PK, FK "internal.players.id"
+        int equipment_id "NULL, references CSV equipment_id logically"
+        boolean is_skipped_by_inventory_full "NOT NULL"
     }
 
     PLAYERS ||--|| CHAT_ROOMS : owns
@@ -174,6 +220,10 @@ erDiagram
     PLAYERS ||--|| PLAYER_MOVES : has_slots
     PLAYERS ||--o{ PLAYER_MASTER_JOBS : has_mastered
     PLAYERS ||--o{ PLAYER_EQUIPMENTS : owns
+    PLAYERS ||--o{ PLAYER_ITEM_STACKS : owns
+    PLAYERS ||--o{ MARKET_LISTINGS : sells
+    PLAYERS ||--o{ MARKET_TRADE_HISTORIES : sells_or_buys
+    PLAYERS ||--o{ ITEM_DELETE_LOGS : deletes
     PLAYERS ||--o{ QUEST_ROOMS : owns
     QUEST_ROOMS ||--o{ QUEST_ROOM_PARTICIPANTS : has
     QUEST_RUNS ||--o{ QUEST_RUN_PARTY_SNAPSHOTS : snapshots
@@ -182,3 +232,4 @@ erDiagram
     QUEST_RUNS ||--o{ QUEST_TURN_COMMANDS : receives
     QUEST_RUNS ||--o{ QUEST_FLOOR_TRAPS : carries
     QUEST_RUNS ||--|| QUEST_REWARD_SUMMARIES : awards
+    QUEST_RUNS ||--o{ QUEST_REWARD_EQUIPMENTS : grants

@@ -66,11 +66,25 @@ classDiagram
             +int CurrentPlayerHp
         }
 
+        class TrainingWeaponMasteryPolicy {
+            <<Domain Service>>
+            +ShouldIncrease(playerLevel: int, enemyLevel: int) bool
+            +ResolveAllowedLevelGap(playerLevel: int) int
+        }
+
+        class TrainingWeaponMasteryResult {
+            <<Value Object>>
+            +PlayerEquipmentId? WeaponEquipmentId
+            +int MasteryDelta
+            +bool Increased
+        }
+
         class TrainingService {
             <<Application Service>>
             +GetTrainingEnemies(playerId: PlayerId) TrainingEnemyView[]
             +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
             -ConsumeEquippedDurability(playerEquipments: IReadOnlyList~PlayerEquipment~, now: DateTimeOffset) void
+            -ApplyWeaponMastery(player: Player, enemy: TrainingEnemy, playerEquipments: IReadOnlyList~PlayerEquipment~, now: DateTimeOffset) TrainingWeaponMasteryResult
             -ResolveBattleUntilFinished(actors: IReadOnlyList~BattleActorInput~, playerMoves: IReadOnlyList~Move~, moves: IReadOnlyList~Move~) (TrainingBattleSummary, TrainingContributionMetrics)
             -BuildNextTurnActors(actors: IReadOnlyList~BattleActorInput~, states: IReadOnlyList~BattleActorState~) BattleActorInput[]
             -BuildSummary(actors: IReadOnlyList~BattleActorInput~, turn: int) TrainingBattleSummary
@@ -97,6 +111,7 @@ classDiagram
             +int Exp
             +bool IsPlayerLevelUp
             +bool IsJobLevelUp
+            +int WeaponMasteryDelta
             +IReadOnlyList~LearnedMoveView~ NewlyLearnedMoves
         }
     }
@@ -109,6 +124,8 @@ classDiagram
     TrainingService ..> TrainingBattleFactory : use
     TrainingService ..> TrainingOutcomeJudge : use
     TrainingService ..> TrainingExpCalculator : use
+    TrainingService ..> TrainingWeaponMasteryPolicy : use
+    TrainingService ..> TrainingWeaponMasteryResult : builds
     TrainingService ..> EquipmentStatusResolver : use
     TrainingService ..> IEquipmentRepository : use
     TrainingService ..> IPlayerEquipmentRepository : use
