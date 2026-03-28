@@ -31,22 +31,78 @@ classDiagram
             -SynchronizeLearnableMoves(jobProfile: JobProfile, learningRule: JobMoveLearningRule) IReadOnlyList~MoveId~
         }
 
-        %% 転職ルール:
-        %% - 同一ジョブへの転職は不可
-        %% - Apprentice は初期ジョブ専用で転職先には含めない
-        %% - required_master_job_* が未設定の現行ジョブは Player Level 5 以上で転職可能
-        %% - 将来の上級職は required_master_job_* に定義した全ジョブの mastered を要求
-        %% - 転職時にスキルは習得しない。スキル習得は LevelUp 時のみ行う
-        %% - Level / Exp はプレイヤー共通の成長値でジョブ変更では維持する
-        %% - JobLevel / JobExp は現在職専用の値で、転職時に 1 / 0 へリセットする
-        %% - ステータス成長、スキル習得、ジョブマスター判定は JobLevel を使う
-
         class PlayerId {
             <<Value Object>>
             +Guid Id
         }
 
         class Status {
+            <<Value Object>>
+            +int MaxHp
+            +int MaxMp
+            +int Strength
+            +int Defense
+            +int Intelligence
+            +int Luck
+            +int Speed
+        }
+
+        class EquipmentType {
+            <<enumeration>>
+            Weapon
+            Armor
+        }
+
+        class EquipmentStatus {
+            <<enumeration>>
+            Inventory
+            Equipped
+            Broken
+        }
+
+        class EquipmentId {
+            <<Value Object>>
+            +int Id
+        }
+
+        class PlayerEquipmentId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class Equipment {
+            <<Aggregate Root>>
+            +EquipmentId Id
+            +string Name
+            +EquipmentType Type
+            +int MaxDurability
+            +EquipmentStatusBonus BonusValues
+            +IReadOnlySet~Job~ EquippableJobs
+            +bool CanEquip(job: Job) bool
+        }
+
+        class PlayerEquipment {
+            <<Entity>>
+            +PlayerEquipmentId Id
+            +PlayerId PlayerId
+            +EquipmentId EquipmentId
+            +EquipmentType Type
+            +EquipmentStatus Status
+            +int Durability
+            +int Mastery
+            +bool IsBroken
+            +Equip(equipment: Equipment, playerJob: Job, now: DateTimeOffset) void
+            +Unequip(now: DateTimeOffset) void
+            +ConsumeDurability(value: int, now: DateTimeOffset) void
+            +IncreaseMastery(value: int, now: DateTimeOffset) void
+        }
+
+        class EquipmentStatusResolver {
+            <<Domain Service>>
+            +BuildEffectiveStatus(baseStatus: Status, playerJob: Job, playerEquipments: IEnumerable~PlayerEquipment~, equipments: IEnumerable~Equipment~) Status
+        }
+
+        class EquipmentStatusBonus {
             <<Value Object>>
             +int MaxHp
             +int MaxMp
@@ -106,6 +162,17 @@ classDiagram
             +Task SaveAsync(player: Player)
         }
 
+        class IEquipmentRepository {
+            +Task~Equipment?~ GetAsync(id: EquipmentId)
+            +Task~IReadOnlyList~Equipment~~ GetAllAsync()
+        }
+
+        class IPlayerEquipmentRepository {
+            +Task~IReadOnlyList~PlayerEquipment~~ GetByPlayerAsync(playerId: PlayerId)
+            +Task~PlayerEquipment?~ GetAsync(playerEquipmentId: PlayerEquipmentId)
+            +Task SaveAsync(playerEquipments: IReadOnlyList~PlayerEquipment~)
+        }
+
         class IJobProfileRepository {
             +JobProfile GetByJob(job: Job)
             +IReadOnlyList~JobProfile~ GetAll()
@@ -115,7 +182,17 @@ classDiagram
     Player *-- PlayerId : has
     Player *-- Status : has
     Player *-- MoveSet : has
+    PlayerEquipment *-- PlayerEquipmentId : has
+    PlayerEquipment ..> Equipment : refers
+    PlayerEquipment ..> EquipmentStatus : has
+    Equipment *-- EquipmentId : has
+    Equipment ..> EquipmentType : has
+    Equipment *-- EquipmentStatusBonus : has
     Player ..> JobMoveLearningRule : uses
     Player ..> LevelUpResult : returns
+    EquipmentStatusResolver ..> Equipment : uses
+    EquipmentStatusResolver ..> PlayerEquipment : uses
     IJobProfileRepository ..> JobProfile : returns
     IPlayerRepository ..> Player : stores/loads
+    IEquipmentRepository ..> Equipment : stores/loads
+    IPlayerEquipmentRepository ..> PlayerEquipment : stores/loads

@@ -27,6 +27,8 @@
     "jobExp": "職業経験値",
     "maxHp": "HP",
     "maxMp": "MP",
+    "weapon": "武器",
+    "armor": "防具",
     "strength": "筋力",
     "defense": "防御",
     "intelligence": "知力",

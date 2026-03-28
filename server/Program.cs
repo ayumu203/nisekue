@@ -93,6 +93,8 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 });
 
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
+builder.Services.AddScoped<IPlayerEquipmentRepository, DbPlayerEquipmentRepository>();
+builder.Services.AddSingleton<IEquipmentRepository, CsvEquipmentRepository>();
 builder.Services.AddSingleton<IJobProfileRepository, CsvJobProfileRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
 builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
@@ -115,6 +117,7 @@ builder.Services.AddHostedService<QuestRunTimeoutBackgroundService>();
 builder.Services.AddScoped<TrainingBattleFactory>();
 builder.Services.AddScoped<TrainingOutcomeJudge>();
 builder.Services.AddScoped<TrainingExpCalculator>();
+builder.Services.AddScoped<EquipmentStatusResolver>();
 builder.Services.AddScoped<PlayerJobService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<TrainingService>();

@@ -24,14 +24,14 @@ classDiagram
 
         class TrainingBattleFactory {
             <<Application Service>>
-            +CreatePlayerActor(player: Player) BattleActorInput
+            +CreatePlayerActor(player: Player, effectiveStatus: Status, selectedPlayerMoves: IEnumerable~Move~) BattleActorInput
             +CreateEnemyActor(enemy: TrainingEnemy) BattleActorInput
-            +CreateTurnActions(playerActorId: Guid, enemyActorId: Guid) BattleActionInput[]
-            +CreateTrainingMoves(player: Player, enemy: TrainingEnemy) Move[]
+            +CreateTurnActions(playerActor: BattleActorInput, enemyActorId: Guid, playerMove: Move) BattleActionInput[]
+            +CreateTrainingMoves(enemy: TrainingEnemy, playerMoves: IEnumerable~Move~) Move[]
+            +CreatePlayerTrainingNormalAttack(status: Status) Move
             +PlayerActorId Guid
             +EnemyActorId Guid
             -CreateTrainingNormalAttack(moveId: int, status: Status) Move
-            -ResolveAttackStat(status: Status) BuffStat
         }
 
         class TrainingOutcome {
@@ -70,6 +70,7 @@ classDiagram
             <<Application Service>>
             +GetTrainingEnemies(playerId: PlayerId) TrainingEnemyView[]
             +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
+            -ConsumeEquippedDurability(playerEquipments: IReadOnlyList~PlayerEquipment~, now: DateTimeOffset) void
             -ResolveBattleUntilFinished(actors: IReadOnlyList~BattleActorInput~, playerMoves: IReadOnlyList~Move~, moves: IReadOnlyList~Move~) (TrainingBattleSummary, TrainingContributionMetrics)
             -BuildNextTurnActors(actors: IReadOnlyList~BattleActorInput~, states: IReadOnlyList~BattleActorState~) BattleActorInput[]
             -BuildSummary(actors: IReadOnlyList~BattleActorInput~, turn: int) TrainingBattleSummary
@@ -108,6 +109,9 @@ classDiagram
     TrainingService ..> TrainingBattleFactory : use
     TrainingService ..> TrainingOutcomeJudge : use
     TrainingService ..> TrainingExpCalculator : use
+    TrainingService ..> EquipmentStatusResolver : use
+    TrainingService ..> IEquipmentRepository : use
+    TrainingService ..> IPlayerEquipmentRepository : use
     TrainingService ..> TrainingBattleSummary : builds
     TrainingService ..> TrainingContributionMetrics : builds
     TrainingService ..> TrainingResultView : has

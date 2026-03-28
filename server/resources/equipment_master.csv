@@ -1,0 +1,3 @@
+equipment_id,name,equipment_type,max_durability,bonus_max_hp,bonus_max_mp,bonus_strength,bonus_defense,bonus_intelligence,bonus_luck,bonus_speed,equippable_jobs
+1001,旅立ちの剣,Weapon,10,0,0,3,0,0,0,0,Apprentice|Warrior|Guardian|Mage|Priest|Ranger
+2001,旅立ちの服,Armor,10,4,0,0,2,0,0,0,Apprentice|Warrior|Guardian|Mage|Priest|Ranger

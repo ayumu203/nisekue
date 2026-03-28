@@ -199,6 +199,7 @@ classDiagram
     BattleTurnOrderResolver ..> BattleActorState : use
     BattleTurnOrderResolver ..> BattleAction : use
     BattleStatusResolver ..> BattleActorState : use
+    BattleStatusResolver ..> BattleActorSnapshot : use
     BattleDamageCalculator ..> BattleDamageResult : builds
     BattleActionResolver ..> BattleDamageCalculator : use
     BattleActionResolver ..> BattleStatusResolver : use

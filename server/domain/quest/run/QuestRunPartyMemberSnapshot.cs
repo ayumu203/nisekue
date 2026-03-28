@@ -11,6 +11,8 @@ public class QuestRunPartyMemberSnapshot(
     string? imagePath,
     Job job,
     Status baseStatus,
+    PlayerEquipmentId? weaponEquipmentId,
+    PlayerEquipmentId? armorEquipmentId,
     MoveSet moveSet,
     BattlePosition startPosition,
     ActionMode initialActionMode)
@@ -23,6 +25,8 @@ public class QuestRunPartyMemberSnapshot(
     public string? ImagePath { get; } = string.IsNullOrWhiteSpace(imagePath) ? null : imagePath.Trim();
     public Job Job { get; } = job;
     public Status BaseStatus { get; } = baseStatus ?? throw new ArgumentNullException(nameof(baseStatus));
+    public PlayerEquipmentId? WeaponEquipmentId { get; } = weaponEquipmentId;
+    public PlayerEquipmentId? ArmorEquipmentId { get; } = armorEquipmentId;
     public MoveSet MoveSet { get; } = moveSet ?? throw new ArgumentNullException(nameof(moveSet));
     public BattlePosition StartPosition { get; } = startPosition;
     public ActionMode InitialActionMode { get; } = initialActionMode;

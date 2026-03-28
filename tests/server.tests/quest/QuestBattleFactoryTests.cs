@@ -34,6 +34,8 @@ public class QuestBattleFactoryTests
                     "/images/player.png",
                     Job.Warrior,
                     new Status(40, 10, 10, 5, 3, 3, 8),
+                    weaponEquipmentId: null,
+                    armorEquipmentId: null,
                     moveSet,
                     new BattlePosition(BattleRow.Front, BattleColumn.Left),
                     ActionMode.Manual)
@@ -446,6 +448,8 @@ public class QuestBattleFactoryTests
                 member.Type == ParticipantType.Player ? "/images/player.png" : null,
                 member.Job,
                 new Status(member.MaxHp, member.MaxMp, member.Strength, member.Defense, member.Intelligence, 3, 8),
+                weaponEquipmentId: null,
+                armorEquipmentId: null,
                 set,
                 member.Position,
                 member.ParticipantId == actorId ? initialActionMode : ActionMode.Manual);

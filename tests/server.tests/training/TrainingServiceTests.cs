@@ -175,6 +175,167 @@ public class TrainingServiceTests
     }
 
     [Fact]
+    public async Task ExecuteTraining_WithEquippedWeapon_AppliesEffectiveStatusAndConsumesDurability()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var player = new Player(
+            playerId,
+            name: "Tester",
+            level: 1,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            status: new Status(maxHp: 20, maxMp: 0, strength: 7, defense: 5, intelligence: 0, luck: 0, speed: 10),
+            job: Job.Apprentice,
+            moveSet: CreateMoveSet(PhysicalAttackMoveId));
+
+        var enemy = new TrainingEnemy(
+            new TrainingEnemyId(1),
+            name: "Enemy",
+            imagePath: "/image/training/01_heishi.png",
+            level: 1,
+            status: new Status(maxHp: 10, maxMp: 0, strength: 1, defense: 0, intelligence: 0, luck: 0, speed: 1));
+        var equipment = new Equipment(
+            new EquipmentId(1001),
+            "旅立ちの剣",
+            EquipmentType.Weapon,
+            10,
+            new EquipmentStatusBonus(0, 0, 3, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice });
+        var playerEquipment = new PlayerEquipment(
+            PlayerEquipmentId.New(),
+            playerId,
+            equipment.Id,
+            EquipmentType.Weapon,
+            EquipmentStatus.Equipped,
+            durability: 10,
+            mastery: 0,
+            acquiredAt: DateTimeOffset.UtcNow,
+            updatedAt: DateTimeOffset.UtcNow);
+        var equipmentRepository = new FakeEquipmentRepository(equipment);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
+
+        var service = CreateService(
+            new FakePlayerRepository(player),
+            new FakeTrainingEnemyRepository(enemy),
+            playerEquipmentRepository,
+            equipmentRepository);
+
+        var result = await service.ExecuteTraining(playerId, enemy.Id, [PhysicalAttackMoveId, PhysicalAttackMoveId, PhysicalAttackMoveId]);
+
+        result.TrainingResult.Should().Be("Win");
+        result.Turn.Should().Be(1);
+        playerEquipmentRepository.StoredEquipments.Should().ContainSingle();
+        playerEquipmentRepository.StoredEquipments[0].Durability.Should().Be(9);
+    }
+
+    [Fact]
+    public async Task ExecuteTraining_WithInventoryEquipment_DoesNotConsumeDurability()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var player = new Player(
+            playerId,
+            name: "Tester",
+            level: 1,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            status: new Status(maxHp: 20, maxMp: 0, strength: 7, defense: 5, intelligence: 0, luck: 0, speed: 10),
+            job: Job.Apprentice,
+            moveSet: CreateMoveSet(PhysicalAttackMoveId));
+
+        var enemy = new TrainingEnemy(
+            new TrainingEnemyId(1),
+            name: "Enemy",
+            imagePath: "/image/training/01_heishi.png",
+            level: 1,
+            status: new Status(maxHp: 10, maxMp: 0, strength: 1, defense: 0, intelligence: 0, luck: 0, speed: 1));
+        var equipment = new Equipment(
+            new EquipmentId(1001),
+            "旅立ちの剣",
+            EquipmentType.Weapon,
+            10,
+            new EquipmentStatusBonus(0, 0, 3, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice });
+        var playerEquipment = new PlayerEquipment(
+            PlayerEquipmentId.New(),
+            playerId,
+            equipment.Id,
+            EquipmentType.Weapon,
+            EquipmentStatus.Inventory,
+            durability: 10,
+            mastery: 0,
+            acquiredAt: DateTimeOffset.UtcNow,
+            updatedAt: DateTimeOffset.UtcNow);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
+
+        var service = CreateService(
+            new FakePlayerRepository(player),
+            new FakeTrainingEnemyRepository(enemy),
+            playerEquipmentRepository,
+            new FakeEquipmentRepository(equipment));
+
+        await service.ExecuteTraining(playerId, enemy.Id, [PhysicalAttackMoveId, PhysicalAttackMoveId, PhysicalAttackMoveId]);
+
+        playerEquipmentRepository.StoredEquipments.Should().ContainSingle();
+        playerEquipmentRepository.StoredEquipments[0].Durability.Should().Be(10);
+        playerEquipmentRepository.StoredEquipments[0].Status.Should().Be(EquipmentStatus.Inventory);
+    }
+
+    [Fact]
+    public async Task ExecuteTraining_WithLastDurabilityEquipment_MarksBroken()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var player = new Player(
+            playerId,
+            name: "Tester",
+            level: 1,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            status: new Status(maxHp: 20, maxMp: 0, strength: 7, defense: 5, intelligence: 0, luck: 0, speed: 10),
+            job: Job.Apprentice,
+            moveSet: CreateMoveSet(PhysicalAttackMoveId));
+
+        var enemy = new TrainingEnemy(
+            new TrainingEnemyId(1),
+            name: "Enemy",
+            imagePath: "/image/training/01_heishi.png",
+            level: 1,
+            status: new Status(maxHp: 10, maxMp: 0, strength: 1, defense: 0, intelligence: 0, luck: 0, speed: 1));
+        var equipment = new Equipment(
+            new EquipmentId(1001),
+            "旅立ちの剣",
+            EquipmentType.Weapon,
+            10,
+            new EquipmentStatusBonus(0, 0, 3, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice });
+        var playerEquipment = new PlayerEquipment(
+            PlayerEquipmentId.New(),
+            playerId,
+            equipment.Id,
+            EquipmentType.Weapon,
+            EquipmentStatus.Equipped,
+            durability: 1,
+            mastery: 0,
+            acquiredAt: DateTimeOffset.UtcNow,
+            updatedAt: DateTimeOffset.UtcNow);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
+
+        var service = CreateService(
+            new FakePlayerRepository(player),
+            new FakeTrainingEnemyRepository(enemy),
+            playerEquipmentRepository,
+            new FakeEquipmentRepository(equipment));
+
+        await service.ExecuteTraining(playerId, enemy.Id, [PhysicalAttackMoveId, PhysicalAttackMoveId, PhysicalAttackMoveId]);
+
+        playerEquipmentRepository.StoredEquipments.Should().ContainSingle();
+        playerEquipmentRepository.StoredEquipments[0].Durability.Should().Be(0);
+        playerEquipmentRepository.StoredEquipments[0].Status.Should().Be(EquipmentStatus.Broken);
+    }
+
+    [Fact]
     public async Task ExecuteTraining_WhenBothSurviveAfterThreeTurns_ReturnsDraw()
     {
         var playerId = new PlayerId(Guid.NewGuid());
@@ -384,10 +545,16 @@ public class TrainingServiceTests
         exp.Should().Be(1);
     }
 
-    private static TrainingService CreateService(IPlayerRepository playerRepository, ITrainingEnemyRepository enemyRepository)
+    private static TrainingService CreateService(
+        IPlayerRepository playerRepository,
+        ITrainingEnemyRepository enemyRepository,
+        IPlayerEquipmentRepository? playerEquipmentRepository = null,
+        IEquipmentRepository? equipmentRepository = null)
     {
         return new TrainingService(
             playerRepository,
+            playerEquipmentRepository ?? new FakePlayerEquipmentRepository(),
+            equipmentRepository ?? new FakeEquipmentRepository(),
             enemyRepository,
             new FakeMoveRepository(),
             new FakeJobProfileRepository(),
@@ -400,7 +567,8 @@ public class TrainingServiceTests
             new BattleService(),
             new TrainingBattleFactory(),
             new TrainingOutcomeJudge(),
-            new TrainingExpCalculator());
+            new TrainingExpCalculator(),
+            new EquipmentStatusResolver());
     }
 
     private static MoveSet CreateMoveSet(params int[] moveIds)
@@ -433,6 +601,44 @@ public class TrainingServiceTests
         {
             return Task.FromResult((IReadOnlyList<Move>)moveById.Values.ToArray());
         }
+    }
+
+    private sealed class FakePlayerEquipmentRepository(params PlayerEquipment[] equipments) : IPlayerEquipmentRepository
+    {
+        private readonly Dictionary<PlayerId, List<PlayerEquipment>> equipmentsByPlayerId = equipments
+            .GroupBy(x => x.PlayerId)
+            .ToDictionary(x => x.Key, x => x.ToList());
+
+        public IReadOnlyList<PlayerEquipment> StoredEquipments => equipmentsByPlayerId.Values.SelectMany(x => x).ToArray();
+
+        public Task<IReadOnlyList<PlayerEquipment>> GetByPlayerAsync(PlayerId playerId)
+            => Task.FromResult((IReadOnlyList<PlayerEquipment>)(equipmentsByPlayerId.TryGetValue(playerId, out var playerEquipments)
+                ? playerEquipments.ToArray()
+                : []));
+
+        public Task<PlayerEquipment?> GetAsync(PlayerEquipmentId playerEquipmentId)
+            => Task.FromResult(StoredEquipments.FirstOrDefault(x => x.Id == playerEquipmentId));
+
+        public Task SaveAsync(IReadOnlyList<PlayerEquipment> playerEquipments)
+        {
+            foreach (var group in playerEquipments.GroupBy(x => x.PlayerId))
+            {
+                equipmentsByPlayerId[group.Key] = group.ToList();
+            }
+
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeEquipmentRepository(params Equipment[] equipments) : IEquipmentRepository
+    {
+        private readonly IReadOnlyList<Equipment> storedEquipments = equipments;
+
+        public Task<Equipment?> GetAsync(EquipmentId id)
+            => Task.FromResult(storedEquipments.FirstOrDefault(x => x.Id == id));
+
+        public Task<IReadOnlyList<Equipment>> GetAllAsync()
+            => Task.FromResult(storedEquipments);
     }
 
     private sealed class FakePlayerRepository(Player player) : IPlayerRepository

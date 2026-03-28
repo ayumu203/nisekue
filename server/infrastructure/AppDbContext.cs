@@ -15,6 +15,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PlayerEntity> Players => Set<PlayerEntity>();
     public DbSet<PlayerMoveEntity> PlayerMoves => Set<PlayerMoveEntity>();
     public DbSet<PlayerMasterJobEntity> PlayerMasterJobs => Set<PlayerMasterJobEntity>();
+    public DbSet<PlayerEquipmentEntity> PlayerEquipments => Set<PlayerEquipmentEntity>();
     public DbSet<ChatRoomEntity> ChatRooms => Set<ChatRoomEntity>();
     public DbSet<ChatMessageEntity> ChatMessages => Set<ChatMessageEntity>();
     public DbSet<QuestRoomEntity> QuestRooms => Set<QuestRoomEntity>();
@@ -131,6 +132,25 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(x => x.PlayerId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        var playerEquipment = modelBuilder.Entity<PlayerEquipmentEntity>();
+        playerEquipment.ToTable("player_equipments", "internal");
+        playerEquipment.HasKey(x => x.Id);
+        playerEquipment.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        playerEquipment.Property(x => x.PlayerId).HasColumnName("player_id").HasColumnType("uuid").IsRequired();
+        playerEquipment.Property(x => x.EquipmentId).HasColumnName("equipment_id").IsRequired();
+        playerEquipment.Property(x => x.EquipmentType).HasColumnName("equipment_type").IsRequired();
+        playerEquipment.Property(x => x.EquipmentStatus).HasColumnName("equipment_status").IsRequired();
+        playerEquipment.Property(x => x.Durability).HasColumnName("durability").IsRequired();
+        playerEquipment.Property(x => x.Mastery).HasColumnName("mastery").HasDefaultValue(0).IsRequired();
+        playerEquipment.Property(x => x.AcquiredAt).HasColumnName("acquired_at").IsRequired();
+        playerEquipment.Property(x => x.UpdatedAt).HasColumnName("updated_at").IsRequired();
+        playerEquipment.HasIndex(x => x.PlayerId);
+        playerEquipment
+            .HasOne<PlayerEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.PlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         var chatRoom = modelBuilder.Entity<ChatRoomEntity>();
         chatRoom.ToTable("chat_rooms", "internal");
         chatRoom.HasKey(x => x.OwnerId);
@@ -228,6 +248,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRunPartySnapshot.Property(x => x.DisplayName).HasColumnName("display_name").HasMaxLength(100).IsRequired();
         questRunPartySnapshot.Property(x => x.ImagePath).HasColumnName("image_path").HasMaxLength(255);
         questRunPartySnapshot.Property(x => x.Job).HasColumnName("job").IsRequired();
+        questRunPartySnapshot.Property(x => x.WeaponPlayerEquipmentId).HasColumnName("weapon_player_equipment_id").HasColumnType("uuid");
+        questRunPartySnapshot.Property(x => x.ArmorPlayerEquipmentId).HasColumnName("armor_player_equipment_id").HasColumnType("uuid");
         questRunPartySnapshot.Property(x => x.StartRow).HasColumnName("start_row").IsRequired();
         questRunPartySnapshot.Property(x => x.StartColumn).HasColumnName("start_column").IsRequired();
         questRunPartySnapshot.Property(x => x.MaxHp).HasColumnName("max_hp").IsRequired();

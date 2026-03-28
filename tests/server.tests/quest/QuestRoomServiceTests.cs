@@ -184,21 +184,68 @@ public class QuestRoomServiceTests
         runRepository.SavedRuns.Should().ContainSingle(x => x.Id == run.Id);
     }
 
+    [Fact]
+    public async Task StartAsync_WithEquippedPlayerEquipment_ReflectsEquipmentInSnapshot()
+    {
+        var owner = CreatePlayer("Owner");
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true);
+        var roomRepository = new FakeQuestRoomRepository();
+        var runRepository = new FakeQuestRunRepository();
+        var equipment = new Equipment(
+            new EquipmentId(1001),
+            "旅立ちの剣",
+            EquipmentType.Weapon,
+            10,
+            new EquipmentStatusBonus(0, 0, 3, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Warrior });
+        var playerEquipment = new PlayerEquipment(
+            PlayerEquipmentId.New(),
+            owner.Id,
+            equipment.Id,
+            EquipmentType.Weapon,
+            EquipmentStatus.Equipped,
+            durability: equipment.MaxDurability,
+            mastery: 0,
+            acquiredAt: DateTimeOffset.UtcNow,
+            updatedAt: DateTimeOffset.UtcNow);
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            roomRepository,
+            runRepository,
+            new FakePlayerRepository(owner),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()),
+            new FakePlayerEquipmentRepository(playerEquipment),
+            new FakeEquipmentRepository(equipment));
+
+        var room = await service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Solo);
+        var run = await service.StartAsync(room.Id);
+
+        run.PartySnapshots.Should().ContainSingle();
+        run.PartySnapshots[0].WeaponEquipmentId.Should().Be(playerEquipment.Id);
+        run.PartySnapshots[0].BaseStatus.Strength.Should().Be(owner.Status.Strength + equipment.BonusValues.Strength);
+    }
+
     private static QuestRoomService CreateRoomService(
         IQuestStageRepository stageRepository,
         IQuestRoomRepository roomRepository,
         IQuestRunRepository runRepository,
         IPlayerRepository playerRepository,
         IQuestNpcTemplateRepository npcTemplateRepository,
-        IQuestEnemyDefinitionRepository enemyDefinitionRepository)
+        IQuestEnemyDefinitionRepository enemyDefinitionRepository,
+        IPlayerEquipmentRepository? playerEquipmentRepository = null,
+        IEquipmentRepository? equipmentRepository = null)
     {
         return new QuestRoomService(
             stageRepository,
             roomRepository,
             runRepository,
             playerRepository,
+            playerEquipmentRepository ?? new FakePlayerEquipmentRepository(),
+            equipmentRepository ?? new FakeEquipmentRepository(),
             new QuestNpcAssignmentService(npcTemplateRepository),
-            new QuestSnapshotFactory(),
+            new QuestSnapshotFactory(new EquipmentStatusResolver()),
             new QuestRunFactory(enemyDefinitionRepository));
     }
 

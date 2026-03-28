@@ -8,6 +8,8 @@ public class QuestRunPartySnapshotEntity
     public string DisplayName { get; set; } = string.Empty;
     public string? ImagePath { get; set; }
     public int Job { get; set; }
+    public Guid? WeaponPlayerEquipmentId { get; set; }
+    public Guid? ArmorPlayerEquipmentId { get; set; }
     public int StartRow { get; set; }
     public int StartColumn { get; set; }
     public int MaxHp { get; set; }

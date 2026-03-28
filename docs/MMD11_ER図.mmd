@@ -48,6 +48,17 @@ erDiagram
         int job PK "mastered job enum value"
         timestamptz mastered_at "NOT NULL"
     }
+    PLAYER_EQUIPMENTS {
+        uuid id PK "internal.player_equipments.id"
+        uuid player_id FK "internal.players.id"
+        int equipment_id "NOT NULL, references CSV equipment_id logically"
+        int equipment_type "NOT NULL, duplicated for query/use-case simplicity"
+        int equipment_status "NOT NULL (Inventory/Equipped/Broken)"
+        int durability "NOT NULL"
+        int mastery "NOT NULL, DEFAULT 0"
+        timestamptz acquired_at "NOT NULL"
+        timestamptz updated_at "NOT NULL"
+    }
     QUEST_ROOMS {
         uuid id PK "internal.quest_rooms.id"
         uuid owner_player_id FK "internal.players.id"
@@ -95,6 +106,8 @@ erDiagram
         varchar(100) display_name "NOT NULL"
         varchar(255) image_path "NULL"
         int job "NOT NULL"
+        uuid weapon_player_equipment_id "NULL, internal.player_equipments.id"
+        uuid armor_player_equipment_id "NULL, internal.player_equipments.id"
         int start_row "NOT NULL"
         int start_column "NOT NULL"
         int max_hp "NOT NULL"
@@ -160,6 +173,7 @@ erDiagram
     CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
     PLAYERS ||--|| PLAYER_MOVES : has_slots
     PLAYERS ||--o{ PLAYER_MASTER_JOBS : has_mastered
+    PLAYERS ||--o{ PLAYER_EQUIPMENTS : owns
     PLAYERS ||--o{ QUEST_ROOMS : owns
     QUEST_ROOMS ||--o{ QUEST_ROOM_PARTICIPANTS : has
     QUEST_RUNS ||--o{ QUEST_RUN_PARTY_SNAPSHOTS : snapshots
