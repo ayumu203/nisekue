@@ -86,28 +86,30 @@ const playerEquipmentSchema = z.object({
   bonusValues: playerEquipmentBonusValuesSchema,
 })
 
-export const getPlayerResponseSchema = z.object({
-  userId: playerIdSchema,
-  userName: playerUserNameSchema.optional(),
-  imagePath: z.string().min(1).nullable().optional(),
-  job: playerJobSchema,
-  jobProfiles: z.array(playerJobSchema),
-  level: z.number().int().min(1, 'レベルは1以上である必要があります'),
-  exp: z.number().int().min(0, '経験値は0以上である必要があります'),
-  jobLevel: z.number().int().min(1, '職業レベルは1以上である必要があります'),
-  jobExp: z.number().int().min(0, '職業経験値は0以上である必要があります'),
-  status: z.object({
-    baseValues: playerStatusValuesSchema,
-    effectiveValues: playerStatusValuesSchema,
-  }),
-  moveSlots: z.array(playerMoveSlotSchema).length(10),
-  equipments: z.array(playerEquipmentSchema),
-}).transform((value) => ({
-  ...value,
-  baseStatus: value.status.baseValues,
-  effectiveStatus: value.status.effectiveValues,
-  status: value.status.effectiveValues,
-}))
+export const getPlayerResponseSchema = z
+  .object({
+    userId: playerIdSchema,
+    userName: playerUserNameSchema.optional(),
+    imagePath: z.string().min(1).nullable().optional(),
+    job: playerJobSchema,
+    jobProfiles: z.array(playerJobSchema),
+    level: z.number().int().min(1, 'レベルは1以上である必要があります'),
+    exp: z.number().int().min(0, '経験値は0以上である必要があります'),
+    jobLevel: z.number().int().min(1, '職業レベルは1以上である必要があります'),
+    jobExp: z.number().int().min(0, '職業経験値は0以上である必要があります'),
+    status: z.object({
+      baseValues: playerStatusValuesSchema,
+      effectiveValues: playerStatusValuesSchema,
+    }),
+    moveSlots: z.array(playerMoveSlotSchema).length(10),
+    equipments: z.array(playerEquipmentSchema),
+  })
+  .transform((value) => ({
+    ...value,
+    baseStatus: value.status.baseValues,
+    effectiveStatus: value.status.effectiveValues,
+    status: value.status.effectiveValues,
+  }))
 
 export const playerSummarySchema = z.object({
   userId: playerIdSchema,

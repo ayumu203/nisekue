@@ -45,7 +45,11 @@ function formatExpProgress(exp: number | undefined, level: number | undefined, f
   return `${exp} / ${requiredExp}`
 }
 
-function formatStatusValue(baseValue: number | undefined, effectiveValue: number | undefined, fallback: string): StatValue {
+function formatStatusValue(
+  baseValue: number | undefined,
+  effectiveValue: number | undefined,
+  fallback: string,
+): StatValue {
   if (typeof baseValue !== 'number' || typeof effectiveValue !== 'number') {
     return fallback
   }
