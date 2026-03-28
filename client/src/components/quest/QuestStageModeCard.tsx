@@ -34,16 +34,18 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
         height: '100%',
         borderRadius: 3,
         borderWidth: isSelected ? 2 : 1,
-        borderColor: isSelected ? '#c58f2b' : innerSurfaceSx.borderColor,
-        boxShadow: isSelected ? '0 10px 24px rgba(120, 88, 32, 0.14)' : 'none',
+        color: '#f4f7ff',
+        backgroundColor: '#243654',
+        borderColor: isSelected ? '#90b4ea' : 'rgba(152, 192, 255, 0.26)',
+        boxShadow: isSelected ? '0 10px 24px rgba(22, 39, 73, 0.22)' : 'none',
         '&::before': {
           content: '""',
           position: 'absolute',
           inset: 0,
-          backgroundImage: `linear-gradient(135deg, rgba(255, 250, 240, 0.9), rgba(255, 247, 232, 0.74)), url(${battlefieldImageSrc})`,
+          backgroundImage: `linear-gradient(135deg, rgba(18, 29, 48, 0.74), rgba(32, 49, 80, 0.66)), url(${battlefieldImageSrc})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          opacity: isSelected ? 1 : 0.92,
+          opacity: isSelected ? 1 : 0.95,
         },
       }}
     >
@@ -62,8 +64,8 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
             flexShrink: 0,
             display: 'grid',
             placeItems: 'center',
-            background: 'radial-gradient(circle at 30% 30%, #fff6de 0%, #f0d5a0 100%)',
-            border: '2px solid #e2bf7b',
+            background: 'radial-gradient(circle at 30% 30%, #eef4ff 0%, #9cbbe6 100%)',
+            border: '2px solid #a9c3eb',
           }}
         >
           {stage.previewEnemyImagePath ? (
@@ -86,10 +88,10 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
 
         <Stack spacing={1.5} sx={{ flex: 1, width: '100%' }}>
           <Stack spacing={0.5}>
-            <Typography variant="h6" sx={{ lineHeight: 1.2 }}>
+            <Typography variant="h6" sx={{ lineHeight: 1.2, fontWeight: 900, color: '#ffffff' }}>
               {stage.name}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.78)' }}>
               {`${locale.recommendedLevel} ${stage.recommendedLevel}`}
             </Typography>
           </Stack>
@@ -102,10 +104,10 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
               sx={{
                 ...modeButtonSx,
                 '&&': {
-                  backgroundColor: isSoloSelected ? '#3A66D6' : '#EEF3FF',
-                  borderColor: '#3A66D6',
-                  color: isSoloSelected ? '#ffffff' : '#3A66D6',
-                  boxShadow: isSoloSelected ? '0 4px 12px rgba(58, 102, 214, 0.18)' : 'none',
+                  backgroundColor: isSoloSelected ? '#7ab4ff' : 'rgba(240, 246, 255, 0.92)',
+                  borderColor: '#7ab4ff',
+                  color: isSoloSelected ? '#13253f' : '#365a90',
+                  boxShadow: 'none',
                   transition: 'none',
                 },
               }}
@@ -119,10 +121,10 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
               sx={{
                 ...modeButtonSx,
                 '&&': {
-                  backgroundColor: isMultiSelected ? '#C9485B' : '#FFF0F3',
-                  borderColor: '#C9485B',
-                  color: isMultiSelected ? '#ffffff' : '#C9485B',
-                  boxShadow: isMultiSelected ? '0 4px 12px rgba(201, 72, 91, 0.18)' : 'none',
+                  backgroundColor: isMultiSelected ? '#9ed8ce' : 'rgba(239, 252, 248, 0.92)',
+                  borderColor: '#9ed8ce',
+                  color: isMultiSelected ? '#173a34' : '#2e6e64',
+                  boxShadow: 'none',
                   transition: 'none',
                 },
               }}

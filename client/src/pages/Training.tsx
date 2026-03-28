@@ -242,7 +242,14 @@ export default function Training() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
+      <Paper
+        elevation={2}
+        sx={{
+          ...outerPagePaperSx,
+          background:
+            'linear-gradient(180deg, rgba(157, 69, 52, 0.98) 0%, rgba(100, 40, 34, 0.96) 100%)',
+        }}
+      >
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Box sx={twoColumnContentGridSx}>
             <Stack spacing={{ xs: 1.5, sm: 2 }}>
@@ -263,8 +270,36 @@ export default function Training() {
               )}
             </Stack>
 
-            <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+            <Paper
+              variant="outlined"
+              sx={{
+                ...innerSurfaceSx,
+                borderRadius: 3,
+                p: { xs: 2, sm: 2.5 },
+                color: '#f5f0df',
+                backgroundColor: '#2d1d1e',
+                borderColor: 'rgba(214, 146, 112, 0.55)',
+              }}
+            >
               <Stack spacing={{ xs: 1.5, sm: 2 }}>
+                <Stack
+                  spacing={0.6}
+                  sx={{
+                    px: { xs: 0.4, sm: 0.75 },
+                    pb: 1.25,
+                    borderBottom: '1px solid rgba(214, 146, 112, 0.24)',
+                  }}
+                >
+                  <Typography
+                    variant="overline"
+                    sx={{ color: 'rgba(248, 221, 207, 0.72)', letterSpacing: '0.18em', lineHeight: 1.2 }}
+                  >
+                    TRAINING GROUND
+                  </Typography>
+                  <Typography variant="h5" fontWeight={900} sx={{ color: '#fff7dd', lineHeight: 1.15 }}>
+                    訓練場
+                  </Typography>
+                </Stack>
                 {selectedEnemy && trainingResult ? (
                   <Box ref={battleResultRef}>
                     <TrainingBattleResult

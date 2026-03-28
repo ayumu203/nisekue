@@ -35,7 +35,7 @@ export default function Thanks() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2.5 }}>
-          <Stack direction="row" justifyContent="flex-end">
+          <Stack direction="row" justifyContent="flex-start">
             <HomeNavIconButton ariaLabel="ホームへ戻る" />
           </Stack>
 

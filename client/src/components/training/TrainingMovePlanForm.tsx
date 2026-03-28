@@ -1,7 +1,7 @@
 import { Alert, Box, Button, FormControl, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { resolvePublicAssetPath } from '@/lib/assets'
-import { innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
+import { innerSurfaceSx } from '@/constants/styles'
 import type { GetPlayerResponse, PlayerMoveSlot } from '@/schema/player'
 import type { TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
@@ -94,7 +94,17 @@ export default function TrainingMovePlanForm({
   return (
     <Paper
       variant="outlined"
-      sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2.5, width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+      sx={{
+        ...innerSurfaceSx,
+        borderRadius: 3,
+        p: 2.5,
+        width: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
+        color: '#f5f0df',
+        backgroundColor: '#182228',
+        borderColor: 'rgba(227, 188, 111, 0.34)',
+      }}
     >
       <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
         {showEnemyHeader ? (
@@ -108,22 +118,23 @@ export default function TrainingMovePlanForm({
                 height: 180,
                 objectFit: 'contain',
                 borderRadius: 2,
-                backgroundColor: 'action.hover',
-                p: 1,
+                backgroundColor: '#0f171b',
+                border: '1px solid rgba(227, 188, 111, 0.22)',
+                p: 1.1,
                 boxSizing: 'border-box',
               }}
             />
-            <Typography variant="subtitle1" fontWeight={700} textAlign="center">
+            <Typography variant="subtitle1" fontWeight={800} textAlign="center" sx={{ color: '#fff7dd' }}>
               {enemy.name}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'rgba(245, 240, 223, 0.72)' }}>
               {locale.plannedMpSummary
                 .replace('{{currentMp}}', String(player.status.maxMp))
                 .replace('{{totalMp}}', String(totalMp))}
             </Typography>
           </Stack>
         ) : (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'rgba(245, 240, 223, 0.72)' }}>
             {locale.plannedMpSummary
               .replace('{{currentMp}}', String(player.status.maxMp))
               .replace('{{totalMp}}', String(totalMp))}
@@ -132,7 +143,7 @@ export default function TrainingMovePlanForm({
 
         {plannedTurns.map((turn, index) => (
           <Stack key={`training-turn-${index}`} spacing={0.75} sx={{ width: '100%', minWidth: 0 }}>
-            <Typography variant="subtitle2" fontWeight={700}>
+            <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#fff0c8' }}>
               {locale.turnLabel.replace('{{turn}}', String(index + 1))}
             </Typography>
             <FormControl fullWidth sx={{ minWidth: 0, maxWidth: '100%' }}>
@@ -159,6 +170,7 @@ export default function TrainingMovePlanForm({
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
+                          color: '#fff7dd',
                         }}
                       >
                         {locale.normalAttack}
@@ -173,6 +185,7 @@ export default function TrainingMovePlanForm({
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
                             lineHeight: 1.25,
+                            color: '#fff7dd',
                           }}
                         >
                           {turn.moveName}
@@ -180,8 +193,8 @@ export default function TrainingMovePlanForm({
                         <Typography
                           component="span"
                           variant="caption"
-                          color="text.secondary"
                           sx={{
+                            color: 'rgba(245, 240, 223, 0.66)',
                             display: 'block',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -209,6 +222,20 @@ export default function TrainingMovePlanForm({
                   minWidth: 0,
                   maxWidth: '100%',
                   boxSizing: 'border-box',
+                  color: '#fff7dd',
+                  backgroundColor: '#233038',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(227, 188, 111, 0.34)',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(227, 188, 111, 0.58)',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#d8b064',
+                  },
+                  '& .MuiSvgIcon-root': {
+                    color: 'rgba(245, 240, 223, 0.82)',
+                  },
                   '& .MuiSelect-select': {
                     minWidth: 0,
                     maxWidth: '100%',
@@ -219,18 +246,21 @@ export default function TrainingMovePlanForm({
                   },
                 }}
               >
-                <MenuItem value="normal-attack">{locale.normalAttack}</MenuItem>
+                <MenuItem value="normal-attack" sx={{ color: '#1f2326' }}>
+                  {locale.normalAttack}
+                </MenuItem>
                 {availableMoves.map((move) => (
                   <MenuItem
                     key={move.moveId}
                     value={String(move.moveId)}
                     sx={{
+                      color: '#1f2326',
                       whiteSpace: 'normal',
                       overflowWrap: 'anywhere',
                     }}
                   >
-                    <Stack spacing={0.2} sx={{ minWidth: 0 }}>
-                      <Typography sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}>{move.moveName}</Typography>
+                      <Stack spacing={0.2} sx={{ minWidth: 0 }}>
+                        <Typography sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}>{move.moveName}</Typography>
                       <Typography variant="caption" color="text.secondary">
                         {locale.mpCost.replace('{{cost}}', String(move.mpCost ?? 0))} /{' '}
                         {resolveTargetTypeLabel(move.targetType)}
@@ -240,12 +270,45 @@ export default function TrainingMovePlanForm({
                 ))}
               </Select>
             </FormControl>
-            {turn.warning ? <Alert severity="warning">{turn.warning}</Alert> : null}
+            {turn.warning ? (
+              <Alert
+                severity="warning"
+                sx={{
+                  color: '#38240f',
+                  backgroundColor: '#f0d49d',
+                  '& .MuiAlert-icon': {
+                    color: '#8c5311',
+                  },
+                }}
+              >
+                {turn.warning}
+              </Alert>
+            ) : null}
           </Stack>
         ))}
 
         {showSubmitButton ? (
-          <Button variant="contained" disabled={isActionDisabled} onClick={onSubmit} sx={softGreenButtonSx}>
+          <Button
+            variant="contained"
+            disabled={isActionDisabled}
+            onClick={onSubmit}
+            sx={{
+              borderRadius: 999,
+              py: 1.1,
+              fontWeight: 800,
+              color: '#1f2326',
+              backgroundColor: '#d8b064',
+              boxShadow: 'none',
+              '&:hover': {
+                backgroundColor: '#e2bb70',
+                boxShadow: 'none',
+              },
+              '&.Mui-disabled': {
+                color: 'rgba(255, 247, 221, 0.58)',
+                backgroundColor: 'rgba(216, 176, 100, 0.24)',
+              },
+            }}
+          >
             {isActionDisabled ? rematchInSeconds : (submitLabel ?? locale.startTraining)}
           </Button>
         ) : null}

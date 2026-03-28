@@ -1,6 +1,6 @@
 import { Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
-import { innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
+import { innerSurfaceSx, playerHpBarSx } from '@/constants/styles'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
@@ -65,7 +65,17 @@ export default function TrainingBattleResult({
           : null
 
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2.5 }}>
+    <Paper
+      variant="outlined"
+      sx={{
+        ...innerSurfaceSx,
+        borderRadius: 3,
+        p: 2.5,
+        color: '#f5f0df',
+        backgroundColor: '#182228',
+        borderColor: 'rgba(227, 188, 111, 0.34)',
+      }}
+    >
       <Stack spacing={2}>
         <img
           src={resolvePublicAssetPath(enemy.imagePath)}
@@ -75,12 +85,13 @@ export default function TrainingBattleResult({
             height: 220,
             objectFit: 'contain',
             borderRadius: 12,
-            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-            padding: 8,
+            backgroundColor: '#0f171b',
+            border: '1px solid rgba(227, 188, 111, 0.22)',
+            padding: 10,
             boxSizing: 'border-box',
           }}
         />
-        <Typography variant="subtitle1" fontWeight={700} textAlign="center">
+        <Typography variant="subtitle1" fontWeight={800} textAlign="center" sx={{ color: '#fff7dd' }}>
           {battleAgainst}
         </Typography>
         <Paper
@@ -89,25 +100,44 @@ export default function TrainingBattleResult({
             ...innerSurfaceSx,
             p: 2,
             borderRadius: 3,
-            background: 'linear-gradient(135deg, rgba(255, 244, 214, 0.95), rgba(255, 231, 182, 0.88))',
+            color: '#fff7dd',
+            backgroundColor: '#233038',
+            borderColor: 'rgba(227, 188, 111, 0.34)',
           }}
         >
           <Stack spacing={1.25} alignItems="center">
-            <Typography variant="h4" fontWeight={900} color="warning.dark">
+            <Typography variant="h4" fontWeight={900} sx={{ color: '#f2c66f' }}>
               {expValue}
             </Typography>
-            <Typography variant="body2" color="text.secondary" textAlign="center">
+            <Typography variant="body2" textAlign="center" sx={{ color: 'rgba(245, 240, 223, 0.72)' }}>
               {resultSummary}
             </Typography>
-            {levelUpLabel ? <Chip color="success" label={levelUpLabel} sx={{ fontWeight: 700 }} /> : null}
+            {levelUpLabel ? (
+              <Chip
+                label={levelUpLabel}
+                sx={{
+                  fontWeight: 800,
+                  color: '#1d2b20',
+                  backgroundColor: '#d9e6be',
+                }}
+              />
+            ) : null}
             {result.newlyLearnedMoves.length > 0 ? (
               <Stack spacing={0.75} alignItems="center">
-                <Typography variant="body2" fontWeight={700}>
+                <Typography variant="body2" fontWeight={800} sx={{ color: '#fff0c8' }}>
                   {locale.newlyLearnedMoves}
                 </Typography>
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent="center">
                   {result.newlyLearnedMoves.map((move) => (
-                    <Chip key={move.moveId} color="info" label={move.moveName} variant="outlined" />
+                    <Chip
+                      key={move.moveId}
+                      label={move.moveName}
+                      variant="outlined"
+                      sx={{
+                        color: '#f5f0df',
+                        borderColor: 'rgba(227, 188, 111, 0.38)',
+                      }}
+                    />
                   ))}
                 </Stack>
               </Stack>
@@ -121,50 +151,89 @@ export default function TrainingBattleResult({
             gap: 1,
           }}
         >
-          <Paper variant="outlined" sx={{ ...innerSurfaceSx, p: 1.25 }}>
-            <Typography variant="caption" color="text.secondary">
+          <Paper
+            variant="outlined"
+            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#233038', borderColor: 'rgba(227, 188, 111, 0.22)' }}
+          >
+            <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.62)' }}>
               {locale.result}
             </Typography>
             <Typography variant="subtitle2" fontWeight={700} color={toResultColor(result.trainingResult)}>
               {result.trainingResult}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ ...innerSurfaceSx, p: 1.25 }}>
-            <Typography variant="caption" color="text.secondary">
+          <Paper
+            variant="outlined"
+            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#233038', borderColor: 'rgba(227, 188, 111, 0.22)' }}
+          >
+            <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.62)' }}>
               {locale.turn}
             </Typography>
-            <Typography variant="subtitle2" fontWeight={700}>
+            <Typography variant="subtitle2" fontWeight={800}>
               {result.turn}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ ...innerSurfaceSx, p: 1.25 }}>
-            <Typography variant="caption" color="text.secondary">
+          <Paper
+            variant="outlined"
+            sx={{ ...innerSurfaceSx, p: 1.25, color: '#f5f0df', backgroundColor: '#233038', borderColor: 'rgba(227, 188, 111, 0.22)' }}
+          >
+            <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.62)' }}>
               {locale.expGained}
             </Typography>
-            <Typography variant="subtitle2" fontWeight={700} color="warning.dark">
+            <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#f2c66f' }}>
               {expValue}
             </Typography>
           </Paper>
         </Box>
         <Stack spacing={0.75}>
-          <Typography variant="body2">{playerHp}</Typography>
+          <Typography variant="body2" sx={{ color: '#fff7dd' }}>
+            {playerHp}
+          </Typography>
           <LinearProgress
             variant="determinate"
             value={normalizeHp(result.currentPlayerHp, result.maxPlayerHp)}
-            sx={playerHpBarSx}
+            sx={{ ...playerHpBarSx, backgroundColor: 'rgba(245, 240, 223, 0.14)' }}
           />
         </Stack>
         <Stack spacing={0.75}>
-          <Typography variant="body2">{enemyHp}</Typography>
+          <Typography variant="body2" sx={{ color: '#fff7dd' }}>
+            {enemyHp}
+          </Typography>
           <LinearProgress
             variant="determinate"
             value={normalizeHp(result.currentEnemyHp, result.maxEnemyHp)}
-            color="secondary"
-            sx={{ height: 8, borderRadius: 999 }}
+            sx={{
+              height: 8,
+              borderRadius: 999,
+              backgroundColor: 'rgba(245, 240, 223, 0.14)',
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: '#d8b064',
+              },
+            }}
           />
         </Stack>
         {movePlanSlot}
-        <Button variant="contained" disabled={isActionDisabled} onClick={onRematch} sx={softGreenButtonSx}>
+        <Button
+          variant="contained"
+          disabled={isActionDisabled}
+          onClick={onRematch}
+          sx={{
+            borderRadius: 999,
+            py: 1.1,
+            fontWeight: 800,
+            color: '#1f2326',
+            backgroundColor: '#d8b064',
+            boxShadow: 'none',
+            '&:hover': {
+              backgroundColor: '#e2bb70',
+              boxShadow: 'none',
+            },
+            '&.Mui-disabled': {
+              color: 'rgba(255, 247, 221, 0.58)',
+              backgroundColor: 'rgba(216, 176, 100, 0.24)',
+            },
+          }}
+        >
           {isActionDisabled ? rematchInSeconds : locale.rematch}
         </Button>
       </Stack>

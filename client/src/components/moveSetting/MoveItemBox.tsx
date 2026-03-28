@@ -1,4 +1,5 @@
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material'
+import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { GetPlayerResponse } from '@/schema/player'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
 import MoveItem from '@/components/moveSetting/MoveItem'
@@ -12,6 +13,7 @@ export default function MoveItemBox({ player }: MoveItemBoxProps) {
   const attackCount = equippedMoves.filter((slot) => slot.category === 'Attack').length
   const supportCount = equippedMoves.filter((slot) => slot.category === 'Support').length
   const hybridCount = equippedMoves.filter((slot) => slot.category === 'Hybrid').length
+  const playerImageSrc = resolveCharacterAssetPath(player.imagePath)
 
   return (
     <Paper
@@ -34,13 +36,73 @@ export default function MoveItemBox({ player }: MoveItemBoxProps) {
           }}
         >
           <Stack spacing={1.5}>
-            <Stack spacing={0.5}>
-              <Typography variant="overline" sx={{ letterSpacing: '0.18em', color: 'rgba(242, 235, 207, 0.8)' }}>
-                TACTICAL LOADOUT
-              </Typography>
-              <Typography variant="h4" fontWeight={900} lineHeight={1.1} color="#fff8ea">
-                {locale.moveListTitle}
-              </Typography>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+            >
+              <Box
+                sx={{
+                  width: { xs: '100%', sm: 140 },
+                  minWidth: { sm: 140 },
+                  aspectRatio: '338 / 350',
+                  borderRadius: 3,
+                  border: '2px solid #b8ab7a',
+                  backgroundColor: 'rgba(255, 249, 232, 0.9)',
+                  overflow: 'hidden',
+                  display: 'grid',
+                  placeItems: 'center',
+                  p: 1,
+                }}
+              >
+                {playerImageSrc ? (
+                  <Box
+                    component="img"
+                    src={playerImageSrc}
+                    alt={player.userName ?? 'player'}
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      objectPosition: 'center bottom',
+                      display: 'block',
+                    }}
+                  />
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    画像なし
+                  </Typography>
+                )}
+              </Box>
+
+              <Stack spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
+                <Stack spacing={0.5}>
+                  <Typography variant="overline" sx={{ letterSpacing: '0.18em', color: 'rgba(242, 235, 207, 0.8)' }}>
+                    TACTICAL LOADOUT
+                  </Typography>
+                  <Typography variant="h4" fontWeight={900} lineHeight={1.1} color="#fff8ea">
+                    {locale.moveListTitle}
+                  </Typography>
+                </Stack>
+
+                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                  <Chip
+                    size="small"
+                    label={`レベル ${player.level}`}
+                    sx={{ fontWeight: 700, bgcolor: 'rgba(255, 249, 232, 0.94)', color: '#35513a' }}
+                  />
+                  <Chip
+                    size="small"
+                    label={`職業Lv ${player.jobLevel}`}
+                    sx={{ fontWeight: 700, bgcolor: 'rgba(255, 249, 232, 0.94)', color: '#35513a' }}
+                  />
+                  <Chip
+                    size="small"
+                    label={`${player.job.displayName}`}
+                    sx={{ fontWeight: 700, bgcolor: 'rgba(239, 226, 183, 0.96)', color: '#5f4a18' }}
+                  />
+                </Stack>
+              </Stack>
             </Stack>
 
             <Box
@@ -96,23 +158,6 @@ export default function MoveItemBox({ player }: MoveItemBoxProps) {
               </Paper>
             </Box>
 
-            <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-              <Chip
-                size="small"
-                label={`レベル ${player.level}`}
-                sx={{ fontWeight: 700, bgcolor: 'rgba(255, 249, 232, 0.94)', color: '#35513a' }}
-              />
-              <Chip
-                size="small"
-                label={`職業Lv ${player.jobLevel}`}
-                sx={{ fontWeight: 700, bgcolor: 'rgba(255, 249, 232, 0.94)', color: '#35513a' }}
-              />
-              <Chip
-                size="small"
-                label={`${player.job.displayName}`}
-                sx={{ fontWeight: 700, bgcolor: 'rgba(239, 226, 183, 0.96)', color: '#5f4a18' }}
-              />
-            </Stack>
           </Stack>
         </Paper>
 
