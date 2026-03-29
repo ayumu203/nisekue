@@ -248,6 +248,7 @@
 
 - 現在の `AllowAnyOrigin` は本番では使用しない。
 - 本番では許可オリジンを設定化し、環境変数または appsettings から注入する。
+- `server/appsettings.Production.json` には `https://game.arm203.org` を既定値として保持する。
 
 候補:
 

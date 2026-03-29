@@ -1,9 +1,11 @@
 name: Deploy Backend - Production
 
 on:
-  workflow_run:
-    workflows: [ Apply DB Migrations - Production ]
-    types: [ completed ]
+  push:
+    branches: [ prod ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/deploy-backend-prod.yml'
   workflow_dispatch:
 
 permissions:
@@ -11,7 +13,6 @@ permissions:
 
 jobs:
   build-and-deploy:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     environment: prod
 
@@ -19,7 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4

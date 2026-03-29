@@ -26,6 +26,10 @@ using server.infrastructure.training;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var defaultCorsAllowedOrigins = builder.Environment.IsDevelopment()
+    ? new[] { "http://localhost:5173", "https://ayumu203.github.io" }
+    : new[] { "https://game.arm203.org" };
+
 var configuredCorsAllowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins")
     .Get<string[]>()?
     .Where(origin => !string.IsNullOrWhiteSpace(origin))
@@ -34,9 +38,7 @@ var configuredCorsAllowedOrigins = builder.Configuration.GetSection("Cors:Allowe
 
 var corsAllowedOrigins = configuredCorsAllowedOrigins is { Length: > 0 }
     ? configuredCorsAllowedOrigins
-    : builder.Environment.IsDevelopment()
-        ? ["http://localhost:5173", "https://ayumu203.github.io"]
-        : throw new InvalidOperationException("Cors:AllowedOrigins is not configured.");
+    : defaultCorsAllowedOrigins;
 
 builder.Services.AddCors(options =>
 {
