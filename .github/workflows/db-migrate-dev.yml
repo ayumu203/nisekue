@@ -1,6 +1,11 @@
 name: Apply DB Migrations - Development
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/db-migrate-dev.yml'
   workflow_dispatch:
 
 permissions:

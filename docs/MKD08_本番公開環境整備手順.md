@@ -6,7 +6,7 @@
 - デプロイの起点を `main` ではなく `prod` ブランチへ移す。
 - フロントエンドは Cloudflare Pages、バックエンドは Azure App Service、DB は本番用 Supabase プロジェクトで運用する。
 - GitHub Actions により、`prod` ブランチ反映時に本番用デプロイを自動で適用できるようにする。
-- DB マイグレーションは当面ローカルから手動適用で運用する。
+- DB マイグレーションは GitHub Actions から環境別に手動起動できるようにする。
 
 ## 2. 現状
 
@@ -22,7 +22,7 @@
 
 - フロントエンドデプロイは GitHub Pages 向け workflow を使用している。
 - バックエンドデプロイは Azure App Service 向け workflow を使用している。
-- DB マイグレーションはローカル端末から手動適用で運用している。
+- DB マイグレーションは GitHub Actions の workflow_dispatch から環境別に適用できる。
 - workflow のトリガーは現在 `main` ブランチ基準である。
 - バックエンドの CORS は `AllowAnyOrigin` であり、本番向けに未調整である。
 - フロントエンドの API ベース URL は `VITE_API_BASE_URL` で切り替える。
@@ -108,23 +108,25 @@
 
 ### 5.1.1 DB 接続方式の使い分け
 
-- GitHub Actions の DB migration は direct connection を使う。
-- Azure App Service の通常アプリ接続は Session Pooler を使う。
-- Session Pooler はアプリ通常運用向けとし、migration には使わない。
+- GitHub Actions の DB migration は Session Pooler を使う。
+- Azure App Service の通常アプリ接続も Session Pooler を使う。
+- direct connection はローカル端末からの疎通確認や緊急時の手動 migration に限定して保持する。
 
 使い分け:
 
 - GitHub `dev` / `prod` Environment secret `SUPABASE_DB_CONNECTION_STRING`
-  - direct connection を設定する
+  - Session Pooler の接続文字列を設定する
 - Azure App Service `ConnectionStrings__Supabase`
   - Session Pooler の接続文字列を設定する
+- ローカル端末
+  - 必要に応じて direct connection を一時利用する
 
 接続文字列例:
 
-- direct connection
-  - `Host=db.<project-ref>.supabase.co;Port=5432;Database=postgres;Username=postgres;Password="<db password>";SSL Mode=Require;Trust Server Certificate=true`
 - Session Pooler
   - `Host=aws-1-<region>.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.<project-ref>;Password="<db password>";SSL Mode=Require;Trust Server Certificate=true`
+- direct connection
+  - `Host=db.<project-ref>.supabase.co;Port=5432;Database=postgres;Username=postgres;Password="<db password>";SSL Mode=Require;Trust Server Certificate=true`
 
 ### 5.2 Azure App Service 本番アプリの作成
 
@@ -210,30 +212,31 @@
 #### db migrate
 
 - `.github/workflows/db-migrate-prod.yml` を追加する。
-- `prod` ブランチ更新時に本番 Supabase へ migration を適用する設計にしている。
-- ただし現時点では GitHub hosted runner から direct connection が IPv6 で到達できず、自動化は未解決である。
-- 当面は migration をローカルから手動適用する。
-- `server/infrastructure/migrations/**` と `AppDbContextModelSnapshot.cs` に絞って起動することを推奨する。
+- `prod` 環境の `workflow_dispatch` から本番 Supabase へ migration を適用する。
+- `dev` / `prod` ともに GitHub Environment secret `SUPABASE_DB_CONNECTION_STRING` へ Session Pooler の接続文字列を登録する。
+- workflow は `dotnet ef database update` を実行し、適用対象の migration がなければ `No migrations were applied` で終了する。
+- schema 変更を含む backend deploy の前に起動する。
 
-### 5.6.1 当面の migration 運用
+### 5.6.1 migration 運用
 
-- migration はローカル端末から direct connection で適用する。
-- Azure App Service の通常アプリ接続は Session Pooler を使い続ける。
-- GitHub Actions の `db-migrate-dev.yml` / `db-migrate-prod.yml` は保守用として残すが、当面は運用の主経路にしない。
+- migration の主経路は GitHub Actions の `db-migrate-dev.yml` / `db-migrate-prod.yml` とする。
+- Azure App Service の通常アプリ接続は Session Pooler を使う。
+- ローカル端末からの direct connection は、Actions 実行前の疎通確認や緊急時の手動適用に限定する。
 
-手動適用コマンド例:
+GitHub Actions での運用手順:
+
+1. `main` または `prod` に必要な migration ファイルが入っていることを確認する。
+2. 対象 Environment (`dev` または `prod`) の `SUPABASE_DB_CONNECTION_STRING` に Session Pooler の接続文字列が設定されていることを確認する。
+3. `db-migrate-dev.yml` または `db-migrate-prod.yml` を `workflow_dispatch` で起動する。
+4. `Apply migrations` ステップで `No migrations were applied` または migration 完了ログを確認する。
+5. その後 backend deploy を行う。
+
+緊急時の手動適用コマンド例:
 
 - development
   - `ConnectionStrings__Supabase='Host=db.pudpklpqhhkozpipsyao.supabase.co;Port=5432;Database=postgres;Username=postgres;Password="<development db password>";SSL Mode=Require;Trust Server Certificate=true' dotnet ef database update --project server/server.csproj --startup-project server/server.csproj`
 - production
   - `ConnectionStrings__Supabase='Host=db.pfigwkdwtyqchsiljkod.supabase.co;Port=5432;Database=postgres;Username=postgres;Password="<production db password>";SSL Mode=Require;Trust Server Certificate=true' dotnet ef database update --project server/server.csproj --startup-project server/server.csproj`
-
-運用手順:
-
-1. `main` または `prod` に必要な migration ファイルが入っていることを確認する。
-2. 対象環境の direct connection を使ってローカルで `dotnet ef database update` を実行する。
-3. `No migrations were applied` または migration 完了ログを確認する。
-4. その後 backend deploy を行う。
 
 #### cleanup worker
 
@@ -344,8 +347,9 @@
 
 ### 9.3 DB
 
-- migration を direct connection で手動適用できるか。
-- 自動実行の無効化後も backend deploy の導線に影響がないか。
+- `db-migrate-dev.yml` / `db-migrate-prod.yml` を `workflow_dispatch` で起動して migration を適用できるか。
+- GitHub Environment secret `SUPABASE_DB_CONNECTION_STRING` が Session Pooler で疎通できるか。
+- 緊急時には direct connection で手動適用へ切り替えられるか。
 
 ## 10. 実装時の変更対象
 
