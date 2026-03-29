@@ -69,8 +69,9 @@ classDiagram
         class DevelopmentCleanupMaintenanceEndpoint {
             <<Endpoint>>
             +POST /internal/development/cleanup-game-data
-            +Header X-Maintenance-Token
             +Development only
+            +Localhost request skips token
+            +Non-local request requires Header X-Maintenance-Token
         }
 
         class MaintenanceConfiguration {

@@ -2,15 +2,17 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import path from 'node:path'
 
+const appBasePath = process.env.VITE_APP_BASE_PATH ?? '/'
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: appBasePath,
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
     },
   },
-  base: '/nisekue/',
   build: {
     rollupOptions: {
       output: {

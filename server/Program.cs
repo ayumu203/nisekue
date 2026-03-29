@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
+using System.Linq;
 using server.application.battle;
 using server.application.chat;
 using server.application.maintenance;
@@ -25,12 +26,24 @@ using server.infrastructure.training;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var configuredCorsAllowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins")
+    .Get<string[]>()?
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+
+var corsAllowedOrigins = configuredCorsAllowedOrigins is { Length: > 0 }
+    ? configuredCorsAllowedOrigins
+    : builder.Environment.IsDevelopment()
+        ? ["http://localhost:5173", "https://ayumu203.github.io"]
+        : throw new InvalidOperationException("Cors:AllowedOrigins is not configured.");
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ClientCors", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            .WithOrigins(corsAllowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using server.application.chat;
@@ -714,18 +715,21 @@ internal static class ItemEndpoints
                 return Results.NotFound();
             }
 
-            var expectedToken = configuration["Maintenance:MarketCleanupToken"];
-            if (string.IsNullOrWhiteSpace(expectedToken))
+            if (!IsLocalDevelopmentRequest(request))
             {
-                return Results.Problem(
-                    detail: "Maintenance:MarketCleanupToken が設定されていません。",
-                    statusCode: StatusCodes.Status503ServiceUnavailable);
-            }
+                var expectedToken = configuration["Maintenance:MarketCleanupToken"];
+                if (string.IsNullOrWhiteSpace(expectedToken))
+                {
+                    return Results.Problem(
+                        detail: "Maintenance:MarketCleanupToken が設定されていません。",
+                        statusCode: StatusCodes.Status503ServiceUnavailable);
+                }
 
-            var providedToken = request.Headers[MaintenanceTokenHeaderName].ToString();
-            if (!SecureEquals(providedToken, expectedToken))
-            {
-                return Results.Unauthorized();
+                var providedToken = request.Headers[MaintenanceTokenHeaderName].ToString();
+                if (!SecureEquals(providedToken, expectedToken))
+                {
+                    return Results.Unauthorized();
+                }
             }
 
             var result = await developmentDataCleanupService.CleanupAsync();
@@ -842,6 +846,22 @@ internal static class ItemEndpoints
 
         var actualBytes = Encoding.UTF8.GetBytes(actual);
         var expectedBytes = Encoding.UTF8.GetBytes(expected);
+        if (actualBytes.Length != expectedBytes.Length)
+        {
+            return false;
+        }
+
         return CryptographicOperations.FixedTimeEquals(actualBytes, expectedBytes);
+    }
+
+    private static bool IsLocalDevelopmentRequest(HttpRequest request)
+    {
+        var remoteIp = request.HttpContext.Connection.RemoteIpAddress;
+        if (remoteIp is null)
+        {
+            return false;
+        }
+
+        return IPAddress.IsLoopback(remoteIp);
     }
 }

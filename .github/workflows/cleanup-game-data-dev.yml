@@ -1,8 +1,6 @@
-name: Cleanup Expired Market Listings
+name: Cleanup Game Data - Development
 
 on:
-  schedule:
-    - cron: '17 0 * * *'
   workflow_dispatch:
 
 permissions:
@@ -11,9 +9,10 @@ permissions:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    environment: development
 
     steps:
-      - name: Trigger cleanup endpoint
+      - name: Trigger development data cleanup endpoint
         env:
           API_BASE_URL: ${{ vars.VITE_API_BASE_URL || secrets.VITE_API_BASE_URL }}
           MARKET_CLEANUP_TOKEN: ${{ secrets.MARKET_CLEANUP_TOKEN }}
@@ -23,7 +22,7 @@ jobs:
             exit 1
           fi
 
-          cleanup_url="${API_BASE_URL%/}/internal/market/listings/cleanup-expired"
+          cleanup_url="${API_BASE_URL%/}/internal/development/cleanup-game-data"
 
           response=$(curl --fail-with-body --silent --show-error \
             -X POST "$cleanup_url" \
