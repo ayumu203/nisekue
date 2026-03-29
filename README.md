@@ -73,6 +73,16 @@ $ dotnet test
 - 開発環境では手動で実行.
 - CI/CD では GitHub Actions (`.github/workflows/db-migrate.yml`) で実行.
 
+### マーケット期限切れ出品の自動削除
+
+- 期限切れ出品の削除は GitHub Actions の定期実行で行う.
+- ワークフローは `.github/workflows/market-listing-cleanup.yml` を利用する.
+- Actions からはバックエンドの内部メンテナンス API を呼び出す.
+- リポジトリまたは Environment Secrets に以下を設定する.
+  - `MARKET_CLEANUP_TOKEN`: 内部メンテナンス API 呼び出し用トークン
+- API のベース URL は既存の `VITE_API_BASE_URL` (`vars` または `secrets`) を流用する.
+- バックエンド側にも同じ値を `Maintenance:MarketCleanupToken` として設定する.
+
 ### 開発環境での手動適用
 
 ```bash
@@ -125,6 +135,7 @@ $ pnpx supabase stop
     - BattleDomain: 戦闘の共通ロジック.
     - TrainDomain: 訓練を回すためのドメイン.
     - QuestDomain: クエストを回すためのドメイン.
+    - CleanupDomain: GitHub Actions から起動するメンテナンス系処理のドメイン.
 
 ## 開発の手順
 

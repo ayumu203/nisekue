@@ -1367,6 +1367,11 @@ public class QuestRunServiceTests
                 .Where(x => x.SellerId == sellerId && !x.IsExpired(now) && !x.IsSoldOut)
                 .ToArray());
 
+        public Task<IReadOnlyList<MarketListing>> GetExpiredAsync(DateTimeOffset now)
+            => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values
+                .Where(x => x.IsExpired(now) && !x.IsSoldOut)
+                .ToArray());
+
         public Task SaveAsync(MarketListing listing)
         {
             listingsById[listing.Id] = listing;

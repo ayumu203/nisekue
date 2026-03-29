@@ -1,7 +1,10 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using server.application.chat;
+using server.application.player;
 using server.domain.move;
 using server.domain.player;
 using server.infrastructure;
@@ -11,6 +14,7 @@ namespace server.endpoints;
 internal static class ItemEndpoints
 {
     private const int ItemCapacity = 20;
+    private const string MaintenanceTokenHeaderName = "X-Maintenance-Token";
 
     internal static WebApplication MapItemEndpoints(this WebApplication app)
     {
@@ -669,6 +673,35 @@ internal static class ItemEndpoints
             return Results.Ok(new { message = "購入しました。", gold = buyer.Gold });
         }).RequireAuthorization();
 
+        app.MapPost("/internal/market/listings/cleanup-expired", async (
+            HttpRequest request,
+            IConfiguration configuration,
+            MarketListingCleanupService marketListingCleanupService) =>
+        {
+            var expectedToken = configuration["Maintenance:MarketCleanupToken"];
+            if (string.IsNullOrWhiteSpace(expectedToken))
+            {
+                return Results.Problem(
+                    detail: "Maintenance:MarketCleanupToken が設定されていません。",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            var providedToken = request.Headers[MaintenanceTokenHeaderName].ToString();
+            if (!SecureEquals(providedToken, expectedToken))
+            {
+                return Results.Unauthorized();
+            }
+
+            var result = await marketListingCleanupService.DeleteExpiredAsync(DateTimeOffset.UtcNow);
+            return Results.Ok(new
+            {
+                message = "期限切れ出品を削除しました。",
+                deletedListings = result.DeletedListings,
+                deletedEquipments = result.DeletedEquipments,
+                deletedItemQuantity = result.DeletedItemQuantity
+            });
+        }).ExcludeFromDescription();
+
         return app;
     }
 
@@ -746,5 +779,17 @@ internal static class ItemEndpoints
                     speed = item.StatusBonus.Speed
                 }
         };
+    }
+
+    private static bool SecureEquals(string actual, string expected)
+    {
+        if (string.IsNullOrEmpty(actual) || string.IsNullOrEmpty(expected))
+        {
+            return false;
+        }
+
+        var actualBytes = Encoding.UTF8.GetBytes(actual);
+        var expectedBytes = Encoding.UTF8.GetBytes(expected);
+        return CryptographicOperations.FixedTimeEquals(actualBytes, expectedBytes);
     }
 }
