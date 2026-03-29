@@ -19,6 +19,9 @@
   "cancelRoom": "募集をキャンセル",
   "cancellingRoom": "キャンセル中...",
   "cancelRoomFailed": "募集キャンセルに失敗しました",
+  "updateRestrictions": "参加制限を更新",
+  "updatingRestrictions": "更新中...",
+  "updateRestrictionsFailed": "参加制限の更新に失敗しました",
   "roomCancelled": "募集をキャンセルしました",
   "updatePositionFailed": "配置更新に失敗しました",
   "escapeRun": "この冒険から撤退",
@@ -31,6 +34,17 @@
   "latestRoomsSubtitle": "募集中のルームから参加先を選べます。",
   "latestRoomsLoading": "参加可能なルームを読み込み中...",
   "latestRoomsEmpty": "参加できるマルチルームはありません。",
+  "playerCandidatesLoading": "参加可能プレイヤー候補を読み込み中...",
+  "noSelectablePlayers": "選択可能なプレイヤーがいません。",
+  "unknownPlayer": "不明なプレイヤー",
+  "allowedPlayersHint": "未選択なら誰でも参加できます。",
+  "minRequiredLevel": "参加条件Lv",
+  "allowedPlayersOnly": "招待制",
+  "noRestriction": "制限なし",
+  "limitAllowedPlayers": "参加可能プレイヤーを限定する",
+  "allowedPlayersOverlayTitle": "参加可能プレイヤーを限定する",
+  "closeOverlay": "閉じる",
+  "selectedAllowedPlayersCount": "{{count}}人を選択中",
   "showCreateRoom": "作成",
   "showRecruitingRooms": "募集中",
   "roomLoading": "ルーム情報を読み込み中...",
@@ -127,6 +141,8 @@
   "labels": {
     "stageSelect": "作成するステージ",
     "modeSelect": "ルーム種別",
+    "minRequiredLevel": "最低参加レベル",
+    "allowedPlayers": "参加可能プレイヤー",
     "actionKind": "行動",
     "move": "スキル",
     "targetRow": "対象列",
@@ -149,6 +165,15 @@
   "roomStatus": {
     "Recruiting": "募集中",
     "Closed": "締切"
+  },
+  "joinDisabledReasons": {
+    "LevelRequirementNotMet": "必要レベルを満たしていないため参加できません。",
+    "NotAllowedPlayer": "このルームの参加対象プレイヤーではありません。",
+    "CooldownActive": "クールダウン中のため参加できません。",
+    "RoomClosed": "このルームは募集終了です。",
+    "AlreadyJoinedQuest": "進行中のクエストがあるため参加できません。",
+    "CapacityFull": "このルームは満員です。",
+    "AlreadyJoined": "このルームには既に参加しています。"
   },
   "runStatus": {
     "InProgress": "進行中",

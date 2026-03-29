@@ -104,10 +104,16 @@ erDiagram
         int stage_id "references CSV quest stage id logically"
         int mode "NOT NULL (Solo/Multi)"
         int status "NOT NULL (Recruiting/Closed)"
+        int min_required_level "NULL"
         int version "NOT NULL, optimistic concurrency token"
         int close_reason "NULL (Started/Cancelled/Expired)"
         timestamptz created_at "NOT NULL"
         timestamptz closed_at "NULL"
+    }
+    QUEST_ROOM_ALLOWED_PLAYERS {
+        uuid room_id PK, FK "internal.quest_rooms.id"
+        uuid player_id PK, FK "internal.players.id"
+        timestamptz added_at "NOT NULL"
     }
     QUEST_ROOM_PARTICIPANTS {
         uuid id PK "internal.quest_room_participants.id"
@@ -225,7 +231,9 @@ erDiagram
     PLAYERS ||--o{ MARKET_TRADE_HISTORIES : sells_or_buys
     PLAYERS ||--o{ ITEM_DELETE_LOGS : deletes
     PLAYERS ||--o{ QUEST_ROOMS : owns
+    PLAYERS ||--o{ QUEST_ROOM_ALLOWED_PLAYERS : can_be_allowed_for
     QUEST_ROOMS ||--o{ QUEST_ROOM_PARTICIPANTS : has
+    QUEST_ROOMS ||--o{ QUEST_ROOM_ALLOWED_PLAYERS : allows
     QUEST_RUNS ||--o{ QUEST_RUN_PARTY_SNAPSHOTS : snapshots
     QUEST_RUNS ||--o{ QUEST_RUN_PARTY_MEMBERS : tracks_party
     QUEST_RUNS ||--o{ QUEST_RUN_ENEMIES : tracks_enemies

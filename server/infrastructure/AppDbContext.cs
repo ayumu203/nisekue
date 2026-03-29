@@ -24,6 +24,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ChatRoomEntity> ChatRooms => Set<ChatRoomEntity>();
     public DbSet<ChatMessageEntity> ChatMessages => Set<ChatMessageEntity>();
     public DbSet<QuestRoomEntity> QuestRooms => Set<QuestRoomEntity>();
+    public DbSet<QuestRoomAllowedPlayerEntity> QuestRoomAllowedPlayers => Set<QuestRoomAllowedPlayerEntity>();
     public DbSet<QuestRoomParticipantEntity> QuestRoomParticipants => Set<QuestRoomParticipantEntity>();
     public DbSet<QuestRunEntity> QuestRuns => Set<QuestRunEntity>();
     public DbSet<QuestRunPartySnapshotEntity> QuestRunPartySnapshots => Set<QuestRunPartySnapshotEntity>();
@@ -267,6 +268,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRoom.Property(x => x.StageId).HasColumnName("stage_id").IsRequired();
         questRoom.Property(x => x.Mode).HasColumnName("mode").IsRequired();
         questRoom.Property(x => x.Status).HasColumnName("status").IsRequired();
+        questRoom.Property(x => x.MinRequiredLevel).HasColumnName("min_required_level");
         questRoom.Property(x => x.Version).HasColumnName("version").IsConcurrencyToken().IsRequired();
         questRoom.Property(x => x.CloseReason).HasColumnName("close_reason");
         questRoom.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
@@ -274,6 +276,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRoom.HasIndex(x => x.OwnerPlayerId)
             .IsUnique()
             .HasFilter($"status = {(int)server.domain.quest.enums.QuestRoomStatus.Recruiting}");
+
+        var questRoomAllowedPlayer = modelBuilder.Entity<QuestRoomAllowedPlayerEntity>();
+        questRoomAllowedPlayer.ToTable("quest_room_allowed_players", "internal");
+        questRoomAllowedPlayer.HasKey(x => new { x.RoomId, x.PlayerId });
+        questRoomAllowedPlayer.Property(x => x.RoomId).HasColumnName("room_id").HasColumnType("uuid").IsRequired();
+        questRoomAllowedPlayer.Property(x => x.PlayerId).HasColumnName("player_id").HasColumnType("uuid").IsRequired();
+        questRoomAllowedPlayer.Property(x => x.AddedAt).HasColumnName("added_at").IsRequired();
+        questRoomAllowedPlayer.HasOne<QuestRoomEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.RoomId)
+            .OnDelete(DeleteBehavior.Cascade);
+        questRoomAllowedPlayer.HasOne<PlayerEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.PlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         var questRoomParticipant = modelBuilder.Entity<QuestRoomParticipantEntity>();
         questRoomParticipant.ToTable("quest_room_participants", "internal");

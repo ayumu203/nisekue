@@ -29,10 +29,11 @@ public class QuestResponseMapper(
             .ToArray();
     }
 
-    public async Task<object> MapQuestRoomSummaryAsync(QuestRoom room)
+    public async Task<object> MapQuestRoomSummaryAsync(QuestRoom room, Player? viewer = null, bool viewerHasActiveRun = false)
     {
         var stage = await questStageRepository.GetAsync(room.StageId);
         var owner = await playerRepository.GetPlayerAsync(room.OwnerId);
+        var joinDisabledReason = GetJoinDisabledReason(room, stage, viewer, viewerHasActiveRun);
 
         return new
         {
@@ -47,18 +48,24 @@ public class QuestResponseMapper(
             participantCount = room.Participants.Count(x => x.Status != ParticipantStatus.Left),
             minPartyMemberCount = stage?.MinPartyMemberCount,
             maxPartyMemberCount = stage?.MaxPartyMemberCount,
+            minRequiredLevel = room.JoinPolicy.MinRequiredLevel,
+            hasAllowedPlayerRestriction = room.JoinPolicy.HasAllowedPlayerRestriction,
+            isJoinable = joinDisabledReason is null,
+            joinDisabledReason,
             createdAt = room.CreatedAt
         };
     }
 
-    public async Task<object> MapQuestRoomDetailAsync(QuestRoom room)
+    public async Task<object> MapQuestRoomDetailAsync(QuestRoom room, Player? viewer = null)
     {
-        var players = (await Task.WhenAll(
-                room.Participants
-                    .Where(x => x.PlayerId is not null)
-                    .Select(x => x.PlayerId!.Value)
-                    .Distinct()
-                    .Select(playerRepository.GetPlayerAsync)))
+        var playerIds = room.Participants
+            .Where(x => x.PlayerId is not null)
+            .Select(x => x.PlayerId!.Value)
+            .Concat(room.JoinPolicy.AllowedPlayerIds)
+            .Distinct()
+            .ToArray();
+
+        var players = (await Task.WhenAll(playerIds.Select(playerRepository.GetPlayerAsync)))
             .Where(x => x is not null)
             .ToDictionary(x => x!.Id, x => x!);
 
@@ -74,6 +81,29 @@ public class QuestResponseMapper(
             createdAt = room.CreatedAt,
             closedAt = room.ClosedAt,
             canStart = room.CanStart(),
+            restrictions = new
+            {
+                minRequiredLevel = room.JoinPolicy.MinRequiredLevel,
+                allowedPlayers = room.JoinPolicy.AllowedPlayerIds
+                    .Select(playerId =>
+                    {
+                        players.TryGetValue(playerId, out var allowedPlayer);
+                        return new
+                        {
+                            playerId = playerId.Value,
+                            displayName = allowedPlayer?.Name,
+                            imagePath = allowedPlayer?.ImagePath,
+                            level = allowedPlayer?.Level,
+                            job = allowedPlayer is null
+                                ? null
+                                : new
+                                {
+                                    code = allowedPlayer.Job.ToString(),
+                                    displayName = ToJobDisplayName(allowedPlayer.Job)
+                                }
+                        };
+                    })
+            },
             formation = new
             {
                 occupiedPositions = room.Formation.OccupiedPositions.Select(position => new
@@ -119,6 +149,46 @@ public class QuestResponseMapper(
                 };
             })
         };
+    }
+
+    private static string? GetJoinDisabledReason(
+        QuestRoom room,
+        QuestStageDefinition? stage,
+        Player? viewer,
+        bool viewerHasActiveRun)
+    {
+        if (room.Status != QuestRoomStatus.Recruiting)
+        {
+            return "RoomClosed";
+        }
+
+        if (viewer is null)
+        {
+            return null;
+        }
+
+        if (room.Participants.Any(x => x.PlayerId == viewer.Id && x.Status != ParticipantStatus.Left))
+        {
+            return "AlreadyJoined";
+        }
+
+        if (viewerHasActiveRun)
+        {
+            return "AlreadyJoinedQuest";
+        }
+
+        if (viewer.QuestCooldownUntil is not null && viewer.QuestCooldownUntil.Value > DateTimeOffset.UtcNow)
+        {
+            return "CooldownActive";
+        }
+
+        var maxPartyMemberCount = Math.Min(stage?.MaxPartyMemberCount ?? 6, 6);
+        if (room.Participants.Count(x => x.Status != ParticipantStatus.Left) >= maxPartyMemberCount)
+        {
+            return "CapacityFull";
+        }
+
+        return room.JoinPolicy.GetJoinDeniedReason(viewer.Id, viewer.Level);
     }
 
     public async Task<object> MapQuestRunDetailAsync(QuestRun run)

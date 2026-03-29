@@ -4,7 +4,8 @@ using server.domain.quest.enums;
 
 namespace server.endpoints;
 
-public record CreateQuestRoomRequest(int StageId, QuestRoomMode Mode);
+public record CreateQuestRoomRequest(int StageId, QuestRoomMode Mode, int? MinRequiredLevel, IReadOnlyList<Guid>? AllowedPlayerIds);
+public record UpdateQuestRoomRestrictionsRequest(int? MinRequiredLevel, IReadOnlyList<Guid>? AllowedPlayerIds);
 public record UpdateQuestRoomPositionRequest(Guid ParticipantId, BattleRow Row, BattleColumn Column);
 public record SubmitQuestCommandRequest(Guid ParticipantId, int TurnNo, ActionKind ActionKind, int? MoveId, BattleRow? TargetRow, BattleColumn? TargetColumn);
 public record ManualControlRequest(Guid ParticipantId);

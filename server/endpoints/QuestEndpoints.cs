@@ -32,8 +32,14 @@ internal static class QuestEndpoints
 
             try
             {
-                var room = await questRoomService.CreateRoomAsync(playerId.Value, new QuestStageId(request.StageId), request.Mode);
-                return Results.Ok(await responseMapper.MapQuestRoomDetailAsync(room));
+                var room = await questRoomService.CreateRoomAsync(
+                    playerId.Value,
+                    new QuestStageId(request.StageId),
+                    request.Mode,
+                    request.MinRequiredLevel,
+                    request.AllowedPlayerIds?.Select(id => new PlayerId(id)).ToArray());
+                var viewer = await questRoomService.GetViewerAsync(playerId.Value);
+                return Results.Ok(await responseMapper.MapQuestRoomDetailAsync(room, viewer));
             }
             catch (KeyNotFoundException ex)
             {
@@ -50,6 +56,7 @@ internal static class QuestEndpoints
         });
 
         questGroup.MapGet("/rooms", async (
+            ClaimsPrincipal user,
             int? stageId,
             QuestRoomMode? mode,
             QuestRoomStatus? status,
@@ -57,31 +64,52 @@ internal static class QuestEndpoints
             int? page,
             int? pageSize,
             IQuestRoomRepository questRoomRepository,
+            QuestRoomService questRoomService,
             QuestResponseMapper responseMapper) =>
         {
+            var viewerPlayerId = EndpointHelpers.TryGetPlayerId(user);
+            if (viewerPlayerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
             var rooms = await questRoomRepository.SearchAsync(new QuestRoomSearchCondition(
                 stageId is null ? null : new QuestStageId(stageId.Value),
                 mode,
                 status ?? QuestRoomStatus.Recruiting,
                 ownerPlayerId is null ? null : new PlayerId(ownerPlayerId.Value),
+                viewerPlayerId.Value,
                 page ?? 1,
                 pageSize ?? 20));
+            var viewer = await questRoomService.GetViewerAsync(viewerPlayerId.Value);
+            var viewerHasActiveRun = await questRoomService.ViewerHasActiveRunAsync(viewerPlayerId.Value);
 
             var payload = new List<object>(rooms.Count);
             foreach (var room in rooms)
             {
-                payload.Add(await responseMapper.MapQuestRoomSummaryAsync(room));
+                payload.Add(await responseMapper.MapQuestRoomSummaryAsync(room, viewer, viewerHasActiveRun));
             }
 
             return Results.Ok(payload);
         });
 
-        questGroup.MapGet("/rooms/{roomId:guid}", async (Guid roomId, IQuestRoomRepository questRoomRepository, QuestResponseMapper responseMapper) =>
+        questGroup.MapGet("/rooms/{roomId:guid}", async (
+            Guid roomId,
+            ClaimsPrincipal user,
+            IQuestRoomRepository questRoomRepository,
+            QuestRoomService questRoomService,
+            QuestResponseMapper responseMapper) =>
         {
+            var viewerPlayerId = EndpointHelpers.TryGetPlayerId(user);
+            if (viewerPlayerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
             var room = await questRoomRepository.GetAsync(new QuestRoomId(roomId));
             return room is null
                 ? Results.NotFound(new { message = "ルームが見つかりません。" })
-                : Results.Ok(await responseMapper.MapQuestRoomDetailAsync(room));
+                : Results.Ok(await responseMapper.MapQuestRoomDetailAsync(room, await questRoomService.GetViewerAsync(viewerPlayerId.Value)));
         });
 
         questGroup.MapGet("/rooms/{roomId:guid}/run", async (
@@ -106,7 +134,7 @@ internal static class QuestEndpoints
             try
             {
                 var room = await questRoomService.JoinRoomAsync(new QuestRoomId(roomId), playerId.Value);
-                return Results.Ok(await responseMapper.MapQuestRoomDetailAsync(room));
+                return Results.Ok(await responseMapper.MapQuestRoomDetailAsync(room, await questRoomService.GetViewerAsync(playerId.Value)));
             }
             catch (KeyNotFoundException ex)
             {
@@ -127,6 +155,7 @@ internal static class QuestEndpoints
             ClaimsPrincipal user,
             UpdateQuestRoomPositionRequest request,
             IQuestRoomRepository questRoomRepository,
+            QuestRoomService questRoomService,
             QuestResponseMapper responseMapper) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
@@ -159,7 +188,7 @@ internal static class QuestEndpoints
                     targetParticipant.Id,
                     new BattlePosition(request.Row, request.Column));
                 await questRoomRepository.SaveAsync(room);
-                return Results.Ok(await responseMapper.MapQuestRoomDetailAsync(room));
+                return Results.Ok(await responseMapper.MapQuestRoomDetailAsync(room, await questRoomService.GetViewerAsync(playerId.Value)));
             }
             catch (ArgumentException ex)
             {
@@ -229,7 +258,43 @@ internal static class QuestEndpoints
             try
             {
                 var room = await questRoomService.CancelRoomAsync(new QuestRoomId(roomId), playerId.Value);
-                return Results.Ok(await responseMapper.MapQuestRoomDetailAsync(room));
+                return Results.Ok(await responseMapper.MapQuestRoomDetailAsync(room, await questRoomService.GetViewerAsync(playerId.Value)));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
+        });
+
+        questGroup.MapPut("/rooms/{roomId:guid}/restrictions", async (
+            Guid roomId,
+            ClaimsPrincipal user,
+            UpdateQuestRoomRestrictionsRequest request,
+            QuestRoomService questRoomService,
+            QuestResponseMapper responseMapper) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                var room = await questRoomService.UpdateRestrictionsAsync(
+                    new QuestRoomId(roomId),
+                    playerId.Value,
+                    request.MinRequiredLevel,
+                    request.AllowedPlayerIds?.Select(id => new PlayerId(id)).ToArray());
+                return Results.Ok(await responseMapper.MapQuestRoomDetailAsync(room, await questRoomService.GetViewerAsync(playerId.Value)));
             }
             catch (KeyNotFoundException ex)
             {

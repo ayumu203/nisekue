@@ -15,6 +15,9 @@ type QuestMultiRoomListProps = {
     joinRoom: string
     joiningRoom: string
     recommendedLevel: string
+    minRequiredLevel: string
+    allowedPlayersOnly: string
+    joinDisabledReasons: Record<string, string>
     ownerBadge: string
     noImage?: string
   }
@@ -108,6 +111,11 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
             <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
               {`${locale.recommendedLevel} ${stage?.recommendedLevel ?? '-'}`}
             </Typography>
+            {room.minRequiredLevel != null ? (
+              <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
+                {`${locale.minRequiredLevel} ${room.minRequiredLevel}`}
+              </Typography>
+            ) : null}
             <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
               <Chip
                 size="small"
@@ -131,6 +139,18 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
                   borderColor: 'rgba(222, 236, 255, 0.34)',
                 }}
               />
+              {room.hasAllowedPlayerRestriction ? (
+                <Chip
+                  size="small"
+                  label={locale.allowedPlayersOnly}
+                  sx={{
+                    fontWeight: 700,
+                    color: '#fce8b2',
+                    bgcolor: 'rgba(241, 194, 80, 0.16)',
+                    border: '1px solid rgba(241, 194, 80, 0.3)',
+                  }}
+                />
+              ) : null}
             </Stack>
           </Stack>
         </Stack>
@@ -139,7 +159,7 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
           <Button
             variant="contained"
             onClick={() => void onJoinRoom(room.roomId)}
-            disabled={isJoining}
+            disabled={isJoining || !room.isJoinable}
             sx={{
               ...menuButtonSx,
               ...softGreenButtonSx,
@@ -179,6 +199,11 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
             </Typography>
           </Stack>
         </Stack>
+        {!room.isJoinable && room.joinDisabledReason ? (
+          <Typography variant="body2" sx={{ color: '#ffd7d7' }}>
+            {locale.joinDisabledReasons[room.joinDisabledReason] ?? room.joinDisabledReason}
+          </Typography>
+        ) : null}
       </Stack>
     </Paper>
   )

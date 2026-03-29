@@ -45,6 +45,14 @@
 * クールダウン中は `QuestRoomService.CreateRoomAsync()` と `JoinRoomAsync()` の両方を拒否する。
 * `Succeeded` / `Failed` / `Aborted` のいずれで終了した場合も同じルールを適用する。
 
+### 2.6 ルーム参加制限
+
+* `QuestRoom` は募集条件として `MinRequiredLevel` と `AllowedPlayerIds` を持てる。
+* `MinRequiredLevel` は「参加可能レベル」の意味で扱い、値を満たさないプレイヤーの参加を拒否する。
+* `AllowedPlayerIds` は allow-list 方式で扱い、値が 1 件以上ある場合は含まれるプレイヤーだけ参加できる。
+* ルーム一覧では制限の有無にかかわらず募集ルームを表示し、参加可否は `IsJoinable` と理由コードで返す。
+* 参加可能プレイヤー選定 UI の候補表示は既存 `GET /players` を再利用し、決定内容の反映はクエスト側 API で扱う。
+
 ## 3. 前提
 
 ### 3.1 既存ドメインの再利用
@@ -150,6 +158,10 @@
 * 新規ルーム作成時、同じ `OwnerId` の `Recruiting` ルームが存在する場合は、その既存ルームを `Closed + Cancelled` に遷移させたうえで新規ルームを作成する。
 * 進行中の `QuestRun` に参加しているプレイヤーは、新規ルームを作成できない。
 * `Player.QuestCooldownUntil` が現在時刻より未来のプレイヤーは、新規ルームを作成できない。
+* `QuestRoom` は募集条件として、任意で `MinRequiredLevel` と `AllowedPlayerIds` を保持できる。
+* `AllowedPlayerIds` が空のときはプレイヤー個別制限なしとみなす。
+* `JoinRoomAsync()` は、クールダウンに加えてレベル条件と allow-list 条件を検証し、違反時は状態遷移を起こさずリクエストを拒否する。
+* `GET /quest/rooms` は募集ルーム自体は隠さず、閲覧者にとって参加可能かどうかを併記する。
 * これは「過去の募集を閉じて誤参加を防ぐ」ための募集制御であり、クエスト結果の `Succeeded` / `Failed` とは別概念として扱う。
 
 ### 4.6 配置責務とレイヤ配置
@@ -186,6 +198,7 @@
 * `GET /quest/runs/{runId}` は初期表示や再接続復元のために `QuestRunDetailResponse` を返す読み取り API として残す。
 * `POST /quest/runs/{runId}/manual-control/request` と `POST /quest/runs/{runId}/manual-control/approve` は、状態更新後に同様に `QuestRunDetailResponse` を SignalR 通知できる構成とする。
 * `POST /quest/rooms/{roomId}/cancel` は募集状態を `Closed + Cancelled` へ更新し、必要なら更新済みルーム情報を返す。
+* `POST /quest/rooms` と `PUT /quest/rooms/{roomId}/restrictions` は、募集条件として `minRequiredLevel` と `allowedPlayerIds` を受け取れるようにする。
 * `POST /quest/runs/{runId}/escape` は進行中クエストを `Failed` へ更新し、更新後の `QuestRunDetailResponse` を SignalR 通知する。
 
 ### 4.9 `QuestRunHub` イベント契約
@@ -420,11 +433,54 @@
 * `ParticipantCount`
 * `MinPartyMemberCount`
 * `MaxPartyMemberCount`
+* `MinRequiredLevel`
+* `HasAllowedPlayerRestriction`
+* `IsJoinable`
+* `JoinDisabledReason` (`LevelRequirementNotMet`, `NotAllowedPlayer`, `CooldownActive`, `RoomClosed`, `AlreadyJoinedQuest`, `CapacityFull` など)
 * `CreatedAt`
 
 一覧用途では詳細な配置情報や参加者全件は返さず、ルームカード描画に必要な情報へ絞る。
 
-### 4.13 手動復帰 API 方針
+### 4.13 参加可能プレイヤー選定 UI / API 方針
+
+ルーム作成時または `Recruiting` 中の募集条件更新時に、オーナーが参加可能プレイヤーを選定できるようにする。
+
+#### 候補表示
+
+* 候補一覧は既存 `GET /players` を再利用する。
+* 参加可能プレイヤー選定 UI は `userId`, `userName`, `imagePath`, `level`, `job` を使って候補カードを描画する。
+* 将来検索条件が必要になった場合は `GET /players` へのクエリ追加で対応し、初期実装ではクエスト専用の候補取得 API は増やさない。
+
+#### `PUT /quest/rooms/{roomId}/restrictions`
+
+オーナーが `Recruiting` 中ルームの募集条件を更新するための API とする。
+
+リクエスト:
+
+* `MinRequiredLevel`
+* `AllowedPlayerIds`
+
+認可:
+
+* ルームオーナーのみ呼び出せる。
+* `Recruiting` 中のルームのみ更新できる。
+
+結果:
+
+* `QuestRoom.JoinPolicy` を置き換える。
+* 更新後の待機画面用 `QuestRoomDetailResponse` を返す。
+* `AllowedPlayerIds` が空配列なら個別制限なしとみなす。
+
+#### `POST /quest/rooms`
+
+作成時リクエストにも同じ募集条件を含められるようにする。
+
+* `MinRequiredLevel`
+* `AllowedPlayerIds`
+
+これにより、作成直後から参加制限付きルームを募集できるようにする。
+
+### 4.14 手動復帰 API 方針
 
 手動復帰は HTTP API で要求を受け付け、状態更新後は SignalR で `QuestRunDetailResponse` を通知する。
 
@@ -638,9 +694,25 @@
 
 これらは `ParticipantType = Player` の場合に `Player` 集約から補完し、NPC や未解決データでは `null` を許容する。
 
+`GET /quest/rooms/{roomId}` には募集条件表示のため、以下も追加する。
+
+* `Restrictions`
+  * `MinRequiredLevel`
+  * `AllowedPlayers`
+    * `PlayerId`
+    * `DisplayName`
+    * `ImagePath`
+    * `Level`
+    * `Job`
+      * `Code`
+      * `DisplayName`
+
+`AllowedPlayers` は選定済みプレイヤーの確認用であり、`AllowedPlayerIds` が空のときは空配列を返す。
+
 #### 主な振る舞い
 
 * `AddPlayer(playerId, displayName)`
+* `UpdateJoinPolicy(minRequiredLevel, allowedPlayerIds)`
 * `AssignPosition(participantId, position)`
 * `MarkDisconnected(participantId, at)`
 * `MarkReconnected(participantId, at)`
@@ -655,10 +727,13 @@
 
 * オーナーは常に 1 人。
 * `Recruiting` 中のみ参加者追加・配置変更が可能。
+* `Recruiting` 中のみ募集条件更新が可能。
 * 同一マスに複数参加者は配置できない。
 * 同一 `OwnerId` が同時に所有できる `Recruiting` ルームは 1 件まで。
 * `Solo` はオーナー 1 人で開始可能。
 * `Multi` は人間プレイヤー 2 人以上で開始可能。
+* `MinRequiredLevel` を設定した場合、その値未満のプレイヤーは参加できない。
+* `AllowedPlayerIds` が 1 件以上ある場合、その集合に含まれないプレイヤーは参加できない。
 * NPC 補充は `CloseRecruitment()` の前に行い、`Closed` になった後は参加者構成を変更できない。
 * オーナーは `Recruiting` ルームを `Closed + Cancelled` にできる。
 
@@ -1119,6 +1194,7 @@ CSV 採用理由:
 | `stage_id` | int | CSV の `QuestStageDefinition.Id` を参照 |
 | `mode` | int | `Solo` / `Multi` |
 | `status` | int | `Recruiting` / `Closed` |
+| `min_required_level` | int | NULL, 参加可能最低レベル |
 | `version` | int | NOT NULL, 楽観ロック用の更新バージョン |
 | `close_reason` | int | `Started` / `Cancelled` / `Expired`, NULL 可 |
 | `created_at` | timestamptz | NOT NULL |
@@ -1142,12 +1218,22 @@ CSV 採用理由:
 | `last_seen_at` | timestamptz | NULL |
 | `left_at` | timestamptz | NULL |
 
+#### `internal.quest_room_allowed_players`
+
+| カラム | 型 | 備考 |
+| --- | --- | --- |
+| `room_id` | uuid | PK, FK `quest_rooms.id` |
+| `player_id` | uuid | PK, FK `players.id` |
+| `added_at` | timestamptz | NOT NULL |
+
 制約案:
 
 * `player_id` は `participant_type = Player` のとき必須。
 * `npc_template_id` は `participant_type = Npc` のとき必須。
 * `UNIQUE(room_id, battle_row, battle_column)`。
 * `UNIQUE(room_id, player_id)` ただし `player_id IS NOT NULL`。
+* `quest_room_allowed_players` は `UNIQUE(room_id, player_id)` を主キーで表現する。
+* `quest_room_allowed_players` は `room_id` への `ON DELETE CASCADE` を前提とし、募集ルーム削除または再作成時の不要データを残さない。
 * `quest_rooms.version` を楽観ロックに使い、同時参加更新は stale write を拒否する。
 * `quest_rooms` には `status = Recruiting` を条件とする `owner_player_id` の部分ユニーク制約を設け、同一オーナーの同時募集中ルームを DB でも禁止する。
 * 進行中クエスト参加者の新規ルーム作成禁止は `QuestRun` と参加者対応を参照してアプリケーション層で検証する。
@@ -1302,6 +1388,12 @@ CSV 採用理由:
 そのため `internal.players.quest_cooldown_until` を追加し、`QuestRun` 終了時に対象プレイヤーへ `EndedAt + 3分` を反映する。
 `QuestRoomService.CreateRoomAsync()` と `JoinRoomAsync()` は、この値が現在時刻より未来なら要求を拒否する。
 
+#### 参加可能プレイヤー制限は `quest_rooms` + `quest_room_allowed_players` に保持する
+
+最低参加レベルは `internal.quest_rooms.min_required_level` に保持する。
+個別許可プレイヤーは `internal.quest_room_allowed_players` に保持し、空集合なら制限なしとして扱う。
+`GET /quest/rooms` と `GET /quest/rooms/{roomId}` は、閲覧者の `Player.Level` と allow-list を参照して参加可否を組み立てる。
+
 ## 8. ルールと永続化の対応表
 
 | 要件 | 主担当集約 | 永続化先 |
@@ -1310,6 +1402,9 @@ CSV 採用理由:
 | 同一プレイヤーの同時募集中ルームを 1 件までに制限する | `QuestRoom` | `quest_rooms` |
 | 新規ルーム作成時に同一オーナーの旧募集ルームを `Cancelled` で閉じる | `QuestRoom` | `quest_rooms` |
 | 進行中クエスト参加者は新規ルームを作成できない | `QuestRoom` + `QuestRun` | 募集系 + 進行系テーブル |
+| ルームごとに最低参加レベルを設定できる | `QuestRoom` + `QuestRoomService` | `quest_rooms.min_required_level` |
+| ルームごとに参加可能プレイヤー allow-list を設定できる | `QuestRoom` + `QuestRoomService` | `quest_room_allowed_players` |
+| ルーム一覧は全員に見せつつ参加不可理由を返す | `QuestRoomService` + `QuestResponseMapper` | 募集系テーブル + `players` |
 | クエスト終了後 1分間はルーム作成・参加を禁止する | `QuestRun` + `Player` + `QuestRoomService` | `players.quest_cooldown_until` |
 | オーナーが募集中ルームを明示的にキャンセルできる | `QuestRoom` + `QuestRoomService` | `quest_rooms` |
 | ソロは即開始、マルチは 2 人以上で開始 | `QuestRoom` | `quest_rooms` |

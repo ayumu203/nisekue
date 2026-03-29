@@ -8,6 +8,7 @@ public class QuestRoomSearchCondition(
     QuestRoomMode? mode = null,
     QuestRoomStatus? status = null,
     PlayerId? ownerPlayerId = null,
+    PlayerId? viewerPlayerId = null,
     int page = 1,
     int pageSize = 20)
 {
@@ -15,6 +16,7 @@ public class QuestRoomSearchCondition(
     public QuestRoomMode? Mode { get; } = mode;
     public QuestRoomStatus? Status { get; } = status;
     public PlayerId? OwnerPlayerId { get; } = ownerPlayerId;
+    public PlayerId? ViewerPlayerId { get; } = viewerPlayerId;
     public int Page { get; } = page < 1 ? 1 : page;
     public int PageSize { get; } = pageSize < 1 ? 20 : Math.Min(pageSize, 100);
 }

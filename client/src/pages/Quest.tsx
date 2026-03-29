@@ -1,7 +1,7 @@
 import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
-import { createPlayer, getPlayer } from '@/api/player'
+import { createPlayer, getPlayer, listPlayers } from '@/api/player'
 import {
   cancelQuestRoom,
   createQuestRoom,
@@ -15,6 +15,7 @@ import {
   postQuestChatMessage,
   startQuestRoom,
   submitQuestCommand,
+  updateQuestRoomRestrictions,
   updateQuestRoomPosition,
 } from '@/api/quest'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
@@ -35,6 +36,7 @@ import type {
   QuestRoomDetailResponse,
   QuestRunDetailResponse,
 } from '@/schema/quest'
+import type { PlayerSummary } from '@/schema/player'
 
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
@@ -93,12 +95,15 @@ export default function Quest() {
   const [selectedStageId, setSelectedStageId] = useState<number | ''>('')
   const [mode, setMode] = useState<CreateQuestRoomRequest['mode']>('Solo')
   const [multiEntryView, setMultiEntryView] = useState<'create' | 'list'>('create')
+  const [minRequiredLevelInput, setMinRequiredLevelInput] = useState('')
+  const [allowedPlayerIds, setAllowedPlayerIds] = useState<string[]>([])
   const [createdRoom, setCreatedRoom] = useState<QuestRoomDetailResponse | null>(null)
   const [startedRun, setStartedRun] = useState<QuestRunDetailResponse | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
   const [isCancellingRoom, setIsCancellingRoom] = useState(false)
+  const [isUpdatingRestrictions, setIsUpdatingRestrictions] = useState(false)
   const [selectedActionKind, setSelectedActionKind] = useState<QuestActionKind>('NormalAttack')
   const [selectedMoveId, setSelectedMoveId] = useState<number | ''>('')
   const [selectedTargetRow, setSelectedTargetRow] = useState<BattleRow | ''>('')
@@ -176,11 +181,31 @@ export default function Quest() {
         .sort((left, right) => left.recommendedLevel - right.recommendedLevel),
     [stages],
   )
+  const playerCandidatesSWRKey =
+    session?.access_token && createdRoom == null && startedRun == null ? ([`quest-player-candidates`] as const) : null
+  const {
+    data: playerCandidates,
+    error: playerCandidatesError,
+    isLoading: isPlayerCandidatesLoading,
+  } = useSWR(playerCandidatesSWRKey, async () => {
+    if (!session?.access_token) {
+      throw new Error(locale.sessionInfoMissing)
+    }
+
+    return listPlayers(session.access_token)
+  })
+
+  const selectablePlayers = useMemo<PlayerSummary[]>(
+    () => (playerCandidates ?? []).filter((candidate) => candidate.userId !== player?.userId),
+    [player?.userId, playerCandidates],
+  )
   const isCreateDisabled =
     isSubmitting ||
     isPlayerLoading ||
     isStagesLoading ||
+    isPlayerCandidatesLoading ||
     playerError != null ||
+    playerCandidatesError != null ||
     activeStages.length === 0 ||
     selectedStageId === ''
 
@@ -217,6 +242,8 @@ export default function Quest() {
         {
           stageId: selectedStageId,
           mode,
+          minRequiredLevel: minRequiredLevelInput.trim() === '' ? null : Number(minRequiredLevelInput),
+          allowedPlayerIds,
         },
         session.access_token,
       )
@@ -229,6 +256,12 @@ export default function Quest() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  function handleToggleAllowedPlayer(playerId: string): void {
+    setAllowedPlayerIds((current) =>
+      current.includes(playerId) ? current.filter((id) => id !== playerId) : [...current, playerId],
+    )
   }
 
   const roomsSWRKey =
@@ -282,6 +315,15 @@ export default function Quest() {
 
   const currentRoom = liveRoom ?? createdRoom
 
+  useEffect(() => {
+    if (!currentRoom) {
+      return
+    }
+
+    setMinRequiredLevelInput(currentRoom.restrictions.minRequiredLevel?.toString() ?? '')
+    setAllowedPlayerIds(currentRoom.restrictions.allowedPlayers.map((player) => player.playerId))
+  }, [currentRoom?.roomId, currentRoom?.version])
+
   async function handleJoinRoom(roomId: string): Promise<void> {
     if (!session?.access_token) {
       setSubmitError(locale.sessionInfoMissing)
@@ -302,6 +344,39 @@ export default function Quest() {
       setSubmitError(error instanceof Error ? error.message : locale.joinRoomFailed)
     } finally {
       setIsJoiningRoomId(null)
+    }
+  }
+
+  async function handleUpdateRoomRestrictions(): Promise<void> {
+    if (!session?.access_token) {
+      setSubmitError(locale.sessionInfoMissing)
+      return
+    }
+
+    if (!currentRoom) {
+      setSubmitError(locale.createRoomFirst)
+      return
+    }
+
+    setIsUpdatingRestrictions(true)
+    setSubmitError(null)
+
+    try {
+      const room = await updateQuestRoomRestrictions(
+        currentRoom.roomId,
+        {
+          minRequiredLevel: minRequiredLevelInput.trim() === '' ? null : Number(minRequiredLevelInput),
+          allowedPlayerIds,
+        },
+        session.access_token,
+      )
+      setCreatedRoom(room)
+      await mutateRoom(room, { revalidate: false })
+      await mutateRooms()
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : locale.updateRestrictionsFailed)
+    } finally {
+      setIsUpdatingRestrictions(false)
     }
   }
 
@@ -924,11 +999,18 @@ export default function Quest() {
                           activeStages={activeStages}
                           selectedStageId={selectedStageId}
                           mode={mode}
+                          minRequiredLevelInput={minRequiredLevelInput}
+                          selectablePlayers={selectablePlayers}
+                          allowedPlayerIds={allowedPlayerIds}
                           isLoading={isPlayerLoading || isStagesLoading}
+                          isPlayerCandidatesLoading={isPlayerCandidatesLoading}
+                          playerCandidatesError={playerCandidatesError}
                           isSubmitting={isSubmitting}
                           isCreateDisabled={isCreateDisabled}
                           onStageChange={setSelectedStageId}
                           onModeChange={setMode}
+                          onMinRequiredLevelChange={setMinRequiredLevelInput}
+                          onToggleAllowedPlayer={handleToggleAllowedPlayer}
                           onCreateRoom={handleCreateRoom}
                         />
                       ) : null}
@@ -952,11 +1034,20 @@ export default function Quest() {
                       currentRoom={currentRoom}
                       stageLabel={currentRoomStage?.name ?? null}
                       selfParticipantId={selfParticipantId}
+                      selectablePlayers={selectablePlayers}
+                      minRequiredLevelInput={minRequiredLevelInput}
+                      allowedPlayerIds={allowedPlayerIds}
                       positionDrafts={positionDrafts}
                       isLoading={isRoomLoading && liveRoom == null}
                       isStarting={isStarting}
                       isCancellingRoom={isCancellingRoom}
+                      isUpdatingRestrictions={isUpdatingRestrictions}
+                      isPlayerCandidatesLoading={isPlayerCandidatesLoading}
+                      playerCandidatesError={playerCandidatesError}
                       isUpdatingParticipantId={isUpdatingParticipantId}
+                      onMinRequiredLevelChange={setMinRequiredLevelInput}
+                      onToggleAllowedPlayer={handleToggleAllowedPlayer}
+                      onUpdateRestrictions={handleUpdateRoomRestrictions}
                       onPositionDraftChange={(participantId, nextPosition) => {
                         setPositionDrafts((current) => ({
                           ...current,
