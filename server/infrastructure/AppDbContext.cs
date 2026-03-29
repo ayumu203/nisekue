@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using server.domain.chat;
 using server.domain.player;
 using server.shared.constants.chat;
@@ -16,6 +17,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PlayerMoveEntity> PlayerMoves => Set<PlayerMoveEntity>();
     public DbSet<PlayerMasterJobEntity> PlayerMasterJobs => Set<PlayerMasterJobEntity>();
     public DbSet<PlayerEquipmentEntity> PlayerEquipments => Set<PlayerEquipmentEntity>();
+    public DbSet<PlayerItemStackEntity> PlayerItemStacks => Set<PlayerItemStackEntity>();
+    public DbSet<MarketListingEntity> MarketListings => Set<MarketListingEntity>();
+    public DbSet<MarketTradeHistoryEntity> MarketTradeHistories => Set<MarketTradeHistoryEntity>();
+    public DbSet<ItemDeletionLogEntity> ItemDeletionLogs => Set<ItemDeletionLogEntity>();
     public DbSet<ChatRoomEntity> ChatRooms => Set<ChatRoomEntity>();
     public DbSet<ChatMessageEntity> ChatMessages => Set<ChatMessageEntity>();
     public DbSet<QuestRoomEntity> QuestRooms => Set<QuestRoomEntity>();
@@ -57,6 +62,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired();
         player.Property(x => x.JobExp)
             .HasColumnName("job_exp")
+            .IsRequired();
+        player.Property(x => x.Gold)
+            .HasColumnName("gold")
+            .HasDefaultValue(100)
             .IsRequired();
         player.Property(x => x.MaxHp)
             .HasColumnName("max_hp")
@@ -151,6 +160,63 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(x => x.PlayerId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        var playerItemStack = modelBuilder.Entity<PlayerItemStackEntity>();
+        playerItemStack.ToTable("player_item_stacks", "internal");
+        playerItemStack.HasKey(x => x.Id);
+        playerItemStack.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        playerItemStack.Property(x => x.PlayerId).HasColumnName("player_id").HasColumnType("uuid").IsRequired();
+        playerItemStack.Property(x => x.ItemId).HasColumnName("item_id").IsRequired();
+        playerItemStack.Property(x => x.Quantity).HasColumnName("quantity").IsRequired();
+        playerItemStack.Property(x => x.UpdatedAt).HasColumnName("updated_at").IsRequired();
+        playerItemStack.HasIndex(x => new { x.PlayerId, x.ItemId }).IsUnique();
+        playerItemStack
+            .HasOne<PlayerEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.PlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        var marketListing = modelBuilder.Entity<MarketListingEntity>();
+        marketListing.ToTable("market_listings", "internal");
+        marketListing.HasKey(x => x.Id);
+        marketListing.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        marketListing.Property(x => x.SellerId).HasColumnName("seller_id").HasColumnType("uuid").IsRequired();
+        marketListing.Property(x => x.PlayerEquipmentId).HasColumnName("player_equipment_id").HasColumnType("uuid");
+        marketListing.Property(x => x.ItemId).HasColumnName("item_id");
+        marketListing.Property(x => x.ItemName).HasColumnName("item_name").HasMaxLength(100).IsRequired();
+        marketListing.Property(x => x.FlavorText).HasColumnName("flavor_text").HasMaxLength(500).IsRequired();
+        marketListing.Property(x => x.Quantity).HasColumnName("quantity").IsRequired();
+        marketListing.Property(x => x.RemainingQuantity).HasColumnName("remaining_quantity").IsRequired();
+        marketListing.Property(x => x.UnitPrice).HasColumnName("unit_price").IsRequired();
+        marketListing.Property(x => x.ListedAt).HasColumnName("listed_at").IsRequired();
+        marketListing.Property(x => x.ExpiresAt).HasColumnName("expires_at").IsRequired();
+        marketListing.HasIndex(x => x.SellerId);
+        marketListing.HasIndex(x => x.ExpiresAt);
+
+        var marketTradeHistory = modelBuilder.Entity<MarketTradeHistoryEntity>();
+        marketTradeHistory.ToTable("market_trade_histories", "internal");
+        marketTradeHistory.HasKey(x => x.Id);
+        marketTradeHistory.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        marketTradeHistory.Property(x => x.SellerId).HasColumnName("seller_id").HasColumnType("uuid").IsRequired();
+        marketTradeHistory.Property(x => x.BuyerId).HasColumnName("buyer_id").HasColumnType("uuid").IsRequired();
+        marketTradeHistory.Property(x => x.ItemIdentifier).HasColumnName("item_id").HasMaxLength(50).IsRequired();
+        marketTradeHistory.Property(x => x.Quantity).HasColumnName("quantity").IsRequired();
+        marketTradeHistory.Property(x => x.UnitPrice).HasColumnName("unit_price").IsRequired();
+        marketTradeHistory.Property(x => x.PurchasedAt).HasColumnName("purchased_at").IsRequired();
+        marketTradeHistory.HasIndex(x => x.SellerId);
+        marketTradeHistory.HasIndex(x => x.BuyerId);
+
+        var itemDeletionLog = modelBuilder.Entity<ItemDeletionLogEntity>();
+        itemDeletionLog.ToTable("item_delete_logs", "internal");
+        itemDeletionLog.HasKey(x => x.Id);
+        itemDeletionLog.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        itemDeletionLog.Property(x => x.PlayerId).HasColumnName("player_id").HasColumnType("uuid").IsRequired();
+        itemDeletionLog.Property(x => x.ItemIdentifier).HasColumnName("item_id").HasMaxLength(50).IsRequired();
+        itemDeletionLog.Property(x => x.Quantity).HasColumnName("quantity").IsRequired();
+        itemDeletionLog.Property(x => x.Reason).HasColumnName("reason").HasMaxLength(50).IsRequired();
+        itemDeletionLog.Property(x => x.DeletedAt).HasColumnName("deleted_at").IsRequired();
+        itemDeletionLog.HasIndex(x => x.PlayerId);
+        itemDeletionLog.HasIndex(x => x.DeletedAt);
+
         var chatRoom = modelBuilder.Entity<ChatRoomEntity>();
         chatRoom.ToTable("chat_rooms", "internal");
         chatRoom.HasKey(x => x.OwnerId);
@@ -174,11 +240,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         chatMessage.Property(x => x.ChatId)
             .HasColumnName("chat_id")
             .IsRequired();
+        chatMessage.Property(x => x.SenderType)
+            .HasColumnName("sender_type")
+            .HasConversion<int>()
+            .IsRequired();
         chatMessage.Property(x => x.SenderId)
             .HasColumnName("sender_id")
             .HasColumnType("uuid")
-            .HasConversion(x => x.Value, value => new PlayerId(value))
-            .IsRequired();
+            .HasConversion(new ValueConverter<PlayerId?, Guid?>(
+                x => x == null ? null : x.Value.Value,
+                value => value == null ? null : new PlayerId(value.Value)));
         chatMessage.Property(x => x.Message)
             .HasColumnName("message")
             .HasMaxLength(ChatConstants.MessageMaxLength)
@@ -321,5 +392,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRewardSummary.HasKey(x => x.RunId);
         questRewardSummary.Property(x => x.RunId).HasColumnName("run_id").HasColumnType("uuid").IsRequired();
         questRewardSummary.Property(x => x.Exp).HasColumnName("exp").IsRequired();
+        questRewardSummary.Property(x => x.EquipmentRewardId).HasColumnName("equipment_reward_id");
+        questRewardSummary.Property(x => x.SkippedRewardPlayerIdsJson).HasColumnName("skipped_reward_player_ids_json").HasColumnType("jsonb").IsRequired();
     }
 }

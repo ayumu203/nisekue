@@ -94,7 +94,12 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
 builder.Services.AddScoped<IPlayerEquipmentRepository, DbPlayerEquipmentRepository>();
+builder.Services.AddScoped<IPlayerItemStackRepository, DbPlayerItemStackRepository>();
 builder.Services.AddSingleton<IEquipmentRepository, CsvEquipmentRepository>();
+builder.Services.AddSingleton<IItemRepository, CsvItemRepository>();
+builder.Services.AddScoped<IMarketListingRepository, DbMarketListingRepository>();
+builder.Services.AddScoped<IMarketTradeHistoryRepository, DbMarketTradeHistoryRepository>();
+builder.Services.AddScoped<IItemDeletionLogRepository, DbItemDeletionLogRepository>();
 builder.Services.AddSingleton<IJobProfileRepository, CsvJobProfileRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
 builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
@@ -117,6 +122,7 @@ builder.Services.AddHostedService<QuestRunTimeoutBackgroundService>();
 builder.Services.AddScoped<TrainingBattleFactory>();
 builder.Services.AddScoped<TrainingOutcomeJudge>();
 builder.Services.AddScoped<TrainingExpCalculator>();
+builder.Services.AddScoped<TrainingWeaponMasteryPolicy>();
 builder.Services.AddScoped<EquipmentStatusResolver>();
 builder.Services.AddScoped<PlayerJobService>();
 builder.Services.AddScoped<ChatService>();
@@ -130,6 +136,7 @@ app.UseAuthorization();
 
 app.MapGet("/", () => Results.Ok(new { message = "Hello World!" }));
 app.MapPlayerEndpoints();
+app.MapItemEndpoints();
 app.MapQuestEndpoints();
 app.MapChatEndpoints();
 app.MapTrainingEndpoints();

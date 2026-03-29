@@ -194,8 +194,11 @@ public class QuestRoomServiceTests
         var equipment = new Equipment(
             new EquipmentId(1001),
             "旅立ちの剣",
+            "旅路の始まりを告げる剣。",
             EquipmentType.Weapon,
             10,
+            20,
+            5,
             new EquipmentStatusBonus(0, 0, 3, 0, 0, 0, 0),
             new HashSet<Job> { Job.Warrior });
         var playerEquipment = new PlayerEquipment(
@@ -259,6 +262,7 @@ public class QuestRoomServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(30, 10, 12, 8, 6, 3, 10),
             job: Job.Warrior,
             imagePath: "/images/player.png",
@@ -287,6 +291,7 @@ public class QuestRoomServiceTests
                     ],
                     new QuestFloorRewardRule(0, 0))
             ],
+            equipmentRewards: [],
             isActive);
     }
 

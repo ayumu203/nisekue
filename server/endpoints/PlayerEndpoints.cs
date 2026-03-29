@@ -92,6 +92,7 @@ internal static class PlayerEndpoints
             CreatePlayerRequest request,
             IPlayerRepository playerRepository,
             IPlayerEquipmentRepository playerEquipmentRepository,
+            IPlayerItemStackRepository playerItemStackRepository,
             IEquipmentRepository equipmentRepository,
             ChatService chatService,
             IJobProfileRepository jobProfileRepository) =>
@@ -114,6 +115,7 @@ internal static class PlayerEndpoints
                     exp: 0,
                     jobLevel: 1,
                     jobExp: 0,
+                    gold: 100,
                     status: new Status(maxHp: 24, maxMp: 8, strength: 7, defense: 5, intelligence: 5, luck: 3, speed: 4),
                     job: Job.Apprentice,
                     imagePath: PlayerImageCatalog.DefaultFileName,
@@ -121,6 +123,7 @@ internal static class PlayerEndpoints
                 await playerRepository.SaveAsync(player);
                 var equipments = await equipmentRepository.GetAllAsync();
                 await playerEquipmentRepository.SaveAsync(CreateStarterEquipments(player, equipments, DateTimeOffset.UtcNow));
+                await playerItemStackRepository.SaveAsync(CreateStarterItemStacks());
                 await chatService.EnsureRoomAsync(player.Id);
                 return Results.Ok(new
                 {
@@ -441,11 +444,14 @@ internal static class PlayerEndpoints
                     playerEquipmentId = playerEquipment.Id.Value,
                     equipmentId = equipment.Id.Value,
                     name = equipment.Name,
+                    flavorText = equipment.FlavorText,
                     equipmentType = equipment.Type.ToString(),
                     status = playerEquipment.Status.ToString(),
                     durability = playerEquipment.Durability,
                     maxDurability = equipment.MaxDurability,
                     mastery = playerEquipment.Mastery,
+                    masteryCap = equipment.MasteryCap,
+                    synthesisGoldCost = equipment.SynthesisGoldCost,
                     canEquipCurrentJob = equipment.CanEquip(player.Job),
                     bonusValues = new
                     {
@@ -479,6 +485,7 @@ internal static class PlayerEndpoints
             exp = player.Exp,
             jobLevel = player.JobLevel,
             jobExp = player.JobExp,
+            gold = player.Gold,
             status = new
             {
                 baseValues = new
@@ -521,6 +528,11 @@ internal static class PlayerEndpoints
         ];
     }
 
+    private static IReadOnlyList<PlayerItemStack> CreateStarterItemStacks()
+    {
+        return [];
+    }
+
     private static PlayerEquipment CreateStarterEquipment(
         Player player,
         IReadOnlyDictionary<EquipmentId, Equipment> equipmentById,
@@ -546,4 +558,5 @@ internal static class PlayerEndpoints
         playerEquipment.Equip(equipment, player.Job, now);
         return playerEquipment;
     }
+
 }

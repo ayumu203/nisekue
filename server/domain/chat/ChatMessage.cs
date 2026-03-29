@@ -2,9 +2,12 @@ using server.domain.player;
 
 namespace server.domain.chat;
 
-public class ChatMessage(PlayerId senderId, int chatId, ChatText body, DateTimeOffset createdAt)
+public class ChatMessage(ChatMessageSenderType senderType, PlayerId? senderId, int chatId, ChatText body, DateTimeOffset createdAt)
 {
-    public PlayerId SenderId { get; } = senderId;
+    public ChatMessageSenderType SenderType { get; } = senderType;
+    public PlayerId? SenderId { get; } = senderType == ChatMessageSenderType.Player
+        ? senderId ?? throw new ArgumentNullException(nameof(senderId))
+        : senderId;
     public int ChatId { get; } = ValidateChatId(chatId);
     public ChatText Body { get; } = body ?? throw new ArgumentNullException(nameof(body));
     public DateTimeOffset CreatedAt { get; } = createdAt;

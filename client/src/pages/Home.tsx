@@ -52,6 +52,14 @@ function MoveSettingIcon(props: SvgIconProps) {
   )
 }
 
+function ItemsIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M5 4h14a1 1 0 0 1 1 1v4H4V5a1 1 0 0 1 1-1m-1 7h7v9H5a1 1 0 0 1-1-1zm9 0h7v8a1 1 0 0 1-1 1h-6zm1-5h4v1h-4z" />
+    </SvgIcon>
+  )
+}
+
 function JobChangeIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
@@ -169,6 +177,15 @@ function Home() {
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
                 {locale.visitPlayers}
+              </Button>
+              <Button
+                component={Link}
+                to="/items"
+                variant="contained"
+                startIcon={<ItemsIcon />}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+              >
+                {locale.items}
               </Button>
               <Button
                 component={Link}

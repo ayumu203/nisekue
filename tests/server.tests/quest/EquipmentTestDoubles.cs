@@ -32,6 +32,21 @@ internal sealed class FakePlayerEquipmentRepository(params PlayerEquipment[] equ
 
         return Task.CompletedTask;
     }
+
+    public Task DeleteAsync(PlayerEquipmentId playerEquipmentId)
+    {
+        foreach (var group in equipmentsByPlayerId.ToArray())
+        {
+            var filtered = group.Value.Where(x => x.Id != playerEquipmentId).ToArray();
+            if (filtered.Length != group.Value.Count)
+            {
+                equipmentsByPlayerId[group.Key] = filtered;
+                break;
+            }
+        }
+
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeEquipmentRepository(params Equipment[] equipments) : IEquipmentRepository

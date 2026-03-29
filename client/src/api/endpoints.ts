@@ -39,6 +39,17 @@ import {
   questRunHubUpdatedEventSchema,
   questRunHubErrorEventSchema,
 } from '@/schema/quest'
+import {
+  getItemsResponseSchema,
+  useItemRequestSchema,
+  itemActionResponseSchema,
+  synthesizeEquipmentResponseSchema,
+  createMarketListingRequestSchema,
+  createMarketListingResponseSchema,
+  getMarketListingsResponseSchema,
+  purchaseMarketListingRequestSchema,
+  purchaseMarketListingResponseSchema,
+} from '@/schema/item'
 
 export type {
   GetPlayerResponse,
@@ -85,6 +96,21 @@ export type {
   QuestRunHubUpdatedEvent,
   QuestRunHubErrorEvent,
 } from '@/schema/quest'
+export type {
+  ItemEquipmentView,
+  ItemStackView,
+  InventoryItemView,
+  GetItemsResponse,
+  UseItemRequest,
+  ItemActionResponse,
+  SynthesizeEquipmentResponse,
+  CreateMarketListingRequest,
+  CreateMarketListingResponse,
+  MarketListingView,
+  GetMarketListingsResponse,
+  PurchaseMarketListingRequest,
+  PurchaseMarketListingResponse,
+} from '@/schema/item'
 
 export const endpoints = {
   player: {
@@ -253,6 +279,59 @@ export const endpoints = {
       errorEventSchema: questRunHubErrorEventSchema,
       subscribeMethod: 'SubscribeRun',
       unsubscribeMethod: 'UnsubscribeRun',
+    },
+  },
+  items: {
+    get: {
+      path: '/items',
+      method: 'GET',
+      responseSchema: getItemsResponseSchema,
+    },
+    use: {
+      path: (itemStackId: string) => `/items/${itemStackId}/use`,
+      method: 'POST',
+      requestSchema: useItemRequestSchema,
+      responseSchema: itemActionResponseSchema,
+    },
+    synthesize: {
+      path: (playerEquipmentId: string) => `/items/equipments/${playerEquipmentId}/synthesize`,
+      method: 'POST',
+      responseSchema: synthesizeEquipmentResponseSchema,
+    },
+    deleteEquipment: {
+      path: (playerEquipmentId: string) => `/items/equipments/${playerEquipmentId}`,
+      method: 'DELETE',
+      responseSchema: itemActionResponseSchema,
+    },
+    deleteStack: {
+      path: (itemStackId: string) => `/items/stacks/${itemStackId}`,
+      method: 'DELETE',
+      requestSchema: useItemRequestSchema,
+      responseSchema: itemActionResponseSchema,
+    },
+  },
+  market: {
+    createListing: {
+      path: '/market/listings',
+      method: 'POST',
+      requestSchema: createMarketListingRequestSchema,
+      responseSchema: createMarketListingResponseSchema,
+    },
+    getListings: {
+      path: '/market/listings',
+      method: 'GET',
+      responseSchema: getMarketListingsResponseSchema,
+    },
+    getMyListings: {
+      path: '/market/my-listings',
+      method: 'GET',
+      responseSchema: getMarketListingsResponseSchema,
+    },
+    purchase: {
+      path: (listingId: string) => `/market/listings/${listingId}/purchase`,
+      method: 'POST',
+      requestSchema: purchaseMarketListingRequestSchema,
+      responseSchema: purchaseMarketListingResponseSchema,
     },
   },
 } as const

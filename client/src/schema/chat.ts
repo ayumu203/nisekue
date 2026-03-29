@@ -3,7 +3,7 @@ import { playerIdSchema } from '@/schema/player'
 
 export const chatMessageSchema = z.object({
   chatId: z.number().int().min(1, 'chatIdは1以上である必要があります'),
-  senderId: playerIdSchema,
+  senderId: playerIdSchema.nullable(),
   senderName: z.string().trim().min(1, '投稿者名が不正です'),
   imagePath: z.string().min(1).nullable().optional(),
   text: z.string().trim().min(1, 'メッセージを入力してください').max(200, 'メッセージは200文字以内で入力してください'),

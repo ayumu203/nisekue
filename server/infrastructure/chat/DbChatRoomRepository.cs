@@ -59,8 +59,8 @@ namespace server.infrastructure.chat
                 foreach (var message in messagesToPersist)
                 {
                     await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
-                        INSERT INTO internal.chat_messages(owner_id, chat_id, sender_id, message)
-                        VALUES ({ownerId}, {message.ChatId}, {message.SenderId.Value}, {message.Body.Text})
+                        INSERT INTO internal.chat_messages(owner_id, chat_id, sender_type, sender_id, message)
+                        VALUES ({ownerId}, {message.ChatId}, {(int)message.SenderType}, {(message.SenderId == null ? (Guid?)null : message.SenderId.Value.Value)}, {message.Body.Text})
                         ON CONFLICT (owner_id, chat_id) DO NOTHING");
                 }
 
@@ -110,6 +110,6 @@ namespace server.infrastructure.chat
         }
 
         private static ChatMessage MapToDomain(ChatMessageEntity entity) =>
-            new(entity.SenderId, entity.ChatId, new ChatText(entity.Message), entity.CreatedAt);
+            new(entity.SenderType, entity.SenderId, entity.ChatId, new ChatText(entity.Message), entity.CreatedAt);
     }
 }

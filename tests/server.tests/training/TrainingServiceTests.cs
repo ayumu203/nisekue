@@ -27,6 +27,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 30, maxMp: 10, strength: 12, defense: 8, intelligence: 5, luck: 2, speed: 10),
             moveSet: CreateMoveSet(PhysicalAttackMoveId));
 
@@ -63,6 +64,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 50, maxMp: 0, strength: 30, defense: 5, intelligence: 0, luck: 0, speed: 10),
             moveSet: CreateMoveSet(PhysicalAttackMoveId));
 
@@ -94,6 +96,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 50, maxMp: 0, strength: 30, defense: 5, intelligence: 0, luck: 0, speed: 10),
             moveSet: CreateMoveSet(PhysicalAttackMoveId));
 
@@ -124,6 +127,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 10, maxMp: 0, strength: 25, defense: 0, intelligence: 0, luck: 0, speed: 1),
             moveSet: CreateMoveSet(PhysicalAttackMoveId));
 
@@ -155,6 +159,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 30, maxMp: 10, strength: 2, defense: 5, intelligence: 10, luck: 0, speed: 10),
             moveSet: CreateMoveSet(MagicAttackMoveId));
 
@@ -185,6 +190,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 20, maxMp: 0, strength: 7, defense: 5, intelligence: 0, luck: 0, speed: 10),
             job: Job.Apprentice,
             moveSet: CreateMoveSet(PhysicalAttackMoveId));
@@ -198,8 +204,11 @@ public class TrainingServiceTests
         var equipment = new Equipment(
             new EquipmentId(1001),
             "旅立ちの剣",
+            "旅路の始まりを告げる剣。",
             EquipmentType.Weapon,
             10,
+            20,
+            5,
             new EquipmentStatusBonus(0, 0, 3, 0, 0, 0, 0),
             new HashSet<Job> { Job.Apprentice });
         var playerEquipment = new PlayerEquipment(
@@ -240,6 +249,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 20, maxMp: 0, strength: 7, defense: 5, intelligence: 0, luck: 0, speed: 10),
             job: Job.Apprentice,
             moveSet: CreateMoveSet(PhysicalAttackMoveId));
@@ -253,8 +263,11 @@ public class TrainingServiceTests
         var equipment = new Equipment(
             new EquipmentId(1001),
             "旅立ちの剣",
+            "旅路の始まりを告げる剣。",
             EquipmentType.Weapon,
             10,
+            20,
+            5,
             new EquipmentStatusBonus(0, 0, 3, 0, 0, 0, 0),
             new HashSet<Job> { Job.Apprentice });
         var playerEquipment = new PlayerEquipment(
@@ -293,6 +306,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 20, maxMp: 0, strength: 7, defense: 5, intelligence: 0, luck: 0, speed: 10),
             job: Job.Apprentice,
             moveSet: CreateMoveSet(PhysicalAttackMoveId));
@@ -306,8 +320,11 @@ public class TrainingServiceTests
         var equipment = new Equipment(
             new EquipmentId(1001),
             "旅立ちの剣",
+            "旅路の始まりを告げる剣。",
             EquipmentType.Weapon,
             10,
+            20,
+            5,
             new EquipmentStatusBonus(0, 0, 3, 0, 0, 0, 0),
             new HashSet<Job> { Job.Apprentice });
         var playerEquipment = new PlayerEquipment(
@@ -336,6 +353,174 @@ public class TrainingServiceTests
     }
 
     [Fact]
+    public async Task ExecuteTraining_WhenEquippedWeaponLevelGapIsWithinThreshold_IncreasesWeaponMastery()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var player = new Player(
+            playerId,
+            name: "Tester",
+            level: 10,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            gold: 100,
+            status: new Status(maxHp: 20, maxMp: 0, strength: 12, defense: 5, intelligence: 0, luck: 0, speed: 10),
+            job: Job.Apprentice,
+            moveSet: CreateMoveSet(PhysicalAttackMoveId));
+
+        var enemy = new TrainingEnemy(
+            new TrainingEnemyId(1),
+            name: "Enemy",
+            imagePath: "/image/training/01_heishi.png",
+            level: 17,
+            status: new Status(maxHp: 10, maxMp: 0, strength: 1, defense: 0, intelligence: 0, luck: 0, speed: 1));
+        var equipment = new Equipment(
+            new EquipmentId(1001),
+            "旅立ちの剣",
+            "旅路の始まりを告げる剣。",
+            EquipmentType.Weapon,
+            10,
+            20,
+            5,
+            new EquipmentStatusBonus(0, 0, 3, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice });
+        var playerEquipment = new PlayerEquipment(
+            PlayerEquipmentId.New(),
+            playerId,
+            equipment.Id,
+            EquipmentType.Weapon,
+            EquipmentStatus.Equipped,
+            durability: 10,
+            mastery: 0,
+            acquiredAt: DateTimeOffset.UtcNow,
+            updatedAt: DateTimeOffset.UtcNow);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
+
+        var service = CreateService(
+            new FakePlayerRepository(player),
+            new FakeTrainingEnemyRepository(enemy),
+            playerEquipmentRepository,
+            new FakeEquipmentRepository(equipment));
+
+        var result = await service.ExecuteTraining(playerId, enemy.Id, [PhysicalAttackMoveId, PhysicalAttackMoveId, PhysicalAttackMoveId]);
+
+        result.WeaponMasteryDelta.Should().Be(1);
+        playerEquipmentRepository.StoredEquipments[0].Mastery.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ExecuteTraining_WhenEquippedWeaponLevelGapExceedsThreshold_DoesNotIncreaseWeaponMastery()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var player = new Player(
+            playerId,
+            name: "Tester",
+            level: 10,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            gold: 100,
+            status: new Status(maxHp: 20, maxMp: 0, strength: 12, defense: 5, intelligence: 0, luck: 0, speed: 10),
+            job: Job.Apprentice,
+            moveSet: CreateMoveSet(PhysicalAttackMoveId));
+
+        var enemy = new TrainingEnemy(
+            new TrainingEnemyId(1),
+            name: "Enemy",
+            imagePath: "/image/training/01_heishi.png",
+            level: 18,
+            status: new Status(maxHp: 10, maxMp: 0, strength: 1, defense: 0, intelligence: 0, luck: 0, speed: 1));
+        var equipment = new Equipment(
+            new EquipmentId(1001),
+            "旅立ちの剣",
+            "旅路の始まりを告げる剣。",
+            EquipmentType.Weapon,
+            10,
+            20,
+            5,
+            new EquipmentStatusBonus(0, 0, 3, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice });
+        var playerEquipment = new PlayerEquipment(
+            PlayerEquipmentId.New(),
+            playerId,
+            equipment.Id,
+            EquipmentType.Weapon,
+            EquipmentStatus.Equipped,
+            durability: 10,
+            mastery: 0,
+            acquiredAt: DateTimeOffset.UtcNow,
+            updatedAt: DateTimeOffset.UtcNow);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
+
+        var service = CreateService(
+            new FakePlayerRepository(player),
+            new FakeTrainingEnemyRepository(enemy),
+            playerEquipmentRepository,
+            new FakeEquipmentRepository(equipment));
+
+        var result = await service.ExecuteTraining(playerId, enemy.Id, [PhysicalAttackMoveId, PhysicalAttackMoveId, PhysicalAttackMoveId]);
+
+        result.WeaponMasteryDelta.Should().Be(0);
+        playerEquipmentRepository.StoredEquipments[0].Mastery.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ExecuteTraining_WhenEquippedWeaponAlreadyAtMasteryCap_DoesNotIncreaseWeaponMastery()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var player = new Player(
+            playerId,
+            name: "Tester",
+            level: 10,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            gold: 100,
+            status: new Status(maxHp: 20, maxMp: 0, strength: 12, defense: 5, intelligence: 0, luck: 0, speed: 10),
+            job: Job.Apprentice,
+            moveSet: CreateMoveSet(PhysicalAttackMoveId));
+
+        var enemy = new TrainingEnemy(
+            new TrainingEnemyId(1),
+            name: "Enemy",
+            imagePath: "/image/training/01_heishi.png",
+            level: 10,
+            status: new Status(maxHp: 10, maxMp: 0, strength: 1, defense: 0, intelligence: 0, luck: 0, speed: 1));
+        var equipment = new Equipment(
+            new EquipmentId(1001),
+            "旅立ちの剣",
+            "旅路の始まりを告げる剣。",
+            EquipmentType.Weapon,
+            10,
+            5,
+            5,
+            new EquipmentStatusBonus(0, 0, 3, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice });
+        var playerEquipment = new PlayerEquipment(
+            PlayerEquipmentId.New(),
+            playerId,
+            equipment.Id,
+            EquipmentType.Weapon,
+            EquipmentStatus.Equipped,
+            durability: 10,
+            mastery: 5,
+            acquiredAt: DateTimeOffset.UtcNow,
+            updatedAt: DateTimeOffset.UtcNow);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
+
+        var service = CreateService(
+            new FakePlayerRepository(player),
+            new FakeTrainingEnemyRepository(enemy),
+            playerEquipmentRepository,
+            new FakeEquipmentRepository(equipment));
+
+        var result = await service.ExecuteTraining(playerId, enemy.Id, [PhysicalAttackMoveId, PhysicalAttackMoveId, PhysicalAttackMoveId]);
+
+        result.WeaponMasteryDelta.Should().Be(0);
+        playerEquipmentRepository.StoredEquipments[0].Mastery.Should().Be(5);
+    }
+
+    [Fact]
     public async Task ExecuteTraining_WhenBothSurviveAfterThreeTurns_ReturnsDraw()
     {
         var playerId = new PlayerId(Guid.NewGuid());
@@ -346,6 +531,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 30, maxMp: 0, strength: 8, defense: 8, intelligence: 0, luck: 0, speed: 10),
             moveSet: CreateMoveSet(PhysicalAttackMoveId));
 
@@ -378,6 +564,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 30, maxMp: 5, strength: 2, defense: 5, intelligence: 10, luck: 0, speed: 10),
             moveSet: CreateMoveSet(MagicAttackMoveId, HighCostAttackMoveId));
 
@@ -410,6 +597,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 30, maxMp: 0, strength: 10, defense: 8, intelligence: 2, luck: 0, speed: 10));
 
         var enemy = new TrainingEnemy(
@@ -440,6 +628,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 30, maxMp: 0, strength: 10, defense: 5, intelligence: 8, luck: 0, speed: 5));
 
         var enemy = new TrainingEnemy(
@@ -469,6 +658,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 30, maxMp: 0, strength: 5, defense: 2, intelligence: 3, luck: 0, speed: 3));
 
         var enemy = new TrainingEnemy(
@@ -498,6 +688,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 40, maxMp: 20, strength: 4, defense: 6, intelligence: 10, luck: 0, speed: 6));
 
         var enemy = new TrainingEnemy(
@@ -527,6 +718,7 @@ public class TrainingServiceTests
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
+            gold: 100,
             status: new Status(maxHp: 30, maxMp: 0, strength: 10, defense: 10, intelligence: 10, luck: 0, speed: 10));
 
         var enemy = new TrainingEnemy(
@@ -568,6 +760,7 @@ public class TrainingServiceTests
             new TrainingBattleFactory(),
             new TrainingOutcomeJudge(),
             new TrainingExpCalculator(),
+            new TrainingWeaponMasteryPolicy(),
             new EquipmentStatusResolver());
     }
 
@@ -624,6 +817,21 @@ public class TrainingServiceTests
             foreach (var group in playerEquipments.GroupBy(x => x.PlayerId))
             {
                 equipmentsByPlayerId[group.Key] = group.ToList();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(PlayerEquipmentId playerEquipmentId)
+        {
+            foreach (var group in equipmentsByPlayerId.ToArray())
+            {
+                var filtered = group.Value.Where(x => x.Id != playerEquipmentId).ToList();
+                if (filtered.Count != group.Value.Count)
+                {
+                    equipmentsByPlayerId[group.Key] = filtered;
+                    break;
+                }
             }
 
             return Task.CompletedTask;

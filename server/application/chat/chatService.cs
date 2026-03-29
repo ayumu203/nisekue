@@ -17,6 +17,7 @@ public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerReposito
         // 投稿者のIDを取得
         var senderIds = room.Messages
             .Select(x => x.SenderId)
+            .OfType<PlayerId>()
             .Distinct()
             .ToArray();
 
@@ -31,12 +32,13 @@ public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerReposito
             .OrderBy(x => x.ChatId)
             .Select(x =>
             {
-                var senderProfile = senderProfileMap.TryGetValue(x.SenderId, out var profile)
+                var senderProfile = x.SenderId is not null && senderProfileMap.TryGetValue(x.SenderId.Value, out var profile)
                     ? profile
-                    : ("Unknown", null);
+                    : ("System", null);
 
                 return new ChatMessageView(
                     ChatId: x.ChatId,
+                    SenderType: x.SenderType.ToString(),
                     SenderId: x.SenderId,
                     SenderName: senderProfile.Name,
                     ImagePath: senderProfile.ImagePath,
@@ -64,5 +66,12 @@ public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerReposito
         await chatRoomRepository.SaveAsync(room);
 
         return await GetRoomAsync(ownerId);
+    }
+
+    public async Task PostSystemMessageAsync(PlayerId ownerId, string text)
+    {
+        var room = await chatRoomRepository.GetChatRoomAsync(ownerId);
+        room.PostSystemMessage(text);
+        await chatRoomRepository.SaveAsync(room);
     }
 }

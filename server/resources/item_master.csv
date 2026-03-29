@@ -1,0 +1,5 @@
+item_id,name,flavor_text,effect_type,max_stack,change_job_to,required_level,bonus_max_hp,bonus_max_mp,bonus_strength,bonus_defense,bonus_intelligence,bonus_luck,bonus_speed,required_master_jobs
+3001,体力の実,食べると体力の基礎値が少し伸びる,StatBoost,99,,1,3,0,0,0,0,0,0,
+3002,戦士の証,戦士への道を開く転職用の証,ChangeJob,99,Warrior,1,0,0,0,0,0,0,0,
+3003,大きな体力の実,食べると体力の基礎値が大きく伸びる,StatBoost,99,,1,8,0,0,0,0,0,0,
+3004,魔道士の証,魔道士への道を開く転職用の証,ChangeJob,99,Mage,1,0,0,0,0,0,0,0,

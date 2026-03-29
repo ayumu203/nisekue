@@ -44,9 +44,13 @@ namespace server.infrastructure.migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("message");
 
-                    b.Property<Guid>("SenderId")
+                    b.Property<Guid?>("SenderId")
                         .HasColumnType("uuid")
                         .HasColumnName("sender_id");
+
+                    b.Property<int>("SenderType")
+                        .HasColumnType("integer")
+                        .HasColumnName("sender_type");
 
                     b.HasKey("OwnerId", "ChatId");
 
@@ -68,6 +72,148 @@ namespace server.infrastructure.migrations
                     b.ToTable("chat_rooms", "internal");
                 });
 
+            modelBuilder.Entity("server.infrastructure.player.ItemDeletionLogEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("ItemIdentifier")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("item_id");
+
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_id");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("reason");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeletedAt");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("item_delete_logs", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.player.MarketListingEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("FlavorText")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("flavor_text");
+
+                    b.Property<int?>("ItemId")
+                        .HasColumnType("integer")
+                        .HasColumnName("item_id");
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("item_name");
+
+                    b.Property<DateTimeOffset>("ListedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("listed_at");
+
+                    b.Property<Guid?>("PlayerEquipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_equipment_id");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<int>("RemainingQuantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("remaining_quantity");
+
+                    b.Property<Guid>("SellerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("seller_id");
+
+                    b.Property<int>("UnitPrice")
+                        .HasColumnType("integer")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("SellerId");
+
+                    b.ToTable("market_listings", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.player.MarketTradeHistoryEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BuyerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("buyer_id");
+
+                    b.Property<string>("ItemIdentifier")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("item_id");
+
+                    b.Property<DateTimeOffset>("PurchasedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("purchased_at");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<Guid>("SellerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("seller_id");
+
+                    b.Property<int>("UnitPrice")
+                        .HasColumnType("integer")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BuyerId");
+
+                    b.HasIndex("SellerId");
+
+                    b.ToTable("market_trade_histories", "internal");
+                });
+
             modelBuilder.Entity("server.infrastructure.player.PlayerEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -82,6 +228,12 @@ namespace server.infrastructure.migrations
                     b.Property<int>("Exp")
                         .HasColumnType("integer")
                         .HasColumnName("exp");
+
+                    b.Property<int>("Gold")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(100)
+                        .HasColumnName("gold");
 
                     b.Property<string>("ImagePath")
                         .HasMaxLength(255)
@@ -201,6 +353,37 @@ namespace server.infrastructure.migrations
                     b.HasIndex("PlayerId");
 
                     b.ToTable("player_equipments", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.player.PlayerItemStackEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("integer")
+                        .HasColumnName("item_id");
+
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_id");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId", "ItemId")
+                        .IsUnique();
+
+                    b.ToTable("player_item_stacks", "internal");
                 });
 
             modelBuilder.Entity("server.infrastructure.player.PlayerMasterJobEntity", b =>
@@ -427,9 +610,18 @@ namespace server.infrastructure.migrations
                         .HasColumnType("uuid")
                         .HasColumnName("run_id");
 
+                    b.Property<int?>("EquipmentRewardId")
+                        .HasColumnType("integer")
+                        .HasColumnName("equipment_reward_id");
+
                     b.Property<int>("Exp")
                         .HasColumnType("integer")
                         .HasColumnName("exp");
+
+                    b.Property<string>("SkippedRewardPlayerIdsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("skipped_reward_player_ids_json");
 
                     b.HasKey("RunId");
 
@@ -737,6 +929,15 @@ namespace server.infrastructure.migrations
                 });
 
             modelBuilder.Entity("server.infrastructure.player.PlayerEquipmentEntity", b =>
+                {
+                    b.HasOne("server.infrastructure.player.PlayerEntity", null)
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("server.infrastructure.player.PlayerItemStackEntity", b =>
                 {
                     b.HasOne("server.infrastructure.player.PlayerEntity", null)
                         .WithMany()

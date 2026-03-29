@@ -49,7 +49,7 @@ public class CsvEquipmentRepository : IEquipmentRepository
             }
 
             var columns = line.Split(',', StringSplitOptions.TrimEntries);
-            if (columns.Length != 12)
+            if (columns.Length != 15)
             {
                 throw new InvalidOperationException($"equipment_master.csv の形式が不正です。行: {i + 1}");
             }
@@ -63,17 +63,20 @@ public class CsvEquipmentRepository : IEquipmentRepository
             map[equipmentId] = new Equipment(
                 equipmentId,
                 columns[1],
-                ParseEnum<EquipmentType>(columns[2], "equipment_type", i + 1),
-                ParseInt(columns[3], "max_durability", i + 1),
+                columns[2],
+                ParseEnum<EquipmentType>(columns[3], "equipment_type", i + 1),
+                ParseInt(columns[4], "max_durability", i + 1),
+                ParseInt(columns[5], "mastery_cap", i + 1),
+                ParseInt(columns[6], "synthesis_gold_cost", i + 1),
                 new EquipmentStatusBonus(
-                    ParseInt(columns[4], "bonus_max_hp", i + 1),
-                    ParseInt(columns[5], "bonus_max_mp", i + 1),
-                    ParseInt(columns[6], "bonus_strength", i + 1),
-                    ParseInt(columns[7], "bonus_defense", i + 1),
-                    ParseInt(columns[8], "bonus_intelligence", i + 1),
-                    ParseInt(columns[9], "bonus_luck", i + 1),
-                    ParseInt(columns[10], "bonus_speed", i + 1)),
-                ParseJobs(columns[11], i + 1));
+                    ParseInt(columns[7], "bonus_max_hp", i + 1),
+                    ParseInt(columns[8], "bonus_max_mp", i + 1),
+                    ParseInt(columns[9], "bonus_strength", i + 1),
+                    ParseInt(columns[10], "bonus_defense", i + 1),
+                    ParseInt(columns[11], "bonus_intelligence", i + 1),
+                    ParseInt(columns[12], "bonus_luck", i + 1),
+                    ParseInt(columns[13], "bonus_speed", i + 1)),
+                ParseJobs(columns[14], i + 1));
         }
 
         return map;

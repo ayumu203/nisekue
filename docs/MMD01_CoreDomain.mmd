@@ -14,6 +14,7 @@ classDiagram
             +int Exp
             +int JobLevel
             +int JobExp
+            +int Gold
             +Status Status
             +MoveSet MoveSet
             +UpdateName(name: string) void
@@ -25,6 +26,8 @@ classDiagram
             -ValidateName(name: string) string
             -ValidateImagePath(imagePath: string?) string?
             +GainExp(exp: int) void
+            +GainGold(gold: int) void
+            +SpendGold(gold: int) void
             +LevelUp(jobProfile: JobProfile, learningRule: JobMoveLearningRule) LevelUpResult
             -CanChangeJob(nextProfile: JobProfile) bool
             -MarkCurrentJobAsMastered(jobProfile: JobProfile) bool
@@ -74,8 +77,11 @@ classDiagram
             <<Aggregate Root>>
             +EquipmentId Id
             +string Name
+            +string FlavorText
             +EquipmentType Type
             +int MaxDurability
+            +int MasteryCap
+            +int SynthesisGoldCost
             +EquipmentStatusBonus BonusValues
             +IReadOnlySet~Job~ EquippableJobs
             +bool CanEquip(job: Job) bool
@@ -95,6 +101,95 @@ classDiagram
             +Unequip(now: DateTimeOffset) void
             +ConsumeDurability(value: int, now: DateTimeOffset) void
             +IncreaseMastery(value: int, now: DateTimeOffset) void
+            +CanSynthesizeTarget(equipment: Equipment) bool
+        }
+
+        class ItemId {
+            <<Value Object>>
+            +int Id
+        }
+
+        class Item {
+            <<Aggregate Root>>
+            +ItemId Id
+            +string Name
+            +string FlavorText
+            +int MaxStack
+            +StatusBonus? StatusBonus
+            +Job? ChangeJobTo
+            +int? RequiredLevel
+            +IReadOnlyList~Job~ RequiredMasterJobs
+        }
+
+        class PlayerItemStackId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class PlayerItemStack {
+            <<Entity>>
+            +PlayerItemStackId Id
+            +PlayerId PlayerId
+            +ItemId ItemId
+            +int Quantity
+            +AddQuantity(value: int) void
+            +ConsumeQuantity(value: int) void
+            +CanStack(item: Item) bool
+        }
+
+        class StatusBonus {
+            <<Value Object>>
+            +int MaxHp
+            +int MaxMp
+            +int Strength
+            +int Defense
+            +int Intelligence
+            +int Luck
+            +int Speed
+        }
+
+        class MarketListingId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class MarketListing {
+            <<Aggregate Root>>
+            +MarketListingId Id
+            +PlayerId SellerId
+            +PlayerEquipmentId? PlayerEquipmentId
+            +ItemId? ItemId
+            +string ItemName
+            +string FlavorText
+            +int Quantity
+            +int RemainingQuantity
+            +int UnitPrice
+            +DateTimeOffset ListedAt
+            +DateTimeOffset ExpiresAt
+            +bool IsExpired(now: DateTimeOffset) bool
+            +Purchase(quantity: int, now: DateTimeOffset) void
+            +Expire(now: DateTimeOffset) void
+        }
+
+        class MarketTradeHistory {
+            <<Entity>>
+            +Guid Id
+            +PlayerId SellerId
+            +PlayerId BuyerId
+            +string ItemIdentifier
+            +int Quantity
+            +int UnitPrice
+            +DateTimeOffset PurchasedAt
+        }
+
+        class ItemDeletionLog {
+            <<Entity>>
+            +Guid Id
+            +PlayerId PlayerId
+            +string ItemIdentifier
+            +int Quantity
+            +string Reason
+            +DateTimeOffset DeletedAt
         }
 
         class EquipmentStatusResolver {
@@ -173,6 +268,32 @@ classDiagram
             +Task SaveAsync(playerEquipments: IReadOnlyList~PlayerEquipment~)
         }
 
+        class IItemRepository {
+            +Task~Item?~ GetAsync(id: ItemId)
+            +Task~IReadOnlyList~Item~~ GetAllAsync()
+        }
+
+        class IPlayerItemStackRepository {
+            +Task~IReadOnlyList~PlayerItemStack~~ GetByPlayerAsync(playerId: PlayerId)
+            +Task SaveAsync(playerItemStacks: IReadOnlyList~PlayerItemStack~)
+        }
+
+        class IMarketListingRepository {
+            +Task~MarketListing?~ GetAsync(id: MarketListingId)
+            +Task~IReadOnlyList~MarketListing~~ GetActiveAsync()
+            +Task~IReadOnlyList~MarketListing~~ GetBySellerAsync(playerId: PlayerId)
+            +Task SaveAsync(listing: MarketListing)
+            +Task DeleteAsync(id: MarketListingId)
+        }
+
+        class IMarketTradeHistoryRepository {
+            +Task AddAsync(history: MarketTradeHistory)
+        }
+
+        class IItemDeletionLogRepository {
+            +Task AddAsync(log: ItemDeletionLog)
+        }
+
         class IJobProfileRepository {
             +JobProfile GetByJob(job: Job)
             +IReadOnlyList~JobProfile~ GetAll()
@@ -188,6 +309,13 @@ classDiagram
     Equipment *-- EquipmentId : has
     Equipment ..> EquipmentType : has
     Equipment *-- EquipmentStatusBonus : has
+    PlayerItemStack *-- PlayerItemStackId : has
+    PlayerItemStack ..> Item : refers
+    Item *-- ItemId : has
+    Item *-- StatusBonus : has
+    MarketListing *-- MarketListingId : has
+    MarketListing ..> PlayerEquipmentId : may sell
+    MarketListing ..> ItemId : may sell
     Player ..> JobMoveLearningRule : uses
     Player ..> LevelUpResult : returns
     EquipmentStatusResolver ..> Equipment : uses
@@ -196,3 +324,8 @@ classDiagram
     IPlayerRepository ..> Player : stores/loads
     IEquipmentRepository ..> Equipment : stores/loads
     IPlayerEquipmentRepository ..> PlayerEquipment : stores/loads
+    IItemRepository ..> Item : stores/loads
+    IPlayerItemStackRepository ..> PlayerItemStack : stores/loads
+    IMarketListingRepository ..> MarketListing : stores/loads
+    IMarketTradeHistoryRepository ..> MarketTradeHistory : stores
+    IItemDeletionLogRepository ..> ItemDeletionLog : stores

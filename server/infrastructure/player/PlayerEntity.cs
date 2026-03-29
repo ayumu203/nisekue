@@ -12,6 +12,7 @@ public class PlayerEntity
     public int Exp { get; set; }
     public int JobLevel { get; set; }
     public int JobExp { get; set; }
+    public int Gold { get; set; }
     public int MaxHp { get; set; }
     public int MaxMp { get; set; }
     public int Strength { get; set; }

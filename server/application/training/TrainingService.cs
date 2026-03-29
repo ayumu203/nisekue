@@ -21,6 +21,7 @@ public class TrainingService(
     TrainingBattleFactory trainingBattleFactory,
     TrainingOutcomeJudge trainingOutcomeJudge,
     TrainingExpCalculator trainingExpCalculator,
+    TrainingWeaponMasteryPolicy trainingWeaponMasteryPolicy,
     EquipmentStatusResolver equipmentStatusResolver)
 {
     public async Task<TrainingEnemyView[]> GetTrainingEnemies(PlayerId playerId)
@@ -79,6 +80,7 @@ public class TrainingService(
 
         var exp = trainingExpCalculator.Calculate(player, enemy, metrics, summary.Outcome);
         var levelUpResult = ApplyExp(player, exp);
+        var weaponMasteryDelta = ApplyWeaponMastery(player, enemy, playerEquipments, equipments, nowUtc);
 
         ConsumeEquippedDurability(playerEquipments, nowUtc);
         await playerRepository.SaveAsync(player);
@@ -94,6 +96,7 @@ public class TrainingService(
             Exp: exp,
             IsPlayerLevelUp: levelUpResult.HasPlayerLeveledUp,
             IsJobLevelUp: levelUpResult.HasJobLeveledUp,
+            WeaponMasteryDelta: weaponMasteryDelta,
             NewlyLearnedMoves: await playerJobService.BuildLearnedMoveViewsAsync(levelUpResult.NewlyLearnedMoveIds));
     }
 
@@ -264,5 +267,34 @@ public class TrainingService(
         {
             equipment.ConsumeDurability(1, now);
         }
+    }
+
+    private int ApplyWeaponMastery(
+        Player player,
+        TrainingEnemy enemy,
+        IReadOnlyList<PlayerEquipment> playerEquipments,
+        IReadOnlyList<Equipment> equipments,
+        DateTimeOffset now)
+    {
+        var weapon = playerEquipments.FirstOrDefault(x => x.Status == EquipmentStatus.Equipped && x.Type == EquipmentType.Weapon);
+        if (weapon is null || weapon.IsBroken)
+        {
+            return 0;
+        }
+
+        if (!trainingWeaponMasteryPolicy.ShouldIncrease(player.Level, enemy.Level))
+        {
+            return 0;
+        }
+
+        var equipment = equipments.FirstOrDefault(x => x.Id == weapon.EquipmentId);
+        if (equipment is null)
+        {
+            return 0;
+        }
+
+        var before = weapon.Mastery;
+        weapon.IncreaseMastery(1, equipment.MasteryCap, now);
+        return weapon.Mastery - before;
     }
 }
