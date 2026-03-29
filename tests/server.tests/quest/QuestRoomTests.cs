@@ -80,6 +80,54 @@ public class QuestRoomTests
     }
 
     [Fact]
+    public void AddPlayer_WhenBelowMinRequiredLevel_ThrowsInvalidOperationException()
+    {
+        var ownerId = new PlayerId(Guid.NewGuid());
+        var room = new QuestRoom(
+            QuestRoomId.New(),
+            ownerId,
+            new QuestStageId(1),
+            QuestRoomMode.Multi,
+            joinPolicy: new QuestRoomJoinPolicy(minRequiredLevel: 10));
+
+        var act = () => room.AddPlayer(new PlayerId(Guid.NewGuid()), "Guest", level: 9);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("参加可能レベルを満たしていないため、このルームには参加できません。");
+    }
+
+    [Fact]
+    public void AddPlayer_WhenAllowedPlayerRestrictionDoesNotIncludePlayer_ThrowsInvalidOperationException()
+    {
+        var ownerId = new PlayerId(Guid.NewGuid());
+        var allowedPlayerId = new PlayerId(Guid.NewGuid());
+        var room = new QuestRoom(
+            QuestRoomId.New(),
+            ownerId,
+            new QuestStageId(1),
+            QuestRoomMode.Multi,
+            joinPolicy: new QuestRoomJoinPolicy(allowedPlayerIds: [allowedPlayerId]));
+
+        var act = () => room.AddPlayer(new PlayerId(Guid.NewGuid()), "Guest", level: 10);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("このルームへの参加対象プレイヤーに含まれていません。");
+    }
+
+    [Fact]
+    public void UpdateJoinPolicy_WhenRecruiting_UpdatesRestrictions()
+    {
+        var ownerId = new PlayerId(Guid.NewGuid());
+        var allowedPlayerId = new PlayerId(Guid.NewGuid());
+        var room = CreateRoom(ownerId, QuestRoomMode.Multi);
+
+        room.UpdateJoinPolicy(12, [allowedPlayerId]);
+
+        room.JoinPolicy.MinRequiredLevel.Should().Be(12);
+        room.JoinPolicy.AllowedPlayerIds.Should().ContainSingle().Which.Should().Be(allowedPlayerId);
+    }
+
+    [Fact]
     public void CancelForOwnerRoomReplacement_WhenRecruiting_ClosesRoomAsCancelled()
     {
         var ownerId = new PlayerId(Guid.NewGuid());

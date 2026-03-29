@@ -33,6 +33,7 @@ import {
 import {
   getQuestStagesResponseSchema,
   createQuestRoomRequestSchema,
+  updateQuestRoomRestrictionsRequestSchema,
   questRoomDetailResponseSchema,
   listQuestRoomsRequestSchema,
   listQuestRoomsResponseSchema,
@@ -101,6 +102,7 @@ export type {
 export type {
   GetQuestStagesResponse,
   CreateQuestRoomRequest,
+  UpdateQuestRoomRestrictionsRequest,
   QuestRoomDetailResponse,
   ListQuestRoomsRequest,
   QuestRoomSummaryResponse,
@@ -263,6 +265,12 @@ export const endpoints = {
       path: (roomId: string) => `/quest/rooms/${roomId}/positions`,
       method: 'PUT',
       requestSchema: updateQuestRoomPositionRequestSchema,
+      responseSchema: questRoomDetailResponseSchema,
+    },
+    updateRoomRestrictions: {
+      path: (roomId: string) => `/quest/rooms/${roomId}/restrictions`,
+      method: 'PUT',
+      requestSchema: updateQuestRoomRestrictionsRequestSchema,
       responseSchema: questRoomDetailResponseSchema,
     },
     startRoom: {

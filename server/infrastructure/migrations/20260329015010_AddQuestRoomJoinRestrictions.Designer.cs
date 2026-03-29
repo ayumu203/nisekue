@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using server.infrastructure;
@@ -11,9 +12,11 @@ using server.infrastructure;
 namespace server.infrastructure.migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260329015010_AddQuestRoomJoinRestrictions")]
+    partial class AddQuestRoomJoinRestrictions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -70,82 +73,6 @@ namespace server.infrastructure.migrations
                     b.HasKey("OwnerId");
 
                     b.ToTable("chat_rooms", "internal");
-                });
-
-            modelBuilder.Entity("server.infrastructure.chat.ThreadEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("AuthorPlayerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("author_player_id");
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("body");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTimeOffset?>("LastRepliedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_replied_at");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("title");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuthorPlayerId");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.ToTable("threads", "internal");
-                });
-
-            modelBuilder.Entity("server.infrastructure.chat.ThreadReplyEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("AuthorPlayerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("author_player_id");
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)")
-                        .HasColumnName("body");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("ThreadId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("thread_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuthorPlayerId");
-
-                    b.HasIndex("ThreadId");
-
-                    b.ToTable("thread_replies", "internal");
                 });
 
             modelBuilder.Entity("server.infrastructure.player.ItemDeletionLogEntity", b =>
@@ -1027,30 +954,6 @@ namespace server.infrastructure.migrations
                     b.HasKey("RunId", "TurnNo", "ParticipantId");
 
                     b.ToTable("quest_turn_commands", "internal");
-                });
-
-            modelBuilder.Entity("server.infrastructure.chat.ThreadEntity", b =>
-                {
-                    b.HasOne("server.infrastructure.player.PlayerEntity", null)
-                        .WithMany()
-                        .HasForeignKey("AuthorPlayerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("server.infrastructure.chat.ThreadReplyEntity", b =>
-                {
-                    b.HasOne("server.infrastructure.player.PlayerEntity", null)
-                        .WithMany()
-                        .HasForeignKey("AuthorPlayerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("server.infrastructure.chat.ThreadEntity", null)
-                        .WithMany()
-                        .HasForeignKey("ThreadId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("server.infrastructure.player.PlayerEquipmentEntity", b =>

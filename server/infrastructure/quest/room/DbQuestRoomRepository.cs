@@ -89,6 +89,15 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
         var participantsByRoomId = participantEntities
             .GroupBy(x => x.RoomId)
             .ToDictionary(x => x.Key, x => x.Select(MapParticipant).ToArray());
+        var allowedPlayerEntities = await dbContext.QuestRoomAllowedPlayers
+            .AsNoTracking()
+            .Where(x => roomIds.Contains(x.RoomId))
+            .ToListAsync();
+        var allowedPlayerIdsByRoomId = allowedPlayerEntities
+            .GroupBy(x => x.RoomId)
+            .ToDictionary(
+                x => x.Key,
+                x => (IReadOnlyList<PlayerId>)x.Select(item => new PlayerId(item.PlayerId)).ToArray());
 
         return roomEntities
             .Select(roomEntity =>
@@ -105,6 +114,9 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
                     (QuestRoomMode)roomEntity.Mode,
                     formation,
                     participants,
+                    new QuestRoomJoinPolicy(
+                        roomEntity.MinRequiredLevel,
+                        allowedPlayerIdsByRoomId.GetValueOrDefault(roomEntity.Id) ?? []),
                     (QuestRoomStatus)roomEntity.Status,
                     roomEntity.Version,
                     roomEntity.CloseReason is null ? null : (QuestRoomCloseReason)roomEntity.CloseReason.Value,
@@ -131,6 +143,7 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
                     StageId = room.StageId.Value,
                     Mode = (int)room.Mode,
                     Status = (int)room.Status,
+                    MinRequiredLevel = room.JoinPolicy.MinRequiredLevel,
                     Version = 1,
                     CloseReason = room.CloseReason is null ? null : (int)room.CloseReason.Value,
                     CreatedAt = room.CreatedAt,
@@ -144,9 +157,38 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
                 existing.StageId = room.StageId.Value;
                 existing.Mode = (int)room.Mode;
                 existing.Status = (int)room.Status;
+                existing.MinRequiredLevel = room.JoinPolicy.MinRequiredLevel;
                 existing.Version = room.Version + 1;
                 existing.CloseReason = room.CloseReason is null ? null : (int)room.CloseReason.Value;
                 existing.ClosedAt = room.ClosedAt;
+            }
+
+            var allowedPlayers = await dbContext.QuestRoomAllowedPlayers
+                .Where(x => x.RoomId == room.Id.Value)
+                .ToListAsync();
+            var existingAllowedPlayerIds = allowedPlayers.Select(x => x.PlayerId).ToHashSet();
+            var nextAllowedPlayerIds = room.JoinPolicy.AllowedPlayerIds.Select(x => x.Value).ToHashSet();
+
+            var allowedPlayersToRemove = allowedPlayers
+                .Where(x => !nextAllowedPlayerIds.Contains(x.PlayerId))
+                .ToArray();
+            if (allowedPlayersToRemove.Length > 0)
+            {
+                dbContext.QuestRoomAllowedPlayers.RemoveRange(allowedPlayersToRemove);
+            }
+
+            var allowedPlayersToAdd = room.JoinPolicy.AllowedPlayerIds
+                .Where(x => !existingAllowedPlayerIds.Contains(x.Value))
+                .Select(x => new QuestRoomAllowedPlayerEntity
+                {
+                    RoomId = room.Id.Value,
+                    PlayerId = x.Value,
+                    AddedAt = DateTimeOffset.UtcNow
+                })
+                .ToArray();
+            if (allowedPlayersToAdd.Length > 0)
+            {
+                dbContext.QuestRoomAllowedPlayers.AddRange(allowedPlayersToAdd);
             }
 
             var participants = await dbContext.QuestRoomParticipants
@@ -206,6 +248,10 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
             .Where(x => x.RoomId == roomEntity.Id)
             .OrderBy(x => x.JoinedAt)
             .ToListAsync();
+        var allowedPlayerEntities = await dbContext.QuestRoomAllowedPlayers
+            .AsNoTracking()
+            .Where(x => x.RoomId == roomEntity.Id)
+            .ToListAsync();
 
         var participants = participantEntities.Select(MapParticipant).ToArray();
         var formation = new FormationLayout(participants
@@ -219,6 +265,9 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
             (QuestRoomMode)roomEntity.Mode,
             formation,
             participants,
+            new QuestRoomJoinPolicy(
+                roomEntity.MinRequiredLevel,
+                allowedPlayerEntities.Select(x => new PlayerId(x.PlayerId)).ToArray()),
             (QuestRoomStatus)roomEntity.Status,
             roomEntity.Version,
             roomEntity.CloseReason is null ? null : (QuestRoomCloseReason)roomEntity.CloseReason.Value,

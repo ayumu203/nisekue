@@ -156,11 +156,13 @@ classDiagram
             +QuestRoomStatus Status
             +int Version
             +FormationLayout Formation
+            +QuestRoomJoinPolicy JoinPolicy
             +IReadOnlyList~QuestParticipant~ Participants
             +QuestRoomCloseReason? CloseReason
             +DateTimeOffset CreatedAt
             +DateTimeOffset? ClosedAt
-            +AddPlayer(playerId: PlayerId, displayName: string) void
+            +AddPlayer(playerId: PlayerId, displayName: string, level: int) void
+            +UpdateJoinPolicy(minRequiredLevel: int?, allowedPlayerIds: IReadOnlyList~PlayerId~) void
             +AssignPosition(participantId: QuestParticipantId, position: BattlePosition) void
             +MarkDisconnected(participantId: QuestParticipantId, at: DateTimeOffset) void
             +MarkReconnected(participantId: QuestParticipantId, at: DateTimeOffset) void
@@ -175,6 +177,13 @@ classDiagram
         class QuestRoomId {
             <<Value Object>>
             +Guid Id
+        }
+
+        class QuestRoomJoinPolicy {
+            <<Value Object>>
+            +int? MinRequiredLevel
+            +IReadOnlyList~PlayerId~ AllowedPlayerIds
+            +CanJoin(playerId: PlayerId, level: int) bool
         }
 
         class QuestParticipant {
@@ -212,6 +221,7 @@ classDiagram
             +QuestRoomMode? Mode
             +QuestRoomStatus? Status
             +PlayerId? OwnerPlayerId
+            +PlayerId? ViewerPlayerId
             +int Page
             +int PageSize
         }
@@ -405,9 +415,10 @@ classDiagram
 
         class QuestRoomService {
             <<Application Service>>
-            +Task~QuestRoom~ CreateRoomAsync(ownerId: PlayerId, stageId: QuestStageId, mode: QuestRoomMode)
+            +Task~QuestRoom~ CreateRoomAsync(ownerId: PlayerId, stageId: QuestStageId, mode: QuestRoomMode, minRequiredLevel: int?, allowedPlayerIds: IReadOnlyList~PlayerId~)
             +Task~QuestRoom~ JoinRoomAsync(roomId: QuestRoomId, playerId: PlayerId)
             +Task~QuestRoom~ CancelRoomAsync(roomId: QuestRoomId, ownerId: PlayerId)
+            +Task~QuestRoom~ UpdateRestrictionsAsync(roomId: QuestRoomId, ownerId: PlayerId, minRequiredLevel: int?, allowedPlayerIds: IReadOnlyList~PlayerId~)
             +Task~IReadOnlyList~QuestRoom~~ ListAsync(condition: QuestRoomSearchCondition)
             +Task~QuestRun~ StartAsync(roomId: QuestRoomId)
         }
@@ -472,6 +483,7 @@ classDiagram
     QuestNpcTemplate *-- QuestNpcTemplateId : has
     QuestRoom *-- QuestRoomId : has
     QuestRoom *-- FormationLayout : has
+    QuestRoom *-- QuestRoomJoinPolicy : has
     QuestRoom *-- QuestParticipant : 1..*
     QuestParticipant *-- QuestParticipantId : has
     QuestParticipant *-- BattlePosition : has

@@ -82,6 +82,35 @@ export const questRoomParticipantSchema = z.object({
   leftAt: z.string().datetime({ offset: true }).nullable(),
 })
 
+export const questRoomRestrictionAllowedPlayerSchema = z.object({
+  playerId: playerIdSchema,
+  displayName: playerUserNameSchema.nullable().optional(),
+  imagePath: z.string().min(1).nullable().optional(),
+  level: z.number().int().positive().nullable().optional(),
+  job: z
+    .object({
+      code: playerJobCodeSchema,
+      displayName: z.string().min(1),
+    })
+    .nullable()
+    .optional(),
+})
+
+export const questRoomRestrictionsSchema = z.object({
+  minRequiredLevel: z.number().int().positive().nullable(),
+  allowedPlayers: z.array(questRoomRestrictionAllowedPlayerSchema),
+})
+
+export const questJoinDisabledReasonSchema = z.enum([
+  'LevelRequirementNotMet',
+  'NotAllowedPlayer',
+  'CooldownActive',
+  'RoomClosed',
+  'AlreadyJoinedQuest',
+  'CapacityFull',
+  'AlreadyJoined',
+])
+
 export const questRoomDetailResponseSchema = z.object({
   roomId: questRoomIdSchema,
   ownerPlayerId: playerIdSchema,
@@ -93,6 +122,7 @@ export const questRoomDetailResponseSchema = z.object({
   createdAt: z.string().datetime({ offset: true }),
   closedAt: z.string().datetime({ offset: true }).nullable(),
   canStart: z.boolean(),
+  restrictions: questRoomRestrictionsSchema,
   formation: z.object({
     occupiedPositions: z.array(battlePositionSchema),
   }),
@@ -102,6 +132,13 @@ export const questRoomDetailResponseSchema = z.object({
 export const createQuestRoomRequestSchema = z.object({
   stageId: z.number().int().positive(),
   mode: questRoomModeSchema,
+  minRequiredLevel: z.number().int().positive().nullable().optional(),
+  allowedPlayerIds: z.array(playerIdSchema).optional().default([]),
+})
+
+export const updateQuestRoomRestrictionsRequestSchema = z.object({
+  minRequiredLevel: z.number().int().positive().nullable().optional(),
+  allowedPlayerIds: z.array(playerIdSchema).optional().default([]),
 })
 
 export const updateQuestRoomPositionRequestSchema = z.object({
@@ -131,6 +168,10 @@ export const questRoomSummaryResponseSchema = z.object({
   participantCount: z.number().int().nonnegative(),
   minPartyMemberCount: z.number().int().positive().nullable().optional(),
   maxPartyMemberCount: z.number().int().positive().nullable().optional(),
+  minRequiredLevel: z.number().int().positive().nullable(),
+  hasAllowedPlayerRestriction: z.boolean(),
+  isJoinable: z.boolean(),
+  joinDisabledReason: questJoinDisabledReasonSchema.nullable(),
   createdAt: z.string().datetime({ offset: true }),
 })
 
@@ -322,6 +363,7 @@ export type GetQuestStagesResponse = z.infer<typeof getQuestStagesResponseSchema
 export type BattleRow = z.infer<typeof battleRowSchema>
 export type BattleColumn = z.infer<typeof battleColumnSchema>
 export type CreateQuestRoomRequest = z.infer<typeof createQuestRoomRequestSchema>
+export type UpdateQuestRoomRestrictionsRequest = z.infer<typeof updateQuestRoomRestrictionsRequestSchema>
 export type QuestActionKind = z.infer<typeof questActionKindSchema>
 export type QuestRoomDetailResponse = z.infer<typeof questRoomDetailResponseSchema>
 export type ListQuestRoomsRequest = z.infer<typeof listQuestRoomsRequestSchema>

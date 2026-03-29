@@ -10,6 +10,7 @@ public class QuestRoom(
     QuestRoomMode mode,
     FormationLayout? formation = null,
     IEnumerable<QuestParticipant>? participants = null,
+    QuestRoomJoinPolicy? joinPolicy = null,
     QuestRoomStatus status = QuestRoomStatus.Recruiting,
     int version = 0,
     QuestRoomCloseReason? closeReason = null,
@@ -24,19 +25,31 @@ public class QuestRoom(
     public QuestRoomMode Mode { get; } = mode;
     public QuestRoomStatus Status { get; private set; } = status;
     public int Version { get; private set; } = ValidateVersion(version);
+    public QuestRoomJoinPolicy JoinPolicy { get; private set; } = joinPolicy ?? new QuestRoomJoinPolicy();
     public FormationLayout Formation { get; private set; } = formation ?? new FormationLayout();
     public IReadOnlyList<QuestParticipant> Participants => participants;
     public QuestRoomCloseReason? CloseReason { get; private set; } = closeReason;
     public DateTimeOffset CreatedAt { get; } = createdAt ?? DateTimeOffset.UtcNow;
     public DateTimeOffset? ClosedAt { get; private set; } = closedAt;
 
-    public void AddPlayer(PlayerId playerId, string displayName)
+    public void AddPlayer(PlayerId playerId, string displayName, int level = 1)
     {
         EnsureRecruiting();
         EnsureCapacityAvailable();
         if (participants.Any(x => x.PlayerId == playerId && x.Status != ParticipantStatus.Left))
         {
             throw new InvalidOperationException("同じプレイヤーは同一ルームに重複参加できません。");
+        }
+
+        var joinDeniedReason = JoinPolicy.GetJoinDeniedReason(playerId, level);
+        if (joinDeniedReason == "LevelRequirementNotMet")
+        {
+            throw new InvalidOperationException("参加可能レベルを満たしていないため、このルームには参加できません。");
+        }
+
+        if (joinDeniedReason == "NotAllowedPlayer")
+        {
+            throw new InvalidOperationException("このルームへの参加対象プレイヤーに含まれていません。");
         }
 
         var position = Formation.FindFirstEmpty();
@@ -52,6 +65,12 @@ public class QuestRoom(
         Formation.Assign(participant.Id, position);
         participants.Add(participant);
         EnsureSingleOwner();
+    }
+
+    public void UpdateJoinPolicy(int? minRequiredLevel, IEnumerable<PlayerId>? allowedPlayerIds)
+    {
+        EnsureRecruiting();
+        JoinPolicy = new QuestRoomJoinPolicy(minRequiredLevel, allowedPlayerIds);
     }
 
     public void AssignPosition(QuestParticipantId participantId, server.domain.battle.BattlePosition position)

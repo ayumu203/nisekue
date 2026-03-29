@@ -14,6 +14,7 @@ import type {
   QuestRunDetailResponse,
   SubmitQuestCommandRequest,
   SubmitQuestCommandResponse,
+  UpdateQuestRoomRestrictionsRequest,
 } from '@/schema/quest'
 
 function createAuthorizedHeaders(accessToken: string, contentType: 'application/json' | null = 'application/json') {
@@ -180,6 +181,29 @@ export async function updateQuestRoomPosition(
   }
 
   return endpoints.quest.updateRoomPosition.responseSchema.parse(json)
+}
+
+export async function updateQuestRoomRestrictions(
+  roomId: string,
+  input: UpdateQuestRoomRestrictionsRequest,
+  accessToken: string,
+): Promise<QuestRoomDetailResponse> {
+  const payload = endpoints.quest.updateRoomRestrictions.requestSchema.parse(input)
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.quest.updateRoomRestrictions.path(roomId)}`, {
+    method: endpoints.quest.updateRoomRestrictions.method,
+    headers: createAuthorizedHeaders(accessToken),
+    body: JSON.stringify(payload),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '参加制限の更新に失敗しました'))
+  }
+
+  return endpoints.quest.updateRoomRestrictions.responseSchema.parse(json)
 }
 
 export async function startQuestRoom(roomId: string, accessToken: string): Promise<QuestRunDetailResponse> {

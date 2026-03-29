@@ -7,6 +7,7 @@ public class QuestRoomEntity
     public int StageId { get; set; }
     public int Mode { get; set; }
     public int Status { get; set; }
+    public int? MinRequiredLevel { get; set; }
     public int Version { get; set; }
     public int? CloseReason { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

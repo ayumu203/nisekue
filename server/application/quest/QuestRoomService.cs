@@ -15,9 +15,14 @@ public class QuestRoomService(
     QuestSnapshotFactory questSnapshotFactory,
     QuestRunFactory questRunFactory)
 {
-    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
 
-    public async Task<QuestRoom> CreateRoomAsync(PlayerId ownerId, QuestStageId stageId, QuestRoomMode mode)
+    public async Task<QuestRoom> CreateRoomAsync(
+        PlayerId ownerId,
+        QuestStageId stageId,
+        QuestRoomMode mode,
+        int? minRequiredLevel = null,
+        IReadOnlyList<PlayerId>? allowedPlayerIds = null)
     {
         var player = await playerRepository.GetPlayerAsync(ownerId)
             ?? throw new KeyNotFoundException("オーナープレイヤーが見つかりません。");
@@ -45,8 +50,9 @@ public class QuestRoomService(
             QuestRoomId.New(),
             ownerId,
             stageId,
-            mode);
-        room.AddPlayer(ownerId, player.Name);
+            mode,
+            joinPolicy: new QuestRoomJoinPolicy(minRequiredLevel, EnsureOwnerIncluded(ownerId, allowedPlayerIds)));
+        room.AddPlayer(ownerId, player.Name, player.Level);
 
         await questRoomRepository.SaveAsync(room);
         return room;
@@ -59,8 +65,12 @@ public class QuestRoomService(
         var player = await playerRepository.GetPlayerAsync(playerId)
             ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
         EnsureQuestCooldownExpired(player, DateTimeOffset.UtcNow);
+        if (await questRunRepository.ExistsActiveRunByPlayerAsync(playerId))
+        {
+            throw new InvalidOperationException("進行中クエストに参加しているためルームに参加できません。");
+        }
 
-        room.AddPlayer(playerId, player.Name);
+        room.AddPlayer(playerId, player.Name, player.Level);
         await questRoomRepository.SaveAsync(room);
         return room;
     }
@@ -77,6 +87,77 @@ public class QuestRoomService(
         room.CancelByOwner(DateTimeOffset.UtcNow);
         await questRoomRepository.SaveAsync(room);
         return room;
+    }
+
+    public async Task<QuestRoom> UpdateRestrictionsAsync(
+        QuestRoomId roomId,
+        PlayerId ownerId,
+        int? minRequiredLevel,
+        IReadOnlyList<PlayerId>? allowedPlayerIds)
+    {
+        var room = await questRoomRepository.GetAsync(roomId)
+            ?? throw new KeyNotFoundException("ルームが見つかりません。");
+        if (room.OwnerId != ownerId)
+        {
+            throw new InvalidOperationException("ルームのオーナーのみ参加制限を更新できます。");
+        }
+
+        await EnsureActiveParticipantsMatchJoinPolicyAsync(room, minRequiredLevel, allowedPlayerIds);
+        room.UpdateJoinPolicy(minRequiredLevel, EnsureOwnerIncluded(ownerId, allowedPlayerIds));
+        await questRoomRepository.SaveAsync(room);
+        return room;
+    }
+
+    public async Task<Player> GetViewerAsync(PlayerId playerId)
+    {
+        return await playerRepository.GetPlayerAsync(playerId)
+            ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
+    }
+
+    public Task<bool> ViewerHasActiveRunAsync(PlayerId playerId) => questRunRepository.ExistsActiveRunByPlayerAsync(playerId);
+
+    private async Task EnsureActiveParticipantsMatchJoinPolicyAsync(
+        QuestRoom room,
+        int? minRequiredLevel,
+        IReadOnlyList<PlayerId>? allowedPlayerIds)
+    {
+        var nextPolicy = new QuestRoomJoinPolicy(minRequiredLevel, EnsureOwnerIncluded(room.OwnerId, allowedPlayerIds));
+        var activePlayerIds = room.Participants
+            .Where(x => x.Type == ParticipantType.Player && x.Status != ParticipantStatus.Left)
+            .Select(x => x.PlayerId)
+            .Where(x => x is not null)
+            .Select(x => x!.Value)
+            .Distinct()
+            .ToArray();
+
+        foreach (var playerId in activePlayerIds)
+        {
+            var player = await playerRepository.GetPlayerAsync(playerId)
+                ?? throw new KeyNotFoundException($"プレイヤーが見つかりません。 playerId={playerId.Value}");
+            var joinDeniedReason = nextPolicy.GetJoinDeniedReason(player.Id, player.Level);
+            if (joinDeniedReason == "LevelRequirementNotMet")
+            {
+                throw new InvalidOperationException("現在の参加者に参加可能レベルを満たさないプレイヤーが含まれるため更新できません。");
+            }
+
+            if (joinDeniedReason == "NotAllowedPlayer")
+            {
+                throw new InvalidOperationException("現在の参加者に参加対象外プレイヤーが含まれるため更新できません。");
+            }
+        }
+    }
+
+    private static IReadOnlyList<PlayerId> EnsureOwnerIncluded(PlayerId ownerId, IReadOnlyList<PlayerId>? allowedPlayerIds)
+    {
+        if (allowedPlayerIds is null || allowedPlayerIds.Count == 0)
+        {
+            return [];
+        }
+
+        return allowedPlayerIds
+            .Append(ownerId)
+            .Distinct()
+            .ToArray();
     }
 
     public async Task<QuestRun> StartAsync(QuestRoomId roomId)

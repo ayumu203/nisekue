@@ -100,7 +100,7 @@ public class QuestRoomServiceTests
         var act = () => service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Solo);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("クエスト終了後1分間は再参加できません。");
+            .WithMessage("クエスト終了後3分間は再参加できません。");
     }
 
     [Fact]
@@ -126,7 +126,107 @@ public class QuestRoomServiceTests
         var act = () => service.JoinRoomAsync(room.Id, guest.Id);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("クエスト終了後1分間は再参加できません。");
+            .WithMessage("クエスト終了後3分間は再参加できません。");
+    }
+
+    [Fact]
+    public async Task CreateRoomAsync_WithJoinRestrictions_SavesJoinPolicy()
+    {
+        var owner = CreatePlayer("Owner");
+        var allowedPlayer = CreatePlayer("Allowed");
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true);
+        var roomRepository = new FakeQuestRoomRepository();
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            roomRepository,
+            new FakeQuestRunRepository(),
+            new FakePlayerRepository(owner, allowedPlayer),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var room = await service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Multi, owner.Level, [owner.Id, allowedPlayer.Id]);
+
+        room.JoinPolicy.MinRequiredLevel.Should().Be(owner.Level);
+        room.JoinPolicy.AllowedPlayerIds.Should().Contain(allowedPlayer.Id);
+    }
+
+    [Fact]
+    public async Task CreateRoomAsync_WhenOwnerIsNotIncludedInAllowedPlayers_AddsOwnerAutomatically()
+    {
+        var owner = CreatePlayer("Owner");
+        var other = CreatePlayer("Other");
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true);
+        var roomRepository = new FakeQuestRoomRepository();
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            roomRepository,
+            new FakeQuestRunRepository(),
+            new FakePlayerRepository(owner, other),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var room = await service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Multi, null, [other.Id]);
+
+        room.JoinPolicy.AllowedPlayerIds.Should().Contain(owner.Id);
+        room.JoinPolicy.AllowedPlayerIds.Should().Contain(other.Id);
+    }
+
+    [Fact]
+    public async Task JoinRoomAsync_WhenPlayerIsNotAllowedByRestriction_ThrowsInvalidOperationException()
+    {
+        var owner = CreatePlayer("Owner");
+        var guest = CreatePlayer("Guest");
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true);
+        var roomRepository = new FakeQuestRoomRepository();
+        var room = new QuestRoom(
+            QuestRoomId.New(),
+            owner.Id,
+            stage.Id,
+            QuestRoomMode.Multi,
+            joinPolicy: new QuestRoomJoinPolicy(allowedPlayerIds: [owner.Id]));
+        room.AddPlayer(owner.Id, owner.Name, owner.Level);
+        await roomRepository.SaveAsync(room);
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            roomRepository,
+            new FakeQuestRunRepository(),
+            new FakePlayerRepository(owner, guest),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var act = () => service.JoinRoomAsync(room.Id, guest.Id);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("このルームへの参加対象プレイヤーに含まれていません。");
+    }
+
+    [Fact]
+    public async Task UpdateRestrictionsAsync_WhenExistingParticipantWouldBecomeNotAllowed_ThrowsInvalidOperationException()
+    {
+        var owner = CreatePlayer("Owner");
+        var guest = CreatePlayer("Guest");
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true);
+        var roomRepository = new FakeQuestRoomRepository();
+        var room = new QuestRoom(QuestRoomId.New(), owner.Id, stage.Id, QuestRoomMode.Multi);
+        room.AddPlayer(owner.Id, owner.Name, owner.Level);
+        room.AddPlayer(guest.Id, guest.Name, guest.Level);
+        await roomRepository.SaveAsync(room);
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            roomRepository,
+            new FakeQuestRunRepository(),
+            new FakePlayerRepository(owner, guest),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var act = () => service.UpdateRestrictionsAsync(room.Id, owner.Id, null, [owner.Id]);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("現在の参加者に参加対象外プレイヤーが含まれるため更新できません。");
     }
 
     [Fact]
