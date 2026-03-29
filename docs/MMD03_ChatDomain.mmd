@@ -76,7 +76,6 @@ classDiagram
             +IReadOnlyList~ThreadReply~ Replies
             +Thread(id: ThreadId, authorPlayerId: PlayerId, title: ThreadTitle, body: ThreadBody, createdAt: DateTimeOffset, updatedAt: DateTimeOffset, lastRepliedAt: DateTimeOffset?, replies: IEnumerable~ThreadReply~)
             +AddReply(replyId: ThreadReplyId, authorPlayerId: PlayerId, body: ThreadReplyBody) : void
-            +GetReplyCount() : int
         }
 
         class ThreadReply {
@@ -165,12 +164,10 @@ classDiagram
         }
 
         class IThreadRepository {
-            +Task CreateAsync(thread: Thread)
+            +Task CreateAsync(thread: Thread, maxThreadCount: int)
             +Task~Thread?~ FindByIdAsync(threadId: ThreadId)
-            +Task SaveAsync(thread: Thread)
-            +Task DeleteOldestByAuthorIfLimitExceededAsync(authorPlayerId: PlayerId, maxThreadCount: int)
+            +Task SaveAsync(thread: Thread, maxReplyCount: int)
             +Task~ThreadListPage~ GetPageAsync(query: ThreadQuery)
-            +Task~int~ CountByAuthorAsync(authorPlayerId: PlayerId)
         }
 
         class ThreadService {

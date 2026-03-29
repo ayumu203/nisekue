@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 const threadIdSchema = z.string().uuid('threadIdの形式が不正です')
+const replyIdSchema = z.string().uuid('replyIdの形式が不正です')
 
 export const threadSummarySchema = z.object({
   id: threadIdSchema,
@@ -14,7 +15,7 @@ export const threadSummarySchema = z.object({
 })
 
 export const threadReplySchema = z.object({
-  id: threadIdSchema,
+  id: replyIdSchema,
   body: z.string().trim().min(1).max(250),
   createdAt: z.string().datetime({ offset: true, message: '日時の形式が不正です' }),
   authorName: z.string().trim().min(1),

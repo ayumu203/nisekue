@@ -100,7 +100,7 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
             var currentReplyCount = existingReplyIds.Count;
             if (currentReplyCount + repliesToAdd.Length > maxReplyCount)
             {
-                throw new InvalidOperationException($"返信は{ThreadConstants.MaxRepliesPerThread}件までです。");
+                throw new InvalidOperationException($"返信は{maxReplyCount}件までです。");
             }
 
             if (repliesToAdd.Length > 0)
