@@ -7,11 +7,40 @@ classDiagram
             -DeleteListedEquipmentIfNeededAsync(listing: MarketListing) string
         }
 
+        class DevelopmentDataCleanupService {
+            <<Application Service>>
+            +CleanupAsync() DevelopmentDataCleanupResult
+            -DeleteEntitiesAsync~TEntity~(dbSet: DbSet~TEntity~) int
+        }
+
         class CleanupExpiredMarketListingsResult {
             <<Value Object>>
             +int DeletedListings
             +int DeletedEquipments
             +int DeletedItemQuantity
+        }
+
+        class DevelopmentDataCleanupResult {
+            <<Value Object>>
+            +int DeletedPlayers
+            +int DeletedChatRooms
+            +int DeletedChatMessages
+            +int DeletedPlayerMoves
+            +int DeletedPlayerMasterJobs
+            +int DeletedPlayerEquipments
+            +int DeletedPlayerItemStacks
+            +int DeletedMarketListings
+            +int DeletedMarketTradeHistories
+            +int DeletedItemDeletionLogs
+            +int DeletedQuestRooms
+            +int DeletedQuestRoomParticipants
+            +int DeletedQuestRuns
+            +int DeletedQuestRunPartySnapshots
+            +int DeletedQuestRunPartyMembers
+            +int DeletedQuestRunEnemies
+            +int DeletedQuestTurnCommands
+            +int DeletedQuestFloorTraps
+            +int DeletedQuestRewardSummaries
         }
 
         class IMarketListingRepository {
@@ -37,6 +66,13 @@ classDiagram
             +Header X-Maintenance-Token
         }
 
+        class DevelopmentCleanupMaintenanceEndpoint {
+            <<Endpoint>>
+            +POST /internal/development/cleanup-game-data
+            +Header X-Maintenance-Token
+            +Development only
+        }
+
         class MaintenanceConfiguration {
             <<Configuration>>
             +string MarketCleanupToken
@@ -50,5 +86,9 @@ classDiagram
     MarketListingCleanupService ..> MarketListing : cleanup target
     MarketListingCleanupService ..> PlayerEquipment : deletes listed equipment
     MarketListingCleanupService ..> ItemDeletionLog : writes
+    DevelopmentDataCleanupService ..> AppDbContext : use
+    DevelopmentDataCleanupService ..> DevelopmentDataCleanupResult : returns
     ItemCleanupMaintenanceEndpoint ..> MarketListingCleanupService : calls
     ItemCleanupMaintenanceEndpoint ..> MaintenanceConfiguration : validates token
+    DevelopmentCleanupMaintenanceEndpoint ..> DevelopmentDataCleanupService : calls
+    DevelopmentCleanupMaintenanceEndpoint ..> MaintenanceConfiguration : validates token

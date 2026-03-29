@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
 using server.application.battle;
 using server.application.chat;
+using server.application.maintenance;
 using server.application.quest;
 using server.application.training;
 using server.application.player;
@@ -126,6 +127,7 @@ builder.Services.AddScoped<TrainingWeaponMasteryPolicy>();
 builder.Services.AddScoped<EquipmentStatusResolver>();
 builder.Services.AddScoped<PlayerJobService>();
 builder.Services.AddScoped<MarketListingCleanupService>();
+builder.Services.AddScoped<DevelopmentDataCleanupService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<TrainingService>();
 

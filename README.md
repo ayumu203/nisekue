@@ -83,6 +83,13 @@ $ dotnet test
 - API のベース URL は既存の `VITE_API_BASE_URL` (`vars` または `secrets`) を流用する.
 - バックエンド側にも同じ値を `Maintenance:MarketCleanupToken` として設定する.
 
+### 開発用ゲームデータ一括削除
+
+- 開発環境では `POST /internal/development/cleanup-game-data` でプレイヤー・チャット・アイテム・クエスト進行データを一括削除できる.
+- このエンドポイントは `Development` 環境でのみ有効.
+- 認証には `X-Maintenance-Token` を使い、値は `Maintenance:MarketCleanupToken` を流用する.
+- CSV マスタ、EF Core migration 履歴、アプリ設定は削除対象に含めない.
+
 ### 開発環境での手動適用
 
 ```bash

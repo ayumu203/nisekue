@@ -1,6 +1,9 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using server.application.player;
 using server.domain.player;
+using server.infrastructure;
+using server.infrastructure.player;
 using Xunit;
 
 namespace server.tests;
@@ -10,152 +13,112 @@ public class MarketListingCleanupServiceTests
     [Fact]
     public async Task DeleteExpiredAsync_WhenEquipmentListingExpired_DeletesEquipmentListingAndWritesLog()
     {
+        var databaseName = $"market-cleanup-{Guid.NewGuid()}";
         var now = DateTimeOffset.UtcNow;
-        var sellerId = new PlayerId(Guid.NewGuid());
-        var equipment = CreateEquipment(sellerId, new EquipmentId(1001));
-        var listing = new MarketListing(
-            MarketListingId.New(),
-            sellerId,
-            equipment.Id,
-            itemId: null,
-            itemName: "銅の剣",
-            flavorText: "テスト用の剣",
-            quantity: 1,
-            remainingQuantity: 1,
-            unitPrice: 10,
-            listedAt: now.AddDays(-16),
-            expiresAt: now.AddMinutes(-1));
-        var listingRepository = new FakeMarketListingRepository(listing);
-        var equipmentRepository = new FakePlayerEquipmentRepository(equipment);
-        var deletionLogRepository = new FakeItemDeletionLogRepository();
-        var service = new MarketListingCleanupService(listingRepository, equipmentRepository, deletionLogRepository);
+        var sellerId = Guid.NewGuid();
+        var playerEquipmentId = Guid.NewGuid();
+
+        await using (var seedContext = CreateDbContext(databaseName))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+            seedContext.MarketListings.Add(new MarketListingEntity
+            {
+                Id = Guid.NewGuid(),
+                SellerId = sellerId,
+                PlayerEquipmentId = playerEquipmentId,
+                ItemName = "銅の剣",
+                FlavorText = "テスト用の剣",
+                Quantity = 1,
+                RemainingQuantity = 1,
+                UnitPrice = 10,
+                ListedAt = now.AddDays(-16),
+                ExpiresAt = now.AddMinutes(-1)
+            });
+            seedContext.PlayerEquipments.Add(new PlayerEquipmentEntity
+            {
+                Id = playerEquipmentId,
+                PlayerId = sellerId,
+                EquipmentId = 1001,
+                EquipmentType = (int)EquipmentType.Weapon,
+                EquipmentStatus = (int)EquipmentStatus.Inventory,
+                Durability = 10,
+                Mastery = 0,
+                AcquiredAt = now.AddDays(-20),
+                UpdatedAt = now.AddDays(-20)
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        var service = new MarketListingCleanupService(new TestDbContextFactory(databaseName));
 
         var result = await service.DeleteExpiredAsync(now);
 
         result.DeletedListings.Should().Be(1);
         result.DeletedEquipments.Should().Be(1);
         result.DeletedItemQuantity.Should().Be(0);
-        (await listingRepository.GetAsync(listing.Id)).Should().BeNull();
-        (await equipmentRepository.GetAsync(equipment.Id)).Should().BeNull();
-        deletionLogRepository.Logs.Should().ContainSingle();
-        deletionLogRepository.Logs[0].ItemIdentifier.Should().Be("equipment:1001");
-        deletionLogRepository.Logs[0].Reason.Should().Be("expired_listing_cleanup");
+
+        await using var verifyContext = CreateDbContext(databaseName);
+        (await verifyContext.MarketListings.CountAsync()).Should().Be(0);
+        (await verifyContext.PlayerEquipments.CountAsync()).Should().Be(0);
+        verifyContext.ItemDeletionLogs.Should().ContainSingle();
+        verifyContext.ItemDeletionLogs.Single().ItemIdentifier.Should().Be("equipment:1001");
+        verifyContext.ItemDeletionLogs.Single().Reason.Should().Be("expired_listing_cleanup");
     }
 
     [Fact]
     public async Task DeleteExpiredAsync_WhenItemListingExpired_DeletesListingAndAggregatesDeletedQuantity()
     {
+        var databaseName = $"market-cleanup-{Guid.NewGuid()}";
         var now = DateTimeOffset.UtcNow;
-        var sellerId = new PlayerId(Guid.NewGuid());
-        var listing = new MarketListing(
-            MarketListingId.New(),
-            sellerId,
-            playerEquipmentId: null,
-            itemId: new ItemId(3001),
-            itemName: "体力の実",
-            flavorText: "テスト用の実",
-            quantity: 5,
-            remainingQuantity: 3,
-            unitPrice: 20,
-            listedAt: now.AddDays(-16),
-            expiresAt: now.AddMinutes(-1));
-        var listingRepository = new FakeMarketListingRepository(listing);
-        var equipmentRepository = new FakePlayerEquipmentRepository();
-        var deletionLogRepository = new FakeItemDeletionLogRepository();
-        var service = new MarketListingCleanupService(listingRepository, equipmentRepository, deletionLogRepository);
+        var sellerId = Guid.NewGuid();
+
+        await using (var seedContext = CreateDbContext(databaseName))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+            seedContext.MarketListings.Add(new MarketListingEntity
+            {
+                Id = Guid.NewGuid(),
+                SellerId = sellerId,
+                ItemId = 3001,
+                ItemName = "体力の実",
+                FlavorText = "テスト用の実",
+                Quantity = 5,
+                RemainingQuantity = 3,
+                UnitPrice = 20,
+                ListedAt = now.AddDays(-16),
+                ExpiresAt = now.AddMinutes(-1)
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        var service = new MarketListingCleanupService(new TestDbContextFactory(databaseName));
 
         var result = await service.DeleteExpiredAsync(now);
 
         result.DeletedListings.Should().Be(1);
         result.DeletedEquipments.Should().Be(0);
         result.DeletedItemQuantity.Should().Be(3);
-        deletionLogRepository.Logs.Should().ContainSingle();
-        deletionLogRepository.Logs[0].ItemIdentifier.Should().Be("item:3001");
-        deletionLogRepository.Logs[0].Quantity.Should().Be(3);
+
+        await using var verifyContext = CreateDbContext(databaseName);
+        (await verifyContext.MarketListings.CountAsync()).Should().Be(0);
+        verifyContext.ItemDeletionLogs.Should().ContainSingle();
+        verifyContext.ItemDeletionLogs.Single().ItemIdentifier.Should().Be("item:3001");
+        verifyContext.ItemDeletionLogs.Single().Quantity.Should().Be(3);
     }
 
-    private static PlayerEquipment CreateEquipment(PlayerId playerId, EquipmentId equipmentId)
+    private static AppDbContext CreateDbContext(string databaseName)
     {
-        return new PlayerEquipment(
-            PlayerEquipmentId.New(),
-            playerId,
-            equipmentId,
-            EquipmentType.Weapon,
-            EquipmentStatus.Inventory,
-            durability: 10,
-            mastery: 0,
-            acquiredAt: DateTimeOffset.UtcNow.AddDays(-20),
-            updatedAt: DateTimeOffset.UtcNow.AddDays(-20));
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName)
+            .Options;
+        return new AppDbContext(options);
     }
 
-    private sealed class FakeMarketListingRepository(params MarketListing[] listings) : IMarketListingRepository
+    private sealed class TestDbContextFactory(string databaseName) : IDbContextFactory<AppDbContext>
     {
-        private readonly Dictionary<MarketListingId, MarketListing> listingsById = listings.ToDictionary(x => x.Id);
+        public AppDbContext CreateDbContext() => MarketListingCleanupServiceTests.CreateDbContext(databaseName);
 
-        public Task<MarketListing?> GetAsync(MarketListingId id)
-            => Task.FromResult(listingsById.GetValueOrDefault(id));
-
-        public Task<IReadOnlyList<MarketListing>> GetActiveAsync(DateTimeOffset now)
-            => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values.Where(x => !x.IsExpired(now) && !x.IsSoldOut).ToArray());
-
-        public Task<IReadOnlyList<MarketListing>> GetBySellerAsync(PlayerId sellerId, DateTimeOffset now)
-            => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values
-                .Where(x => x.SellerId == sellerId && !x.IsExpired(now) && !x.IsSoldOut)
-                .ToArray());
-
-        public Task<IReadOnlyList<MarketListing>> GetExpiredAsync(DateTimeOffset now)
-            => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values
-                .Where(x => x.IsExpired(now) && !x.IsSoldOut)
-                .ToArray());
-
-        public Task SaveAsync(MarketListing listing)
-        {
-            listingsById[listing.Id] = listing;
-            return Task.CompletedTask;
-        }
-
-        public Task DeleteAsync(MarketListingId id)
-        {
-            listingsById.Remove(id);
-            return Task.CompletedTask;
-        }
-    }
-
-    private sealed class FakePlayerEquipmentRepository(params PlayerEquipment[] equipments) : IPlayerEquipmentRepository
-    {
-        private readonly Dictionary<PlayerEquipmentId, PlayerEquipment> equipmentsById = equipments.ToDictionary(x => x.Id);
-
-        public Task<IReadOnlyList<PlayerEquipment>> GetByPlayerAsync(PlayerId playerId)
-            => Task.FromResult((IReadOnlyList<PlayerEquipment>)equipmentsById.Values.Where(x => x.PlayerId == playerId).ToArray());
-
-        public Task<PlayerEquipment?> GetAsync(PlayerEquipmentId id)
-            => Task.FromResult(equipmentsById.GetValueOrDefault(id));
-
-        public Task SaveAsync(IReadOnlyList<PlayerEquipment> playerEquipments)
-        {
-            foreach (var equipment in playerEquipments)
-            {
-                equipmentsById[equipment.Id] = equipment;
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public Task DeleteAsync(PlayerEquipmentId id)
-        {
-            equipmentsById.Remove(id);
-            return Task.CompletedTask;
-        }
-    }
-
-    private sealed class FakeItemDeletionLogRepository : IItemDeletionLogRepository
-    {
-        public List<ItemDeletionLog> Logs { get; } = [];
-
-        public Task AddAsync(ItemDeletionLog log)
-        {
-            Logs.Add(log);
-            return Task.CompletedTask;
-        }
+        public Task<AppDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(MarketListingCleanupServiceTests.CreateDbContext(databaseName));
     }
 }

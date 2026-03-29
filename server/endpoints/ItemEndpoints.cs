@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using server.application.chat;
+using server.application.maintenance;
 using server.application.player;
 using server.domain.move;
 using server.domain.player;
@@ -699,6 +700,57 @@ internal static class ItemEndpoints
                 deletedListings = result.DeletedListings,
                 deletedEquipments = result.DeletedEquipments,
                 deletedItemQuantity = result.DeletedItemQuantity
+            });
+        }).ExcludeFromDescription();
+
+        app.MapPost("/internal/development/cleanup-game-data", async (
+            HttpRequest request,
+            IConfiguration configuration,
+            IWebHostEnvironment environment,
+            DevelopmentDataCleanupService developmentDataCleanupService) =>
+        {
+            if (!environment.IsDevelopment())
+            {
+                return Results.NotFound();
+            }
+
+            var expectedToken = configuration["Maintenance:MarketCleanupToken"];
+            if (string.IsNullOrWhiteSpace(expectedToken))
+            {
+                return Results.Problem(
+                    detail: "Maintenance:MarketCleanupToken が設定されていません。",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            var providedToken = request.Headers[MaintenanceTokenHeaderName].ToString();
+            if (!SecureEquals(providedToken, expectedToken))
+            {
+                return Results.Unauthorized();
+            }
+
+            var result = await developmentDataCleanupService.CleanupAsync();
+            return Results.Ok(new
+            {
+                message = "開発用ゲームデータを削除しました。",
+                deletedPlayers = result.DeletedPlayers,
+                deletedChatRooms = result.DeletedChatRooms,
+                deletedChatMessages = result.DeletedChatMessages,
+                deletedPlayerMoves = result.DeletedPlayerMoves,
+                deletedPlayerMasterJobs = result.DeletedPlayerMasterJobs,
+                deletedPlayerEquipments = result.DeletedPlayerEquipments,
+                deletedPlayerItemStacks = result.DeletedPlayerItemStacks,
+                deletedMarketListings = result.DeletedMarketListings,
+                deletedMarketTradeHistories = result.DeletedMarketTradeHistories,
+                deletedItemDeletionLogs = result.DeletedItemDeletionLogs,
+                deletedQuestRooms = result.DeletedQuestRooms,
+                deletedQuestRoomParticipants = result.DeletedQuestRoomParticipants,
+                deletedQuestRuns = result.DeletedQuestRuns,
+                deletedQuestRunPartySnapshots = result.DeletedQuestRunPartySnapshots,
+                deletedQuestRunPartyMembers = result.DeletedQuestRunPartyMembers,
+                deletedQuestRunEnemies = result.DeletedQuestRunEnemies,
+                deletedQuestTurnCommands = result.DeletedQuestTurnCommands,
+                deletedQuestFloorTraps = result.DeletedQuestFloorTraps,
+                deletedQuestRewardSummaries = result.DeletedQuestRewardSummaries
             });
         }).ExcludeFromDescription();
 
