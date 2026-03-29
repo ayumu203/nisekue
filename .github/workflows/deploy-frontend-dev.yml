@@ -20,7 +20,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: development
+    environment: dev
     steps:
       - name: Checkout
         uses: actions/checkout@v4

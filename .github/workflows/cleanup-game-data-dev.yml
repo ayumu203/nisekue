@@ -9,7 +9,7 @@ permissions:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    environment: development
+    environment: dev
 
     steps:
       - name: Trigger development data cleanup endpoint
