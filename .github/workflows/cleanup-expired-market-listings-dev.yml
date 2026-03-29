@@ -1,4 +1,4 @@
-name: Cleanup Expired Market Listings
+name: Cleanup Expired Market Listings - Development
 
 on:
   schedule:
@@ -11,6 +11,7 @@ permissions:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    environment: development
 
     steps:
       - name: Trigger cleanup endpoint
