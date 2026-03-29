@@ -1,0 +1,24 @@
+{
+  "title": "スレッド広場",
+  "listTitle": "新着スレッド",
+  "loading": "スレッドを読み込み中...",
+  "empty": "まだスレッドがありません。",
+  "total": "全 {count} 件",
+  "pageStatus": "{page} / {pages} ページ",
+  "open": "詳細を見る",
+  "author": "投稿者: {name}",
+  "createdAt": "作成日時: {value}",
+  "replyInfo": "返信 {count} 件 / 最終返信 {last}",
+  "noReplies": "返信なし",
+  "backToHome": "ホームに戻る",
+  "sessionMissing": "セッション情報が不足しています",
+  "createFailed": "スレッド作成に失敗しました",
+  "form": {
+    "heading": "新しい話題を立てる",
+    "title": "タイトル",
+    "body": "本文",
+    "helper": "タイトル {title}/50 文字・本文 {body}/500 文字",
+    "submit": "スレッドを作成",
+    "submitting": "作成中..."
+  }
+}

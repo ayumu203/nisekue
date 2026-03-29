@@ -1,0 +1,19 @@
+{
+  "loading": "スレッド詳細を読み込み中...",
+  "threadMissing": "対象スレッドが見つかりません。",
+  "backToHome": "ホームに戻る",
+  "backToList": "一覧へ戻る",
+  "createdAt": "作成日時: {value}",
+  "replyCount": "返信 {count} 件 / 最終返信 {last}",
+  "repliesTitle": "返信一覧",
+  "emptyReplies": "まだ返信はありません。",
+  "noReplies": "返信なし",
+  "replyFailed": "返信送信に失敗しました",
+  "replyForm": {
+    "title": "返信する",
+    "body": "返信本文",
+    "helper": "{count}/250 文字",
+    "submit": "返信を送信",
+    "submitting": "送信中..."
+  }
+}

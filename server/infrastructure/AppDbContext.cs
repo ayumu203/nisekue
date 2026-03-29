@@ -23,6 +23,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ItemDeletionLogEntity> ItemDeletionLogs => Set<ItemDeletionLogEntity>();
     public DbSet<ChatRoomEntity> ChatRooms => Set<ChatRoomEntity>();
     public DbSet<ChatMessageEntity> ChatMessages => Set<ChatMessageEntity>();
+    public DbSet<ThreadEntity> Threads => Set<ThreadEntity>();
+    public DbSet<ThreadReplyEntity> ThreadReplies => Set<ThreadReplyEntity>();
     public DbSet<QuestRoomEntity> QuestRooms => Set<QuestRoomEntity>();
     public DbSet<QuestRoomParticipantEntity> QuestRoomParticipants => Set<QuestRoomParticipantEntity>();
     public DbSet<QuestRunEntity> QuestRuns => Set<QuestRunEntity>();
@@ -258,6 +260,79 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("created_at")
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .IsRequired();
+
+        var thread = modelBuilder.Entity<ThreadEntity>();
+        thread.ToTable("threads", "internal");
+        thread.HasKey(x => x.Id);
+        thread.Property(x => x.Id)
+            .HasColumnName("id")
+            .HasColumnType("uuid")
+            .HasConversion(x => x.Value, value => new ThreadId(value))
+            .IsRequired();
+        thread.Property(x => x.AuthorPlayerId)
+            .HasColumnName("author_player_id")
+            .HasColumnType("uuid")
+            .IsRequired();
+        thread.Property(x => x.Title)
+            .HasColumnName("title")
+            .HasMaxLength(ThreadConstants.TitleMaxLength)
+            .IsRequired();
+        thread.Property(x => x.Body)
+            .HasColumnName("body")
+            .HasMaxLength(ThreadConstants.BodyMaxLength)
+            .IsRequired();
+        thread.Property(x => x.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
+        thread.Property(x => x.UpdatedAt)
+            .HasColumnName("updated_at")
+            .IsRequired();
+        thread.Property(x => x.LastRepliedAt)
+            .HasColumnName("last_replied_at");
+        thread.HasIndex(x => x.AuthorPlayerId);
+        thread.HasIndex(x => x.CreatedAt);
+        thread
+            .HasOne<PlayerEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.AuthorPlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        var threadReply = modelBuilder.Entity<ThreadReplyEntity>();
+        threadReply.ToTable("thread_replies", "internal");
+        threadReply.HasKey(x => x.Id);
+        threadReply.Property(x => x.Id)
+            .HasColumnName("id")
+            .HasColumnType("uuid")
+            .HasConversion(x => x.Value, value => new ThreadReplyId(value))
+            .IsRequired();
+        threadReply.Property(x => x.ThreadId)
+            .HasColumnName("thread_id")
+            .HasColumnType("uuid")
+            .HasConversion(x => x.Value, value => new ThreadId(value))
+            .IsRequired();
+        threadReply.Property(x => x.AuthorPlayerId)
+            .HasColumnName("author_player_id")
+            .HasColumnType("uuid")
+            .IsRequired();
+        threadReply.Property(x => x.Body)
+            .HasColumnName("body")
+            .HasMaxLength(ThreadConstants.ReplyBodyMaxLength)
+            .IsRequired();
+        threadReply.Property(x => x.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
+        threadReply.HasIndex(x => x.ThreadId);
+        threadReply.HasIndex(x => x.AuthorPlayerId);
+        threadReply
+            .HasOne<PlayerEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.AuthorPlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
+        threadReply
+            .HasOne<ThreadEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.ThreadId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         var questRoom = modelBuilder.Entity<QuestRoomEntity>();
         questRoom.ToTable("quest_rooms", "internal");

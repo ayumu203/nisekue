@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using server.application.chat;
 using server.domain.player;
 using server.domain.quest;
 
@@ -81,5 +82,46 @@ internal static class EndpointHelpers
             lastSeenAt = participant.LastSeenAt,
             leftAt = participant.LeftAt
         })
+    };
+
+    internal static object MapThreadPage(ThreadListPageView page) => new
+    {
+        items = page.Items.Select(MapThreadSummary),
+        page = page.Page,
+        pageSize = page.PageSize,
+        totalCount = page.TotalCount,
+        hasNextPage = page.HasNextPage
+    };
+
+    internal static object MapThreadDetail(ThreadDetailView thread) => new
+    {
+        id = thread.Id,
+        title = thread.Title,
+        body = thread.Body,
+        createdAt = thread.CreatedAt,
+        updatedAt = thread.UpdatedAt,
+        lastRepliedAt = thread.LastRepliedAt,
+        authorName = thread.AuthorName,
+        authorImagePath = thread.AuthorImagePath,
+        replies = thread.Replies.Select(reply => new
+        {
+            id = reply.Id,
+            body = reply.Body,
+            createdAt = reply.CreatedAt,
+            authorName = reply.AuthorName,
+            authorImagePath = reply.AuthorImagePath
+        })
+    };
+
+    private static object MapThreadSummary(ThreadSummaryView thread) => new
+    {
+        id = thread.Id,
+        title = thread.Title,
+        previewBody = thread.PreviewBody,
+        createdAt = thread.CreatedAt,
+        lastRepliedAt = thread.LastRepliedAt,
+        replyCount = thread.ReplyCount,
+        authorName = thread.AuthorName,
+        authorImagePath = thread.AuthorImagePath
     };
 }

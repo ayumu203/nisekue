@@ -61,6 +61,125 @@ classDiagram
             +Task~ChatRoomView~ PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
             +Task PostSystemMessageAsync(ownerId: PlayerId, text: string)
         }
+
+        %% スレッド機能
+        class Thread {
+            <<Aggregate Root>>
+            +ThreadId Id
+            +PlayerId AuthorPlayerId
+            +ThreadTitle Title
+            +ThreadBody Body
+            +DateTimeOffset CreatedAt
+            +DateTimeOffset UpdatedAt
+            +DateTimeOffset? LastRepliedAt
+            -List~ThreadReply~ _replies
+            +IReadOnlyList~ThreadReply~ Replies
+            +Thread(id: ThreadId, authorPlayerId: PlayerId, title: ThreadTitle, body: ThreadBody, createdAt: DateTimeOffset, updatedAt: DateTimeOffset, lastRepliedAt: DateTimeOffset?, replies: IEnumerable~ThreadReply~)
+            +AddReply(replyId: ThreadReplyId, authorPlayerId: PlayerId, body: ThreadReplyBody) : void
+            +GetReplyCount() : int
+        }
+
+        class ThreadReply {
+            <<Entity>>
+            +ThreadReplyId Id
+            +PlayerId AuthorPlayerId
+            +ThreadReplyBody Body
+            +DateTimeOffset CreatedAt
+        }
+
+        class ThreadId {
+            <<Value Object>>
+            +Guid Value
+        }
+
+        class ThreadReplyId {
+            <<Value Object>>
+            +Guid Value
+        }
+
+        class ThreadTitle {
+            <<Value Object>>
+            +string Value
+            -ValidateTitle() : string
+        }
+
+        class ThreadBody {
+            <<Value Object>>
+            +string Value
+            -ValidateBody() : string
+        }
+
+        class ThreadReplyBody {
+            <<Value Object>>
+            +string Value
+            -ValidateBody() : string
+        }
+
+        class ThreadSummary {
+            <<Read Model>>
+            +ThreadId Id
+            +string Title
+            +string PreviewBody
+            +DateTimeOffset CreatedAt
+            +DateTimeOffset? LastRepliedAt
+            +int ReplyCount
+            +string AuthorName
+            +string? AuthorImagePath
+        }
+
+        class ThreadDetailView {
+            <<Read Model>>
+            +ThreadId Id
+            +string Title
+            +string Body
+            +DateTimeOffset CreatedAt
+            +DateTimeOffset UpdatedAt
+            +DateTimeOffset? LastRepliedAt
+            +string AuthorName
+            +string? AuthorImagePath
+            +IReadOnlyList~ThreadReplyView~ Replies
+        }
+
+        class ThreadReplyView {
+            <<Read Model>>
+            +ThreadReplyId Id
+            +string Body
+            +DateTimeOffset CreatedAt
+            +string AuthorName
+            +string? AuthorImagePath
+        }
+
+        class ThreadListPage {
+            <<Read Model>>
+            +IReadOnlyList~ThreadSummary~ Items
+            +int Page
+            +int PageSize
+            +int TotalCount
+            +bool HasNextPage
+        }
+
+        class ThreadQuery {
+            <<Value Object>>
+            +int Page
+            +int PageSize
+        }
+
+        class IThreadRepository {
+            +Task CreateAsync(thread: Thread)
+            +Task~Thread?~ FindByIdAsync(threadId: ThreadId)
+            +Task SaveAsync(thread: Thread)
+            +Task DeleteOldestByAuthorIfLimitExceededAsync(authorPlayerId: PlayerId, maxThreadCount: int)
+            +Task~ThreadListPage~ GetPageAsync(query: ThreadQuery)
+            +Task~int~ CountByAuthorAsync(authorPlayerId: PlayerId)
+        }
+
+        class ThreadService {
+            <<Application Service>>
+            +Task~ThreadListPage~ GetPageAsync(page: int)
+            +Task~ThreadDetailView?~ GetByIdAsync(threadId: ThreadId)
+            +Task~ThreadDetailView~ CreateAsync(authorPlayerId: PlayerId, title: string, body: string)
+            +Task~ThreadDetailView~ AddReplyAsync(threadId: ThreadId, authorPlayerId: PlayerId, body: string)
+        }
     }
 
     ChatRoom *-- ChatMessage : 0..50
@@ -70,3 +189,13 @@ classDiagram
     ChatService ..> ChatMessageView : builds
     ChatService ..> ChatRoomView : builds
     ChatService ..> IChatRoomRepository : use
+    Thread *-- ThreadReply : 0..100
+    Thread *-- ThreadId : has
+    Thread *-- ThreadTitle : has
+    Thread *-- ThreadBody : has
+    ThreadReply *-- ThreadReplyId : has
+    ThreadReply *-- ThreadReplyBody : has
+    IThreadRepository ..> Thread : stores/loads
+    ThreadService ..> IThreadRepository : use
+    ThreadService ..> ThreadDetailView : builds
+    ThreadService ..> ThreadListPage : builds

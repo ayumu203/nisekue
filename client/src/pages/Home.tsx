@@ -84,6 +84,14 @@ function VisitPlayersIcon(props: SvgIconProps) {
   )
 }
 
+function ThreadsIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M4 5h16v10H8l-4 4zm2 2v7.17L7.17 13H18V7z" />
+    </SvgIcon>
+  )
+}
+
 function Home() {
   const { session, isLoading } = useAuth()
   const playerSWRKey = session?.user.id ? (['player', session.user.id] as const) : null
@@ -186,6 +194,15 @@ function Home() {
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
                 {locale.items}
+              </Button>
+              <Button
+                component={Link}
+                to="/threads"
+                variant="contained"
+                startIcon={<ThreadsIcon />}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+              >
+                {locale.threads}
               </Button>
               <Button
                 component={Link}
