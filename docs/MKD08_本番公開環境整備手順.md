@@ -210,11 +210,11 @@
 候補:
 
 - `Cors__AllowedOrigins__0=https://game.arm203.org`
-- `Cors__AllowedOrigins__1=https://www.arm203.org`
-- `Cors__AllowedOrigins__2=http://localhost:5173`
+- `Cors__AllowedOrigins__1=http://localhost:5173`
+- `Cors__AllowedOrigins__2=https://ayumu203.github.io`
 
 - 本番 App Service では `https://game.arm203.org` のみ設定する。
-- 開発環境では `https://www.arm203.org` と `http://localhost:5173` を設定する。
+- 開発環境では `http://localhost:5173` と `https://ayumu203.github.io` を設定する。
 
 ## 6. GitHub Secrets / Variables 設計
 
