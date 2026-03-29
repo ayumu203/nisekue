@@ -1,11 +1,6 @@
 name: Apply DB Migrations - Production
 
 on:
-  push:
-    branches: [ prod ]
-    paths:
-      - 'server/**'
-      - '.github/workflows/db-migrate-prod.yml'
   workflow_dispatch:
 
 permissions:
