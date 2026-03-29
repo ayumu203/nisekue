@@ -40,6 +40,19 @@ public class DbMarketListingRepository(IDbContextFactory<AppDbContext> dbContext
         return entities.Select(MapToDomain).ToArray();
     }
 
+    public async Task<IReadOnlyList<MarketListing>> GetExpiredAsync(DateTimeOffset now)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var entities = await dbContext.MarketListings
+            .AsNoTracking()
+            .Where(x => x.ExpiresAt <= now && x.RemainingQuantity > 0)
+            .OrderBy(x => x.ExpiresAt)
+            .ThenBy(x => x.ListedAt)
+            .ToListAsync();
+
+        return entities.Select(MapToDomain).ToArray();
+    }
+
     public async Task SaveAsync(MarketListing listing)
     {
         ArgumentNullException.ThrowIfNull(listing);

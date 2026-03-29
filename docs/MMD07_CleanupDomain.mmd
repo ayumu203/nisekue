@@ -1,0 +1,94 @@
+classDiagram
+    %% Enum 定義は docs/MMD21_Enum.mmd を参照
+    namespace CleanupDomain {
+        class MarketListingCleanupService {
+            <<Application Service>>
+            +DeleteExpiredAsync(now: DateTimeOffset) CleanupExpiredMarketListingsResult
+            -DeleteListedEquipmentIfNeededAsync(listing: MarketListing) string
+        }
+
+        class DevelopmentDataCleanupService {
+            <<Application Service>>
+            +CleanupAsync() DevelopmentDataCleanupResult
+            -DeleteEntitiesAsync~TEntity~(dbSet: DbSet~TEntity~) int
+        }
+
+        class CleanupExpiredMarketListingsResult {
+            <<Value Object>>
+            +int DeletedListings
+            +int DeletedEquipments
+            +int DeletedItemQuantity
+        }
+
+        class DevelopmentDataCleanupResult {
+            <<Value Object>>
+            +int DeletedPlayers
+            +int DeletedChatRooms
+            +int DeletedChatMessages
+            +int DeletedPlayerMoves
+            +int DeletedPlayerMasterJobs
+            +int DeletedPlayerEquipments
+            +int DeletedPlayerItemStacks
+            +int DeletedMarketListings
+            +int DeletedMarketTradeHistories
+            +int DeletedItemDeletionLogs
+            +int DeletedQuestRooms
+            +int DeletedQuestRoomParticipants
+            +int DeletedQuestRuns
+            +int DeletedQuestRunPartySnapshots
+            +int DeletedQuestRunPartyMembers
+            +int DeletedQuestRunEnemies
+            +int DeletedQuestTurnCommands
+            +int DeletedQuestFloorTraps
+            +int DeletedQuestRewardSummaries
+        }
+
+        class IMarketListingRepository {
+            <<Repository>>
+            +Task~IReadOnlyList~MarketListing~~ GetExpiredAsync(now: DateTimeOffset)
+            +Task DeleteAsync(id: MarketListingId)
+        }
+
+        class IPlayerEquipmentRepository {
+            <<Repository>>
+            +Task~PlayerEquipment?~ GetAsync(id: PlayerEquipmentId)
+            +Task DeleteAsync(id: PlayerEquipmentId)
+        }
+
+        class IItemDeletionLogRepository {
+            <<Repository>>
+            +Task AddAsync(log: ItemDeletionLog)
+        }
+
+        class ItemCleanupMaintenanceEndpoint {
+            <<Endpoint>>
+            +POST /internal/market/listings/cleanup-expired
+            +Header X-Maintenance-Token
+        }
+
+        class DevelopmentCleanupMaintenanceEndpoint {
+            <<Endpoint>>
+            +POST /internal/development/cleanup-game-data
+            +Header X-Maintenance-Token
+            +Development only
+        }
+
+        class MaintenanceConfiguration {
+            <<Configuration>>
+            +string MarketCleanupToken
+        }
+    }
+
+    MarketListingCleanupService ..> IMarketListingRepository : use
+    MarketListingCleanupService ..> IPlayerEquipmentRepository : use
+    MarketListingCleanupService ..> IItemDeletionLogRepository : use
+    MarketListingCleanupService ..> CleanupExpiredMarketListingsResult : returns
+    MarketListingCleanupService ..> MarketListing : cleanup target
+    MarketListingCleanupService ..> PlayerEquipment : deletes listed equipment
+    MarketListingCleanupService ..> ItemDeletionLog : writes
+    DevelopmentDataCleanupService ..> AppDbContext : use
+    DevelopmentDataCleanupService ..> DevelopmentDataCleanupResult : returns
+    ItemCleanupMaintenanceEndpoint ..> MarketListingCleanupService : calls
+    ItemCleanupMaintenanceEndpoint ..> MaintenanceConfiguration : validates token
+    DevelopmentCleanupMaintenanceEndpoint ..> DevelopmentDataCleanupService : calls
+    DevelopmentCleanupMaintenanceEndpoint ..> MaintenanceConfiguration : validates token
