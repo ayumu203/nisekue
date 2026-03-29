@@ -71,24 +71,45 @@ $ dotnet test
 ### DB マイグレーション (EF Core)
 
 - 開発環境では手動で実行.
-- CI/CD では GitHub Actions (`.github/workflows/db-migrate.yml`) で実行.
 
 ### マーケット期限切れ出品の自動削除
 
 - 期限切れ出品の削除は GitHub Actions の定期実行で行う.
-- ワークフローは `.github/workflows/market-listing-cleanup.yml` を利用する.
+- ワークフローは環境別に以下を利用する.
+  - 開発: `.github/workflows/cleanup-expired-market-listings-dev.yml`
+  - 本番: `.github/workflows/cleanup-expired-market-listings-prod.yml`
 - Actions からはバックエンドの内部メンテナンス API を呼び出す.
-- リポジトリまたは Environment Secrets に以下を設定する.
+- GitHub Environments (`dev`, `prod`) の Secrets に以下を設定する.
   - `MARKET_CLEANUP_TOKEN`: 内部メンテナンス API 呼び出し用トークン
 - API のベース URL は既存の `VITE_API_BASE_URL` (`vars` または `secrets`) を流用する.
 - バックエンド側にも同じ値を `Maintenance:MarketCleanupToken` として設定する.
+
+```bash
+# 開発公開環境で手動実行する例
+curl -X POST "https://www.arm203.org/internal/market/listings/cleanup-expired" \
+  -H "X-Maintenance-Token: <MARKET_CLEANUP_TOKEN>" \
+  -H "Accept: application/json"
+```
 
 ### 開発用ゲームデータ一括削除
 
 - 開発環境では `POST /internal/development/cleanup-game-data` でプレイヤー・チャット・アイテム・クエスト進行データを一括削除できる.
 - このエンドポイントは `Development` 環境でのみ有効.
-- 認証には `X-Maintenance-Token` を使い、値は `Maintenance:MarketCleanupToken` を流用する.
+- ローカルで `localhost` / `127.0.0.1` / `::1` 宛てに叩く場合は認証不要.
+- 開発公開環境へ叩く場合の認証には `X-Maintenance-Token` を使い、値は `Maintenance:MarketCleanupToken` を流用する.
 - CSV マスタ、EF Core migration 履歴、アプリ設定は削除対象に含めない.
+- GitHub Actions から手動実行する場合は `.github/workflows/cleanup-game-data-dev.yml` を利用する.
+
+```bash
+# ローカル開発環境で実行する例
+curl -X POST "http://localhost:5068/internal/development/cleanup-game-data" \
+  -H "Accept: application/json"
+
+# 開発公開環境で実行する例
+curl -X POST "https://www.arm203.org/internal/development/cleanup-game-data" \
+  -H "X-Maintenance-Token: <MARKET_CLEANUP_TOKEN>" \
+  -H "Accept: application/json"
+```
 
 ### 開発環境での手動適用
 

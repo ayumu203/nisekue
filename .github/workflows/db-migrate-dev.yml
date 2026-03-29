@@ -1,0 +1,76 @@
+name: Apply DB Migrations - Development
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      ConnectionStrings__Supabase: ${{ secrets.SUPABASE_DB_CONNECTION_STRING }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install dotnet-ef
+        run: dotnet tool install --global dotnet-ef --version 10.0.3
+
+      - name: Add dotnet tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Restore
+        run: dotnet restore server/server.csproj
+
+      - name: Validate DB connection string
+        run: |
+          if [ -z "${ConnectionStrings__Supabase}" ]; then
+            echo "::error::Development secret SUPABASE_DB_CONNECTION_STRING is empty or unavailable."
+            exit 1
+          fi
+
+      - name: Inspect DB connection string
+        run: |
+          connection_string="${ConnectionStrings__Supabase}"
+
+          extract_value() {
+            key="$1"
+            printf '%s' "$connection_string" | tr ';' '\n' | sed -n "s/^${key}=//p" | head -n 1
+          }
+
+          host_value="$(extract_value Host)"
+          port_value="$(extract_value Port)"
+          database_value="$(extract_value Database)"
+          username_value="$(extract_value Username)"
+          password_value="$(extract_value Password)"
+
+          if [ -z "$host_value" ] || [ -z "$port_value" ] || [ -z "$database_value" ] || [ -z "$username_value" ]; then
+            echo "::error::Connection string is missing Host, Port, Database, or Username."
+            exit 1
+          fi
+
+          if [ -z "$password_value" ]; then
+            echo "::error::Connection string is missing Password."
+            exit 1
+          fi
+
+          echo "Host=$host_value"
+          echo "Port=$port_value"
+          echo "Database=$database_value"
+          echo "Username=$username_value"
+          echo "PasswordPresent=yes"
+
+      - name: Build
+        run: dotnet build server/server.csproj -c Release --no-restore
+
+      - name: Apply migrations
+        run: dotnet ef database update --project server/server.csproj --startup-project server/server.csproj --configuration Release --no-build

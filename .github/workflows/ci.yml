@@ -1,4 +1,4 @@
-name: CI
+name: Code Check (Format/Lint/Build/Test)
 
 on:
   push:
