@@ -278,6 +278,7 @@ internal static class QuestEndpoints
             Guid roomId,
             ClaimsPrincipal user,
             UpdateQuestRoomRestrictionsRequest request,
+            IQuestRoomRepository questRoomRepository,
             QuestRoomService questRoomService,
             QuestResponseMapper responseMapper) =>
         {
@@ -287,9 +288,20 @@ internal static class QuestEndpoints
                 return Results.Unauthorized();
             }
 
+            var room = await questRoomRepository.GetAsync(new QuestRoomId(roomId));
+            if (room is null)
+            {
+                return Results.NotFound(new { message = "ルームが見つかりません。" });
+            }
+
+            if (room.OwnerId != playerId.Value)
+            {
+                return Results.Forbid();
+            }
+
             try
             {
-                var room = await questRoomService.UpdateRestrictionsAsync(
+                room = await questRoomService.UpdateRestrictionsAsync(
                     new QuestRoomId(roomId),
                     playerId.Value,
                     request.MinRequiredLevel,

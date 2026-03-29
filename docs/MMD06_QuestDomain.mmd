@@ -161,7 +161,7 @@ classDiagram
             +QuestRoomCloseReason? CloseReason
             +DateTimeOffset CreatedAt
             +DateTimeOffset? ClosedAt
-            +AddPlayer(playerId: PlayerId, displayName: string) void
+            +AddPlayer(playerId: PlayerId, displayName: string, level: int) void
             +UpdateJoinPolicy(minRequiredLevel: int?, allowedPlayerIds: IReadOnlyList~PlayerId~) void
             +AssignPosition(participantId: QuestParticipantId, position: BattlePosition) void
             +MarkDisconnected(participantId: QuestParticipantId, at: DateTimeOffset) void

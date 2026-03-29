@@ -85,6 +85,7 @@ public class QuestResponseMapper(
             {
                 minRequiredLevel = room.JoinPolicy.MinRequiredLevel,
                 allowedPlayers = room.JoinPolicy.AllowedPlayerIds
+                    .OrderBy(playerId => playerId.Value)
                     .Select(playerId =>
                     {
                         players.TryGetValue(playerId, out var allowedPlayer);

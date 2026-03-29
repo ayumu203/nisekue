@@ -166,13 +166,30 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
             var allowedPlayers = await dbContext.QuestRoomAllowedPlayers
                 .Where(x => x.RoomId == room.Id.Value)
                 .ToListAsync();
-            dbContext.QuestRoomAllowedPlayers.RemoveRange(allowedPlayers);
-            dbContext.QuestRoomAllowedPlayers.AddRange(room.JoinPolicy.AllowedPlayerIds.Select(x => new QuestRoomAllowedPlayerEntity
+            var existingAllowedPlayerIds = allowedPlayers.Select(x => x.PlayerId).ToHashSet();
+            var nextAllowedPlayerIds = room.JoinPolicy.AllowedPlayerIds.Select(x => x.Value).ToHashSet();
+
+            var allowedPlayersToRemove = allowedPlayers
+                .Where(x => !nextAllowedPlayerIds.Contains(x.PlayerId))
+                .ToArray();
+            if (allowedPlayersToRemove.Length > 0)
             {
-                RoomId = room.Id.Value,
-                PlayerId = x.Value,
-                AddedAt = DateTimeOffset.UtcNow
-            }));
+                dbContext.QuestRoomAllowedPlayers.RemoveRange(allowedPlayersToRemove);
+            }
+
+            var allowedPlayersToAdd = room.JoinPolicy.AllowedPlayerIds
+                .Where(x => !existingAllowedPlayerIds.Contains(x.Value))
+                .Select(x => new QuestRoomAllowedPlayerEntity
+                {
+                    RoomId = room.Id.Value,
+                    PlayerId = x.Value,
+                    AddedAt = DateTimeOffset.UtcNow
+                })
+                .ToArray();
+            if (allowedPlayersToAdd.Length > 0)
+            {
+                dbContext.QuestRoomAllowedPlayers.AddRange(allowedPlayersToAdd);
+            }
 
             var participants = await dbContext.QuestRoomParticipants
                 .Where(x => x.RoomId == room.Id.Value)

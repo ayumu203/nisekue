@@ -97,6 +97,7 @@ export default function Quest() {
   const [multiEntryView, setMultiEntryView] = useState<'create' | 'list'>('create')
   const [minRequiredLevelInput, setMinRequiredLevelInput] = useState('')
   const [allowedPlayerIds, setAllowedPlayerIds] = useState<string[]>([])
+  const [isRestrictionsDirty, setIsRestrictionsDirty] = useState(false)
   const [createdRoom, setCreatedRoom] = useState<QuestRoomDetailResponse | null>(null)
   const [startedRun, setStartedRun] = useState<QuestRunDetailResponse | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -182,7 +183,7 @@ export default function Quest() {
     [stages],
   )
   const playerCandidatesSWRKey =
-    session?.access_token && createdRoom == null && startedRun == null ? ([`quest-player-candidates`] as const) : null
+    session?.access_token && startedRun == null ? ([`quest-player-candidates`] as const) : null
   const {
     data: playerCandidates,
     error: playerCandidatesError,
@@ -258,7 +259,13 @@ export default function Quest() {
     }
   }
 
+  function handleMinRequiredLevelChange(value: string): void {
+    setIsRestrictionsDirty(true)
+    setMinRequiredLevelInput(value)
+  }
+
   function handleToggleAllowedPlayer(playerId: string): void {
+    setIsRestrictionsDirty(true)
     setAllowedPlayerIds((current) =>
       current.includes(playerId) ? current.filter((id) => id !== playerId) : [...current, playerId],
     )
@@ -314,15 +321,26 @@ export default function Quest() {
   )
 
   const currentRoom = liveRoom ?? createdRoom
+  const currentRoomRestrictionSignature = currentRoom
+    ? JSON.stringify({
+        roomId: currentRoom.roomId,
+        minRequiredLevel: currentRoom.restrictions.minRequiredLevel,
+        allowedPlayerIds: currentRoom.restrictions.allowedPlayers.map((player) => player.playerId).sort(),
+      })
+    : null
 
   useEffect(() => {
-    if (!currentRoom) {
+    if (!currentRoom || isRestrictionsDirty) {
       return
     }
 
     setMinRequiredLevelInput(currentRoom.restrictions.minRequiredLevel?.toString() ?? '')
     setAllowedPlayerIds(currentRoom.restrictions.allowedPlayers.map((player) => player.playerId))
-  }, [currentRoom?.roomId, currentRoom?.version])
+  }, [currentRoomRestrictionSignature, isRestrictionsDirty])
+
+  useEffect(() => {
+    setIsRestrictionsDirty(false)
+  }, [currentRoom?.roomId])
 
   async function handleJoinRoom(roomId: string): Promise<void> {
     if (!session?.access_token) {
@@ -370,6 +388,7 @@ export default function Quest() {
         },
         session.access_token,
       )
+      setIsRestrictionsDirty(false)
       setCreatedRoom(room)
       await mutateRoom(room, { revalidate: false })
       await mutateRooms()
@@ -1009,7 +1028,7 @@ export default function Quest() {
                           isCreateDisabled={isCreateDisabled}
                           onStageChange={setSelectedStageId}
                           onModeChange={setMode}
-                          onMinRequiredLevelChange={setMinRequiredLevelInput}
+                          onMinRequiredLevelChange={handleMinRequiredLevelChange}
                           onToggleAllowedPlayer={handleToggleAllowedPlayer}
                           onCreateRoom={handleCreateRoom}
                         />
@@ -1045,7 +1064,7 @@ export default function Quest() {
                       isPlayerCandidatesLoading={isPlayerCandidatesLoading}
                       playerCandidatesError={playerCandidatesError}
                       isUpdatingParticipantId={isUpdatingParticipantId}
-                      onMinRequiredLevelChange={setMinRequiredLevelInput}
+                      onMinRequiredLevelChange={handleMinRequiredLevelChange}
                       onToggleAllowedPlayer={handleToggleAllowedPlayer}
                       onUpdateRestrictions={handleUpdateRoomRestrictions}
                       onPositionDraftChange={(participantId, nextPosition) => {

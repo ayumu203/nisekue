@@ -4,12 +4,14 @@ namespace server.domain.quest;
 
 public class QuestRoomJoinPolicy(int? minRequiredLevel = null, IEnumerable<PlayerId>? allowedPlayerIds = null)
 {
-    private readonly HashSet<PlayerId> allowedPlayerIds = (allowedPlayerIds ?? [])
-        .ToHashSet();
+    private readonly PlayerId[] allowedPlayerIds = (allowedPlayerIds ?? [])
+        .Distinct()
+        .OrderBy(x => x.Value)
+        .ToArray();
 
     public int? MinRequiredLevel { get; } = ValidateMinRequiredLevel(minRequiredLevel);
-    public IReadOnlyCollection<PlayerId> AllowedPlayerIds => allowedPlayerIds;
-    public bool HasAllowedPlayerRestriction => allowedPlayerIds.Count > 0;
+    public IReadOnlyCollection<PlayerId> AllowedPlayerIds => allowedPlayerIds.ToArray();
+    public bool HasAllowedPlayerRestriction => allowedPlayerIds.Length > 0;
 
     public bool CanJoin(PlayerId playerId, int level) => GetJoinDeniedReason(playerId, level) is null;
 
