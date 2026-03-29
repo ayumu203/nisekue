@@ -12,6 +12,8 @@ import JobChange from '@/pages/JobChange'
 import Quest from '@/pages/Quest'
 import VisitPlayer from '@/pages/VisitPlayer'
 import Items from '@/pages/Items'
+import Threads from '@/pages/Threads'
+import ThreadDetail from '@/pages/ThreadDetail'
 import { useAuth } from '@/contexts/useAuth'
 
 function App() {
@@ -32,6 +34,8 @@ function App() {
       <Route path="/quest/quest-mult-test" element={<Navigate to="/quest" replace />} />
       <Route path="/training" element={user ? <Training /> : <Navigate to="/auth" replace />} />
       <Route path="/items" element={user ? <Items /> : <Navigate to="/auth" replace />} />
+      <Route path="/threads" element={user ? <Threads /> : <Navigate to="/auth" replace />} />
+      <Route path="/threads/:threadId" element={user ? <ThreadDetail /> : <Navigate to="/auth" replace />} />
       <Route path="/player-setting" element={user ? <PlayerSetting /> : <Navigate to="/auth" replace />} />
       <Route path="/player-images" element={user ? <PlayerImageList /> : <Navigate to="/auth" replace />} />
       <Route path="/move-setting" element={user ? <MoveSetting /> : <Navigate to="/auth" replace />} />

@@ -16,6 +16,8 @@ public record UpdatePlayerImageRequest(int ImageNo);
 public record UpdatePlayerJobRequest(Job Job);
 public record UpdatePlayerEquipmentRequest(EquipmentType EquipmentType, Guid? PlayerEquipmentId);
 public record PostChatMessageRequest(Guid OwnerId, string Text);
+public record CreateThreadRequest(string Title, string Body);
+public record CreateThreadReplyRequest(string Body);
 public record ExecuteTrainingRequest(int EnemyId, IReadOnlyList<int?> MoveIds);
 public record UseItemRequest(int Quantity);
 public record CreateMarketListingRequest(Guid? PlayerEquipmentId, Guid? ItemStackId, int Quantity, int UnitPrice);

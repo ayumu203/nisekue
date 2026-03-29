@@ -32,6 +32,22 @@ erDiagram
         varchar(200) message "NOT NULL"
         timestamptz created_at "NOT NULL, DEFAULT CURRENT_TIMESTAMP"
     }
+    THREADS {
+        uuid id PK "internal.threads.id"
+        uuid author_player_id FK "internal.players.id"
+        varchar(50) title "NOT NULL"
+        varchar(500) body "NOT NULL"
+        timestamptz created_at "NOT NULL"
+        timestamptz updated_at "NOT NULL"
+        timestamptz last_replied_at "NULL"
+    }
+    THREAD_REPLIES {
+        uuid id PK "internal.thread_replies.id"
+        uuid thread_id FK "internal.threads.id"
+        uuid author_player_id FK "internal.players.id"
+        varchar(250) body "NOT NULL"
+        timestamptz created_at "NOT NULL"
+    }
     PLAYER_MOVES {
         uuid player_id PK, FK "internal.players.id"
         int move_id_1 "NULL (references CSV move_id logically)"
@@ -217,6 +233,9 @@ erDiagram
 
     PLAYERS ||--|| CHAT_ROOMS : owns
     CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
+    PLAYERS ||--o{ THREADS : authors
+    THREADS ||--o{ THREAD_REPLIES : has
+    PLAYERS ||--o{ THREAD_REPLIES : authors
     PLAYERS ||--|| PLAYER_MOVES : has_slots
     PLAYERS ||--o{ PLAYER_MASTER_JOBS : has_mastered
     PLAYERS ||--o{ PLAYER_EQUIPMENTS : owns

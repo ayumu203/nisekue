@@ -103,6 +103,7 @@ builder.Services.AddScoped<IMarketTradeHistoryRepository, DbMarketTradeHistoryRe
 builder.Services.AddScoped<IItemDeletionLogRepository, DbItemDeletionLogRepository>();
 builder.Services.AddSingleton<IJobProfileRepository, CsvJobProfileRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
+builder.Services.AddScoped<IThreadRepository, DbThreadRepository>();
 builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
 builder.Services.AddSingleton<IMoveRepository, CsvMoveRepository>();
 builder.Services.AddSingleton<IJobMoveLearningRuleRepository, CsvJobMoveLearningRuleRepository>();
@@ -129,6 +130,7 @@ builder.Services.AddScoped<PlayerJobService>();
 builder.Services.AddScoped<MarketListingCleanupService>();
 builder.Services.AddScoped<DevelopmentDataCleanupService>();
 builder.Services.AddScoped<ChatService>();
+builder.Services.AddScoped<ThreadService>();
 builder.Services.AddScoped<TrainingService>();
 
 var app = builder.Build();
@@ -142,6 +144,7 @@ app.MapPlayerEndpoints();
 app.MapItemEndpoints();
 app.MapQuestEndpoints();
 app.MapChatEndpoints();
+app.MapThreadEndpoints();
 app.MapTrainingEndpoints();
 
 app.Run();

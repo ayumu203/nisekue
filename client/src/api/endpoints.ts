@@ -17,6 +17,15 @@ import {
   postChatMessageResponseSchema,
 } from '@/schema/chat'
 import {
+  createThreadReplyRequestSchema,
+  createThreadReplyResponseSchema,
+  createThreadRequestSchema,
+  createThreadResponseSchema,
+  getThreadsRequestSchema,
+  getThreadsResponseSchema,
+  threadDetailSchema,
+} from '@/schema/thread'
+import {
   getTrainingEnemiesResponseSchema,
   executeTrainingRequestSchema,
   executeTrainingResponseSchema,
@@ -71,6 +80,17 @@ export type {
   PostChatMessageRequest,
   PostChatMessageResponse,
 } from '@/schema/chat'
+export type {
+  ThreadSummary,
+  ThreadReply,
+  ThreadDetail,
+  GetThreadsRequest,
+  GetThreadsResponse,
+  CreateThreadRequest,
+  CreateThreadResponse,
+  CreateThreadReplyRequest,
+  CreateThreadReplyResponse,
+} from '@/schema/thread'
 export type {
   TrainingEnemy,
   GetTrainingEnemiesResponse,
@@ -166,6 +186,31 @@ export const endpoints = {
       method: 'POST',
       requestSchema: postChatMessageRequestSchema,
       responseSchema: postChatMessageResponseSchema,
+    },
+  },
+  thread: {
+    list: {
+      path: '/threads',
+      method: 'GET',
+      requestSchema: getThreadsRequestSchema,
+      responseSchema: getThreadsResponseSchema,
+    },
+    get: {
+      path: (threadId: string) => `/threads/${threadId}`,
+      method: 'GET',
+      responseSchema: threadDetailSchema,
+    },
+    create: {
+      path: '/threads',
+      method: 'POST',
+      requestSchema: createThreadRequestSchema,
+      responseSchema: createThreadResponseSchema,
+    },
+    reply: {
+      path: (threadId: string) => `/threads/${threadId}/replies`,
+      method: 'POST',
+      requestSchema: createThreadReplyRequestSchema,
+      responseSchema: createThreadReplyResponseSchema,
     },
   },
   training: {
