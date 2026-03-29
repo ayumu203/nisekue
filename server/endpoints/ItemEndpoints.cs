@@ -846,17 +846,22 @@ internal static class ItemEndpoints
 
         var actualBytes = Encoding.UTF8.GetBytes(actual);
         var expectedBytes = Encoding.UTF8.GetBytes(expected);
+        if (actualBytes.Length != expectedBytes.Length)
+        {
+            return false;
+        }
+
         return CryptographicOperations.FixedTimeEquals(actualBytes, expectedBytes);
     }
 
     private static bool IsLocalDevelopmentRequest(HttpRequest request)
     {
-        var host = request.Host.Host;
-        if (string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase))
+        var remoteIp = request.HttpContext.Connection.RemoteIpAddress;
+        if (remoteIp is null)
         {
-            return true;
+            return false;
         }
 
-        return IPAddress.TryParse(host, out var address) && IPAddress.IsLoopback(address);
+        return IPAddress.IsLoopback(remoteIp);
     }
 }
