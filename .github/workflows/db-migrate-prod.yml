@@ -14,7 +14,7 @@ permissions:
 jobs:
   migrate:
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod
     env:
       ConnectionStrings__Supabase: ${{ secrets.SUPABASE_DB_CONNECTION_STRING }}
 
@@ -42,6 +42,37 @@ jobs:
             echo "::error::Production secret SUPABASE_DB_CONNECTION_STRING is empty or unavailable."
             exit 1
           fi
+
+      - name: Inspect DB connection string
+        run: |
+          connection_string="${ConnectionStrings__Supabase}"
+
+          extract_value() {
+            key="$1"
+            printf '%s' "$connection_string" | tr ';' '\n' | sed -n "s/^${key}=//p" | head -n 1
+          }
+
+          host_value="$(extract_value Host)"
+          port_value="$(extract_value Port)"
+          database_value="$(extract_value Database)"
+          username_value="$(extract_value Username)"
+          password_value="$(extract_value Password)"
+
+          if [ -z "$host_value" ] || [ -z "$port_value" ] || [ -z "$database_value" ] || [ -z "$username_value" ]; then
+            echo "::error::Connection string is missing Host, Port, Database, or Username."
+            exit 1
+          fi
+
+          if [ -z "$password_value" ]; then
+            echo "::error::Connection string is missing Password."
+            exit 1
+          fi
+
+          echo "Host=$host_value"
+          echo "Port=$port_value"
+          echo "Database=$database_value"
+          echo "Username=$username_value"
+          echo "PasswordPresent=yes"
 
       - name: Build
         run: dotnet build server/server.csproj -c Release --no-restore
