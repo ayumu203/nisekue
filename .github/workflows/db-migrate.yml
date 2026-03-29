@@ -1,4 +1,4 @@
-name: Apply DB Migrations
+name: DB Migrations
 
 on:
   push:
