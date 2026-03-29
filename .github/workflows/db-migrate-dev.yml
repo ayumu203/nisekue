@@ -14,7 +14,7 @@ permissions:
 jobs:
   migrate:
     runs-on: ubuntu-latest
-    environment: development
+    environment: dev
     env:
       ConnectionStrings__Supabase: ${{ secrets.SUPABASE_DB_CONNECTION_STRING }}
 

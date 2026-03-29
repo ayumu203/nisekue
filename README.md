@@ -79,7 +79,7 @@ $ dotnet test
   - 開発: `.github/workflows/cleanup-expired-market-listings-dev.yml`
   - 本番: `.github/workflows/cleanup-expired-market-listings-prod.yml`
 - Actions からはバックエンドの内部メンテナンス API を呼び出す.
-- Environment Secrets に以下を設定する.
+- GitHub Environments (`dev`, `prod`) の Secrets に以下を設定する.
   - `MARKET_CLEANUP_TOKEN`: 内部メンテナンス API 呼び出し用トークン
 - API のベース URL は既存の `VITE_API_BASE_URL` (`vars` または `secrets`) を流用する.
 - バックエンド側にも同じ値を `Maintenance:MarketCleanupToken` として設定する.

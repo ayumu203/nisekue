@@ -220,8 +220,8 @@
 
 ### 6.1 GitHub Environments
 
-- `development`
-- `production`
+- `dev`
+- `prod`
 
 ### 6.2 production へ置く値
 
@@ -241,17 +241,17 @@
 
 ### 6.4 `MARKET_CLEANUP_TOKEN` の書き場所
 
-- GitHub では `Settings > Environments > development > Secrets and variables > Actions` に登録する。
-- GitHub では `Settings > Environments > production > Secrets and variables > Actions` に登録する。
+- GitHub では `Settings > Environments > dev > Secrets and variables > Actions` に登録する。
+- GitHub では `Settings > Environments > prod > Secrets and variables > Actions` に登録する。
 - Azure App Service では `Settings > Environment variables` に登録する。
 
 対応関係:
 
-- GitHub `development` Environment secret
+- GitHub `dev` Environment secret
   - `MARKET_CLEANUP_TOKEN=<development 用 token>`
 - 開発 App Service environment variable
   - `Maintenance__MarketCleanupToken=<development 用 token>`
-- GitHub `production` Environment secret
+- GitHub `prod` Environment secret
   - `MARKET_CLEANUP_TOKEN=<production 用 token>`
 - 本番 App Service environment variable
   - `Maintenance__MarketCleanupToken=<production 用 token>`
