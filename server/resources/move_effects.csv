@@ -5,8 +5,8 @@ effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical
 4,4,1,Damage,1,1.80,12,0.05,Slash,,,,,,,,,,,,
 5,5,1,Damage,1,1.20,6,0.03,Strike,Defense,,,,,,,,,,,
 6,6,1,Damage,1,1.25,4,0.02,None,,,,,,,,,,,,
-7,7,1,Ailment,,,,,,,Taunt,1.00,1,,,,,,,,,
-8,8,1,Ailment,,,,,,,Taunt,1.00,1,,,,,,,,,
+7,7,1,Ailment,,,,,,,Taunt,1.00,2,,,,,,,,,
+8,8,1,Ailment,,,,,,,Taunt,1.00,2,,,,,,,,,
 9,8,2,Buff,,,,,,,,,,Defense,Add,15,3,1.00,false,,,
 10,9,1,Buff,,,,,,,,,,Defense,Add,15,3,1.00,false,,,
 11,10,1,Ailment,,,,,,,Paralysis,1.00,1,,,,,,,,,
@@ -76,10 +76,10 @@ effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical
 75,66,2,Buff,,,,,,,,,,Defense,Add,-8,2,1.00,false,,,, 
 76,67,1,Damage,1,1.85,8,0.05,Slash,Strength,,,,,,,,,,,, 
 77,68,1,Buff,,,,,,,,,,CriticalChance,Add,45,2,1.00,false,,,, 
-78,69,1,Ailment,,,,,,,Taunt,1.00,1,,,,,,,,,,false
+78,69,1,Ailment,,,,,,,Taunt,1.00,2,,,,,,,,,,false
 79,69,2,Buff,,,,,,,,,,Evasion,Add,25,2,1.00,false,,,, 
 80,70,1,Buff,,,,,,,,,,DamageReduction,Add,25,2,1.00,false,,,, 
-81,71,1,Ailment,,,,,,,Taunt,1.00,1,,,,,,,,,,false
+81,71,1,Ailment,,,,,,,Taunt,1.00,2,,,,,,,,,,false
 82,71,2,Buff,,,,,,,,,,Defense,Add,20,2,1.00,false,,,, 
 83,72,1,Buff,,,,,,,,,,DamageReduction,Add,35,2,1.00,false,,,, 
 84,73,1,Damage,1,1.55,8,0.03,Fire,Intelligence,,,,,,,,,,,, 

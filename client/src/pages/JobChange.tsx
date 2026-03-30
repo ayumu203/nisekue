@@ -30,6 +30,8 @@ function formatExpProgress(currentExp: number, level: number): { current: number
   }
 }
 
+const baseJobCodes = new Set(['Warrior', 'Guardian', 'Mage', 'Priest'] as const)
+
 export default function JobChange() {
   const { session, isLoading } = useAuth()
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -61,7 +63,7 @@ export default function JobChange() {
     }
   })
   const currentJobImageSrc = resolveJobAssetPath(player?.job.code)
-  const currentJobs = (player?.jobProfiles ?? []).filter((job) => job.code !== 'Apprentice')
+  const currentJobs = (player?.jobProfiles ?? []).filter((job) => baseJobCodes.has(job.code as typeof job.code))
   const unlockThreshold = 5
   const jobExpProgress = formatExpProgress(player?.jobExp ?? 0, player?.jobLevel ?? 1)
 

@@ -977,6 +977,7 @@
 * 「単体攻撃スキル」「ちょうはつスキル」「防御参照スキル」は `Move` の効果定義から判定できる前提とする。判定に必要な Move メタデータが不足する場合は、後続で `MoveDomain` 設計を補う。
 * 「単体攻撃スキル」は、`Move.TargetType == Enemy` かつ `Move.AttackRange == Single` であり、`Move.Effects` に `Damage` 効果を含むスキルとして判定する。
 * 「ちょうはつスキル」は、`Move.Effects` に `Ailment` 効果を含み、その `AilmentType == Taunt` であるスキルとして判定する。
+* ちょうはつ状態は付与ターンを含めて 2 ターン継続し、2 ターン目終了時に自動的に解除される。クエスト中の行動判定では付与後の最大 2 ターン間、優先対象として扱う。
 * 「防御参照スキル」は、`Move.Effects` に `Damage` 効果を含み、その `Damage.AttackStat == Defense` であるスキルとして判定する。
 * 「範囲攻撃スキル」は、`Move.TargetType == Enemy` かつ `Move.AttackRange != Single` であり、`Move.Effects` に `Damage` 効果を含むスキルとして判定する。
 * 「回復スキル」は、`Move.Effects` に `Heal` 効果を含むスキルとして判定する。
