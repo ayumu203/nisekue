@@ -17,6 +17,7 @@ public class BattleStatusResolver
         var intelligence = snapshot.BaseStatus.Intelligence;
         var luck = snapshot.BaseStatus.Luck;
         var speed = snapshot.BaseStatus.Speed;
+        var accuracy = snapshot.BaseStatus.Accuracy;
 
         foreach (var buff in state.Buffs)
         {
@@ -43,12 +44,15 @@ public class BattleStatusResolver
                 case BuffStat.Speed:
                     speed = Apply(speed, buff.CalculationType, buff.Value);
                     break;
+                case BuffStat.Accuracy:
+                    accuracy = Apply(accuracy, buff.CalculationType, buff.Value);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(buff.Stat), $"未対応の BuffStat: {buff.Stat}");
             }
         }
 
-        return new Status(maxHp, maxMp, strength, defense, intelligence, luck, speed);
+        return new Status(maxHp, maxMp, strength, defense, intelligence, luck, speed, accuracy);
     }
 
     private static int Apply(int currentValue, BuffCalculationType calculationType, decimal value, int minValue = 0)

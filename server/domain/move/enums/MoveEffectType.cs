@@ -6,5 +6,6 @@ public enum MoveEffectType
     Heal = 2,
     RestoreMp = 3,
     Ailment = 4,
-    Buff = 5
+    Buff = 5,
+    Knockout = 6
 }

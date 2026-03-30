@@ -41,6 +41,11 @@ public class BattleActionResolver(
             return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.CannotAct);
         }
 
+        if (actorState.Ailments.Any(x => x.Type == AilmentType.Sleep))
+        {
+            return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.Sleeping);
+        }
+
         if (ShouldSkipActionByParalysis(actorState))
         {
             return new BattleActionResult(action.ActorId, action.Kind, action.MoveId, false, BattleActionFailureReason.Paralyzed);
@@ -80,6 +85,12 @@ public class BattleActionResolver(
             var targetState = stateMap[targetId];
             if (targetState.IsDead)
             {
+                continue;
+            }
+
+            if (!ShouldHit(attackerStatus, TargetType.Enemy))
+            {
+                targetResults.Add(new BattleTargetResult(targetId, 0, 0, 0, targetState.IsDead, null));
                 continue;
             }
 
@@ -127,7 +138,7 @@ public class BattleActionResolver(
         }
 
         var targets = ResolveTargets(
-            new BattleTargetSelector(move.TargetType, move.AttackRange, action.Target.TargetActorIds, action.Target.SelectedPosition),
+            new BattleTargetSelector(move.TargetType, move.AttackRange, action.Target.TargetActorIds, action.Target.SelectedPosition, move.TargetLifeState),
             actorSnapshot,
             snapshotMap.Values,
             stateMap.Values,
@@ -144,11 +155,21 @@ public class BattleActionResolver(
 
         foreach (var effect in move.GetOrderedEffects())
         {
-            foreach (var targetId in targets)
+            var effectTargets = ResolveEffectTargets(
+                action,
+                move,
+                effect,
+                actorSnapshot,
+                snapshotMap.Values,
+                stateMap.Values,
+                fieldContext,
+                targets);
+
+            foreach (var targetId in effectTargets)
             {
                 var targetSnapshot = snapshotMap[targetId];
                 var targetState = stateMap[targetId];
-                if (targetState.IsDead && effect.EffectType != MoveEffectType.Heal)
+                if (targetState.IsDead && effect.EffectType != MoveEffectType.Heal && effect.EffectType != MoveEffectType.RestoreMp)
                 {
                     continue;
                 }
@@ -224,8 +245,9 @@ public class BattleActionResolver(
             MoveEffectType.Damage => ResolveDamageEffect(actorSnapshot, attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
             MoveEffectType.Heal => ResolveHealEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
             MoveEffectType.RestoreMp => ResolveRestoreMpEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
-            MoveEffectType.Ailment => ResolveAilmentEffect(actorSnapshot, attackerStatus, defenderStatus, targetState, effect),
-            MoveEffectType.Buff => ResolveBuffEffect(actorSnapshot, attackerStatus, defenderStatus, targetState, effect),
+            MoveEffectType.Ailment => ResolveAilmentEffect(actorSnapshot, attackerStatus, defenderStatus, targetState, move, effect),
+            MoveEffectType.Buff => ResolveBuffEffect(attackerStatus, defenderStatus, targetState, move, effect),
+            MoveEffectType.Knockout => ResolveKnockoutEffect(attackerStatus, defenderStatus, targetState, move, effect),
             _ => throw new ArgumentOutOfRangeException(nameof(effect.EffectType), $"未対応の MoveEffectType: {effect.EffectType}")
         };
     }
@@ -242,6 +264,10 @@ public class BattleActionResolver(
     {
         ArgumentNullException.ThrowIfNull(effect.Damage);
         var attackStat = ResolveAttackStat(move, effect.Damage, attackerStatus, isSupportMove);
+        if (!ShouldHit(attackerStatus, effect.OverrideTargetType ?? move.TargetType))
+        {
+            return new BattleTargetResult(targetSnapshot.Id, 0, 0, 0, targetState.IsDead, null);
+        }
 
         var totalDamage = 0;
         for (var i = 0; i < effect.Damage.HitCount; i++)
@@ -315,43 +341,70 @@ public class BattleActionResolver(
         return new BattleTargetResult(targetSnapshot.Id, 0, 0, restoredMp, false, null);
     }
 
-    private static BattleTargetResult ResolveAilmentEffect(
+    private BattleTargetResult ResolveAilmentEffect(
         BattleActorSnapshot actorSnapshot,
         Status attackerStatus,
         Status defenderStatus,
         BattleActorState targetState,
+        Move move,
         MoveEffect effect)
     {
         ArgumentNullException.ThrowIfNull(effect.Ailment);
 
         var appliedAilment = default(AilmentType?);
-        if (ShouldApplySecondaryEffect(effect.Ailment.AilmentRate, attackerStatus, defenderStatus))
+        if (ShouldHit(attackerStatus, effect.OverrideTargetType ?? move.TargetType) &&
+            ShouldApplySecondaryEffect(effect.Ailment.AilmentRate, attackerStatus, defenderStatus))
         {
-            targetState.ApplyAilment(new BattleAilmentState(
-                effect.Ailment.AilmentType,
-                effect.Ailment.AilmentTurns,
-                effect.Ailment.TriggerDamage,
-                actorSnapshot.MoveSet.GetLearnedMoveIds().FirstOrDefault(id => id.Id == effect.MoveId.Id) ?? effect.MoveId));
+            if (effect.Ailment.AilmentType == AilmentType.InstantDeath)
+            {
+                targetState.ReceiveDamage(targetState.CurrentHp);
+            }
+            else
+            {
+                targetState.ApplyAilment(new BattleAilmentState(
+                    effect.Ailment.AilmentType,
+                    effect.Ailment.AilmentTurns,
+                    effect.Ailment.TriggerDamage,
+                    actorSnapshot.MoveSet.GetLearnedMoveIds().FirstOrDefault(id => id.Id == effect.MoveId.Id) ?? effect.MoveId));
+            }
+
             appliedAilment = effect.Ailment.AilmentType;
         }
 
         return new BattleTargetResult(targetState.Id, 0, 0, 0, targetState.IsDead, appliedAilment);
     }
 
-    private static BattleTargetResult ResolveBuffEffect(
-        BattleActorSnapshot actorSnapshot,
+    private BattleTargetResult ResolveBuffEffect(
         Status attackerStatus,
         Status defenderStatus,
         BattleActorState targetState,
+        Move move,
         MoveEffect effect)
     {
         ArgumentNullException.ThrowIfNull(effect.Buff);
 
-        if (ShouldApplySecondaryEffect(effect.Buff.BuffRate, attackerStatus, defenderStatus))
+        if (ShouldHit(attackerStatus, effect.OverrideTargetType ?? move.TargetType) &&
+            ShouldApplySecondaryEffect(effect.Buff.BuffRate, attackerStatus, defenderStatus))
         {
             targetState.ApplyBuff(
                 new BattleBuffState(effect.Buff.BuffStat, effect.Buff.BuffCalculationType, effect.Buff.BuffValue, effect.Buff.BuffTurns),
                 effect.Buff.CanStack);
+        }
+
+        return new BattleTargetResult(targetState.Id, 0, 0, 0, targetState.IsDead, null);
+    }
+
+    private BattleTargetResult ResolveKnockoutEffect(
+        Status attackerStatus,
+        Status defenderStatus,
+        BattleActorState targetState,
+        Move move,
+        MoveEffect effect)
+    {
+        if (ShouldHit(attackerStatus, effect.OverrideTargetType ?? move.TargetType) &&
+            ShouldApplySecondaryEffect(1m, attackerStatus, defenderStatus))
+        {
+            targetState.ReceiveDamage(targetState.CurrentHp);
         }
 
         return new BattleTargetResult(targetState.Id, 0, 0, 0, targetState.IsDead, null);
@@ -397,5 +450,44 @@ public class BattleActionResolver(
         BattleFieldContext? fieldContext)
     {
         return battleTargetingResolver.ResolveTargets(selector, actorSnapshot, snapshots, states, fieldContext);
+    }
+
+    private IReadOnlyList<BattleActorId> ResolveEffectTargets(
+        BattleAction action,
+        Move move,
+        MoveEffect effect,
+        BattleActorSnapshot actorSnapshot,
+        IEnumerable<BattleActorSnapshot> snapshots,
+        IEnumerable<BattleActorState> states,
+        BattleFieldContext? fieldContext,
+        IReadOnlyList<BattleActorId> initialTargets)
+    {
+        if (effect.OverrideTargetType is null &&
+            effect.OverrideAttackRange is null &&
+            effect.OverrideTargetLifeState is null)
+        {
+            return initialTargets;
+        }
+
+        return ResolveTargets(
+            new BattleTargetSelector(
+                effect.OverrideTargetType ?? move.TargetType,
+                effect.OverrideAttackRange ?? move.AttackRange,
+                selectedPosition: action.Target.SelectedPosition,
+                targetLifeState: effect.OverrideTargetLifeState ?? move.TargetLifeState),
+            actorSnapshot,
+            snapshots,
+            states,
+            fieldContext);
+    }
+
+    private bool ShouldHit(Status attackerStatus, TargetType targetType)
+    {
+        if (targetType is TargetType.Ally or TargetType.Self)
+        {
+            return true;
+        }
+
+        return attackerStatus.Accuracy >= 100 || _randomProvider() * 100d < attackerStatus.Accuracy;
     }
 }

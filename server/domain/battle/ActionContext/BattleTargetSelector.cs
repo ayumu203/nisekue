@@ -6,7 +6,8 @@ public class BattleTargetSelector(
     TargetType targetType,
     AttackRange attackRange,
     IEnumerable<BattleActorId>? targetActorIds = null,
-    BattlePosition? selectedPosition = null)
+    BattlePosition? selectedPosition = null,
+    TargetLifeState targetLifeState = TargetLifeState.Alive)
 {
     private readonly BattleActorId[] _targetActorIds = targetActorIds?.ToArray() ?? [];
 
@@ -14,4 +15,5 @@ public class BattleTargetSelector(
     public AttackRange AttackRange { get; } = attackRange;
     public IReadOnlyList<BattleActorId> TargetActorIds => _targetActorIds;
     public BattlePosition? SelectedPosition { get; } = selectedPosition;
+    public TargetLifeState TargetLifeState { get; } = targetLifeState;
 }

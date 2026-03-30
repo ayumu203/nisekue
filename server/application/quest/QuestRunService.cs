@@ -659,6 +659,7 @@ public class QuestRunService(
             BattleActionFailureReason.ActorUnavailable => CreateLogEntry((actorDisplayName, LogTone.Default), ("は行動前に倒れた", LogTone.Default)),
             BattleActionFailureReason.NoTarget => CreateLogEntry([(actorDisplayName, LogTone.Default), ("は", LogTone.Default), .. actionLabelSegments, ("しようとしたが、対象がいなかった", LogTone.Default)]),
             BattleActionFailureReason.Paralyzed => CreateLogEntry((actorDisplayName, LogTone.Default), ("は麻痺して動けなかった", LogTone.Default)),
+            BattleActionFailureReason.Sleeping => CreateLogEntry((actorDisplayName, LogTone.Default), ("は眠っていて動けなかった", LogTone.Default)),
             BattleActionFailureReason.CannotAct => CreateLogEntry((actorDisplayName, LogTone.Default), ("は行動できなかった", LogTone.Default)),
             BattleActionFailureReason.InsufficientMp => CreateLogEntry([(actorDisplayName, LogTone.Default), ("はMPが足りず", LogTone.Default), .. actionLabelSegments, ("できなかった", LogTone.Default)]),
             BattleActionFailureReason.MoveUnavailable => CreateLogEntry([(actorDisplayName, LogTone.Default), ("は", LogTone.Default), .. actionLabelSegments, ("できなかった", LogTone.Default)]),
@@ -826,7 +827,8 @@ public class QuestRunService(
         {
             if (targetResult.TriggeredAilment is not AilmentType.DamageTrap
                 and not AilmentType.PoisonTrap
-                and not AilmentType.Poison)
+                and not AilmentType.Poison
+                and not AilmentType.Burn)
             {
                 continue;
             }
@@ -894,6 +896,7 @@ public class QuestRunService(
         {
             AilmentType.DamageTrap or AilmentType.PoisonTrap => "トラップ",
             AilmentType.Poison => "毒",
+            AilmentType.Burn => "やけど",
             _ => ailmentType.ToString()
         };
 
@@ -901,7 +904,7 @@ public class QuestRunService(
             ? CreateLogEntry(
                 (actorDisplayName, LogTone.Default),
                 ("は", LogTone.Default),
-                (sourceMove.Name, ailmentType is AilmentType.DamageTrap or AilmentType.PoisonTrap or AilmentType.Poison ? LogTone.Ailment : ResolveMoveTone(sourceMove)),
+                (sourceMove.Name, ailmentType is AilmentType.DamageTrap or AilmentType.PoisonTrap or AilmentType.Poison or AilmentType.Burn ? LogTone.Ailment : ResolveMoveTone(sourceMove)),
                 ("による", LogTone.Default),
                 (effectLabel, LogTone.Default),
                 ("で", LogTone.Default),
@@ -945,7 +948,7 @@ public class QuestRunService(
         if (move.Effects.Any(effect =>
                 effect.EffectType == MoveEffectType.Ailment &&
                 effect.Ailment is not null &&
-                effect.Ailment.AilmentType is AilmentType.Poison or AilmentType.PoisonTrap or AilmentType.DamageTrap))
+                effect.Ailment.AilmentType is AilmentType.Poison or AilmentType.PoisonTrap or AilmentType.DamageTrap or AilmentType.Burn or AilmentType.Sleep or AilmentType.InstantDeath))
         {
             return LogTone.Ailment;
         }

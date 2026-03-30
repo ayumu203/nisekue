@@ -56,6 +56,7 @@ public class BattleDamageCalculator(Func<double>? randomProvider = null)
             BuffStat.Defense => attackerStatus.Defense,
             BuffStat.Luck => attackerStatus.Luck,
             BuffStat.Speed => attackerStatus.Speed,
+            BuffStat.Accuracy => attackerStatus.Accuracy,
             _ => throw new ArgumentOutOfRangeException(nameof(attackStat), $"未対応の attackStat: {attackStat}")
         };
     }

@@ -139,6 +139,21 @@ public class BattleActorState(
                     ailment.SourceMoveId));
             }
 
+            if (ailment.Type == AilmentType.Burn)
+            {
+                var damage = Math.Max(1, CurrentHp / 10);
+                ReceiveDamage(damage);
+                results.Add(new BattleTargetResult(
+                    Id,
+                    damage,
+                    -damage,
+                    0,
+                    IsDead,
+                    null,
+                    ailment.Type,
+                    ailment.SourceMoveId));
+            }
+
             if (ailment.Type == AilmentType.DamageTrap)
             {
                 var trapDamage = ApplyTrapDamage(ailment.TriggerDamage);

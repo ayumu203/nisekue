@@ -43,6 +43,7 @@ classDiagram
             RestoreMp
             Ailment
             Buff
+            Knockout
         }
 
         class ElementType {
@@ -62,9 +63,12 @@ classDiagram
             <<Enum>>
             Paralysis
             Poison
+            Sleep
+            Burn
             Taunt
             PoisonTrap
             DamageTrap
+            InstantDeath
         }
 
         class BuffStat {
@@ -76,6 +80,14 @@ classDiagram
             Intelligence
             Luck
             Speed
+            Accuracy
+        }
+
+        class TargetLifeState {
+            <<Enum>>
+            Alive
+            Dead
+            Any
         }
 
         class BuffCalculationType {

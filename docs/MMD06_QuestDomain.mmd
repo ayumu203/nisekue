@@ -2,6 +2,21 @@ classDiagram
     %% Enum 定義は docs/MMD21_Enum.mmd を参照
 
     namespace StageContext {
+        class QuestBattleMoveProfile {
+            <<Value Object>>
+            +TargetType TargetType
+            +AttackRange AttackRange
+            +TargetLifeState TargetLifeState
+        }
+
+        class QuestBattleMoveEffectProfile {
+            <<Value Object>>
+            +MoveEffectType EffectType
+            +TargetType? OverrideTargetType
+            +AttackRange? OverrideAttackRange
+            +TargetLifeState? OverrideTargetLifeState
+        }
+
         class QuestStageDefinition {
             <<Aggregate Root>>
             +QuestStageId Id
@@ -124,6 +139,8 @@ classDiagram
         }
 
         QuestStageDefinition ..> QuestStageSummaryView : first placement enemy image for UI preview
+        QuestEnemyDefinition ..> QuestBattleMoveProfile : move target profile is resolved from move master
+        QuestEnemyDefinition ..> QuestBattleMoveEffectProfile : effects may override target side/range/life-state
     }
 
     namespace RoomContext {
@@ -228,6 +245,20 @@ classDiagram
     }
 
     namespace RunContext {
+        class BattleAilmentState {
+            +AilmentType Type
+            +int RemainingTurns
+            +DamageEffect? TriggerDamage
+            +MoveId? SourceMoveId
+        }
+
+        class BattleBuffState {
+            +BuffStat Stat
+            +BuffCalculationType CalculationType
+            +decimal Value
+            +int RemainingTurns
+        }
+
         class QuestRunPartyMemberSnapshot {
             <<Value Object>>
             +QuestParticipantId ParticipantId

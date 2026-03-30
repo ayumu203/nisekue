@@ -19,7 +19,7 @@ public class BattleTargetingResolver
 
         var candidates = snapshotMap.Values
             .Where(x => IsTargetTypeMatch(selector.TargetType, actorSnapshot, x))
-            .Where(x => stateMap.TryGetValue(x.Id, out var state) && !state.IsDead)
+            .Where(x => stateMap.TryGetValue(x.Id, out var state) && IsLifeStateMatch(selector.TargetLifeState, state))
             .ToArray();
 
         if (selector.TargetActorIds.Count > 0)
@@ -196,6 +196,17 @@ public class BattleTargetingResolver
             TargetType.Ally => actorSnapshot.Side == targetSnapshot.Side && actorSnapshot.Id != targetSnapshot.Id,
             TargetType.Self => actorSnapshot.Id == targetSnapshot.Id,
             _ => throw new ArgumentOutOfRangeException(nameof(targetType), $"未対応の TargetType: {targetType}")
+        };
+    }
+
+    private static bool IsLifeStateMatch(TargetLifeState targetLifeState, BattleActorState state)
+    {
+        return targetLifeState switch
+        {
+            TargetLifeState.Alive => !state.IsDead,
+            TargetLifeState.Dead => state.IsDead,
+            TargetLifeState.Any => true,
+            _ => throw new ArgumentOutOfRangeException(nameof(targetLifeState), $"未対応の TargetLifeState: {targetLifeState}")
         };
     }
 }

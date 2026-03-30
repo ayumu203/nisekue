@@ -189,7 +189,8 @@ public class Player(
                 defense: Status.Defense + growth.Defense,
                 intelligence: Status.Intelligence + growth.Intelligence,
                 luck: Status.Luck + growth.Luck,
-                speed: Status.Speed + growth.Speed);
+                speed: Status.Speed + growth.Speed,
+                accuracy: Status.Accuracy);
             hasJobLeveledUp = true;
         }
 

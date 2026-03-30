@@ -34,6 +34,12 @@ public class QuestRoomService(
             throw new InvalidOperationException("無効化されたステージではルームを作成できません。");
         }
 
+        if (!QuestStageEntryPolicy.MeetsMinimumLevel(player, stage))
+        {
+            throw new InvalidOperationException(
+                $"推奨レベル{stage.RecommendedLevel}に対してレベルが低すぎるためルームを作成できません。最低レベルは{QuestStageEntryPolicy.GetMinimumAllowedLevel(stage)}です。");
+        }
+
         if (await questRunRepository.ExistsActiveRunByPlayerAsync(ownerId))
         {
             throw new InvalidOperationException("進行中クエストに参加しているためルームを作成できません。");
@@ -68,6 +74,14 @@ public class QuestRoomService(
         if (await questRunRepository.ExistsActiveRunByPlayerAsync(playerId))
         {
             throw new InvalidOperationException("進行中クエストに参加しているためルームに参加できません。");
+        }
+
+        var stage = await questStageRepository.GetAsync(room.StageId)
+            ?? throw new KeyNotFoundException("ステージが見つかりません。");
+        if (!QuestStageEntryPolicy.MeetsMinimumLevel(player, stage))
+        {
+            throw new InvalidOperationException(
+                $"推奨レベル{stage.RecommendedLevel}に対してレベルが低すぎるためルームに参加できません。最低レベルは{QuestStageEntryPolicy.GetMinimumAllowedLevel(stage)}です。");
         }
 
         room.AddPlayer(playerId, player.Name, player.Level);

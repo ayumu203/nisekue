@@ -61,6 +61,7 @@ public class CsvMoveRepository : IMoveRepository
                 executionPriority: master.ExecutionPriority,
                 category: master.MoveCategory,
                 effectImagePath: master.EffectImagePath,
+                targetLifeState: master.TargetLifeState,
                 effects: effects);
 
             map.Add(master.MoveId, move);
@@ -92,7 +93,7 @@ public class CsvMoveRepository : IMoveRepository
             }
 
             var columns = line.Split(',', StringSplitOptions.TrimEntries);
-            if (columns.Length is not (8 or 9))
+            if (columns.Length is not (8 or 9 or 10))
             {
                 throw new InvalidOperationException($"move_master.csv の形式が不正です。行: {i + 1}");
             }
@@ -112,7 +113,10 @@ public class CsvMoveRepository : IMoveRepository
                 MpCost: ParseInt(columns[5], "mp_cost", i + 1),
                 ExecutionPriority: ParseInt(columns[6], "execution_priority", i + 1),
                 MoveCategory: ParseEnum<MoveCategory>(columns[7], "move_category", i + 1),
-                EffectImagePath: columns.Length == 9 ? ParseNullableString(columns[8]) : null));
+                EffectImagePath: columns.Length >= 9 ? ParseNullableString(columns[8]) : null,
+                TargetLifeState: columns.Length == 10
+                    ? ParseNullableEnum<TargetLifeState>(columns[9], "target_life_state", i + 1) ?? TargetLifeState.Alive
+                    : TargetLifeState.Alive));
         }
 
         if (map.Count == 0)
@@ -148,9 +152,14 @@ public class CsvMoveRepository : IMoveRepository
             }
 
             var columns = line.Split(',', StringSplitOptions.TrimEntries);
-            if (columns.Length != 19)
+            if (columns.Length < 19 || columns.Length > 22)
             {
                 throw new InvalidOperationException($"move_effects.csv の形式が不正です。行: {i + 1}");
+            }
+
+            if (columns.Length < 22)
+            {
+                Array.Resize(ref columns, 22);
             }
 
             var effectId = ParseInt(columns[0], "effect_id", i + 1);
@@ -172,7 +181,10 @@ public class CsvMoveRepository : IMoveRepository
                 effectType: effectType,
                 damage: damage,
                 ailment: ailment,
-                buff: buff);
+                buff: buff,
+                overrideTargetType: columns.Length >= 20 ? ParseNullableEnum<TargetType>(columns[19], "override_target_type", i + 1) : null,
+                overrideAttackRange: columns.Length >= 21 ? ParseNullableEnum<AttackRange>(columns[20], "override_attack_range", i + 1) : null,
+                overrideTargetLifeState: columns.Length >= 22 ? ParseNullableEnum<TargetLifeState>(columns[21], "override_target_life_state", i + 1) : null);
 
             if (!map.TryGetValue(moveId, out var list))
             {
@@ -341,5 +353,6 @@ public class CsvMoveRepository : IMoveRepository
         int MpCost,
         int ExecutionPriority,
         MoveCategory MoveCategory,
-        string? EffectImagePath);
+        string? EffectImagePath,
+        TargetLifeState TargetLifeState);
 }

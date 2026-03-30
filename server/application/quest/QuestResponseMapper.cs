@@ -183,6 +183,11 @@ public class QuestResponseMapper(
             return "CooldownActive";
         }
 
+        if (stage is not null && !QuestStageEntryPolicy.MeetsMinimumLevel(viewer, stage))
+        {
+            return "StageRecommendedLevelTooLow";
+        }
+
         var maxPartyMemberCount = Math.Min(stage?.MaxPartyMemberCount ?? 6, 6);
         if (room.Participants.Count(x => x.Status != ParticipantStatus.Left) >= maxPartyMemberCount)
         {
