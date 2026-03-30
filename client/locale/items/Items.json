@@ -55,6 +55,7 @@
   "mastery": "熟練度",
   "expiresAt": "期限",
   "seller": "販売者",
+  "visitSellerRoom": "{name}の部屋へ移動",
   "status": "状態",
   "itemKindEquipment": "装備",
   "itemKindConsumable": "消費",

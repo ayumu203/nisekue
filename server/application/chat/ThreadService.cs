@@ -23,6 +23,7 @@ public class ThreadService(IThreadRepository threadRepository, IPlayerRepository
                     item.CreatedAt,
                     item.LastRepliedAt,
                     item.ReplyCount,
+                    item.AuthorPlayerId.Value,
                     profile.Name,
                     profile.ImagePath);
             })
@@ -94,6 +95,7 @@ public class ThreadService(IThreadRepository threadRepository, IPlayerRepository
                     reply.Id.Value,
                     reply.Body.Value,
                     reply.CreatedAt,
+                    reply.AuthorPlayerId.Value,
                     profile.Name,
                     profile.ImagePath);
             })
@@ -106,6 +108,7 @@ public class ThreadService(IThreadRepository threadRepository, IPlayerRepository
             thread.CreatedAt,
             thread.UpdatedAt,
             thread.LastRepliedAt,
+            thread.AuthorPlayerId.Value,
             authorProfile.Name,
             authorProfile.ImagePath,
             replies);

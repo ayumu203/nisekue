@@ -101,6 +101,7 @@ internal static class EndpointHelpers
         createdAt = thread.CreatedAt,
         updatedAt = thread.UpdatedAt,
         lastRepliedAt = thread.LastRepliedAt,
+        authorPlayerId = thread.AuthorPlayerId,
         authorName = thread.AuthorName,
         authorImagePath = thread.AuthorImagePath,
         replies = thread.Replies.Select(reply => new
@@ -108,6 +109,7 @@ internal static class EndpointHelpers
             id = reply.Id,
             body = reply.Body,
             createdAt = reply.CreatedAt,
+            authorPlayerId = reply.AuthorPlayerId,
             authorName = reply.AuthorName,
             authorImagePath = reply.AuthorImagePath
         })
@@ -121,6 +123,7 @@ internal static class EndpointHelpers
         createdAt = thread.CreatedAt,
         lastRepliedAt = thread.LastRepliedAt,
         replyCount = thread.ReplyCount,
+        authorPlayerId = thread.AuthorPlayerId,
         authorName = thread.AuthorName,
         authorImagePath = thread.AuthorImagePath
     };
