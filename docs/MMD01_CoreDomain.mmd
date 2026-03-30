@@ -29,6 +29,7 @@ classDiagram
             +GainGold(gold: int) void
             +SpendGold(gold: int) void
             +LevelUp(jobProfile: JobProfile, learningRule: JobMoveLearningRule) LevelUpResult
+            +Rebirth(inheritedStatus: Status) void
             -CanChangeJob(nextProfile: JobProfile) bool
             -MarkCurrentJobAsMastered(jobProfile: JobProfile) bool
             -SynchronizeLearnableMoves(jobProfile: JobProfile, learningRule: JobMoveLearningRule) IReadOnlyList~MoveId~

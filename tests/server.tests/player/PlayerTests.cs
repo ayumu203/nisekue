@@ -126,12 +126,70 @@ public class PlayerTests
             .WithMessage("*所持 Gold が不足しています*");
     }
 
+    [Fact]
+    public void Rebirth_WhenLevelIsBelowRequirement_Throws()
+    {
+        var player = CreatePlayer(level: 99, gold: 100000);
+
+        var act = () => player.Rebirth(CreateInheritedStatus());
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*転生にはレベル100以上が必要です*");
+    }
+
+    [Fact]
+    public void Rebirth_WhenGoldIsBelowRequirement_Throws()
+    {
+        var player = CreatePlayer(level: 100, gold: 99999);
+
+        var act = () => player.Rebirth(CreateInheritedStatus());
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*転生には100000 Goldが必要です*");
+    }
+
+    [Fact]
+    public void Rebirth_WhenEligible_ResetsLevelsAndKeepsJobMovesAndMasteredJobs()
+    {
+        var moveSet = new MoveSet();
+        moveSet.SetSlot(0, new MoveId(101));
+        moveSet.SetSlot(1, new MoveId(102));
+        var player = CreatePlayer(
+            level: 120,
+            exp: 45,
+            jobLevel: 9,
+            jobExp: 27,
+            gold: 150000,
+            job: Job.Mage,
+            status: new Status(120, 80, 30, 28, 42, 18, 25),
+            moveSet: moveSet,
+            masteredJobs: new HashSet<Job> { Job.Warrior, Job.Priest });
+
+        player.Rebirth(new Status(35, 24, 9, 8, 12, 5, 7));
+
+        player.Job.Should().Be(Job.Mage);
+        player.Level.Should().Be(1);
+        player.Exp.Should().Be(0);
+        player.JobLevel.Should().Be(1);
+        player.JobExp.Should().Be(0);
+        player.Gold.Should().Be(50000);
+        player.Status.MaxHp.Should().Be(35);
+        player.Status.MaxMp.Should().Be(24);
+        player.Status.Strength.Should().Be(9);
+        player.MoveSet.GetLearnedMoveIds().Select(x => x.Id).Should().Equal(101, 102);
+        player.MasteredJobs.Should().BeEquivalentTo(new[] { Job.Warrior, Job.Priest });
+    }
+
     private static Player CreatePlayer(
         int level,
         int exp = 0,
         int jobLevel = 1,
         int jobExp = 0,
-        Job job = Job.Apprentice) =>
+        int gold = 100,
+        Job job = Job.Apprentice,
+        Status? status = null,
+        MoveSet? moveSet = null,
+        IReadOnlySet<Job>? masteredJobs = null) =>
         new(
             new PlayerId(Guid.NewGuid()),
             name: "Tester",
@@ -139,8 +197,8 @@ public class PlayerTests
             exp: exp,
             jobLevel: jobLevel,
             jobExp: jobExp,
-            gold: 100,
-            status: new Status(
+            gold: gold,
+            status: status ?? new Status(
                 maxHp: 10,
                 maxMp: 0,
                 strength: 1,
@@ -148,7 +206,21 @@ public class PlayerTests
                 intelligence: 1,
                 luck: 1,
                 speed: 1),
-            job: job);
+            job: job,
+            moveSet: moveSet,
+            masteredJobs: masteredJobs);
+
+    private static Status CreateInheritedStatus()
+    {
+        return new Status(
+            maxHp: 10,
+            maxMp: 3,
+            strength: 2,
+            defense: 2,
+            intelligence: 2,
+            luck: 1,
+            speed: 1);
+    }
 
     private static JobProfile CreateJobProfile(Job job, int masterLevel = 5)
     {

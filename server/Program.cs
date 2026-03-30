@@ -142,6 +142,7 @@ builder.Services.AddScoped<TrainingExpCalculator>();
 builder.Services.AddScoped<TrainingWeaponMasteryPolicy>();
 builder.Services.AddScoped<EquipmentStatusResolver>();
 builder.Services.AddScoped<PlayerJobService>();
+builder.Services.AddScoped<PlayerRebirthService>();
 builder.Services.AddScoped<MarketListingCleanupService>();
 builder.Services.AddScoped<DevelopmentDataCleanupService>();
 builder.Services.AddScoped<ChatService>();

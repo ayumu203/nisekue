@@ -12,6 +12,7 @@ import type {
   UpdatePlayerImageResponse,
   UpdatePlayerJobRequest,
   UpdatePlayerJobResponse,
+  RebirthPlayerResponse,
 } from '@/schema/player'
 
 export async function getPlayer(accessToken: string): Promise<GetPlayerResponse> {
@@ -178,4 +179,23 @@ export async function updatePlayerJob(
   }
 
   return endpoints.player.updateJob.responseSchema.parse(json)
+}
+
+export async function rebirthPlayer(accessToken: string): Promise<RebirthPlayerResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.rebirth.path}`, {
+    method: endpoints.player.rebirth.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '転生に失敗しました'))
+  }
+
+  return endpoints.player.rebirth.responseSchema.parse(json)
 }

@@ -1,4 +1,6 @@
 erDiagram
+    %% 転生は既存 internal.players の level / exp / job_level / job_exp / gold / status 系カラム更新で表現する
+    %% player_moves と player_master_jobs は維持し、転生専用の追加テーブル・追加カラムは作成しない
     PLAYERS {
         uuid id PK "internal.players.id"
         varchar(20) name "NOT NULL"

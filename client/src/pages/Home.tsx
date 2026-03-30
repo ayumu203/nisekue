@@ -68,6 +68,14 @@ function JobChangeIcon(props: SvgIconProps) {
   )
 }
 
+function RebirthIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M12 4a8 8 0 0 1 7.75 6h-2.17A6 6 0 1 0 17 15h-2.5l3.5 4 3.5-4H19a8 8 0 1 1-7-11" />
+    </SvgIcon>
+  )
+}
+
 function SpecialThanksIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
@@ -221,6 +229,9 @@ function Home() {
                 sx={menuButtonSx}
               >
                 {locale.jobChange}
+              </Button>
+              <Button component={Link} to="/rebirth" variant="outlined" startIcon={<RebirthIcon />} sx={menuButtonSx}>
+                {locale.rebirth}
               </Button>
               <Button
                 component={Link}

@@ -382,6 +382,63 @@ internal static class PlayerEndpoints
             }
         }).RequireAuthorization();
 
+        app.MapPost("/player/rebirth", async (
+            ClaimsPrincipal user,
+            PlayerRebirthService playerRebirthService,
+            IJobProfileRepository jobProfileRepository) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                var player = await playerRebirthService.RebirthAsync(playerId.Value);
+
+                return Results.Ok(new
+                {
+                    message = "転生しました。",
+                    userId = player.Id.Value,
+                    userName = player.Name,
+                    job = new
+                    {
+                        code = player.Job.ToString(),
+                        value = (int)player.Job,
+                        displayName = EndpointHelpers.GetJobDisplayName(player.Job),
+                        description = jobProfileRepository.GetByJob(player.Job).Description
+                    },
+                    level = player.Level,
+                    exp = player.Exp,
+                    jobLevel = player.JobLevel,
+                    jobExp = player.JobExp,
+                    gold = player.Gold,
+                    status = new
+                    {
+                        baseValues = new
+                        {
+                            maxHp = player.Status.MaxHp,
+                            maxMp = player.Status.MaxMp,
+                            strength = player.Status.Strength,
+                            defense = player.Status.Defense,
+                            intelligence = player.Status.Intelligence,
+                            luck = player.Status.Luck,
+                            speed = player.Status.Speed
+                        }
+                    }
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message, userId = playerId.Value.Value });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
+        }).RequireAuthorization();
+
         return app;
     }
 
@@ -481,6 +538,16 @@ internal static class PlayerEndpoints
                 description = jobProfile.Description
             },
             jobProfiles,
+            masteredJobs = player.MasteredJobs
+                .OrderBy(job => (int)job)
+                .Select(job => new
+                {
+                    code = job.ToString(),
+                    value = (int)job,
+                    displayName = EndpointHelpers.GetJobDisplayName(job),
+                    description = jobProfileRepository.GetByJob(job).Description
+                })
+                .ToArray(),
             level = player.Level,
             exp = player.Exp,
             jobLevel = player.JobLevel,
