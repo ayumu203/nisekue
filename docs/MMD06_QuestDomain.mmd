@@ -447,6 +447,11 @@ classDiagram
             +SelectAction(run: QuestRun, participantId: QuestParticipantId, availableMoves: IReadOnlyList~Move~) QuestSubmittedCommand
         }
 
+        class QuestEnemyActionPolicy {
+            <<Domain Service>>
+            +SelectAction(run: QuestRun, enemyInstanceId: QuestEnemyInstanceId, enemyDefinition: QuestEnemyDefinition, availableMoves: IReadOnlyList~Move~) BattleAction
+        }
+
         class QuestRunFactory {
             <<Application Service>>
             +Create(stageDefinition: QuestStageDefinition, snapshots: IEnumerable~QuestRunPartyMemberSnapshot~, now: DateTimeOffset) QuestRun
@@ -518,6 +523,8 @@ classDiagram
     QuestRoomService ..> QuestRoom : use
     QuestRoomService ..> QuestRun : starts
     QuestResponseMapper ..> IQuestStageRepository : use
+    QuestBattleFactory ..> QuestAllyNpcActionPolicy : use
+    QuestBattleFactory ..> QuestEnemyActionPolicy : use
     QuestResponseMapper ..> IQuestEnemyDefinitionRepository : use
     QuestResponseMapper ..> IPlayerRepository : use
     QuestResponseMapper ..> QuestRoom : map detail/summary
