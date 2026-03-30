@@ -319,6 +319,184 @@ public class BattleActionResolverTests
         result.FailureReason.Should().Be(BattleActionFailureReason.NoTarget);
     }
 
+    [Fact]
+    public void Resolve_WhenTargetHasEvasionBuff_CanMiss()
+    {
+        var resolver = CreateResolver(() => 0.9d);
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var targetState = CreateState(target.Id);
+        targetState.ApplyBuff(new BattleBuffState(BuffStat.Evasion, BuffCalculationType.Add, 40m, 2), canStack: false);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.NormalAttack, EnemyTarget()),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            []);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].Damage.Should().Be(0);
+        targetState.CurrentHp.Should().Be(30);
+    }
+
+    [Fact]
+    public void Resolve_WhenActorHasCriticalChanceBuff_ConsumesBuffAfterDamage()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var actorState = CreateState(actor.Id, currentMp: 10);
+        actorState.ApplyBuff(new BattleBuffState(BuffStat.CriticalChance, BuffCalculationType.Add, 100m, 2), canStack: false);
+        var move = CreateCriticalDamageMove(1);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
+            [actor, target],
+            [actorState, CreateState(target.Id)],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].Damage.Should().Be(12);
+        actorState.Buffs.Should().NotContain(x => x.Stat == BuffStat.CriticalChance);
+    }
+
+    [Fact]
+    public void Resolve_WhenTargetHasDamageReductionBuff_ReducesDamage()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var targetState = CreateState(target.Id);
+        targetState.ApplyBuff(new BattleBuffState(BuffStat.DamageReduction, BuffCalculationType.Add, 50m, 2), canStack: false);
+        var move = CreateDamageMove(1, mpCost: 1, executionPriority: 0);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].Damage.Should().Be(3);
+        targetState.CurrentHp.Should().Be(27);
+    }
+
+    [Fact]
+    public void TickTurnEnd_WhenRegenerationApplied_RestoresHpUpToStoredMaxHp()
+    {
+        var state = new BattleActorState(
+            new BattleActorId(Guid.NewGuid()),
+            currentHp: 20,
+            currentMp: 10,
+            ailments:
+            [
+                new BattleAilmentState(
+                    AilmentType.Regeneration,
+                    2,
+                    new DamageEffect(1, 0m, 15, 0m, ElementType.Holy),
+                    maxHpLimit: 30)
+            ]);
+
+        var results = state.TickTurnEnd();
+
+        results.Should().ContainSingle();
+        results[0].HpChange.Should().Be(10);
+        state.CurrentHp.Should().Be(30);
+    }
+
+    [Fact]
+    public void Resolve_WhenInstantDeathTargetsBossAndMoveDisallowsBoss_DoesNotApply()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var move = CreateInstantDeathMove(1, allowBossInstantDeath: false);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), CreateState(target.Id)],
+            [move],
+            new BattleFieldContext(bossActorIds: [target.Id]));
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].AppliedAilment.Should().BeNull();
+        result.TargetResults[0].IsDefeated.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Resolve_WhenInstantDeathTargetsBossAndMoveAllowsBoss_Applies()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var targetState = CreateState(target.Id);
+        var move = CreateInstantDeathMove(1, allowBossInstantDeath: true);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move],
+            new BattleFieldContext(bossActorIds: [target.Id]));
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].AppliedAilment.Should().Be(AilmentType.InstantDeath);
+        targetState.IsDead.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Resolve_WhenAllyHasCoverAll_RedirectsNormalAttackDamageToCoverActor()
+    {
+        var resolver = CreateResolver();
+        var attacker = CreateSnapshot(1, BattleSide.Enemy, learnedMoveIds: []);
+        var target = CreateSnapshot(2, BattleSide.Ally, learnedMoveIds: []);
+        var cover = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var targetState = CreateState(target.Id);
+        var coverState = new BattleActorState(
+            cover.Id,
+            currentHp: 30,
+            currentMp: 10,
+            ailments: [new BattleAilmentState(AilmentType.CoverAll, 2)]);
+
+        var result = resolver.Resolve(
+            new BattleAction(attacker.Id, BattleActionKind.NormalAttack, new BattleTargetSelector(TargetType.Enemy, AttackRange.Single, [target.Id])),
+            [attacker, target, cover],
+            [CreateState(attacker.Id), targetState, coverState],
+            []);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].TargetActorId.Should().Be(cover.Id);
+        targetState.CurrentHp.Should().Be(30);
+        coverState.CurrentHp.Should().Be(25);
+    }
+
+    [Fact]
+    public void Resolve_WhenMoveHalvesSelfHp_ReducesCurrentHpToCeilingHalf()
+    {
+        var resolver = CreateResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var actorState = CreateState(actor.Id, currentHp: 5, currentMp: 10);
+        var move = CreateHalveSelfHpMove(1);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, SelfTarget(), new MoveId(1)),
+            [actor],
+            [actorState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].HpChange.Should().Be(-2);
+        actorState.CurrentHp.Should().Be(3);
+    }
+
     private static BattleActionResolver CreateResolver(Func<double>? randomProvider = null)
     {
         return new BattleActionResolver(
@@ -373,6 +551,27 @@ public class BattleActionResolverTests
                     1,
                     MoveEffectType.Damage,
                     damage: new DamageEffect(hitCount: 1, powerRate: 1m, fixedValue: 1, criticalRate: 0m, elementType: ElementType.None))
+            ]);
+    }
+
+    private static Move CreateHalveSelfHpMove(int moveId)
+    {
+        return new Move(
+            new MoveId(moveId),
+            "Halve",
+            "halve self hp",
+            TargetType.Self,
+            AttackRange.Single,
+            1,
+            1,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    new MoveId(moveId),
+                    1,
+                    MoveEffectType.HalveSelfHp)
             ]);
     }
 
@@ -451,6 +650,50 @@ public class BattleActionResolverTests
                     1,
                     MoveEffectType.RestoreMp,
                     damage: new DamageEffect(hitCount: 1, powerRate: 1m, fixedValue: 5, criticalRate: 0m, elementType: ElementType.None, attackStat: BuffStat.Intelligence))
+            ]);
+    }
+
+    private static Move CreateCriticalDamageMove(int moveId)
+    {
+        return new Move(
+            new MoveId(moveId),
+            "Critical",
+            "critical move",
+            TargetType.Enemy,
+            AttackRange.Single,
+            1,
+            0,
+            MoveCategory.Attack,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    new MoveId(moveId),
+                    1,
+                    MoveEffectType.Damage,
+                    damage: new DamageEffect(hitCount: 1, powerRate: 1m, fixedValue: 1, criticalRate: 1m, elementType: ElementType.None))
+            ]);
+    }
+
+    private static Move CreateInstantDeathMove(int moveId, bool allowBossInstantDeath)
+    {
+        return new Move(
+            new MoveId(moveId),
+            "Death",
+            "instant death",
+            TargetType.Enemy,
+            AttackRange.Single,
+            1,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    new MoveId(moveId),
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(AilmentType.InstantDeath, 1m, 1, allowBossInstantDeath: allowBossInstantDeath))
             ]);
     }
 }

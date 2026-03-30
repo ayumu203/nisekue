@@ -45,6 +45,34 @@ public class BattleTargetingResolver
                 : candidates.Select(x => x.Id).ToArray());
     }
 
+    public BattleActorId ResolveDamageReceiver(
+        BattleActorId targetId,
+        IEnumerable<BattleActorSnapshot> snapshots,
+        IEnumerable<BattleActorState> states)
+    {
+        var snapshotMap = snapshots?.ToDictionary(x => x.Id) ?? throw new ArgumentNullException(nameof(snapshots));
+        var stateMap = states?.ToDictionary(x => x.Id) ?? throw new ArgumentNullException(nameof(states));
+        if (!snapshotMap.TryGetValue(targetId, out var targetSnapshot) || !stateMap.TryGetValue(targetId, out var targetState))
+        {
+            return targetId;
+        }
+
+        if (targetState.IsDead)
+        {
+            return targetId;
+        }
+
+        var coverActor = snapshotMap.Values
+            .Where(snapshot => snapshot.Side == targetSnapshot.Side && snapshot.Id != targetId)
+            .Where(snapshot => stateMap.TryGetValue(snapshot.Id, out var state) &&
+                               !state.IsDead &&
+                               state.Ailments.Any(ailment => ailment.Type == AilmentType.CoverAll))
+            .OrderBy(snapshot => snapshot.Id.Value)
+            .FirstOrDefault();
+
+        return coverActor?.Id ?? targetId;
+    }
+
     private static bool ShouldApplyFormationRangeControl(BattleTargetSelector selector, BattleFieldContext? fieldContext)
     {
         return fieldContext is not null &&

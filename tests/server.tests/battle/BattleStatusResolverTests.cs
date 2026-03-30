@@ -72,6 +72,18 @@ public class BattleStatusResolverTests
         afterTurnEnd.Strength.Should().Be(8);
     }
 
+    [Fact]
+    public void BuildEffectiveStatus_WhenSetBuffApplied_UsesExactValue()
+    {
+        var resolver = new BattleStatusResolver();
+        var snapshot = CreateSnapshot(maxHp: 10, maxMp: 5, strength: 8);
+        var state = CreateState(snapshot.Id, new BattleBuffState(BuffStat.Strength, BuffCalculationType.Set, 0m, 2));
+
+        var result = resolver.BuildEffectiveStatus(snapshot, state);
+
+        result.Strength.Should().Be(0);
+    }
+
     private static BattleActorSnapshot CreateSnapshot(int maxHp, int maxMp, int strength)
     {
         return new BattleActorSnapshot(

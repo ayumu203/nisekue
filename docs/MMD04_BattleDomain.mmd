@@ -55,6 +55,7 @@ classDiagram
         class BattleFieldContext {
             <<Value Object>>
             +IReadOnlyList~BattleActorPosition~ Positions
+            +IReadOnlyList~BattleActorId~ BossActorIds
             +bool EnableFormationRangeControl
         }
 
@@ -176,6 +177,7 @@ classDiagram
         class BattleTargetingResolver {
             <<Domain Service>>
             +ResolveTargets(selector: BattleTargetSelector, actor: BattleActorSnapshot, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~, fieldContext: BattleFieldContext?) BattleActorId[]
+            +ResolveDamageReceiver(targetId: BattleActorId, snapshots: IEnumerable~BattleActorSnapshot~, states: IEnumerable~BattleActorState~) BattleActorId
         }
 
         class BattleTurnResolver {

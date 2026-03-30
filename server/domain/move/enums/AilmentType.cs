@@ -9,5 +9,7 @@ public enum AilmentType
     Taunt = 5,
     PoisonTrap = 6,
     DamageTrap = 7,
-    InstantDeath = 8
+    InstantDeath = 8,
+    Regeneration = 9,
+    CoverAll = 10
 }

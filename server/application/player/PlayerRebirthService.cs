@@ -27,7 +27,10 @@ public class PlayerRebirthService(IPlayerRepository playerRepository)
             intelligence: InheritNonNegative(currentStatus.Intelligence),
             luck: InheritNonNegative(currentStatus.Luck),
             speed: InheritNonNegative(currentStatus.Speed),
-            accuracy: currentStatus.Accuracy);
+            accuracy: currentStatus.Accuracy,
+            evasion: currentStatus.Evasion,
+            criticalChance: currentStatus.CriticalChance,
+            damageReduction: currentStatus.DamageReduction);
     }
 
     private static int InheritMaxHp(int currentValue)

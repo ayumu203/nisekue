@@ -8,11 +8,37 @@ export const playerUserNameSchema = z
   .min(1, 'ユーザー名を入力してください')
   .max(20, 'ユーザー名は20文字以内で入力してください')
 
-export const playerJobCodeSchema = z.enum(['Apprentice', 'Warrior', 'Guardian', 'Mage', 'Priest', 'Ranger'])
+export const playerJobCodeSchema = z.enum([
+  'Apprentice',
+  'Warrior',
+  'Guardian',
+  'Mage',
+  'Priest',
+  'Ranger',
+  'OniWarrior',
+  'SwordMaster',
+  'Trickster',
+  'Crusader',
+  'FireMage',
+  'WaterMage',
+  'WindMage',
+  'HighPriest',
+  'Necromancer',
+  'Sniper',
+  'TrapMaster',
+  'GrandWarrior',
+  'GrandGuard',
+  'GrandCaster',
+  'GrandPriest',
+  'GrandRanger',
+  'Shogun',
+  'Archmage',
+  'GreatThief',
+])
 
 export const playerJobSchema = z.object({
   code: playerJobCodeSchema,
-  value: z.number().int().min(1).max(6),
+  value: z.number().int().min(1).max(25),
   displayName: z.string().min(1, 'ジョブ名が空です'),
   description: z.string().min(1, 'ジョブ説明が空です'),
 })
@@ -158,7 +184,7 @@ export const updatePlayerImageResponseSchema = z.object({
 })
 
 export const updatePlayerJobRequestSchema = z.object({
-  job: z.number().int().min(1).max(6),
+  job: z.number().int().min(1).max(25),
 })
 
 export const updatePlayerJobResponseSchema = z.object({

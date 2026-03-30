@@ -36,7 +36,10 @@ public class ItemStatBoostService
             intelligence: currentStatus.Intelligence + flatBonus.Intelligence + CalculatePercentIncrease(currentStatus.Intelligence, percentBonus.IntelligencePercent),
             luck: currentStatus.Luck + flatBonus.Luck + CalculatePercentIncrease(currentStatus.Luck, percentBonus.LuckPercent),
             speed: currentStatus.Speed + flatBonus.Speed + CalculatePercentIncrease(currentStatus.Speed, percentBonus.SpeedPercent),
-            accuracy: currentStatus.Accuracy);
+            accuracy: currentStatus.Accuracy,
+            evasion: currentStatus.Evasion,
+            criticalChance: currentStatus.CriticalChance,
+            damageReduction: currentStatus.DamageReduction);
     }
 
     private static int CalculatePercentIncrease(int currentValue, int percent)

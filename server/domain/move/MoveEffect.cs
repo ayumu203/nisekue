@@ -42,6 +42,7 @@ public class MoveEffect(
                 ValidateOnlyBuff();
                 return;
             case MoveEffectType.Knockout:
+            case MoveEffectType.HalveSelfHp:
                 ValidateNoPayload();
                 return;
             default:

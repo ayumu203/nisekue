@@ -230,13 +230,9 @@ erDiagram
     QUEST_REWARD_SUMMARIES {
         uuid run_id PK, FK "internal.quest_runs.id"
         int exp "NOT NULL"
-        int gold "NOT NULL, DEFAULT 0"
-    }
-    QUEST_REWARD_EQUIPMENTS {
-        uuid run_id PK, FK "internal.quest_runs.id"
-        uuid player_id PK, FK "internal.players.id"
-        int equipment_id "NULL, references CSV equipment_id logically"
-        boolean is_skipped_by_inventory_full "NOT NULL"
+        int equipment_reward_id "NULL, references CSV equipment_id logically"
+        int item_reward_id "NULL, references CSV item_id logically"
+        jsonb skipped_reward_player_ids_json "NOT NULL"
     }
 
     PLAYERS ||--|| CHAT_ROOMS : owns

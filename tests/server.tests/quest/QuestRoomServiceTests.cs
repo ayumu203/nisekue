@@ -437,6 +437,7 @@ public class QuestRoomServiceTests
                     new QuestFloorRewardRule(0, 0))
             ],
             equipmentRewards: [],
+            itemRewards: [],
             isActive);
     }
 

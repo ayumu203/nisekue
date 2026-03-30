@@ -53,7 +53,7 @@ public class BattleActorState(
         {
             var existing = _ailments[index];
             var turns = Math.Max(existing.RemainingTurns, ailment.RemainingTurns);
-            _ailments[index] = new BattleAilmentState(ailment.Type, turns, ailment.TriggerDamage, ailment.SourceMoveId);
+            _ailments[index] = new BattleAilmentState(ailment.Type, turns, ailment.TriggerDamage, ailment.SourceMoveId, ailment.MaxHpLimit);
             return;
         }
 
@@ -78,6 +78,18 @@ public class BattleActorState(
         }
 
         _buffs.Add(buff);
+    }
+
+    public decimal GetBuffTotal(BuffStat stat, BuffCalculationType calculationType)
+    {
+        return _buffs
+            .Where(x => x.Stat == stat && x.CalculationType == calculationType)
+            .Sum(x => x.Value);
+    }
+
+    public void RemoveBuffs(BuffStat stat)
+    {
+        _buffs.RemoveAll(x => x.Stat == stat);
     }
 
     public IReadOnlyList<BattleTargetResult> TickTurnEnd()
@@ -106,7 +118,7 @@ public class BattleActorState(
             var remainingTurns = ailment.RemainingTurns - 1;
             if (remainingTurns > 0)
             {
-                updated.Add(new BattleAilmentState(ailment.Type, remainingTurns, ailment.TriggerDamage, ailment.SourceMoveId));
+                updated.Add(new BattleAilmentState(ailment.Type, remainingTurns, ailment.TriggerDamage, ailment.SourceMoveId, ailment.MaxHpLimit));
             }
         }
 
@@ -167,6 +179,20 @@ public class BattleActorState(
                     ailment.Type,
                     ailment.SourceMoveId));
             }
+
+            if (ailment.Type == AilmentType.Regeneration)
+            {
+                var restoredHp = ApplyRegeneration(ailment);
+                results.Add(new BattleTargetResult(
+                    Id,
+                    0,
+                    restoredHp,
+                    0,
+                    false,
+                    null,
+                    ailment.Type,
+                    ailment.SourceMoveId));
+            }
         }
 
         return results;
@@ -192,6 +218,18 @@ public class BattleActorState(
         }
 
         return totalDamage;
+    }
+
+    private int ApplyRegeneration(BattleAilmentState ailment)
+    {
+        var triggerDamage = ailment.TriggerDamage;
+        ArgumentNullException.ThrowIfNull(triggerDamage);
+
+        var healValue = Math.Max(1, triggerDamage.FixedValue + (int)Math.Round(CurrentHp * triggerDamage.PowerRate, MidpointRounding.AwayFromZero));
+        var beforeHp = CurrentHp;
+        var maxHp = ailment.MaxHpLimit ?? (CurrentHp + healValue);
+        RestoreHp(healValue, maxHp);
+        return CurrentHp - beforeHp;
     }
 
     private void TickBuffs()

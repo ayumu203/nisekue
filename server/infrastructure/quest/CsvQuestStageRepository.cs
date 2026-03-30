@@ -16,7 +16,8 @@ public class CsvQuestStageRepository : IQuestStageRepository
             Path.Combine(resourceDir, "stages.csv"),
             Path.Combine(resourceDir, "stage_floors.csv"),
             Path.Combine(resourceDir, "floor_enemy_spawns.csv"),
-            Path.Combine(resourceDir, "stage_equipment_rewards.csv"));
+            Path.Combine(resourceDir, "stage_equipment_rewards.csv"),
+            Path.Combine(resourceDir, "stage_item_rewards.csv"));
         stagesByCode = stagesById.Values.ToDictionary(x => x.StageCode, StringComparer.OrdinalIgnoreCase);
         stages = stagesById.Values.OrderBy(x => x.StageCode, StringComparer.OrdinalIgnoreCase).ToArray();
     }
@@ -47,11 +48,13 @@ public class CsvQuestStageRepository : IQuestStageRepository
         string stagesPath,
         string floorsPath,
         string spawnsPath,
-        string rewardsPath)
+        string equipmentRewardsPath,
+        string itemRewardsPath)
     {
         var floorRowsByStage = LoadFloorRows(floorsPath);
         var spawnRowsByFloor = LoadSpawnRows(spawnsPath);
-        var rewardRowsByStage = LoadRewardRows(rewardsPath);
+        var rewardRowsByStage = LoadRewardRows(equipmentRewardsPath);
+        var itemRewardRowsByStage = LoadItemRewardRows(itemRewardsPath);
         var lines = CsvQuestParser.ReadDataLines(stagesPath);
         var map = new Dictionary<QuestStageId, QuestStageDefinition>();
 
@@ -79,6 +82,8 @@ public class CsvQuestStageRepository : IQuestStageRepository
             floorRows ??= [];
             rewardRowsByStage.TryGetValue(stageId, out var rewardRows);
             rewardRows ??= [];
+            itemRewardRowsByStage.TryGetValue(stageId, out var itemRewardRows);
+            itemRewardRows ??= [];
             var floors = floorRows
                 .OrderBy(x => x.FloorNo)
                 .Select(row =>
@@ -103,6 +108,7 @@ public class CsvQuestStageRepository : IQuestStageRepository
                 CsvQuestParser.ParseInt(columns[6], "max_party_member_count", i + 1),
                 floors,
                 rewardRows.OrderByDescending(x => x.Weight).Select(x => x.ToRewardEntry()).ToArray(),
+                itemRewardRows.OrderByDescending(x => x.Weight).Select(x => x.ToRewardEntry()).ToArray(),
                 CsvQuestParser.ParseBool(columns[7], "is_active", i + 1)));
         }
 
@@ -223,6 +229,43 @@ public class CsvQuestStageRepository : IQuestStageRepository
         return map;
     }
 
+    private static IReadOnlyDictionary<QuestStageId, List<ItemRewardRow>> LoadItemRewardRows(string csvPath)
+    {
+        var lines = CsvQuestParser.ReadDataLines(csvPath);
+        var map = new Dictionary<QuestStageId, List<ItemRewardRow>>();
+
+        for (var i = 1; i < lines.Length; i++)
+        {
+            var line = lines[i].Trim();
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            var columns = CsvQuestParser.SplitColumns(line);
+            if (columns.Length != 4)
+            {
+                throw new InvalidOperationException($"stage_item_rewards.csv の形式が不正です。行: {i + 1}");
+            }
+
+            var stageId = new QuestStageId(CsvQuestParser.ParseInt(columns[0], "stage_id", i + 1));
+            var row = new ItemRewardRow(
+                string.IsNullOrWhiteSpace(columns[1]) ? null : new server.domain.player.ItemId(CsvQuestParser.ParseInt(columns[1], "item_id", i + 1)),
+                CsvQuestParser.ParseInt(columns[2], "weight", i + 1),
+                CsvQuestParser.ParseBool(columns[3], "is_miss", i + 1));
+
+            if (!map.TryGetValue(stageId, out var list))
+            {
+                list = [];
+                map[stageId] = list;
+            }
+
+            list.Add(row);
+        }
+
+        return map;
+    }
+
     private sealed record FloorRow(int FloorNo, FloorType FloorType, decimal ExpRate, decimal GoldRate);
 
     private sealed record SpawnRow(int PlacementNo, QuestEnemyDefinitionId EnemyDefinitionId, server.domain.battle.BattlePosition Position)
@@ -233,5 +276,10 @@ public class CsvQuestStageRepository : IQuestStageRepository
     private sealed record RewardRow(server.domain.player.EquipmentId? EquipmentId, int Weight, bool IsMiss)
     {
         public QuestStageEquipmentRewardEntry ToRewardEntry() => new(EquipmentId, Weight, IsMiss);
+    }
+
+    private sealed record ItemRewardRow(server.domain.player.ItemId? ItemId, int Weight, bool IsMiss)
+    {
+        public QuestStageItemRewardEntry ToRewardEntry() => new(ItemId, Weight, IsMiss);
     }
 }

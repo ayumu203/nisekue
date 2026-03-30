@@ -7,5 +7,6 @@ public enum MoveEffectType
     RestoreMp = 3,
     Ailment = 4,
     Buff = 5,
-    Knockout = 6
+    Knockout = 6,
+    HalveSelfHp = 7
 }

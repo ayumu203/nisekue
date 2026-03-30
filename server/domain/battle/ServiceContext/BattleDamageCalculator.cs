@@ -24,7 +24,9 @@ public class BattleDamageCalculator(Func<double>? randomProvider = null)
 
         var isCritical = input.CriticalRate > 0m && randomProvider() < CalculateCriticalChance(input);
         var criticalMultiplier = isCritical ? 1m + input.CriticalRate : 1m;
-        var damage = Math.Max(1, (int)Math.Round(rawDamage * criticalMultiplier, MidpointRounding.AwayFromZero));
+        var reducedDamage = Math.Max(1, (int)Math.Round(rawDamage * criticalMultiplier, MidpointRounding.AwayFromZero));
+        var reductionRate = Math.Clamp(input.DefenderStatus.DamageReduction, 0, 95) / 100m;
+        var damage = Math.Max(1, (int)Math.Round(reducedDamage * (1m - reductionRate), MidpointRounding.AwayFromZero));
 
         return new BattleDamageResult(damage, isCritical);
     }
@@ -36,7 +38,8 @@ public class BattleDamageCalculator(Func<double>? randomProvider = null)
             / (double)BattleConstants.Critical.MaxLuckAdvantageForChance;
 
         return BattleConstants.Critical.MinChance
-            + ((BattleConstants.Critical.MaxChance - BattleConstants.Critical.MinChance) * normalizedAdvantage);
+            + ((BattleConstants.Critical.MaxChance - BattleConstants.Critical.MinChance) * normalizedAdvantage)
+            + (double)input.CriticalChanceBonus;
     }
 
     private static int CalculateIntelligenceDamage(int baseDamage, int attackPower, int defensePower)
@@ -57,6 +60,7 @@ public class BattleDamageCalculator(Func<double>? randomProvider = null)
             BuffStat.Luck => attackerStatus.Luck,
             BuffStat.Speed => attackerStatus.Speed,
             BuffStat.Accuracy => attackerStatus.Accuracy,
+            BuffStat.StrengthIntelligence => attackerStatus.Strength + attackerStatus.Intelligence,
             _ => throw new ArgumentOutOfRangeException(nameof(attackStat), $"未対応の attackStat: {attackStat}")
         };
     }
