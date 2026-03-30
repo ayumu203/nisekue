@@ -9,6 +9,8 @@ import {
   updatePlayerImageResponseSchema,
   updatePlayerJobRequestSchema,
   updatePlayerJobResponseSchema,
+  updatePlayerEquipmentRequestSchema,
+  updatePlayerEquipmentResponseSchema,
   rebirthPlayerResponseSchema,
 } from '@/schema/player'
 import {
@@ -75,6 +77,8 @@ export type {
   UpdatePlayerImageResponse,
   UpdatePlayerJobRequest,
   UpdatePlayerJobResponse,
+  UpdatePlayerEquipmentRequest,
+  UpdatePlayerEquipmentResponse,
   RebirthPlayerResponse,
 } from '@/schema/player'
 export type {
@@ -176,6 +180,12 @@ export const endpoints = {
       method: 'PUT',
       requestSchema: updatePlayerJobRequestSchema,
       responseSchema: updatePlayerJobResponseSchema,
+    },
+    updateEquipment: {
+      path: '/player/equipment',
+      method: 'PUT',
+      requestSchema: updatePlayerEquipmentRequestSchema,
+      responseSchema: updatePlayerEquipmentResponseSchema,
     },
     rebirth: {
       path: '/player/rebirth',

@@ -195,6 +195,16 @@ export const updatePlayerJobResponseSchema = z.object({
   newlyLearnedMoves: z.array(learnedMoveSchema),
 })
 
+export const updatePlayerEquipmentRequestSchema = z.object({
+  equipmentType: playerEquipmentTypeSchema,
+  playerEquipmentId: z.string().uuid().nullable(),
+})
+
+export const updatePlayerEquipmentResponseSchema = z.object({
+  message: z.string().min(1, 'レスポンスメッセージが空です'),
+  player: getPlayerResponseSchema,
+})
+
 export const rebirthPlayerResponseSchema = z.object({
   message: z.string().min(1, 'レスポンスメッセージが空です'),
   userId: playerIdSchema,
@@ -222,4 +232,6 @@ export type UpdatePlayerImageRequest = z.infer<typeof updatePlayerImageRequestSc
 export type UpdatePlayerImageResponse = z.infer<typeof updatePlayerImageResponseSchema>
 export type UpdatePlayerJobRequest = z.infer<typeof updatePlayerJobRequestSchema>
 export type UpdatePlayerJobResponse = z.infer<typeof updatePlayerJobResponseSchema>
+export type UpdatePlayerEquipmentRequest = z.infer<typeof updatePlayerEquipmentRequestSchema>
+export type UpdatePlayerEquipmentResponse = z.infer<typeof updatePlayerEquipmentResponseSchema>
 export type RebirthPlayerResponse = z.infer<typeof rebirthPlayerResponseSchema>
