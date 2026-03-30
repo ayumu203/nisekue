@@ -1,5 +1,8 @@
 namespace server.domain.move.enums;
 
+// The JSON serializer in Quest saves ailment types as their integral values. Adjustments to the
+// existing values break deserialization of saved quest effects, so keep current assignments intact
+// and append any new values after the existing set.
 public enum AilmentType
 {
     Paralysis = 1,
