@@ -9,6 +9,7 @@ import {
   updatePlayerImageResponseSchema,
   updatePlayerJobRequestSchema,
   updatePlayerJobResponseSchema,
+  rebirthPlayerResponseSchema,
 } from '@/schema/player'
 import {
   getChatRoomRequestSchema,
@@ -74,6 +75,7 @@ export type {
   UpdatePlayerImageResponse,
   UpdatePlayerJobRequest,
   UpdatePlayerJobResponse,
+  RebirthPlayerResponse,
 } from '@/schema/player'
 export type {
   GetChatRoomRequest,
@@ -174,6 +176,11 @@ export const endpoints = {
       method: 'PUT',
       requestSchema: updatePlayerJobRequestSchema,
       responseSchema: updatePlayerJobResponseSchema,
+    },
+    rebirth: {
+      path: '/player/rebirth',
+      method: 'POST',
+      responseSchema: rebirthPlayerResponseSchema,
     },
   },
   chatRoom: {

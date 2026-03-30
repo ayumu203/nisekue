@@ -9,6 +9,25 @@ classDiagram
             Mage
             Priest
             Ranger
+            OniWarrior
+            SwordMaster
+            Trickster
+            Crusader
+            FireMage
+            WaterMage
+            WindMage
+            HighPriest
+            Necromancer
+            Sniper
+            TrapMaster
+            GrandWarrior
+            GrandGuard
+            GrandCaster
+            GrandPriest
+            GrandRanger
+            Shogun
+            Archmage
+            GreatThief
         }
     }
 
@@ -43,6 +62,8 @@ classDiagram
             RestoreMp
             Ailment
             Buff
+            Knockout
+            HalveSelfHp
         }
 
         class ElementType {
@@ -62,9 +83,14 @@ classDiagram
             <<Enum>>
             Paralysis
             Poison
+            Sleep
+            Burn
             Taunt
             PoisonTrap
             DamageTrap
+            InstantDeath
+            Regeneration
+            CoverAll
         }
 
         class BuffStat {
@@ -76,12 +102,25 @@ classDiagram
             Intelligence
             Luck
             Speed
+            Accuracy
+            Evasion
+            CriticalChance
+            DamageReduction
+            StrengthIntelligence
+        }
+
+        class TargetLifeState {
+            <<Enum>>
+            Alive
+            Dead
+            Any
         }
 
         class BuffCalculationType {
             <<Enum>>
             Add
             Mul
+            Set
         }
     }
 

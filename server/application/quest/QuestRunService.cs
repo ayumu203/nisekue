@@ -20,14 +20,17 @@ public class QuestRunService(
     IPlayerItemStackRepository playerItemStackRepository,
     IMarketListingRepository marketListingRepository,
     IEquipmentRepository equipmentRepository,
+    IItemRepository itemRepository,
     IJobProfileRepository jobProfileRepository,
     IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
     BattleService battleService,
-    QuestBattleFactory questBattleFactory)
+    QuestBattleFactory questBattleFactory,
+    Func<int, int>? rewardRollProvider = null)
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
     private const int ItemCapacity = 20;
+    private readonly Func<int, int> _rewardRollProvider = rewardRollProvider ?? (maxInclusive => Random.Shared.Next(1, maxInclusive + 1));
 
     public async Task<QuestRun> GetDetailAsync(QuestRunId runId)
     {
@@ -227,10 +230,28 @@ public class QuestRunService(
             .Distinct()
             .ToArray();
 
+        var hasGreatThiefBonus = room.Participants
+            .Where(participant => participant.Type == ParticipantType.Player)
+            .Where(participant =>
+            {
+                var state = run.BattleState.FindPartyMember(participant.Id);
+                return !state.HasLeftQuest;
+            })
+            .Join(
+                run.PartySnapshots,
+                participant => participant.Id,
+                snapshot => snapshot.ParticipantId,
+                (_, snapshot) => snapshot.Job)
+            .Any(job => job == Job.GreatThief);
+
         var rewardEquipmentId = run.Status == QuestRunStatus.Succeeded
-            ? DrawEquipmentReward(stage)
+            ? DrawEquipmentReward(stage, hasGreatThiefBonus)
+            : null;
+        var rewardItemId = run.Status == QuestRunStatus.Succeeded
+            ? DrawItemReward(stage, hasGreatThiefBonus)
             : null;
         run.Rewards.SetEquipmentReward(rewardEquipmentId);
+        run.Rewards.SetItemReward(rewardItemId);
         var skippedRewardPlayerIds = new List<PlayerId>();
 
         foreach (var playerId in rewardedPlayerIds)
@@ -249,10 +270,10 @@ public class QuestRunService(
             player.SetQuestCooldownUntil((run.EndedAt ?? DateTimeOffset.UtcNow).Add(QuestCooldown));
             await playerRepository.SaveAsync(player);
 
-            if (run.Status == QuestRunStatus.Succeeded && rewardEquipmentId is not null)
+            if (run.Status == QuestRunStatus.Succeeded && (rewardEquipmentId is not null || rewardItemId is not null))
             {
                 var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(playerId)).ToList();
-                var playerItemStacks = await playerItemStackRepository.GetByPlayerAsync(playerId);
+                var playerItemStacks = (await playerItemStackRepository.GetByPlayerAsync(playerId)).ToList();
                 var listings = await marketListingRepository.GetBySellerAsync(playerId, DateTimeOffset.UtcNow);
                 var listedEquipmentIds = listings
                     .Where(x => x.PlayerEquipmentId is not null)
@@ -261,26 +282,56 @@ public class QuestRunService(
                 var usedSlots = playerEquipments.Count(x => x.Status != EquipmentStatus.Equipped && !listedEquipmentIds.Contains(x.Id))
                                 + playerItemStacks.Count;
 
-                if (usedSlots >= ItemCapacity)
+                if (rewardEquipmentId is not null)
                 {
-                    skippedRewardPlayerIds.Add(playerId);
+                    if (usedSlots >= ItemCapacity)
+                    {
+                        skippedRewardPlayerIds.Add(playerId);
+                    }
+                    else
+                    {
+                        var rewardMaster = await equipmentRepository.GetAsync(rewardEquipmentId.Value)
+                            ?? throw new KeyNotFoundException($"装備マスタが見つかりません。 equipmentId={rewardEquipmentId.Value.Value}");
+                        var rewardGrantedAt = run.EndedAt ?? DateTimeOffset.UtcNow;
+                        playerEquipments.Add(new PlayerEquipment(
+                            PlayerEquipmentId.New(),
+                            playerId,
+                            rewardMaster.Id,
+                            rewardMaster.Type,
+                            EquipmentStatus.Inventory,
+                            rewardMaster.MaxDurability,
+                            0,
+                            rewardGrantedAt,
+                            rewardGrantedAt));
+                        usedSlots += 1;
+                        await playerEquipmentRepository.SaveAsync(playerEquipments);
+                    }
                 }
-                else
+
+                if (rewardItemId is not null)
                 {
-                    var rewardMaster = await equipmentRepository.GetAsync(rewardEquipmentId.Value)
-                        ?? throw new KeyNotFoundException($"装備マスタが見つかりません。 equipmentId={rewardEquipmentId.Value.Value}");
-                    var rewardGrantedAt = run.EndedAt ?? DateTimeOffset.UtcNow;
-                    playerEquipments.Add(new PlayerEquipment(
-                        PlayerEquipmentId.New(),
-                        playerId,
-                        rewardMaster.Id,
-                        rewardMaster.Type,
-                        EquipmentStatus.Inventory,
-                        rewardMaster.MaxDurability,
-                        0,
-                        rewardGrantedAt,
-                        rewardGrantedAt));
-                    await playerEquipmentRepository.SaveAsync(playerEquipments);
+                    var rewardItem = await itemRepository.GetAsync(rewardItemId.Value)
+                        ?? throw new KeyNotFoundException($"アイテムマスタが見つかりません。 itemId={rewardItemId.Value.Value}");
+                    var existingStack = playerItemStacks.FirstOrDefault(stack => stack.ItemId == rewardItem.Id);
+                    if (existingStack is not null)
+                    {
+                        existingStack.AddQuantity(1, rewardItem.MaxStack, DateTimeOffset.UtcNow);
+                        await playerItemStackRepository.SaveAsync(playerItemStacks);
+                    }
+                    else if (usedSlots >= ItemCapacity)
+                    {
+                        skippedRewardPlayerIds.Add(playerId);
+                    }
+                    else
+                    {
+                        playerItemStacks.Add(new PlayerItemStack(
+                            PlayerItemStackId.New(),
+                            playerId,
+                            rewardItem.Id,
+                            quantity: 1,
+                            DateTimeOffset.UtcNow));
+                        await playerItemStackRepository.SaveAsync(playerItemStacks);
+                    }
                 }
             }
         }
@@ -308,7 +359,7 @@ public class QuestRunService(
         }
     }
 
-    private static EquipmentId? DrawEquipmentReward(QuestStageDefinition stage)
+    private EquipmentId? DrawEquipmentReward(QuestStageDefinition stage, bool hasGreatThiefBonus)
     {
         if (stage.EquipmentRewards.Count == 0)
         {
@@ -321,17 +372,64 @@ public class QuestRunService(
             return null;
         }
 
-        var roll = Random.Shared.Next(1, totalWeight + 1);
-        var cumulative = 0;
-        foreach (var entry in stage.EquipmentRewards)
+        var drawCount = hasGreatThiefBonus ? 2 : 1;
+        for (var i = 0; i < drawCount; i++)
         {
-            cumulative += entry.Weight;
-            if (roll > cumulative)
+            var roll = _rewardRollProvider(totalWeight);
+            var cumulative = 0;
+            foreach (var entry in stage.EquipmentRewards)
             {
-                continue;
-            }
+                cumulative += entry.Weight;
+                if (roll > cumulative)
+                {
+                    continue;
+                }
 
-            return entry.IsMiss ? null : entry.EquipmentId;
+                if (!entry.IsMiss)
+                {
+                    return entry.EquipmentId;
+                }
+
+                break;
+            }
+        }
+
+        return null;
+    }
+
+    private ItemId? DrawItemReward(QuestStageDefinition stage, bool hasGreatThiefBonus)
+    {
+        if (stage.ItemRewards.Count == 0)
+        {
+            return null;
+        }
+
+        var totalWeight = stage.ItemRewards.Sum(x => x.Weight);
+        if (totalWeight <= 0)
+        {
+            return null;
+        }
+
+        var drawCount = hasGreatThiefBonus ? 2 : 1;
+        for (var i = 0; i < drawCount; i++)
+        {
+            var roll = _rewardRollProvider(totalWeight);
+            var cumulative = 0;
+            foreach (var entry in stage.ItemRewards)
+            {
+                cumulative += entry.Weight;
+                if (roll > cumulative)
+                {
+                    continue;
+                }
+
+                if (!entry.IsMiss)
+                {
+                    return entry.ItemId;
+                }
+
+                break;
+            }
         }
 
         return null;
@@ -405,7 +503,9 @@ public class QuestRunService(
         bool nextFloorIsBoss,
         QuestRunResolutionSummary summary)
     {
-        var moveById = moves.ToDictionary(x => x.Id.Id);
+        var moveById = moves
+            .GroupBy(x => x.Id.Id)
+            .ToDictionary(x => x.Key, x => x.First());
         var snapshotByParticipantId = run.PartySnapshots.ToDictionary(x => x.ParticipantId);
         var partyById = run.BattleState.PartyMembers.ToDictionary(x => x.ParticipantId);
         var enemyById = run.BattleState.Enemies.ToDictionary(x => x.Id);
@@ -659,6 +759,7 @@ public class QuestRunService(
             BattleActionFailureReason.ActorUnavailable => CreateLogEntry((actorDisplayName, LogTone.Default), ("は行動前に倒れた", LogTone.Default)),
             BattleActionFailureReason.NoTarget => CreateLogEntry([(actorDisplayName, LogTone.Default), ("は", LogTone.Default), .. actionLabelSegments, ("しようとしたが、対象がいなかった", LogTone.Default)]),
             BattleActionFailureReason.Paralyzed => CreateLogEntry((actorDisplayName, LogTone.Default), ("は麻痺して動けなかった", LogTone.Default)),
+            BattleActionFailureReason.Sleeping => CreateLogEntry((actorDisplayName, LogTone.Default), ("は眠っていて動けなかった", LogTone.Default)),
             BattleActionFailureReason.CannotAct => CreateLogEntry((actorDisplayName, LogTone.Default), ("は行動できなかった", LogTone.Default)),
             BattleActionFailureReason.InsufficientMp => CreateLogEntry([(actorDisplayName, LogTone.Default), ("はMPが足りず", LogTone.Default), .. actionLabelSegments, ("できなかった", LogTone.Default)]),
             BattleActionFailureReason.MoveUnavailable => CreateLogEntry([(actorDisplayName, LogTone.Default), ("は", LogTone.Default), .. actionLabelSegments, ("できなかった", LogTone.Default)]),
@@ -826,7 +927,8 @@ public class QuestRunService(
         {
             if (targetResult.TriggeredAilment is not AilmentType.DamageTrap
                 and not AilmentType.PoisonTrap
-                and not AilmentType.Poison)
+                and not AilmentType.Poison
+                and not AilmentType.Burn)
             {
                 continue;
             }
@@ -894,6 +996,7 @@ public class QuestRunService(
         {
             AilmentType.DamageTrap or AilmentType.PoisonTrap => "トラップ",
             AilmentType.Poison => "毒",
+            AilmentType.Burn => "やけど",
             _ => ailmentType.ToString()
         };
 
@@ -901,7 +1004,7 @@ public class QuestRunService(
             ? CreateLogEntry(
                 (actorDisplayName, LogTone.Default),
                 ("は", LogTone.Default),
-                (sourceMove.Name, ailmentType is AilmentType.DamageTrap or AilmentType.PoisonTrap or AilmentType.Poison ? LogTone.Ailment : ResolveMoveTone(sourceMove)),
+                (sourceMove.Name, ailmentType is AilmentType.DamageTrap or AilmentType.PoisonTrap or AilmentType.Poison or AilmentType.Burn ? LogTone.Ailment : ResolveMoveTone(sourceMove)),
                 ("による", LogTone.Default),
                 (effectLabel, LogTone.Default),
                 ("で", LogTone.Default),
@@ -945,7 +1048,7 @@ public class QuestRunService(
         if (move.Effects.Any(effect =>
                 effect.EffectType == MoveEffectType.Ailment &&
                 effect.Ailment is not null &&
-                effect.Ailment.AilmentType is AilmentType.Poison or AilmentType.PoisonTrap or AilmentType.DamageTrap))
+                effect.Ailment.AilmentType is AilmentType.Poison or AilmentType.PoisonTrap or AilmentType.DamageTrap or AilmentType.Burn or AilmentType.Sleep or AilmentType.InstantDeath))
         {
             return LogTone.Ailment;
         }

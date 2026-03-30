@@ -1,4 +1,7 @@
 id,stage_code,name,battlefield_image_path,recommended_level,min_party_member_count,max_party_member_count,is_active
-1,twilight-bog,はじまりのぬまち,image/quest/riverbank-battlefield.svg,5,4,6,true
-2,thunderpeak-pass,やまみちのぬけ道,image/quest/cave-battlefield.svg,20,4,6,true
-3,arcane-garden-core,ふしぎな花園,image/quest/enchanted-forest-battlefield.svg,50,4,6,true
+1,myu-town,ミュータウン,image/quest/residential-battlefield.svg,10,4,6,true
+2,fuga-forest,フガフガ森,image/quest/enchanted-forest-battlefield.svg,25,4,6,true
+3,sakasaka-desert,サカサカデザート,image/quest/ancient-ruins-battlefield.svg,50,4,6,true
+4,ehi-park,エヒエヒパーク,image/quest/crystal-cavern-battlefield.svg,75,4,6,true
+5,college-town,カレッジタウン,image/quest/residential-battlefield.svg,100,4,6,true
+6,rush-rush,ラッシュラッシュ,image/quest/hell-battlefield.svg,300,4,6,true

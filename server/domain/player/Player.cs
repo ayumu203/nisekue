@@ -189,13 +189,39 @@ public class Player(
                 defense: Status.Defense + growth.Defense,
                 intelligence: Status.Intelligence + growth.Intelligence,
                 luck: Status.Luck + growth.Luck,
-                speed: Status.Speed + growth.Speed);
+                speed: Status.Speed + growth.Speed,
+                accuracy: Status.Accuracy,
+                evasion: Status.Evasion,
+                criticalChance: Status.CriticalChance,
+                damageReduction: Status.DamageReduction);
             hasJobLeveledUp = true;
         }
 
         var hasMasteredCurrentJob = MarkCurrentJobAsMastered(jobProfile);
         var newlyLearnedMoveIds = SynchronizeLearnableMoves(jobProfile, learningRule);
         return new LevelUpResult(hasPlayerLeveledUp, hasJobLeveledUp, hasMasteredCurrentJob, newlyLearnedMoveIds);
+    }
+
+    public void Rebirth(Status inheritedStatus)
+    {
+        ArgumentNullException.ThrowIfNull(inheritedStatus);
+
+        if (Level < PlayerConstants.RebirthRequiredLevel)
+        {
+            throw new InvalidOperationException($"転生にはレベル{PlayerConstants.RebirthRequiredLevel}以上が必要です。");
+        }
+
+        if (Gold < PlayerConstants.RebirthGoldCost)
+        {
+            throw new InvalidOperationException($"転生には{PlayerConstants.RebirthGoldCost} Goldが必要です。");
+        }
+
+        Gold -= PlayerConstants.RebirthGoldCost;
+        Level = 1;
+        Exp = 0;
+        JobLevel = 1;
+        JobExp = 0;
+        Status = inheritedStatus;
     }
 
     private bool CanChangeJob(JobProfile nextProfile)

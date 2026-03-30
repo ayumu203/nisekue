@@ -103,6 +103,7 @@ export const questRoomRestrictionsSchema = z.object({
 
 export const questJoinDisabledReasonSchema = z.enum([
   'LevelRequirementNotMet',
+  'StageRecommendedLevelTooLow',
   'NotAllowedPlayer',
   'CooldownActive',
   'RoomClosed',

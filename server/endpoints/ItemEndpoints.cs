@@ -89,7 +89,8 @@ internal static class ItemEndpoints
             IPlayerItemStackRepository playerItemStackRepository,
             IItemRepository itemRepository,
             IJobProfileRepository jobProfileRepository,
-            IJobMoveLearningRuleRepository jobMoveLearningRuleRepository) =>
+            IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
+            ItemStatBoostService itemStatBoostService) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -131,16 +132,7 @@ internal static class ItemEndpoints
                 {
                     case ItemEffectType.StatBoost:
                         {
-                            var bonus = item.StatusBonus ?? new StatusBonus(0, 0, 0, 0, 0, 0, 0);
-                            var quantity = request.Quantity;
-                            player.UpdateStatus(new Status(
-                                player.Status.MaxHp + bonus.MaxHp * quantity,
-                                player.Status.MaxMp + bonus.MaxMp * quantity,
-                                player.Status.Strength + bonus.Strength * quantity,
-                                player.Status.Defense + bonus.Defense * quantity,
-                                player.Status.Intelligence + bonus.Intelligence * quantity,
-                                player.Status.Luck + bonus.Luck * quantity,
-                                player.Status.Speed + bonus.Speed * quantity));
+                            player.UpdateStatus(itemStatBoostService.Apply(player.Status, item, request.Quantity));
                             break;
                         }
                     case ItemEffectType.ChangeJob:
@@ -833,6 +825,18 @@ internal static class ItemEndpoints
                     intelligence = item.StatusBonus.Intelligence,
                     luck = item.StatusBonus.Luck,
                     speed = item.StatusBonus.Speed
+                },
+            statusBonusPercent = item.StatusBonusPercent is null
+                ? null
+                : new
+                {
+                    maxHp = item.StatusBonusPercent.MaxHpPercent,
+                    maxMp = item.StatusBonusPercent.MaxMpPercent,
+                    strength = item.StatusBonusPercent.StrengthPercent,
+                    defense = item.StatusBonusPercent.DefensePercent,
+                    intelligence = item.StatusBonusPercent.IntelligencePercent,
+                    luck = item.StatusBonusPercent.LuckPercent,
+                    speed = item.StatusBonusPercent.SpeedPercent
                 }
         };
     }

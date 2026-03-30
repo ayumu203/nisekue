@@ -9,6 +9,7 @@ import PlayerSetting from '@/pages/PlayerSetting'
 import PlayerImageList from '@/pages/PlayerImageList'
 import MoveSetting from '@/pages/MoveSetting'
 import JobChange from '@/pages/JobChange'
+import Rebirth from '@/pages/Rebirth'
 import Quest from '@/pages/Quest'
 import VisitPlayer from '@/pages/VisitPlayer'
 import Items from '@/pages/Items'
@@ -40,6 +41,7 @@ function App() {
       <Route path="/player-images" element={user ? <PlayerImageList /> : <Navigate to="/auth" replace />} />
       <Route path="/move-setting" element={user ? <MoveSetting /> : <Navigate to="/auth" replace />} />
       <Route path="/job-change" element={user ? <JobChange /> : <Navigate to="/auth" replace />} />
+      <Route path="/rebirth" element={user ? <Rebirth /> : <Navigate to="/auth" replace />} />
       <Route path="/thanks" element={<Thanks />} />
       <Route path="*" element={<Navigate to={user ? '/' : '/auth'} replace />} />
     </Routes>

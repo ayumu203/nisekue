@@ -13,13 +13,24 @@ public class Move
     public string? EffectImagePath { get; private set; }
     public TargetType TargetType { get; private set; }
     public AttackRange AttackRange { get; private set; }
+    public TargetLifeState TargetLifeState { get; private set; }
     public int MpCost { get; private set; }
     public int ExecutionPriority { get; private set; }
     public MoveCategory Category { get; private set; }
     public IReadOnlyList<MoveEffect> Effects => _effects;
 
-    public Move(MoveId id, string name, string description, TargetType targetType, AttackRange attackRange, int mpCost, int executionPriority, MoveCategory category, string? effectImagePath = null)
-        : this(id, name, description, targetType, attackRange, mpCost, executionPriority, category, effectImagePath, [])
+    public Move(
+        MoveId id,
+        string name,
+        string description,
+        TargetType targetType,
+        AttackRange attackRange,
+        int mpCost,
+        int executionPriority,
+        MoveCategory category,
+        string? effectImagePath = null,
+        TargetLifeState targetLifeState = TargetLifeState.Alive)
+        : this(id, name, description, targetType, attackRange, mpCost, executionPriority, category, effectImagePath, targetLifeState, [])
     {
     }
 
@@ -33,6 +44,7 @@ public class Move
         int executionPriority,
         MoveCategory category,
         string? effectImagePath = null,
+        TargetLifeState targetLifeState = TargetLifeState.Alive,
         IEnumerable<MoveEffect>? effects = null)
     {
         Id = id ?? throw new ArgumentNullException(nameof(id));
@@ -41,6 +53,7 @@ public class Move
         EffectImagePath = ValidateEffectImagePath(effectImagePath);
         TargetType = targetType;
         AttackRange = attackRange;
+        TargetLifeState = targetLifeState;
         MpCost = ValidateMpCost(mpCost);
         ExecutionPriority = executionPriority;
         Category = category;

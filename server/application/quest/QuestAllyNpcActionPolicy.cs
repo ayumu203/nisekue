@@ -26,11 +26,11 @@ public class QuestAllyNpcActionPolicy
 
         return snapshot.Job switch
         {
-            Job.Warrior => SelectWarriorAction(run, snapshot, state, orderedMoves, now),
-            Job.Guardian => SelectGuardianAction(run, snapshot, state, orderedMoves, now),
-            Job.Mage => SelectMageAction(run, snapshot, state, orderedMoves, now),
-            Job.Priest => SelectPriestAction(run, snapshot, state, orderedMoves, now),
-            Job.Ranger => SelectRangerAction(run, snapshot, state, orderedMoves, now),
+            Job.Warrior or Job.OniWarrior or Job.SwordMaster or Job.GrandWarrior or Job.Shogun => SelectWarriorAction(run, snapshot, state, orderedMoves, now),
+            Job.Guardian or Job.Trickster or Job.Crusader or Job.GrandGuard => SelectGuardianAction(run, snapshot, state, orderedMoves, now),
+            Job.Mage or Job.FireMage or Job.WaterMage or Job.WindMage or Job.GrandCaster or Job.Archmage => SelectMageAction(run, snapshot, state, orderedMoves, now),
+            Job.Priest or Job.HighPriest or Job.Necromancer or Job.GrandPriest => SelectPriestAction(run, snapshot, state, orderedMoves, now),
+            Job.Ranger or Job.Sniper or Job.TrapMaster or Job.GrandRanger or Job.GreatThief => SelectRangerAction(run, snapshot, state, orderedMoves, now),
             _ => CreateNormalAttack(run, participantId, snapshot.StartPosition, now, EnemyFrontFirstOrder)
         };
     }
@@ -241,7 +241,9 @@ public class QuestAllyNpcActionPolicy
 
     private static IReadOnlyList<Move> OrderMovesByMoveSet(MoveSet moveSet, IReadOnlyList<Move> availableMoves)
     {
-        var moveById = availableMoves.ToDictionary(x => x.Id.Id);
+        var moveById = availableMoves
+            .GroupBy(x => x.Id.Id)
+            .ToDictionary(x => x.Key, x => x.First());
         var ordered = new List<Move>();
         foreach (var moveId in moveSet.Slots)
         {

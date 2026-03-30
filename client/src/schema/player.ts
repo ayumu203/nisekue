@@ -8,11 +8,37 @@ export const playerUserNameSchema = z
   .min(1, 'ユーザー名を入力してください')
   .max(20, 'ユーザー名は20文字以内で入力してください')
 
-export const playerJobCodeSchema = z.enum(['Apprentice', 'Warrior', 'Guardian', 'Mage', 'Priest', 'Ranger'])
+export const playerJobCodeSchema = z.enum([
+  'Apprentice',
+  'Warrior',
+  'Guardian',
+  'Mage',
+  'Priest',
+  'Ranger',
+  'OniWarrior',
+  'SwordMaster',
+  'Trickster',
+  'Crusader',
+  'FireMage',
+  'WaterMage',
+  'WindMage',
+  'HighPriest',
+  'Necromancer',
+  'Sniper',
+  'TrapMaster',
+  'GrandWarrior',
+  'GrandGuard',
+  'GrandCaster',
+  'GrandPriest',
+  'GrandRanger',
+  'Shogun',
+  'Archmage',
+  'GreatThief',
+])
 
 export const playerJobSchema = z.object({
   code: playerJobCodeSchema,
-  value: z.number().int().min(1).max(6),
+  value: z.number().int().min(1).max(25),
   displayName: z.string().min(1, 'ジョブ名が空です'),
   description: z.string().min(1, 'ジョブ説明が空です'),
 })
@@ -93,10 +119,12 @@ export const getPlayerResponseSchema = z
     imagePath: z.string().min(1).nullable().optional(),
     job: playerJobSchema,
     jobProfiles: z.array(playerJobSchema),
+    masteredJobs: z.array(playerJobSchema).default([]),
     level: z.number().int().min(1, 'レベルは1以上である必要があります'),
     exp: z.number().int().min(0, '経験値は0以上である必要があります'),
     jobLevel: z.number().int().min(1, '職業レベルは1以上である必要があります'),
     jobExp: z.number().int().min(0, '職業経験値は0以上である必要があります'),
+    gold: z.number().int().min(0, 'Goldは0以上である必要があります'),
     status: z.object({
       baseValues: playerStatusValuesSchema,
       effectiveValues: playerStatusValuesSchema,
@@ -156,7 +184,7 @@ export const updatePlayerImageResponseSchema = z.object({
 })
 
 export const updatePlayerJobRequestSchema = z.object({
-  job: z.number().int().min(1).max(6),
+  job: z.number().int().min(1).max(25),
 })
 
 export const updatePlayerJobResponseSchema = z.object({
@@ -165,6 +193,21 @@ export const updatePlayerJobResponseSchema = z.object({
   userName: playerUserNameSchema.optional(),
   job: playerJobSchema,
   newlyLearnedMoves: z.array(learnedMoveSchema),
+})
+
+export const rebirthPlayerResponseSchema = z.object({
+  message: z.string().min(1, 'レスポンスメッセージが空です'),
+  userId: playerIdSchema,
+  userName: playerUserNameSchema.optional(),
+  job: playerJobSchema,
+  level: z.number().int().min(1),
+  exp: z.number().int().min(0),
+  jobLevel: z.number().int().min(1),
+  jobExp: z.number().int().min(0),
+  gold: z.number().int().min(0),
+  status: z.object({
+    baseValues: playerStatusValuesSchema,
+  }),
 })
 
 export type GetPlayerResponse = z.infer<typeof getPlayerResponseSchema>
@@ -179,3 +222,4 @@ export type UpdatePlayerImageRequest = z.infer<typeof updatePlayerImageRequestSc
 export type UpdatePlayerImageResponse = z.infer<typeof updatePlayerImageResponseSchema>
 export type UpdatePlayerJobRequest = z.infer<typeof updatePlayerJobRequestSchema>
 export type UpdatePlayerJobResponse = z.infer<typeof updatePlayerJobResponseSchema>
+export type RebirthPlayerResponse = z.infer<typeof rebirthPlayerResponseSchema>

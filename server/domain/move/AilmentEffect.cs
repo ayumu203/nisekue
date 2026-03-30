@@ -3,12 +3,18 @@ using server.shared.constants.move;
 
 namespace server.domain.move;
 
-public class AilmentEffect(AilmentType ailmentType, decimal ailmentRate, int ailmentTurns, DamageEffect? triggerDamage = null)
+public class AilmentEffect(
+    AilmentType ailmentType,
+    decimal ailmentRate,
+    int ailmentTurns,
+    DamageEffect? triggerDamage = null,
+    bool allowBossInstantDeath = false)
 {
     public AilmentType AilmentType { get; } = ailmentType;
     public decimal AilmentRate { get; } = ValidateRateRange(ailmentRate);
     public int AilmentTurns { get; } = ValidateTurns(ailmentTurns);
     public DamageEffect? TriggerDamage { get; } = ValidateTriggerDamage(ailmentType, triggerDamage);
+    public bool AllowBossInstantDeath { get; } = allowBossInstantDeath;
 
     private static decimal ValidateRateRange(decimal value)
     {
@@ -35,6 +41,11 @@ public class AilmentEffect(AilmentType ailmentType, decimal ailmentRate, int ail
         if (ailmentType == AilmentType.DamageTrap && triggerDamage is null)
         {
             throw new ArgumentException("DamageTrap には triggerDamage が必要です。", nameof(triggerDamage));
+        }
+
+        if (ailmentType == AilmentType.Regeneration && triggerDamage is null)
+        {
+            throw new ArgumentException("Regeneration には triggerDamage が必要です。", nameof(triggerDamage));
         }
 
         return triggerDamage;

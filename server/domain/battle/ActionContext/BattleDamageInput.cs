@@ -11,6 +11,7 @@ public class BattleDamageInput(
     int fixedPower,
     decimal powerRate,
     decimal criticalRate,
+    decimal criticalChanceBonus,
     ElementType elementType,
     BuffStat attackStat)
 {
@@ -21,6 +22,7 @@ public class BattleDamageInput(
     public int FixedPower { get; } = ValidateNonNegative(fixedPower, nameof(fixedPower));
     public decimal PowerRate { get; } = ValidateNonNegative(powerRate, nameof(powerRate));
     public decimal CriticalRate { get; } = ValidateNonNegative(criticalRate, nameof(criticalRate));
+    public decimal CriticalChanceBonus { get; } = ValidateNonNegative(criticalChanceBonus, nameof(criticalChanceBonus));
     public ElementType ElementType { get; } = elementType;
     public BuffStat AttackStat { get; } = attackStat;
 

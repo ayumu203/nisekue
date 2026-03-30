@@ -65,8 +65,11 @@ public class QuestBattleFactory
             .Select(x => new BattleActorPosition(new BattleActorId(x.ParticipantId.Value), x.StartPosition));
         var enemyPositions = run.BattleState.Enemies
             .Select(x => new BattleActorPosition(new BattleActorId(x.Id.Value), x.Position));
+        var bossActorIds = run.FloorState.IsBossFloor
+            ? run.BattleState.Enemies.Select(x => new BattleActorId(x.Id.Value)).ToArray()
+            : [];
 
-        return new BattleFieldContext(partyPositions.Concat(enemyPositions).ToArray());
+        return new BattleFieldContext(partyPositions.Concat(enemyPositions).ToArray(), bossActorIds);
     }
 
     public IReadOnlyDictionary<BattleActorId, QuestParticipantId> CreatePartyActorMap(QuestRun run)

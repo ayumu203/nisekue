@@ -27,7 +27,7 @@ internal static class QuestJsonSerializer
     public static string SerializeEffects(IEnumerable<BattleAilmentState> ailments, IEnumerable<BattleBuffState> buffs)
     {
         return JsonSerializer.Serialize(new EffectsDto(
-            ailments.Select(x => new AilmentDto((int)x.Type, x.RemainingTurns, x.SourceMoveId?.Id, x.TriggerDamage is null ? null : new DamageDto(
+            ailments.Select(x => new AilmentDto((int)x.Type, x.RemainingTurns, x.SourceMoveId?.Id, x.MaxHpLimit, x.TriggerDamage is null ? null : new DamageDto(
                 x.TriggerDamage.HitCount,
                 x.TriggerDamage.PowerRate,
                 x.TriggerDamage.FixedValue,
@@ -53,7 +53,8 @@ internal static class QuestJsonSerializer
                         x.TriggerDamage.CriticalRate,
                         (ElementType)x.TriggerDamage.ElementType,
                         x.TriggerDamage.AttackStat is null ? null : (BuffStat)x.TriggerDamage.AttackStat.Value),
-                x.SourceMoveId is null ? null : new MoveId(x.SourceMoveId.Value))).ToArray(),
+                x.SourceMoveId is null ? null : new MoveId(x.SourceMoveId.Value),
+                x.MaxHpLimit)).ToArray(),
             dto.Buffs.Select(x => new BattleBuffState(
                 (BuffStat)x.Stat,
                 (BuffCalculationType)x.CalculationType,
@@ -201,7 +202,7 @@ internal static class QuestJsonSerializer
     }
 
     private sealed record EffectsDto(AilmentDto[] Ailments, BuffDto[] Buffs);
-    private sealed record AilmentDto(int Type, int RemainingTurns, int? SourceMoveId, DamageDto? TriggerDamage);
+    private sealed record AilmentDto(int Type, int RemainingTurns, int? SourceMoveId, int? MaxHpLimit, DamageDto? TriggerDamage);
     private sealed record DamageDto(int HitCount, decimal PowerRate, int FixedValue, decimal CriticalRate, int ElementType, int? AttackStat);
     private sealed record BuffDto(int Stat, int CalculationType, decimal Value, int RemainingTurns);
     private sealed record ChatMessageDto(int TurnNo, Guid SenderParticipantId, string DisplayName, string? ImagePath, string Message, DateTimeOffset SentAt);

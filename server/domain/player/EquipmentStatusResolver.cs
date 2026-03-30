@@ -55,7 +55,11 @@ public class EquipmentStatusResolver
             baseStatus.Defense + bonusDefense,
             baseStatus.Intelligence + bonusIntelligence,
             baseStatus.Luck + bonusLuck,
-            baseStatus.Speed + bonusSpeed);
+            baseStatus.Speed + bonusSpeed,
+            baseStatus.Accuracy,
+            baseStatus.Evasion,
+            baseStatus.CriticalChance,
+            baseStatus.DamageReduction);
     }
 
     private static int ApplyMasteryBonus(int baseBonus, decimal masteryRate)

@@ -9,7 +9,8 @@ public class QuestResponseMapper(
     IQuestStageRepository questStageRepository,
     IQuestEnemyDefinitionRepository questEnemyDefinitionRepository,
     IPlayerRepository playerRepository,
-    IEquipmentRepository equipmentRepository)
+    IEquipmentRepository equipmentRepository,
+    IItemRepository itemRepository)
 {
     public async Task<object> MapQuestStageSummaryAsync(QuestStageDefinition stage)
     {
@@ -183,6 +184,11 @@ public class QuestResponseMapper(
             return "CooldownActive";
         }
 
+        if (stage is not null && !QuestStageEntryPolicy.MeetsMinimumLevel(viewer, stage))
+        {
+            return "StageRecommendedLevelTooLow";
+        }
+
         var maxPartyMemberCount = Math.Min(stage?.MaxPartyMemberCount ?? 6, 6);
         if (room.Participants.Count(x => x.Status != ParticipantStatus.Left) >= maxPartyMemberCount)
         {
@@ -198,6 +204,9 @@ public class QuestResponseMapper(
             .ToDictionary(x => x.Id);
         var rewardEquipment = run.Rewards.EquipmentRewardId is not null
             ? await equipmentRepository.GetAsync(run.Rewards.EquipmentRewardId.Value)
+            : null;
+        var rewardItem = run.Rewards.ItemRewardId is not null
+            ? await itemRepository.GetAsync(run.Rewards.ItemRewardId.Value)
             : null;
 
         var waitingParticipantIds = run.BattleState.PartyMembers
@@ -327,6 +336,8 @@ public class QuestResponseMapper(
                 exp = run.Rewards.Exp,
                 equipmentRewardId = run.Rewards.EquipmentRewardId?.Value,
                 equipmentRewardName = rewardEquipment?.Name,
+                itemRewardId = run.Rewards.ItemRewardId?.Value,
+                itemRewardName = rewardItem?.Name,
                 inventoryFullSkippedPlayerIds = run.Rewards.SkippedRewardPlayerIds.Select(x => x.Value)
             },
             lastTurnResults = run.LastTurnResults is null
@@ -406,6 +417,25 @@ public class QuestResponseMapper(
             Job.Mage => "魔法使い",
             Job.Priest => "僧侶",
             Job.Ranger => "レンジャー",
+            Job.OniWarrior => "鬼武者",
+            Job.SwordMaster => "ソードマスター",
+            Job.Trickster => "トリックスター",
+            Job.Crusader => "クルセイダー",
+            Job.FireMage => "火魔法使い",
+            Job.WaterMage => "水魔法使い",
+            Job.WindMage => "風魔法使い",
+            Job.HighPriest => "神官",
+            Job.Necromancer => "死霊使い",
+            Job.Sniper => "スナイパー",
+            Job.TrapMaster => "罠師",
+            Job.GrandWarrior => "グランドウォリアー",
+            Job.GrandGuard => "グランドガード",
+            Job.GrandCaster => "グランドキャスター",
+            Job.GrandPriest => "グランドプリースト",
+            Job.GrandRanger => "グランドレンジャー",
+            Job.Shogun => "大将軍",
+            Job.Archmage => "大魔法使い",
+            Job.GreatThief => "大盗賊",
             _ => job.ToString()
         };
 

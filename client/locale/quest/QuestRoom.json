@@ -168,6 +168,7 @@
   },
   "joinDisabledReasons": {
     "LevelRequirementNotMet": "必要レベルを満たしていないため参加できません。",
+    "StageRecommendedLevelTooLow": "このステージの推奨レベルに対して現在のレベルが低すぎるため参加できません。",
     "NotAllowedPlayer": "このルームの参加対象プレイヤーではありません。",
     "CooldownActive": "クールダウン中のため参加できません。",
     "RoomClosed": "このルームは募集終了です。",

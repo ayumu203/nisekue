@@ -232,6 +232,7 @@ public class QuestEnemyActionPolicy
                 moveId: null,
                 TargetType.Enemy,
                 AttackRange.Single,
+                TargetLifeState.Alive,
                 tauntingTargets,
                 planningContext,
                 resolvedTargets => resolvedTargets.Any(target => target.IsTaunting));
@@ -247,6 +248,7 @@ public class QuestEnemyActionPolicy
             moveId: null,
             TargetType.Enemy,
             AttackRange.Single,
+            TargetLifeState.Alive,
             backPriorityTargets,
             planningContext,
             resolvedTargets => resolvedTargets.Count > 0);
@@ -267,6 +269,7 @@ public class QuestEnemyActionPolicy
                 move.Id.Id,
                 move.TargetType,
                 move.AttackRange,
+                move.TargetLifeState,
                 preferredTargets,
                 planningContext,
                 predicate);
@@ -285,13 +288,14 @@ public class QuestEnemyActionPolicy
         int? moveId,
         TargetType targetType,
         AttackRange attackRange,
+        TargetLifeState targetLifeState,
         IReadOnlyList<CombatTargetCandidate> preferredTargets,
         EnemyPlanningContext planningContext,
         Func<IReadOnlyList<CombatTargetCandidate>, bool> predicate)
     {
         foreach (var target in preferredTargets)
         {
-            var resolvedTargets = ResolveTargets(targetType, attackRange, target.Position, planningContext);
+            var resolvedTargets = ResolveTargets(targetType, attackRange, targetLifeState, target.Position, planningContext);
             if (resolvedTargets.Count == 0 || !predicate(resolvedTargets))
             {
                 continue;
@@ -313,7 +317,7 @@ public class QuestEnemyActionPolicy
     {
         foreach (var target in planningContext.PlayerTargets)
         {
-            var resolvedTargets = ResolveTargets(move.TargetType, move.AttackRange, target.Position, planningContext);
+            var resolvedTargets = ResolveTargets(move.TargetType, move.AttackRange, move.TargetLifeState, target.Position, planningContext);
             if (resolvedTargets.Any(resolvedTarget => resolvedTarget.Position.Row == BattleRow.Back))
             {
                 return true;
@@ -335,7 +339,7 @@ public class QuestEnemyActionPolicy
 
         if (move.TargetType == TargetType.Enemy || move.TargetType == TargetType.Ally)
         {
-            var resolvedTargets = ResolveTargets(move.TargetType, move.AttackRange, target.Position, planningContext);
+            var resolvedTargets = ResolveTargets(move.TargetType, move.AttackRange, move.TargetLifeState, target.Position, planningContext);
             return resolvedTargets.Any(resolved => resolved.ActorId == target.ActorId);
         }
 
@@ -345,10 +349,11 @@ public class QuestEnemyActionPolicy
     private IReadOnlyList<CombatTargetCandidate> ResolveTargets(
         TargetType targetType,
         AttackRange attackRange,
+        TargetLifeState targetLifeState,
         BattlePosition selectedPosition,
         EnemyPlanningContext planningContext)
     {
-        var selector = new BattleTargetSelector(targetType, attackRange, selectedPosition: selectedPosition);
+        var selector = new BattleTargetSelector(targetType, attackRange, selectedPosition: selectedPosition, targetLifeState: targetLifeState);
         var targetIds = targetingResolver.ResolveTargets(
             selector,
             planningContext.ActorSnapshot,
@@ -438,7 +443,7 @@ public class QuestEnemyActionPolicy
             .ToArray();
 
         var friendlyTargets = run.BattleState.Enemies
-            .Where(other => !other.IsDead && other.Id != enemy.Id)
+            .Where(other => other.Id != enemy.Id)
             .Select(other =>
             {
                 var otherDefinition = ResolveDefinition(other.EnemyDefinitionId, enemyDefinitions);

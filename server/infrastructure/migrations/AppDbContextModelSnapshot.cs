@@ -719,6 +719,10 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasColumnName("exp");
 
+                    b.Property<int?>("ItemRewardId")
+                        .HasColumnType("integer")
+                        .HasColumnName("item_reward_id");
+
                     b.Property<string>("SkippedRewardPlayerIdsJson")
                         .IsRequired()
                         .HasColumnType("jsonb")

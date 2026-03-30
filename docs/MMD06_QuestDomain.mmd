@@ -2,6 +2,21 @@ classDiagram
     %% Enum 定義は docs/MMD21_Enum.mmd を参照
 
     namespace StageContext {
+        class QuestBattleMoveProfile {
+            <<Value Object>>
+            +TargetType TargetType
+            +AttackRange AttackRange
+            +TargetLifeState TargetLifeState
+        }
+
+        class QuestBattleMoveEffectProfile {
+            <<Value Object>>
+            +MoveEffectType EffectType
+            +TargetType? OverrideTargetType
+            +AttackRange? OverrideAttackRange
+            +TargetLifeState? OverrideTargetLifeState
+        }
+
         class QuestStageDefinition {
             <<Aggregate Root>>
             +QuestStageId Id
@@ -13,6 +28,7 @@ classDiagram
             +int MaxPartyMemberCount
             +IReadOnlyList~QuestFloorDefinition~ Floors
             +IReadOnlyList~QuestStageEquipmentRewardEntry~ EquipmentRewards
+            +IReadOnlyList~QuestStageItemRewardEntry~ ItemRewards
             +bool IsActive
         }
 
@@ -48,6 +64,13 @@ classDiagram
         class QuestStageEquipmentRewardEntry {
             <<Value Object>>
             +EquipmentId? EquipmentId
+            +int Weight
+            +bool IsMiss
+        }
+
+        class QuestStageItemRewardEntry {
+            <<Value Object>>
+            +ItemId? ItemId
             +int Weight
             +bool IsMiss
         }
@@ -124,6 +147,8 @@ classDiagram
         }
 
         QuestStageDefinition ..> QuestStageSummaryView : first placement enemy image for UI preview
+        QuestEnemyDefinition ..> QuestBattleMoveProfile : move target profile is resolved from move master
+        QuestEnemyDefinition ..> QuestBattleMoveEffectProfile : effects may override target side/range/life-state
     }
 
     namespace RoomContext {
@@ -228,6 +253,20 @@ classDiagram
     }
 
     namespace RunContext {
+        class BattleAilmentState {
+            +AilmentType Type
+            +int RemainingTurns
+            +DamageEffect? TriggerDamage
+            +MoveId? SourceMoveId
+        }
+
+        class BattleBuffState {
+            +BuffStat Stat
+            +BuffCalculationType CalculationType
+            +decimal Value
+            +int RemainingTurns
+        }
+
         class QuestRunPartyMemberSnapshot {
             <<Value Object>>
             +QuestParticipantId ParticipantId
@@ -375,18 +414,13 @@ classDiagram
         class QuestRewardAccumulator {
             <<Value Object>>
             +int Exp
-            +int Gold
-            +EquipmentId? RewardEquipmentId
+            +EquipmentId? EquipmentRewardId
+            +ItemId? ItemRewardId
+            +IReadOnlySet~PlayerId~ SkippedRewardPlayerIds
             +AddExp(value: int) void
-            +AddGold(value: int) void
-            +SetRewardEquipment(equipmentId: EquipmentId?) void
-        }
-
-        class QuestRewardEquipmentGrant {
-            <<Value Object>>
-            +PlayerId PlayerId
-            +EquipmentId? EquipmentId
-            +bool IsSkippedByInventoryFull
+            +SetEquipmentReward(equipmentId: EquipmentId?) void
+            +SetItemReward(itemId: ItemId?) void
+            +SetSkippedRewardPlayerIds(playerIds: IEnumerable~PlayerId~) void
         }
 
         class QuestRunResolutionSummary {
@@ -498,7 +532,6 @@ classDiagram
     QuestRun *-- QuestTurnState : has
     QuestRun *-- QuestTrapCollection : has
     QuestRun *-- QuestRewardAccumulator : has
-    QuestRun *-- QuestRewardEquipmentGrant : 0..*
     QuestRun *-- QuestRunParticipantIdentity : 1..*
     QuestRun *-- QuestChatMessage : 0..*
     QuestFloorState *-- QuestEnemyPlacement : 0..*
@@ -534,6 +567,8 @@ classDiagram
     QuestAllyNpcActionPolicy ..> QuestRun : use
     QuestAllyNpcActionPolicy ..> QuestParticipantId : use
     QuestAllyNpcActionPolicy ..> Move : use
+    QuestRewardAccumulator ..> QuestStageEquipmentRewardEntry : common reward roll; doubled when any party member is GreatThief
+    QuestRewardAccumulator ..> QuestStageItemRewardEntry : common reward roll; doubled when any party member is GreatThief
     QuestSnapshotFactory ..> QuestRunPartyMemberSnapshot : builds
     QuestSnapshotFactory ..> EquipmentStatusResolver : use
     QuestSnapshotFactory ..> PlayerEquipment : use

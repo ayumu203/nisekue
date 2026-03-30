@@ -161,6 +161,69 @@ public class CsvMoveRepositoryTests
         move.Effects[0].Damage!.AttackStat.Should().Be(BuffStat.Defense);
     }
 
+    [Fact]
+    public async Task GetMoveAsync_WhenRegenerationMoveExists_ReturnsRegenerationDefinition()
+    {
+        var repository = new CsvMoveRepository();
+
+        var move = await repository.GetMoveAsync(new(80));
+
+        move.Should().NotBeNull();
+        move!.Name.Should().Be("リジェネレイ");
+        move.Effects.Should().ContainSingle();
+        move.Effects[0].Ailment.Should().NotBeNull();
+        move.Effects[0].Ailment!.AilmentType.Should().Be(AilmentType.Regeneration);
+        move.Effects[0].Ailment!.TriggerDamage.Should().NotBeNull();
+        move.Effects[0].Ailment!.TriggerDamage!.FixedValue.Should().Be(35);
+    }
+
+    [Fact]
+    public async Task GetMoveAsync_WhenBossApplicableInstantDeathMoveExists_ReturnsBossFlag()
+    {
+        var repository = new CsvMoveRepository();
+
+        var move = await repository.GetMoveAsync(new(84));
+
+        move.Should().NotBeNull();
+        move!.Name.Should().Be("急所撃ち");
+        move.Effects.Should().ContainSingle();
+        move.Effects[0].Ailment.Should().NotBeNull();
+        move.Effects[0].Ailment!.AilmentType.Should().Be(AilmentType.InstantDeath);
+        move.Effects[0].Ailment!.AllowBossInstantDeath.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetMoveAsync_WhenCoverAllMoveExists_ReturnsCoverAllDefinition()
+    {
+        var repository = new CsvMoveRepository();
+
+        var move = await repository.GetMoveAsync(new(90));
+
+        move.Should().NotBeNull();
+        move!.Name.Should().Be("絶対守護");
+        move.TargetType.Should().Be(TargetType.Self);
+        move.Effects.Should().ContainSingle();
+        move.Effects[0].EffectType.Should().Be(MoveEffectType.Ailment);
+        move.Effects[0].Ailment.Should().NotBeNull();
+        move.Effects[0].Ailment!.AilmentType.Should().Be(AilmentType.CoverAll);
+    }
+
+    [Fact]
+    public async Task GetMoveAsync_WhenHalveSelfHpMoveExists_ReturnsHalveSelfHpEffect()
+    {
+        var repository = new CsvMoveRepository();
+
+        var move = await repository.GetMoveAsync(new(89));
+
+        move.Should().NotBeNull();
+        move!.Name.Should().Be("血戦覚悟");
+        move.Effects.Should().HaveCount(2);
+        move.Effects[0].EffectType.Should().Be(MoveEffectType.HalveSelfHp);
+        move.Effects[1].Buff.Should().NotBeNull();
+        move.Effects[1].Buff!.BuffStat.Should().Be(BuffStat.Strength);
+        move.Effects[1].Buff!.BuffCalculationType.Should().Be(BuffCalculationType.Mul);
+    }
+
     /*
     [Fact]
     public async Task GetMoveAsync_WhenEffectImagePathConfigured_ReturnsPath()
@@ -199,7 +262,11 @@ public class CsvMoveRepositoryTests
         { 31, "クラインゼムリャ", TargetType.Enemy, AttackRange.Row, 4, ElementType.Earth },
         { 32, "ミッテルゼムリャ", TargetType.Enemy, AttackRange.Row, 7, ElementType.Earth },
         { 33, "グロースゼムリャ", TargetType.Enemy, AttackRange.Row, 11, ElementType.Earth },
-        { 34, "ウアゼムリャ", TargetType.Enemy, AttackRange.Row, 17, ElementType.Earth }
+        { 34, "ウアゼムリャ", TargetType.Enemy, AttackRange.Row, 17, ElementType.Earth },
+        { 65, "魔神斬り", TargetType.Enemy, AttackRange.Single, 8, ElementType.Slash },
+        { 73, "フレアライン", TargetType.Enemy, AttackRange.Column, 9, ElementType.Fire },
+        { 77, "テンペスト", TargetType.Enemy, AttackRange.All, 12, ElementType.Wind },
+        { 82, "死霊召喚", TargetType.Enemy, AttackRange.Single, 10, ElementType.None }
     };
 
     public static TheoryData<int, string, MoveCategory, TargetType, AttackRange> FamilyRepresentativeDefinitions => new()
@@ -219,7 +286,11 @@ public class CsvMoveRepositoryTests
         { 18, "プラーミア", MoveCategory.Attack, TargetType.Enemy, AttackRange.Row },
         { 23, "クラインヴォーダ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Column },
         { 27, "クラインヴェーチェル", MoveCategory.Attack, TargetType.Enemy, AttackRange.Square },
-        { 31, "クラインゼムリャ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Row }
+        { 31, "クラインゼムリャ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Row },
+        { 69, "幻惑の挑発", MoveCategory.Support, TargetType.Self, AttackRange.Single },
+        { 80, "リジェネレイ", MoveCategory.Support, TargetType.Ally, AttackRange.Single },
+        { 84, "急所撃ち", MoveCategory.Support, TargetType.Enemy, AttackRange.Single },
+        { 86, "黒霧散布", MoveCategory.Support, TargetType.Enemy, AttackRange.All }
     };
 
     public static TheoryData<int, string, int, decimal, int> HealMoveDefinitions => new()

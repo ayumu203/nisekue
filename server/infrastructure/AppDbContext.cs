@@ -485,6 +485,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRewardSummary.Property(x => x.RunId).HasColumnName("run_id").HasColumnType("uuid").IsRequired();
         questRewardSummary.Property(x => x.Exp).HasColumnName("exp").IsRequired();
         questRewardSummary.Property(x => x.EquipmentRewardId).HasColumnName("equipment_reward_id");
+        questRewardSummary.Property(x => x.ItemRewardId).HasColumnName("item_reward_id");
         questRewardSummary.Property(x => x.SkippedRewardPlayerIdsJson).HasColumnName("skipped_reward_player_ids_json").HasColumnType("jsonb").IsRequired();
     }
 }

@@ -178,6 +178,7 @@ public class BattleDamageCalculatorTests
             fixedPower: 5,
             powerRate: 1m,
             criticalRate: criticalRate,
+            criticalChanceBonus: 0m,
             elementType: ElementType.None,
             attackStat: attackStat);
     }
