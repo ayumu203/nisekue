@@ -144,9 +144,23 @@ export default function ThreadDetail() {
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="space-between">
                   <Stack direction="row" spacing={1.5} alignItems="center">
                     <Avatar
+                      component={Link}
+                      to={`/players/${data.authorPlayerId}/visit`}
+                      aria-label={locale.visitAuthorRoom.replace('{name}', data.authorName)}
                       src={resolveCharacterAssetPath(data.authorImagePath) ?? undefined}
                       alt={data.authorName}
-                      sx={{ width: 56, height: 56, bgcolor: '#c7a57b', color: '#4f392c' }}
+                      sx={{
+                        width: 56,
+                        height: 56,
+                        bgcolor: '#c7a57b',
+                        color: '#4f392c',
+                        textDecoration: 'none',
+                        transition: 'transform 140ms ease, box-shadow 140ms ease',
+                        '&:hover': {
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 8px 18px rgba(36, 20, 11, 0.18)',
+                        },
+                      }}
                     >
                       {data.authorName.slice(0, 1)}
                     </Avatar>
@@ -269,9 +283,23 @@ export default function ThreadDetail() {
                       <Stack spacing={1.25}>
                         <Stack direction="row" spacing={1.25} alignItems="center">
                           <Avatar
+                            component={Link}
+                            to={`/players/${reply.authorPlayerId}/visit`}
+                            aria-label={locale.visitAuthorRoom.replace('{name}', reply.authorName)}
                             src={resolveCharacterAssetPath(reply.authorImagePath) ?? undefined}
                             alt={reply.authorName}
-                            sx={{ width: 40, height: 40, bgcolor: '#c7a57b', color: '#4f392c' }}
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              bgcolor: '#c7a57b',
+                              color: '#4f392c',
+                              textDecoration: 'none',
+                              transition: 'transform 140ms ease, box-shadow 140ms ease',
+                              '&:hover': {
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 6px 14px rgba(36, 20, 11, 0.16)',
+                              },
+                            }}
                           >
                             {reply.authorName.slice(0, 1)}
                           </Avatar>

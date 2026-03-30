@@ -7,5 +7,6 @@ public sealed record ThreadSummaryView(
     DateTimeOffset CreatedAt,
     DateTimeOffset? LastRepliedAt,
     int ReplyCount,
+    Guid AuthorPlayerId,
     string AuthorName,
     string? AuthorImagePath);

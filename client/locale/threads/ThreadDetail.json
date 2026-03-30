@@ -3,6 +3,7 @@
   "threadMissing": "対象スレッドが見つかりません。",
   "backToHome": "ホームに戻る",
   "backToList": "一覧へ戻る",
+  "visitAuthorRoom": "{name}の部屋へ移動",
   "createdAt": "作成日時: {value}",
   "replyCount": "返信 {count} 件 / 最終返信 {last}",
   "repliesTitle": "返信一覧",

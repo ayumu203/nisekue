@@ -327,7 +327,11 @@ public class BattleActionResolver(
         var appliedAilment = default(AilmentType?);
         if (ShouldApplySecondaryEffect(effect.Ailment.AilmentRate, attackerStatus, defenderStatus))
         {
-            targetState.ApplyAilment(new BattleAilmentState(effect.Ailment.AilmentType, effect.Ailment.AilmentTurns, effect.Ailment.TriggerDamage));
+            targetState.ApplyAilment(new BattleAilmentState(
+                effect.Ailment.AilmentType,
+                effect.Ailment.AilmentTurns,
+                effect.Ailment.TriggerDamage,
+                actorSnapshot.MoveSet.GetLearnedMoveIds().FirstOrDefault(id => id.Id == effect.MoveId.Id) ?? effect.MoveId));
             appliedAilment = effect.Ailment.AilmentType;
         }
 

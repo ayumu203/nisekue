@@ -7,6 +7,7 @@
   "pageStatus": "{page} / {pages} ページ",
   "open": "詳細を見る",
   "author": "投稿者: {name}",
+  "visitAuthorRoom": "{name}の部屋へ移動",
   "createdAt": "作成日時: {value}",
   "replyInfo": "返信 {count} 件 / 最終返信 {last}",
   "noReplies": "返信なし",

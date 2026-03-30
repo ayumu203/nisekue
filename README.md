@@ -70,19 +70,17 @@ $ dotnet test
 
 ### DB マイグレーション (EF Core)
 
-- `dev` / `prod` の公開環境は GitHub Actions から手動起動で適用する.
+- `dev` / `prod` の公開環境は GitHub Actions で自動適用する.
 - workflow は以下を利用する.
   - 開発: `.github/workflows/db-migrate-dev.yml`
   - 本番: `.github/workflows/db-migrate-prod.yml`
 - GitHub Environments (`dev`, `prod`) の Secrets に `SUPABASE_DB_CONNECTION_STRING` を設定する.
 - `SUPABASE_DB_CONNECTION_STRING` には Session Pooler の接続文字列を入れる.
 - Azure App Service の `ConnectionStrings__Supabase` も Session Pooler を使う.
-- direct connection はローカル端末からの疎通確認や緊急時の手動適用に使う.
 
 ```bash
-# GitHub Actions の workflow_dispatch で実行する.
-# 開発: Apply DB Migrations - Development
-# 本番: Apply DB Migrations - Production
+# main push: Apply DB Migrations - Development
+# prod push: Apply DB Migrations - Production
 ```
 
 ### マーケット期限切れ出品の自動削除
@@ -122,17 +120,6 @@ curl -X POST "http://localhost:5068/internal/development/cleanup-game-data" \
 curl -X POST "https://www.arm203.org/internal/development/cleanup-game-data" \
   -H "X-Maintenance-Token: <MARKET_CLEANUP_TOKEN>" \
   -H "Accept: application/json"
-```
-
-### 開発環境での手動適用
-
-```bash
-# 初回のみ (dotnet-ef の導入)
-dotnet tool install --global dotnet-ef --version 10.0.3
-
-# direct connection を使った緊急時の手動適用例
-ConnectionStrings__Supabase='Host=db.<project-ref>.supabase.co;Port=5432;Database=postgres;Username=postgres;Password="<db password>";SSL Mode=Require;Trust Server Certificate=true' \
-dotnet ef database update --project server/server.csproj --startup-project server/server.csproj
 ```
 
 ### 新しい migration を作る場合

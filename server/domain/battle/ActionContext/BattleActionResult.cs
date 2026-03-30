@@ -9,7 +9,8 @@ public class BattleActionResult(
     MoveId? moveId,
     bool succeeded,
     BattleActionFailureReason? failureReason = null,
-    IEnumerable<BattleTargetResult>? targetResults = null)
+    IEnumerable<BattleTargetResult>? targetResults = null,
+    bool isTurnEndEffect = false)
 {
     private readonly BattleTargetResult[] _targetResults = targetResults?.ToArray() ?? [];
 
@@ -19,4 +20,5 @@ public class BattleActionResult(
     public bool Succeeded { get; } = succeeded;
     public BattleActionFailureReason? FailureReason { get; } = failureReason;
     public IReadOnlyList<BattleTargetResult> TargetResults => _targetResults;
+    public bool IsTurnEndEffect { get; } = isTurnEndEffect;
 }

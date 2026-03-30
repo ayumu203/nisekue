@@ -6,7 +6,7 @@
 - デプロイの起点を `main` ではなく `prod` ブランチへ移す。
 - フロントエンドは Cloudflare Pages、バックエンドは Azure App Service、DB は本番用 Supabase プロジェクトで運用する。
 - GitHub Actions により、`prod` ブランチ反映時に本番用デプロイを自動で適用できるようにする。
-- DB マイグレーションは GitHub Actions から環境別に手動起動できるようにする。
+- DB マイグレーションは GitHub Actions により環境別に自動適用できるようにする。
 
 ## 2. 現状
 
@@ -22,7 +22,7 @@
 
 - フロントエンドデプロイは GitHub Pages 向け workflow を使用している。
 - バックエンドデプロイは Azure App Service 向け workflow を使用している。
-- DB マイグレーションは GitHub Actions の workflow_dispatch から環境別に適用できる。
+- DB マイグレーションは GitHub Actions により環境別に自動適用できる。
 - workflow のトリガーは現在 `main` ブランチ基準である。
 - バックエンドの CORS は `AllowAnyOrigin` であり、本番向けに未調整である。
 - フロントエンドの API ベース URL は `VITE_API_BASE_URL` で切り替える。
@@ -106,27 +106,17 @@
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 
-### 5.1.1 DB 接続方式の使い分け
+### 5.1.1 DB 接続
 
 - GitHub Actions の DB migration は Session Pooler を使う。
 - Azure App Service の通常アプリ接続も Session Pooler を使う。
-- direct connection はローカル端末からの疎通確認や緊急時の手動 migration に限定して保持する。
-
-使い分け:
-
-- GitHub `dev` / `prod` Environment secret `SUPABASE_DB_CONNECTION_STRING`
-  - Session Pooler の接続文字列を設定する
-- Azure App Service `ConnectionStrings__Supabase`
-  - Session Pooler の接続文字列を設定する
-- ローカル端末
-  - 必要に応じて direct connection を一時利用する
+- GitHub `dev` / `prod` Environment secret `SUPABASE_DB_CONNECTION_STRING` には Session Pooler の接続文字列を設定する。
+- Azure App Service `ConnectionStrings__Supabase` にも Session Pooler の接続文字列を設定する。
 
 接続文字列例:
 
 - Session Pooler
   - `Host=aws-1-<region>.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.<project-ref>;Password="<db password>";SSL Mode=Require;Trust Server Certificate=true`
-- direct connection
-  - `Host=db.<project-ref>.supabase.co;Port=5432;Database=postgres;Username=postgres;Password="<db password>";SSL Mode=Require;Trust Server Certificate=true`
 
 ### 5.2 Azure App Service 本番アプリの作成
 
@@ -212,7 +202,7 @@
 #### db migrate
 
 - `.github/workflows/db-migrate-prod.yml` を追加する。
-- `prod` 環境の `workflow_dispatch` から本番 Supabase へ migration を適用する。
+- `prod` ブランチ push から本番 Supabase へ migration を自動適用する。
 - `dev` / `prod` ともに GitHub Environment secret `SUPABASE_DB_CONNECTION_STRING` へ Session Pooler の接続文字列を登録する。
 - workflow は `dotnet ef database update` を実行し、適用対象の migration がなければ `No migrations were applied` で終了する。
 - schema 変更を含む backend deploy の前に起動する。
@@ -221,22 +211,14 @@
 
 - migration の主経路は GitHub Actions の `db-migrate-dev.yml` / `db-migrate-prod.yml` とする。
 - Azure App Service の通常アプリ接続は Session Pooler を使う。
-- ローカル端末からの direct connection は、Actions 実行前の疎通確認や緊急時の手動適用に限定する。
 
 GitHub Actions での運用手順:
 
 1. `main` または `prod` に必要な migration ファイルが入っていることを確認する。
 2. 対象 Environment (`dev` または `prod`) の `SUPABASE_DB_CONNECTION_STRING` に Session Pooler の接続文字列が設定されていることを確認する。
-3. `db-migrate-dev.yml` または `db-migrate-prod.yml` を `workflow_dispatch` で起動する。
+3. `main` または `prod` へ push して `db-migrate-dev.yml` または `db-migrate-prod.yml` を自動起動させる。
 4. `Apply migrations` ステップで `No migrations were applied` または migration 完了ログを確認する。
 5. その後 backend deploy を行う。
-
-緊急時の手動適用コマンド例:
-
-- development
-  - `ConnectionStrings__Supabase='Host=db.pudpklpqhhkozpipsyao.supabase.co;Port=5432;Database=postgres;Username=postgres;Password="<development db password>";SSL Mode=Require;Trust Server Certificate=true' dotnet ef database update --project server/server.csproj --startup-project server/server.csproj`
-- production
-  - `ConnectionStrings__Supabase='Host=db.pfigwkdwtyqchsiljkod.supabase.co;Port=5432;Database=postgres;Username=postgres;Password="<production db password>";SSL Mode=Require;Trust Server Certificate=true' dotnet ef database update --project server/server.csproj --startup-project server/server.csproj`
 
 #### cleanup worker
 
@@ -271,7 +253,7 @@ GitHub Actions での運用手順:
 
 ### 6.2 production へ置く値
 
-- `SUPABASE_DB_CONNECTION_STRING` (`direct connection`)
+- `SUPABASE_DB_CONNECTION_STRING` (`Session Pooler`)
 - `AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND_PROD`
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
@@ -281,7 +263,7 @@ GitHub Actions での運用手順:
 ### 6.3 development へ置く値
 
 - 既存の dev App Service 用 publish profile
-- 開発 Supabase 用 direct connection
+- 開発 Supabase 用 Session Pooler connection string
 - 開発向け `VITE_*` 値
 - 開発向け `MARKET_CLEANUP_TOKEN`
 
@@ -298,7 +280,7 @@ GitHub Actions での運用手順:
 - 開発 App Service environment variable
   - `Maintenance__MarketCleanupToken=<development 用 token>`
 - GitHub `dev` Environment secret
-  - `SUPABASE_DB_CONNECTION_STRING=<development 用 direct connection>`
+  - `SUPABASE_DB_CONNECTION_STRING=<development 用 Session Pooler connection string>`
 - 開発 App Service environment variable
   - `ConnectionStrings__Supabase=<development 用 Session Pooler connection string>`
 - GitHub `prod` Environment secret
@@ -306,7 +288,7 @@ GitHub Actions での運用手順:
 - 本番 App Service environment variable
   - `Maintenance__MarketCleanupToken=<production 用 token>`
 - GitHub `prod` Environment secret
-  - `SUPABASE_DB_CONNECTION_STRING=<production 用 direct connection>`
+  - `SUPABASE_DB_CONNECTION_STRING=<production 用 Session Pooler connection string>`
 - 本番 App Service environment variable
   - `ConnectionStrings__Supabase=<production 用 Session Pooler connection string>`
 
@@ -347,9 +329,8 @@ GitHub Actions での運用手順:
 
 ### 9.3 DB
 
-- `db-migrate-dev.yml` / `db-migrate-prod.yml` を `workflow_dispatch` で起動して migration を適用できるか。
+- `db-migrate-dev.yml` / `db-migrate-prod.yml` が `main` / `prod` push で自動起動して migration を適用できるか。
 - GitHub Environment secret `SUPABASE_DB_CONNECTION_STRING` が Session Pooler で疎通できるか。
-- 緊急時には direct connection で手動適用へ切り替えられるか。
 
 ## 10. 実装時の変更対象
 

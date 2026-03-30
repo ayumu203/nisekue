@@ -16,6 +16,7 @@ import {
   type SvgIconProps,
 } from '@mui/material'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import useSWR, { useSWRConfig } from 'swr'
 import {
   createMarketListing,
@@ -768,6 +769,7 @@ function MarketCard({
   showSeller: boolean
 }) {
   const sellerImageSrc = resolveCharacterAssetPath(listing.sellerImagePath)
+  const sellerRoomPath = listing.sellerId ? `/players/${listing.sellerId}/visit` : null
 
   return (
     <Paper
@@ -815,6 +817,9 @@ function MarketCard({
         {showSeller && listing.sellerName ? (
           <Stack direction="row" spacing={1.25} alignItems="center">
             <Box
+              component={sellerRoomPath ? Link : 'div'}
+              to={sellerRoomPath ?? undefined}
+              aria-label={locale.visitSellerRoom.replace('{name}', listing.sellerName)}
               sx={{
                 width: 52,
                 height: 52,
@@ -825,6 +830,17 @@ function MarketCard({
                 display: 'grid',
                 placeItems: 'center',
                 flexShrink: 0,
+                textDecoration: 'none',
+                transition: 'transform 140ms ease, box-shadow 140ms ease',
+                ...(sellerRoomPath
+                  ? {
+                      cursor: 'pointer',
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 6px 14px rgba(22, 44, 31, 0.16)',
+                      },
+                    }
+                  : null),
               }}
             >
               {sellerImageSrc ? (

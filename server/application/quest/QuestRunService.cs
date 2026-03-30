@@ -2,6 +2,7 @@ using server.application.battle;
 using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.move;
+using server.domain.move.enums;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
@@ -125,19 +126,14 @@ public class QuestRunService(
         var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync())
             .ToDictionary(x => x.Id);
 
-        var beforeParty = run.BattleState.PartyMembers.ToDictionary(
-            x => x.ParticipantId,
-            x => new ActorStateSnapshot(x.CurrentHp, x.CurrentMp, x.IsDead));
-        var beforeEnemy = run.BattleState.Enemies.ToDictionary(
-            x => x.Id,
-            x => new ActorStateSnapshot(x.CurrentHp, x.CurrentMp, x.IsDead));
         var previousFloorNo = run.FloorState.CurrentFloorNo;
         var previousStatus = run.Status.ToString();
 
         var fieldContext = questBattleFactory.CreateBattleFieldContext(run);
-        var actors = questBattleFactory.CreateActorInputs(run);
-        var (actions, moves) = await questBattleFactory.CreateTurnInputsAsync(run, moveRepository);
+        var actors = questBattleFactory.CreateActorInputs(run, enemyDefinitions);
+        var (actions, moves) = await questBattleFactory.CreateTurnInputsAsync(run, moveRepository, enemyDefinitions);
         var resolution = battleService.ResolveTurn(new BattleTurnRequest(actors, actions, moves, fieldContext));
+        var resolvedMoves = await LoadMissingAilmentSourceMovesAsync(moves, resolution, moveRepository);
 
         var finalFloorNo = stage.Floors.Max(x => x.FloorNo);
         var currentFloor = stage.Floors.FirstOrDefault(x => x.FloorNo == previousFloorNo)
@@ -166,12 +162,10 @@ public class QuestRunService(
         run.SetLastTurnResults(BuildLastTurnResults(
             run,
             resolution,
-            moves,
+            resolvedMoves,
             enemyDefinitions,
             partyActorMap,
             enemyActorMap,
-            beforeParty,
-            beforeEnemy,
             previousFloorNo,
             previousStatus,
             nextFloor?.FloorNo,
@@ -405,8 +399,6 @@ public class QuestRunService(
         IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions,
         IReadOnlyDictionary<BattleActorId, QuestParticipantId> partyActorMap,
         IReadOnlyDictionary<BattleActorId, QuestEnemyInstanceId> enemyActorMap,
-        IReadOnlyDictionary<QuestParticipantId, ActorStateSnapshot> beforeParty,
-        IReadOnlyDictionary<QuestEnemyInstanceId, ActorStateSnapshot> beforeEnemy,
         int previousFloorNo,
         string previousStatus,
         int? nextFloorNo,
@@ -418,7 +410,9 @@ public class QuestRunService(
         var partyById = run.BattleState.PartyMembers.ToDictionary(x => x.ParticipantId);
         var enemyById = run.BattleState.Enemies.ToDictionary(x => x.Id);
 
-        var actions = resolution.ActionResults.Select(actionResult =>
+        var actions = resolution.ActionResults
+            .Where(actionResult => !actionResult.IsTurnEndEffect)
+            .Select(actionResult =>
         {
             Guid? actorParticipantId = null;
             Guid? actorEnemyInstanceId = null;
@@ -491,23 +485,40 @@ public class QuestRunService(
                     isDeadAfterAction);
             }).ToArray();
 
+            var move = actionResult.MoveId is null ? null : moveById.GetValueOrDefault(actionResult.MoveId.Id);
+            var logEntries = BuildActionLogs(
+                actorDisplayName,
+                MapActionKind(actionResult.ActionKind),
+                move,
+                actionResult.Succeeded,
+                actionResult.FailureReason,
+                targetSummaries);
+
             return new QuestResolvedAction(
                 actorParticipantId,
                 actorEnemyInstanceId,
                 actorDisplayName,
                 MapActionKind(actionResult.ActionKind),
                 actionResult.MoveId?.Id,
-                actionResult.MoveId is null ? null : moveById.GetValueOrDefault(actionResult.MoveId.Id)?.Name,
+                move?.Name,
                 actionResult.Succeeded,
                 targetSummaries,
-                BuildActionLogs(
-                    actorDisplayName,
-                    MapActionKind(actionResult.ActionKind),
-                    actionResult.MoveId is null ? null : moveById.GetValueOrDefault(actionResult.MoveId.Id)?.Name,
-                    actionResult.Succeeded,
-                    actionResult.FailureReason,
-                    targetSummaries));
-        }).ToArray();
+                logEntries.Select(entry => entry.Text),
+                logEntries);
+        })
+        .ToArray();
+
+        var ailmentLogActions = BuildAilmentTickActions(
+            resolution,
+            moveById,
+            partyActorMap,
+            enemyActorMap,
+            snapshotByParticipantId,
+            partyById,
+            enemyById,
+            enemyDefinitions);
+
+        actions = [.. actions, .. ailmentLogActions];
 
         var floorTransition = summary.IsFloorCleared
             ? new QuestFloorTransition(
@@ -531,6 +542,39 @@ public class QuestRunService(
             runTransition);
     }
 
+    private static async Task<IReadOnlyList<Move>> LoadMissingAilmentSourceMovesAsync(
+        IReadOnlyList<Move> moves,
+        BattleTurnResolution resolution,
+        IMoveRepository moveRepository)
+    {
+        var moveById = moves.ToDictionary(move => move.Id);
+        var missingMoveIds = resolution.ActionResults
+            .Where(result => result.IsTurnEndEffect)
+            .SelectMany(result => result.TargetResults)
+            .Select(result => result.SourceMoveId)
+            .OfType<MoveId>()
+            .Where(moveId => !moveById.ContainsKey(moveId))
+            .Distinct()
+            .ToArray();
+
+        if (missingMoveIds.Length == 0)
+        {
+            return moves;
+        }
+
+        var resolvedMoves = new List<Move>(moves);
+        foreach (var moveId in missingMoveIds)
+        {
+            var move = await moveRepository.GetMoveAsync(moveId);
+            if (move is not null)
+            {
+                resolvedMoves.Add(move);
+            }
+        }
+
+        return resolvedMoves;
+    }
+
     private static string MapActionKind(server.domain.battle.enums.BattleActionKind actionKind)
     {
         return actionKind switch
@@ -544,26 +588,26 @@ public class QuestRunService(
         };
     }
 
-    private static IReadOnlyList<string> BuildActionLogs(
+    private static IReadOnlyList<QuestBattleLogEntry> BuildActionLogs(
         string actorDisplayName,
         string actionKind,
-        string? moveName,
+        Move? move,
         bool succeeded,
         BattleActionFailureReason? failureReason,
         IReadOnlyList<QuestResolvedTargetSummary> targetSummaries)
     {
         if (!succeeded)
         {
-            return [BuildFailureLog(actorDisplayName, actionKind, moveName, failureReason)];
+            return [BuildFailureLog(actorDisplayName, actionKind, move, failureReason)];
         }
 
         if (targetSummaries.Count == 0)
         {
             return actionKind switch
             {
-                nameof(ActionKind.Guard) => [$"{actorDisplayName}は身を守っている"],
-                nameof(ActionKind.Wait) => [$"{actorDisplayName}は様子を見ている"],
-                _ => [$"{actorDisplayName}は行動した"]
+                nameof(ActionKind.Guard) => [CreateLogEntry((actorDisplayName, LogTone.Default), ("は身を守っている", LogTone.Default))],
+                nameof(ActionKind.Wait) => [CreateLogEntry((actorDisplayName, LogTone.Default), ("は様子を見ている", LogTone.Default))],
+                _ => [CreateLogEntry((actorDisplayName, LogTone.Default), ("は行動した", LogTone.Default))]
             };
         }
 
@@ -590,47 +634,51 @@ public class QuestRunService(
                 group.SelectMany(target => target.AppliedEffects).Distinct().ToArray(),
                 group.SelectMany(target => target.RemovedEffects).Distinct().ToArray(),
                 group.Any(target => target.IsDeadAfterAction)))
-            .Select(target => BuildTargetLog(actorDisplayName, actionKind, moveName, target))
+            .Select(target => BuildTargetLog(actorDisplayName, actionKind, move, target))
             .ToArray();
     }
 
-    private static string BuildFailureLog(
+    private static QuestBattleLogEntry BuildFailureLog(
         string actorDisplayName,
         string actionKind,
-        string? moveName,
+        Move? move,
         BattleActionFailureReason? failureReason)
     {
-        var actionLabel = actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
-            ? moveName
+        var actionLabelSegments = actionKind == nameof(ActionKind.UseMove) && move is not null
+            ? new[] { (move.Name, ResolveMoveTone(move)) }
             : actionKind switch
             {
-                nameof(ActionKind.NormalAttack) => "攻撃",
-                nameof(ActionKind.Prayer) => "祈り",
-                nameof(ActionKind.Guard) => "防御",
-                _ => "行動"
+                nameof(ActionKind.NormalAttack) => new[] { ("攻撃", LogTone.Default) },
+                nameof(ActionKind.Prayer) => new[] { ("祈り", LogTone.Default) },
+                nameof(ActionKind.Guard) => new[] { ("防御", LogTone.Default) },
+                _ => new[] { ("行動", LogTone.Default) }
             };
 
         return failureReason switch
         {
-            BattleActionFailureReason.ActorUnavailable => $"{actorDisplayName}は行動前に倒れた",
-            BattleActionFailureReason.NoTarget => $"{actorDisplayName}は{actionLabel}しようとしたが、対象がいなかった",
-            BattleActionFailureReason.Paralyzed => $"{actorDisplayName}は麻痺して動けなかった",
-            BattleActionFailureReason.CannotAct => $"{actorDisplayName}は行動できなかった",
-            BattleActionFailureReason.InsufficientMp => $"{actorDisplayName}はMPが足りず{actionLabel}できなかった",
-            BattleActionFailureReason.MoveUnavailable => $"{actorDisplayName}は{actionLabel}できなかった",
-            _ => $"{actorDisplayName}は行動したが失敗した"
+            BattleActionFailureReason.ActorUnavailable => CreateLogEntry((actorDisplayName, LogTone.Default), ("は行動前に倒れた", LogTone.Default)),
+            BattleActionFailureReason.NoTarget => CreateLogEntry([(actorDisplayName, LogTone.Default), ("は", LogTone.Default), .. actionLabelSegments, ("しようとしたが、対象がいなかった", LogTone.Default)]),
+            BattleActionFailureReason.Paralyzed => CreateLogEntry((actorDisplayName, LogTone.Default), ("は麻痺して動けなかった", LogTone.Default)),
+            BattleActionFailureReason.CannotAct => CreateLogEntry((actorDisplayName, LogTone.Default), ("は行動できなかった", LogTone.Default)),
+            BattleActionFailureReason.InsufficientMp => CreateLogEntry([(actorDisplayName, LogTone.Default), ("はMPが足りず", LogTone.Default), .. actionLabelSegments, ("できなかった", LogTone.Default)]),
+            BattleActionFailureReason.MoveUnavailable => CreateLogEntry([(actorDisplayName, LogTone.Default), ("は", LogTone.Default), .. actionLabelSegments, ("できなかった", LogTone.Default)]),
+            _ => CreateLogEntry((actorDisplayName, LogTone.Default), ("は行動したが失敗した", LogTone.Default))
         };
     }
 
-    private static string BuildTargetLog(
+    private static QuestBattleLogEntry BuildTargetLog(
         string actorDisplayName,
         string actionKind,
-        string? moveName,
+        Move? move,
         QuestResolvedTargetSummary target)
     {
         if (actionKind == nameof(ActionKind.Prayer))
         {
-            return $"{actorDisplayName}は{target.TargetDisplayName}に祈りを捧げた";
+            return CreateLogEntry(
+                (actorDisplayName, LogTone.Default),
+                ("は", LogTone.Default),
+                (target.TargetDisplayName, LogTone.Default),
+                ("に祈りを捧げた", LogTone.Default));
         }
 
         if (target.HpChange < 0)
@@ -639,42 +687,283 @@ public class QuestRunService(
             if (target.AppliedEffects.Count > 0)
             {
                 var effectNames = string.Join("、", target.AppliedEffects);
-                return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
-                    ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{damage}ダメージを与え、{effectNames}を付与した"
-                    : $"{actorDisplayName}は{target.TargetDisplayName}に{damage}ダメージを与え、{effectNames}を付与した";
+                return move is not null
+                    ? CreateLogEntry(
+                        (actorDisplayName, LogTone.Default),
+                        ("は", LogTone.Default),
+                        (target.TargetDisplayName, LogTone.Default),
+                        ("に", LogTone.Default),
+                        (move.Name, ResolveMoveTone(move)),
+                        ("を使って", LogTone.Default),
+                        (damage.ToString(), LogTone.Damage),
+                        ("ダメージを与え、", LogTone.Default),
+                        (effectNames, LogTone.Default),
+                        ("を付与した", LogTone.Default))
+                    : CreateLogEntry(
+                        (actorDisplayName, LogTone.Default),
+                        ("は", LogTone.Default),
+                        (target.TargetDisplayName, LogTone.Default),
+                        ("に", LogTone.Default),
+                        (damage.ToString(), LogTone.Damage),
+                        ("ダメージを与え、", LogTone.Default),
+                        (effectNames, LogTone.Default),
+                        ("を付与した", LogTone.Default));
             }
 
-            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
-                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{damage}ダメージを与えた"
-                : $"{actorDisplayName}は{target.TargetDisplayName}に{damage}ダメージを与えた";
+            return move is not null
+                ? CreateLogEntry(
+                    (actorDisplayName, LogTone.Default),
+                    ("は", LogTone.Default),
+                    (target.TargetDisplayName, LogTone.Default),
+                    ("に", LogTone.Default),
+                    (move.Name, ResolveMoveTone(move)),
+                    ("を使って", LogTone.Default),
+                    (damage.ToString(), LogTone.Damage),
+                    ("ダメージを与えた", LogTone.Default))
+                : CreateLogEntry(
+                    (actorDisplayName, LogTone.Default),
+                    ("は", LogTone.Default),
+                    (target.TargetDisplayName, LogTone.Default),
+                    ("に", LogTone.Default),
+                    (damage.ToString(), LogTone.Damage),
+                    ("ダメージを与えた", LogTone.Default));
         }
 
         if (target.HpChange > 0)
         {
-            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
-                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{target.HpChange}回復した"
-                : $"{actorDisplayName}は{target.TargetDisplayName}を{target.HpChange}回復した";
+            return move is not null
+                ? CreateLogEntry(
+                    (actorDisplayName, LogTone.Default),
+                    ("は", LogTone.Default),
+                    (target.TargetDisplayName, LogTone.Default),
+                    ("に", LogTone.Default),
+                    (move.Name, ResolveMoveTone(move)),
+                    ("を使って", LogTone.Default),
+                    (target.HpChange.ToString(), LogTone.Default),
+                    ("回復した", LogTone.Default))
+                : CreateLogEntry(
+                    (actorDisplayName, LogTone.Default),
+                    ("は", LogTone.Default),
+                    (target.TargetDisplayName, LogTone.Default),
+                    ("を", LogTone.Default),
+                    (target.HpChange.ToString(), LogTone.Default),
+                    ("回復した", LogTone.Default));
         }
 
         if (target.MpChange > 0)
         {
-            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
-                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使ってMPを{target.MpChange}回復した"
-                : $"{actorDisplayName}は{target.TargetDisplayName}のMPを{target.MpChange}回復した";
+            return move is not null
+                ? CreateLogEntry(
+                    (actorDisplayName, LogTone.Default),
+                    ("は", LogTone.Default),
+                    (target.TargetDisplayName, LogTone.Default),
+                    ("に", LogTone.Default),
+                    (move.Name, ResolveMoveTone(move)),
+                    ("を使ってMPを", LogTone.Default),
+                    (target.MpChange.ToString(), LogTone.Default),
+                    ("回復した", LogTone.Default))
+                : CreateLogEntry(
+                    (actorDisplayName, LogTone.Default),
+                    ("は", LogTone.Default),
+                    (target.TargetDisplayName, LogTone.Default),
+                    ("のMPを", LogTone.Default),
+                    (target.MpChange.ToString(), LogTone.Default),
+                    ("回復した", LogTone.Default));
         }
 
         if (target.AppliedEffects.Count > 0)
         {
             var effectNames = string.Join("、", target.AppliedEffects);
-            return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
-                ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使って{effectNames}を付与した"
-                : $"{actorDisplayName}は{target.TargetDisplayName}に{effectNames}を付与した";
+            return move is not null
+                ? CreateLogEntry(
+                    (actorDisplayName, LogTone.Default),
+                    ("は", LogTone.Default),
+                    (target.TargetDisplayName, LogTone.Default),
+                    ("に", LogTone.Default),
+                    (move.Name, ResolveMoveTone(move)),
+                    ("を使って", LogTone.Default),
+                    (effectNames, LogTone.Default),
+                    ("を付与した", LogTone.Default))
+                : CreateLogEntry(
+                    (actorDisplayName, LogTone.Default),
+                    ("は", LogTone.Default),
+                    (target.TargetDisplayName, LogTone.Default),
+                    ("に", LogTone.Default),
+                    (effectNames, LogTone.Default),
+                    ("を付与した", LogTone.Default));
         }
 
-        return actionKind == nameof(ActionKind.UseMove) && !string.IsNullOrWhiteSpace(moveName)
-            ? $"{actorDisplayName}は{target.TargetDisplayName}に{moveName}を使った"
-            : $"{actorDisplayName}は{target.TargetDisplayName}に行動した";
+        return move is not null
+            ? CreateLogEntry(
+                (actorDisplayName, LogTone.Default),
+                ("は", LogTone.Default),
+                (target.TargetDisplayName, LogTone.Default),
+                ("に", LogTone.Default),
+                (move.Name, ResolveMoveTone(move)),
+                ("を使った", LogTone.Default))
+            : CreateLogEntry(
+                (actorDisplayName, LogTone.Default),
+                ("は", LogTone.Default),
+                (target.TargetDisplayName, LogTone.Default),
+                ("に行動した", LogTone.Default));
     }
 
-    private sealed record ActorStateSnapshot(int CurrentHp, int CurrentMp, bool IsDead);
+    private static IReadOnlyList<QuestResolvedAction> BuildAilmentTickActions(
+        BattleTurnResolution resolution,
+        IReadOnlyDictionary<int, Move> moveById,
+        IReadOnlyDictionary<BattleActorId, QuestParticipantId> partyActorMap,
+        IReadOnlyDictionary<BattleActorId, QuestEnemyInstanceId> enemyActorMap,
+        IReadOnlyDictionary<QuestParticipantId, QuestRunPartyMemberSnapshot> snapshotByParticipantId,
+        IReadOnlyDictionary<QuestParticipantId, QuestRunPartyMemberState> partyById,
+        IReadOnlyDictionary<QuestEnemyInstanceId, QuestEnemyState> enemyById,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+    {
+        var logActions = new List<QuestResolvedAction>();
+
+        foreach (var targetResult in resolution.ActionResults
+                     .Where(result => result.IsTurnEndEffect)
+                     .SelectMany(result => result.TargetResults))
+        {
+            if (targetResult.TriggeredAilment is not AilmentType.DamageTrap
+                and not AilmentType.PoisonTrap
+                and not AilmentType.Poison)
+            {
+                continue;
+            }
+
+            var sourceMoveId = targetResult.SourceMoveId;
+            var sourceMove = sourceMoveId is null ? null : moveById.GetValueOrDefault(sourceMoveId.Id);
+            var (actorParticipantId, actorEnemyInstanceId, actorDisplayName) = ResolveActorInfo(
+                targetResult.TargetActorId,
+                partyActorMap,
+                enemyActorMap,
+                snapshotByParticipantId,
+                partyById,
+                enemyById,
+                enemyDefinitions);
+            var entry = BuildAilmentTickLog(actorDisplayName, targetResult.Damage, targetResult.TriggeredAilment.Value, sourceMove);
+
+            logActions.Add(new QuestResolvedAction(
+                actorParticipantId,
+                actorEnemyInstanceId,
+                actorDisplayName,
+                nameof(ActionKind.Wait),
+                sourceMoveId?.Id,
+                sourceMove?.Name,
+                true,
+                logs: [entry.Text],
+                logEntries: [entry]));
+        }
+
+        return logActions;
+    }
+
+    private static (Guid? ActorParticipantId, Guid? ActorEnemyInstanceId, string ActorDisplayName) ResolveActorInfo(
+        BattleActorId actorId,
+        IReadOnlyDictionary<BattleActorId, QuestParticipantId> partyActorMap,
+        IReadOnlyDictionary<BattleActorId, QuestEnemyInstanceId> enemyActorMap,
+        IReadOnlyDictionary<QuestParticipantId, QuestRunPartyMemberSnapshot> snapshotByParticipantId,
+        IReadOnlyDictionary<QuestParticipantId, QuestRunPartyMemberState> partyById,
+        IReadOnlyDictionary<QuestEnemyInstanceId, QuestEnemyState> enemyById,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+    {
+        if (partyActorMap.TryGetValue(actorId, out var participantId))
+        {
+            return (participantId.Value, null, snapshotByParticipantId[participantId].DisplayName);
+        }
+
+        if (enemyActorMap.TryGetValue(actorId, out var enemyInstanceId))
+        {
+            var enemy = enemyById[enemyInstanceId];
+            var name = enemyDefinitions.TryGetValue(enemy.EnemyDefinitionId, out var definition)
+                ? definition.Name
+                : enemy.EnemyDefinitionId.ToString();
+            return (null, enemyInstanceId.Value, name);
+        }
+
+        return (null, null, actorId.Value.ToString());
+    }
+
+    private static QuestBattleLogEntry BuildAilmentTickLog(
+        string actorDisplayName,
+        int damage,
+        AilmentType ailmentType,
+        Move? sourceMove)
+    {
+        var effectLabel = ailmentType switch
+        {
+            AilmentType.DamageTrap or AilmentType.PoisonTrap => "トラップ",
+            AilmentType.Poison => "毒",
+            _ => ailmentType.ToString()
+        };
+
+        return sourceMove is not null
+            ? CreateLogEntry(
+                (actorDisplayName, LogTone.Default),
+                ("は", LogTone.Default),
+                (sourceMove.Name, ailmentType is AilmentType.DamageTrap or AilmentType.PoisonTrap or AilmentType.Poison ? LogTone.Ailment : ResolveMoveTone(sourceMove)),
+                ("による", LogTone.Default),
+                (effectLabel, LogTone.Default),
+                ("で", LogTone.Default),
+                (damage.ToString(), LogTone.Damage),
+                ("ダメージを受けた", LogTone.Default))
+            : CreateLogEntry(
+                (actorDisplayName, LogTone.Default),
+                ("は", LogTone.Default),
+                (effectLabel, LogTone.Default),
+                ("で", LogTone.Default),
+                (damage.ToString(), LogTone.Damage),
+                ("ダメージを受けた", LogTone.Default));
+    }
+
+    private static QuestBattleLogEntry CreateLogEntry(params (string Text, string Tone)[] segments)
+    {
+        return CreateLogEntry((IEnumerable<(string Text, string Tone)>)segments);
+    }
+
+    private static QuestBattleLogEntry CreateLogEntry(IEnumerable<(string Text, string Tone)> segments)
+    {
+        var list = segments
+            .Where(segment => !string.IsNullOrEmpty(segment.Text))
+            .Select(segment => new QuestBattleLogSegment(segment.Text, segment.Tone))
+            .ToArray();
+        return new QuestBattleLogEntry(string.Concat(list.Select(segment => segment.Text)), list);
+    }
+
+    private static string ResolveMoveTone(Move move)
+    {
+        if (move.Effects.Any(effect => effect.EffectType == MoveEffectType.Heal || effect.EffectType == MoveEffectType.RestoreMp))
+        {
+            return LogTone.Heal;
+        }
+
+        if (move.Effects.Any(effect => effect.EffectType == MoveEffectType.Buff))
+        {
+            return LogTone.Buff;
+        }
+
+        if (move.Effects.Any(effect =>
+                effect.EffectType == MoveEffectType.Ailment &&
+                effect.Ailment is not null &&
+                effect.Ailment.AilmentType is AilmentType.Poison or AilmentType.PoisonTrap or AilmentType.DamageTrap))
+        {
+            return LogTone.Ailment;
+        }
+
+        if (move.Effects.Any(effect => effect.EffectType == MoveEffectType.Damage))
+        {
+            return LogTone.Damage;
+        }
+
+        return LogTone.Default;
+    }
+
+    private static class LogTone
+    {
+        public const string Default = "Default";
+        public const string Damage = "Damage";
+        public const string Ailment = "Ailment";
+        public const string Buff = "Buff";
+        public const string Heal = "Heal";
+    }
 }
