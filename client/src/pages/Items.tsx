@@ -29,7 +29,7 @@ import {
   synthesizeEquipment,
   useItem as consumeItem,
 } from '@/api/item'
-import { createPlayer } from '@/api/player'
+import { createPlayer, updatePlayerEquipment } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { useAuth } from '@/contexts/useAuth'
 import { innerSurfaceSx, outerPagePaperSx } from '@/constants/styles'
@@ -507,6 +507,7 @@ function EquipmentCard({
   onSynthesize,
   onDelete,
   onList,
+  onEquip,
   actionDisabled,
   showActions = true,
 }: {
@@ -518,6 +519,7 @@ function EquipmentCard({
   onSynthesize: () => void
   onDelete: () => void
   onList: () => void
+  onEquip?: () => void
   actionDisabled: boolean
   showActions?: boolean
 }) {
@@ -591,6 +593,16 @@ function EquipmentCard({
                 onQuantityChange={onQuantityChange}
                 onUnitPriceChange={onUnitPriceChange}
               />
+            ) : null}
+            {onEquip ? (
+              <Button
+                variant="outlined"
+                onClick={onEquip}
+                disabled={actionDisabled}
+                sx={secondaryActionSx}
+              >
+                {locale.actionEquip}
+              </Button>
             ) : null}
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
               <Button variant="contained" onClick={onSynthesize} disabled={actionDisabled} sx={primaryActionSx}>
@@ -1070,6 +1082,20 @@ export default function Items() {
     )
   }
 
+  async function handleEquip(item: ItemEquipmentView): Promise<void> {
+    if (!session?.access_token) return
+
+    await runAction(`equip:${item.playerEquipmentId}`, () =>
+      updatePlayerEquipment(
+        {
+          equipmentType: item.equipmentType,
+          playerEquipmentId: item.playerEquipmentId,
+        },
+        session.access_token,
+      ),
+    )
+  }
+
   async function handleListInventoryItem(item: InventoryItemView): Promise<void> {
     if (!session?.access_token) return
 
@@ -1219,18 +1245,19 @@ export default function Items() {
                         {inventoryEquipments.map((item) => {
                           const key = item.playerEquipmentId
                           return (
-                            <EquipmentCard
-                              key={key}
-                              item={item}
-                              quantityValue={quantities[key] ?? '1'}
-                              unitPriceValue={unitPrices[`price:${key}`] ?? '10'}
-                              onQuantityChange={(value) => setQuantityValue(key, value)}
-                              onUnitPriceChange={(value) => setUnitPriceValue(`price:${key}`, value)}
-                              onSynthesize={() => void handleSynthesize(item)}
-                              onDelete={() => void handleDeleteEquipment(item)}
-                              onList={() => void handleListInventoryItem(item)}
-                              actionDisabled={busyKey !== null}
-                            />
+                          <EquipmentCard
+                            key={key}
+                            item={item}
+                            quantityValue={quantities[key] ?? '1'}
+                            unitPriceValue={unitPrices[`price:${key}`] ?? '10'}
+                            onQuantityChange={(value) => setQuantityValue(key, value)}
+                            onUnitPriceChange={(value) => setUnitPriceValue(`price:${key}`, value)}
+                            onSynthesize={() => void handleSynthesize(item)}
+                            onDelete={() => void handleDeleteEquipment(item)}
+                            onList={() => void handleListInventoryItem(item)}
+                            onEquip={() => void handleEquip(item)}
+                            actionDisabled={busyKey !== null}
+                          />
                           )
                         })}
                       </Box>
