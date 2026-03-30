@@ -596,16 +596,16 @@ function EquipmentCard({
             ) : null}
             {onEquip ? (
               <Button
-                variant="outlined"
+                variant="contained"
                 onClick={onEquip}
                 disabled={actionDisabled}
-                sx={secondaryActionSx}
+                sx={primaryActionSx}
               >
                 {locale.actionEquip}
               </Button>
             ) : null}
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-              <Button variant="contained" onClick={onSynthesize} disabled={actionDisabled} sx={primaryActionSx}>
+              <Button variant="outlined" onClick={onSynthesize} disabled={actionDisabled} sx={secondaryActionSx}>
                 {locale.actionSynthesize}
               </Button>
               {showListingControls ? (
