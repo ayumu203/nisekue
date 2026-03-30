@@ -117,6 +117,7 @@ classDiagram
             +string FlavorText
             +int MaxStack
             +StatusBonus? StatusBonus
+            +StatusBonusPercent? StatusBonusPercent
             +Job? ChangeJobTo
             +int? RequiredLevel
             +IReadOnlyList~Job~ RequiredMasterJobs
@@ -147,6 +148,17 @@ classDiagram
             +int Intelligence
             +int Luck
             +int Speed
+        }
+
+        class StatusBonusPercent {
+            <<Value Object>>
+            +int MaxHpPercent
+            +int MaxMpPercent
+            +int StrengthPercent
+            +int DefensePercent
+            +int IntelligencePercent
+            +int LuckPercent
+            +int SpeedPercent
         }
 
         class MarketListingId {
@@ -314,6 +326,7 @@ classDiagram
     PlayerItemStack ..> Item : refers
     Item *-- ItemId : has
     Item *-- StatusBonus : has
+    Item *-- StatusBonusPercent : has
     MarketListing *-- MarketListingId : has
     MarketListing ..> PlayerEquipmentId : may sell
     MarketListing ..> ItemId : may sell

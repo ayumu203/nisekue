@@ -141,6 +141,7 @@ builder.Services.AddScoped<TrainingOutcomeJudge>();
 builder.Services.AddScoped<TrainingExpCalculator>();
 builder.Services.AddScoped<TrainingWeaponMasteryPolicy>();
 builder.Services.AddScoped<EquipmentStatusResolver>();
+builder.Services.AddScoped<ItemStatBoostService>();
 builder.Services.AddScoped<PlayerJobService>();
 builder.Services.AddScoped<PlayerRebirthService>();
 builder.Services.AddScoped<MarketListingCleanupService>();

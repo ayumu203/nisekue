@@ -11,6 +11,16 @@ const statusBonusSchema = z.object({
   speed: z.number().int(),
 })
 
+const statusBonusPercentSchema = z.object({
+  maxHp: z.number().int().min(0),
+  maxMp: z.number().int().min(0),
+  strength: z.number().int().min(0),
+  defense: z.number().int().min(0),
+  intelligence: z.number().int().min(0),
+  luck: z.number().int().min(0),
+  speed: z.number().int().min(0),
+})
+
 export const itemEquipmentTypeSchema = z.enum(['Weapon', 'Armor'])
 export const itemEquipmentStatusSchema = z.enum(['Inventory', 'Equipped', 'Broken'])
 export const itemEffectTypeSchema = z.enum(['StatBoost', 'ChangeJob'])
@@ -42,6 +52,7 @@ export const itemStackViewSchema = z.object({
   requiredLevel: z.number().int().min(1).nullable(),
   changeJobTo: playerJobCodeSchema.nullable(),
   statusBonus: statusBonusSchema.nullable(),
+  statusBonusPercent: statusBonusPercentSchema.nullable(),
 })
 
 export const inventoryItemViewSchema = z.discriminatedUnion('kind', [itemEquipmentViewSchema, itemStackViewSchema])

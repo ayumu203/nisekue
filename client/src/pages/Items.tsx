@@ -296,23 +296,37 @@ function getEffectTypeLabel(effectType: ItemStackView['effectType']): string {
 
 function formatStatusBonus(item: {
   statusBonus: ItemStackView['statusBonus'] | ItemEquipmentView['statusBonus']
+  statusBonusPercent?: ItemStackView['statusBonusPercent'] | null
 }): string {
-  if (!item.statusBonus) {
+  if (!item.statusBonus && !item.statusBonusPercent) {
     return '-'
   }
 
   const labels: Array<[string, number]> = [
-    ['HP', item.statusBonus.maxHp],
-    ['MP', item.statusBonus.maxMp],
-    ['STR', item.statusBonus.strength],
-    ['DEF', item.statusBonus.defense],
-    ['INT', item.statusBonus.intelligence],
-    ['LUK', item.statusBonus.luck],
-    ['SPD', item.statusBonus.speed],
+    ['HP', item.statusBonus?.maxHp ?? 0],
+    ['MP', item.statusBonus?.maxMp ?? 0],
+    ['STR', item.statusBonus?.strength ?? 0],
+    ['DEF', item.statusBonus?.defense ?? 0],
+    ['INT', item.statusBonus?.intelligence ?? 0],
+    ['LUK', item.statusBonus?.luck ?? 0],
+    ['SPD', item.statusBonus?.speed ?? 0],
+  ]
+  const percentLabels: Array<[string, number]> = [
+    ['HP', item.statusBonusPercent?.maxHp ?? 0],
+    ['MP', item.statusBonusPercent?.maxMp ?? 0],
+    ['STR', item.statusBonusPercent?.strength ?? 0],
+    ['DEF', item.statusBonusPercent?.defense ?? 0],
+    ['INT', item.statusBonusPercent?.intelligence ?? 0],
+    ['LUK', item.statusBonusPercent?.luck ?? 0],
+    ['SPD', item.statusBonusPercent?.speed ?? 0],
   ]
 
-  const active = labels.filter(([, value]) => value !== 0)
-  return active.length > 0 ? active.map(([label, value]) => `${label}+${value}`).join(' / ') : '-'
+  const active = labels.filter(([, value]) => value !== 0).map(([label, value]) => `${label}+${value}`)
+  const activePercent = percentLabels
+    .filter(([, value]) => value !== 0)
+    .map(([label, value]) => `${label}+${value}%`)
+  const effects = [...active, ...activePercent]
+  return effects.length > 0 ? effects.join(' / ') : '-'
 }
 
 function parsePositiveInteger(value: string | undefined, fallback: number): number {
