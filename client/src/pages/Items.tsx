@@ -322,9 +322,7 @@ function formatStatusBonus(item: {
   ]
 
   const active = labels.filter(([, value]) => value !== 0).map(([label, value]) => `${label}+${value}`)
-  const activePercent = percentLabels
-    .filter(([, value]) => value !== 0)
-    .map(([label, value]) => `${label}+${value}%`)
+  const activePercent = percentLabels.filter(([, value]) => value !== 0).map(([label, value]) => `${label}+${value}%`)
   const effects = [...active, ...activePercent]
   return effects.length > 0 ? effects.join(' / ') : '-'
 }

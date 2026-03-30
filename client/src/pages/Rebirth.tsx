@@ -237,7 +237,8 @@ export default function Rebirth() {
                       sx={{
                         height: 12,
                         borderRadius: 999,
-                        background: 'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(255,232,137,0.9), rgba(227,216,165,0.3))',
+                        background:
+                          'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(255,232,137,0.9), rgba(227,216,165,0.3))',
                       }}
                     />
                     <Typography variant="h6" sx={templeSectionTitleSx}>
@@ -316,7 +317,8 @@ export default function Rebirth() {
                         right: '10%',
                         height: 10,
                         borderRadius: 999,
-                        background: 'linear-gradient(90deg, rgba(255,255,255,0.55), rgba(247,219,105,0.95), rgba(255,255,255,0.55))',
+                        background:
+                          'linear-gradient(90deg, rgba(255,255,255,0.55), rgba(247,219,105,0.95), rgba(255,255,255,0.55))',
                         pointerEvents: 'none',
                       }}
                     />
@@ -397,7 +399,8 @@ export default function Rebirth() {
                         maxWidth: 320,
                         height: 14,
                         borderRadius: 999,
-                        background: 'linear-gradient(90deg, rgba(225,211,150,0.35), rgba(247,219,105,0.98), rgba(225,211,150,0.35))',
+                        background:
+                          'linear-gradient(90deg, rgba(225,211,150,0.35), rgba(247,219,105,0.98), rgba(225,211,150,0.35))',
                         alignSelf: 'center',
                         position: 'relative',
                       }}
@@ -422,7 +425,8 @@ export default function Rebirth() {
                       sx={{
                         height: 12,
                         borderRadius: 999,
-                        background: 'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(145,213,255,0.92), rgba(227,216,165,0.3))',
+                        background:
+                          'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(145,213,255,0.92), rgba(227,216,165,0.3))',
                       }}
                     />
                     <Typography variant="h6" sx={templeSectionTitleSx}>
@@ -536,7 +540,11 @@ export default function Rebirth() {
                               <Typography variant="body2" color="text.secondary">
                                 {formatInheritedMedian(currentValue, minimumValue)}
                               </Typography>
-                              <Typography variant="body2" fontWeight={resultStatus ? 700 : 500} color={resultStatus ? '#8a6a00' : 'text.secondary'}>
+                              <Typography
+                                variant="body2"
+                                fontWeight={resultStatus ? 700 : 500}
+                                color={resultStatus ? '#8a6a00' : 'text.secondary'}
+                              >
                                 {actualValue ?? locale.statusTablePending}
                               </Typography>
                             </Box>

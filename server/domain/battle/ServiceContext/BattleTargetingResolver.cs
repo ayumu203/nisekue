@@ -48,7 +48,8 @@ public class BattleTargetingResolver
     public BattleActorId ResolveDamageReceiver(
         BattleActorId targetId,
         IEnumerable<BattleActorSnapshot> snapshots,
-        IEnumerable<BattleActorState> states)
+        IEnumerable<BattleActorState> states,
+        BattleFieldContext? fieldContext = null)
     {
         var snapshotMap = snapshots?.ToDictionary(x => x.Id) ?? throw new ArgumentNullException(nameof(snapshots));
         var stateMap = states?.ToDictionary(x => x.Id) ?? throw new ArgumentNullException(nameof(states));
@@ -62,15 +63,57 @@ public class BattleTargetingResolver
             return targetId;
         }
 
-        var coverActor = snapshotMap.Values
-            .Where(snapshot => snapshot.Side == targetSnapshot.Side && snapshot.Id != targetId)
+        var tauntTarget = FindHighestPriorityActorWithAilment(targetSnapshot.Side, AilmentType.Taunt, snapshotMap.Values, stateMap, fieldContext);
+        var preferredTargetId = tauntTarget?.Id ?? targetId;
+
+        var coverActor = FindHighestPriorityActorWithAilment(targetSnapshot.Side, AilmentType.CoverAll, snapshotMap.Values, stateMap, fieldContext);
+        return coverActor?.Id ?? preferredTargetId;
+    }
+
+    private static BattleActorSnapshot? FindHighestPriorityActorWithAilment(
+        BattleSide side,
+        AilmentType ailmentType,
+        IEnumerable<BattleActorSnapshot> snapshots,
+        IReadOnlyDictionary<BattleActorId, BattleActorState> stateMap,
+        BattleFieldContext? fieldContext)
+    {
+        var candidates = snapshots
+            .Where(snapshot => snapshot.Side == side)
             .Where(snapshot => stateMap.TryGetValue(snapshot.Id, out var state) &&
                                !state.IsDead &&
-                               state.Ailments.Any(ailment => ailment.Type == AilmentType.CoverAll))
+                               state.Ailments.Any(ailment => ailment.Type == ailmentType));
+
+        var positionMap = fieldContext?.Positions.ToDictionary(x => x.ActorId, x => x.Position);
+        if (positionMap is not null)
+        {
+            return candidates
+                .OrderBy(snapshot => GetTauntPriority(positionMap, snapshot.Id))
+                .ThenBy(snapshot => snapshot.Id.Value)
+                .FirstOrDefault();
+        }
+
+        return candidates
             .OrderBy(snapshot => snapshot.Id.Value)
             .FirstOrDefault();
+    }
 
-        return coverActor?.Id ?? targetId;
+    private static int GetTauntPriority(IReadOnlyDictionary<BattleActorId, BattlePosition> positionMap, BattleActorId actorId)
+    {
+        if (!positionMap.TryGetValue(actorId, out var position))
+        {
+            return int.MaxValue;
+        }
+
+        return position.Row switch
+        {
+            BattleRow.Front when position.Column == BattleColumn.Left => 0,
+            BattleRow.Front when position.Column == BattleColumn.Right => 1,
+            BattleRow.Middle when position.Column == BattleColumn.Left => 2,
+            BattleRow.Middle when position.Column == BattleColumn.Right => 3,
+            BattleRow.Back when position.Column == BattleColumn.Left => 4,
+            BattleRow.Back when position.Column == BattleColumn.Right => 5,
+            _ => int.MaxValue
+        };
     }
 
     private static bool ShouldApplyFormationRangeControl(BattleTargetSelector selector, BattleFieldContext? fieldContext)

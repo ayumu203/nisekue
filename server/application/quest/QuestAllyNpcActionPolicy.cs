@@ -241,7 +241,9 @@ public class QuestAllyNpcActionPolicy
 
     private static IReadOnlyList<Move> OrderMovesByMoveSet(MoveSet moveSet, IReadOnlyList<Move> availableMoves)
     {
-        var moveById = availableMoves.ToDictionary(x => x.Id.Id);
+        var moveById = availableMoves
+            .GroupBy(x => x.Id.Id)
+            .ToDictionary(x => x.Key, x => x.First());
         var ordered = new List<Move>();
         foreach (var moveId in moveSet.Slots)
         {

@@ -81,7 +81,7 @@ public class BattleActionResolver(
 
         foreach (var targetId in targets)
         {
-            var receiverId = battleTargetingResolver.ResolveDamageReceiver(targetId, snapshotMap.Values, stateMap.Values);
+            var receiverId = battleTargetingResolver.ResolveDamageReceiver(targetId, snapshotMap.Values, stateMap.Values, fieldContext);
             var targetSnapshot = snapshotMap[receiverId];
             var targetState = stateMap[receiverId];
             if (targetState.IsDead)
@@ -252,7 +252,7 @@ public class BattleActionResolver(
     {
         return effect.EffectType switch
         {
-            MoveEffectType.Damage => ResolveDamageEffect(actorSnapshot, actorState, attackerStatus, targetSnapshot, defenderStatus, targetState, snapshots, states, move, effect, isSupportMove),
+            MoveEffectType.Damage => ResolveDamageEffect(actorSnapshot, actorState, attackerStatus, targetSnapshot, defenderStatus, targetState, snapshots, states, move, effect, isSupportMove, fieldContext),
             MoveEffectType.Heal => ResolveHealEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
             MoveEffectType.RestoreMp => ResolveRestoreMpEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
             MoveEffectType.Ailment => ResolveAilmentEffect(actorSnapshot, attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, fieldContext),
@@ -274,7 +274,8 @@ public class BattleActionResolver(
         IEnumerable<BattleActorState> states,
         Move move,
         MoveEffect effect,
-        bool isSupportMove)
+        bool isSupportMove,
+        BattleFieldContext? fieldContext)
     {
         ArgumentNullException.ThrowIfNull(effect.Damage);
         var attackStat = ResolveAttackStat(move, effect.Damage, attackerStatus, isSupportMove);
@@ -284,7 +285,7 @@ public class BattleActionResolver(
 
         if ((effect.OverrideTargetType ?? move.TargetType) == TargetType.Enemy)
         {
-            var receiverId = battleTargetingResolver.ResolveDamageReceiver(targetSnapshot.Id, snapshots, states);
+            var receiverId = battleTargetingResolver.ResolveDamageReceiver(targetSnapshot.Id, snapshots, states, fieldContext);
             if (receiverId != targetSnapshot.Id)
             {
                 var snapshotMap = snapshots.ToDictionary(x => x.Id);

@@ -478,6 +478,33 @@ public class BattleActionResolverTests
     }
 
     [Fact]
+    public void Resolve_WhenAllyHasTaunt_RedirectsNormalAttackDamageToTauntingActor()
+    {
+        var resolver = CreateResolver();
+        var attacker = CreateSnapshot(1, BattleSide.Enemy, learnedMoveIds: []);
+        var target = CreateSnapshot(2, BattleSide.Ally, learnedMoveIds: []);
+        var taunter = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var targetState = CreateState(target.Id);
+        var taunterState = new BattleActorState(
+            taunter.Id,
+            currentHp: 30,
+            currentMp: 10,
+            ailments: [new BattleAilmentState(AilmentType.Taunt, 1)]);
+
+        var result = resolver.Resolve(
+            new BattleAction(attacker.Id, BattleActionKind.NormalAttack, new BattleTargetSelector(TargetType.Enemy, AttackRange.Single, [target.Id])),
+            [attacker, target, taunter],
+            [CreateState(attacker.Id), targetState, taunterState],
+            []);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].TargetActorId.Should().Be(taunter.Id);
+        targetState.CurrentHp.Should().Be(30);
+        taunterState.CurrentHp.Should().Be(25);
+    }
+
+    [Fact]
     public void Resolve_WhenMoveHalvesSelfHp_ReducesCurrentHpToCeilingHalf()
     {
         var resolver = CreateResolver();

@@ -307,6 +307,66 @@ public class BattleTargetingResolverTests
         result.Should().Equal(enemyWithPosition.Id);
     }
 
+    [Fact]
+    public void ResolveDamageReceiver_WhenTargetSideHasTauntingActor_ReturnsTauntingActor()
+    {
+        var resolver = new BattleTargetingResolver();
+        var attacker = CreateSnapshot(1, BattleSide.Enemy);
+        var target = CreateSnapshot(2, BattleSide.Ally);
+        var taunter = CreateSnapshot(3, BattleSide.Ally);
+
+        var receiverId = resolver.ResolveDamageReceiver(
+            target.Id,
+            [attacker, target, taunter],
+            [
+                new BattleActorState(attacker.Id, attacker.BaseStatus.MaxHp, attacker.BaseStatus.MaxMp),
+                new BattleActorState(target.Id, target.BaseStatus.MaxHp, target.BaseStatus.MaxMp),
+                new BattleActorState(
+                    taunter.Id,
+                    taunter.BaseStatus.MaxHp,
+                    taunter.BaseStatus.MaxMp,
+                    ailments: [new BattleAilmentState(AilmentType.Taunt, 1)])
+            ]);
+
+        receiverId.Should().Be(taunter.Id);
+    }
+
+    [Fact]
+    public void ResolveDamageReceiver_WhenMultipleTauntingActorsExist_UsesFrontPriority()
+    {
+        var resolver = new BattleTargetingResolver();
+        var attacker = CreateSnapshot(1, BattleSide.Enemy);
+        var target = CreateSnapshot(2, BattleSide.Ally);
+        var backTaunter = CreateSnapshot(3, BattleSide.Ally);
+        var frontTaunter = CreateSnapshot(4, BattleSide.Ally);
+
+        var receiverId = resolver.ResolveDamageReceiver(
+            target.Id,
+            [attacker, target, backTaunter, frontTaunter],
+            [
+                new BattleActorState(attacker.Id, attacker.BaseStatus.MaxHp, attacker.BaseStatus.MaxMp),
+                new BattleActorState(target.Id, target.BaseStatus.MaxHp, target.BaseStatus.MaxMp),
+                new BattleActorState(
+                    backTaunter.Id,
+                    backTaunter.BaseStatus.MaxHp,
+                    backTaunter.BaseStatus.MaxMp,
+                    ailments: [new BattleAilmentState(AilmentType.Taunt, 1)]),
+                new BattleActorState(
+                    frontTaunter.Id,
+                    frontTaunter.BaseStatus.MaxHp,
+                    frontTaunter.BaseStatus.MaxMp,
+                    ailments: [new BattleAilmentState(AilmentType.Taunt, 1)])
+            ],
+            new BattleFieldContext([
+                new BattleActorPosition(attacker.Id, new BattlePosition(BattleRow.Front, BattleColumn.Left)),
+                new BattleActorPosition(target.Id, new BattlePosition(BattleRow.Middle, BattleColumn.Left)),
+                new BattleActorPosition(backTaunter.Id, new BattlePosition(BattleRow.Back, BattleColumn.Right)),
+                new BattleActorPosition(frontTaunter.Id, new BattlePosition(BattleRow.Front, BattleColumn.Right))
+            ]));
+
+        receiverId.Should().Be(frontTaunter.Id);
+    }
+
     private static BattleActorSnapshot CreateSnapshot(int seed, BattleSide side)
     {
         return new BattleActorSnapshot(

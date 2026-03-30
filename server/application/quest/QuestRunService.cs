@@ -503,7 +503,9 @@ public class QuestRunService(
         bool nextFloorIsBoss,
         QuestRunResolutionSummary summary)
     {
-        var moveById = moves.ToDictionary(x => x.Id.Id);
+        var moveById = moves
+            .GroupBy(x => x.Id.Id)
+            .ToDictionary(x => x.Key, x => x.First());
         var snapshotByParticipantId = run.PartySnapshots.ToDictionary(x => x.ParticipantId);
         var partyById = run.BattleState.PartyMembers.ToDictionary(x => x.ParticipantId);
         var enemyById = run.BattleState.Enemies.ToDictionary(x => x.Id);
