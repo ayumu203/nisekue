@@ -365,7 +365,16 @@ public class QuestResponseMapper(
                             removedEffects = target.RemovedEffects,
                             isDeadAfterAction = target.IsDeadAfterAction
                         }),
-                        logs = action.Logs
+                        logs = action.Logs,
+                        logEntries = action.LogEntries.Select(entry => new
+                        {
+                            text = entry.Text,
+                            segments = entry.Segments.Select(segment => new
+                            {
+                                text = segment.Text,
+                                tone = segment.Tone
+                            })
+                        })
                     }),
                     floorTransition = run.LastTurnResults.FloorTransition is null
                         ? null

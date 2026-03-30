@@ -53,7 +53,7 @@ public class BattleActorState(
         {
             var existing = _ailments[index];
             var turns = Math.Max(existing.RemainingTurns, ailment.RemainingTurns);
-            _ailments[index] = new BattleAilmentState(ailment.Type, turns, ailment.TriggerDamage);
+            _ailments[index] = new BattleAilmentState(ailment.Type, turns, ailment.TriggerDamage, ailment.SourceMoveId);
             return;
         }
 
@@ -105,7 +105,7 @@ public class BattleActorState(
             var remainingTurns = ailment.RemainingTurns - 1;
             if (remainingTurns > 0)
             {
-                updated.Add(new BattleAilmentState(ailment.Type, remainingTurns, ailment.TriggerDamage));
+                updated.Add(new BattleAilmentState(ailment.Type, remainingTurns, ailment.TriggerDamage, ailment.SourceMoveId));
             }
         }
 
