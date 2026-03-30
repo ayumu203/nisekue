@@ -126,12 +126,6 @@ public class QuestRunService(
         var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync())
             .ToDictionary(x => x.Id);
 
-        var beforeParty = run.BattleState.PartyMembers.ToDictionary(
-            x => x.ParticipantId,
-            x => new ActorStateSnapshot(x.CurrentHp, x.CurrentMp, x.IsDead, x.Ailments));
-        var beforeEnemy = run.BattleState.Enemies.ToDictionary(
-            x => x.Id,
-            x => new ActorStateSnapshot(x.CurrentHp, x.CurrentMp, x.IsDead, x.Ailments));
         var previousFloorNo = run.FloorState.CurrentFloorNo;
         var previousStatus = run.Status.ToString();
 
@@ -139,6 +133,7 @@ public class QuestRunService(
         var actors = questBattleFactory.CreateActorInputs(run, enemyDefinitions);
         var (actions, moves) = await questBattleFactory.CreateTurnInputsAsync(run, moveRepository, enemyDefinitions);
         var resolution = battleService.ResolveTurn(new BattleTurnRequest(actors, actions, moves, fieldContext));
+        var resolvedMoves = await LoadMissingAilmentSourceMovesAsync(moves, resolution, moveRepository);
 
         var finalFloorNo = stage.Floors.Max(x => x.FloorNo);
         var currentFloor = stage.Floors.FirstOrDefault(x => x.FloorNo == previousFloorNo)
@@ -167,12 +162,10 @@ public class QuestRunService(
         run.SetLastTurnResults(BuildLastTurnResults(
             run,
             resolution,
-            moves,
+            resolvedMoves,
             enemyDefinitions,
             partyActorMap,
             enemyActorMap,
-            beforeParty,
-            beforeEnemy,
             previousFloorNo,
             previousStatus,
             nextFloor?.FloorNo,
@@ -406,8 +399,6 @@ public class QuestRunService(
         IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions,
         IReadOnlyDictionary<BattleActorId, QuestParticipantId> partyActorMap,
         IReadOnlyDictionary<BattleActorId, QuestEnemyInstanceId> enemyActorMap,
-        IReadOnlyDictionary<QuestParticipantId, ActorStateSnapshot> beforeParty,
-        IReadOnlyDictionary<QuestEnemyInstanceId, ActorStateSnapshot> beforeEnemy,
         int previousFloorNo,
         string previousStatus,
         int? nextFloorNo,
@@ -419,7 +410,9 @@ public class QuestRunService(
         var partyById = run.BattleState.PartyMembers.ToDictionary(x => x.ParticipantId);
         var enemyById = run.BattleState.Enemies.ToDictionary(x => x.Id);
 
-        var actions = resolution.ActionResults.Select(actionResult =>
+        var actions = resolution.ActionResults
+            .Where(actionResult => !actionResult.IsTurnEndEffect)
+            .Select(actionResult =>
         {
             Guid? actorParticipantId = null;
             Guid? actorEnemyInstanceId = null;
@@ -512,15 +505,14 @@ public class QuestRunService(
                 targetSummaries,
                 logEntries.Select(entry => entry.Text),
                 logEntries);
-        }).ToArray();
+        })
+        .ToArray();
 
         var ailmentLogActions = BuildAilmentTickActions(
             resolution,
             moveById,
             partyActorMap,
             enemyActorMap,
-            beforeParty,
-            beforeEnemy,
             snapshotByParticipantId,
             partyById,
             enemyById,
@@ -548,6 +540,39 @@ public class QuestRunService(
             actions,
             floorTransition,
             runTransition);
+    }
+
+    private static async Task<IReadOnlyList<Move>> LoadMissingAilmentSourceMovesAsync(
+        IReadOnlyList<Move> moves,
+        BattleTurnResolution resolution,
+        IMoveRepository moveRepository)
+    {
+        var moveById = moves.ToDictionary(move => move.Id);
+        var missingMoveIds = resolution.ActionResults
+            .Where(result => result.IsTurnEndEffect)
+            .SelectMany(result => result.TargetResults)
+            .Select(result => result.SourceMoveId)
+            .OfType<MoveId>()
+            .Where(moveId => !moveById.ContainsKey(moveId))
+            .Distinct()
+            .ToArray();
+
+        if (missingMoveIds.Length == 0)
+        {
+            return moves;
+        }
+
+        var resolvedMoves = new List<Move>(moves);
+        foreach (var moveId in missingMoveIds)
+        {
+            var move = await moveRepository.GetMoveAsync(moveId);
+            if (move is not null)
+            {
+                resolvedMoves.Add(move);
+            }
+        }
+
+        return resolvedMoves;
     }
 
     private static string MapActionKind(server.domain.battle.enums.BattleActionKind actionKind)
@@ -788,56 +813,35 @@ public class QuestRunService(
         IReadOnlyDictionary<int, Move> moveById,
         IReadOnlyDictionary<BattleActorId, QuestParticipantId> partyActorMap,
         IReadOnlyDictionary<BattleActorId, QuestEnemyInstanceId> enemyActorMap,
-        IReadOnlyDictionary<QuestParticipantId, ActorStateSnapshot> beforeParty,
-        IReadOnlyDictionary<QuestEnemyInstanceId, ActorStateSnapshot> beforeEnemy,
         IReadOnlyDictionary<QuestParticipantId, QuestRunPartyMemberSnapshot> snapshotByParticipantId,
         IReadOnlyDictionary<QuestParticipantId, QuestRunPartyMemberState> partyById,
         IReadOnlyDictionary<QuestEnemyInstanceId, QuestEnemyState> enemyById,
         IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
     {
-        var actionHpChanges = resolution.ActionResults
-            .SelectMany(result => result.TargetResults)
-            .GroupBy(result => result.TargetActorId)
-            .ToDictionary(group => group.Key, group => group.Sum(result => result.HpChange));
-        var appliedAilmentSources = resolution.ActionResults
-            .Where(result => result.MoveId is not null)
-            .SelectMany(result => result.TargetResults
-                .Where(target => target.AppliedAilment is not null)
-                .Select(target => new { target.TargetActorId, Ailment = target.AppliedAilment!.Value, result.MoveId }))
-            .GroupBy(x => (x.TargetActorId, x.Ailment))
-            .ToDictionary(group => group.Key, group => group.Last().MoveId!);
-        var updatedStates = resolution.UpdatedStates.ToDictionary(state => state.Id);
         var logActions = new List<QuestResolvedAction>();
 
-        foreach (var updatedState in updatedStates.Values)
+        foreach (var targetResult in resolution.ActionResults
+                     .Where(result => result.IsTurnEndEffect)
+                     .SelectMany(result => result.TargetResults))
         {
-            var extraDamage = ResolveEndOfTurnDamage(updatedState, actionHpChanges, partyActorMap, enemyActorMap, beforeParty, beforeEnemy);
-            if (extraDamage <= 0)
+            if (targetResult.TriggeredAilment is not AilmentType.DamageTrap
+                and not AilmentType.PoisonTrap
+                and not AilmentType.Poison)
             {
                 continue;
             }
 
-            var beforeAilments = ResolveBeforeAilments(updatedState.Id, partyActorMap, enemyActorMap, beforeParty, beforeEnemy);
-            var sourceAilment = updatedState.Ailments
-                .Concat(beforeAilments)
-                .FirstOrDefault(ailment => ailment.Type is AilmentType.DamageTrap or AilmentType.PoisonTrap or AilmentType.Poison);
-            if (sourceAilment is null)
-            {
-                continue;
-            }
-
-            var sourceMoveId = sourceAilment.SourceMoveId
-                ?? appliedAilmentSources.GetValueOrDefault((updatedState.Id, sourceAilment.Type));
+            var sourceMoveId = targetResult.SourceMoveId;
             var sourceMove = sourceMoveId is null ? null : moveById.GetValueOrDefault(sourceMoveId.Id);
             var (actorParticipantId, actorEnemyInstanceId, actorDisplayName) = ResolveActorInfo(
-                updatedState.Id,
+                targetResult.TargetActorId,
                 partyActorMap,
                 enemyActorMap,
                 snapshotByParticipantId,
                 partyById,
                 enemyById,
                 enemyDefinitions);
-            var entry = BuildAilmentTickLog(actorDisplayName, extraDamage, sourceAilment.Type, sourceMove);
+            var entry = BuildAilmentTickLog(actorDisplayName, targetResult.Damage, targetResult.TriggeredAilment.Value, sourceMove);
 
             logActions.Add(new QuestResolvedAction(
                 actorParticipantId,
@@ -852,52 +856,6 @@ public class QuestRunService(
         }
 
         return logActions;
-    }
-
-    private static int ResolveEndOfTurnDamage(
-        BattleActorState updatedState,
-        IReadOnlyDictionary<BattleActorId, int> actionHpChanges,
-        IReadOnlyDictionary<BattleActorId, QuestParticipantId> partyActorMap,
-        IReadOnlyDictionary<BattleActorId, QuestEnemyInstanceId> enemyActorMap,
-        IReadOnlyDictionary<QuestParticipantId, ActorStateSnapshot> beforeParty,
-        IReadOnlyDictionary<QuestEnemyInstanceId, ActorStateSnapshot> beforeEnemy)
-    {
-        int beforeHp;
-        if (partyActorMap.TryGetValue(updatedState.Id, out var participantId))
-        {
-            beforeHp = beforeParty[participantId].CurrentHp;
-        }
-        else if (enemyActorMap.TryGetValue(updatedState.Id, out var enemyId))
-        {
-            beforeHp = beforeEnemy[enemyId].CurrentHp;
-        }
-        else
-        {
-            return 0;
-        }
-
-        var afterActionsHp = beforeHp + actionHpChanges.GetValueOrDefault(updatedState.Id);
-        return Math.Max(0, afterActionsHp - updatedState.CurrentHp);
-    }
-
-    private static IReadOnlyList<BattleAilmentState> ResolveBeforeAilments(
-        BattleActorId actorId,
-        IReadOnlyDictionary<BattleActorId, QuestParticipantId> partyActorMap,
-        IReadOnlyDictionary<BattleActorId, QuestEnemyInstanceId> enemyActorMap,
-        IReadOnlyDictionary<QuestParticipantId, ActorStateSnapshot> beforeParty,
-        IReadOnlyDictionary<QuestEnemyInstanceId, ActorStateSnapshot> beforeEnemy)
-    {
-        if (partyActorMap.TryGetValue(actorId, out var participantId))
-        {
-            return beforeParty[participantId].Ailments;
-        }
-
-        if (enemyActorMap.TryGetValue(actorId, out var enemyId))
-        {
-            return beforeEnemy[enemyId].Ailments;
-        }
-
-        return [];
     }
 
     private static (Guid? ActorParticipantId, Guid? ActorEnemyInstanceId, string ActorDisplayName) ResolveActorInfo(
@@ -999,8 +957,6 @@ public class QuestRunService(
 
         return LogTone.Default;
     }
-
-    private sealed record ActorStateSnapshot(int CurrentHp, int CurrentMp, bool IsDead, IReadOnlyList<BattleAilmentState> Ailments);
 
     private static class LogTone
     {

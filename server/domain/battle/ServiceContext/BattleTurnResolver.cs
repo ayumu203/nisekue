@@ -1,4 +1,5 @@
 using server.domain.move;
+using server.domain.battle.enums;
 using server.domain.player;
 
 namespace server.domain.battle;
@@ -40,7 +41,17 @@ public class BattleTurnResolver(
         foreach (var state in stateArray)
         {
             var beforeStatus = _battleStatusResolver.BuildEffectiveStatus(snapshotMap[state.Id], state);
-            state.TickTurnEnd();
+            var turnEndResults = state.TickTurnEnd();
+            if (turnEndResults.Count > 0)
+            {
+                actionResults.Add(new BattleActionResult(
+                    state.Id,
+                    BattleActionKind.Wait,
+                    null,
+                    true,
+                    targetResults: turnEndResults,
+                    isTurnEndEffect: true));
+            }
             var afterStatus = _battleStatusResolver.BuildEffectiveStatus(snapshotMap[state.Id], state);
             NormalizeCurrentResources(state, beforeStatus, afterStatus);
         }

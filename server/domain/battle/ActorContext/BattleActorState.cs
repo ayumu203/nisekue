@@ -80,11 +80,12 @@ public class BattleActorState(
         _buffs.Add(buff);
     }
 
-    public void TickTurnEnd()
+    public IReadOnlyList<BattleTargetResult> TickTurnEnd()
     {
-        ApplyAilmentTurnEndEffects();
+        var turnEndResults = ApplyAilmentTurnEndEffects();
         TickAilments();
         TickBuffs();
+        return turnEndResults;
     }
 
     public bool CanAct()
@@ -113,43 +114,69 @@ public class BattleActorState(
         _ailments.AddRange(updated);
     }
 
-    private void ApplyAilmentTurnEndEffects()
+    private IReadOnlyList<BattleTargetResult> ApplyAilmentTurnEndEffects()
     {
+        var results = new List<BattleTargetResult>();
         foreach (var ailment in _ailments)
         {
             if (IsDead)
             {
-                return;
+                return results;
             }
 
             if (ailment.Type == AilmentType.Poison || ailment.Type == AilmentType.PoisonTrap)
             {
                 var damage = Math.Max(1, CurrentHp / 10);
                 ReceiveDamage(damage);
+                results.Add(new BattleTargetResult(
+                    Id,
+                    damage,
+                    -damage,
+                    0,
+                    IsDead,
+                    null,
+                    ailment.Type,
+                    ailment.SourceMoveId));
             }
 
             if (ailment.Type == AilmentType.DamageTrap)
             {
-                ApplyTrapDamage(ailment.TriggerDamage);
+                var trapDamage = ApplyTrapDamage(ailment.TriggerDamage);
+                results.Add(new BattleTargetResult(
+                    Id,
+                    trapDamage,
+                    -trapDamage,
+                    0,
+                    IsDead,
+                    null,
+                    ailment.Type,
+                    ailment.SourceMoveId));
             }
         }
+
+        return results;
     }
 
-    private void ApplyTrapDamage(DamageEffect? triggerDamage)
+    private int ApplyTrapDamage(DamageEffect? triggerDamage)
     {
         ArgumentNullException.ThrowIfNull(triggerDamage);
 
+        var totalDamage = 0;
         for (var i = 0; i < triggerDamage.HitCount; i++)
         {
             if (IsDead)
             {
-                return;
+                return totalDamage;
             }
 
             var damage = triggerDamage.FixedValue
                 + (int)Math.Round(CurrentHp * triggerDamage.PowerRate, MidpointRounding.AwayFromZero);
-            ReceiveDamage(Math.Max(1, damage));
+            var appliedDamage = Math.Max(1, damage);
+            ReceiveDamage(appliedDamage);
+            totalDamage += appliedDamage;
         }
+
+        return totalDamage;
     }
 
     private void TickBuffs()

@@ -1,3 +1,4 @@
+using server.domain.move;
 using server.domain.move.enums;
 
 namespace server.domain.battle;
@@ -8,7 +9,9 @@ public class BattleTargetResult(
     int hpChange,
     int mpChange,
     bool isDefeated,
-    AilmentType? appliedAilment)
+    AilmentType? appliedAilment,
+    AilmentType? triggeredAilment = null,
+    MoveId? sourceMoveId = null)
 {
     public BattleActorId TargetActorId { get; } = targetActorId;
     public int Damage { get; } = ValidateNonNegative(damage, nameof(damage));
@@ -16,6 +19,8 @@ public class BattleTargetResult(
     public int MpChange { get; } = mpChange;
     public bool IsDefeated { get; } = isDefeated;
     public AilmentType? AppliedAilment { get; } = appliedAilment;
+    public AilmentType? TriggeredAilment { get; } = triggeredAilment;
+    public MoveId? SourceMoveId { get; } = sourceMoveId;
 
     private static int ValidateNonNegative(int value, string paramName)
     {

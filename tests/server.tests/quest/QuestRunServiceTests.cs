@@ -415,6 +415,139 @@ public class QuestRunServiceTests
     }
 
     [Fact]
+    public async Task SubmitCommandAsync_WhenEnemyHasPoisonAndTrap_StoresSeparateAilmentLogs()
+    {
+        var playerParticipantId = QuestParticipantId.New();
+        var poisonMoveId = new MoveId(201);
+        var trapMoveId = new MoveId(202);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 20,
+            enemyAilments:
+            [
+                new BattleAilmentState(AilmentType.Poison, 1, sourceMoveId: poisonMoveId),
+                new BattleAilmentState(AilmentType.DamageTrap, 1, new DamageEffect(1, 0.1m, 0, 0m, ElementType.None), trapMoveId)
+            ]);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var poisonMove = new Move(
+            poisonMoveId,
+            "Poison Mist",
+            "poison",
+            TargetType.Enemy,
+            AttackRange.Single,
+            0,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    poisonMoveId,
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(AilmentType.Poison, 1m, 1))
+            ]);
+        var trapMove = new Move(
+            trapMoveId,
+            "Spike Trap",
+            "trap",
+            TargetType.Enemy,
+            AttackRange.Single,
+            0,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(2),
+                    trapMoveId,
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(AilmentType.DamageTrap, 1m, 1, new DamageEffect(1, 0.1m, 0, 0m, ElementType.None)))
+            ]);
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), [poisonMove, trapMove]);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            playerParticipantId,
+            new QuestSubmittedCommand(
+                playerParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Wait,
+                DateTimeOffset.UtcNow));
+
+        repository.StoredRun!.LastTurnResults!.Actions.Should().Contain(x =>
+            x.ActorEnemyInstanceId != null &&
+            x.MoveId == poisonMoveId.Id &&
+            x.Logs.Contains("SlimeはPoison Mistによる毒で2ダメージを受けた"));
+        repository.StoredRun.LastTurnResults.Actions.Should().Contain(x =>
+            x.ActorEnemyInstanceId != null &&
+            x.MoveId == trapMoveId.Id &&
+            x.Logs.Contains("SlimeはSpike Trapによるトラップで2ダメージを受けた"));
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_WhenPoisonAndMaxHpBuffExpire_LogsOnlyPoisonTickDamage()
+    {
+        var playerParticipantId = QuestParticipantId.New();
+        var poisonMoveId = new MoveId(203);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 10,
+            enemyAilments:
+            [
+                new BattleAilmentState(AilmentType.Poison, 1, sourceMoveId: poisonMoveId)
+            ],
+            enemyBuffs:
+            [
+                new BattleBuffState(BuffStat.MaxHp, BuffCalculationType.Mul, 2.0m, 1)
+            ]);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var poisonMove = new Move(
+            poisonMoveId,
+            "Venom",
+            "venom",
+            TargetType.Enemy,
+            AttackRange.Single,
+            0,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(3),
+                    poisonMoveId,
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(AilmentType.Poison, 1m, 1))
+            ]);
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), [poisonMove]);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            playerParticipantId,
+            new QuestSubmittedCommand(
+                playerParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Wait,
+                DateTimeOffset.UtcNow));
+
+        repository.StoredRun!.LastTurnResults!.Actions.Should().Contain(x =>
+            x.ActorEnemyInstanceId != null &&
+            x.MoveId == poisonMoveId.Id &&
+            x.Logs.Contains("SlimeはVenomによる毒で1ダメージを受けた"));
+        repository.StoredRun.LastTurnResults.Actions.Should().NotContain(x =>
+            x.ActorEnemyInstanceId != null &&
+            x.Logs.Any(log => log.Contains("6ダメージ")));
+    }
+
+    [Fact]
     public async Task ResolveTurnAsync_WhenRunEnds_ConsumesSnapshottedEquipmentDurability()
     {
         var playerId = new PlayerId(Guid.NewGuid());
@@ -1035,7 +1168,9 @@ public class QuestRunServiceTests
         int enemyHp = 1,
         DateTimeOffset? deadlineAt = null,
         PlayerEquipmentId? weaponEquipmentId = null,
-        PlayerEquipmentId? armorEquipmentId = null)
+        PlayerEquipmentId? armorEquipmentId = null,
+        IReadOnlyList<BattleAilmentState>? enemyAilments = null,
+        IReadOnlyList<BattleBuffState>? enemyBuffs = null)
     {
         enemyPositions ??= [new BattlePosition(BattleRow.Front, BattleColumn.Right)];
 
@@ -1077,7 +1212,9 @@ public class QuestRunServiceTests
                     position,
                     currentHp: enemyHp,
                     currentMp: 0,
-                    isDead: false)).ToArray()),
+                    isDead: false,
+                    ailments: enemyAilments,
+                    buffs: enemyBuffs)).ToArray()),
             new QuestTurnState(1, deadlineAt ?? DateTimeOffset.UtcNow.AddSeconds(30)),
             new QuestTrapCollection(),
             new QuestRewardAccumulator(),

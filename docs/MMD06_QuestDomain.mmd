@@ -449,7 +449,7 @@ classDiagram
 
         class QuestEnemyActionPolicy {
             <<Domain Service>>
-            +SelectAction(run: QuestRun, enemyInstanceId: QuestEnemyInstanceId, enemyDefinition: QuestEnemyDefinition, availableMoves: IReadOnlyList~Move~) BattleAction
+            +SelectAction(run: QuestRun, enemy: QuestEnemyState, enemyDefinition: QuestEnemyDefinition, availableMoves: IReadOnlyList~Move~) BattleActionInput
         }
 
         class QuestRunFactory {

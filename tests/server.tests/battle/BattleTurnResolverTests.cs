@@ -129,6 +129,44 @@ public class BattleTurnResolverTests
     }
 
     [Fact]
+    public void Resolve_AfterTurnEndPoisonAndExpiredMaxHpBuff_SeparatesTickDamageFromNormalization()
+    {
+        var resolver = CreateResolver();
+
+        var actorId = new BattleActorId(Guid.NewGuid());
+        var snapshot = CreateSnapshot(1, speed: 7, strength: 8, actorId: actorId);
+        var poisonMoveId = new MoveId(501);
+        var state = new BattleActorState(
+            actorId,
+            currentHp: 10,
+            currentMp: 8,
+            ailments:
+            [
+                new BattleAilmentState(AilmentType.Poison, 1, sourceMoveId: poisonMoveId)
+            ],
+            buffs:
+            [
+                new BattleBuffState(BuffStat.MaxHp, BuffCalculationType.Mul, 2.0m, 1)
+            ]);
+        var action = new BattleAction(
+            actorId,
+            BattleActionKind.Wait,
+            new BattleTargetSelector(TargetType.Self, AttackRange.Single));
+
+        var result = resolver.Resolve([action], [snapshot], [state], []);
+
+        var updatedState = result.UpdatedStates.Should().ContainSingle().Subject;
+        var turnEndResult = result.ActionResults.Should().ContainSingle(x => x.IsTurnEndEffect).Subject;
+        var targetResult = turnEndResult.TargetResults.Should().ContainSingle().Subject;
+
+        targetResult.Damage.Should().Be(1);
+        targetResult.HpChange.Should().Be(-1);
+        targetResult.TriggeredAilment.Should().Be(AilmentType.Poison);
+        targetResult.SourceMoveId.Should().Be(poisonMoveId);
+        updatedState.CurrentHp.Should().Be(4);
+    }
+
+    [Fact]
     public void Resolve_AfterTurnEndExpiredMaxMpDebuff_RestoresMpByRatio()
     {
         var resolver = CreateResolver();
