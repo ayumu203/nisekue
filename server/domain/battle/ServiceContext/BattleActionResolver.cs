@@ -98,7 +98,7 @@ public class BattleActionResolver(
 
             var damageResult = battleDamageCalculator.Calculate(new BattleDamageInput(
                 actorSnapshot.Id,
-                targetId,
+                receiverId,
                 attackerStatus,
                 defenderStatus,
                 fixedPower: 0,
