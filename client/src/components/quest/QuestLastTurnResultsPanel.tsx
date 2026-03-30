@@ -22,24 +22,19 @@ type QuestLastTurnResultsPanelProps = {
   }
 }
 
-function getLogColor(log: string): string {
-  if (log.includes('倒した') || log.includes('撃破')) {
-    return '#111111'
+function getLogToneColor(tone: 'Default' | 'Damage' | 'Ailment' | 'Buff' | 'Heal'): string {
+  switch (tone) {
+    case 'Damage':
+      return '#c62828'
+    case 'Ailment':
+      return '#2e7d32'
+    case 'Buff':
+      return '#ef6c00'
+    case 'Heal':
+      return '#0288d1'
+    default:
+      return '#3b2f1f'
   }
-
-  if (log.includes('ダメージ') || log.includes('反動')) {
-    return '#d32f2f'
-  }
-
-  if (log.includes('使った') || log.includes('発動')) {
-    return '#1565c0'
-  }
-
-  if (log.includes('回復')) {
-    return '#2e7d32'
-  }
-
-  return '#3b2f1f'
 }
 
 function ChatMessageItem({
@@ -123,7 +118,15 @@ export default function QuestLastTurnResultsPanel({
 }: QuestLastTurnResultsPanelProps) {
   const currentTurnMessages = run?.chatMessages ?? []
   const lastTurnMessages = run?.lastTurnResults?.chatMessages ?? []
-  const logs = run?.lastTurnResults?.actions.flatMap((action) => action.logs) ?? []
+  const logs =
+    run?.lastTurnResults?.actions.flatMap((action) =>
+      action.logEntries.length > 0
+        ? action.logEntries
+        : action.logs.map((log) => ({
+            text: log,
+            segments: [{ text: log, tone: 'Default' as const }],
+          })),
+    ) ?? []
   const hasContent = currentTurnMessages.length > 0 || lastTurnMessages.length > 0 || logs.length > 0
 
   return (
@@ -204,15 +207,23 @@ export default function QuestLastTurnResultsPanel({
               <Stack spacing={0.5}>
                 {logs.map((log, index) => (
                   <Box
-                    key={`${log}-${index}`}
+                    key={`${log.text}-${index}`}
                     sx={{
                       px: 0.5,
                       py: 0.75,
                       borderBottom: '1px solid #c9c2b7',
                     }}
                   >
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: getLogColor(log), lineHeight: 1.5 }}>
-                      {log}
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#3b2f1f', lineHeight: 1.5 }}>
+                      {log.segments.map((segment, segmentIndex) => (
+                        <Box
+                          key={`${segment.text}-${segmentIndex}`}
+                          component="span"
+                          sx={{ color: getLogToneColor(segment.tone), whiteSpace: 'pre-wrap' }}
+                        >
+                          {segment.text}
+                        </Box>
+                      ))}
                     </Typography>
                   </Box>
                 ))}

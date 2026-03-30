@@ -263,6 +263,19 @@ export const questResolvedActionViewSchema = z.object({
   succeeded: z.boolean(),
   targetSummaries: z.array(questActionTargetResultViewSchema),
   logs: z.array(z.string()),
+  logEntries: z
+    .array(
+      z.object({
+        text: z.string().min(1),
+        segments: z.array(
+          z.object({
+            text: z.string(),
+            tone: z.enum(['Default', 'Damage', 'Ailment', 'Buff', 'Heal']),
+          }),
+        ),
+      }),
+    )
+    .default([]),
 })
 
 export const questFloorTransitionViewSchema = z.object({
