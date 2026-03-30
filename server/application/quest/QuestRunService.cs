@@ -178,6 +178,7 @@ public class QuestRunService(
         if (summary.IsFloorCleared)
         {
             run.Rewards.AddExp(CalculateFloorExp(currentFloor, enemyDefinitions));
+            run.Rewards.AddGold(CalculateFloorGold(currentFloor, enemyDefinitions));
         }
 
         if (nextFloor is not null && nextEnemyStates is not null)
@@ -210,6 +211,21 @@ public class QuestRunService(
                 : 0);
 
         return (int)Math.Floor(baseExp * floor.RewardRule.ExpRate);
+    }
+
+    private static int CalculateFloorGold(
+        QuestFloorDefinition floor,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+    {
+        ArgumentNullException.ThrowIfNull(floor);
+        ArgumentNullException.ThrowIfNull(enemyDefinitions);
+
+        var baseGold = floor.Placements.Sum(placement =>
+            enemyDefinitions.TryGetValue(placement.EnemyDefinitionId, out var definition)
+                ? definition.Level
+                : 0);
+
+        return (int)Math.Floor(baseGold * floor.RewardRule.GoldRate);
     }
 
     private async Task ApplyQuestCompletionEffectsAsync(QuestRun run)
@@ -265,6 +281,11 @@ public class QuestRunService(
                 var jobProfile = jobProfileRepository.GetByJob(player.Job);
                 var learningRule = jobMoveLearningRuleRepository.GetByJob(player.Job);
                 player.LevelUp(jobProfile, learningRule);
+            }
+
+            if (run.Rewards.Gold > 0)
+            {
+                player.GainGold(run.Rewards.Gold);
             }
 
             player.SetQuestCooldownUntil((run.EndedAt ?? DateTimeOffset.UtcNow).Add(QuestCooldown));

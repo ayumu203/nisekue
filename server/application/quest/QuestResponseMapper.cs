@@ -334,6 +334,7 @@ public class QuestResponseMapper(
             rewards = new
             {
                 exp = run.Rewards.Exp,
+                gold = run.Rewards.Gold,
                 equipmentRewardId = run.Rewards.EquipmentRewardId?.Value,
                 equipmentRewardName = rewardEquipment?.Name,
                 itemRewardId = run.Rewards.ItemRewardId?.Value,

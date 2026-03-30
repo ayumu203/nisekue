@@ -174,6 +174,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                 rewardEntity?.Exp ?? 0,
                 rewardEntity?.EquipmentRewardId is null ? null : new EquipmentId(rewardEntity.EquipmentRewardId.Value),
                 rewardEntity?.ItemRewardId is null ? null : new ItemId(rewardEntity.ItemRewardId.Value),
+                rewardEntity?.Gold ?? 0,
                 DeserializeSkippedRewardPlayerIds(rewardEntity?.SkippedRewardPlayerIdsJson)),
             lastTurnResults,
             chatMessages,
@@ -199,6 +200,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             {
                 RunId = runId,
                 Exp = run.Rewards.Exp,
+                Gold = run.Rewards.Gold,
                 EquipmentRewardId = run.Rewards.EquipmentRewardId?.Value,
                 ItemRewardId = run.Rewards.ItemRewardId?.Value,
                 SkippedRewardPlayerIdsJson = SerializeSkippedRewardPlayerIds(run.Rewards.SkippedRewardPlayerIds)
@@ -207,6 +209,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         else
         {
             reward.Exp = run.Rewards.Exp;
+            reward.Gold = run.Rewards.Gold;
             reward.EquipmentRewardId = run.Rewards.EquipmentRewardId?.Value;
             reward.ItemRewardId = run.Rewards.ItemRewardId?.Value;
             reward.SkippedRewardPlayerIdsJson = SerializeSkippedRewardPlayerIds(run.Rewards.SkippedRewardPlayerIds);

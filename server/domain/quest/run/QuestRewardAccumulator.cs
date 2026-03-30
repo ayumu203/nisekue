@@ -2,9 +2,10 @@ using server.domain.player;
 
 namespace server.domain.quest;
 
-public class QuestRewardAccumulator(int exp = 0, EquipmentId? equipmentRewardId = null, ItemId? itemRewardId = null, IEnumerable<PlayerId>? skippedRewardPlayerIds = null)
+public class QuestRewardAccumulator(int exp = 0, EquipmentId? equipmentRewardId = null, ItemId? itemRewardId = null, int gold = 0, IEnumerable<PlayerId>? skippedRewardPlayerIds = null)
 {
     public int Exp { get; private set; } = ValidateNonNegative(exp);
+    public int Gold { get; private set; } = ValidateNonNegative(gold);
     private readonly HashSet<PlayerId> skippedRewardPlayerIds = skippedRewardPlayerIds?.ToHashSet() ?? [];
     public EquipmentId? EquipmentRewardId { get; private set; } = equipmentRewardId;
     public ItemId? ItemRewardId { get; private set; } = itemRewardId;
@@ -13,6 +14,11 @@ public class QuestRewardAccumulator(int exp = 0, EquipmentId? equipmentRewardId 
     public void AddExp(int value)
     {
         Exp += ValidateNonNegative(value);
+    }
+
+    public void AddGold(int value)
+    {
+        Gold += ValidateNonNegative(value);
     }
 
     public void SetEquipmentReward(EquipmentId? equipmentId)
