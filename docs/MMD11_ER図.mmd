@@ -238,7 +238,7 @@ erDiagram
     TREASURE_MAP_EXPEDITIONS {
         uuid id PK "internal.treasure_map_expeditions.id"
         uuid player_id FK "internal.players.id"
-        uuid map_id "NOT NULL, references CSV treasure_maps.id logically"
+        int map_id "NOT NULL, references CSV treasure_maps.id logically"
         timestamptz started_at "NOT NULL"
         timestamptz ends_at "NOT NULL"
         int status "NOT NULL (InProgress/Completed/Claimed/Failed)"

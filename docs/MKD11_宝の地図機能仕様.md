@@ -55,6 +55,7 @@
   - `server/resources/treasuremap/treasure_maps.csv`
   - `server/resources/treasuremap/reward_pools.csv`
   - `server/resources/treasuremap/reward_entries.csv`
+  - `treasure_maps.id` と `reward_pools.id` は `int` とし, `reward_entries.pool_id` で関連付ける.
 - 所要時間は秒単位で `duration` に保持し, 終了判定は `endsAt` を基に行う.
 - `completedAt` は完了(成功/失敗)確定時刻として保持し, 受け取り履歴・運用監視で利用する.
 - 報酬は `rewardPoolId` を参照してアイテム/装備/経験値/ゴールドを組み立て, 旅完了時に `TreasureMapExpedition` に結果を記録する.
