@@ -254,7 +254,7 @@ erDiagram
         int quantity_max "NULL"
         int gold_amount "NULL"
         int experience_amount "NULL"
-        boolean is_default_entry "NOT NULL, DEFAULT FALSE"
+        boolean is_fallback "NOT NULL, DEFAULT FALSE"
         timestamptz created_at "NOT NULL"
     }
 
@@ -281,7 +281,7 @@ erDiagram
         int status "NOT NULL (InProgress/Completed/Claimed/Failed)"
         jsonb reward_summary_json "NULL, serialized items/equipment/gold/exp"
         boolean reward_claimed "NOT NULL, DEFAULT FALSE"
-        timestamptz completed_at "NULL"
+        timestamptz completed_at "NULL, set when status becomes Completed or Failed"
         timestamptz created_at "NOT NULL"
         timestamptz updated_at "NOT NULL"
     }

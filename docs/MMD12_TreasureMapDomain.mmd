@@ -20,7 +20,7 @@ classDiagram
             +TreasureMapRewardPoolId Id
             +string Name
             +IReadOnlyList~TreasureMapRewardEntry~ Entries
-            +TreasureMapRewardEntry SelectRandomEntry()
+            +TreasureMapRewardEntry Draw(Random random, Func~TreasureMapRewardEntry, bool~? predicate)
         }
 
         class TreasureMap {
