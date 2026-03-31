@@ -169,5 +169,6 @@ app.MapQuestEndpoints();
 app.MapChatEndpoints();
 app.MapThreadEndpoints();
 app.MapTrainingEndpoints();
+app.MapTreasureMapEndpoints();
 
 app.Run();
