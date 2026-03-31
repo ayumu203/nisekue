@@ -3,24 +3,34 @@ import { innerSurfaceSx, menuButtonSx, softGreenButtonSx } from '@/constants/sty
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import type { GetQuestStagesResponse, ListQuestRoomsResponse } from '@/schema/quest'
 
+function formatCooldownRemainingMessage(seconds: number, template: string) {
+  const floorSeconds = Math.max(0, seconds)
+  const minutes = Math.floor(floorSeconds / 60)
+  const secondPart = floorSeconds % 60
+  return template
+    .replace('{minutes}', String(minutes))
+    .replace('{seconds}', String(secondPart).padStart(2, '0'))
+}
+
 type QuestMultiRoomListProps = {
   rooms: ListQuestRoomsResponse
   stages: GetQuestStagesResponse
   isLoading: boolean
   error: Error | null
   isJoiningRoomId: string | null
-  locale: {
-    latestRoomsLoading: string
-    latestRoomsEmpty: string
-    joinRoom: string
+    locale: {
+      latestRoomsLoading: string
+      latestRoomsEmpty: string
+      joinRoom: string
     joiningRoom: string
     recommendedLevel: string
     minRequiredLevel: string
-    allowedPlayersOnly: string
-    joinDisabledReasons: Record<string, string>
-    ownerBadge: string
-    noImage?: string
-  }
+      allowedPlayersOnly: string
+      joinDisabledReasons: Record<string, string>
+      cooldownRemaining: string
+      ownerBadge: string
+      noImage?: string
+    }
   onJoinRoom: (roomId: string) => Promise<void>
 }
 
@@ -41,6 +51,10 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
       ? `${room.participantCount} / ${room.maxPartyMemberCount}人`
       : `${room.participantCount}人`
   const roomModeLabel = room.mode === 'Solo' ? 'ソロ' : 'マルチ'
+  const cooldownRemainingText =
+    room.joinDisabledReason === 'CooldownActive' && room.cooldownRemainingSeconds != null
+      ? formatCooldownRemainingMessage(room.cooldownRemainingSeconds, locale.cooldownRemaining)
+      : null
 
   return (
     <Paper
@@ -200,9 +214,16 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
           </Stack>
         </Stack>
         {!room.isJoinable && room.joinDisabledReason ? (
-          <Typography variant="body2" sx={{ color: '#ffd7d7' }}>
-            {locale.joinDisabledReasons[room.joinDisabledReason] ?? room.joinDisabledReason}
-          </Typography>
+          <Stack spacing={0.25}>
+            <Typography variant="body2" sx={{ color: '#ffd7d7' }}>
+              {locale.joinDisabledReasons[room.joinDisabledReason] ?? room.joinDisabledReason}
+            </Typography>
+            {cooldownRemainingText ? (
+              <Typography variant="body2" sx={{ color: '#ffd7d7' }}>
+                {cooldownRemainingText}
+              </Typography>
+            ) : null}
+          </Stack>
         ) : null}
       </Stack>
     </Paper>

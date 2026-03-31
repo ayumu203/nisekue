@@ -176,6 +176,7 @@
     "CapacityFull": "このルームは満員です。",
     "AlreadyJoined": "このルームには既に参加しています。"
   },
+  "cooldownRemaining": "再参加まであと{minutes}分{seconds}秒です。",
   "runStatus": {
     "InProgress": "進行中",
     "Succeeded": "成功",

@@ -34,7 +34,11 @@ public class QuestResponseMapper(
     {
         var stage = await questStageRepository.GetAsync(room.StageId);
         var owner = await playerRepository.GetPlayerAsync(room.OwnerId);
-        var joinDisabledReason = GetJoinDisabledReason(room, stage, viewer, viewerHasActiveRun);
+        var now = DateTimeOffset.UtcNow;
+        var joinDisabledReason = GetJoinDisabledReason(room, stage, viewer, viewerHasActiveRun, now);
+        var cooldownRemainingSeconds = viewer?.QuestCooldownUntil is not null && viewer.QuestCooldownUntil.Value > now
+            ? (int)Math.Ceiling((viewer.QuestCooldownUntil.Value - now).TotalSeconds)
+            : (int?)null;
 
         return new
         {
@@ -53,6 +57,7 @@ public class QuestResponseMapper(
             hasAllowedPlayerRestriction = room.JoinPolicy.HasAllowedPlayerRestriction,
             isJoinable = joinDisabledReason is null,
             joinDisabledReason,
+            cooldownRemainingSeconds,
             createdAt = room.CreatedAt
         };
     }
@@ -157,7 +162,8 @@ public class QuestResponseMapper(
         QuestRoom room,
         QuestStageDefinition? stage,
         Player? viewer,
-        bool viewerHasActiveRun)
+        bool viewerHasActiveRun,
+        DateTimeOffset now)
     {
         if (room.Status != QuestRoomStatus.Recruiting)
         {
@@ -179,7 +185,7 @@ public class QuestResponseMapper(
             return "AlreadyJoinedQuest";
         }
 
-        if (viewer.QuestCooldownUntil is not null && viewer.QuestCooldownUntil.Value > DateTimeOffset.UtcNow)
+        if (viewer.QuestCooldownUntil is not null && viewer.QuestCooldownUntil.Value > now)
         {
             return "CooldownActive";
         }
