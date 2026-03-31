@@ -50,9 +50,14 @@
 ## サーバー/データ構造
 - `TreasureMap` エンティティ (id, name, grade, duration, rewardPoolId, marketFlag, ownedQuantityなど).
 - `TreasureMapExpedition` レコード (playerId, mapId, startedAt, endsAt, rewardResult, status[進行中/完了/受け取り済み/失敗], completedAt).
+- マスターデータはCSVで管理する.
+  - `server/resources/treasuremap/treasure_maps.csv`
+  - `server/resources/treasuremap/reward_pools.csv`
+  - `server/resources/treasuremap/reward_entries.csv`
 - 所要時間は秒単位で `duration` に保持し, 終了判定は `endsAt` を基に行う.
 - `completedAt` は完了(成功/失敗)確定時刻として保持し, 受け取り履歴・運用監視で利用する.
 - 報酬は `rewardPoolId` を参照してアイテム/装備/経験値/ゴールドを組み立て, 旅完了時に `TreasureMapExpedition` に結果を記録する.
+- DBに永続化するのは `TreasureMapExpedition` のみとし, 地図/報酬プール/報酬エントリはCSV読み込みで提供する.
 - マーケット出品時は `TreasureMap` の `marketFlag` を立て, グレード, 所要時間, 期待報酬を出品情報として表示する.
 - 所持地図の数量管理は既存のアイテム在庫テーブルを再利用するが, アイテム一覧側の露出フラグが立っていないことを保証.
 - 進行中の旅はプレイヤー単位で最大幾つまで許可するかも含め, 仕様として定義する.
