@@ -124,6 +124,7 @@ internal static class PlayerEndpoints
                 await playerRepository.SaveAsync(player);
                 var equipments = await equipmentRepository.GetAllAsync();
                 await playerEquipmentRepository.SaveAsync(CreateStarterEquipments(player, equipments, now));
+                await playerItemStackRepository.SaveAsync(CreateStarterItemStacks(player, now));
                 await chatService.EnsureRoomAsync(player.Id);
                 return Results.Ok(new
                 {
