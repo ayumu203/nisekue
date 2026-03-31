@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using server.application.chat;
 using server.domain.chat;
 using server.domain.player;
@@ -87,6 +89,36 @@ internal static class ThreadEndpoints
             catch (KeyNotFoundException ex)
             {
                 return Results.NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
+        }).RequireAuthorization();
+
+        app.MapDelete("/threads/{threadId:guid}", async (
+            Guid threadId,
+            ClaimsPrincipal user,
+            ThreadService threadService) =>
+        {
+            var currentPlayerId = EndpointHelpers.TryGetPlayerId(user);
+            if (currentPlayerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                await threadService.DeleteAsync(new ThreadId(threadId), currentPlayerId.Value);
+                return Results.Ok(new { message = "スレッドを削除しました。" });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Results.Json(new { message = ex.Message }, options: null, contentType: null, statusCode: StatusCodes.Status403Forbidden);
             }
             catch (InvalidOperationException ex)
             {

@@ -8,4 +8,5 @@ public interface IThreadRepository
     Task<Thread?> FindByIdAsync(ThreadId threadId);
     Task SaveAsync(Thread thread, int maxReplyCount);
     Task<ThreadPageResult> GetPageAsync(ThreadQuery query);
+    Task DeleteAsync(ThreadId threadId);
 }

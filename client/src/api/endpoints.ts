@@ -24,6 +24,7 @@ import {
   createThreadReplyResponseSchema,
   createThreadRequestSchema,
   createThreadResponseSchema,
+  deleteThreadResponseSchema,
   getThreadsRequestSchema,
   getThreadsResponseSchema,
   threadDetailSchema,
@@ -97,6 +98,7 @@ export type {
   CreateThreadResponse,
   CreateThreadReplyRequest,
   CreateThreadReplyResponse,
+  DeleteThreadResponse,
 } from '@/schema/thread'
 export type {
   TrainingEnemy,
@@ -230,6 +232,11 @@ export const endpoints = {
       method: 'POST',
       requestSchema: createThreadReplyRequestSchema,
       responseSchema: createThreadReplyResponseSchema,
+    },
+    delete: {
+      path: (threadId: string) => `/threads/${threadId}`,
+      method: 'DELETE',
+      responseSchema: deleteThreadResponseSchema,
     },
   },
   training: {

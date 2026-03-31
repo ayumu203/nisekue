@@ -62,6 +62,10 @@ export const createThreadReplyRequestSchema = z.object({
 
 export const createThreadReplyResponseSchema = threadDetailSchema
 
+export const deleteThreadResponseSchema = z.object({
+  message: z.string(),
+})
+
 export type ThreadSummary = z.infer<typeof threadSummarySchema>
 export type ThreadReply = z.infer<typeof threadReplySchema>
 export type ThreadDetail = z.infer<typeof threadDetailSchema>
@@ -71,3 +75,4 @@ export type CreateThreadRequest = z.infer<typeof createThreadRequestSchema>
 export type CreateThreadResponse = z.infer<typeof createThreadResponseSchema>
 export type CreateThreadReplyRequest = z.infer<typeof createThreadReplyRequestSchema>
 export type CreateThreadReplyResponse = z.infer<typeof createThreadReplyResponseSchema>
+export type DeleteThreadResponse = z.infer<typeof deleteThreadResponseSchema>
