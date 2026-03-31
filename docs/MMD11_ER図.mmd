@@ -235,6 +235,57 @@ erDiagram
         jsonb skipped_reward_player_ids_json "NOT NULL"
     }
 
+    TREASURE_MAP_REWARD_POOLS {
+        uuid id PK "internal.treasure_map_reward_pools.id"
+        varchar(100) name "NOT NULL"
+        varchar(500) description "NOT NULL"
+        boolean allow_fallback "NOT NULL, DEFAULT TRUE"
+        timestamptz created_at "NOT NULL"
+    }
+
+    TREASURE_MAP_REWARD_ENTRIES {
+        uuid id PK "internal.treasure_map_reward_entries.id"
+        uuid reward_pool_id FK "internal.treasure_map_reward_pools.id"
+        varchar(20) reward_type "NOT NULL (Item/Equipment/Experience/Gold)"
+        int item_id "NULL, references CSV item_id logically"
+        int equipment_id "NULL, references CSV equipment_id logically"
+        int weight "NOT NULL"
+        int quantity_min "NULL"
+        int quantity_max "NULL"
+        int gold_amount "NULL"
+        int experience_amount "NULL"
+        boolean is_default_entry "NOT NULL, DEFAULT FALSE"
+        timestamptz created_at "NOT NULL"
+    }
+
+    TREASURE_MAPS {
+        uuid id PK "internal.treasure_maps.id"
+        varchar(50) code "NOT NULL, UNIQUE"
+        varchar(150) name "NOT NULL"
+        varchar(500) description "NOT NULL"
+        varchar(1) grade "NOT NULL (S/A/B/C/D)"
+        int duration_seconds "NOT NULL"
+        uuid reward_pool_id FK "internal.treasure_map_reward_pools.id"
+        boolean is_marketable "NOT NULL, DEFAULT FALSE"
+        boolean is_hidden_inventory "NOT NULL, DEFAULT TRUE"
+        timestamptz created_at "NOT NULL"
+        timestamptz updated_at "NOT NULL"
+    }
+
+    TREASURE_MAP_EXPEDITIONS {
+        uuid id PK "internal.treasure_map_expeditions.id"
+        uuid player_id FK "internal.players.id"
+        uuid map_id FK "internal.treasure_maps.id"
+        timestamptz started_at "NOT NULL"
+        timestamptz ends_at "NOT NULL"
+        int status "NOT NULL (InProgress/Completed/Claimed/Failed)"
+        jsonb reward_summary_json "NULL, serialized items/equipment/gold/exp"
+        boolean reward_claimed "NOT NULL, DEFAULT FALSE"
+        timestamptz completed_at "NULL"
+        timestamptz created_at "NOT NULL"
+        timestamptz updated_at "NOT NULL"
+    }
+
     PLAYERS ||--|| CHAT_ROOMS : owns
     CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
     PLAYERS ||--o{ THREADS : authors
@@ -258,3 +309,7 @@ erDiagram
     QUEST_RUNS ||--o{ QUEST_FLOOR_TRAPS : carries
     QUEST_RUNS ||--|| QUEST_REWARD_SUMMARIES : awards
     QUEST_RUNS ||--o{ QUEST_REWARD_EQUIPMENTS : grants
+    PLAYERS ||--o{ TREASURE_MAP_EXPEDITIONS : begins
+    TREASURE_MAPS ||--o{ TREASURE_MAP_EXPEDITIONS : executes
+    TREASURE_MAP_REWARD_POOLS ||--o{ TREASURE_MAPS : defines
+    TREASURE_MAP_REWARD_POOLS ||--o{ TREASURE_MAP_REWARD_ENTRIES : contains

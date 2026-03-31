@@ -1,0 +1,70 @@
+classDiagram
+    %% 宝の地図ドメインの集約
+
+    namespace TreasureMapDomain {
+        class TreasureMapRewardEntry {
+            <<Value Object>>
+            +TreasureMapRewardType RewardType
+            +int? ItemId
+            +int? EquipmentId
+            +int Weight
+            +int? QuantityMin
+            +int? QuantityMax
+            +int? GoldAmount
+            +int? ExperienceAmount
+            +bool IsFallback
+        }
+
+        class TreasureMapRewardPool {
+            <<Aggregate Root>>
+            +TreasureMapRewardPoolId Id
+            +string Name
+            +IReadOnlyList~TreasureMapRewardEntry~ Entries
+            +TreasureMapRewardEntry SelectRandomEntry()
+        }
+
+        class TreasureMap {
+            <<Aggregate Root>>
+            +TreasureMapId Id
+            +string Name
+            +TreasureMapGrade Grade
+            +int DurationSeconds
+            +TreasureMapRewardPoolId RewardPoolId
+            +bool IsMarketable
+            +bool IsHiddenFromInventory
+            +TreasureMapRewardPool RewardPool
+        }
+
+        class TreasureMapExpedition {
+            <<Entity>>
+            +TreasureMapExpeditionId Id
+            +TreasureMapId MapId
+            +uuid PlayerId
+            +DateTimeOffset StartedAt
+            +DateTimeOffset EndsAt
+            +TreasureMapExpeditionStatus Status
+            +TreasureMapRewardResult RewardResult
+            +bool RewardClaimed
+            +TreasureMap Map
+        }
+
+        class TreasureMapRewardResult {
+            <<Value Object>>
+            +IReadOnlyList~int~ ItemIds
+            +IReadOnlyList~int~ EquipmentIds
+            +int ExperiencePoints
+            +int Gold
+        }
+
+        class TreasureMapMenuService {
+            <<Application Service>>
+            +Task~IReadOnlyList~TreasureMapPreviewDto~~ GetAvailableMapsAsync(uuid playerId)
+            +Task~TreasureMapExpeditionDto~ StartExpeditionAsync(uuid playerId, TreasureMapId mapId)
+            +Task~TreasureMapExpeditionDto~ GetExpeditionStatusAsync(uuid playerId)
+        }
+
+        TreasureMapRewardPool --> TreasureMapRewardEntry : contains
+        TreasureMap --> TreasureMapRewardPool : uses
+        TreasureMapExpedition --> TreasureMap : references
+        TreasureMapExpedition --> TreasureMapRewardResult : produces
+    }
