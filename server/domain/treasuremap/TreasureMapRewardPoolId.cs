@@ -1,8 +1,6 @@
 namespace server.domain.treasuremap;
 
-public readonly record struct TreasureMapRewardPoolId(Guid Value)
+public readonly record struct TreasureMapRewardPoolId(int Value)
 {
-    public static TreasureMapRewardPoolId New() => new(Guid.NewGuid());
-
     public override string ToString() => Value.ToString();
 }
