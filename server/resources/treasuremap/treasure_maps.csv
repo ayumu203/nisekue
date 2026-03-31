@@ -1,0 +1,6 @@
+id,code,name,description,grade,duration_seconds,reward_pool_id,is_marketable,is_hidden_from_inventory
+101,4001,Ancient Treasure Map D,Small beginner expedition route,D,3600,201,true,true
+102,4002,Ancient Treasure Map C,Short route with low risk,C,5400,202,true,true
+103,4003,Ancient Treasure Map B,Mid route with balanced rewards,B,7200,203,true,true
+104,4004,Ancient Treasure Map A,Long route for veteran adventurers,A,10800,204,true,true
+105,4005,Ancient Treasure Map S,Legendary route with highest risk and reward,S,14400,205,true,true
