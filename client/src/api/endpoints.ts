@@ -64,6 +64,13 @@ import {
   purchaseMarketListingRequestSchema,
   purchaseMarketListingResponseSchema,
 } from '@/schema/item'
+import {
+  claimTreasureMapRewardResponseSchema,
+  getCurrentTreasureMapExpeditionResponseSchema,
+  getTreasureMapsResponseSchema,
+  startTreasureMapExpeditionRequestSchema,
+  treasureMapExpeditionSchema,
+} from '@/schema/treasureMap'
 
 export type {
   GetPlayerResponse,
@@ -141,6 +148,14 @@ export type {
   PurchaseMarketListingRequest,
   PurchaseMarketListingResponse,
 } from '@/schema/item'
+export type {
+  ClaimTreasureMapRewardResponse,
+  GetCurrentTreasureMapExpeditionResponse,
+  GetTreasureMapsResponse,
+  StartTreasureMapExpeditionRequest,
+  TreasureMapExpedition,
+  TreasureMapSummary,
+} from '@/schema/treasureMap'
 
 export const endpoints = {
   player: {
@@ -409,6 +424,29 @@ export const endpoints = {
       method: 'POST',
       requestSchema: purchaseMarketListingRequestSchema,
       responseSchema: purchaseMarketListingResponseSchema,
+    },
+  },
+  treasureMap: {
+    getMaps: {
+      path: '/treasure-maps',
+      method: 'GET',
+      responseSchema: getTreasureMapsResponseSchema,
+    },
+    getCurrentExpedition: {
+      path: '/treasure-map-expeditions/current',
+      method: 'GET',
+      responseSchema: getCurrentTreasureMapExpeditionResponseSchema,
+    },
+    startExpedition: {
+      path: '/treasure-map-expeditions',
+      method: 'POST',
+      requestSchema: startTreasureMapExpeditionRequestSchema,
+      responseSchema: treasureMapExpeditionSchema,
+    },
+    claimReward: {
+      path: (expeditionId: string) => `/treasure-map-expeditions/${expeditionId}/claim`,
+      method: 'POST',
+      responseSchema: claimTreasureMapRewardResponseSchema,
     },
   },
 } as const

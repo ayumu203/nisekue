@@ -60,6 +60,14 @@ function ItemsIcon(props: SvgIconProps) {
   )
 }
 
+function TreasureMapIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="m4 5 5-2 6 2 5-2v14l-5 2-6-2-5 2zm6 2v10l4 1.33V8.33zm-4 .27v10.19l2-.8V6.47zm12-.8-2 .8v10.2l2-.8z" />
+    </SvgIcon>
+  )
+}
+
 function JobChangeIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
@@ -202,6 +210,15 @@ function Home() {
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
                 {locale.items}
+              </Button>
+              <Button
+                component={Link}
+                to="/treasure-map"
+                variant="contained"
+                startIcon={<TreasureMapIcon />}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+              >
+                {locale.treasureMap}
               </Button>
               <Button
                 component={Link}

@@ -120,10 +120,10 @@ internal static class PlayerEndpoints
                     job: Job.Apprentice,
                     imagePath: PlayerImageCatalog.DefaultFileName,
                     moveSet: moveSet);
+                var now = DateTimeOffset.UtcNow;
                 await playerRepository.SaveAsync(player);
                 var equipments = await equipmentRepository.GetAllAsync();
-                await playerEquipmentRepository.SaveAsync(CreateStarterEquipments(player, equipments, DateTimeOffset.UtcNow));
-                await playerItemStackRepository.SaveAsync(CreateStarterItemStacks());
+                await playerEquipmentRepository.SaveAsync(CreateStarterEquipments(player, equipments, now));
                 await chatService.EnsureRoomAsync(player.Id);
                 return Results.Ok(new
                 {
@@ -595,9 +595,19 @@ internal static class PlayerEndpoints
         ];
     }
 
-    private static IReadOnlyList<PlayerItemStack> CreateStarterItemStacks()
+    private static IReadOnlyList<PlayerItemStack> CreateStarterItemStacks(Player player, DateTimeOffset now)
     {
-        return [];
+        ArgumentNullException.ThrowIfNull(player);
+
+        return
+        [
+            new PlayerItemStack(
+                PlayerItemStackId.New(),
+                player.Id,
+                new ItemId(4999),
+                quantity: 1,
+                updatedAt: now)
+        ];
     }
 
     private static PlayerEquipment CreateStarterEquipment(

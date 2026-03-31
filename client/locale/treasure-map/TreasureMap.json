@@ -1,0 +1,29 @@
+{
+  "authLoading": "認証状態を確認中...",
+  "title": "宝の地図",
+  "backToHome": "ホームへ戻る",
+  "sessionMissing": "セッション情報が不足しています",
+  "mapsLoading": "宝の地図一覧を読み込み中...",
+  "currentLoading": "進行中の遠征を読み込み中...",
+  "startButton": "探索開始",
+  "starting": "開始中...",
+  "claimButton": "報酬を受け取る",
+  "claiming": "受け取り中...",
+  "inProgressLabel": "進行中",
+  "completedLabel": "完了",
+  "claimedLabel": "受取済み",
+  "failedLabel": "失敗",
+  "noCurrentExpedition": "現在進行中の遠征はありません。",
+  "ownedQuantity": "所持数",
+  "duration": "所要時間",
+  "seconds": "秒",
+  "expeditionInfo": "遠征情報",
+  "remainingTime": "残り時間",
+  "ended": "終了",
+  "rewardPreview": "確定報酬",
+  "noReward": "報酬は未確定です",
+  "messages": {
+    "started": "遠征を開始しました。",
+    "claimed": "報酬を受け取りました。"
+  }
+}

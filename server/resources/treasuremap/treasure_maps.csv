@@ -4,3 +4,4 @@ id,code,name,description,grade,duration_seconds,reward_pool_id,is_marketable,is_
 103,4003,Ancient Treasure Map B,Mid route with balanced rewards,B,7200,203,true,true
 104,4004,Ancient Treasure Map A,Long route for veteran adventurers,A,10800,204,true,true
 105,4005,Ancient Treasure Map S,Legendary route with highest risk and reward,S,14400,205,true,true
+4999,4999,Test Treasure Map 1min,Frontend testing map with 60 seconds duration,D,60,201,true,true
