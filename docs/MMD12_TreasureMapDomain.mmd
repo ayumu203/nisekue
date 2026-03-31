@@ -47,6 +47,15 @@ classDiagram
         +TreasureMap Map
     }
 
+    class TreasureMapClaimHistory {
+        <<Entity>>
+        +uuid Id
+        +uuid PlayerId
+        +TreasureMapExpeditionId ExpeditionId
+        +DateTimeOffset ClaimedAt
+        +json RewardSummaryJson
+    }
+
     class TreasureMapRewardResult {
         <<Value Object>>
         +IReadOnlyList~int~ ItemIds
@@ -60,6 +69,7 @@ classDiagram
         +Task~IReadOnlyList~TreasureMapPreviewDto~~ GetAvailableMapsAsync(uuid playerId)
         +Task~TreasureMapExpeditionDto~ StartExpeditionAsync(uuid playerId, TreasureMapId mapId)
         +Task~TreasureMapExpeditionDto~ GetExpeditionStatusAsync(uuid playerId)
+        +Task~TreasureMapExpeditionDto~ ClaimRewardAsync(uuid playerId, TreasureMapExpeditionId expeditionId)
     }
 
     class CsvMasterData {
@@ -69,9 +79,24 @@ classDiagram
         +reward_entries_csv
     }
 
+    class DbTreasureMapExpeditionRepository {
+        <<Infrastructure>>
+        +Save expedition state
+        +Load current expedition by player
+    }
+
+    class DbTreasureMapClaimHistoryRepository {
+        <<Infrastructure>>
+        +Record reward claims
+        +Check duplicate claim by expedition
+    }
+
     TreasureMapRewardPool --> TreasureMapRewardEntry : contains
     TreasureMap --> TreasureMapRewardPool : uses
     TreasureMapExpedition --> TreasureMap : references
     TreasureMapExpedition --> TreasureMapRewardResult : produces
+    TreasureMapClaimHistory --> TreasureMapExpedition : records_claim
     TreasureMap --> CsvMasterData : loaded from
     TreasureMapRewardPool --> CsvMasterData : loaded from
+    TreasureMapMenuService --> DbTreasureMapExpeditionRepository : uses
+    TreasureMapMenuService --> DbTreasureMapClaimHistoryRepository : uses

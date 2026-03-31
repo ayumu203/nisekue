@@ -82,7 +82,7 @@ erDiagram
     PLAYER_ITEM_STACKS {
         uuid id PK "internal.player_item_stacks.id"
         uuid player_id FK "internal.players.id"
-        int item_id "NOT NULL, references CSV item_id logically"
+        int item_id "NOT NULL, references CSV item_id logically (normal item and treasure map shared id space)"
         int quantity "NOT NULL"
         timestamptz updated_at "NOT NULL"
     }
@@ -248,6 +248,13 @@ erDiagram
         timestamptz created_at "NOT NULL"
         timestamptz updated_at "NOT NULL"
     }
+    TREASURE_MAP_CLAIM_HISTORIES {
+        uuid id PK "internal.treasure_map_claim_histories.id"
+        uuid player_id FK "internal.players.id"
+        uuid expedition_id FK "internal.treasure_map_expeditions.id"
+        jsonb reward_summary_json "NOT NULL, reward snapshot for audit"
+        timestamptz claimed_at "NOT NULL"
+    }
 
     PLAYERS ||--|| CHAT_ROOMS : owns
     CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
@@ -273,3 +280,5 @@ erDiagram
     QUEST_RUNS ||--|| QUEST_REWARD_SUMMARIES : awards
     QUEST_RUNS ||--o{ QUEST_REWARD_EQUIPMENTS : grants
     PLAYERS ||--o{ TREASURE_MAP_EXPEDITIONS : begins
+    PLAYERS ||--o{ TREASURE_MAP_CLAIM_HISTORIES : claims
+    TREASURE_MAP_EXPEDITIONS ||--o{ TREASURE_MAP_CLAIM_HISTORIES : claimed_by
