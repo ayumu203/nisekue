@@ -13,6 +13,7 @@ using server.domain.chat;
 using server.domain.move;
 using server.domain.player;
 using server.domain.quest;
+using server.domain.treasuremap;
 using server.domain.training;
 using server.endpoints;
 using server.infrastructure;
@@ -23,6 +24,7 @@ using server.infrastructure.quest;
 using server.infrastructure.quest.room;
 using server.infrastructure.quest.run;
 using server.infrastructure.training;
+using server.infrastructure.treasuremap;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -111,6 +113,10 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
 builder.Services.AddScoped<IPlayerEquipmentRepository, DbPlayerEquipmentRepository>();
 builder.Services.AddScoped<IPlayerItemStackRepository, DbPlayerItemStackRepository>();
+builder.Services.AddSingleton<ITreasureMapRepository, CsvTreasureMapRepository>();
+builder.Services.AddSingleton<ITreasureMapRewardPoolRepository, CsvTreasureMapRewardPoolRepository>();
+builder.Services.AddScoped<ITreasureMapExpeditionRepository, DbTreasureMapExpeditionRepository>();
+builder.Services.AddScoped<ITreasureMapClaimHistoryRepository, DbTreasureMapClaimHistoryRepository>();
 builder.Services.AddSingleton<IEquipmentRepository, CsvEquipmentRepository>();
 builder.Services.AddSingleton<IItemRepository, CsvItemRepository>();
 builder.Services.AddScoped<IMarketListingRepository, DbMarketListingRepository>();

@@ -116,6 +116,11 @@ internal static class ItemEndpoints
                 return Results.BadRequest(new { message = "アイテムマスタが見つかりません。" });
             }
 
+            if (IsTreasureMapItem(item.Id))
+            {
+                return Results.BadRequest(new { message = "宝の地図は専用メニューから使用してください。" });
+            }
+
             if (request.Quantity <= 0)
             {
                 return Results.BadRequest(new { message = "使用数は1以上で指定してください。" });
@@ -811,6 +816,7 @@ internal static class ItemEndpoints
             name = item.Name,
             flavorText = item.FlavorText,
             quantity = stack.Quantity,
+            canUseFromInventory = !IsTreasureMapItem(item.Id),
             effectType = item.EffectType.ToString(),
             requiredLevel = item.RequiredLevel,
             changeJobTo = item.ChangeJobTo?.ToString(),
@@ -839,6 +845,11 @@ internal static class ItemEndpoints
                     speed = item.StatusBonusPercent.SpeedPercent
                 }
         };
+    }
+
+    private static bool IsTreasureMapItem(ItemId itemId)
+    {
+        return itemId.Value is >= 4001 and <= 4005;
     }
 
     private static bool SecureEquals(string actual, string expected)
