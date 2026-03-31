@@ -573,7 +573,7 @@ export default function Quest() {
   const selfPartyMember = useMemo(
     () =>
       currentRun && selfParticipantId
-        ? currentRun.partyMembers.find((member) => member.participantId === selfParticipantId) ?? null
+        ? (currentRun.partyMembers.find((member) => member.participantId === selfParticipantId) ?? null)
         : null,
     [currentRun, selfParticipantId],
   )

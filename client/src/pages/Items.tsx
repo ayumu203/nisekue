@@ -595,12 +595,7 @@ function EquipmentCard({
               />
             ) : null}
             {onEquip ? (
-              <Button
-                variant="contained"
-                onClick={onEquip}
-                disabled={actionDisabled}
-                sx={primaryActionSx}
-              >
+              <Button variant="contained" onClick={onEquip} disabled={actionDisabled} sx={primaryActionSx}>
                 {locale.actionEquip}
               </Button>
             ) : null}
@@ -1245,19 +1240,19 @@ export default function Items() {
                         {inventoryEquipments.map((item) => {
                           const key = item.playerEquipmentId
                           return (
-                          <EquipmentCard
-                            key={key}
-                            item={item}
-                            quantityValue={quantities[key] ?? '1'}
-                            unitPriceValue={unitPrices[`price:${key}`] ?? '10'}
-                            onQuantityChange={(value) => setQuantityValue(key, value)}
-                            onUnitPriceChange={(value) => setUnitPriceValue(`price:${key}`, value)}
-                            onSynthesize={() => void handleSynthesize(item)}
-                            onDelete={() => void handleDeleteEquipment(item)}
-                            onList={() => void handleListInventoryItem(item)}
-                            onEquip={() => void handleEquip(item)}
-                            actionDisabled={busyKey !== null}
-                          />
+                            <EquipmentCard
+                              key={key}
+                              item={item}
+                              quantityValue={quantities[key] ?? '1'}
+                              unitPriceValue={unitPrices[`price:${key}`] ?? '10'}
+                              onQuantityChange={(value) => setQuantityValue(key, value)}
+                              onUnitPriceChange={(value) => setUnitPriceValue(`price:${key}`, value)}
+                              onSynthesize={() => void handleSynthesize(item)}
+                              onDelete={() => void handleDeleteEquipment(item)}
+                              onList={() => void handleListInventoryItem(item)}
+                              onEquip={() => void handleEquip(item)}
+                              actionDisabled={busyKey !== null}
+                            />
                           )
                         })}
                       </Box>

@@ -153,12 +153,7 @@ export default function ThreadDetail() {
         <HomeNavIconButton ariaLabel={locale.backToHome} />
         <Stack direction="row" spacing={1}>
           {canDelete ? (
-            <Button
-              variant="outlined"
-              disabled={isDeleting}
-              sx={deleteButtonSx}
-              onClick={handleDelete}
-            >
+            <Button variant="outlined" disabled={isDeleting} sx={deleteButtonSx} onClick={handleDelete}>
               {isDeleting ? <CircularProgress size={18} color="inherit" /> : locale.deleteButton}
             </Button>
           ) : null}

@@ -43,6 +43,9 @@ export const playerJobSchema = z.object({
   description: z.string().min(1, 'ジョブ説明が空です'),
 })
 
+export type PlayerJob = z.infer<typeof playerJobSchema>
+export type PlayerJobCode = z.infer<typeof playerJobCodeSchema>
+
 export const moveTargetTypeSchema = z.enum(['Enemy', 'Ally', 'Self'])
 export const moveAttackRangeSchema = z.enum(['Single', 'Column', 'Row', 'Square', 'All'])
 export const moveCategorySchema = z.enum(['Attack', 'Support', 'Hybrid'])

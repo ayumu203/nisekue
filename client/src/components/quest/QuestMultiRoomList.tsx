@@ -7,9 +7,7 @@ function formatCooldownRemainingMessage(seconds: number, template: string) {
   const floorSeconds = Math.max(0, seconds)
   const minutes = Math.floor(floorSeconds / 60)
   const secondPart = floorSeconds % 60
-  return template
-    .replace('{minutes}', String(minutes))
-    .replace('{seconds}', String(secondPart).padStart(2, '0'))
+  return template.replace('{minutes}', String(minutes)).replace('{seconds}', String(secondPart).padStart(2, '0'))
 }
 
 type QuestMultiRoomListProps = {
@@ -18,19 +16,19 @@ type QuestMultiRoomListProps = {
   isLoading: boolean
   error: Error | null
   isJoiningRoomId: string | null
-    locale: {
-      latestRoomsLoading: string
-      latestRoomsEmpty: string
-      joinRoom: string
+  locale: {
+    latestRoomsLoading: string
+    latestRoomsEmpty: string
+    joinRoom: string
     joiningRoom: string
     recommendedLevel: string
     minRequiredLevel: string
-      allowedPlayersOnly: string
-      joinDisabledReasons: Record<string, string>
-      cooldownRemaining: string
-      ownerBadge: string
-      noImage?: string
-    }
+    allowedPlayersOnly: string
+    joinDisabledReasons: Record<string, string>
+    cooldownRemaining: string
+    ownerBadge: string
+    noImage?: string
+  }
   onJoinRoom: (roomId: string) => Promise<void>
 }
 
