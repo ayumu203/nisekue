@@ -568,6 +568,15 @@ export default function Quest() {
   }, [currentRun, selfParticipantId])
   const isEnemyTargetingAction =
     selectedActionKind === 'NormalAttack' || (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
+  const isAllyTargetingAction = selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Ally'
+  const isSelfTargetingAction = selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Self'
+  const selfPartyMember = useMemo(
+    () =>
+      currentRun && selfParticipantId
+        ? (currentRun.partyMembers.find((member) => member.participantId === selfParticipantId) ?? null)
+        : null,
+    [currentRun, selfParticipantId],
+  )
 
   useEffect(() => {
     if (!session?.user.id) {
@@ -705,6 +714,29 @@ export default function Quest() {
     setSelectedTargetRow(nextTarget.row)
     setSelectedTargetColumn(nextTarget.column)
   }, [isEnemyTargetingAction, reachableEnemyPositions, selectedTargetColumn, selectedTargetRow])
+
+  useEffect(() => {
+    if (isSelfTargetingAction) {
+      if (selfPartyMember) {
+        setSelectedTargetRow(selfPartyMember.position.row)
+        setSelectedTargetColumn(selfPartyMember.position.column)
+      }
+      return
+    }
+
+    if (isEnemyTargetingAction || isAllyTargetingAction) {
+      return
+    }
+
+    setSelectedTargetRow('')
+    setSelectedTargetColumn('')
+  }, [
+    isEnemyTargetingAction,
+    isAllyTargetingAction,
+    isSelfTargetingAction,
+    selfPartyMember?.position.row,
+    selfPartyMember?.position.column,
+  ])
 
   useEffect(() => {
     if (selectedActionKind !== 'UseMove') {

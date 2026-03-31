@@ -43,6 +43,9 @@ export const playerJobSchema = z.object({
   description: z.string().min(1, 'ジョブ説明が空です'),
 })
 
+export type PlayerJob = z.infer<typeof playerJobSchema>
+export type PlayerJobCode = z.infer<typeof playerJobCodeSchema>
+
 export const moveTargetTypeSchema = z.enum(['Enemy', 'Ally', 'Self'])
 export const moveAttackRangeSchema = z.enum(['Single', 'Column', 'Row', 'Square', 'All'])
 export const moveCategorySchema = z.enum(['Attack', 'Support', 'Hybrid'])
@@ -195,6 +198,16 @@ export const updatePlayerJobResponseSchema = z.object({
   newlyLearnedMoves: z.array(learnedMoveSchema),
 })
 
+export const updatePlayerEquipmentRequestSchema = z.object({
+  equipmentType: playerEquipmentTypeSchema,
+  playerEquipmentId: z.string().uuid().nullable(),
+})
+
+export const updatePlayerEquipmentResponseSchema = z.object({
+  message: z.string().min(1, 'レスポンスメッセージが空です'),
+  player: getPlayerResponseSchema,
+})
+
 export const rebirthPlayerResponseSchema = z.object({
   message: z.string().min(1, 'レスポンスメッセージが空です'),
   userId: playerIdSchema,
@@ -222,4 +235,6 @@ export type UpdatePlayerImageRequest = z.infer<typeof updatePlayerImageRequestSc
 export type UpdatePlayerImageResponse = z.infer<typeof updatePlayerImageResponseSchema>
 export type UpdatePlayerJobRequest = z.infer<typeof updatePlayerJobRequestSchema>
 export type UpdatePlayerJobResponse = z.infer<typeof updatePlayerJobResponseSchema>
+export type UpdatePlayerEquipmentRequest = z.infer<typeof updatePlayerEquipmentRequestSchema>
+export type UpdatePlayerEquipmentResponse = z.infer<typeof updatePlayerEquipmentResponseSchema>
 export type RebirthPlayerResponse = z.infer<typeof rebirthPlayerResponseSchema>

@@ -17,6 +17,7 @@ import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { innerSurfaceSx, outerPagePaperSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { resolveJobAssetPath } from '@/lib/assets'
+import type { PlayerJobCode } from '@/schema/player'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-job/JobChange.json'
 
@@ -29,6 +30,8 @@ function formatExpProgress(currentExp: number, level: number): { current: number
     ratio: Math.max(0, Math.min(100, (current / required) * 100)),
   }
 }
+
+const baseJobCodes = new Set<PlayerJobCode>(['Warrior', 'Guardian', 'Mage', 'Priest'])
 
 export default function JobChange() {
   const { session, isLoading } = useAuth()
@@ -61,7 +64,7 @@ export default function JobChange() {
     }
   })
   const currentJobImageSrc = resolveJobAssetPath(player?.job.code)
-  const currentJobs = (player?.jobProfiles ?? []).filter((job) => job.code !== 'Apprentice')
+  const currentJobs = (player?.jobProfiles ?? []).filter((job) => baseJobCodes.has(job.code))
   const unlockThreshold = 5
   const jobExpProgress = formatExpProgress(player?.jobExp ?? 0, player?.jobLevel ?? 1)
 

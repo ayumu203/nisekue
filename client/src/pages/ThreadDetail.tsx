@@ -1,8 +1,8 @@
 import { Alert, Avatar, Box, Button, CircularProgress, Paper, Stack, TextField, Typography } from '@mui/material'
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import useSWR from 'swr'
-import { createThreadReply, getThreadDetail } from '@/api/thread'
+import { createThreadReply, deleteThread, getThreadDetail } from '@/api/thread'
 import ThreadBoardSurface from '@/components/common/ThreadBoardSurface'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import ThreadPageShell from '@/components/common/ThreadPageShell'
@@ -66,6 +66,20 @@ const flatSecondaryButtonSx = {
   },
 } as const
 
+const deleteButtonSx = {
+  borderRadius: 2,
+  minHeight: 36,
+  borderColor: '#b22c1c',
+  color: '#b22c1c',
+  backgroundColor: 'transparent',
+  boxShadow: 'none',
+  '&:hover': {
+    borderColor: '#b22c1c',
+    backgroundColor: '#ffece8',
+    boxShadow: 'none',
+  },
+} as const
+
 function formatDate(value: string | null): string {
   if (!value) {
     return locale.noReplies
@@ -77,9 +91,12 @@ function formatDate(value: string | null): string {
 export default function ThreadDetail() {
   const { threadId } = useParams<{ threadId: string }>()
   const { session, isLoading } = useAuth()
+  const navigate = useNavigate()
   const [replyBody, setReplyBody] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const swrKey = session?.access_token && threadId ? (['thread', threadId] as const) : null
   const {
@@ -94,6 +111,30 @@ export default function ThreadDetail() {
 
     return getThreadDetail(threadId, session.access_token)
   })
+
+  const canDelete = Boolean(session?.user?.id && data?.authorPlayerId && session.user.id === data.authorPlayerId)
+
+  const handleDelete = async () => {
+    if (!session?.access_token || !threadId) {
+      setDeleteError(locale.threadMissing)
+      return
+    }
+
+    if (!window.confirm(locale.deleteConfirm)) {
+      return
+    }
+
+    setIsDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteThread(threadId, session.access_token)
+      navigate('/threads')
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : locale.deleteFailed)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -110,12 +151,24 @@ export default function ThreadDetail() {
     <ThreadPageShell>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
         <HomeNavIconButton ariaLabel={locale.backToHome} />
-        <Button component={Link} to="/threads" variant="outlined" sx={flatSecondaryButtonSx}>
-          {locale.backToList}
-        </Button>
+        <Stack direction="row" spacing={1}>
+          {canDelete ? (
+            <Button variant="outlined" disabled={isDeleting} sx={deleteButtonSx} onClick={handleDelete}>
+              {isDeleting ? <CircularProgress size={18} color="inherit" /> : locale.deleteButton}
+            </Button>
+          ) : null}
+          <Button component={Link} to="/threads" variant="outlined" sx={flatSecondaryButtonSx}>
+            {locale.backToList}
+          </Button>
+        </Stack>
       </Stack>
 
       <ThreadBoardSurface>
+        {deleteError ? (
+          <Box sx={{ mb: 2 }}>
+            <Alert severity="warning">{deleteError}</Alert>
+          </Box>
+        ) : null}
         {isThreadLoading ? (
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={16} />

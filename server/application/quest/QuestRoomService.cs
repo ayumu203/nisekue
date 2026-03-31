@@ -238,7 +238,10 @@ public class QuestRoomService(
     {
         if (player.QuestCooldownUntil is not null && player.QuestCooldownUntil.Value > now)
         {
-            throw new InvalidOperationException($"クエスト終了後{(int)QuestCooldown.TotalMinutes}分間は再参加できません。");
+            var remainingSeconds = (int)Math.Ceiling((player.QuestCooldownUntil.Value - now).TotalSeconds);
+            var remainingMinutes = remainingSeconds / 60;
+            var remainingSecondPart = remainingSeconds % 60;
+            throw new InvalidOperationException($"クエスト終了後{(int)QuestCooldown.TotalMinutes}分間は再参加できません。再参加まであと{remainingMinutes}分{remainingSecondPart}秒です。");
         }
     }
 }

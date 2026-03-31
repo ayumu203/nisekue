@@ -80,6 +80,19 @@ public class ThreadService(IThreadRepository threadRepository, IPlayerRepository
         return await BuildDetailAsync(thread);
     }
 
+    public async Task DeleteAsync(ThreadId threadId, PlayerId requestorId)
+    {
+        var thread = await threadRepository.FindByIdAsync(threadId)
+            ?? throw new KeyNotFoundException("対象スレッドが見つかりません。");
+
+        if (thread.AuthorPlayerId != requestorId)
+        {
+            throw new UnauthorizedAccessException("スレッドの削除権限がありません。");
+        }
+
+        await threadRepository.DeleteAsync(threadId);
+    }
+
     private async Task<ThreadDetailView> BuildDetailAsync(DomainThread thread)
     {
         var profileMap = await LoadProfilesAsync([thread.AuthorPlayerId, .. thread.Replies.Select(x => x.AuthorPlayerId)]);

@@ -9,6 +9,8 @@ import {
   updatePlayerImageResponseSchema,
   updatePlayerJobRequestSchema,
   updatePlayerJobResponseSchema,
+  updatePlayerEquipmentRequestSchema,
+  updatePlayerEquipmentResponseSchema,
   rebirthPlayerResponseSchema,
 } from '@/schema/player'
 import {
@@ -22,6 +24,7 @@ import {
   createThreadReplyResponseSchema,
   createThreadRequestSchema,
   createThreadResponseSchema,
+  deleteThreadResponseSchema,
   getThreadsRequestSchema,
   getThreadsResponseSchema,
   threadDetailSchema,
@@ -75,6 +78,8 @@ export type {
   UpdatePlayerImageResponse,
   UpdatePlayerJobRequest,
   UpdatePlayerJobResponse,
+  UpdatePlayerEquipmentRequest,
+  UpdatePlayerEquipmentResponse,
   RebirthPlayerResponse,
 } from '@/schema/player'
 export type {
@@ -93,6 +98,7 @@ export type {
   CreateThreadResponse,
   CreateThreadReplyRequest,
   CreateThreadReplyResponse,
+  DeleteThreadResponse,
 } from '@/schema/thread'
 export type {
   TrainingEnemy,
@@ -177,6 +183,12 @@ export const endpoints = {
       requestSchema: updatePlayerJobRequestSchema,
       responseSchema: updatePlayerJobResponseSchema,
     },
+    updateEquipment: {
+      path: '/player/equipment',
+      method: 'PUT',
+      requestSchema: updatePlayerEquipmentRequestSchema,
+      responseSchema: updatePlayerEquipmentResponseSchema,
+    },
     rebirth: {
       path: '/player/rebirth',
       method: 'POST',
@@ -220,6 +232,11 @@ export const endpoints = {
       method: 'POST',
       requestSchema: createThreadReplyRequestSchema,
       responseSchema: createThreadReplyResponseSchema,
+    },
+    delete: {
+      path: (threadId: string) => `/threads/${threadId}`,
+      method: 'DELETE',
+      responseSchema: deleteThreadResponseSchema,
     },
   },
   training: {

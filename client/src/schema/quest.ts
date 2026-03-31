@@ -173,6 +173,7 @@ export const questRoomSummaryResponseSchema = z.object({
   hasAllowedPlayerRestriction: z.boolean(),
   isJoinable: z.boolean(),
   joinDisabledReason: questJoinDisabledReasonSchema.nullable(),
+  cooldownRemainingSeconds: z.number().int().nonnegative().nullable().optional(),
   createdAt: z.string().datetime({ offset: true }),
 })
 
