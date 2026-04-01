@@ -11,7 +11,7 @@ public class CsvMoveRepository : IMoveRepository
 
     public CsvMoveRepository()
     {
-        var resourceDir = Path.Combine(AppContext.BaseDirectory, "resources");
+        var resourceDir = Path.Combine(AppContext.BaseDirectory, "resources", "move");
         var moveMasterPath = Path.Combine(resourceDir, "move_master.csv");
         var moveEffectsPath = Path.Combine(resourceDir, "move_effects.csv");
 

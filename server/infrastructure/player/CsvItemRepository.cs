@@ -10,7 +10,7 @@ public class CsvItemRepository : IItemRepository
 
     public CsvItemRepository()
     {
-        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "item_master.csv");
+        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "player", "item_master.csv");
         itemsById = LoadItems(csvPath);
         items = itemsById.Values.OrderBy(x => x.Id.Value).ToArray();
     }

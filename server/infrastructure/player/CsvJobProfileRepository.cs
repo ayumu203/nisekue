@@ -9,7 +9,7 @@ public class CsvJobProfileRepository : IJobProfileRepository
 
     public CsvJobProfileRepository()
     {
-        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "job_levelup_growths.csv");
+        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "player", "job_levelup_growths.csv");
         profileByJob = LoadProfiles(csvPath);
     }
 

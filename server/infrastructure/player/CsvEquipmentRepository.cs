@@ -10,7 +10,7 @@ public class CsvEquipmentRepository : IEquipmentRepository
 
     public CsvEquipmentRepository()
     {
-        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "equipment_master.csv");
+        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "player", "equipment_master.csv");
         equipmentById = LoadEquipments(csvPath);
         equipments = equipmentById.Values.OrderBy(x => x.Id.Value).ToArray();
     }
