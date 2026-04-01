@@ -196,8 +196,12 @@ export default function Status({
   const characterImageSrc =
     player?.imagePath && player.imagePath !== failedImagePath ? resolveCharacterAssetPath(player.imagePath) : null
   const characterBackgroundSrc = resolveStatusAssetPath('back-image.jpg')
+  const isCurrentJobMastered =
+    player?.job?.code != null && player.masteredJobs.some((job) => job.code === player.job.code)
   const currentJobLevelLabel =
-    typeof player?.jobLevel === 'number'
+    isCurrentJobMastered
+      ? `${player?.job.displayName ?? locale.unknownValue} マスター`
+      : typeof player?.jobLevel === 'number'
       ? `${player?.job.displayName ?? locale.unknownValue} Lv.${player.jobLevel}`
       : (player?.job.displayName ?? locale.unknownValue)
 
