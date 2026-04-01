@@ -16,6 +16,7 @@ import Items from '@/pages/Items'
 import TreasureMap from '@/pages/TreasureMap'
 import Threads from '@/pages/Threads'
 import ThreadDetail from '@/pages/ThreadDetail'
+import Ranking from '@/pages/Ranking'
 import { useAuth } from '@/contexts/useAuth'
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
       <Route path="/treasure-map" element={user ? <TreasureMap /> : <Navigate to="/auth" replace />} />
       <Route path="/threads" element={user ? <Threads /> : <Navigate to="/auth" replace />} />
       <Route path="/threads/:threadId" element={user ? <ThreadDetail /> : <Navigate to="/auth" replace />} />
+      <Route path="/ranking" element={user ? <Ranking /> : <Navigate to="/auth" replace />} />
       <Route path="/player-setting" element={user ? <PlayerSetting /> : <Navigate to="/auth" replace />} />
       <Route path="/player-images" element={user ? <PlayerImageList /> : <Navigate to="/auth" replace />} />
       <Route path="/move-setting" element={user ? <MoveSetting /> : <Navigate to="/auth" replace />} />

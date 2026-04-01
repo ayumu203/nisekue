@@ -256,6 +256,25 @@ erDiagram
         timestamptz claimed_at "NOT NULL"
     }
 
+    RANKING_SNAPSHOTS {
+        uuid id PK "internal.ranking_snapshots.id"
+        timestamptz snapshot_at "NOT NULL, schedule aligned timestamp"
+        int interval_hours "NOT NULL, DEFAULT 6"
+        timestamptz created_at "NOT NULL"
+    }
+
+    RANKING_ENTRIES {
+        uuid id PK "internal.ranking_entries.id"
+        uuid snapshot_id FK "internal.ranking_snapshots.id"
+        varchar(80) ranking_type "NOT NULL"
+        varchar(20) period_kind "NOT NULL (Total/Weekly/Daily)"
+        varchar(20) combat_index_rank "NULL, SSS- G for rank scoped rankings"
+        uuid player_id FK "internal.players.id"
+        int rank_position "NOT NULL, 1-based"
+        bigint score "NOT NULL"
+        timestamptz created_at "NOT NULL"
+    }
+
     PLAYERS ||--|| CHAT_ROOMS : owns
     CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
     PLAYERS ||--o{ THREADS : authors
@@ -282,3 +301,5 @@ erDiagram
     PLAYERS ||--o{ TREASURE_MAP_EXPEDITIONS : begins
     PLAYERS ||--o{ TREASURE_MAP_CLAIM_HISTORIES : claims
     TREASURE_MAP_EXPEDITIONS ||--o{ TREASURE_MAP_CLAIM_HISTORIES : claimed_by
+    RANKING_SNAPSHOTS ||--o{ RANKING_ENTRIES : has
+    PLAYERS ||--o{ RANKING_ENTRIES : ranked_in

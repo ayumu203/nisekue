@@ -102,6 +102,32 @@ curl -X POST "https://www.arm203.org/internal/market/listings/cleanup-expired" \
   -H "Accept: application/json"
 ```
 
+### ランキング再集計の定期実行
+
+- ランキングは GitHub Actions の定期実行で 6 時間ごとに再集計する.
+- ランキング機能の有効/無効は `Ranking:Enabled` で切り替える.
+  - 既定値: `appsettings.json` で `true`
+  - ローカル開発時の既定値: `appsettings.Development.json` で `false`
+- `Ranking:Enabled=false` の場合:
+  - `/rankings` は空データを返す.
+  - `/internal/rankings/rebuild` は `404 NotFound` を返す.
+- ローカルでランキング集計を有効化したい場合は `server/appsettings.Development.json` の `Ranking:Enabled` を `true` に変更する.
+- ワークフローは環境別に以下を利用する.
+  - 開発: `.github/workflows/ranking-rebuild-dev.yml`
+  - 本番: `.github/workflows/ranking-rebuild-prod.yml`
+- Actions からはバックエンドの内部メンテナンス API を呼び出す.
+  - `POST /internal/rankings/rebuild`
+- GitHub Environments (`dev`, `prod`) の Secrets に以下を設定する.
+  - `MARKET_CLEANUP_TOKEN`: 内部メンテナンス API 呼び出し用トークン
+- API のベース URL は既存の `VITE_API_BASE_URL` (`vars` または `secrets`) を利用する.
+
+```bash
+# 開発公開環境で手動実行する例
+curl -X POST "https://www.arm203.org/internal/rankings/rebuild" \
+  -H "X-Maintenance-Token: <MARKET_CLEANUP_TOKEN>" \
+  -H "Accept: application/json"
+```
+
 ### 開発用ゲームデータ一括削除
 
 - 開発環境では `POST /internal/development/cleanup-game-data` でプレイヤー・チャット・アイテム・クエスト進行データを一括削除できる.

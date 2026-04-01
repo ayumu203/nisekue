@@ -1,0 +1,89 @@
+import { SvgIcon, type SvgIconProps } from '@mui/material'
+
+export function TrainingIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M11 21h-1l1-7H7.5a.5.5 0 0 1-.39-.81L13 3h1l-1 7h3.5c.4 0 .64.45.39.76z" />
+    </SvgIcon>
+  )
+}
+
+export function QuestIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M4 5h16v3H4zm2 5h12l-1 9H7zM10 2h4v2h-4z" />
+    </SvgIcon>
+  )
+}
+
+export function MoveSettingIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M4 7h16v2H4zm0 4h10v2H4zm0 4h16v2H4z" />
+    </SvgIcon>
+  )
+}
+
+export function ItemsIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M5 4h14a1 1 0 0 1 1 1v4H4V5a1 1 0 0 1 1-1m-1 7h7v9H5a1 1 0 0 1-1-1zm9 0h7v8a1 1 0 0 1-1 1h-6zm1-5h4v1h-4z" />
+    </SvgIcon>
+  )
+}
+
+export function TreasureMapIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="m4 5 5-2 6 2 5-2v14l-5 2-6-2-5 2zm6 2v10l4 1.33V8.33zm-4 .27v10.19l2-.8V6.47zm12-.8-2 .8v10.2l2-.8z" />
+    </SvgIcon>
+  )
+}
+
+export function JobChangeIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M7 4h7v2H7zM7 8h10v2H7zm0 4h7v2H7zm8.5 1 4.5 4.5-4.5 4.5-1.41-1.41L16.17 18H11v-2h5.17l-2.08-2.09z" />
+    </SvgIcon>
+  )
+}
+
+export function RebirthIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M12 4a8 8 0 0 1 7.75 6h-2.17A6 6 0 1 0 17 15h-2.5l3.5 4 3.5-4H19a8 8 0 1 1-7-11" />
+    </SvgIcon>
+  )
+}
+
+export function SpecialThanksIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="m12 17.27 6.18 3.73-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+    </SvgIcon>
+  )
+}
+
+export function VisitPlayersIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3m6 1a2.5 2.5 0 1 0-2.5-2.5A2.5 2.5 0 0 0 15 12m0 1.5c-1.84 0-5.5.92-5.5 2.75V18h11v-1.75C20.5 14.42 16.84 13.5 15 13.5M9 12c-2.33 0-7 1.17-7 3.5V18h5.5v-1.75c0-.83.31-1.58.89-2.21A11 11 0 0 1 9 12" />
+    </SvgIcon>
+  )
+}
+
+export function ThreadsIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M4 5h16v10H8l-4 4zm2 2v7.17L7.17 13H18V7z" />
+    </SvgIcon>
+  )
+}
+
+export function RankingIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M4 20h16v2H4zm1-2V8h3v10zm5 0V4h3v14zm5 0v-6h3v6z" />
+    </SvgIcon>
+  )
+}

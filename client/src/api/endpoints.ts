@@ -71,6 +71,7 @@ import {
   startTreasureMapExpeditionRequestSchema,
   treasureMapExpeditionSchema,
 } from '@/schema/treasureMap'
+import { getRankingsResponseSchema } from '@/schema/ranking'
 
 export type {
   GetPlayerResponse,
@@ -156,6 +157,7 @@ export type {
   TreasureMapExpedition,
   TreasureMapSummary,
 } from '@/schema/treasureMap'
+export type { GetRankingsResponse, RankingRow } from '@/schema/ranking'
 
 export const endpoints = {
   player: {
@@ -447,6 +449,13 @@ export const endpoints = {
       path: (expeditionId: string) => `/treasure-map-expeditions/${expeditionId}/claim`,
       method: 'POST',
       responseSchema: claimTreasureMapRewardResponseSchema,
+    },
+  },
+  ranking: {
+    get: {
+      path: '/rankings',
+      method: 'GET',
+      responseSchema: getRankingsResponseSchema,
     },
   },
 } as const

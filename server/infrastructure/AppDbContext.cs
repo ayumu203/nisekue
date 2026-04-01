@@ -8,6 +8,7 @@ using server.infrastructure.chat;
 using server.infrastructure.player;
 using server.infrastructure.quest.room;
 using server.infrastructure.quest.run;
+using server.infrastructure.ranking;
 using server.infrastructure.treasuremap;
 
 namespace server.infrastructure;
@@ -38,6 +39,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<QuestRewardSummaryEntity> QuestRewardSummaries => Set<QuestRewardSummaryEntity>();
     public DbSet<TreasureMapExpeditionEntity> TreasureMapExpeditions => Set<TreasureMapExpeditionEntity>();
     public DbSet<TreasureMapClaimHistoryEntity> TreasureMapClaimHistories => Set<TreasureMapClaimHistoryEntity>();
+    public DbSet<RankingSnapshotEntity> RankingSnapshots => Set<RankingSnapshotEntity>();
+    public DbSet<RankingEntryEntity> RankingEntries => Set<RankingEntryEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -519,5 +522,38 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         treasureMapClaimHistory.Property(x => x.ClaimedAt).HasColumnName("claimed_at").IsRequired();
         treasureMapClaimHistory.HasIndex(x => x.PlayerId);
         treasureMapClaimHistory.HasIndex(x => x.ExpeditionId).IsUnique();
+
+        var rankingSnapshot = modelBuilder.Entity<RankingSnapshotEntity>();
+        rankingSnapshot.ToTable("ranking_snapshots", "internal");
+        rankingSnapshot.HasKey(x => x.Id);
+        rankingSnapshot.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        rankingSnapshot.Property(x => x.SnapshotAt).HasColumnName("snapshot_at").IsRequired();
+        rankingSnapshot.Property(x => x.IntervalHours).HasColumnName("interval_hours").HasDefaultValue(6).IsRequired();
+        rankingSnapshot.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
+        rankingSnapshot.HasIndex(x => x.SnapshotAt);
+
+        var rankingEntry = modelBuilder.Entity<RankingEntryEntity>();
+        rankingEntry.ToTable("ranking_entries", "internal");
+        rankingEntry.HasKey(x => x.Id);
+        rankingEntry.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        rankingEntry.Property(x => x.SnapshotId).HasColumnName("snapshot_id").HasColumnType("uuid").IsRequired();
+        rankingEntry.Property(x => x.RankingType).HasColumnName("ranking_type").HasMaxLength(80).IsRequired();
+        rankingEntry.Property(x => x.PeriodKind).HasColumnName("period_kind").HasMaxLength(20).IsRequired();
+        rankingEntry.Property(x => x.CombatIndexRank).HasColumnName("combat_index_rank").HasMaxLength(20);
+        rankingEntry.Property(x => x.PlayerId).HasColumnName("player_id").HasColumnType("uuid").IsRequired();
+        rankingEntry.Property(x => x.RankPosition).HasColumnName("rank_position").IsRequired();
+        rankingEntry.Property(x => x.Score).HasColumnName("score").IsRequired();
+        rankingEntry.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
+        rankingEntry.HasIndex(x => new { x.SnapshotId, x.RankingType, x.PeriodKind, x.CombatIndexRank, x.RankPosition })
+            .IsUnique();
+        rankingEntry.HasIndex(x => x.PlayerId);
+        rankingEntry.HasOne<RankingSnapshotEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.SnapshotId)
+            .OnDelete(DeleteBehavior.Cascade);
+        rankingEntry.HasOne<PlayerEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.PlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
