@@ -1,5 +1,6 @@
 {
   "title": "プレイヤー設定",
+  "titleRuby": "PLAYER SETTINGS",
   "loadingAuth": "認証情報を確認中...",
   "loadingPlayer": "プレイヤー情報を読み込み中...",
   "backToHome": "ホームへ戻る",
