@@ -330,7 +330,7 @@ export default function Quest() {
 
     setMinRequiredLevelInput(currentRoom.restrictions.minRequiredLevel?.toString() ?? '')
     setAllowedPlayerIds(currentRoom.restrictions.allowedPlayers.map((player) => player.playerId))
-  }, [currentRoomRestrictionSignature, isRestrictionsDirty])
+  }, [currentRoom, currentRoomRestrictionSignature, isRestrictionsDirty])
 
   useEffect(() => {
     setIsRestrictionsDirty(false)
@@ -728,6 +728,7 @@ export default function Quest() {
     isEnemyTargetingAction,
     isAllyTargetingAction,
     isSelfTargetingAction,
+    selfPartyMember,
     selfPartyMember?.position.row,
     selfPartyMember?.position.column,
   ])

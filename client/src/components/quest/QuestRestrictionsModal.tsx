@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Alert,
   Avatar,
@@ -55,14 +55,10 @@ export default function QuestRestrictionsModal({
     currentPlayerLevel != null &&
     parsedMinRequiredLevel > currentPlayerLevel
 
-  useEffect(() => {
-    if (!open) {
-      return
-    }
-
+  const handleOpen = () => {
     setDraftMinRequiredLevelInput(minRequiredLevelInput)
     setDraftAllowedPlayerIds(allowedPlayerIds)
-  }, [open, minRequiredLevelInput, allowedPlayerIds])
+  }
 
   const handleToggleAllowedPlayer = (playerId: string) => {
     setDraftAllowedPlayerIds((current) =>
@@ -80,7 +76,7 @@ export default function QuestRestrictionsModal({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" TransitionProps={{ onEnter: handleOpen }}>
       <DialogTitle>{title ?? locale.restrictionsModalTitle}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={1.5}>

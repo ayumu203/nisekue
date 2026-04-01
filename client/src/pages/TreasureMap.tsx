@@ -300,7 +300,7 @@ export default function TreasureMap() {
       widthXs: candidate.widthXs,
       widthSm: candidate.widthSm,
     }))
-  }, [inProgress, currentExpedition?.expeditionId])
+  }, [inProgress])
 
   const rewardResult = currentExpedition?.reward
   const rewardItemCount = rewardResult?.itemIds.length ?? 0
