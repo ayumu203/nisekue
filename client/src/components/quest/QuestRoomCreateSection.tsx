@@ -1,11 +1,13 @@
-import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, CircularProgress, Pagination, Paper, Stack, Typography } from '@mui/material'
 import { innerSurfaceSx, menuButtonSx, softGreenButtonSx } from '@/constants/styles'
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PlayerSummary } from '@/schema/player'
 import locale from '../../../locale/quest/QuestRoom.json'
 import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/quest'
 import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestStageModeCard from './QuestStageModeCard'
+
+const STAGE_PAGE_SIZE = 3
 
 type QuestRoomCreateSectionProps = {
   activeStages: GetQuestStagesResponse
@@ -45,10 +47,42 @@ export default function QuestRoomCreateSection({
   onCreateRoom,
 }: QuestRoomCreateSectionProps) {
   const [isRestrictionsModalOpen, setIsRestrictionsModalOpen] = useState(false)
+  const [stagePage, setStagePage] = useState(1)
+  const previousSelectedStageIdRef = useRef<number | ''>(selectedStageId)
   const handleStageModeSelect = (stageId: number, nextMode: CreateQuestRoomRequest['mode']) => {
     onStageChange(stageId)
     onModeChange(nextMode)
   }
+
+  const stagePageCount = Math.max(1, Math.ceil(activeStages.length / STAGE_PAGE_SIZE))
+  const pagedStages = useMemo(() => {
+    const start = (stagePage - 1) * STAGE_PAGE_SIZE
+    return activeStages.slice(start, start + STAGE_PAGE_SIZE)
+  }, [activeStages, stagePage])
+
+  useEffect(() => {
+    if (stagePage > stagePageCount) {
+      setStagePage(1)
+    }
+  }, [stagePage, stagePageCount])
+
+  useEffect(() => {
+    if (selectedStageId === '' || previousSelectedStageIdRef.current === selectedStageId) {
+      return
+    }
+
+    previousSelectedStageIdRef.current = selectedStageId
+
+    const selectedIndex = activeStages.findIndex((stage) => stage.stageId === selectedStageId)
+    if (selectedIndex < 0) {
+      return
+    }
+
+    const pageForSelected = Math.floor(selectedIndex / STAGE_PAGE_SIZE) + 1
+    if (pageForSelected !== stagePage) {
+      setStagePage(pageForSelected)
+    }
+  }, [activeStages, selectedStageId, stagePage])
 
   return (
     <Paper
@@ -78,7 +112,7 @@ export default function QuestRoomCreateSection({
                 gap: 2,
               }}
             >
-              {activeStages.map((stage) => (
+              {pagedStages.map((stage) => (
                 <QuestStageModeCard
                   key={stage.stageId}
                   stage={stage}
@@ -88,6 +122,17 @@ export default function QuestRoomCreateSection({
                 />
               ))}
             </Box>
+
+            {stagePageCount > 1 ? (
+              <Stack alignItems="center">
+                <Pagination
+                  page={stagePage}
+                  count={stagePageCount}
+                  onChange={(_, nextPage) => setStagePage(nextPage)}
+                  color="primary"
+                />
+              </Stack>
+            ) : null}
 
             <Stack spacing={1.5}>
               <Stack spacing={1}>
