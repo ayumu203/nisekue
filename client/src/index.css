@@ -8,6 +8,7 @@
 
 :root {
   font-family: 'DotGothic16', sans-serif;
+  --app-bg-color: #EAF3F8;
 }
 
 html,
@@ -18,6 +19,7 @@ body,
 
 body {
   margin: 0;
+  background-color: var(--app-bg-color);
 }
 
 .MuiContainer-root {

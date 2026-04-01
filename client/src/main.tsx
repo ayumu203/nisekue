@@ -35,6 +35,10 @@ const theme = createTheme({
       dark: '#ea8db0',
       contrastText: '#ffffff',
     },
+    background: {
+      default: 'var(--app-bg-color)',
+      paper: '#fff7e8',
+    },
     text: {
       primary: '#4f4638',
       secondary: '#7a6f5c',
@@ -72,6 +76,13 @@ const theme = createTheme({
         },
         text: {
           border: 'none',
+        },
+      },
+    },
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          backgroundColor: 'var(--app-bg-color)',
         },
       },
     },
