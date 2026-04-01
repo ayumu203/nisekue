@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using server.domain.player;
 using server.domain.treasuremap;
 using server.domain.treasuremap.enums;
+using server.infrastructure;
 
 namespace server.endpoints;
 
@@ -50,7 +52,7 @@ internal static class TreasureMapEndpoints
             durationSeconds = map.DurationSeconds,
             isMarketable = map.IsMarketable,
             isHiddenFromInventory = map.IsHiddenFromInventory,
-            ownedQuantity = quantityByItemId.GetValueOrDefault(map.Id.Value, 0),
+            ownedQuantity = quantityByItemId.GetValueOrDefault(ResolveTreasureMapItemId(map), 0),
             rewardTendency = BuildRewardTendency(map.RewardPoolId, rewardPoolById),
             rewardCandidates = BuildRewardCandidates(map.RewardPoolId, rewardPoolById, itemNameById, equipmentNameById)
         }));
@@ -63,7 +65,8 @@ internal static class TreasureMapEndpoints
         ITreasureMapRewardPoolRepository rewardPoolRepository,
         ITreasureMapExpeditionRepository expeditionRepository,
         IItemRepository itemRepository,
-        IEquipmentRepository equipmentRepository)
+        IEquipmentRepository equipmentRepository,
+        IDbContextFactory<AppDbContext> dbContextFactory)
     {
         var playerId = EndpointHelpers.TryGetPlayerId(user);
         if (playerId is null)
@@ -89,7 +92,8 @@ internal static class TreasureMapEndpoints
             rewardPoolRepository,
             expeditionRepository,
             itemRepository,
-            equipmentRepository);
+            equipmentRepository,
+            dbContextFactory);
 
         return Results.Ok(ToExpeditionResponse(expedition));
     }
@@ -134,8 +138,9 @@ internal static class TreasureMapEndpoints
             return Results.NotFound(new { message = "宝の地図が見つかりません。" });
         }
 
+        var mapItemId = ResolveTreasureMapItemId(map);
         var stacks = await playerItemStackRepository.GetByPlayerAsync(playerId.Value);
-        var stack = stacks.FirstOrDefault(x => x.ItemId == new ItemId(request.MapId));
+        var stack = stacks.FirstOrDefault(x => x.ItemId == new ItemId(mapItemId));
         if (stack is null || stack.Quantity < 1)
         {
             return Results.BadRequest(new { message = "対象の宝の地図を所持していません。" });
@@ -172,15 +177,11 @@ internal static class TreasureMapEndpoints
     private static async Task<IResult> ClaimReward(
         ClaimsPrincipal user,
         Guid expeditionId,
-        IPlayerRepository playerRepository,
         ITreasureMapRepository treasureMapRepository,
         ITreasureMapRewardPoolRepository rewardPoolRepository,
-        ITreasureMapExpeditionRepository expeditionRepository,
-        ITreasureMapClaimHistoryRepository claimHistoryRepository,
-        IPlayerItemStackRepository playerItemStackRepository,
-        IPlayerEquipmentRepository playerEquipmentRepository,
         IItemRepository itemRepository,
-        IEquipmentRepository equipmentRepository)
+        IEquipmentRepository equipmentRepository,
+        IDbContextFactory<AppDbContext> dbContextFactory)
     {
         var playerId = EndpointHelpers.TryGetPlayerId(user);
         if (playerId is null)
@@ -188,32 +189,45 @@ internal static class TreasureMapEndpoints
             return Results.Unauthorized();
         }
 
-        var player = await playerRepository.GetPlayerAsync(playerId.Value);
-        if (player is null)
-        {
-            return Results.NotFound(new { message = "プレイヤーが見つかりません。" });
-        }
+        await using var lockDbContext = await dbContextFactory.CreateDbContextAsync();
+        await using var lockTransaction = await lockDbContext.Database.BeginTransactionAsync();
+        await lockDbContext.Database.ExecuteSqlRawAsync(
+            "SELECT pg_advisory_xact_lock({0})",
+            BuildExpeditionLockKey(expeditionId));
 
-        var expedition = await expeditionRepository.GetAsync(new TreasureMapExpeditionId(expeditionId));
+        var expedition = await lockDbContext.TreasureMapExpeditions
+            .FromSqlInterpolated($"SELECT * FROM internal.treasure_map_expeditions WHERE id = {expeditionId} FOR UPDATE")
+            .SingleOrDefaultAsync();
         if (expedition is null)
         {
             return Results.NotFound(new { message = "遠征が見つかりません。" });
         }
 
-        if (expedition.PlayerId != playerId.Value)
+        if (expedition.PlayerId != playerId.Value.Value)
         {
             return Results.Forbid();
         }
 
-        expedition = await EnsureExpeditionCompletedAsync(
-            expedition,
-            treasureMapRepository,
-            rewardPoolRepository,
-            expeditionRepository,
-            itemRepository,
-            equipmentRepository);
+        if ((TreasureMapExpeditionStatus)expedition.Status == TreasureMapExpeditionStatus.InProgress &&
+            expedition.EndsAt <= DateTimeOffset.UtcNow)
+        {
+            var map = await treasureMapRepository.GetAsync(new TreasureMapId(expedition.MapId))
+                ?? throw new InvalidOperationException("宝の地図マスタが見つかりません。");
+            var rewardPool = await rewardPoolRepository.GetAsync(map.RewardPoolId)
+                ?? throw new InvalidOperationException("報酬プールが見つかりません。");
 
-        if (expedition.Status != TreasureMapExpeditionStatus.Completed)
+            var validItemIds = (await itemRepository.GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
+            var validEquipmentIds = (await equipmentRepository.GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
+            var random = new Random(BuildRewardSeed(expedition.Id, expedition.PlayerId, expedition.MapId));
+            var rewardResult = BuildRewardResult(rewardPool, validItemIds, validEquipmentIds, random);
+
+            expedition.Status = (int)TreasureMapExpeditionStatus.Completed;
+            expedition.CompletedAt = DateTimeOffset.UtcNow;
+            expedition.RewardSummaryJson = SerializeRewardResult(rewardResult);
+            expedition.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        if ((TreasureMapExpeditionStatus)expedition.Status != TreasureMapExpeditionStatus.Completed)
         {
             return Results.BadRequest(new { message = "遠征が完了していません。" });
         }
@@ -223,15 +237,23 @@ internal static class TreasureMapEndpoints
             return Results.Conflict(new { message = "報酬は既に受け取り済みです。" });
         }
 
-        if (await claimHistoryRepository.ExistsByExpeditionAsync(expedition.Id))
+        if (await lockDbContext.TreasureMapClaimHistories.AnyAsync(x => x.ExpeditionId == expedition.Id))
         {
             return Results.Conflict(new { message = "この遠征の報酬は既に受け取り済みです。" });
         }
 
-        var reward = expedition.RewardResult;
+        var reward = DeserializeRewardResult(expedition.RewardSummaryJson);
         if (reward is null)
         {
             return Results.Conflict(new { message = "報酬情報が存在しません。" });
+        }
+
+        var player = await lockDbContext.Players
+            .FromSqlInterpolated($"SELECT * FROM internal.players WHERE id = {playerId.Value.Value} FOR UPDATE")
+            .SingleOrDefaultAsync();
+        if (player is null)
+        {
+            return Results.NotFound(new { message = "プレイヤーが見つかりません。" });
         }
 
         var allItems = await itemRepository.GetAllAsync();
@@ -243,21 +265,22 @@ internal static class TreasureMapEndpoints
 
         if (reward.ExperiencePoints > 0)
         {
-            player.GainExp(reward.ExperiencePoints);
+            player.Exp += reward.ExperiencePoints;
+            player.JobExp += reward.ExperiencePoints;
         }
 
         if (reward.Gold > 0)
         {
-            player.GainGold(reward.Gold);
+            player.Gold += reward.Gold;
         }
 
-        await playerRepository.SaveAsync(player);
+        var stacks = await lockDbContext.PlayerItemStacks
+            .Where(x => x.PlayerId == player.Id)
+            .ToListAsync();
 
-        var itemsToSave = new List<PlayerItemStack>();
         var itemQuantitySummary = new Dictionary<int, int>();
         if (reward.ItemIds.Count > 0)
         {
-            var stacks = (await playerItemStackRepository.GetByPlayerAsync(player.Id)).ToList();
             foreach (var group in reward.ItemIds.GroupBy(x => x))
             {
                 if (!itemById.TryGetValue(group.Key, out var itemMaster))
@@ -268,36 +291,32 @@ internal static class TreasureMapEndpoints
                 var quantity = group.Count();
                 itemQuantitySummary[group.Key] = quantity;
 
-                var existing = stacks.FirstOrDefault(x => x.ItemId.Value == group.Key);
+                var existing = stacks.FirstOrDefault(x => x.ItemId == group.Key);
                 if (existing is null)
                 {
                     var initialQuantity = Math.Min(quantity, itemMaster.MaxStack);
-                    var created = new PlayerItemStack(
-                        PlayerItemStackId.New(),
-                        player.Id,
-                        new ItemId(group.Key),
-                        initialQuantity,
-                        now);
+                    var created = new server.infrastructure.player.PlayerItemStackEntity
+                    {
+                        Id = Guid.NewGuid(),
+                        PlayerId = player.Id,
+                        ItemId = group.Key,
+                        Quantity = initialQuantity,
+                        UpdatedAt = now
+                    };
                     stacks.Add(created);
-                    itemsToSave.Add(created);
+                    lockDbContext.PlayerItemStacks.Add(created);
                 }
                 else
                 {
-                    existing.AddQuantity(quantity, itemMaster.MaxStack, now);
-                    itemsToSave.Add(existing);
+                    existing.Quantity = Math.Min(existing.Quantity + quantity, itemMaster.MaxStack);
+                    existing.UpdatedAt = now;
                 }
-            }
-
-            if (itemsToSave.Count > 0)
-            {
-                await playerItemStackRepository.SaveAsync(itemsToSave);
             }
         }
 
         var equipmentSummary = new List<int>();
         if (reward.EquipmentIds.Count > 0)
         {
-            var equipmentsToSave = new List<PlayerEquipment>();
             foreach (var equipmentId in reward.EquipmentIds)
             {
                 if (!equipmentById.TryGetValue(equipmentId, out var equipmentMaster))
@@ -306,28 +325,26 @@ internal static class TreasureMapEndpoints
                 }
 
                 equipmentSummary.Add(equipmentId);
-                equipmentsToSave.Add(new PlayerEquipment(
-                    PlayerEquipmentId.New(),
-                    player.Id,
-                    equipmentMaster.Id,
-                    equipmentMaster.Type,
-                    EquipmentStatus.Inventory,
-                    equipmentMaster.MaxDurability,
-                    0,
-                    now,
-                    now));
-            }
-
-            if (equipmentsToSave.Count > 0)
-            {
-                await playerEquipmentRepository.SaveAsync(equipmentsToSave);
+                lockDbContext.PlayerEquipments.Add(new server.infrastructure.player.PlayerEquipmentEntity
+                {
+                    Id = Guid.NewGuid(),
+                    PlayerId = player.Id,
+                    EquipmentId = equipmentMaster.Id.Value,
+                    EquipmentType = (int)equipmentMaster.Type,
+                    EquipmentStatus = (int)EquipmentStatus.Inventory,
+                    Durability = equipmentMaster.MaxDurability,
+                    Mastery = 0,
+                    AcquiredAt = now,
+                    UpdatedAt = now
+                });
             }
         }
 
-        expedition.ClaimReward();
-        await expeditionRepository.SaveAsync(expedition);
+        expedition.RewardClaimed = true;
+        expedition.Status = (int)TreasureMapExpeditionStatus.Claimed;
+        expedition.UpdatedAt = now;
 
-        var rewardSummaryJson = JsonSerializer.SerializeToDocument(new
+        var rewardSummaryJson = JsonSerializer.Serialize(new
         {
             itemQuantities = itemQuantitySummary,
             equipmentIds = equipmentSummary,
@@ -335,17 +352,39 @@ internal static class TreasureMapEndpoints
             gold = reward.Gold
         });
 
-        await claimHistoryRepository.AddAsync(new TreasureMapClaimHistory(
-            Guid.NewGuid(),
-            player.Id,
-            expedition.Id,
-            rewardSummaryJson,
-            now));
+        lockDbContext.TreasureMapClaimHistories.Add(new server.infrastructure.treasuremap.TreasureMapClaimHistoryEntity
+        {
+            Id = Guid.NewGuid(),
+            PlayerId = player.Id,
+            ExpeditionId = expedition.Id,
+            RewardSummaryJson = rewardSummaryJson,
+            ClaimedAt = now
+        });
+
+        await lockDbContext.SaveChangesAsync();
+
+        await lockTransaction.CommitAsync();
 
         return Results.Ok(new
         {
             message = "宝の地図報酬を受け取りました。",
-            expedition = ToExpeditionResponse(expedition)
+            expedition = new
+            {
+                expeditionId = expedition.Id,
+                mapId = expedition.MapId,
+                startedAt = expedition.StartedAt,
+                endsAt = expedition.EndsAt,
+                status = TreasureMapExpeditionStatus.Claimed.ToString(),
+                rewardClaimed = expedition.RewardClaimed,
+                completedAt = expedition.CompletedAt,
+                reward = new
+                {
+                    itemIds = reward.ItemIds,
+                    equipmentIds = reward.EquipmentIds,
+                    experiencePoints = reward.ExperiencePoints,
+                    gold = reward.Gold
+                }
+            }
         });
     }
 
@@ -355,11 +394,37 @@ internal static class TreasureMapEndpoints
         ITreasureMapRewardPoolRepository rewardPoolRepository,
         ITreasureMapExpeditionRepository expeditionRepository,
         IItemRepository itemRepository,
-        IEquipmentRepository equipmentRepository)
+        IEquipmentRepository equipmentRepository,
+        IDbContextFactory<AppDbContext> dbContextFactory,
+        bool alreadyLocked = false)
     {
         if (expedition.Status != TreasureMapExpeditionStatus.InProgress || expedition.EndsAt > DateTimeOffset.UtcNow)
         {
             return expedition;
+        }
+
+        if (!alreadyLocked)
+        {
+            await using var lockDbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var lockTransaction = await lockDbContext.Database.BeginTransactionAsync();
+            await lockDbContext.Database.ExecuteSqlRawAsync(
+                "SELECT pg_advisory_xact_lock({0})",
+                BuildExpeditionLockKey(expedition.Id.Value));
+
+            var lockedExpedition = await expeditionRepository.GetAsync(expedition.Id)
+                ?? throw new InvalidOperationException("遠征データが見つかりません。");
+            var completed = await EnsureExpeditionCompletedAsync(
+                lockedExpedition,
+                treasureMapRepository,
+                rewardPoolRepository,
+                expeditionRepository,
+                itemRepository,
+                equipmentRepository,
+                dbContextFactory,
+                alreadyLocked: true);
+
+            await lockTransaction.CommitAsync();
+            return completed;
         }
 
         var map = await treasureMapRepository.GetAsync(expedition.MapId)
@@ -370,7 +435,8 @@ internal static class TreasureMapEndpoints
         var itemIds = (await itemRepository.GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
         var equipmentIds = (await equipmentRepository.GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
 
-        var rewardResult = BuildRewardResult(rewardPool, itemIds, equipmentIds);
+        var random = new Random(BuildRewardSeed(expedition.Id.Value, expedition.PlayerId.Value, expedition.MapId.Value));
+        var rewardResult = BuildRewardResult(rewardPool, itemIds, equipmentIds, random);
 
         expedition.MarkCompleted(rewardResult, DateTimeOffset.UtcNow);
         await expeditionRepository.SaveAsync(expedition);
@@ -396,24 +462,28 @@ internal static class TreasureMapEndpoints
     private static TreasureMapRewardResult BuildRewardResult(
         TreasureMapRewardPool rewardPool,
         IReadOnlySet<int> validItemIds,
-        IReadOnlySet<int> validEquipmentIds)
+        IReadOnlySet<int> validEquipmentIds,
+        Random random)
     {
         // Item/Equipment is probabilistic, Gold/Experience are guaranteed.
         var lootEntry = ResolveRewardEntryByTypes(
             rewardPool,
             validItemIds,
             validEquipmentIds,
-            [TreasureMapRewardType.Item, TreasureMapRewardType.Equipment]);
+            [TreasureMapRewardType.Item, TreasureMapRewardType.Equipment],
+            random);
         var goldEntry = ResolveRewardEntryByTypes(
             rewardPool,
             validItemIds,
             validEquipmentIds,
-            [TreasureMapRewardType.Gold]);
+            [TreasureMapRewardType.Gold],
+            random);
         var experienceEntry = ResolveRewardEntryByTypes(
             rewardPool,
             validItemIds,
             validEquipmentIds,
-            [TreasureMapRewardType.Experience]);
+            [TreasureMapRewardType.Experience],
+            random);
 
         var itemIds = Array.Empty<int>();
         var equipmentIds = Array.Empty<int>();
@@ -425,7 +495,7 @@ internal static class TreasureMapEndpoints
                 var itemId = lootEntry.ItemId ?? throw new InvalidOperationException("itemId が未設定です。");
                 var min = lootEntry.QuantityMin ?? 1;
                 var max = lootEntry.QuantityMax ?? min;
-                itemIds = Enumerable.Repeat(itemId, Random.Shared.Next(min, max + 1)).ToArray();
+                itemIds = Enumerable.Repeat(itemId, random.Next(min, max + 1)).ToArray();
             }
             else if (lootEntry.RewardType == TreasureMapRewardType.Equipment)
             {
@@ -445,7 +515,8 @@ internal static class TreasureMapEndpoints
         TreasureMapRewardPool rewardPool,
         IReadOnlySet<int> validItemIds,
         IReadOnlySet<int> validEquipmentIds,
-        IReadOnlyCollection<TreasureMapRewardType> targetTypes)
+        IReadOnlyCollection<TreasureMapRewardType> targetTypes,
+        Random random)
     {
         var candidates = rewardPool.Entries
             .Where(entry => targetTypes.Contains(entry.RewardType) && IsValidEntry(entry, validItemIds, validEquipmentIds))
@@ -462,7 +533,7 @@ internal static class TreasureMapEndpoints
             return candidates[0];
         }
 
-        var roll = Random.Shared.Next(0, totalWeight);
+        var roll = random.Next(0, totalWeight);
         var cumulative = 0;
         foreach (var entry in candidates)
         {
@@ -474,6 +545,58 @@ internal static class TreasureMapEndpoints
         }
 
         return candidates[^1];
+    }
+
+    private static string SerializeRewardResult(TreasureMapRewardResult reward)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            itemIds = reward.ItemIds,
+            equipmentIds = reward.EquipmentIds,
+            experiencePoints = reward.ExperiencePoints,
+            gold = reward.Gold
+        });
+    }
+
+    private static TreasureMapRewardResult? DeserializeRewardResult(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        var itemIds = root.TryGetProperty("itemIds", out var itemIdsElement)
+            ? itemIdsElement.EnumerateArray().Select(x => x.GetInt32()).ToArray()
+            : Array.Empty<int>();
+        var equipmentIds = root.TryGetProperty("equipmentIds", out var equipmentIdsElement)
+            ? equipmentIdsElement.EnumerateArray().Select(x => x.GetInt32()).ToArray()
+            : Array.Empty<int>();
+        var exp = root.TryGetProperty("experiencePoints", out var expElement) ? expElement.GetInt32() : 0;
+        var gold = root.TryGetProperty("gold", out var goldElement) ? goldElement.GetInt32() : 0;
+
+        return new TreasureMapRewardResult(itemIds, equipmentIds, exp, gold);
+    }
+
+    private static int ResolveTreasureMapItemId(TreasureMap map)
+    {
+        if (int.TryParse(map.Code, out var parsedCode))
+        {
+            return parsedCode;
+        }
+
+        return map.Id.Value;
+    }
+
+    private static long BuildExpeditionLockKey(Guid expeditionId)
+    {
+        return BitConverter.ToInt64(expeditionId.ToByteArray(), 0);
+    }
+
+    private static int BuildRewardSeed(Guid expeditionId, Guid playerId, int mapId)
+    {
+        return HashCode.Combine(expeditionId, playerId, mapId);
     }
 
     private static object ToExpeditionResponse(TreasureMapExpedition expedition)

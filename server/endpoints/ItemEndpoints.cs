@@ -9,6 +9,7 @@ using server.application.maintenance;
 using server.application.player;
 using server.domain.move;
 using server.domain.player;
+using server.domain.treasuremap;
 using server.infrastructure;
 
 namespace server.endpoints;
@@ -27,6 +28,7 @@ internal static class ItemEndpoints
             IEquipmentRepository equipmentRepository,
             IPlayerItemStackRepository playerItemStackRepository,
             IItemRepository itemRepository,
+            ITreasureMapRepository treasureMapRepository,
             IMarketListingRepository marketListingRepository) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
@@ -47,6 +49,7 @@ internal static class ItemEndpoints
             var itemStacks = await playerItemStackRepository.GetByPlayerAsync(player.Id);
             var items = await itemRepository.GetAllAsync();
             var itemById = items.ToDictionary(x => x.Id);
+            var treasureMapItemIds = await ResolveTreasureMapItemIdsAsync(treasureMapRepository);
             var activeListings = await marketListingRepository.GetBySellerAsync(player.Id, DateTimeOffset.UtcNow);
             var listedEquipmentIds = activeListings
                 .Where(x => x.PlayerEquipmentId is not null)
@@ -67,7 +70,7 @@ internal static class ItemEndpoints
                 .ToArray();
 
             var inventoryItems = itemStacks
-                .Select(stack => ToItemStackView(stack, itemById))
+                .Select(stack => ToItemStackView(stack, itemById, treasureMapItemIds))
                 .Where(x => x is not null)
                 .ToArray();
 
@@ -88,6 +91,7 @@ internal static class ItemEndpoints
             IPlayerRepository playerRepository,
             IPlayerItemStackRepository playerItemStackRepository,
             IItemRepository itemRepository,
+            ITreasureMapRepository treasureMapRepository,
             IJobProfileRepository jobProfileRepository,
             IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
             ItemStatBoostService itemStatBoostService) =>
@@ -116,7 +120,7 @@ internal static class ItemEndpoints
                 return Results.BadRequest(new { message = "アイテムマスタが見つかりません。" });
             }
 
-            if (IsTreasureMapItem(item.Id))
+            if (await IsTreasureMapItemAsync(item.Id, treasureMapRepository))
             {
                 return Results.BadRequest(new { message = "宝の地図は専用メニューから使用してください。" });
             }
@@ -801,7 +805,10 @@ internal static class ItemEndpoints
         };
     }
 
-    private static object? ToItemStackView(PlayerItemStack stack, IReadOnlyDictionary<ItemId, Item> itemById)
+    private static object? ToItemStackView(
+        PlayerItemStack stack,
+        IReadOnlyDictionary<ItemId, Item> itemById,
+        IReadOnlySet<int> treasureMapItemIds)
     {
         if (!itemById.TryGetValue(stack.ItemId, out var item))
         {
@@ -816,7 +823,7 @@ internal static class ItemEndpoints
             name = item.Name,
             flavorText = item.FlavorText,
             quantity = stack.Quantity,
-            canUseFromInventory = !IsTreasureMapItem(item.Id),
+            canUseFromInventory = !treasureMapItemIds.Contains(item.Id.Value),
             effectType = item.EffectType.ToString(),
             requiredLevel = item.RequiredLevel,
             changeJobTo = item.ChangeJobTo?.ToString(),
@@ -847,9 +854,30 @@ internal static class ItemEndpoints
         };
     }
 
-    private static bool IsTreasureMapItem(ItemId itemId)
+    private static async Task<bool> IsTreasureMapItemAsync(ItemId itemId, ITreasureMapRepository treasureMapRepository)
     {
-        return itemId.Value is >= 4001 and <= 4005;
+        var treasureMapItemIds = await ResolveTreasureMapItemIdsAsync(treasureMapRepository);
+        return treasureMapItemIds.Contains(itemId.Value);
+    }
+
+    private static async Task<HashSet<int>> ResolveTreasureMapItemIdsAsync(ITreasureMapRepository treasureMapRepository)
+    {
+        var maps = await treasureMapRepository.GetAllAsync();
+        var ids = new HashSet<int>();
+
+        foreach (var map in maps)
+        {
+            if (int.TryParse(map.Code, out var itemId))
+            {
+                ids.Add(itemId);
+            }
+            else
+            {
+                ids.Add(map.Id.Value);
+            }
+        }
+
+        return ids;
     }
 
     private static bool SecureEquals(string actual, string expected)
