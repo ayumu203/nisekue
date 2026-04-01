@@ -27,7 +27,7 @@ strength,C,70
 strength,B,95
 strength,A,125
 strength,S,160
-strength,SS,200
+strength,SS,300
 strength,SSS,2147483647
 defense,G,10
 defense,F,20
@@ -37,7 +37,7 @@ defense,C,70
 defense,B,95
 defense,A,125
 defense,S,160
-defense,SS,200
+defense,SS,300
 defense,SSS,2147483647
 intelligence,G,10
 intelligence,F,20
@@ -47,7 +47,7 @@ intelligence,C,70
 intelligence,B,95
 intelligence,A,125
 intelligence,S,160
-intelligence,SS,200
+intelligence,SS,300
 intelligence,SSS,2147483647
 luck,G,8
 luck,F,16
