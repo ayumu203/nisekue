@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Alert, Box, Collapse, IconButton, Paper, Stack, SvgIcon, Typography, type SvgIconProps } from '@mui/material'
+import { Alert, Box, Button, Collapse, IconButton, Paper, Stack, SvgIcon, Typography, type SvgIconProps } from '@mui/material'
 import { Link } from 'react-router-dom'
 import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx, topNavigationIconButtonSx } from '@/constants/styles'
 import type { GetPlayerResponse } from '@/schema/player'
@@ -65,6 +65,23 @@ function formatStatusValue(
   return `${effectiveValue} (${diff > 0 ? '+' : ''}${diff})`
 }
 
+function formatEquippedItemWithDurability(
+  equipment:
+    | {
+        name: string
+        durability: number
+        maxDurability: number
+      }
+    | undefined,
+  fallback: string,
+): string {
+  if (!equipment) {
+    return fallback
+  }
+
+  return `${equipment.name} (${equipment.durability}/${equipment.maxDurability})`
+}
+
 function SettingGearIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
@@ -90,6 +107,7 @@ export default function Status({
 }: StatusProps) {
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(true)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState<string | null>(null)
   const equippedWeapon = player?.equipments.find(
@@ -266,68 +284,118 @@ export default function Status({
           </Box>
 
           {compactTrainingMobile ? (
-            <Stack spacing={1.5}>
-              <StatusStatRow
-                label={locale.labels.exp}
-                value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
-                normalized={0}
-                hideGauge
-              />
-              <StatusStatRow
-                label={locale.labels.jobExp}
-                value={formatExpProgress(player?.jobExp, player?.jobLevel, locale.unknownValue)}
-                normalized={0}
-                hideGauge
-              />
-              <StatusStatRow
-                label={locale.labels.weapon}
-                value={equippedWeapon?.name ?? locale.notSet}
-                normalized={0}
-                hideGauge
-              />
-              <StatusStatRow
-                label={locale.labels.armor}
-                value={equippedArmor?.name ?? locale.notSet}
-                normalized={0}
-                hideGauge
-              />
+            <Stack spacing={1.25}>
+              <Button
+                variant="contained"
+                size="small"
+                fullWidth
+                onClick={() => setIsDetailOpen((current) => !current)}
+                sx={{
+                  alignSelf: 'stretch',
+                  borderRadius: 1,
+                  minHeight: 38,
+                  fontWeight: 700,
+                  backgroundColor: '#5f7f67',
+                  color: '#fff8ea',
+                  boxShadow: 'none',
+                  '&:hover': {
+                    backgroundColor: '#56755f',
+                    boxShadow: 'none',
+                  },
+                }}
+              >
+                {isDetailOpen ? locale.statusDetailsHide : locale.statusDetailsShow}
+              </Button>
+              <Collapse in={isDetailOpen}>
+                <Stack spacing={1.5}>
+                  <StatusStatRow
+                    label={locale.labels.exp}
+                    value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+                    normalized={0}
+                    hideGauge
+                  />
+                  <StatusStatRow
+                    label={locale.labels.jobExp}
+                    value={formatExpProgress(player?.jobExp, player?.jobLevel, locale.unknownValue)}
+                    normalized={0}
+                    hideGauge
+                  />
+                  <StatusStatRow
+                    label={locale.labels.weapon}
+                    value={formatEquippedItemWithDurability(equippedWeapon, locale.notSet)}
+                    normalized={0}
+                    hideGauge
+                  />
+                  <StatusStatRow
+                    label={locale.labels.armor}
+                    value={formatEquippedItemWithDurability(equippedArmor, locale.notSet)}
+                    normalized={0}
+                    hideGauge
+                  />
+                </Stack>
+              </Collapse>
             </Stack>
           ) : (
             <Box>
-              <Stack spacing={1.5}>
-                {attributeItems.map((item) => (
-                  <StatusStatRow
-                    key={item.key}
-                    label={item.label}
-                    value={item.value}
-                    normalized={item.normalized}
-                    hideGauge
-                  />
-                ))}
-                <StatusStatRow
-                  label={locale.labels.exp}
-                  value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
-                  normalized={0}
-                  hideGauge
-                />
-                <StatusStatRow
-                  label={locale.labels.jobExp}
-                  value={formatExpProgress(player?.jobExp, player?.jobLevel, locale.unknownValue)}
-                  normalized={0}
-                  hideGauge
-                />
-                <StatusStatRow
-                  label={locale.labels.weapon}
-                  value={equippedWeapon?.name ?? locale.notSet}
-                  normalized={0}
-                  hideGauge
-                />
-                <StatusStatRow
-                  label={locale.labels.armor}
-                  value={equippedArmor?.name ?? locale.notSet}
-                  normalized={0}
-                  hideGauge
-                />
+              <Stack spacing={1.25}>
+                <Button
+                  variant="contained"
+                  size="small"
+                  fullWidth
+                  onClick={() => setIsDetailOpen((current) => !current)}
+                  sx={{
+                    alignSelf: 'stretch',
+                    borderRadius: 1,
+                    minHeight: 38,
+                    fontWeight: 700,
+                    backgroundColor: '#5f7f67',
+                    color: '#fff8ea',
+                    boxShadow: 'none',
+                    '&:hover': {
+                      backgroundColor: '#56755f',
+                      boxShadow: 'none',
+                    },
+                  }}
+                >
+                  {isDetailOpen ? locale.statusDetailsHide : locale.statusDetailsShow}
+                </Button>
+                <Collapse in={isDetailOpen}>
+                  <Stack spacing={1.5}>
+                    {attributeItems.map((item) => (
+                      <StatusStatRow
+                        key={item.key}
+                        label={item.label}
+                        value={item.value}
+                        normalized={item.normalized}
+                        hideGauge
+                      />
+                    ))}
+                    <StatusStatRow
+                      label={locale.labels.exp}
+                      value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+                      normalized={0}
+                      hideGauge
+                    />
+                    <StatusStatRow
+                      label={locale.labels.jobExp}
+                      value={formatExpProgress(player?.jobExp, player?.jobLevel, locale.unknownValue)}
+                      normalized={0}
+                      hideGauge
+                    />
+                    <StatusStatRow
+                      label={locale.labels.weapon}
+                      value={formatEquippedItemWithDurability(equippedWeapon, locale.notSet)}
+                      normalized={0}
+                      hideGauge
+                    />
+                    <StatusStatRow
+                      label={locale.labels.armor}
+                      value={formatEquippedItemWithDurability(equippedArmor, locale.notSet)}
+                      normalized={0}
+                      hideGauge
+                    />
+                  </Stack>
+                </Collapse>
               </Stack>
             </Box>
           )}

@@ -20,6 +20,8 @@
   "baseStatusTitle": "基本ステータス",
   "notSet": "未設定",
   "unknownValue": "-",
+  "statusDetailsShow": "ステータス表示",
+  "statusDetailsHide": "閉じる",
   "statusMobileToggleOpenAriaLabel": "ステータスを開く",
   "statusMobileToggleCloseAriaLabel": "ステータスを閉じる",
   "labels": {
