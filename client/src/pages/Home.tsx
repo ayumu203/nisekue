@@ -247,13 +247,7 @@ function Home() {
               >
                 {locale.visitPlayers}
               </Button>
-              <Button
-                component={Link}
-                to="/threads"
-                variant="outlined"
-                startIcon={<ThreadsIcon />}
-                sx={menuButtonSx}
-              >
+              <Button component={Link} to="/threads" variant="outlined" startIcon={<ThreadsIcon />} sx={menuButtonSx}>
                 {locale.threads}
               </Button>
               <Button

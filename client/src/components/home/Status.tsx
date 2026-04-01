@@ -1,6 +1,17 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Alert, Box, Button, Collapse, IconButton, Paper, Stack, SvgIcon, Typography, type SvgIconProps } from '@mui/material'
+import {
+  Alert,
+  Box,
+  Button,
+  Collapse,
+  IconButton,
+  Paper,
+  Stack,
+  SvgIcon,
+  Typography,
+  type SvgIconProps,
+} from '@mui/material'
 import { Link } from 'react-router-dom'
 import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx, topNavigationIconButtonSx } from '@/constants/styles'
 import type { GetPlayerResponse } from '@/schema/player'
