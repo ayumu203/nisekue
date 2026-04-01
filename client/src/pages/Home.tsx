@@ -269,9 +269,6 @@ function Home() {
 
             <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 }, mt: '48px' }}>
               <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ minHeight: 44 }}>
-                  <Typography variant="h5">{locale.chatTitle}</Typography>
-                </Stack>
                 {isChatLoading ? (
                   <Stack direction="row" spacing={1} alignItems="center">
                     <CircularProgress size={16} />

@@ -205,6 +205,13 @@ export default function Rebirth() {
           </Stack>
 
           <Stack spacing={1}>
+            <Typography
+              variant="overline"
+              textAlign="center"
+              sx={{ letterSpacing: '0.16em', color: 'rgba(138, 106, 0, 0.72)' }}
+            >
+              REBIRTH
+            </Typography>
             <Typography variant="h4" textAlign="center">
               <Box component="span" sx={{ color: '#8a6a00' }}>
                 {locale.title}
