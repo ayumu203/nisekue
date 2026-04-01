@@ -184,7 +184,7 @@ export default function JobChange() {
                           width: '100%',
                           maxWidth: 240,
                           aspectRatio: '1 / 1',
-                          justifySelf: { sm: 'start' },
+                          justifySelf: 'center',
                           borderRadius: 3,
                           border: '2px solid',
                           borderColor: '#bda86f',

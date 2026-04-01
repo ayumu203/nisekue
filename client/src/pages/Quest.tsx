@@ -26,6 +26,7 @@ import QuestRunSection from '@/components/quest/QuestRunSection'
 import Status from '@/components/home/Status'
 import { useAuth } from '@/contexts/useAuth'
 import { outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
+import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/quest/QuestRoom.json'
 import type {
@@ -118,6 +119,8 @@ export default function Quest() {
   const [isRecoveringQuest, setIsRecoveringQuest] = useState(false)
   const [hasTriedQuestRecovery, setHasTriedQuestRecovery] = useState(false)
   const hasAttemptedQuestRecoveryRef = useRef(false)
+  const questMainRef = useRef<HTMLDivElement | null>(null)
+  useMobileScrollToRef(questMainRef, { enabled: !isLoading })
 
   useEffect(() => {
     hasAttemptedQuestRecoveryRef.current = false
@@ -954,6 +957,8 @@ export default function Quest() {
             >
               <Stack spacing={{ xs: 1.25, sm: 2 }}>
                 <Stack
+                  id="quest-main"
+                  ref={questMainRef}
                   spacing={0.6}
                   sx={{
                     px: { xs: 0.25, sm: 0.5 },

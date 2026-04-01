@@ -599,9 +599,6 @@ export default function TreasureMap() {
                       <Typography variant="h6" fontWeight={900}>
                         {currentMap?.name ?? `mapId: ${currentExpedition.mapId}`}
                       </Typography>
-                      <Typography variant="body2" sx={{ maxWidth: 560 }}>
-                        {currentMap?.narrativeText ?? currentMap?.description ?? locale.none}
-                      </Typography>
                     </Stack>
                   </Paper>
                 </Stack>
