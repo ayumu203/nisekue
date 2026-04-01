@@ -9,7 +9,6 @@ import {
   Paper,
   Select,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
@@ -25,13 +24,14 @@ import locale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestRoomDetailResponse } from '@/schema/quest'
 import type { PlayerSummary } from '@/schema/player'
 import { resolveCharacterAssetPath, resolveJobAssetPath } from '@/lib/assets'
-import QuestAllowedPlayersOverlay from './QuestAllowedPlayersOverlay'
+import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestRoomFormationPreview from './QuestRoomFormationPreview'
 
 type QuestRoomLobbySectionProps = {
   currentRoom: QuestRoomDetailResponse | null
   stageLabel: string | null
   selfParticipantId: string | null
+  currentPlayerLevel: number | null
   selectablePlayers: PlayerSummary[]
   minRequiredLevelInput: string
   allowedPlayerIds: string[]
@@ -43,8 +43,7 @@ type QuestRoomLobbySectionProps = {
   isPlayerCandidatesLoading: boolean
   playerCandidatesError: Error | null
   isUpdatingParticipantId: string | null
-  onMinRequiredLevelChange: (value: string) => void
-  onToggleAllowedPlayer: (playerId: string) => void
+  onRestrictionsChange: (value: string, nextAllowedPlayerIds: string[]) => void
   onUpdateRestrictions: () => void | Promise<void>
   onPositionDraftChange: (participantId: string, nextPosition: { row: BattleRow; column: BattleColumn }) => void
   onUpdateParticipantPosition: (participantId: string) => void | Promise<void>
@@ -56,6 +55,7 @@ export default function QuestRoomLobbySection({
   currentRoom,
   stageLabel,
   selfParticipantId,
+  currentPlayerLevel,
   selectablePlayers,
   minRequiredLevelInput,
   allowedPlayerIds,
@@ -67,8 +67,7 @@ export default function QuestRoomLobbySection({
   isPlayerCandidatesLoading,
   playerCandidatesError,
   isUpdatingParticipantId,
-  onMinRequiredLevelChange,
-  onToggleAllowedPlayer,
+  onRestrictionsChange,
   onUpdateRestrictions,
   onPositionDraftChange,
   onUpdateParticipantPosition,
@@ -76,7 +75,7 @@ export default function QuestRoomLobbySection({
   onCancelRoom,
 }: QuestRoomLobbySectionProps) {
   const positionEditorRef = useRef<HTMLDivElement | null>(null)
-  const [isAllowedPlayersOverlayOpen, setIsAllowedPlayersOverlayOpen] = useState(false)
+  const [isRestrictionsModalOpen, setIsRestrictionsModalOpen] = useState(false)
   const isOwner =
     currentRoom != null && selfParticipantId != null
       ? currentRoom.participants.some(
@@ -184,48 +183,20 @@ export default function QuestRoomLobbySection({
             {isOwner ? (
               <Stack spacing={1.25}>
                 <Stack spacing={1.5}>
-                  <TextField
-                    label={locale.labels.minRequiredLevel}
-                    type="number"
-                    value={minRequiredLevelInput}
-                    onChange={(event) => onMinRequiredLevelChange(event.target.value)}
-                    inputProps={{ min: 1 }}
-                    placeholder={locale.noRestriction}
-                    fullWidth
-                    disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
-                    sx={{
-                      '& .MuiInputLabel-root': {
-                        color: 'rgba(240, 247, 255, 0.82)',
-                      },
-                      '& .MuiInputBase-input': {
-                        color: '#ffffff',
-                      },
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': {
-                          borderColor: 'rgba(152, 192, 255, 0.34)',
-                        },
-                        '&:hover fieldset': {
-                          borderColor: 'rgba(186, 214, 255, 0.6)',
-                        },
-                        '&.Mui-focused fieldset': {
-                          borderColor: '#b9d3ff',
-                        },
-                      },
-                    }}
-                  />
-
                   <Stack spacing={1}>
-                    <Typography variant="subtitle2" sx={{ color: '#ffffff', fontWeight: 800 }}>
-                      {locale.labels.allowedPlayers}
+                    <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
+                      {minRequiredLevelInput.trim() === ''
+                        ? `${locale.labels.minRequiredLevel}: ${locale.noRestriction}`
+                        : `${locale.labels.minRequiredLevel}: ${minRequiredLevelInput}`}
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#f3f8ff', fontWeight: 600 }}>
                       {allowedPlayerIds.length === 0
-                        ? locale.noRestriction
+                        ? `${locale.labels.allowedPlayers}: ${locale.noRestriction}`
                         : locale.selectedAllowedPlayersCount.replace('{{count}}', String(allowedPlayerIds.length))}
                     </Typography>
                     <Button
                       variant="outlined"
-                      onClick={() => setIsAllowedPlayersOverlayOpen(true)}
+                      onClick={() => setIsRestrictionsModalOpen(true)}
                       disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
                       sx={{
                         ...menuButtonSx,
@@ -233,7 +204,7 @@ export default function QuestRoomLobbySection({
                         borderColor: 'rgba(152, 192, 255, 0.34)',
                       }}
                     >
-                      {locale.limitAllowedPlayers}
+                      {locale.openRestrictionsModal}
                     </Button>
                   </Stack>
 
@@ -289,15 +260,17 @@ export default function QuestRoomLobbySection({
               </Stack>
             ) : null}
 
-            <QuestAllowedPlayersOverlay
-              open={isAllowedPlayersOverlayOpen}
+            <QuestRestrictionsModal
+              open={isRestrictionsModalOpen}
+              minRequiredLevelInput={minRequiredLevelInput}
+              currentPlayerLevel={currentPlayerLevel}
               selectablePlayers={selectablePlayers}
               allowedPlayerIds={allowedPlayerIds}
               isLoading={isPlayerCandidatesLoading}
               error={playerCandidatesError}
               disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
-              onClose={() => setIsAllowedPlayersOverlayOpen(false)}
-              onToggleAllowedPlayer={onToggleAllowedPlayer}
+              onClose={() => setIsRestrictionsModalOpen(false)}
+              onApply={onRestrictionsChange}
             />
 
             <div ref={positionEditorRef}>

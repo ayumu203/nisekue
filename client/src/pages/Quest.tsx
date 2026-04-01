@@ -259,16 +259,10 @@ export default function Quest() {
     }
   }
 
-  function handleMinRequiredLevelChange(value: string): void {
+  function handleRestrictionsChange(nextMinRequiredLevelInput: string, nextAllowedPlayerIds: string[]): void {
     setIsRestrictionsDirty(true)
-    setMinRequiredLevelInput(value)
-  }
-
-  function handleToggleAllowedPlayer(playerId: string): void {
-    setIsRestrictionsDirty(true)
-    setAllowedPlayerIds((current) =>
-      current.includes(playerId) ? current.filter((id) => id !== playerId) : [...current, playerId],
-    )
+    setMinRequiredLevelInput(nextMinRequiredLevelInput)
+    setAllowedPlayerIds(nextAllowedPlayerIds)
   }
 
   const roomsSWRKey =
@@ -1050,6 +1044,7 @@ export default function Quest() {
                           activeStages={activeStages}
                           selectedStageId={selectedStageId}
                           mode={mode}
+                          currentPlayerLevel={player?.level ?? null}
                           minRequiredLevelInput={minRequiredLevelInput}
                           selectablePlayers={selectablePlayers}
                           allowedPlayerIds={allowedPlayerIds}
@@ -1060,8 +1055,7 @@ export default function Quest() {
                           isCreateDisabled={isCreateDisabled}
                           onStageChange={setSelectedStageId}
                           onModeChange={setMode}
-                          onMinRequiredLevelChange={handleMinRequiredLevelChange}
-                          onToggleAllowedPlayer={handleToggleAllowedPlayer}
+                          onRestrictionsChange={handleRestrictionsChange}
                           onCreateRoom={handleCreateRoom}
                         />
                       ) : null}
@@ -1085,6 +1079,7 @@ export default function Quest() {
                       currentRoom={currentRoom}
                       stageLabel={currentRoomStage?.name ?? null}
                       selfParticipantId={selfParticipantId}
+                      currentPlayerLevel={player?.level ?? null}
                       selectablePlayers={selectablePlayers}
                       minRequiredLevelInput={minRequiredLevelInput}
                       allowedPlayerIds={allowedPlayerIds}
@@ -1096,8 +1091,7 @@ export default function Quest() {
                       isPlayerCandidatesLoading={isPlayerCandidatesLoading}
                       playerCandidatesError={playerCandidatesError}
                       isUpdatingParticipantId={isUpdatingParticipantId}
-                      onMinRequiredLevelChange={handleMinRequiredLevelChange}
-                      onToggleAllowedPlayer={handleToggleAllowedPlayer}
+                      onRestrictionsChange={handleRestrictionsChange}
                       onUpdateRestrictions={handleUpdateRoomRestrictions}
                       onPositionDraftChange={(participantId, nextPosition) => {
                         setPositionDrafts((current) => ({

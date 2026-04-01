@@ -1,16 +1,17 @@
-import { Alert, Box, Button, CircularProgress, Paper, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material'
 import { innerSurfaceSx, menuButtonSx, softGreenButtonSx } from '@/constants/styles'
 import { useState } from 'react'
 import type { PlayerSummary } from '@/schema/player'
 import locale from '../../../locale/quest/QuestRoom.json'
 import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/quest'
-import QuestAllowedPlayersOverlay from './QuestAllowedPlayersOverlay'
+import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestStageModeCard from './QuestStageModeCard'
 
 type QuestRoomCreateSectionProps = {
   activeStages: GetQuestStagesResponse
   selectedStageId: number | ''
   mode: CreateQuestRoomRequest['mode']
+  currentPlayerLevel: number | null
   minRequiredLevelInput: string
   selectablePlayers: PlayerSummary[]
   allowedPlayerIds: string[]
@@ -21,8 +22,7 @@ type QuestRoomCreateSectionProps = {
   isCreateDisabled: boolean
   onStageChange: (stageId: number | '') => void
   onModeChange: (mode: CreateQuestRoomRequest['mode']) => void
-  onMinRequiredLevelChange: (value: string) => void
-  onToggleAllowedPlayer: (playerId: string) => void
+  onRestrictionsChange: (value: string, nextAllowedPlayerIds: string[]) => void
   onCreateRoom: () => void | Promise<void>
 }
 
@@ -30,6 +30,7 @@ export default function QuestRoomCreateSection({
   activeStages,
   selectedStageId,
   mode,
+  currentPlayerLevel,
   minRequiredLevelInput,
   selectablePlayers,
   allowedPlayerIds,
@@ -40,11 +41,10 @@ export default function QuestRoomCreateSection({
   isCreateDisabled,
   onStageChange,
   onModeChange,
-  onMinRequiredLevelChange,
-  onToggleAllowedPlayer,
+  onRestrictionsChange,
   onCreateRoom,
 }: QuestRoomCreateSectionProps) {
-  const [isAllowedPlayersOverlayOpen, setIsAllowedPlayersOverlayOpen] = useState(false)
+  const [isRestrictionsModalOpen, setIsRestrictionsModalOpen] = useState(false)
   const handleStageModeSelect = (stageId: number, nextMode: CreateQuestRoomRequest['mode']) => {
     onStageChange(stageId)
     onModeChange(nextMode)
@@ -90,57 +90,27 @@ export default function QuestRoomCreateSection({
             </Box>
 
             <Stack spacing={1.5}>
-              <TextField
-                label={locale.labels.minRequiredLevel}
-                type="number"
-                value={minRequiredLevelInput}
-                onChange={(event) => onMinRequiredLevelChange(event.target.value)}
-                inputProps={{ min: 1 }}
-                placeholder={locale.noRestriction}
-                fullWidth
-                sx={{
-                  '& .MuiInputLabel-root': {
-                    color: 'rgba(240, 247, 255, 0.82)',
-                  },
-                  '& .MuiInputBase-input': {
-                    color: '#ffffff',
-                  },
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: 'rgba(152, 192, 255, 0.34)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'rgba(186, 214, 255, 0.6)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#b9d3ff',
-                    },
-                  },
-                }}
-              />
-
               <Stack spacing={1}>
-                <Typography variant="subtitle2" sx={{ color: '#ffffff', fontWeight: 800 }}>
-                  {locale.labels.allowedPlayers}
-                </Typography>
                 <Typography variant="body2" sx={{ color: 'rgba(240, 247, 255, 0.9)' }}>
-                  {locale.allowedPlayersHint}
+                  {minRequiredLevelInput.trim() === ''
+                    ? `${locale.labels.minRequiredLevel}: ${locale.noRestriction}`
+                    : `${locale.labels.minRequiredLevel}: ${minRequiredLevelInput}`}
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#f3f8ff', fontWeight: 600 }}>
                   {allowedPlayerIds.length === 0
-                    ? locale.noRestriction
+                    ? `${locale.labels.allowedPlayers}: ${locale.noRestriction}`
                     : locale.selectedAllowedPlayersCount.replace('{{count}}', String(allowedPlayerIds.length))}
                 </Typography>
                 <Button
                   variant="outlined"
-                  onClick={() => setIsAllowedPlayersOverlayOpen(true)}
+                  onClick={() => setIsRestrictionsModalOpen(true)}
                   sx={{
                     ...menuButtonSx,
                     color: '#eef4ff',
                     borderColor: 'rgba(152, 192, 255, 0.34)',
                   }}
                 >
-                  {locale.limitAllowedPlayers}
+                  {locale.openRestrictionsModal}
                 </Button>
               </Stack>
             </Stack>
@@ -164,14 +134,16 @@ export default function QuestRoomCreateSection({
               {isSubmitting ? locale.creatingRoom : locale.createRoom}
             </Button>
 
-            <QuestAllowedPlayersOverlay
-              open={isAllowedPlayersOverlayOpen}
+            <QuestRestrictionsModal
+              open={isRestrictionsModalOpen}
+              minRequiredLevelInput={minRequiredLevelInput}
+              currentPlayerLevel={currentPlayerLevel}
               selectablePlayers={selectablePlayers}
               allowedPlayerIds={allowedPlayerIds}
               isLoading={isPlayerCandidatesLoading}
               error={playerCandidatesError}
-              onClose={() => setIsAllowedPlayersOverlayOpen(false)}
-              onToggleAllowedPlayer={onToggleAllowedPlayer}
+              onClose={() => setIsRestrictionsModalOpen(false)}
+              onApply={onRestrictionsChange}
             />
           </Stack>
         )}
