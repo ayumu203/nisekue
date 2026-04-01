@@ -30,6 +30,7 @@ function App() {
   useMobileScrollToRef(appTopRef, {
     enabled: !isQuestRoute && !isTrainingRoute,
     maxAttempts: 1,
+    trigger: location.key,
   })
 
   if (isLoading) {

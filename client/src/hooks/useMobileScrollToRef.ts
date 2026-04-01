@@ -7,6 +7,7 @@ type UseMobileScrollToRefOptions = {
   maxAttempts?: number
   intervalMs?: number
   offsetTop?: number
+  trigger?: unknown
 }
 
 export function useMobileScrollToRef(
@@ -19,6 +20,7 @@ export function useMobileScrollToRef(
     maxAttempts = 20,
     intervalMs = 50,
     offsetTop = 0,
+    trigger,
   } = options
 
   useEffect(() => {
@@ -50,5 +52,5 @@ export function useMobileScrollToRef(
     return () => {
       window.clearInterval(timerId)
     }
-  }, [enabled, intervalMs, maxAttempts, mediaQuery, offsetTop, targetRef])
+  }, [enabled, intervalMs, maxAttempts, mediaQuery, offsetTop, targetRef, trigger])
 }

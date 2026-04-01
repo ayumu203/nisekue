@@ -196,7 +196,7 @@ export default function PlayerSetting() {
                     </Typography>
                   </Stack>
                   <Stack spacing={0.75}>
-                    <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                    <Typography id="player-name-label" variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
                       {locale.playerNameLabel}
                     </Typography>
                     <TextField
@@ -205,6 +205,9 @@ export default function PlayerSetting() {
                       value={userName}
                       onChange={(event) => {
                         setUserName(event.target.value)
+                      }}
+                      inputProps={{
+                        'aria-labelledby': 'player-name-label',
                       }}
                       sx={settingInputSx}
                     />
@@ -248,7 +251,11 @@ export default function PlayerSetting() {
                       )}
                     </Box>
                     <Stack spacing={0.75}>
-                      <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                      <Typography
+                        id="player-image-no-label"
+                        variant="subtitle1"
+                        sx={{ color: 'rgba(243, 238, 220, 0.9)' }}
+                      >
                         {locale.playerImageNoLabel}
                       </Typography>
                       <TextField
@@ -261,6 +268,7 @@ export default function PlayerSetting() {
                         inputProps={{
                           min: 1,
                           max: PLAYER_IMAGE_COUNT,
+                          'aria-labelledby': 'player-image-no-label',
                         }}
                         helperText={locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
                         sx={settingInputSx}
