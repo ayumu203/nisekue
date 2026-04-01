@@ -16,6 +16,14 @@ body,
   font-family: 'DotGothic16', sans-serif;
 }
 
+body {
+  margin: 0;
+}
+
+.MuiContainer-root {
+  padding-top: 2% !important;
+}
+
 body,
 button,
 input,
