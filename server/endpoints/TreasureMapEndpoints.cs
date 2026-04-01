@@ -370,39 +370,12 @@ internal static class TreasureMapEndpoints
         var itemIds = (await itemRepository.GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
         var equipmentIds = (await equipmentRepository.GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
 
-        var drawnEntry = ResolveRewardEntry(rewardPool, itemIds, equipmentIds);
-        var rewardResult = ToRewardResult(drawnEntry);
+        var rewardResult = BuildRewardResult(rewardPool, itemIds, equipmentIds);
 
         expedition.MarkCompleted(rewardResult, DateTimeOffset.UtcNow);
         await expeditionRepository.SaveAsync(expedition);
 
         return expedition;
-    }
-
-    private static TreasureMapRewardEntry ResolveRewardEntry(
-        TreasureMapRewardPool rewardPool,
-        IReadOnlySet<int> validItemIds,
-        IReadOnlySet<int> validEquipmentIds)
-    {
-        var random = Random.Shared;
-        var drawn = rewardPool.Draw(random);
-
-        if (IsValidEntry(drawn, validItemIds, validEquipmentIds))
-        {
-            return drawn;
-        }
-
-        var fallback = rewardPool.Entries.FirstOrDefault(entry =>
-            entry.IsFallback
-            && entry.RewardType == drawn.RewardType
-            && IsValidEntry(entry, validItemIds, validEquipmentIds));
-
-        if (fallback is not null)
-        {
-            return fallback;
-        }
-
-        throw new InvalidOperationException("報酬エントリの整合性が取れません。fallback を確認してください。");
     }
 
     private static bool IsValidEntry(
@@ -420,22 +393,87 @@ internal static class TreasureMapEndpoints
         };
     }
 
-    private static TreasureMapRewardResult ToRewardResult(TreasureMapRewardEntry entry)
+    private static TreasureMapRewardResult BuildRewardResult(
+        TreasureMapRewardPool rewardPool,
+        IReadOnlySet<int> validItemIds,
+        IReadOnlySet<int> validEquipmentIds)
     {
-        return entry.RewardType switch
+        // Item/Equipment is probabilistic, Gold/Experience are guaranteed.
+        var lootEntry = ResolveRewardEntryByTypes(
+            rewardPool,
+            validItemIds,
+            validEquipmentIds,
+            [TreasureMapRewardType.Item, TreasureMapRewardType.Equipment]);
+        var goldEntry = ResolveRewardEntryByTypes(
+            rewardPool,
+            validItemIds,
+            validEquipmentIds,
+            [TreasureMapRewardType.Gold]);
+        var experienceEntry = ResolveRewardEntryByTypes(
+            rewardPool,
+            validItemIds,
+            validEquipmentIds,
+            [TreasureMapRewardType.Experience]);
+
+        var itemIds = Array.Empty<int>();
+        var equipmentIds = Array.Empty<int>();
+
+        if (lootEntry is not null)
         {
-            TreasureMapRewardType.Item => new TreasureMapRewardResult(
-                itemIds: Enumerable.Repeat(
-                    entry.ItemId ?? throw new InvalidOperationException("itemId が未設定です。"),
-                    Random.Shared.Next(entry.QuantityMin ?? 1, (entry.QuantityMax ?? entry.QuantityMin ?? 1) + 1))),
-            TreasureMapRewardType.Equipment => new TreasureMapRewardResult(
-                equipmentIds: [entry.EquipmentId ?? throw new InvalidOperationException("equipmentId が未設定です。")]),
-            TreasureMapRewardType.Experience => new TreasureMapRewardResult(
-                experiencePoints: entry.ExperienceAmount ?? 0),
-            TreasureMapRewardType.Gold => new TreasureMapRewardResult(
-                gold: entry.GoldAmount ?? 0),
-            _ => new TreasureMapRewardResult()
-        };
+            if (lootEntry.RewardType == TreasureMapRewardType.Item)
+            {
+                var itemId = lootEntry.ItemId ?? throw new InvalidOperationException("itemId が未設定です。");
+                var min = lootEntry.QuantityMin ?? 1;
+                var max = lootEntry.QuantityMax ?? min;
+                itemIds = Enumerable.Repeat(itemId, Random.Shared.Next(min, max + 1)).ToArray();
+            }
+            else if (lootEntry.RewardType == TreasureMapRewardType.Equipment)
+            {
+                var equipmentId = lootEntry.EquipmentId ?? throw new InvalidOperationException("equipmentId が未設定です。");
+                equipmentIds = [equipmentId];
+            }
+        }
+
+        return new TreasureMapRewardResult(
+            itemIds: itemIds,
+            equipmentIds: equipmentIds,
+            experiencePoints: experienceEntry?.ExperienceAmount ?? 0,
+            gold: goldEntry?.GoldAmount ?? 0);
+    }
+
+    private static TreasureMapRewardEntry? ResolveRewardEntryByTypes(
+        TreasureMapRewardPool rewardPool,
+        IReadOnlySet<int> validItemIds,
+        IReadOnlySet<int> validEquipmentIds,
+        IReadOnlyCollection<TreasureMapRewardType> targetTypes)
+    {
+        var candidates = rewardPool.Entries
+            .Where(entry => targetTypes.Contains(entry.RewardType) && IsValidEntry(entry, validItemIds, validEquipmentIds))
+            .ToArray();
+
+        if (candidates.Length == 0)
+        {
+            return null;
+        }
+
+        var totalWeight = candidates.Sum(x => x.Weight);
+        if (totalWeight <= 0)
+        {
+            return candidates[0];
+        }
+
+        var roll = Random.Shared.Next(0, totalWeight);
+        var cumulative = 0;
+        foreach (var entry in candidates)
+        {
+            cumulative += entry.Weight;
+            if (roll < cumulative)
+            {
+                return entry;
+            }
+        }
+
+        return candidates[^1];
     }
 
     private static object ToExpeditionResponse(TreasureMapExpedition expedition)
@@ -476,7 +514,11 @@ internal static class TreasureMapEndpoints
             };
         }
 
-        var totalWeight = pool.Entries.Sum(x => x.Weight);
+        var lootEntries = pool.Entries
+            .Where(x => x.RewardType is TreasureMapRewardType.Item or TreasureMapRewardType.Equipment)
+            .ToArray();
+
+        var totalWeight = lootEntries.Sum(x => x.Weight);
         if (totalWeight <= 0)
         {
             return new
@@ -496,10 +538,10 @@ internal static class TreasureMapEndpoints
 
         return new
         {
-            itemRate = RateByType(pool.Entries, TreasureMapRewardType.Item, totalWeight),
-            equipmentRate = RateByType(pool.Entries, TreasureMapRewardType.Equipment, totalWeight),
-            experienceRate = RateByType(pool.Entries, TreasureMapRewardType.Experience, totalWeight),
-            goldRate = RateByType(pool.Entries, TreasureMapRewardType.Gold, totalWeight)
+            itemRate = RateByType(lootEntries, TreasureMapRewardType.Item, totalWeight),
+            equipmentRate = RateByType(lootEntries, TreasureMapRewardType.Equipment, totalWeight),
+            experienceRate = 0d,
+            goldRate = 0d
         };
     }
 

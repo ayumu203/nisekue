@@ -12,8 +12,8 @@ export const treasureMapRewardTendencySchema = z.object({
 export const treasureMapRewardItemCandidateSchema = z.object({
   itemId: z.number().int().min(1),
   name: z.string().min(1),
-  quantityMin: z.number().int().min(1),
-  quantityMax: z.number().int().min(1),
+  quantityMin: z.number().int().min(0),
+  quantityMax: z.number().int().min(0),
   weight: z.number().int().min(1),
 })
 

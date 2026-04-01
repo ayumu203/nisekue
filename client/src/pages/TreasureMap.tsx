@@ -33,6 +33,31 @@ const mapBackgroundByGrade: Record<TreasureMapSummary['grade'], string> = {
   D: 'image/quest/enchanted-forest-battlefield.svg',
 }
 
+const companionPlayerCandidates = [
+  { fileName: 'ch109_hero.png', widthXs: 54, widthSm: 68 },
+  { fileName: 'ch110_hero.png', widthXs: 52, widthSm: 66 },
+  { fileName: 'ch111_hero.png', widthXs: 60, widthSm: 74 },
+  { fileName: 'ch112_hero.png', widthXs: 62, widthSm: 76 },
+  { fileName: 'ch118_hero.png', widthXs: 56, widthSm: 70 },
+  { fileName: 'ch119_hero.png', widthXs: 55, widthSm: 69 },
+  { fileName: 'ch122_hero.png', widthXs: 64, widthSm: 78 },
+  { fileName: 'ch129_hero.png', widthXs: 57, widthSm: 71 },
+  { fileName: 'ch130_hero.png', widthXs: 61, widthSm: 75 },
+  { fileName: 'ch171_hero.png', widthXs: 58, widthSm: 72 },
+] as const
+
+function pickRandomDistinct<T>(values: readonly T[], count: number): T[] {
+  const pool = [...values]
+  for (let i = pool.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = pool[i]
+    pool[i] = pool[j]
+    pool[j] = tmp
+  }
+
+  return pool.slice(0, Math.min(count, pool.length))
+}
+
 function formatSeconds(seconds: number): string {
   if (seconds <= 0) {
     return locale.ended
@@ -102,14 +127,6 @@ function buildTendencyChips(map: TreasureMapSummary): Array<{ key: string; label
     chips.push({ key: 'equipment', label: `${locale.candidateEquipments} ${map.rewardTendency.equipmentRate}%` })
   }
 
-  if (map.rewardTendency.experienceRate > 0) {
-    chips.push({ key: 'experience', label: `${locale.candidateExperience} ${map.rewardTendency.experienceRate}%` })
-  }
-
-  if (map.rewardTendency.goldRate > 0) {
-    chips.push({ key: 'gold', label: `${locale.candidateGold} ${map.rewardTendency.goldRate}%` })
-  }
-
   return chips
 }
 
@@ -117,8 +134,6 @@ function getDominantTendency(map: TreasureMapSummary): string {
   const entries = [
     { label: locale.candidateItems, rate: map.rewardTendency.itemRate },
     { label: locale.candidateEquipments, rate: map.rewardTendency.equipmentRate },
-    { label: locale.candidateExperience, rate: map.rewardTendency.experienceRate },
-    { label: locale.candidateGold, rate: map.rewardTendency.goldRate },
   ]
   const top = entries.sort((a, b) => b.rate - a.rate)[0]
   return top && top.rate > 0 ? `${top.label} ${top.rate}%` : locale.none
@@ -164,18 +179,16 @@ function buildLootStory(
   rewardEquipments: Array<{ label: string; count: number }>,
 ): string {
   const mapName = map?.name ?? '冒険者'
-  const route = map?.narrativeText?.trim() || '未知のルート'
   const names = [
-    ...rewardItems.map((entry) => `${entry.label} x${entry.count}`),
-    ...rewardEquipments.map((entry) => `${entry.label} x${entry.count}`),
+    ...rewardItems.map((entry) => `${entry.label}${entry.count > 1 ? ` ${entry.count}個` : ''}`),
+    ...rewardEquipments.map((entry) => `${entry.label}${entry.count > 1 ? ` ${entry.count}個` : ''}`),
   ]
   const gained = names.length > 0 ? names.slice(0, 2).join('、') : '戦利品'
-  return `${mapName}は${route}を旅して${gained}を獲得した。`
+  return `${mapName}の探索を終え、${gained}を獲得した。`
 }
 
 export default function TreasureMap() {
   const { session, isLoading } = useAuth()
-  const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionMapId, setActionMapId] = useState<number | null>(null)
   const [isClaiming, setIsClaiming] = useState(false)
@@ -248,6 +261,17 @@ export default function TreasureMap() {
     [maps, currentExpedition],
   )
   const playerImageSrc = resolveCharacterAssetPath(player?.imagePath)
+  const companionPlayers = useMemo(() => {
+    if (!inProgress) {
+      return []
+    }
+
+    return pickRandomDistinct(companionPlayerCandidates, 2).map((candidate) => ({
+      src: resolvePublicAssetPath(`image/character/${candidate.fileName}`),
+      widthXs: candidate.widthXs,
+      widthSm: candidate.widthSm,
+    }))
+  }, [inProgress, currentExpedition?.expeditionId])
 
   const rewardResult = currentExpedition?.reward
   const rewardItemCount = rewardResult?.itemIds.length ?? 0
@@ -299,11 +323,9 @@ export default function TreasureMap() {
 
     setActionMapId(mapId)
     setActionError(null)
-    setActionMessage(null)
 
     try {
       await startTreasureMapExpedition({ mapId }, session.access_token)
-      setActionMessage(locale.messages.started)
       await Promise.all([mutateMaps(), mutateCurrent()])
     } catch (error) {
       setActionError(error instanceof Error ? error.message : locale.sessionMissing)
@@ -319,7 +341,6 @@ export default function TreasureMap() {
 
     setIsClaiming(true)
     setActionError(null)
-    setActionMessage(null)
 
     try {
       const response = await claimTreasureMapReward(currentExpedition.expeditionId, session.access_token)
@@ -330,7 +351,6 @@ export default function TreasureMap() {
 
         return [response.expedition, ...current]
       })
-      setActionMessage(locale.messages.claimed)
       await Promise.all([mutateMaps(), mutateCurrent()])
     } catch (error) {
       setActionError(error instanceof Error ? error.message : locale.sessionMissing)
@@ -374,7 +394,6 @@ export default function TreasureMap() {
               </Typography>
             </Box>
 
-            {actionMessage ? <Alert severity="success">{actionMessage}</Alert> : null}
             {actionError ? <Alert severity="warning">{actionError}</Alert> : null}
 
             {isCurrentLoading ? (
@@ -407,10 +426,26 @@ export default function TreasureMap() {
                   <Paper
                     variant="outlined"
                     sx={{
+                      p: 1,
+                      borderRadius: 2,
+                      borderColor: '#d9c79d',
+                      backgroundColor: 'rgba(255,255,255,0.92)',
+                    }}
+                  >
+                    <Stack spacing={0.6}>
+                      <Typography variant="caption" fontWeight={700}>
+                        {locale.remainingTime}: {formatSeconds(remainSeconds)}
+                      </Typography>
+                      <LinearProgress variant="determinate" value={progressRate} sx={{ height: 7, borderRadius: 999 }} />
+                    </Stack>
+                  </Paper>
+                  <Paper
+                    variant="outlined"
+                    sx={{
                       borderRadius: 2,
                       overflow: 'hidden',
                       position: 'relative',
-                      minHeight: { xs: 210, sm: 240 },
+                      minHeight: { xs: 268, sm: 240 },
                       borderColor: '#d1ba83',
                       backgroundColor: '#d9e6df',
                     }}
@@ -448,8 +483,9 @@ export default function TreasureMap() {
                       aria-hidden="true"
                       sx={{
                         position: 'absolute',
-                        right: { xs: 12, sm: 16 },
-                        bottom: { xs: 8, sm: 10 },
+                        right: { xs: 12, sm: 44 },
+                        top: { xs: '20%', sm: 'auto' },
+                        bottom: { xs: 'auto', sm: 10 },
                         width: { xs: 82, sm: 102 },
                         opacity: 0.9,
                         zIndex: 2,
@@ -464,8 +500,9 @@ export default function TreasureMap() {
                       aria-hidden="true"
                       sx={{
                         position: 'absolute',
-                        right: { xs: 86, sm: 114 },
-                        bottom: { xs: 8, sm: 10 },
+                        right: { xs: 102, sm: 226 },
+                        top: { xs: '24%', sm: 'auto' },
+                        bottom: { xs: 'auto', sm: 10 },
                         width: { xs: 80, sm: 100 },
                         opacity: 0.86,
                         zIndex: 2,
@@ -481,44 +518,45 @@ export default function TreasureMap() {
                         aria-hidden="true"
                         sx={{
                           position: 'absolute',
-                          left: { xs: 14, sm: 20 },
-                          bottom: { xs: 8, sm: 10 },
+                          left: { xs: 10, sm: 8 },
+                          bottom: { xs: 7, sm: 9 },
                           width: { xs: 58, sm: 72 },
                           opacity: 0.96,
                           zIndex: 2,
                           objectFit: 'contain',
                           objectPosition: 'center bottom',
+                          transform: 'scaleX(-1) rotate(-1.5deg)',
+                          transformOrigin: 'center bottom',
                           pointerEvents: 'none',
                           userSelect: 'none',
                         }}
                       />
                     ) : null}
-
-                    <Stack
-                      spacing={0.6}
-                      sx={{
-                        position: 'absolute',
-                        top: { xs: 10, sm: 12 },
-                        right: { xs: 10, sm: 12 },
-                        width: { xs: 156, sm: 188 },
-                        zIndex: 3,
-                        p: 1,
-                        borderRadius: 2,
-                        backgroundColor: 'rgba(255,255,255,0.92)',
-                        border: '1px solid #d9c79d',
-                      }}
-                    >
-                      <Typography variant="caption" fontWeight={700}>
-                        {locale.remainingTime}: {formatSeconds(remainSeconds)}
-                      </Typography>
-                      <LinearProgress variant="determinate" value={progressRate} sx={{ height: 7, borderRadius: 999 }} />
-                    </Stack>
+                    {companionPlayers.map((companion, index) => (
+                      <Box
+                        key={`companion-player-${companion.src}`}
+                        component="img"
+                        src={companion.src}
+                        alt=""
+                        aria-hidden="true"
+                        sx={{
+                          position: 'absolute',
+                          left: index === 0 ? { xs: 64, sm: 92 } : { xs: 126, sm: 192 },
+                          bottom: index === 0 ? { xs: 16, sm: 20 } : { xs: 4, sm: 7 },
+                          width: { xs: companion.widthXs, sm: companion.widthSm },
+                          opacity: 0.96,
+                          zIndex: 2,
+                          objectFit: 'contain',
+                          objectPosition: 'center bottom',
+                          transform: 'scaleX(-1) rotate(-1.5deg)',
+                          transformOrigin: 'center bottom',
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                        }}
+                      />
+                    ))}
 
                     <Stack spacing={1} sx={{ position: 'relative', zIndex: 2, p: { xs: 1.5, sm: 2 } }}>
-                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                        <Chip size="small" color="primary" label={formatStatus(currentExpedition.status)} />
-                        {currentMap ? <Chip size="small" label={`ランク${currentMap.grade}`} /> : null}
-                      </Stack>
                       <Typography variant="h6" fontWeight={900}>{currentMap?.name ?? `mapId: ${currentExpedition.mapId}`}</Typography>
                       <Typography variant="body2" sx={{ maxWidth: 560 }}>
                         {currentMap?.narrativeText ?? currentMap?.description ?? locale.none}
@@ -541,15 +579,15 @@ export default function TreasureMap() {
               >
                 <Stack spacing={0.9}>
                   <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
+                    direction="row"
                     justifyContent="space-between"
-                    alignItems={{ xs: 'flex-start', sm: 'flex-start' }}
+                    alignItems="flex-start"
                     spacing={1}
                   >
                     <Typography variant="h6" fontWeight={900} sx={sectionHeadingSx}>{locale.rewardPreview}</Typography>
                     <Button
                       variant="contained"
-                      sx={{ ...softGreenButtonSx }}
+                      sx={{ ...softGreenButtonSx, flexShrink: 0 }}
                       disabled={isClaiming}
                       onClick={handleClaim}
                     >
@@ -586,7 +624,7 @@ export default function TreasureMap() {
                     >
                       <Paper variant="outlined" sx={{ p: 0.8, borderRadius: 1.2, borderColor: '#78b97b', backgroundColor: '#dcf4dd', boxShadow: '0 0 0 2px rgba(120,185,123,0.2) inset' }}>
                         <Typography variant="caption" color="#2d6d33">{locale.candidateItems}</Typography>
-                        <Typography variant="h6" fontWeight={800} color="#1f5b26">x{rewardItemCount}</Typography>
+                        <Typography variant="subtitle1" fontWeight={800} color="#1f5b26">x{rewardItemCount}</Typography>
                       </Paper>
                       <Paper variant="outlined" sx={{ p: 0.8, borderRadius: 1.2, borderColor: '#b9ccee', backgroundColor: '#edf3ff' }}>
                         <Typography variant="caption" color="#2f4f88">{locale.candidateEquipments}</Typography>
