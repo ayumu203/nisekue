@@ -27,9 +27,6 @@ export default function PlayerSetting() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const settingInputSx = {
     ...greenOutlinedInputSx,
-    '& .MuiInputLabel-root': {
-      color: 'rgba(243, 238, 220, 0.78)',
-    },
     '& .MuiInputLabel-root.Mui-focused': {
       color: '#f3eedc',
     },
@@ -198,16 +195,20 @@ export default function PlayerSetting() {
                       {locale.title}
                     </Typography>
                   </Stack>
-                  <TextField
-                    fullWidth
-                    label={locale.playerNameLabel}
-                    placeholder={locale.playerNamePlaceholder}
-                    value={userName}
-                    onChange={(event) => {
-                      setUserName(event.target.value)
-                    }}
-                    sx={settingInputSx}
-                  />
+                  <Stack spacing={0.75}>
+                    <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                      {locale.playerNameLabel}
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      placeholder={locale.playerNamePlaceholder}
+                      value={userName}
+                      onChange={(event) => {
+                        setUserName(event.target.value)
+                      }}
+                      sx={settingInputSx}
+                    />
+                  </Stack>
                   <Stack spacing={1.5}>
                     <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
                       {locale.playerImageLabel}
@@ -246,21 +247,25 @@ export default function PlayerSetting() {
                         </Box>
                       )}
                     </Box>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      label={locale.playerImageNoLabel}
-                      value={imageNoInput}
-                      onChange={(event) => {
-                        setImageNoInput(event.target.value)
-                      }}
-                      inputProps={{
-                        min: 1,
-                        max: PLAYER_IMAGE_COUNT,
-                      }}
-                      helperText={locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
-                      sx={settingInputSx}
-                    />
+                    <Stack spacing={0.75}>
+                      <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                        {locale.playerImageNoLabel}
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        value={imageNoInput}
+                        onChange={(event) => {
+                          setImageNoInput(event.target.value)
+                        }}
+                        inputProps={{
+                          min: 1,
+                          max: PLAYER_IMAGE_COUNT,
+                        }}
+                        helperText={locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
+                        sx={settingInputSx}
+                      />
+                    </Stack>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                       <Button
                         type="button"
