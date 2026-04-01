@@ -82,7 +82,7 @@ erDiagram
     PLAYER_ITEM_STACKS {
         uuid id PK "internal.player_item_stacks.id"
         uuid player_id FK "internal.players.id"
-        int item_id "NOT NULL, references CSV item_id logically"
+        int item_id "NOT NULL, references CSV item_id logically (normal item and treasure map shared id space)"
         int quantity "NOT NULL"
         timestamptz updated_at "NOT NULL"
     }
@@ -235,6 +235,27 @@ erDiagram
         jsonb skipped_reward_player_ids_json "NOT NULL"
     }
 
+    TREASURE_MAP_EXPEDITIONS {
+        uuid id PK "internal.treasure_map_expeditions.id"
+        uuid player_id FK "internal.players.id"
+        int map_id "NOT NULL, references CSV treasure_maps.id logically"
+        timestamptz started_at "NOT NULL"
+        timestamptz ends_at "NOT NULL"
+        int status "NOT NULL (InProgress/Completed/Claimed/Failed)"
+        jsonb reward_summary_json "NULL, serialized items/equipment/gold/exp"
+        boolean reward_claimed "NOT NULL, DEFAULT FALSE"
+        timestamptz completed_at "NULL, set when status becomes Completed or Failed"
+        timestamptz created_at "NOT NULL"
+        timestamptz updated_at "NOT NULL"
+    }
+    TREASURE_MAP_CLAIM_HISTORIES {
+        uuid id PK "internal.treasure_map_claim_histories.id"
+        uuid player_id FK "internal.players.id"
+        uuid expedition_id FK "internal.treasure_map_expeditions.id"
+        jsonb reward_summary_json "NOT NULL, reward snapshot for audit"
+        timestamptz claimed_at "NOT NULL"
+    }
+
     PLAYERS ||--|| CHAT_ROOMS : owns
     CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
     PLAYERS ||--o{ THREADS : authors
@@ -258,3 +279,6 @@ erDiagram
     QUEST_RUNS ||--o{ QUEST_FLOOR_TRAPS : carries
     QUEST_RUNS ||--|| QUEST_REWARD_SUMMARIES : awards
     QUEST_RUNS ||--o{ QUEST_REWARD_EQUIPMENTS : grants
+    PLAYERS ||--o{ TREASURE_MAP_EXPEDITIONS : begins
+    PLAYERS ||--o{ TREASURE_MAP_CLAIM_HISTORIES : claims
+    TREASURE_MAP_EXPEDITIONS ||--o{ TREASURE_MAP_CLAIM_HISTORIES : claimed_by

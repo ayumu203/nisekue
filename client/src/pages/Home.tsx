@@ -60,6 +60,14 @@ function ItemsIcon(props: SvgIconProps) {
   )
 }
 
+function TreasureMapIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="m4 5 5-2 6 2 5-2v14l-5 2-6-2-5 2zm6 2v10l4 1.33V8.33zm-4 .27v10.19l2-.8V6.47zm12-.8-2 .8v10.2l2-.8z" />
+    </SvgIcon>
+  )
+}
+
 function JobChangeIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
@@ -187,12 +195,12 @@ function Home() {
               </Button>
               <Button
                 component={Link}
-                to="/players"
+                to="/treasure-map"
                 variant="contained"
-                startIcon={<VisitPlayersIcon />}
+                startIcon={<TreasureMapIcon />}
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
-                {locale.visitPlayers}
+                {locale.treasureMap}
               </Button>
               <Button
                 component={Link}
@@ -205,33 +213,42 @@ function Home() {
               </Button>
               <Button
                 component={Link}
-                to="/threads"
-                variant="contained"
-                startIcon={<ThreadsIcon />}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-              >
-                {locale.threads}
-              </Button>
-              <Button
-                component={Link}
                 to="/move-setting"
-                variant="outlined"
+                variant="contained"
                 startIcon={<MoveSettingIcon />}
-                sx={menuButtonSx}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
                 {locale.moveSetting}
               </Button>
               <Button
                 component={Link}
                 to="/job-change"
-                variant="outlined"
+                variant="contained"
                 startIcon={<JobChangeIcon />}
-                sx={menuButtonSx}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
                 {locale.jobChange}
               </Button>
-              <Button component={Link} to="/rebirth" variant="outlined" startIcon={<RebirthIcon />} sx={menuButtonSx}>
+              <Button
+                component={Link}
+                to="/rebirth"
+                variant="contained"
+                startIcon={<RebirthIcon />}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+              >
                 {locale.rebirth}
+              </Button>
+              <Button
+                component={Link}
+                to="/players"
+                variant="outlined"
+                startIcon={<VisitPlayersIcon />}
+                sx={menuButtonSx}
+              >
+                {locale.visitPlayers}
+              </Button>
+              <Button component={Link} to="/threads" variant="outlined" startIcon={<ThreadsIcon />} sx={menuButtonSx}>
+                {locale.threads}
               </Button>
               <Button
                 component={Link}
@@ -246,9 +263,6 @@ function Home() {
 
             <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 }, mt: '48px' }}>
               <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ minHeight: 44 }}>
-                  <Typography variant="h5">{locale.chatTitle}</Typography>
-                </Stack>
                 {isChatLoading ? (
                   <Stack direction="row" spacing={1} alignItems="center">
                     <CircularProgress size={16} />

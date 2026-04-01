@@ -8,6 +8,7 @@ using server.infrastructure.chat;
 using server.infrastructure.player;
 using server.infrastructure.quest.room;
 using server.infrastructure.quest.run;
+using server.infrastructure.treasuremap;
 
 namespace server.infrastructure;
 
@@ -35,6 +36,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<QuestTurnCommandEntity> QuestTurnCommands => Set<QuestTurnCommandEntity>();
     public DbSet<QuestFloorTrapEntity> QuestFloorTraps => Set<QuestFloorTrapEntity>();
     public DbSet<QuestRewardSummaryEntity> QuestRewardSummaries => Set<QuestRewardSummaryEntity>();
+    public DbSet<TreasureMapExpeditionEntity> TreasureMapExpeditions => Set<TreasureMapExpeditionEntity>();
+    public DbSet<TreasureMapClaimHistoryEntity> TreasureMapClaimHistories => Set<TreasureMapClaimHistoryEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -488,5 +491,33 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRewardSummary.Property(x => x.EquipmentRewardId).HasColumnName("equipment_reward_id");
         questRewardSummary.Property(x => x.ItemRewardId).HasColumnName("item_reward_id");
         questRewardSummary.Property(x => x.SkippedRewardPlayerIdsJson).HasColumnName("skipped_reward_player_ids_json").HasColumnType("jsonb").IsRequired();
+
+        var treasureMapExpedition = modelBuilder.Entity<TreasureMapExpeditionEntity>();
+        treasureMapExpedition.ToTable("treasure_map_expeditions", "internal");
+        treasureMapExpedition.HasKey(x => x.Id);
+        treasureMapExpedition.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        treasureMapExpedition.Property(x => x.PlayerId).HasColumnName("player_id").HasColumnType("uuid").IsRequired();
+        treasureMapExpedition.Property(x => x.MapId).HasColumnName("map_id").IsRequired();
+        treasureMapExpedition.Property(x => x.StartedAt).HasColumnName("started_at").IsRequired();
+        treasureMapExpedition.Property(x => x.EndsAt).HasColumnName("ends_at").IsRequired();
+        treasureMapExpedition.Property(x => x.Status).HasColumnName("status").IsRequired();
+        treasureMapExpedition.Property(x => x.RewardSummaryJson).HasColumnName("reward_summary_json").HasColumnType("jsonb");
+        treasureMapExpedition.Property(x => x.RewardClaimed).HasColumnName("reward_claimed").HasDefaultValue(false).IsRequired();
+        treasureMapExpedition.Property(x => x.CompletedAt).HasColumnName("completed_at");
+        treasureMapExpedition.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
+        treasureMapExpedition.Property(x => x.UpdatedAt).HasColumnName("updated_at").IsRequired();
+        treasureMapExpedition.HasIndex(x => x.PlayerId);
+        treasureMapExpedition.HasIndex(x => new { x.PlayerId, x.Status });
+
+        var treasureMapClaimHistory = modelBuilder.Entity<TreasureMapClaimHistoryEntity>();
+        treasureMapClaimHistory.ToTable("treasure_map_claim_histories", "internal");
+        treasureMapClaimHistory.HasKey(x => x.Id);
+        treasureMapClaimHistory.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        treasureMapClaimHistory.Property(x => x.PlayerId).HasColumnName("player_id").HasColumnType("uuid").IsRequired();
+        treasureMapClaimHistory.Property(x => x.ExpeditionId).HasColumnName("expedition_id").HasColumnType("uuid").IsRequired();
+        treasureMapClaimHistory.Property(x => x.RewardSummaryJson).HasColumnName("reward_summary_json").HasColumnType("jsonb").IsRequired();
+        treasureMapClaimHistory.Property(x => x.ClaimedAt).HasColumnName("claimed_at").IsRequired();
+        treasureMapClaimHistory.HasIndex(x => x.PlayerId);
+        treasureMapClaimHistory.HasIndex(x => x.ExpeditionId).IsUnique();
     }
 }
