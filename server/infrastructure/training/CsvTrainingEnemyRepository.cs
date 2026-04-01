@@ -11,7 +11,7 @@ public class CsvTrainingEnemyRepository : ITrainingEnemyRepository
 
     public CsvTrainingEnemyRepository()
     {
-        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "training_enemies.csv");
+        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "training", "training_enemies.csv");
         enemies = LoadEnemies(csvPath);
         enemyList = enemies.Values
             .OrderBy(x => x.Level)
