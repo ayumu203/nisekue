@@ -606,7 +606,7 @@ internal static class PlayerEndpoints
                 PlayerItemStackId.New(),
                 player.Id,
                 new ItemId(4999),
-                quantity: 1,
+                quantity: 5,
                 updatedAt: now)
         ];
     }

@@ -20,7 +20,10 @@ internal static class TreasureMapEndpoints
     private static async Task<IResult> GetTreasureMaps(
         ClaimsPrincipal user,
         ITreasureMapRepository treasureMapRepository,
-        IPlayerItemStackRepository playerItemStackRepository)
+        IPlayerItemStackRepository playerItemStackRepository,
+        ITreasureMapRewardPoolRepository rewardPoolRepository,
+        IItemRepository itemRepository,
+        IEquipmentRepository equipmentRepository)
     {
         var playerId = EndpointHelpers.TryGetPlayerId(user);
         if (playerId is null)
@@ -31,6 +34,10 @@ internal static class TreasureMapEndpoints
         var maps = await treasureMapRepository.GetAllAsync();
         var stacks = await playerItemStackRepository.GetByPlayerAsync(playerId.Value);
         var quantityByItemId = stacks.ToDictionary(x => x.ItemId.Value, x => x.Quantity);
+        var rewardPools = await rewardPoolRepository.GetAllAsync();
+        var rewardPoolById = rewardPools.ToDictionary(x => x.Id, x => x);
+        var itemNameById = (await itemRepository.GetAllAsync()).ToDictionary(x => x.Id.Value, x => x.Name);
+        var equipmentNameById = (await equipmentRepository.GetAllAsync()).ToDictionary(x => x.Id.Value, x => x.Name);
 
         return Results.Ok(maps.Select(map => new
         {
@@ -38,11 +45,14 @@ internal static class TreasureMapEndpoints
             code = map.Code,
             name = map.Name,
             description = map.Description,
+            narrativeText = map.Description,
             grade = map.Grade.ToString(),
             durationSeconds = map.DurationSeconds,
             isMarketable = map.IsMarketable,
             isHiddenFromInventory = map.IsHiddenFromInventory,
-            ownedQuantity = quantityByItemId.GetValueOrDefault(map.Id.Value, 0)
+            ownedQuantity = quantityByItemId.GetValueOrDefault(map.Id.Value, 0),
+            rewardTendency = BuildRewardTendency(map.RewardPoolId, rewardPoolById),
+            rewardCandidates = BuildRewardCandidates(map.RewardPoolId, rewardPoolById, itemNameById, equipmentNameById)
         }));
     }
 
@@ -448,6 +458,120 @@ internal static class TreasureMapEndpoints
                     experiencePoints = expedition.RewardResult.ExperiencePoints,
                     gold = expedition.RewardResult.Gold
                 }
+        };
+    }
+
+    private static object BuildRewardTendency(
+        TreasureMapRewardPoolId rewardPoolId,
+        IReadOnlyDictionary<TreasureMapRewardPoolId, TreasureMapRewardPool> rewardPoolById)
+    {
+        if (!rewardPoolById.TryGetValue(rewardPoolId, out var pool))
+        {
+            return new
+            {
+                itemRate = 0d,
+                equipmentRate = 0d,
+                experienceRate = 0d,
+                goldRate = 0d
+            };
+        }
+
+        var totalWeight = pool.Entries.Sum(x => x.Weight);
+        if (totalWeight <= 0)
+        {
+            return new
+            {
+                itemRate = 0d,
+                equipmentRate = 0d,
+                experienceRate = 0d,
+                goldRate = 0d
+            };
+        }
+
+        static double RateByType(IReadOnlyList<TreasureMapRewardEntry> entries, TreasureMapRewardType type, int total)
+        {
+            var weight = entries.Where(x => x.RewardType == type).Sum(x => x.Weight);
+            return Math.Round(weight * 100d / total, 1, MidpointRounding.AwayFromZero);
+        }
+
+        return new
+        {
+            itemRate = RateByType(pool.Entries, TreasureMapRewardType.Item, totalWeight),
+            equipmentRate = RateByType(pool.Entries, TreasureMapRewardType.Equipment, totalWeight),
+            experienceRate = RateByType(pool.Entries, TreasureMapRewardType.Experience, totalWeight),
+            goldRate = RateByType(pool.Entries, TreasureMapRewardType.Gold, totalWeight)
+        };
+    }
+
+    private static object BuildRewardCandidates(
+        TreasureMapRewardPoolId rewardPoolId,
+        IReadOnlyDictionary<TreasureMapRewardPoolId, TreasureMapRewardPool> rewardPoolById,
+        IReadOnlyDictionary<int, string> itemNameById,
+        IReadOnlyDictionary<int, string> equipmentNameById)
+    {
+        if (!rewardPoolById.TryGetValue(rewardPoolId, out var pool))
+        {
+            return new
+            {
+                items = Array.Empty<object>(),
+                equipments = Array.Empty<object>(),
+                experiences = Array.Empty<object>(),
+                golds = Array.Empty<object>()
+            };
+        }
+
+        var items = pool.Entries
+            .Where(x => x.RewardType == TreasureMapRewardType.Item && x.ItemId is not null)
+            .Select(x => new
+            {
+                itemId = x.ItemId!.Value,
+                name = itemNameById.GetValueOrDefault(x.ItemId.Value, $"Item {x.ItemId.Value}"),
+                quantityMin = x.QuantityMin ?? 1,
+                quantityMax = x.QuantityMax ?? x.QuantityMin ?? 1,
+                weight = x.Weight
+            })
+            .DistinctBy(x => x.itemId)
+            .ToArray();
+
+        var equipments = pool.Entries
+            .Where(x => x.RewardType == TreasureMapRewardType.Equipment && x.EquipmentId is not null)
+            .Select(x => new
+            {
+                equipmentId = x.EquipmentId!.Value,
+                name = equipmentNameById.GetValueOrDefault(x.EquipmentId.Value, $"Equipment {x.EquipmentId.Value}"),
+                weight = x.Weight
+            })
+            .DistinctBy(x => x.equipmentId)
+            .ToArray();
+
+        var experiences = pool.Entries
+            .Where(x => x.RewardType == TreasureMapRewardType.Experience && x.ExperienceAmount is not null)
+            .Select(x => new
+            {
+                amount = x.ExperienceAmount!.Value,
+                weight = x.Weight
+            })
+            .DistinctBy(x => x.amount)
+            .OrderBy(x => x.amount)
+            .ToArray();
+
+        var golds = pool.Entries
+            .Where(x => x.RewardType == TreasureMapRewardType.Gold && x.GoldAmount is not null)
+            .Select(x => new
+            {
+                amount = x.GoldAmount!.Value,
+                weight = x.Weight
+            })
+            .DistinctBy(x => x.amount)
+            .OrderBy(x => x.amount)
+            .ToArray();
+
+        return new
+        {
+            items,
+            equipments,
+            experiences,
+            golds
         };
     }
 }
