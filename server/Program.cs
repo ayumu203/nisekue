@@ -7,6 +7,7 @@ using server.application.battle;
 using server.application.chat;
 using server.application.maintenance;
 using server.application.quest;
+using server.application.ranking;
 using server.application.training;
 using server.application.player;
 using server.domain.chat;
@@ -158,9 +159,12 @@ builder.Services.AddScoped<PlayerJobService>();
 builder.Services.AddScoped<PlayerRebirthService>();
 builder.Services.AddScoped<MarketListingCleanupService>();
 builder.Services.AddScoped<DevelopmentDataCleanupService>();
+builder.Services.AddScoped<RankingAggregationService>();
+builder.Services.AddScoped<RankingReadService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<ThreadService>();
 builder.Services.AddScoped<TrainingService>();
+builder.Services.AddHostedService<RankingRebuildBackgroundService>();
 
 var app = builder.Build();
 
@@ -176,5 +180,6 @@ app.MapChatEndpoints();
 app.MapThreadEndpoints();
 app.MapTrainingEndpoints();
 app.MapTreasureMapEndpoints();
+app.MapRankingEndpoints();
 
 app.Run();
