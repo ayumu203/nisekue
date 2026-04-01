@@ -42,7 +42,11 @@ function periodPriority(period: string): number {
 export default function Ranking() {
   const { session, isLoading } = useAuth()
   const rankingSWRKey = session?.access_token ? (['rankings'] as const) : null
-  const { data, error, isLoading: isRankingLoading } = useSWR(rankingSWRKey, async () => {
+  const {
+    data,
+    error,
+    isLoading: isRankingLoading,
+  } = useSWR(rankingSWRKey, async () => {
     if (!session?.access_token) {
       throw new Error(locale.loading)
     }
@@ -67,13 +71,14 @@ export default function Ranking() {
     .sort((a, b) => a.rankPosition - b.rankPosition)
 
   const filteredRows =
-    period === 'ALL' && combatRank !== 'ALL'
+    period === 'ALL'
       ? Array.from(
           baseFilteredRows
             .reduce((map, row) => {
-              const existing = map.get(row.player.userId)
+              const dedupeKey = `${row.player.userId}:${row.combatIndexRank ?? ''}`
+              const existing = map.get(dedupeKey)
               if (!existing || periodPriority(row.periodKind) < periodPriority(existing.periodKind)) {
-                map.set(row.player.userId, row)
+                map.set(dedupeKey, row)
               }
               return map
             }, new Map<string, (typeof baseFilteredRows)[number]>())
@@ -142,7 +147,11 @@ export default function Ranking() {
                     </FormControl>
                     <FormControl fullWidth>
                       <InputLabel>{locale.combatRank}</InputLabel>
-                      <Select value={combatRank} label={locale.combatRank} onChange={(e) => setCombatRank(e.target.value)}>
+                      <Select
+                        value={combatRank}
+                        label={locale.combatRank}
+                        onChange={(e) => setCombatRank(e.target.value)}
+                      >
                         <MenuItem value="ALL">{locale.allCombatRanks}</MenuItem>
                         {['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E', 'F', 'G'].map((r) => (
                           <MenuItem key={r} value={r}>
@@ -155,14 +164,24 @@ export default function Ranking() {
 
                   <Stack spacing={1}>
                     {filteredRows.map((row) => (
-                      <Paper key={`${row.rankingType}-${row.periodKind}-${row.combatIndexRank}-${row.rankPosition}-${row.player.userId}`} variant="outlined" sx={{ p: 1.5 }}>
+                      <Paper
+                        key={`${row.rankingType}-${row.periodKind}-${row.combatIndexRank}-${row.rankPosition}-${row.player.userId}`}
+                        variant="outlined"
+                        sx={{ p: 1.5 }}
+                      >
                         <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
                           <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
                             <Box
                               component="img"
                               src={resolveCharacterAssetPath(row.player.imagePath) ?? undefined}
                               alt={row.player.userName ?? row.player.userId}
-                              sx={{ width: 42, height: 42, borderRadius: 1.5, objectFit: 'cover', objectPosition: 'center top' }}
+                              sx={{
+                                width: 42,
+                                height: 42,
+                                borderRadius: 1.5,
+                                objectFit: 'cover',
+                                objectPosition: 'center top',
+                              }}
                             />
                             <Stack spacing={0.2}>
                               <Typography variant="body1" fontWeight={800}>
