@@ -13,6 +13,17 @@ classDiagram
             -DeleteEntitiesAsync~TEntity~(dbSet: DbSet~TEntity~) int
         }
 
+        class RankingAggregationService {
+            <<Application Service>>
+            +RebuildAsync(now: DateTimeOffset) RankingAggregationResult
+        }
+
+        class RankingRebuildBackgroundService {
+            <<Background Service>>
+            +ExecuteAsync(stoppingToken: CancellationToken) Task
+            +IntervalHours = 6
+        }
+
         class CleanupExpiredMarketListingsResult {
             <<Value Object>>
             +int DeletedListings
@@ -41,6 +52,18 @@ classDiagram
             +int DeletedQuestTurnCommands
             +int DeletedQuestFloorTraps
             +int DeletedQuestRewardSummaries
+        }
+
+        class RankingAggregationResult {
+            <<Value Object>>
+            +int UpsertedRows
+            +DateTimeOffset CalculatedAt
+        }
+
+        class IRankingEntryRepository {
+            <<Repository>>
+            +Task UpsertRangeAsync(entries: IReadOnlyList~RankingEntry~)
+            +Task DeleteSnapshotAsync(snapshotAt: DateTimeOffset)
         }
 
         class IMarketListingRepository {
@@ -74,6 +97,12 @@ classDiagram
             +Non-local request requires Header X-Maintenance-Token
         }
 
+        class RankingMaintenanceEndpoint {
+            <<Endpoint>>
+            +POST /internal/rankings/rebuild
+            +Header X-Maintenance-Token
+        }
+
         class MaintenanceConfiguration {
             <<Configuration>>
             +string MarketCleanupToken
@@ -89,7 +118,12 @@ classDiagram
     MarketListingCleanupService ..> ItemDeletionLog : writes
     DevelopmentDataCleanupService ..> AppDbContext : use
     DevelopmentDataCleanupService ..> DevelopmentDataCleanupResult : returns
+    RankingAggregationService ..> IRankingEntryRepository : use
+    RankingAggregationService ..> RankingAggregationResult : returns
     ItemCleanupMaintenanceEndpoint ..> MarketListingCleanupService : calls
     ItemCleanupMaintenanceEndpoint ..> MaintenanceConfiguration : validates token
     DevelopmentCleanupMaintenanceEndpoint ..> DevelopmentDataCleanupService : calls
     DevelopmentCleanupMaintenanceEndpoint ..> MaintenanceConfiguration : validates token
+    RankingMaintenanceEndpoint ..> RankingAggregationService : calls
+    RankingMaintenanceEndpoint ..> MaintenanceConfiguration : validates token
+    RankingRebuildBackgroundService ..> RankingAggregationService : calls

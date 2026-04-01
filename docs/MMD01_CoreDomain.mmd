@@ -214,6 +214,34 @@ classDiagram
             +BuildEffectiveStatus(baseStatus: Status, playerJob: Job, playerEquipments: IEnumerable~PlayerEquipment~, equipments: IEnumerable~Equipment~) Status
         }
 
+        class StatusRankThreshold {
+            <<Value Object>>
+            +string StatusKey
+            +StatusRank Rank
+            +int MaxValue
+        }
+
+        class CombatIndexWeight {
+            <<Value Object>>
+            +string StatusKey
+            +double Weight
+        }
+
+        class StatusRankEvaluator {
+            <<Domain Service>>
+            +Evaluate(statusKey: string, value: int) StatusRank
+        }
+
+        class CombatIndexCalculator {
+            <<Domain Service>>
+            +Calculate(status: Status) int
+        }
+
+        class CombatIndexRankEvaluator {
+            <<Domain Service>>
+            +Evaluate(combatIndex: int) StatusRank
+        }
+
         class EquipmentStatusBonus {
             <<Value Object>>
             +int MaxHp
@@ -315,6 +343,21 @@ classDiagram
             +JobProfile GetByJob(job: Job)
             +IReadOnlyList~JobProfile~ GetAll()
         }
+
+        class IStatusRankThresholdRepository {
+            <<Repository>>
+            +IReadOnlyList~StatusRankThreshold~ GetAll()
+        }
+
+        class ICombatIndexWeightRepository {
+            <<Repository>>
+            +IReadOnlyList~CombatIndexWeight~ GetAll()
+        }
+
+        class ICombatIndexRankThresholdRepository {
+            <<Repository>>
+            +IReadOnlyList~StatusRankThreshold~ GetAll()
+        }
     }
 
     Player *-- PlayerId : has
@@ -338,6 +381,10 @@ classDiagram
     Player ..> LevelUpResult : returns
     EquipmentStatusResolver ..> Equipment : uses
     EquipmentStatusResolver ..> PlayerEquipment : uses
+    StatusRankEvaluator ..> IStatusRankThresholdRepository : uses
+    CombatIndexCalculator ..> ICombatIndexWeightRepository : uses
+    CombatIndexRankEvaluator ..> ICombatIndexRankThresholdRepository : uses
+    StatusRankThreshold ..> StatusRank : has
     IJobProfileRepository ..> JobProfile : returns
     IPlayerRepository ..> Player : stores/loads
     IEquipmentRepository ..> Equipment : stores/loads
@@ -347,3 +394,6 @@ classDiagram
     IMarketListingRepository ..> MarketListing : stores/loads
     IMarketTradeHistoryRepository ..> MarketTradeHistory : stores
     IItemDeletionLogRepository ..> ItemDeletionLog : stores
+    IStatusRankThresholdRepository ..> StatusRankThreshold : stores/loads
+    ICombatIndexWeightRepository ..> CombatIndexWeight : stores/loads
+    ICombatIndexRankThresholdRepository ..> StatusRankThreshold : stores/loads
