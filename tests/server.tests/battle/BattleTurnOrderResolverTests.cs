@@ -21,7 +21,7 @@ public class BattleTurnOrderResolverTests
         var result = resolver.Resolve(
             [
                 new BattleAction(fastActor.Id, BattleActionKind.NormalAttack, CreateEnemyTarget()),
-                new BattleAction(priorityActor.Id, BattleActionKind.UseMove, CreateEnemyTarget(), new MoveId(1))
+                new BattleAction(priorityActor.Id, BattleActionKind.UseMove, CreateEnemyTarget(), new MoveId(421))
             ],
             [fastActor, priorityActor],
             [CreateState(fastActor.Id), CreateState(priorityActor.Id)],
@@ -124,7 +124,7 @@ public class BattleTurnOrderResolverTests
             [
                 new BattleAction(waitActor.Id, BattleActionKind.Wait, CreateSelfTarget()),
                 new BattleAction(sameSpeedActor.Id, BattleActionKind.NormalAttack, CreateEnemyTarget()),
-                new BattleAction(priorityActor.Id, BattleActionKind.UseMove, CreateEnemyTarget(), new MoveId(1)),
+                new BattleAction(priorityActor.Id, BattleActionKind.UseMove, CreateEnemyTarget(), new MoveId(421)),
                 new BattleAction(fastActor.Id, BattleActionKind.NormalAttack, CreateEnemyTarget())
             ],
             [priorityActor, fastActor, sameSpeedActor, waitActor],
@@ -146,7 +146,7 @@ public class BattleTurnOrderResolverTests
         var result = resolver.Resolve(
             [
                 new BattleAction(allyActor.Id, BattleActionKind.NormalAttack, CreateEnemyTarget()),
-                new BattleAction(enemyPriorityActor.Id, BattleActionKind.UseMove, CreateEnemyTarget(), new MoveId(1)),
+                new BattleAction(enemyPriorityActor.Id, BattleActionKind.UseMove, CreateEnemyTarget(), new MoveId(421)),
                 new BattleAction(enemyFastActor.Id, BattleActionKind.NormalAttack, CreateEnemyTarget())
             ],
             [allyActor, enemyPriorityActor, enemyFastActor],
@@ -195,7 +195,7 @@ public class BattleTurnOrderResolverTests
             new Status(maxHp: 30, maxMp: 10, strength: 10, defense: 5, intelligence: 3, luck: 3, speed: speed),
             new MoveSet(new MoveId?[]
             {
-                new MoveId(1), null, null, null, null, null, null, null, null, null
+                new MoveId(421), null, null, null, null, null, null, null, null, null
             }));
     }
 

@@ -152,8 +152,8 @@ public class PlayerTests
     public void Rebirth_WhenEligible_ResetsLevelsAndKeepsJobMovesAndMasteredJobs()
     {
         var moveSet = new MoveSet();
-        moveSet.SetSlot(0, new MoveId(101));
-        moveSet.SetSlot(1, new MoveId(102));
+        moveSet.SetSlot(0, new MoveId(421));
+        moveSet.SetSlot(1, new MoveId(141));
         var player = CreatePlayer(
             level: 120,
             exp: 45,
