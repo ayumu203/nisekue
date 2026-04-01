@@ -195,12 +195,12 @@ function Home() {
               </Button>
               <Button
                 component={Link}
-                to="/players"
+                to="/treasure-map"
                 variant="contained"
-                startIcon={<VisitPlayersIcon />}
+                startIcon={<TreasureMapIcon />}
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
-                {locale.visitPlayers}
+                {locale.treasureMap}
               </Button>
               <Button
                 component={Link}
@@ -213,42 +213,48 @@ function Home() {
               </Button>
               <Button
                 component={Link}
-                to="/treasure-map"
-                variant="contained"
-                startIcon={<TreasureMapIcon />}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-              >
-                {locale.treasureMap}
-              </Button>
-              <Button
-                component={Link}
-                to="/threads"
-                variant="contained"
-                startIcon={<ThreadsIcon />}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-              >
-                {locale.threads}
-              </Button>
-              <Button
-                component={Link}
                 to="/move-setting"
-                variant="outlined"
+                variant="contained"
                 startIcon={<MoveSettingIcon />}
-                sx={menuButtonSx}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
                 {locale.moveSetting}
               </Button>
               <Button
                 component={Link}
                 to="/job-change"
-                variant="outlined"
+                variant="contained"
                 startIcon={<JobChangeIcon />}
-                sx={menuButtonSx}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
                 {locale.jobChange}
               </Button>
-              <Button component={Link} to="/rebirth" variant="outlined" startIcon={<RebirthIcon />} sx={menuButtonSx}>
+              <Button
+                component={Link}
+                to="/rebirth"
+                variant="contained"
+                startIcon={<RebirthIcon />}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+              >
                 {locale.rebirth}
+              </Button>
+              <Button
+                component={Link}
+                to="/players"
+                variant="outlined"
+                startIcon={<VisitPlayersIcon />}
+                sx={menuButtonSx}
+              >
+                {locale.visitPlayers}
+              </Button>
+              <Button
+                component={Link}
+                to="/threads"
+                variant="outlined"
+                startIcon={<ThreadsIcon />}
+                sx={menuButtonSx}
+              >
+                {locale.threads}
               </Button>
               <Button
                 component={Link}
