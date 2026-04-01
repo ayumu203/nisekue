@@ -8,6 +8,19 @@ internal static class RankingEndpoints
 
     internal static WebApplication MapRankingEndpoints(this WebApplication app)
     {
+        var rankingEnabled = app.Configuration.GetValue<bool>("Ranking:Enabled");
+        if (!rankingEnabled)
+        {
+            app.MapGet("/rankings", () => Results.Ok(new
+            {
+                snapshotAt = (DateTimeOffset?)null,
+                rows = Array.Empty<object>()
+            })).RequireAuthorization();
+
+            app.MapPost("/internal/rankings/rebuild", () => Results.NotFound()).ExcludeFromDescription();
+            return app;
+        }
+
         app.MapGet("/rankings", async (RankingReadService rankingReadService) =>
         {
             var (snapshotAt, rows) = await rankingReadService.GetLatestAsync();

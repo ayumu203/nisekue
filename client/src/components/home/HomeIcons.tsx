@@ -79,3 +79,11 @@ export function ThreadsIcon(props: SvgIconProps) {
     </SvgIcon>
   )
 }
+
+export function RankingIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M4 20h16v2H4zm1-2V8h3v10zm5 0V4h3v14zm5 0v-6h3v6z" />
+    </SvgIcon>
+  )
+}

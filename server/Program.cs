@@ -103,6 +103,8 @@ builder.Services.AddSignalR();
 var supabaseConnectionString = builder.Configuration.GetConnectionString("Supabase")
     ?? throw new InvalidOperationException("Connection string 'Supabase' is not configured.");
 
+var rankingEnabled = builder.Configuration.GetValue<bool>("Ranking:Enabled");
+
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
 {
     options.UseNpgsql(supabaseConnectionString, npgsqlOptions =>
@@ -164,7 +166,10 @@ builder.Services.AddScoped<RankingReadService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<ThreadService>();
 builder.Services.AddScoped<TrainingService>();
-builder.Services.AddHostedService<RankingRebuildBackgroundService>();
+if (rankingEnabled)
+{
+    builder.Services.AddHostedService<RankingRebuildBackgroundService>();
+}
 
 var app = builder.Build();
 

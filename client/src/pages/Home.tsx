@@ -15,6 +15,7 @@ import {
   MoveSettingIcon,
   QuestIcon,
   RebirthIcon,
+  RankingIcon,
   SpecialThanksIcon,
   ThreadsIcon,
   TrainingIcon,
@@ -170,6 +171,9 @@ function Home() {
               </Button>
               <Button component={Link} to="/threads" variant="outlined" startIcon={<ThreadsIcon />} sx={menuButtonSx}>
                 {locale.threads}
+              </Button>
+              <Button component={Link} to="/ranking" variant="outlined" startIcon={<RankingIcon />} sx={menuButtonSx}>
+                {locale.ranking}
               </Button>
               <Button
                 component={Link}

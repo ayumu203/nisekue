@@ -711,10 +711,6 @@ internal static class ItemEndpoints
             IWebHostEnvironment environment,
             DevelopmentDataCleanupService developmentDataCleanupService) =>
         {
-            if (!environment.IsDevelopment())
-            {
-                return Results.NotFound();
-            }
 
             if (!IsLocalDevelopmentRequest(request))
             {
