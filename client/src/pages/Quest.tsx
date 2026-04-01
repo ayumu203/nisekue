@@ -976,8 +976,7 @@ export default function Quest() {
                     クエスト
                   </Typography>
                 </Stack>
-                <Stack
-                  spacing={{ xs: 1.25, sm: 2 }}>
+                <Stack spacing={{ xs: 1.25, sm: 2 }}>
                   {playerError ? <Alert severity="warning">{playerError.message}</Alert> : null}
                   {stagesError ? <Alert severity="warning">{stagesError.message}</Alert> : null}
                   {roomsError ? <Alert severity="warning">{roomsError.message}</Alert> : null}
