@@ -144,14 +144,12 @@ export default function Status({
       label: locale.labels.maxHp,
       value: formatStatusValue(player?.baseStatus?.maxHp, player?.status.maxHp, locale.unknownValue),
       normalized: toNormalized(player?.status.maxHp, maxResourceValue),
-      rank: player?.statusRanks?.maxHp,
     },
     {
       key: 'maxMp',
       label: locale.labels.maxMp,
       value: formatStatusValue(player?.baseStatus?.maxMp, player?.status.maxMp, locale.unknownValue),
       normalized: toNormalized(player?.status.maxMp, maxResourceValue),
-      rank: player?.statusRanks?.maxMp,
     },
   ]
 
