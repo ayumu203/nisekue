@@ -89,6 +89,18 @@ const playerStatusValuesSchema = z.object({
   speed: z.number().int().min(0, 'Speedは0以上である必要があります'),
 })
 
+const playerStatusRankSchema = z.enum(['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E', 'F', 'G'])
+
+const playerStatusRanksSchema = z.object({
+  maxHp: playerStatusRankSchema,
+  maxMp: playerStatusRankSchema,
+  strength: playerStatusRankSchema,
+  defense: playerStatusRankSchema,
+  intelligence: playerStatusRankSchema,
+  luck: playerStatusRankSchema,
+  speed: playerStatusRankSchema,
+})
+
 const playerEquipmentBonusValuesSchema = z.object({
   maxHp: z.number().int().min(0),
   maxMp: z.number().int().min(0),
@@ -130,7 +142,15 @@ export const getPlayerResponseSchema = z
     gold: z.number().int().min(0, 'Goldは0以上である必要があります'),
     status: z.object({
       baseValues: playerStatusValuesSchema,
+      baseRanks: playerStatusRanksSchema,
       effectiveValues: playerStatusValuesSchema,
+      effectiveRanks: playerStatusRanksSchema,
+    }),
+    combatIndex: z.object({
+      baseValue: z.number().int().min(0),
+      baseRank: playerStatusRankSchema,
+      effectiveValue: z.number().int().min(0),
+      effectiveRank: playerStatusRankSchema,
     }),
     moveSlots: z.array(playerMoveSlotSchema).length(10),
     equipments: z.array(playerEquipmentSchema),
@@ -138,8 +158,13 @@ export const getPlayerResponseSchema = z
   .transform((value) => ({
     ...value,
     baseStatus: value.status.baseValues,
+    baseStatusRanks: value.status.baseRanks,
     effectiveStatus: value.status.effectiveValues,
+    effectiveStatusRanks: value.status.effectiveRanks,
     status: value.status.effectiveValues,
+    statusRanks: value.status.effectiveRanks,
+    combatIndexValue: value.combatIndex.effectiveValue,
+    combatIndexRank: value.combatIndex.effectiveRank,
   }))
 
 export const playerSummarySchema = z.object({
@@ -148,6 +173,9 @@ export const playerSummarySchema = z.object({
   imagePath: z.string().min(1).nullable().optional(),
   level: z.number().int().min(1, 'レベルは1以上である必要があります'),
   job: playerJobSchema,
+  combatIndex: z.number().int().min(0),
+  combatIndexRank: playerStatusRankSchema,
+  statusRanks: playerStatusRanksSchema,
 })
 
 export const listPlayersResponseSchema = z.array(playerSummarySchema)

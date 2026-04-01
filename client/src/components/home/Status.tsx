@@ -28,6 +28,7 @@ type StatItem = {
   label: string
   value: StatValue
   normalized: number
+  rank?: string
 }
 
 type StatusProps = {
@@ -143,12 +144,14 @@ export default function Status({
       label: locale.labels.maxHp,
       value: formatStatusValue(player?.baseStatus?.maxHp, player?.status.maxHp, locale.unknownValue),
       normalized: toNormalized(player?.status.maxHp, maxResourceValue),
+      rank: player?.statusRanks?.maxHp,
     },
     {
       key: 'maxMp',
       label: locale.labels.maxMp,
       value: formatStatusValue(player?.baseStatus?.maxMp, player?.status.maxMp, locale.unknownValue),
       normalized: toNormalized(player?.status.maxMp, maxResourceValue),
+      rank: player?.statusRanks?.maxMp,
     },
   ]
 
@@ -158,30 +161,35 @@ export default function Status({
       label: locale.labels.strength,
       value: formatStatusValue(player?.baseStatus?.strength, player?.status.strength, locale.unknownValue),
       normalized: toNormalized(player?.status.strength, maxAttributeValue),
+      rank: player?.statusRanks?.strength,
     },
     {
       key: 'defense',
       label: locale.labels.defense,
       value: formatStatusValue(player?.baseStatus?.defense, player?.status.defense, locale.unknownValue),
       normalized: toNormalized(player?.status.defense, maxAttributeValue),
+      rank: player?.statusRanks?.defense,
     },
     {
       key: 'intelligence',
       label: locale.labels.intelligence,
       value: formatStatusValue(player?.baseStatus?.intelligence, player?.status.intelligence, locale.unknownValue),
       normalized: toNormalized(player?.status.intelligence, maxAttributeValue),
+      rank: player?.statusRanks?.intelligence,
     },
     {
       key: 'luck',
       label: locale.labels.luck,
       value: formatStatusValue(player?.baseStatus?.luck, player?.status.luck, locale.unknownValue),
       normalized: toNormalized(player?.status.luck, maxAttributeValue),
+      rank: player?.statusRanks?.luck,
     },
     {
       key: 'speed',
       label: locale.labels.speed,
       value: formatStatusValue(player?.baseStatus?.speed, player?.status.speed, locale.unknownValue),
       normalized: toNormalized(player?.status.speed, maxAttributeValue),
+      rank: player?.statusRanks?.speed,
     },
   ]
 
@@ -289,7 +297,14 @@ export default function Status({
               }}
             >
               {resourceItems.map((item) => (
-                <StatusStatRow key={item.key} label={item.label} value={item.value} normalized={item.normalized} />
+                <StatusStatRow
+                  key={item.key}
+                  label={item.label}
+                  value={item.value}
+                  normalized={item.normalized}
+                  rank={item.rank}
+                  compact
+                />
               ))}
             </Box>
           </Box>
@@ -378,6 +393,7 @@ export default function Status({
                         label={item.label}
                         value={item.value}
                         normalized={item.normalized}
+                        rank={item.rank}
                         hideGauge
                       />
                     ))}
