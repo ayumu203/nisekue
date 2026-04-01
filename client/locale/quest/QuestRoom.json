@@ -76,7 +76,7 @@
   "commandSubmitFailed": "コマンド送信に失敗しました",
   "chatSubmitFailed": "メッセージ送信に失敗しました",
   "submitCommand": "送信",
-  "submittingCommand": "送信中...",
+  "submittingCommand": "送信",
   "chatPlaceholder": "メッセージを送る",
   "chatSend": "発言",
   "chatSending": "送信中...",

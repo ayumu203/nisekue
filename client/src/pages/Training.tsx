@@ -350,11 +350,11 @@ export default function Training() {
                         ) : null
                       }
                       onRematch={async () => {
-                        if (!player) {
+                        if (!player || !plannedMoveIds) {
                           throw new Error(locale.playerLoading)
                         }
 
-                        await runTraining(selectedEnemy, normalizeTrainingMoveIds(player, lastSubmittedMoveIds))
+                        await runTraining(selectedEnemy, plannedMoveIds)
                       }}
                     />
                   </Box>
