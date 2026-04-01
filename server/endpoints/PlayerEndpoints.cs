@@ -156,7 +156,6 @@ internal static class PlayerEndpoints
                 await playerRepository.SaveAsync(player);
                 var equipments = await equipmentRepository.GetAllAsync();
                 await playerEquipmentRepository.SaveAsync(CreateStarterEquipments(player, equipments, now));
-                await playerItemStackRepository.SaveAsync(CreateStarterItemStacks(player, now));
                 await chatService.EnsureRoomAsync(player.Id);
                 return Results.Ok(new
                 {
@@ -671,20 +670,6 @@ internal static class PlayerEndpoints
         ];
     }
 
-    private static IReadOnlyList<PlayerItemStack> CreateStarterItemStacks(Player player, DateTimeOffset now)
-    {
-        ArgumentNullException.ThrowIfNull(player);
-
-        return
-        [
-            new PlayerItemStack(
-                PlayerItemStackId.New(),
-                player.Id,
-                new ItemId(4999),
-                quantity: 5,
-                updatedAt: now)
-        ];
-    }
 
     private static PlayerEquipment CreateStarterEquipment(
         Player player,
