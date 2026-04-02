@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using server.domain.player;
 using server.infrastructure;
 
 namespace server.application.ranking;
@@ -18,6 +19,12 @@ public sealed class RankingReadService(IDbContextFactory<AppDbContext> dbContext
             return (null, []);
         }
 
+        var rebirthCounts = await dbContext.PlayerMasterJobs
+            .AsNoTracking()
+            .GroupBy(x => x.PlayerId)
+            .Select(g => new { g.Key, RebirthCount = Math.Max(0, g.Count() - 1) })
+            .ToDictionaryAsync(x => x.Key, x => x.RebirthCount);
+
         var rows = await (
             from entry in dbContext.RankingEntries.AsNoTracking()
             join player in dbContext.Players.AsNoTracking() on entry.PlayerId equals player.Id
@@ -31,7 +38,11 @@ public sealed class RankingReadService(IDbContextFactory<AppDbContext> dbContext
                 entry.Score,
                 player.Id,
                 player.Name,
-                player.ImagePath))
+                player.ImagePath,
+                player.Level,
+                player.Job,
+                JobDisplayNames.GetDisplayName(player.Job),
+                rebirthCounts.GetValueOrDefault(player.Id, 0)))
             .ToListAsync();
 
         return (latestSnapshot.SnapshotAt, rows);
@@ -46,4 +57,8 @@ public sealed record RankingRowView(
     long Score,
     Guid PlayerId,
     string PlayerName,
-    string? PlayerImagePath);
+    string? PlayerImagePath,
+    int Level,
+    Job Job,
+    string JobDisplayName,
+    int RebirthCount);

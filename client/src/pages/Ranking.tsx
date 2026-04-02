@@ -11,6 +11,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
+import { Link } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import useSWR from 'swr'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
@@ -23,13 +24,6 @@ import locale from '../../locale/ranking/Ranking.json'
 function getRankingTypeLabel(type: string): string {
   const labels = locale.rankingTypes as Record<string, string>
   return labels[type] ?? type
-}
-
-function getPeriodLabel(period: string): string {
-  if (period === 'Total') return locale.total
-  if (period === 'Weekly') return locale.weekly
-  if (period === 'Daily') return locale.daily
-  return period
 }
 
 function periodPriority(period: string): number {
@@ -106,7 +100,10 @@ export default function Ranking() {
           </Stack>
 
           <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-            <Stack spacing={2}>
+            <Stack spacing={1.25}>
+              <Typography variant="overline" sx={{ letterSpacing: '0.25em', color: 'rgba(79, 57, 44, 0.7)' }}>
+                {locale.overline}
+              </Typography>
               <Typography variant="h4" fontWeight={900}>
                 {locale.title}
               </Typography>
@@ -163,42 +160,79 @@ export default function Ranking() {
                   </Stack>
 
                   <Stack spacing={1}>
-                    {filteredRows.map((row) => (
-                      <Paper
-                        key={`${row.rankingType}-${row.periodKind}-${row.combatIndexRank}-${row.rankPosition}-${row.player.userId}`}
-                        variant="outlined"
-                        sx={{ p: 1.5 }}
-                      >
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-                          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
-                            <Box
-                              component="img"
-                              src={resolveCharacterAssetPath(row.player.imagePath) ?? undefined}
-                              alt={row.player.userName ?? row.player.userId}
-                              sx={{
-                                width: 42,
-                                height: 42,
-                                borderRadius: 1.5,
-                                objectFit: 'cover',
-                                objectPosition: 'center top',
-                              }}
-                            />
-                            <Stack spacing={0.2}>
-                              <Typography variant="body1" fontWeight={800}>
-                                {row.rankPosition}位 {row.player.userName ?? '-'}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {getRankingTypeLabel(row.rankingType)} / {getPeriodLabel(row.periodKind)}
-                                {row.combatIndexRank ? ` / ${row.combatIndexRank}` : ''}
-                              </Typography>
+                    {filteredRows.map((row) => {
+                      const jobName = row.player.job.displayName ?? row.player.job.code
+                      return (
+                        <Paper
+                          key={`${row.rankingType}-${row.periodKind}-${row.combatIndexRank}-${row.rankPosition}-${row.player.userId}`}
+                          variant="outlined"
+                          sx={{ p: 1.5 }}
+                        >
+                          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                            <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
+                              <Box
+                                component={Link}
+                                to={`/players/${row.player.userId}/visit`}
+                                aria-label={`${row.player.userName ?? row.player.userId} の部屋へ`}
+                                sx={{
+                                  width: 42,
+                                  height: 42,
+                                  borderRadius: 1.5,
+                                  overflow: 'hidden',
+                                  position: 'relative',
+                                  display: 'inline-flex',
+                                }}
+                              >
+                                <Box
+                                  component="img"
+                                  src={resolveCharacterAssetPath(row.player.imagePath) ?? undefined}
+                                  alt={row.player.userName ?? row.player.userId}
+                                  sx={{
+                                    width: 42,
+                                    height: 42,
+                                    borderRadius: 1.5,
+                                    objectFit: 'cover',
+                                    objectPosition: 'center top',
+                                  }}
+                                />
+                                {row.rankPosition === 1 ? (
+                                  <Box
+                                    component="span"
+                                    sx={{
+                                      position: 'absolute',
+                                      top: -4,
+                                      right: -6,
+                                      fontSize: 14,
+                                    }}
+                                  >
+                                    👑
+                                  </Box>
+                                ) : null}
+                              </Box>
+                              <Stack spacing={0.4}>
+                                <Typography variant="body1" fontWeight={800}>
+                                  {row.rankPosition}位 {row.player.userName ?? '-'}
+                                </Typography>
+                                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {locale.jobLabel}: {jobName}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {locale.levelLabel} {row.player.level}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {locale.rebirthLabel} {row.player.rebirthCount}
+                                  </Typography>
+                                </Stack>
+                              </Stack>
                             </Stack>
+                            <Typography variant="body1" fontWeight={900}>
+                              {row.score.toLocaleString('ja-JP')}
+                            </Typography>
                           </Stack>
-                          <Typography variant="body1" fontWeight={900}>
-                            {row.score.toLocaleString('ja-JP')}
-                          </Typography>
-                        </Stack>
-                      </Paper>
-                    ))}
+                        </Paper>
+                      )
+                    })}
                   </Stack>
                 </>
               )}
