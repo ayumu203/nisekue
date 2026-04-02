@@ -11,6 +11,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
@@ -18,6 +19,7 @@ import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { getRankings } from '@/api/ranking'
 import { useAuth } from '@/contexts/useAuth'
 import { resolveCharacterAssetPath } from '@/lib/assets'
+import { resolveRankColor } from '@/lib/playerRank'
 import { innerSurfaceSx, outerPagePaperSx } from '@/constants/styles'
 import locale from '../../locale/ranking/Ranking.json'
 
@@ -196,6 +198,7 @@ export default function Ranking() {
                       <Stack spacing={1}>
                         {filteredRows.map((row) => {
                           const jobName = row.player.job.displayName ?? row.player.job.code
+                          const rankColor = resolveRankColor(row.player.combatIndexRank) ?? '#68b7a7'
                           return (
                             <Paper
                               key={`${row.rankingType}-${row.periodKind}-${row.combatIndexRank}-${row.rankPosition}-${row.player.userId}`}
@@ -244,9 +247,32 @@ export default function Ranking() {
                                     ) : null}
                                   </Box>
                                   <Stack spacing={0.4}>
-                                    <Typography variant="body1" fontWeight={800}>
-                                      {row.rankPosition}位 {row.player.userName ?? '-'}
-                                    </Typography>
+                                    <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+                                      <Typography variant="body1" fontWeight={800}>
+                                        {row.rankPosition}位 {row.player.userName ?? '-'}
+                                      </Typography>
+                                      <Box
+                                        component="span"
+                                        sx={{
+                                          minWidth: 52,
+                                          px: 1.25,
+                                          py: 0.65,
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          borderRadius: 999,
+                                          border: '1px solid',
+                                          borderColor: alpha(rankColor, 0.38),
+                                          backgroundColor: alpha(rankColor, 0.14),
+                                          color: rankColor,
+                                          fontSize: '0.95rem',
+                                          fontWeight: 900,
+                                          lineHeight: 1,
+                                        }}
+                                      >
+                                        {row.player.combatIndexRank}
+                                      </Box>
+                                    </Stack>
                                     <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
                                       <Typography variant="caption" color="text.secondary">
                                         {locale.jobLabel}: {jobName}

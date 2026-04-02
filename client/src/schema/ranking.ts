@@ -10,6 +10,7 @@ export const rankingPlayerSchema = z.object({
   userName: z.string().min(1).nullable().optional(),
   imagePath: z.string().min(1).nullable().optional(),
   level: z.number().int().nonnegative(),
+  combatIndexRank: z.enum(['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E', 'F', 'G']),
   job: rankingJobSchema,
   rebirthCount: z.number().int().nonnegative(),
 })

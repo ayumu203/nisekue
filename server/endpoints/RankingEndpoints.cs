@@ -40,6 +40,7 @@ internal static class RankingEndpoints
                         userName = x.PlayerName,
                         imagePath = x.PlayerImagePath,
                         level = x.Level,
+                        combatIndexRank = x.PlayerCombatIndexRank,
                         job = new
                         {
                             code = x.Job.ToString(),
