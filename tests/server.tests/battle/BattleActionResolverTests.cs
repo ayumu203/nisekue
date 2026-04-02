@@ -41,7 +41,7 @@ public class BattleActionResolverTests
         var move = CreateDamageMove(1, mpCost: 1, executionPriority: 0);
 
         var result = resolver.Resolve(
-            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(421)),
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
             [actor, target],
             [CreateState(actor.Id), CreateState(target.Id)],
             [move]);
@@ -60,7 +60,7 @@ public class BattleActionResolverTests
         var move = CreateDamageMove(1, mpCost: 1, executionPriority: 0);
 
         var result = resolver.Resolve(
-            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(421)),
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
             [actor, target],
             [actorState, CreateState(target.Id)],
             [move]);
@@ -81,7 +81,7 @@ public class BattleActionResolverTests
         var move = CreateDamageMove(1, mpCost: 1, executionPriority: 0);
 
         var result = resolver.Resolve(
-            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(421)),
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
             [actor, target],
             [actorState, targetState],
             [move]);
@@ -107,7 +107,7 @@ public class BattleActionResolverTests
         var move = CreateDefenseDamageMove(1, mpCost: 1, executionPriority: 0);
 
         var result = resolver.Resolve(
-            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(421)),
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
             [actor, target],
             [actorState, targetState],
             [move]);
@@ -211,7 +211,7 @@ public class BattleActionResolverTests
         var move = CreateDamageThenHealMove(1);
 
         var result = resolver.Resolve(
-            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(421)),
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
             [actor, target],
             [actorState, targetState],
             [move]);
@@ -236,7 +236,7 @@ public class BattleActionResolverTests
         var move = CreateRestoreMpMove(1);
 
         var result = resolver.Resolve(
-            new BattleAction(actor.Id, BattleActionKind.UseMove, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id]), new MoveId(421)),
+            new BattleAction(actor.Id, BattleActionKind.UseMove, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id]), new MoveId(1)),
             [actor, target],
             [actorState, targetState],
             [move]);
@@ -351,7 +351,7 @@ public class BattleActionResolverTests
         var move = CreateCriticalDamageMove(1);
 
         var result = resolver.Resolve(
-            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(421)),
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
             [actor, target],
             [actorState, CreateState(target.Id)],
             [move]);
@@ -373,7 +373,7 @@ public class BattleActionResolverTests
         var move = CreateDamageMove(1, mpCost: 1, executionPriority: 0);
 
         var result = resolver.Resolve(
-            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(421)),
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
             [actor, target],
             [CreateState(actor.Id), targetState],
             [move]);
@@ -416,7 +416,7 @@ public class BattleActionResolverTests
         var move = CreateInstantDeathMove(1, allowBossInstantDeath: false);
 
         var result = resolver.Resolve(
-            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(421)),
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
             [actor, target],
             [CreateState(actor.Id), CreateState(target.Id)],
             [move],
@@ -438,7 +438,7 @@ public class BattleActionResolverTests
         var move = CreateInstantDeathMove(1, allowBossInstantDeath: true);
 
         var result = resolver.Resolve(
-            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(421)),
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
             [actor, target],
             [CreateState(actor.Id), targetState],
             [move],
@@ -513,7 +513,7 @@ public class BattleActionResolverTests
         var move = CreateHalveSelfHpMove(1);
 
         var result = resolver.Resolve(
-            new BattleAction(actor.Id, BattleActionKind.UseMove, SelfTarget(), new MoveId(421)),
+            new BattleAction(actor.Id, BattleActionKind.UseMove, SelfTarget(), new MoveId(1)),
             [actor],
             [actorState],
             [move]);

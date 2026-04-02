@@ -17,7 +17,7 @@ public class CsvJobProfileRepositoryTests
         profile.Job.Should().Be(Job.OniWarrior);
         profile.MasterLevel.Should().Be(30);
         profile.RequiredMasterJobs.Should().BeEquivalentTo([Job.Warrior]);
-        profile.GrowthValue.Strength.Should().Be(5);
+        profile.GrowthValue.Strength.Should().Be(6);
     }
 
     [Fact]
@@ -30,6 +30,6 @@ public class CsvJobProfileRepositoryTests
         profile.Job.Should().Be(Job.GreatThief);
         profile.MasterLevel.Should().Be(50);
         profile.RequiredMasterJobs.Should().BeEquivalentTo([Job.Warrior, Job.WindMage, Job.GrandRanger]);
-        profile.GrowthValue.Luck.Should().Be(5);
+        profile.GrowthValue.Luck.Should().Be(6);
     }
 }

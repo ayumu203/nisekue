@@ -116,7 +116,7 @@ function Players() {
                     gap: 2,
                   }}
                 >
-                  {visitTargets.map((player) => (
+                  {visitTargets.map((player) =>
                     (() => {
                       const rankColor = resolveRankColor(player.combatIndexRank) ?? '#68b7a7'
 
@@ -217,8 +217,8 @@ function Players() {
                           </Stack>
                         </Paper>
                       )
-                    })()
-                  ))}
+                    })(),
+                  )}
                 </Box>
               )}
             </Stack>

@@ -13,7 +13,7 @@ import {
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { Link } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import useSWR from 'swr'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { getRankings } from '@/api/ranking'
@@ -66,17 +66,12 @@ export default function Ranking() {
 
   const activeType = selectedType || types[0] || ''
   const isCombatRankSelectorEnabled = combatRankApplicableTypes.has(activeType)
-
-  useEffect(() => {
-    if (!isCombatRankSelectorEnabled && combatRank !== 'ALL') {
-      setCombatRank('ALL')
-    }
-  }, [isCombatRankSelectorEnabled, combatRank])
+  const activeCombatRank = isCombatRankSelectorEnabled ? combatRank : 'ALL'
 
   const baseFilteredRows = (data?.rows ?? [])
     .filter((row) => !activeType || row.rankingType === activeType)
     .filter((row) => period === 'ALL' || row.periodKind === period)
-    .filter((row) => combatRank === 'ALL' || row.combatIndexRank === combatRank)
+    .filter((row) => activeCombatRank === 'ALL' || row.combatIndexRank === activeCombatRank)
     .sort((a, b) => a.rankPosition - b.rankPosition)
 
   const formattedSnapshot = data?.snapshotAt
@@ -138,10 +133,7 @@ export default function Ranking() {
                   }}
                 >
                   <Stack spacing={2}>
-                    <Paper
-                      variant="outlined"
-                      sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}
-                    >
+                    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
                       <Stack spacing={1.25}>
                         <Typography variant="overline" sx={{ letterSpacing: '0.25em', color: 'rgba(79, 57, 44, 0.7)' }}>
                           {locale.overline}
@@ -155,7 +147,11 @@ export default function Ranking() {
                         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
                           <FormControl fullWidth>
                             <InputLabel>{locale.title}</InputLabel>
-                            <Select value={activeType} label={locale.title} onChange={(e) => setSelectedType(e.target.value)}>
+                            <Select
+                              value={activeType}
+                              label={locale.title}
+                              onChange={(e) => setSelectedType(e.target.value)}
+                            >
                               {types.map((type) => (
                                 <MenuItem key={type} value={type}>
                                   {getRankingTypeLabel(type)}
@@ -174,12 +170,12 @@ export default function Ranking() {
                           </FormControl>
                           <FormControl fullWidth>
                             <InputLabel>{locale.combatRank}</InputLabel>
-                          <Select
-                            value={combatRank}
-                            label={locale.combatRank}
-                            disabled={!isCombatRankSelectorEnabled}
-                            onChange={(e) => setCombatRank(e.target.value)}
-                          >
+                            <Select
+                              value={activeCombatRank}
+                              label={locale.combatRank}
+                              disabled={!isCombatRankSelectorEnabled}
+                              onChange={(e) => setCombatRank(e.target.value)}
+                            >
                               <MenuItem value="ALL">{locale.allCombatRanks}</MenuItem>
                               {['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E', 'F', 'G'].map((r) => (
                                 <MenuItem key={r} value={r}>
@@ -191,10 +187,7 @@ export default function Ranking() {
                         </Stack>
                       </Stack>
                     </Paper>
-                    <Paper
-                      variant="outlined"
-                      sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}
-                    >
+                    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
                       <Stack spacing={1}>
                         {filteredRows.map((row) => {
                           const jobName = row.player.job.displayName ?? row.player.job.code

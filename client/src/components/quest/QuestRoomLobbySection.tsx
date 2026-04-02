@@ -56,7 +56,10 @@ type QuestRoomLobbySectionProps = {
   playerCandidatesError: Error | null
   isUpdatingParticipantId: string | null
   onRestrictionsChange: (value: string, nextAllowedPlayerIds: string[]) => void
-  onUpdateRestrictions: (options?: { minRequiredLevelInput?: string; allowedPlayerIds?: string[] }) => void | Promise<void>
+  onUpdateRestrictions: (options?: {
+    minRequiredLevelInput?: string
+    allowedPlayerIds?: string[]
+  }) => void | Promise<void>
   onPositionDraftChange: (participantId: string, nextPosition: { row: BattleRow; column: BattleColumn }) => void
   onUpdateParticipantPosition: (participantId: string) => void | Promise<void>
   onStartQuest: () => void | Promise<void>
@@ -116,10 +119,7 @@ export default function QuestRoomLobbySection({
     })
   }
 
-  const handleRestrictionsModalApply = async (
-    nextMinRequiredLevelInput: string,
-    nextAllowedPlayerIds: string[],
-  ) => {
+  const handleRestrictionsModalApply = async (nextMinRequiredLevelInput: string, nextAllowedPlayerIds: string[]) => {
     onRestrictionsChange(nextMinRequiredLevelInput, nextAllowedPlayerIds)
     await onUpdateRestrictions({
       minRequiredLevelInput: nextMinRequiredLevelInput,

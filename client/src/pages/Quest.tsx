@@ -386,8 +386,7 @@ export default function Quest() {
       const room = await updateQuestRoomRestrictions(
         currentRoom.roomId,
         {
-          minRequiredLevel:
-            nextMinRequiredLevelInput.trim() === '' ? null : Number(nextMinRequiredLevelInput),
+          minRequiredLevel: nextMinRequiredLevelInput.trim() === '' ? null : Number(nextMinRequiredLevelInput),
           allowedPlayerIds: nextAllowedPlayerIds,
         },
         session.access_token,

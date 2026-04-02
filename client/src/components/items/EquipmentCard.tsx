@@ -92,7 +92,9 @@ export function EquipmentCard({
               {locale.effectAmount} {formatStatusBonus(item)}
             </Typography>
             <Stack direction="row" spacing={0.5} alignItems="center">
-              <Typography variant="body2">{locale.durability} {item.durability}/{item.maxDurability}</Typography>
+              <Typography variant="body2">
+                {locale.durability} {item.durability}/{item.maxDurability}
+              </Typography>
               {item.durability === 0 ? (
                 <Tooltip title="耐久値が0のアイテムはもう捨てるしかありません">
                   <WarningAmberIcon sx={{ fontSize: 18, color: '#d84315' }} />
@@ -122,12 +124,7 @@ export function EquipmentCard({
                 {locale.actionEquip}
               </Button>
             ) : null}
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={1}
-              justifyContent="center"
-              alignItems="center"
-            >
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="center" alignItems="center">
               <Button variant="outlined" onClick={onSynthesize} disabled={actionDisabled} sx={secondaryActionSx}>
                 {locale.actionSynthesize}
               </Button>

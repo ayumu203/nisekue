@@ -157,12 +157,7 @@ export default function ThreadDetail() {
               {isDeleting ? <CircularProgress size={18} color="inherit" /> : locale.deleteButton}
             </Button>
           ) : null}
-          <Button
-            component={Link}
-            to="/threads"
-            variant="outlined"
-            sx={{ ...flatSecondaryButtonSx, color: '#295d63' }}
-          >
+          <Button component={Link} to="/threads" variant="outlined" sx={{ ...flatSecondaryButtonSx, color: '#295d63' }}>
             {locale.backToList}
           </Button>
         </Stack>
@@ -200,8 +195,8 @@ export default function ThreadDetail() {
                 </Typography>
 
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="space-between">
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <Avatar
+                  <Stack direction="row" spacing={1.5} alignItems="center">
+                    <Avatar
                       component={Link}
                       to={`/players/${data.authorPlayerId}/visit`}
                       aria-label={locale.visitAuthorRoom.replace('{name}', data.authorName)}

@@ -250,8 +250,7 @@ export default function QuestMultiRoomList({
       }}
     >
       <Stack spacing={2}>
-        <Stack spacing={0.5}>
-        </Stack>
+        <Stack spacing={0.5}></Stack>
         {isLoading ? (
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={18} />

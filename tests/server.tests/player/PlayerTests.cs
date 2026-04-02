@@ -176,7 +176,7 @@ public class PlayerTests
         player.Status.MaxHp.Should().Be(35);
         player.Status.MaxMp.Should().Be(24);
         player.Status.Strength.Should().Be(9);
-        player.MoveSet.GetLearnedMoveIds().Select(x => x.Id).Should().Equal(101, 102);
+        player.MoveSet.GetLearnedMoveIds().Select(x => x.Id).Should().Equal(421, 141);
         player.MasteredJobs.Should().BeEquivalentTo(new[] { Job.Warrior, Job.Priest });
     }
 

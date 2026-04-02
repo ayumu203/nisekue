@@ -14,6 +14,6 @@ public class CsvJobMoveLearningRuleRepositoryTests
 
         var rule = repository.GetByJob(Job.GreatThief);
 
-        rule.MoveIds.Select(x => x.Id).Should().Equal([106, 107]);
+        rule.MoveIds.Select(x => x.Id).Should().Equal([521, 422]);
     }
 }
