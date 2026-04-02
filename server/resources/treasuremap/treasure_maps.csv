@@ -1,6 +1,6 @@
 id,code,name,description,grade,duration_seconds,reward_pool_id,is_marketable,is_hidden_from_inventory
 101,4001,始まりの古地図,冒険者が初めての遠征で赴く地,D,3600,201,true,true
-102,4002,静寂の古地図,比較的危険的な魔物の少ない遠征先,C,5400,202,true,true
+102,4002,静寂の古地図,比較的危険的の少ない遠征先,C,5400,202,true,true
 103,4003,黄金の古地図,危険度が高く得られる報酬も大きい遺跡,B,7200,203,true,true
 104,4004,秘境の古地図,熟練冒険者達が挑む壮大な森,A,10800,204,true,true
 105,4005,伝説の古地図,伝説的な宝物が眠る未知の地,S,14400,205,true,true
