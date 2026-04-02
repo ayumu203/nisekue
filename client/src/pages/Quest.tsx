@@ -456,7 +456,8 @@ export default function Quest() {
 
     try {
       const room = await cancelQuestRoom(currentRoom.roomId, session.access_token)
-      setCreatedRoom(room)
+      setCreatedRoom(null)
+      setMultiEntryView('create')
       await mutateRoom(room, { revalidate: false })
       await mutateRooms()
     } catch (error) {
