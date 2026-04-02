@@ -11,15 +11,16 @@ import {
   Typography,
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
-import {
-  greenOutlinedInputSx,
-  innerSurfaceSx,
-  playerHpBarSx,
-  playerMpBarSx,
-  softGreenButtonSx,
-} from '@/constants/styles'
+import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
-import type { BattleColumn, BattleRow, QuestActionKind, QuestRunDetailResponse } from '@/schema/quest'
+import type {
+  BattleColumn,
+  BattleRow,
+  QuestActionKind,
+  QuestChatMessageView,
+  QuestPartyMemberView,
+  QuestRunDetailResponse,
+} from '@/schema/quest'
 
 type AvailableMove = {
   slot: number
@@ -96,6 +97,69 @@ const enemyPositions: Record<BattleRow, Record<BattleColumn, { left: string; bot
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
 
+function getLatestQuestChatMessages(messages: QuestChatMessageView[]) {
+  const map = new Map<string, QuestChatMessageView>()
+
+  for (const message of messages) {
+    const existing = map.get(message.senderParticipantId)
+    if (!existing || new Date(existing.sentAt) < new Date(message.sentAt)) {
+      map.set(message.senderParticipantId, message)
+    }
+  }
+
+  return map
+}
+
+function truncateChatBubbleText(text: string, limit = 36) {
+  if (text.length <= limit) {
+    return text
+  }
+
+  return `${text.slice(0, limit - 1)}…`
+}
+
+function AllyStatusCard({ member }: { member: QuestPartyMemberView }) {
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        px: { xs: 0.45, sm: 0.8 },
+        py: { xs: 0.32, sm: 0.55 },
+        borderRadius: 1.75,
+        borderColor: 'rgba(123, 92, 44, 0.28)',
+        backgroundColor: 'rgba(255, 248, 224, 0.88)',
+        boxShadow: 'none',
+        opacity: member.isDead ? 0.62 : 1,
+      }}
+    >
+      <Stack spacing={0.05} sx={{ minWidth: 0 }}>
+        <Typography
+          variant="caption"
+          noWrap
+          title={member.displayName}
+          sx={{ fontWeight: 800, color: '#503717', fontSize: { xs: '0.42rem', sm: '0.68rem' }, lineHeight: 1.05 }}
+        >
+          {member.displayName}
+        </Typography>
+        <Typography
+          variant="caption"
+          noWrap
+          sx={{ color: '#624927', fontSize: { xs: '0.38rem', sm: '0.62rem' }, lineHeight: 1.05 }}
+        >
+          HP {member.currentHp}/{member.maxHp ?? '-'}
+        </Typography>
+        <Typography
+          variant="caption"
+          noWrap
+          sx={{ color: '#30506e', fontSize: { xs: '0.38rem', sm: '0.62rem' }, lineHeight: 1.05 }}
+        >
+          MP {member.currentMp}/{member.maxMp ?? '-'}
+        </Typography>
+      </Stack>
+    </Paper>
+  )
+}
+
 function getStatusRate(current: number, max: number | null | undefined): number {
   if (!max || max <= 0) {
     return 0
@@ -109,8 +173,6 @@ type BattleSpriteProps = {
   imagePath: string | null | undefined
   hp: number
   maxHp: number | null | undefined
-  mp?: number | null
-  maxMp?: number | null
   isDead: boolean
   isAlly: boolean
   isSelected?: boolean
@@ -118,6 +180,7 @@ type BattleSpriteProps = {
   onClick?: () => void
   left: string
   bottom: string
+  chatMessage?: QuestChatMessageView | null
 }
 
 function BattleSprite({
@@ -125,8 +188,6 @@ function BattleSprite({
   imagePath,
   hp,
   maxHp,
-  mp,
-  maxMp,
   isDead,
   isAlly,
   isSelected = false,
@@ -134,8 +195,10 @@ function BattleSprite({
   onClick,
   left,
   bottom,
+  chatMessage,
 }: BattleSpriteProps) {
   const spriteSrc = isAlly ? resolveCharacterAssetPath(imagePath) : imagePath ? resolvePublicAssetPath(imagePath) : null
+  const bubbleText = chatMessage ? truncateChatBubbleText(chatMessage.message, 50) : null
 
   return (
     <Box
@@ -151,6 +214,55 @@ function BattleSprite({
       }}
       onClick={onClick}
     >
+      {bubbleText ? (
+        <Box
+          sx={{
+            position: 'absolute',
+            left: '50%',
+            bottom: '100%',
+            transform: 'translate(-50%, -10px)',
+            width: { xs: 132, sm: 168 },
+            px: 1,
+            py: 0.7,
+            borderRadius: 2,
+            border: '1px solid rgba(112, 83, 31, 0.4)',
+            backgroundColor: 'rgba(255, 252, 241, 0.96)',
+            boxShadow: '0 10px 20px rgba(44, 31, 18, 0.18)',
+            zIndex: 4,
+            pointerEvents: 'none',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              left: '50%',
+              bottom: -7,
+              width: 12,
+              height: 12,
+              backgroundColor: 'rgba(255, 252, 241, 0.96)',
+              borderRight: '1px solid rgba(112, 83, 31, 0.4)',
+              borderBottom: '1px solid rgba(112, 83, 31, 0.4)',
+              transform: 'translateX(-50%) rotate(45deg)',
+            },
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              display: '-webkit-box',
+              overflow: 'hidden',
+              color: '#503717',
+              textAlign: 'center',
+              lineHeight: 1.35,
+              fontSize: { xs: '0.62rem', sm: '0.7rem' },
+              wordBreak: 'break-word',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
+            {bubbleText}
+          </Typography>
+        </Box>
+      ) : null}
+
       <Stack
         spacing={0.35}
         sx={{
@@ -185,19 +297,6 @@ function BattleSprite({
           HP {hp}/{maxHp ?? '-'}
         </Typography>
         <LinearProgress variant="determinate" value={getStatusRate(hp, maxHp)} sx={playerHpBarSx} />
-        {mp != null && maxMp != null ? (
-          <>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              textAlign="center"
-              sx={{ fontSize: { xs: '0.43rem', sm: '0.75rem' }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
-            >
-              MP {mp}/{maxMp}
-            </Typography>
-            <LinearProgress variant="determinate" value={getStatusRate(mp, maxMp)} sx={playerMpBarSx} />
-          </>
-        ) : null}
       </Stack>
 
       <Box
@@ -421,6 +520,15 @@ export default function QuestBattleStatusPanel({
 
   const reachableTargetKeys = new Set(reachableEnemies.map((enemy) => `${enemy.position.row}:${enemy.position.column}`))
   const anchorTargetKey = anchorEnemy == null ? null : `${anchorEnemy.position.row}:${anchorEnemy.position.column}`
+  const chatEntries = [...run.chatMessages, ...(run.lastTurnResults?.chatMessages ?? [])]
+  const allyChatMap = getLatestQuestChatMessages(chatEntries)
+  const sortedPartyMembers = [...run.partyMembers].sort((left, right) => {
+    if (left.position.row !== right.position.row) {
+      return battleRowOrder.indexOf(left.position.row) - battleRowOrder.indexOf(right.position.row)
+    }
+
+    return battleColumnOrder.indexOf(left.position.column) - battleColumnOrder.indexOf(right.position.column)
+  })
 
   const handleMoveChange = (event: SelectChangeEvent<string>) => {
     const nextValue = String(event.target.value)
@@ -450,20 +558,11 @@ export default function QuestBattleStatusPanel({
             letterSpacing: '0.02em',
             color: selectedActionKind === option.value ? '#fffdf4' : '#6a4300',
             backgroundColor: selectedActionKind === option.value ? '#8c4b16' : '#ffc83d',
-            border: selectedActionKind === option.value ? '2px solid #8c4b16' : '2px solid #d89a17',
-            boxShadow:
-              selectedActionKind === option.value
-                ? '0 10px 20px rgba(62, 31, 5, 0.32)'
-                : 'inset 0 1px 0 rgba(255,255,255,0.28)',
-            transform: selectedActionKind === option.value ? 'translateY(-1px) scale(1.03)' : 'none',
-            transition:
-              'background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease',
+            border: 'none',
+            boxShadow: 'none',
             '&:hover': {
-              backgroundColor: selectedActionKind === option.value ? '#7c4011' : '#ffcf52',
-              boxShadow:
-                selectedActionKind === option.value
-                  ? '0 12px 24px rgba(62, 31, 5, 0.34)'
-                  : 'inset 0 1px 0 rgba(255,255,255,0.3)',
+              backgroundColor: selectedActionKind === option.value ? '#8c4b16' : '#ffc83d',
+              boxShadow: 'none',
             },
           }}
         >
@@ -519,7 +618,7 @@ export default function QuestBattleStatusPanel({
             position: 'relative',
             overflow: 'hidden',
             borderRadius: 4,
-            minHeight: { xs: 520, sm: 600, md: 640 },
+            minHeight: { xs: 500, sm: 575, md: 620 },
             border: '1px solid #c7a96f',
             backgroundColor: '#d9e6df',
           }}
@@ -597,14 +696,14 @@ export default function QuestBattleStatusPanel({
               position: 'absolute',
               left: 0,
               right: 0,
-              bottom: '14%',
+              bottom: { xs: '12.5%', sm: '12%', md: '11.5%' },
               height: 2,
               backgroundColor: 'rgba(215, 174, 73, 0.7)',
               zIndex: 1,
             }}
           />
 
-          {run.partyMembers.map((member) => {
+          {sortedPartyMembers.map((member) => {
             const position = allyPositions[member.position.row][member.position.column]
             const allyKey = `${member.position.row}:${member.position.column}`
             const isActor = member.participantId === selfParticipantId
@@ -625,8 +724,6 @@ export default function QuestBattleStatusPanel({
                 imagePath={member.imagePath}
                 hp={member.currentHp}
                 maxHp={member.maxHp}
-                mp={member.currentMp}
-                maxMp={member.maxMp}
                 isDead={member.isDead}
                 isAlly
                 targetState={allyTargetState}
@@ -640,6 +737,7 @@ export default function QuestBattleStatusPanel({
                 }
                 left={position.left}
                 bottom={position.bottom}
+                chatMessage={allyChatMap.get(member.participantId) ?? null}
               />
             )
           })}
@@ -655,8 +753,6 @@ export default function QuestBattleStatusPanel({
                 imagePath={enemy.imagePath}
                 hp={enemy.currentHp}
                 maxHp={enemy.maxHp}
-                mp={enemy.currentMp}
-                maxMp={enemy.maxMp}
                 isDead={enemy.isDead}
                 isAlly={false}
                 isSelected={targetKey === anchorTargetKey}
@@ -684,6 +780,27 @@ export default function QuestBattleStatusPanel({
               />
             )
           })}
+
+          <Box
+            sx={{
+              position: 'absolute',
+              left: { xs: 8, sm: 16 },
+              right: { xs: 8, sm: 16 },
+              bottom: { xs: 6, sm: 10 },
+              zIndex: 3,
+              display: 'grid',
+              gap: { xs: 0.45, sm: 0.65 },
+              gridTemplateColumns: {
+                xs: 'repeat(2, minmax(0, 1fr))',
+                sm: 'repeat(3, minmax(0, 1fr))',
+                md: 'repeat(6, minmax(0, 1fr))',
+              },
+            }}
+          >
+            {sortedPartyMembers.map((member) => (
+              <AllyStatusCard key={`status-band-${member.participantId}`} member={member} />
+            ))}
+          </Box>
         </Box>
       </Stack>
     </Paper>

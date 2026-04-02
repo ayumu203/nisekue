@@ -14,11 +14,19 @@ function SignUp({ onMessage }: SignUpProps) {
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const minPasswordErrorMessage = locale.errorMessages['password should be at least 6 characters']
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsSubmitting(true)
     setError(null)
+
+    if (password.length < 6) {
+      setError(minPasswordErrorMessage)
+      onMessage?.(locale.toastFailed)
+      setIsSubmitting(false)
+      return
+    }
 
     const emailRedirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
 

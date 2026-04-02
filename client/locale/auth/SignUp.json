@@ -13,6 +13,8 @@
     "unable to validate email address: invalid format": "メールアドレスの形式が正しくありません。",
     "signup requires a valid password": "有効なパスワードを入力してください。",
     "password should be at least 6 characters": "パスワードは6文字以上で入力してください。",
+    "password should be at least 6 characters long": "パスワードは6文字以上で入力してください。",
+    "password is too short": "パスワードは6文字以上で入力してください。",
     "email rate limit exceeded": "メール送信回数の上限を超えました。時間をおいて再度お試しください。",
     "user already registered": "このメールアドレスは既に登録されています。",
     "anonymous sign-ins are disabled": "匿名サインインは無効になっています。"

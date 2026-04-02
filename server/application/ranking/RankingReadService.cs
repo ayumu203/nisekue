@@ -22,12 +22,6 @@ public sealed class RankingReadService(
             return (null, []);
         }
 
-        var rebirthCounts = await dbContext.PlayerMasterJobs
-            .AsNoTracking()
-            .GroupBy(x => x.PlayerId)
-            .Select(g => new { g.Key, RebirthCount = Math.Max(0, g.Count() - 1) })
-            .ToDictionaryAsync(x => x.Key, x => x.RebirthCount);
-
         var rawRows = await (
             from entry in dbContext.RankingEntries.AsNoTracking()
             join player in dbContext.Players.AsNoTracking() on entry.PlayerId equals player.Id
@@ -43,9 +37,9 @@ public sealed class RankingReadService(
                 PlayerId = player.Id,
                 PlayerName = player.Name,
                 PlayerImagePath = player.ImagePath,
+                player.RebirthCount,
                 player.Level,
                 player.Job,
-                JobDisplayName = JobDisplayNames.GetDisplayName(player.Job),
                 player.MaxHp,
                 player.MaxMp,
                 player.Strength,
@@ -80,8 +74,8 @@ public sealed class RankingReadService(
                     x.PlayerImagePath,
                     x.Level,
                     x.Job,
-                    x.JobDisplayName,
-                    rebirthCounts.GetValueOrDefault(x.PlayerId, 0),
+                    JobDisplayNames.GetDisplayName(x.Job),
+                    x.RebirthCount,
                     playerCombatIndexRank);
             })
             .ToList();

@@ -27,6 +27,7 @@ public sealed class RankingAggregationService(
                 x.Id,
                 x.Name,
                 x.ImagePath,
+                x.RebirthCount,
                 x.MaxHp,
                 x.MaxMp,
                 x.Strength,
@@ -37,12 +38,6 @@ public sealed class RankingAggregationService(
                 x.TrainingBattleCount
             })
             .ToListAsync();
-
-        var rebirthCountByPlayer = await dbContext.PlayerMasterJobs
-            .AsNoTracking()
-            .GroupBy(x => x.PlayerId)
-            .Select(g => new { g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.Key, x => Math.Max(0, x.Count - 1));
 
         var questClearTotal = await BuildQuestClearCountAsync(dbContext, null);
         var questClearWeekly = await BuildQuestClearCountAsync(dbContext, weeklyFrom);
@@ -73,7 +68,7 @@ public sealed class RankingAggregationService(
                 combatIndex,
                 combatRank,
                 x.TrainingBattleCount,
-                rebirthCountByPlayer.GetValueOrDefault(x.Id, 0),
+                x.RebirthCount,
                 questClearTotal.GetValueOrDefault(x.Id, 0),
                 questClearWeekly.GetValueOrDefault(x.Id, 0),
                 questClearDaily.GetValueOrDefault(x.Id, 0),

@@ -189,7 +189,11 @@ export default function ThreadDetail() {
                   variant="h3"
                   fontWeight={900}
                   lineHeight={1.05}
-                  sx={{ color: '#f8efe4', wordBreak: 'break-word' }}
+                  sx={{
+                    color: '#f8efe4',
+                    wordBreak: 'break-word',
+                    fontSize: { xs: '1.25rem', sm: '2.4rem', md: '2.85rem' },
+                  }}
                 >
                   {data.title}
                 </Typography>

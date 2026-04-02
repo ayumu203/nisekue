@@ -60,6 +60,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasConversion<int>()
             .HasDefaultValue(Job.Apprentice)
             .IsRequired();
+        player.Property(x => x.RebirthCount)
+            .HasColumnName("rebirth_count")
+            .HasDefaultValue(0)
+            .IsRequired();
         player.Property(x => x.Level)
             .HasColumnName("level")
             .IsRequired();
