@@ -238,8 +238,11 @@ export const questChatMessageViewSchema = z.object({
 
 export const questRewardViewSchema = z.object({
   exp: z.number().int().nonnegative(),
+  gold: z.number().int().nonnegative().optional().default(0),
   equipmentRewardId: z.number().int().positive().nullable().optional(),
   equipmentRewardName: z.string().min(1).nullable().optional(),
+  itemRewardId: z.number().int().positive().nullable().optional(),
+  itemRewardName: z.string().min(1).nullable().optional(),
   inventoryFullSkippedPlayerIds: z.array(playerIdSchema).optional().default([]),
 })
 
