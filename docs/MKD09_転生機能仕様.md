@@ -2,7 +2,7 @@
 
 * プレイヤーは一定条件を満たすと、自身を転生させて再育成を開始できる。
 * 本機能は既存プレイヤーの更新で表現し、新規プレイヤー作成や別テーブルへの履歴退避は行わない。
-* 初期実装では転生回数を保持しない。
+* 転生回数は `internal.players.rebirth_count` で保持する。
 
 ## 目的
 
@@ -21,6 +21,7 @@
 ## 転生時の更新内容
 
 * 転生時に 100000 Gold を消費する。
+* 転生回数 `rebirth_count` を 1 増やす。
 * プレイヤーレベルは 1 にリセットする。
 * プレイヤー経験値 `exp` は 0 にリセットする。
 * 現在ジョブは維持する。
@@ -44,7 +45,7 @@
 
 * 転生による更新対象は既存 `internal.players`、`internal.player_moves`、`internal.player_master_jobs` のうち、実際に値が変わるプレイヤー本体のみとする。
 * `player_moves` と `player_master_jobs` は内容を維持するため、転生専用の追加テーブルや追加カラムは作成しない。
-* そのため EF Core マイグレーションは不要とする。
+* `internal.players` に `rebirth_count` を追加するため、EF Core マイグレーションを作成する。
 
 ## API
 
@@ -58,6 +59,7 @@
   * `message`
   * `userId`
   * `userName`
+  * `rebirthCount`
   * `job`
   * `level`
   * `jobLevel`

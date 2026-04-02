@@ -238,8 +238,11 @@ export const questChatMessageViewSchema = z.object({
 
 export const questRewardViewSchema = z.object({
   exp: z.number().int().nonnegative(),
+  gold: z.number().int().nonnegative().optional().default(0),
   equipmentRewardId: z.number().int().positive().nullable().optional(),
   equipmentRewardName: z.string().min(1).nullable().optional(),
+  itemRewardId: z.number().int().positive().nullable().optional(),
+  itemRewardName: z.string().min(1).nullable().optional(),
   inventoryFullSkippedPlayerIds: z.array(playerIdSchema).optional().default([]),
 })
 
@@ -360,7 +363,7 @@ export const manualControlResponseSchema = z.object({
 
 export const postQuestChatMessageRequestSchema = z.object({
   participantId: questParticipantIdSchema,
-  message: z.string().trim().min(1),
+  message: z.string().trim().min(1).max(50),
 })
 
 export const postQuestChatMessageResponseSchema = z.object({
@@ -384,6 +387,8 @@ export type QuestRoomDetailResponse = z.infer<typeof questRoomDetailResponseSche
 export type ListQuestRoomsRequest = z.infer<typeof listQuestRoomsRequestSchema>
 export type QuestRoomSummaryResponse = z.infer<typeof questRoomSummaryResponseSchema>
 export type ListQuestRoomsResponse = z.infer<typeof listQuestRoomsResponseSchema>
+export type QuestPartyMemberView = z.infer<typeof questPartyMemberViewSchema>
+export type QuestChatMessageView = z.infer<typeof questChatMessageViewSchema>
 export type QuestRunDetailResponse = z.infer<typeof questRunDetailResponseSchema>
 export type SubmitQuestCommandRequest = z.infer<typeof submitQuestCommandRequestSchema>
 export type SubmitQuestCommandResponse = z.infer<typeof submitQuestCommandResponseSchema>

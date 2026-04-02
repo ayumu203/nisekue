@@ -15,8 +15,11 @@ type QuestRunResultPanelProps = {
     leaveFinishedRun: string
     noImage: string
     rewardTitle: string
+    rewardExpLabel: string
+    rewardGoldLabel: string
     rewardEquipmentLabel: string
-    rewardMiss: string
+    rewardItemLabel: string
+    rewardNone: string
     rewardInventoryFullSkipped: string
   }
 }
@@ -39,6 +42,24 @@ export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }:
 
   const isSucceeded = run.status === 'Succeeded'
   const skippedCount = run.rewards.inventoryFullSkippedPlayerIds?.length ?? 0
+  const rewardRows = [
+    {
+      label: locale.rewardExpLabel,
+      value: `${run.rewards.exp}`,
+    },
+    {
+      label: locale.rewardGoldLabel,
+      value: `${run.rewards.gold ?? 0}`,
+    },
+    {
+      label: locale.rewardEquipmentLabel,
+      value: run.rewards.equipmentRewardName ?? locale.rewardNone,
+    },
+    {
+      label: locale.rewardItemLabel,
+      value: run.rewards.itemRewardName ?? locale.rewardNone,
+    },
+  ]
 
   return (
     <Paper
@@ -147,15 +168,33 @@ export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }:
               background: 'rgba(255,255,255,0.55)',
             }}
           >
-            <Stack spacing={0.75} alignItems="center">
+            <Stack spacing={0.75} alignItems="stretch">
               <Typography variant="subtitle1" fontWeight={800} color="#6f4d11">
                 {locale.rewardTitle}
               </Typography>
-              <Typography variant="body1" fontWeight={700} color="#4b391c" textAlign="center">
-                {run.rewards.equipmentRewardName
-                  ? `${locale.rewardEquipmentLabel} ${run.rewards.equipmentRewardName}`
-                  : locale.rewardMiss}
-              </Typography>
+              {rewardRows.map((reward) => (
+                <Stack
+                  key={reward.label}
+                  direction="row"
+                  spacing={1}
+                  justifyContent="space-between"
+                  alignItems="center"
+                  sx={{
+                    py: 0.25,
+                    borderBottom: '1px solid rgba(124, 91, 25, 0.12)',
+                    '&:last-of-type': {
+                      borderBottom: 'none',
+                    },
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={700} color="#6f4d11">
+                    {reward.label}
+                  </Typography>
+                  <Typography variant="body1" fontWeight={700} color="#4b391c" textAlign="right">
+                    {reward.value}
+                  </Typography>
+                </Stack>
+              ))}
               {skippedCount > 0 ? (
                 <Typography variant="body2" color="#7b5e2f" textAlign="center">
                   {locale.rewardInventoryFullSkipped.replace('{{count}}', String(skippedCount))}

@@ -116,6 +116,7 @@ export default function QuestLastTurnResultsPanel({
   onSubmitChatMessage,
   locale,
 }: QuestLastTurnResultsPanelProps) {
+  const maxQuestChatMessageLength = 50
   const currentTurnMessages = run?.chatMessages ?? []
   const lastTurnMessages = run?.lastTurnResults?.chatMessages ?? []
   const logs =
@@ -135,11 +136,12 @@ export default function QuestLastTurnResultsPanel({
         <Stack direction="row" spacing={1} alignItems="flex-start">
           <TextField
             value={chatMessage}
-            onChange={(event) => onChatMessageChange(event.target.value)}
+            onChange={(event) => onChatMessageChange(event.target.value.slice(0, maxQuestChatMessageLength))}
             placeholder={locale.chatPlaceholder}
             size="small"
             multiline
             maxRows={3}
+            inputProps={{ maxLength: maxQuestChatMessageLength }}
             fullWidth
             disabled={!canPostChat || isChatSubmitting}
             sx={{

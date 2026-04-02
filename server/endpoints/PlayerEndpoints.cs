@@ -143,6 +143,7 @@ internal static class PlayerEndpoints
                 var player = new Player(
                     playerId.Value,
                     request.UserName,
+                    rebirthCount: 0,
                     level: 1,
                     exp: 0,
                     jobLevel: 1,
@@ -446,6 +447,7 @@ internal static class PlayerEndpoints
                     message = "転生しました。",
                     userId = player.Id.Value,
                     userName = player.Name,
+                    rebirthCount = player.RebirthCount,
                     job = new
                     {
                         code = player.Job.ToString(),
@@ -579,6 +581,7 @@ internal static class PlayerEndpoints
             userId = player.Id.Value,
             userName = player.Name,
             imagePath = player.ImagePath,
+            rebirthCount = player.RebirthCount,
             job = new
             {
                 code = player.Job.ToString(),

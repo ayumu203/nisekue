@@ -16,7 +16,8 @@ public class Player(
     string? imagePath = null,
     DateTimeOffset? questCooldownUntil = null,
     MoveSet? moveSet = null,
-    IReadOnlySet<Job>? masteredJobs = null)
+    IReadOnlySet<Job>? masteredJobs = null,
+    int rebirthCount = 0)
 {
     private readonly HashSet<Job> masteredJobs = masteredJobs is null ? [] : new HashSet<Job>(masteredJobs);
 
@@ -25,6 +26,7 @@ public class Player(
     public string? ImagePath { get; private set; } = ValidateImagePath(imagePath);
     public DateTimeOffset? QuestCooldownUntil { get; private set; } = questCooldownUntil;
     public Job Job { get; private set; } = job;
+    public int RebirthCount { get; private set; } = ValidateNonNegative(rebirthCount, nameof(rebirthCount));
     public int Level { get; private set; } = ValidateLevel(level);
     public int Exp { get; private set; } = exp;
     public int JobLevel { get; private set; } = ValidateLevel(jobLevel);
@@ -217,6 +219,7 @@ public class Player(
         }
 
         Gold -= PlayerConstants.RebirthGoldCost;
+        RebirthCount++;
         Level = 1;
         Exp = 0;
         JobLevel = 1;

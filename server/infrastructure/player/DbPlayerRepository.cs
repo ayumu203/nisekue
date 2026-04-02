@@ -112,6 +112,7 @@ namespace server.infrastructure.player
                     ImagePath = player.ImagePath,
                     QuestCooldownUntil = player.QuestCooldownUntil,
                     Job = player.Job,
+                    RebirthCount = player.RebirthCount,
                     Level = player.Level,
                     Exp = player.Exp,
                     JobLevel = player.JobLevel,
@@ -141,6 +142,7 @@ namespace server.infrastructure.player
                 existing.Job = player.Job;
                 existing.ImagePath = player.ImagePath;
                 existing.QuestCooldownUntil = player.QuestCooldownUntil;
+                existing.RebirthCount = player.RebirthCount;
                 existing.Level = player.Level;
                 existing.Exp = player.Exp;
                 existing.JobLevel = player.JobLevel;
@@ -188,6 +190,7 @@ namespace server.infrastructure.player
             new(
                 new PlayerId(entity.Id),
                 entity.Name,
+                rebirthCount: entity.RebirthCount,
                 imagePath: entity.ImagePath,
                 questCooldownUntil: entity.QuestCooldownUntil,
                 job: entity.Job,
