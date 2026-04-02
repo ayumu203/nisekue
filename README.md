@@ -1,5 +1,10 @@
 # README
 
+## 公開先
+
+- [本番用](https://game.arm203.org/)
+- [開発用](https://ayumu203.github.io/nisekue/)
+
 ## 作るもの
 
 - チビクエ3(https://3.chibiquest.net/main3.php)風のゲーム開発.
