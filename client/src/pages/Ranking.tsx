@@ -64,6 +64,10 @@ export default function Ranking() {
     .filter((row) => combatRank === 'ALL' || row.combatIndexRank === combatRank)
     .sort((a, b) => a.rankPosition - b.rankPosition)
 
+  const formattedSnapshot = data?.snapshotAt
+    ? new Date(data.snapshotAt).toLocaleString('ja-JP', { hour12: false })
+    : '-'
+
   const filteredRows =
     period === 'ALL'
       ? Array.from(
@@ -101,16 +105,6 @@ export default function Ranking() {
 
           <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
             <Stack spacing={1.25}>
-              <Typography variant="overline" sx={{ letterSpacing: '0.25em', color: 'rgba(79, 57, 44, 0.7)' }}>
-                {locale.overline}
-              </Typography>
-              <Typography variant="h4" fontWeight={900}>
-                {locale.title}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {locale.snapshotAt}: {data?.snapshotAt ? new Date(data.snapshotAt).toLocaleString('ja-JP') : '-'}
-              </Typography>
-
               {isRankingLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <CircularProgress size={16} />
@@ -121,120 +115,148 @@ export default function Ranking() {
               ) : !data || data.rows.length === 0 ? (
                 <Alert severity="info">{locale.empty}</Alert>
               ) : (
-                <>
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-                    <FormControl fullWidth>
-                      <InputLabel>{locale.title}</InputLabel>
-                      <Select value={activeType} label={locale.title} onChange={(e) => setSelectedType(e.target.value)}>
-                        {types.map((type) => (
-                          <MenuItem key={type} value={type}>
-                            {getRankingTypeLabel(type)}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                    <FormControl fullWidth>
-                      <InputLabel>{locale.period}</InputLabel>
-                      <Select value={period} label={locale.period} onChange={(e) => setPeriod(e.target.value)}>
-                        <MenuItem value="ALL">{locale.allPeriods}</MenuItem>
-                        <MenuItem value="Total">{locale.total}</MenuItem>
-                        <MenuItem value="Weekly">{locale.weekly}</MenuItem>
-                        <MenuItem value="Daily">{locale.daily}</MenuItem>
-                      </Select>
-                    </FormControl>
-                    <FormControl fullWidth>
-                      <InputLabel>{locale.combatRank}</InputLabel>
-                      <Select
-                        value={combatRank}
-                        label={locale.combatRank}
-                        onChange={(e) => setCombatRank(e.target.value)}
-                      >
-                        <MenuItem value="ALL">{locale.allCombatRanks}</MenuItem>
-                        {['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E', 'F', 'G'].map((r) => (
-                          <MenuItem key={r} value={r}>
-                            {r}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Stack>
-
-                  <Stack spacing={1}>
-                    {filteredRows.map((row) => {
-                      const jobName = row.player.job.displayName ?? row.player.job.code
-                      return (
-                        <Paper
-                          key={`${row.rankingType}-${row.periodKind}-${row.combatIndexRank}-${row.rankPosition}-${row.player.userId}`}
-                          variant="outlined"
-                          sx={{ p: 1.5 }}
-                        >
-                          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-                            <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
-                              <Box
-                                component={Link}
-                                to={`/players/${row.player.userId}/visit`}
-                                aria-label={`${row.player.userName ?? row.player.userId} の部屋へ`}
-                                sx={{
-                                  width: 42,
-                                  height: 42,
-                                  borderRadius: 1.5,
-                                  overflow: 'hidden',
-                                  position: 'relative',
-                                  display: 'inline-flex',
-                                }}
-                              >
-                                <Box
-                                  component="img"
-                                  src={resolveCharacterAssetPath(row.player.imagePath) ?? undefined}
-                                  alt={row.player.userName ?? row.player.userId}
-                                  sx={{
-                                    width: 42,
-                                    height: 42,
-                                    borderRadius: 1.5,
-                                    objectFit: 'cover',
-                                    objectPosition: 'center top',
-                                  }}
-                                />
-                                {row.rankPosition === 1 ? (
+                <Box
+                  sx={{
+                    borderRadius: 3,
+                    backgroundColor: '#295d63',
+                    p: { xs: 2, sm: 3 },
+                  }}
+                >
+                  <Stack spacing={2}>
+                    <Paper
+                      variant="outlined"
+                      sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}
+                    >
+                      <Stack spacing={1.25}>
+                        <Typography variant="overline" sx={{ letterSpacing: '0.25em', color: 'rgba(79, 57, 44, 0.7)' }}>
+                          {locale.overline}
+                        </Typography>
+                        <Typography variant="h4" fontWeight={900}>
+                          {locale.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {locale.snapshotAt}: {formattedSnapshot}
+                        </Typography>
+                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+                          <FormControl fullWidth>
+                            <InputLabel>{locale.title}</InputLabel>
+                            <Select value={activeType} label={locale.title} onChange={(e) => setSelectedType(e.target.value)}>
+                              {types.map((type) => (
+                                <MenuItem key={type} value={type}>
+                                  {getRankingTypeLabel(type)}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                          <FormControl fullWidth>
+                            <InputLabel>{locale.period}</InputLabel>
+                            <Select value={period} label={locale.period} onChange={(e) => setPeriod(e.target.value)}>
+                              <MenuItem value="ALL">{locale.allPeriods}</MenuItem>
+                              <MenuItem value="Total">{locale.total}</MenuItem>
+                              <MenuItem value="Weekly">{locale.weekly}</MenuItem>
+                              <MenuItem value="Daily">{locale.daily}</MenuItem>
+                            </Select>
+                          </FormControl>
+                          <FormControl fullWidth>
+                            <InputLabel>{locale.combatRank}</InputLabel>
+                            <Select
+                              value={combatRank}
+                              label={locale.combatRank}
+                              onChange={(e) => setCombatRank(e.target.value)}
+                            >
+                              <MenuItem value="ALL">{locale.allCombatRanks}</MenuItem>
+                              {['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E', 'F', 'G'].map((r) => (
+                                <MenuItem key={r} value={r}>
+                                  {r}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Stack>
+                      </Stack>
+                    </Paper>
+                    <Paper
+                      variant="outlined"
+                      sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}
+                    >
+                      <Stack spacing={1}>
+                        {filteredRows.map((row) => {
+                          const jobName = row.player.job.displayName ?? row.player.job.code
+                          return (
+                            <Paper
+                              key={`${row.rankingType}-${row.periodKind}-${row.combatIndexRank}-${row.rankPosition}-${row.player.userId}`}
+                              variant="outlined"
+                              sx={{ p: 1.5 }}
+                            >
+                              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                                <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
                                   <Box
-                                    component="span"
+                                    component={Link}
+                                    to={`/players/${row.player.userId}/visit`}
+                                    aria-label={`${row.player.userName ?? row.player.userId} の部屋へ`}
                                     sx={{
-                                      position: 'absolute',
-                                      top: -4,
-                                      right: -6,
-                                      fontSize: 14,
+                                      width: 42,
+                                      height: 42,
+                                      borderRadius: 1.5,
+                                      overflow: 'hidden',
+                                      position: 'relative',
+                                      display: 'inline-flex',
                                     }}
                                   >
-                                    👑
+                                    <Box
+                                      component="img"
+                                      src={resolveCharacterAssetPath(row.player.imagePath) ?? undefined}
+                                      alt={row.player.userName ?? row.player.userId}
+                                      sx={{
+                                        width: 42,
+                                        height: 42,
+                                        borderRadius: 1.5,
+                                        objectFit: 'cover',
+                                        objectPosition: 'center top',
+                                      }}
+                                    />
+                                    {row.rankPosition === 1 ? (
+                                      <Box
+                                        component="span"
+                                        sx={{
+                                          position: 'absolute',
+                                          top: -4,
+                                          right: -6,
+                                          fontSize: 14,
+                                        }}
+                                      >
+                                        👑
+                                      </Box>
+                                    ) : null}
                                   </Box>
-                                ) : null}
-                              </Box>
-                              <Stack spacing={0.4}>
-                                <Typography variant="body1" fontWeight={800}>
-                                  {row.rankPosition}位 {row.player.userName ?? '-'}
-                                </Typography>
-                                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                                  <Typography variant="caption" color="text.secondary">
-                                    {locale.jobLabel}: {jobName}
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    {locale.levelLabel} {row.player.level}
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    {locale.rebirthLabel} {row.player.rebirthCount}
-                                  </Typography>
+                                  <Stack spacing={0.4}>
+                                    <Typography variant="body1" fontWeight={800}>
+                                      {row.rankPosition}位 {row.player.userName ?? '-'}
+                                    </Typography>
+                                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        {locale.jobLabel}: {jobName}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        {locale.levelLabel} {row.player.level}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        {locale.rebirthLabel} {row.player.rebirthCount}
+                                      </Typography>
+                                    </Stack>
+                                  </Stack>
                                 </Stack>
+                                <Typography variant="body1" fontWeight={900}>
+                                  {row.score.toLocaleString('ja-JP')}
+                                </Typography>
                               </Stack>
-                            </Stack>
-                            <Typography variant="body1" fontWeight={900}>
-                              {row.score.toLocaleString('ja-JP')}
-                            </Typography>
-                          </Stack>
-                        </Paper>
-                      )
-                    })}
+                            </Paper>
+                          )
+                        })}
+                      </Stack>
+                    </Paper>
                   </Stack>
-                </>
+                </Box>
               )}
             </Stack>
           </Paper>
