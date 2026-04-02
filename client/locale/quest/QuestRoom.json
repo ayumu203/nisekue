@@ -188,8 +188,8 @@
     "Aborted": "中断"
   },
   "actionKinds": {
-    "NormalAttack": "通常攻撃",
-    "UseMove": "スキルを使う",
+    "NormalAttack": "攻撃",
+    "UseMove": "スキル",
     "Prayer": "祈り",
     "Guard": "防御",
     "Wait": "待機",
