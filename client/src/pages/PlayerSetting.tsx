@@ -25,6 +25,15 @@ export default function PlayerSetting() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const settingInputSx = {
+    ...greenOutlinedInputSx,
+    '& .MuiInputLabel-root.Mui-focused': {
+      color: '#f3eedc',
+    },
+    '& .MuiFormHelperText-root': {
+      color: 'rgba(243, 238, 220, 0.72)',
+    },
+  } as const
 
   const playerSWRKey = session?.user.id ? ([`player-setting`, session.user.id] as const) : null
   const {
@@ -150,16 +159,11 @@ export default function PlayerSetting() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
+    <Container maxWidth="lg" sx={{ py: '1%' }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Stack direction="row" justifyContent="flex-end">
             <HomeNavIconButton ariaLabel={locale.backToHome} />
-          </Stack>
-          <Stack spacing={1}>
-            <Typography variant="h4" textAlign="center">
-              {locale.title}
-            </Typography>
           </Stack>
 
           {isPlayerLoading ? (
@@ -170,21 +174,48 @@ export default function PlayerSetting() {
           ) : playerError ? (
             <Alert severity="warning">{playerError.message}</Alert>
           ) : (
-            <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+            <Paper
+              variant="outlined"
+              sx={{
+                ...innerSurfaceSx,
+                borderRadius: 3,
+                p: { xs: 2, sm: 2.5 },
+                backgroundColor: '#44644a',
+                borderColor: '#b8ab7a',
+                color: '#fff8ea',
+              }}
+            >
               <Box component="form" onSubmit={handleSubmit}>
                 <Stack spacing={2}>
-                  <TextField
-                    fullWidth
-                    label={locale.playerNameLabel}
-                    placeholder={locale.playerNamePlaceholder}
-                    value={userName}
-                    onChange={(event) => {
-                      setUserName(event.target.value)
-                    }}
-                    sx={greenOutlinedInputSx}
-                  />
+                  <Stack spacing={0.25}>
+                    <Typography variant="overline" sx={{ letterSpacing: '0.18em', color: 'rgba(243, 238, 220, 0.72)' }}>
+                      {locale.titleRuby}
+                    </Typography>
+                    <Typography variant="h4" fontWeight={900} color="#fff8ea">
+                      {locale.title}
+                    </Typography>
+                  </Stack>
+                  <Stack spacing={0.75}>
+                    <Typography id="player-name-label" variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                      {locale.playerNameLabel}
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      placeholder={locale.playerNamePlaceholder}
+                      value={userName}
+                      onChange={(event) => {
+                        setUserName(event.target.value)
+                      }}
+                      inputProps={{
+                        'aria-labelledby': 'player-name-label',
+                      }}
+                      sx={settingInputSx}
+                    />
+                  </Stack>
                   <Stack spacing={1.5}>
-                    <Typography variant="subtitle1">{locale.playerImageLabel}</Typography>
+                    <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                      {locale.playerImageLabel}
+                    </Typography>
                     <Box
                       sx={{
                         width: '100%',
@@ -219,21 +250,30 @@ export default function PlayerSetting() {
                         </Box>
                       )}
                     </Box>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      label={locale.playerImageNoLabel}
-                      value={imageNoInput}
-                      onChange={(event) => {
-                        setImageNoInput(event.target.value)
-                      }}
-                      inputProps={{
-                        min: 1,
-                        max: PLAYER_IMAGE_COUNT,
-                      }}
-                      helperText={locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
-                      sx={greenOutlinedInputSx}
-                    />
+                    <Stack spacing={0.75}>
+                      <Typography
+                        id="player-image-no-label"
+                        variant="subtitle1"
+                        sx={{ color: 'rgba(243, 238, 220, 0.9)' }}
+                      >
+                        {locale.playerImageNoLabel}
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        value={imageNoInput}
+                        onChange={(event) => {
+                          setImageNoInput(event.target.value)
+                        }}
+                        inputProps={{
+                          min: 1,
+                          max: PLAYER_IMAGE_COUNT,
+                          'aria-labelledby': 'player-image-no-label',
+                        }}
+                        helperText={locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
+                        sx={settingInputSx}
+                      />
+                    </Stack>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                       <Button
                         type="button"

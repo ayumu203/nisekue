@@ -17,7 +17,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenUseMoveCommandHasTargetPosition_PreservesSelectedPosition()
     {
         var participantId = QuestParticipantId.New();
-        var moveId = new MoveId(99);
+        var moveId = new MoveId(519);
         var targetPosition = new BattlePosition(BattleRow.Front, BattleColumn.Right);
         var moveSet = new MoveSet();
         moveSet.SetSlot(0, moveId);
@@ -100,7 +100,7 @@ public class QuestBattleFactoryTests
 
         var factory = new QuestBattleFactory();
 
-        var (actions, moves) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([move]));
+        var (actions, moves) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([move]), CreateEnemyDefinitions());
 
         actions.Should().ContainSingle(x =>
             x.Kind == BattleActionKind.UseMove &&
@@ -130,7 +130,7 @@ public class QuestBattleFactoryTests
 
         var factory = new QuestBattleFactory();
 
-        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([]));
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([]), CreateEnemyDefinitions());
 
         actions.Should().ContainSingle(x =>
             x.ActorId == participantId.Value &&
@@ -142,7 +142,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenNpcRangerHasNoTrap_UsesTrapMove()
     {
         var participantId = QuestParticipantId.New();
-        var trapMoveId = new MoveId(12);
+        var trapMoveId = new MoveId(504);
         var run = CreateNpcRun(
             participantId,
             Job.Ranger,
@@ -180,7 +180,7 @@ public class QuestBattleFactoryTests
 
         var factory = new QuestBattleFactory();
 
-        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([trapMove]));
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([trapMove]), CreateEnemyDefinitions());
 
         actions.Should().ContainSingle(x =>
             x.ActorId == participantId.Value &&
@@ -193,7 +193,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenNpcWarriorOnBossFloor_UsesSingleAttackMove()
     {
         var participantId = QuestParticipantId.New();
-        var attackMoveId = new MoveId(1);
+        var attackMoveId = new MoveId(421);
         var run = CreateNpcRun(
             participantId,
             Job.Warrior,
@@ -231,7 +231,7 @@ public class QuestBattleFactoryTests
 
         var factory = new QuestBattleFactory();
 
-        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([attackMove]));
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([attackMove]), CreateEnemyDefinitions());
 
         actions.Should().ContainSingle(x =>
             x.ActorId == participantId.Value &&
@@ -243,7 +243,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenNpcGuardianWithoutTaunt_UsesTauntMove()
     {
         var participantId = QuestParticipantId.New();
-        var tauntMoveId = new MoveId(7);
+        var tauntMoveId = new MoveId(501);
         var run = CreateNpcRun(
             participantId,
             Job.Guardian,
@@ -279,7 +279,7 @@ public class QuestBattleFactoryTests
             ]);
 
         var factory = new QuestBattleFactory();
-        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([tauntMove]));
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([tauntMove]), CreateEnemyDefinitions());
 
         actions.Should().ContainSingle(x =>
             x.ActorId == participantId.Value &&
@@ -291,9 +291,9 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenNpcMageHasHalfMp_UsesAreaAttack()
     {
         var participantId = QuestParticipantId.New();
-        var areaMoveId = new MoveId(18);
-        var singleMoveId = new MoveId(19);
-        var restoreMoveId = new MoveId(50);
+        var areaMoveId = new MoveId(108);
+        var singleMoveId = new MoveId(109);
+        var restoreMoveId = new MoveId(509);
         var run = CreateNpcRun(
             participantId,
             Job.Mage,
@@ -351,7 +351,7 @@ public class QuestBattleFactoryTests
             ]);
 
         var factory = new QuestBattleFactory();
-        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([areaMove, singleMove, restoreMove]));
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([areaMove, singleMove, restoreMove]), CreateEnemyDefinitions());
 
         actions.Should().ContainSingle(x =>
             x.ActorId == participantId.Value &&
@@ -379,7 +379,7 @@ public class QuestBattleFactoryTests
 
         var factory = new QuestBattleFactory();
 
-        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([]));
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([]), CreateEnemyDefinitions());
 
         actions.Should().ContainSingle(x =>
             x.ActorId == participantId.Value &&
@@ -399,6 +399,13 @@ public class QuestBattleFactoryTests
             [
                 new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Back, BattleColumn.Left), 40, 10, 12, 5, 3)
             ],
+            partyStateFactory: member => new QuestRunPartyMemberState(
+                member.ParticipantId,
+                currentHp: 0,
+                currentMp: member.MaxMp,
+                isDead: true,
+                canActFromTurn: 1,
+                actionMode: ActionMode.Manual),
             enemyPositions:
             [
                 new BattlePosition(BattleRow.Front, BattleColumn.Right)
@@ -406,11 +413,269 @@ public class QuestBattleFactoryTests
 
         var factory = new QuestBattleFactory();
 
-        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([]));
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([]), CreateEnemyDefinitions());
 
         actions.Should().Contain(x =>
             x.ActorId != participantId.Value &&
             x.Kind == BattleActionKind.Wait);
+    }
+
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenEnemyHasRearReachDamageMove_UsesMoveAgainstBackRow()
+    {
+        var participantId = QuestParticipantId.New();
+        var enemyMoveId = new MoveId(407);
+        var run = CreateNpcRun(
+            participantId,
+            Job.Warrior,
+            actionMode: ActionMode.Manual,
+            initialActionMode: ActionMode.Manual,
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Front", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), 40, 10, 12, 5, 3),
+                new PartyMemberSeed(QuestParticipantId.New(), ParticipantType.Player, "Back", Job.Mage, new BattlePosition(BattleRow.Back, BattleColumn.Right), 20, 12, 3, 3, 12)
+            ],
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Back, BattleColumn.Left)
+            ]);
+
+        var rowMove = new Move(
+            enemyMoveId,
+            "Enemy Row",
+            "enemy-row",
+            TargetType.Enemy,
+            AttackRange.Row,
+            0,
+            0,
+            MoveCategory.Attack,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    enemyMoveId,
+                    1,
+                    MoveEffectType.Damage,
+                    damage: new DamageEffect(1, 1m, 1, 0m, ElementType.Fire))
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, moves) = await factory.CreateTurnInputsAsync(
+            run,
+            new FakeMoveRepository([rowMove]),
+            CreateEnemyDefinitions(moveIds: [enemyMoveId]));
+
+        actions.Should().Contain(x =>
+            x.ActorId != participantId.Value &&
+            x.Kind == BattleActionKind.UseMove &&
+            x.MoveId == enemyMoveId.Id &&
+            x.SelectedPosition == new BattlePosition(BattleRow.Back, BattleColumn.Right));
+        moves.Should().Contain(x => x.Id.Id == enemyMoveId.Id);
+    }
+
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenEnemyCanReachTauntingTarget_PrioritizesTauntOverBackRow()
+    {
+        var tauntParticipantId = QuestParticipantId.New();
+        var run = CreateNpcRun(
+            tauntParticipantId,
+            Job.Warrior,
+            actionMode: ActionMode.Manual,
+            initialActionMode: ActionMode.Manual,
+            party:
+            [
+                new PartyMemberSeed(tauntParticipantId, ParticipantType.Player, "Taunter", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), 40, 10, 12, 5, 3),
+                new PartyMemberSeed(QuestParticipantId.New(), ParticipantType.Player, "Back", Job.Mage, new BattlePosition(BattleRow.Back, BattleColumn.Right), 20, 12, 3, 3, 12)
+            ],
+            partyStateFactory: member => new QuestRunPartyMemberState(
+                member.ParticipantId,
+                currentHp: member.MaxHp,
+                currentMp: member.MaxMp,
+                isDead: false,
+                canActFromTurn: 1,
+                actionMode: member.ParticipantId == tauntParticipantId ? ActionMode.Manual : ActionMode.Manual,
+                ailments: member.ParticipantId == tauntParticipantId
+                    ? [new BattleAilmentState(AilmentType.Taunt, 2)]
+                    : []),
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Back, BattleColumn.Left)
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([]), CreateEnemyDefinitions());
+
+        actions.Should().Contain(x =>
+            x.ActorId != tauntParticipantId.Value &&
+            x.Kind == BattleActionKind.NormalAttack &&
+            x.SelectedPosition == new BattlePosition(BattleRow.Front, BattleColumn.Left));
+    }
+
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenEnemySelfHpIsHalfOrLess_UsesSelfHeal()
+    {
+        var participantId = QuestParticipantId.New();
+        var enemyMoveId = new MoveId(408);
+        var run = CreateNpcRun(
+            participantId,
+            Job.Warrior,
+            actionMode: ActionMode.Manual,
+            initialActionMode: ActionMode.Manual,
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Front", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), 40, 10, 12, 5, 3)
+            ],
+            enemyStatesFactory: position =>
+                new QuestEnemyState(QuestEnemyInstanceId.New(), new QuestEnemyDefinitionId(1), position, 10, 10, false),
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Back, BattleColumn.Left)
+            ]);
+
+        var healMove = new Move(
+            enemyMoveId,
+            "Self Heal",
+            "self-heal",
+            TargetType.Self,
+            AttackRange.Single,
+            2,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    enemyMoveId,
+                    1,
+                    MoveEffectType.Heal,
+                    damage: new DamageEffect(1, 0m, 12, 0m, ElementType.None, BuffStat.Intelligence))
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, _) = await factory.CreateTurnInputsAsync(
+            run,
+            new FakeMoveRepository([healMove]),
+            CreateEnemyDefinitions(moveIds: [enemyMoveId]));
+
+        actions.Should().Contain(x =>
+            x.ActorId != participantId.Value &&
+            x.Kind == BattleActionKind.UseMove &&
+            x.MoveId == enemyMoveId.Id &&
+            x.TargetType == TargetType.Self);
+    }
+
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenEnemyFrontAllyHpIsHalfOrLess_UsesAllyHealOnFrontTarget()
+    {
+        var participantId = QuestParticipantId.New();
+        var enemyMoveId = new MoveId(409);
+        var run = CreateNpcRun(
+            participantId,
+            Job.Warrior,
+            actionMode: ActionMode.Manual,
+            initialActionMode: ActionMode.Manual,
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Front", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), 40, 10, 12, 5, 3)
+            ],
+            enemyStatesFactory: position => position == new BattlePosition(BattleRow.Front, BattleColumn.Right)
+                ? new QuestEnemyState(QuestEnemyInstanceId.New(), new QuestEnemyDefinitionId(1), position, 10, 10, false)
+                : new QuestEnemyState(QuestEnemyInstanceId.New(), new QuestEnemyDefinitionId(1), position, 20, 10, false),
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Back, BattleColumn.Left),
+                new BattlePosition(BattleRow.Front, BattleColumn.Right)
+            ]);
+
+        var healMove = new Move(
+            enemyMoveId,
+            "Ally Heal",
+            "ally-heal",
+            TargetType.Ally,
+            AttackRange.Single,
+            2,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    enemyMoveId,
+                    1,
+                    MoveEffectType.Heal,
+                    damage: new DamageEffect(1, 0m, 12, 0m, ElementType.None, BuffStat.Intelligence))
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, _) = await factory.CreateTurnInputsAsync(
+            run,
+            new FakeMoveRepository([healMove]),
+            CreateEnemyDefinitions(moveIds: [enemyMoveId]));
+
+        actions.Should().Contain(x =>
+            x.ActorId != participantId.Value &&
+            x.Kind == BattleActionKind.UseMove &&
+            x.MoveId == enemyMoveId.Id &&
+            x.SelectedPosition == new BattlePosition(BattleRow.Front, BattleColumn.Right));
+    }
+
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenEnemyHasOtherAlly_UsesBuffBeforeAttack()
+    {
+        var participantId = QuestParticipantId.New();
+        var enemyMoveId = new MoveId(203);
+        var run = CreateNpcRun(
+            participantId,
+            Job.Warrior,
+            actionMode: ActionMode.Manual,
+            initialActionMode: ActionMode.Manual,
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Front", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), 40, 10, 12, 5, 3)
+            ],
+            enemyStatesFactory: position =>
+                new QuestEnemyState(QuestEnemyInstanceId.New(), new QuestEnemyDefinitionId(1), position, 20, 10, false),
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Back, BattleColumn.Left),
+                new BattlePosition(BattleRow.Front, BattleColumn.Right)
+            ]);
+
+        var buffMove = new Move(
+            enemyMoveId,
+            "Enemy Buff",
+            "enemy-buff",
+            TargetType.Ally,
+            AttackRange.Single,
+            1,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    enemyMoveId,
+                    1,
+                    MoveEffectType.Buff,
+                    buff: new BuffEffect(BuffStat.Defense, BuffCalculationType.Add, 5m, 2, 1m, false))
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, _) = await factory.CreateTurnInputsAsync(
+            run,
+            new FakeMoveRepository([buffMove]),
+            CreateEnemyDefinitions(moveIds: [enemyMoveId]));
+
+        actions.Should().Contain(x =>
+            x.ActorId != participantId.Value &&
+            x.Kind == BattleActionKind.UseMove &&
+            x.MoveId == enemyMoveId.Id &&
+            x.SelectedPosition == new BattlePosition(BattleRow.Front, BattleColumn.Right));
     }
 
     private static QuestRun CreateNpcRun(
@@ -421,7 +686,9 @@ public class QuestBattleFactoryTests
         IReadOnlyList<MoveId>? moveIds = null,
         IReadOnlyList<PartyMemberSeed>? party = null,
         IReadOnlyList<BattlePosition>? enemyPositions = null,
-        bool isBossFloor = false)
+        bool isBossFloor = false,
+        Func<PartyMemberSeed, QuestRunPartyMemberState>? partyStateFactory = null,
+        Func<BattlePosition, QuestEnemyState>? enemyStatesFactory = null)
     {
         moveIds ??= [];
         party ??=
@@ -455,16 +722,20 @@ public class QuestBattleFactoryTests
                 member.ParticipantId == actorId ? initialActionMode : ActionMode.Manual);
         }).ToArray();
 
-        var partyStates = party.Select(member => new QuestRunPartyMemberState(
+        partyStateFactory ??= member => new QuestRunPartyMemberState(
             member.ParticipantId,
             currentHp: member.MaxHp,
             currentMp: member.MaxMp,
             isDead: false,
             canActFromTurn: 1,
-            actionMode: member.ParticipantId == actorId ? actionMode : ActionMode.Manual)).ToArray();
+            actionMode: member.ParticipantId == actorId ? actionMode : ActionMode.Manual);
 
-        var enemies = enemyPositions.Select(position =>
-            new QuestEnemyState(QuestEnemyInstanceId.New(), new QuestEnemyDefinitionId(1), position, 20, 0, false)).ToArray();
+        var partyStates = party.Select(partyStateFactory).ToArray();
+
+        enemyStatesFactory ??= position =>
+            new QuestEnemyState(QuestEnemyInstanceId.New(), new QuestEnemyDefinitionId(1), position, 20, 0, false);
+
+        var enemies = enemyPositions.Select(enemyStatesFactory).ToArray();
 
         return new QuestRun(
             QuestRunId.New(),
@@ -510,5 +781,24 @@ public class QuestBattleFactoryTests
         {
             return Task.FromResult(moves);
         }
+    }
+
+    private static IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> CreateEnemyDefinitions(
+        IReadOnlyList<MoveId>? moveIds = null)
+    {
+        moveIds ??= [];
+        var definition = new QuestEnemyDefinition(
+            new QuestEnemyDefinitionId(1),
+            "Enemy",
+            1,
+            new Status(30, 10, 8, 6, 6, 3, 8),
+            "/image/battle/enemy.png",
+            EnemyAiType.Aggressive,
+            moveIds);
+
+        return new Dictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>
+        {
+            [definition.Id] = definition
+        };
     }
 }

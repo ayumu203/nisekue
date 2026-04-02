@@ -1,0 +1,102 @@
+classDiagram
+    %% 宝の地図ドメインの集約
+
+    class TreasureMapRewardEntry {
+        <<Value Object>>
+        +TreasureMapRewardType RewardType
+        +int? ItemId
+        +int? EquipmentId
+        +int Weight
+        +int? QuantityMin
+        +int? QuantityMax
+        +int? GoldAmount
+        +int? ExperienceAmount
+        +bool IsFallback
+    }
+
+    class TreasureMapRewardPool {
+        <<Aggregate Root>>
+        +TreasureMapRewardPoolId Id
+        +string Name
+        +IReadOnlyList~TreasureMapRewardEntry~ Entries
+        +TreasureMapRewardEntry Draw(Random random, Func~TreasureMapRewardEntry, bool~? predicate)
+    }
+
+    class TreasureMap {
+        <<Aggregate Root>>
+        +TreasureMapId Id
+        +string Name
+        +TreasureMapGrade Grade
+        +int DurationSeconds
+        +TreasureMapRewardPoolId RewardPoolId
+        +bool IsMarketable
+        +bool IsHiddenFromInventory
+        +TreasureMapRewardPool RewardPool
+    }
+
+    class TreasureMapExpedition {
+        <<Entity>>
+        +TreasureMapExpeditionId Id
+        +TreasureMapId MapId
+        +uuid PlayerId
+        +DateTimeOffset StartedAt
+        +DateTimeOffset EndsAt
+        +TreasureMapExpeditionStatus Status
+        +TreasureMapRewardResult RewardResult
+        +bool RewardClaimed
+        +TreasureMap Map
+    }
+
+    class TreasureMapClaimHistory {
+        <<Entity>>
+        +uuid Id
+        +uuid PlayerId
+        +TreasureMapExpeditionId ExpeditionId
+        +DateTimeOffset ClaimedAt
+        +json RewardSummaryJson
+    }
+
+    class TreasureMapRewardResult {
+        <<Value Object>>
+        +IReadOnlyList~int~ ItemIds
+        +IReadOnlyList~int~ EquipmentIds
+        +int ExperiencePoints
+        +int Gold
+    }
+
+    class TreasureMapMenuService {
+        <<Application Service>>
+        +Task~IReadOnlyList~TreasureMapPreviewDto~~ GetAvailableMapsAsync(uuid playerId)
+        +Task~TreasureMapExpeditionDto~ StartExpeditionAsync(uuid playerId, TreasureMapId mapId)
+        +Task~TreasureMapExpeditionDto~ GetExpeditionStatusAsync(uuid playerId)
+        +Task~TreasureMapExpeditionDto~ ClaimRewardAsync(uuid playerId, TreasureMapExpeditionId expeditionId)
+    }
+
+    class CsvMasterData {
+        <<Resource>>
+        +treasure_maps_csv
+        +reward_pools_csv
+        +reward_entries_csv
+    }
+
+    class DbTreasureMapExpeditionRepository {
+        <<Infrastructure>>
+        +Save expedition state
+        +Load current expedition by player
+    }
+
+    class DbTreasureMapClaimHistoryRepository {
+        <<Infrastructure>>
+        +Record reward claims
+        +Check duplicate claim by expedition
+    }
+
+    TreasureMapRewardPool --> TreasureMapRewardEntry : contains
+    TreasureMap --> TreasureMapRewardPool : uses
+    TreasureMapExpedition --> TreasureMap : references
+    TreasureMapExpedition --> TreasureMapRewardResult : produces
+    TreasureMapClaimHistory --> TreasureMapExpedition : records_claim
+    TreasureMap --> CsvMasterData : loaded from
+    TreasureMapRewardPool --> CsvMasterData : loaded from
+    TreasureMapMenuService --> DbTreasureMapExpeditionRepository : uses
+    TreasureMapMenuService --> DbTreasureMapClaimHistoryRepository : uses

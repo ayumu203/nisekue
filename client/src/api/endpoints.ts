@@ -9,6 +9,9 @@ import {
   updatePlayerImageResponseSchema,
   updatePlayerJobRequestSchema,
   updatePlayerJobResponseSchema,
+  updatePlayerEquipmentRequestSchema,
+  updatePlayerEquipmentResponseSchema,
+  rebirthPlayerResponseSchema,
 } from '@/schema/player'
 import {
   getChatRoomRequestSchema,
@@ -21,6 +24,7 @@ import {
   createThreadReplyResponseSchema,
   createThreadRequestSchema,
   createThreadResponseSchema,
+  deleteThreadResponseSchema,
   getThreadsRequestSchema,
   getThreadsResponseSchema,
   threadDetailSchema,
@@ -60,6 +64,14 @@ import {
   purchaseMarketListingRequestSchema,
   purchaseMarketListingResponseSchema,
 } from '@/schema/item'
+import {
+  claimTreasureMapRewardResponseSchema,
+  getCurrentTreasureMapExpeditionResponseSchema,
+  getTreasureMapsResponseSchema,
+  startTreasureMapExpeditionRequestSchema,
+  treasureMapExpeditionSchema,
+} from '@/schema/treasureMap'
+import { getRankingsResponseSchema } from '@/schema/ranking'
 
 export type {
   GetPlayerResponse,
@@ -74,6 +86,9 @@ export type {
   UpdatePlayerImageResponse,
   UpdatePlayerJobRequest,
   UpdatePlayerJobResponse,
+  UpdatePlayerEquipmentRequest,
+  UpdatePlayerEquipmentResponse,
+  RebirthPlayerResponse,
 } from '@/schema/player'
 export type {
   GetChatRoomRequest,
@@ -91,6 +106,7 @@ export type {
   CreateThreadResponse,
   CreateThreadReplyRequest,
   CreateThreadReplyResponse,
+  DeleteThreadResponse,
 } from '@/schema/thread'
 export type {
   TrainingEnemy,
@@ -133,6 +149,15 @@ export type {
   PurchaseMarketListingRequest,
   PurchaseMarketListingResponse,
 } from '@/schema/item'
+export type {
+  ClaimTreasureMapRewardResponse,
+  GetCurrentTreasureMapExpeditionResponse,
+  GetTreasureMapsResponse,
+  StartTreasureMapExpeditionRequest,
+  TreasureMapExpedition,
+  TreasureMapSummary,
+} from '@/schema/treasureMap'
+export type { GetRankingsResponse, RankingRow } from '@/schema/ranking'
 
 export const endpoints = {
   player: {
@@ -175,6 +200,17 @@ export const endpoints = {
       requestSchema: updatePlayerJobRequestSchema,
       responseSchema: updatePlayerJobResponseSchema,
     },
+    updateEquipment: {
+      path: '/player/equipment',
+      method: 'PUT',
+      requestSchema: updatePlayerEquipmentRequestSchema,
+      responseSchema: updatePlayerEquipmentResponseSchema,
+    },
+    rebirth: {
+      path: '/player/rebirth',
+      method: 'POST',
+      responseSchema: rebirthPlayerResponseSchema,
+    },
   },
   chatRoom: {
     get: {
@@ -213,6 +249,11 @@ export const endpoints = {
       method: 'POST',
       requestSchema: createThreadReplyRequestSchema,
       responseSchema: createThreadReplyResponseSchema,
+    },
+    delete: {
+      path: (threadId: string) => `/threads/${threadId}`,
+      method: 'DELETE',
+      responseSchema: deleteThreadResponseSchema,
     },
   },
   training: {
@@ -385,6 +426,36 @@ export const endpoints = {
       method: 'POST',
       requestSchema: purchaseMarketListingRequestSchema,
       responseSchema: purchaseMarketListingResponseSchema,
+    },
+  },
+  treasureMap: {
+    getMaps: {
+      path: '/treasure-maps',
+      method: 'GET',
+      responseSchema: getTreasureMapsResponseSchema,
+    },
+    getCurrentExpedition: {
+      path: '/treasure-map-expeditions/current',
+      method: 'GET',
+      responseSchema: getCurrentTreasureMapExpeditionResponseSchema,
+    },
+    startExpedition: {
+      path: '/treasure-map-expeditions',
+      method: 'POST',
+      requestSchema: startTreasureMapExpeditionRequestSchema,
+      responseSchema: treasureMapExpeditionSchema,
+    },
+    claimReward: {
+      path: (expeditionId: string) => `/treasure-map-expeditions/${expeditionId}/claim`,
+      method: 'POST',
+      responseSchema: claimTreasureMapRewardResponseSchema,
+    },
+  },
+  ranking: {
+    get: {
+      path: '/rankings',
+      method: 'GET',
+      responseSchema: getRankingsResponseSchema,
     },
   },
 } as const

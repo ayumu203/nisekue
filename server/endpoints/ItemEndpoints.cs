@@ -9,6 +9,7 @@ using server.application.maintenance;
 using server.application.player;
 using server.domain.move;
 using server.domain.player;
+using server.domain.treasuremap;
 using server.infrastructure;
 
 namespace server.endpoints;
@@ -27,6 +28,7 @@ internal static class ItemEndpoints
             IEquipmentRepository equipmentRepository,
             IPlayerItemStackRepository playerItemStackRepository,
             IItemRepository itemRepository,
+            ITreasureMapRepository treasureMapRepository,
             IMarketListingRepository marketListingRepository) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
@@ -47,6 +49,7 @@ internal static class ItemEndpoints
             var itemStacks = await playerItemStackRepository.GetByPlayerAsync(player.Id);
             var items = await itemRepository.GetAllAsync();
             var itemById = items.ToDictionary(x => x.Id);
+            var treasureMapItemIds = await ResolveTreasureMapItemIdsAsync(treasureMapRepository);
             var activeListings = await marketListingRepository.GetBySellerAsync(player.Id, DateTimeOffset.UtcNow);
             var listedEquipmentIds = activeListings
                 .Where(x => x.PlayerEquipmentId is not null)
@@ -67,7 +70,7 @@ internal static class ItemEndpoints
                 .ToArray();
 
             var inventoryItems = itemStacks
-                .Select(stack => ToItemStackView(stack, itemById))
+                .Select(stack => ToItemStackView(stack, itemById, treasureMapItemIds))
                 .Where(x => x is not null)
                 .ToArray();
 
@@ -88,8 +91,10 @@ internal static class ItemEndpoints
             IPlayerRepository playerRepository,
             IPlayerItemStackRepository playerItemStackRepository,
             IItemRepository itemRepository,
+            ITreasureMapRepository treasureMapRepository,
             IJobProfileRepository jobProfileRepository,
-            IJobMoveLearningRuleRepository jobMoveLearningRuleRepository) =>
+            IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
+            ItemStatBoostService itemStatBoostService) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -115,6 +120,11 @@ internal static class ItemEndpoints
                 return Results.BadRequest(new { message = "アイテムマスタが見つかりません。" });
             }
 
+            if (await IsTreasureMapItemAsync(item.Id, treasureMapRepository))
+            {
+                return Results.BadRequest(new { message = "宝の地図は専用メニューから使用してください。" });
+            }
+
             if (request.Quantity <= 0)
             {
                 return Results.BadRequest(new { message = "使用数は1以上で指定してください。" });
@@ -131,16 +141,7 @@ internal static class ItemEndpoints
                 {
                     case ItemEffectType.StatBoost:
                         {
-                            var bonus = item.StatusBonus ?? new StatusBonus(0, 0, 0, 0, 0, 0, 0);
-                            var quantity = request.Quantity;
-                            player.UpdateStatus(new Status(
-                                player.Status.MaxHp + bonus.MaxHp * quantity,
-                                player.Status.MaxMp + bonus.MaxMp * quantity,
-                                player.Status.Strength + bonus.Strength * quantity,
-                                player.Status.Defense + bonus.Defense * quantity,
-                                player.Status.Intelligence + bonus.Intelligence * quantity,
-                                player.Status.Luck + bonus.Luck * quantity,
-                                player.Status.Speed + bonus.Speed * quantity));
+                            player.UpdateStatus(itemStatBoostService.Apply(player.Status, item, request.Quantity));
                             break;
                         }
                     case ItemEffectType.ChangeJob:
@@ -710,10 +711,6 @@ internal static class ItemEndpoints
             IWebHostEnvironment environment,
             DevelopmentDataCleanupService developmentDataCleanupService) =>
         {
-            if (!environment.IsDevelopment())
-            {
-                return Results.NotFound();
-            }
 
             if (!IsLocalDevelopmentRequest(request))
             {
@@ -804,7 +801,10 @@ internal static class ItemEndpoints
         };
     }
 
-    private static object? ToItemStackView(PlayerItemStack stack, IReadOnlyDictionary<ItemId, Item> itemById)
+    private static object? ToItemStackView(
+        PlayerItemStack stack,
+        IReadOnlyDictionary<ItemId, Item> itemById,
+        IReadOnlySet<int> treasureMapItemIds)
     {
         if (!itemById.TryGetValue(stack.ItemId, out var item))
         {
@@ -819,6 +819,7 @@ internal static class ItemEndpoints
             name = item.Name,
             flavorText = item.FlavorText,
             quantity = stack.Quantity,
+            canUseFromInventory = !treasureMapItemIds.Contains(item.Id.Value),
             effectType = item.EffectType.ToString(),
             requiredLevel = item.RequiredLevel,
             changeJobTo = item.ChangeJobTo?.ToString(),
@@ -833,8 +834,46 @@ internal static class ItemEndpoints
                     intelligence = item.StatusBonus.Intelligence,
                     luck = item.StatusBonus.Luck,
                     speed = item.StatusBonus.Speed
+                },
+            statusBonusPercent = item.StatusBonusPercent is null
+                ? null
+                : new
+                {
+                    maxHp = item.StatusBonusPercent.MaxHpPercent,
+                    maxMp = item.StatusBonusPercent.MaxMpPercent,
+                    strength = item.StatusBonusPercent.StrengthPercent,
+                    defense = item.StatusBonusPercent.DefensePercent,
+                    intelligence = item.StatusBonusPercent.IntelligencePercent,
+                    luck = item.StatusBonusPercent.LuckPercent,
+                    speed = item.StatusBonusPercent.SpeedPercent
                 }
         };
+    }
+
+    private static async Task<bool> IsTreasureMapItemAsync(ItemId itemId, ITreasureMapRepository treasureMapRepository)
+    {
+        var treasureMapItemIds = await ResolveTreasureMapItemIdsAsync(treasureMapRepository);
+        return treasureMapItemIds.Contains(itemId.Value);
+    }
+
+    private static async Task<HashSet<int>> ResolveTreasureMapItemIdsAsync(ITreasureMapRepository treasureMapRepository)
+    {
+        var maps = await treasureMapRepository.GetAllAsync();
+        var ids = new HashSet<int>();
+
+        foreach (var map in maps)
+        {
+            if (int.TryParse(map.Code, out var itemId))
+            {
+                ids.Add(itemId);
+            }
+            else
+            {
+                ids.Add(map.Id.Value);
+            }
+        }
+
+        return ids;
     }
 
     private static bool SecureEquals(string actual, string expected)

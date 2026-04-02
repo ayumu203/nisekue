@@ -10,7 +10,10 @@ public class MoveEffect(
     MoveEffectType effectType,
     DamageEffect? damage = null,
     AilmentEffect? ailment = null,
-    BuffEffect? buff = null)
+    BuffEffect? buff = null,
+    TargetType? overrideTargetType = null,
+    AttackRange? overrideAttackRange = null,
+    TargetLifeState? overrideTargetLifeState = null)
 {
     public MoveEffectId EffectId { get; } = effectId ?? throw new ArgumentNullException(nameof(effectId));
     public MoveId MoveId { get; } = moveId ?? throw new ArgumentNullException(nameof(moveId));
@@ -19,6 +22,9 @@ public class MoveEffect(
     public DamageEffect? Damage { get; } = damage;
     public AilmentEffect? Ailment { get; } = ailment;
     public BuffEffect? Buff { get; } = buff;
+    public TargetType? OverrideTargetType { get; } = overrideTargetType;
+    public AttackRange? OverrideAttackRange { get; } = overrideAttackRange;
+    public TargetLifeState? OverrideTargetLifeState { get; } = overrideTargetLifeState;
 
     public void ValidateByType()
     {
@@ -34,6 +40,10 @@ public class MoveEffect(
                 return;
             case MoveEffectType.Buff:
                 ValidateOnlyBuff();
+                return;
+            case MoveEffectType.Knockout:
+            case MoveEffectType.HalveSelfHp:
+                ValidateNoPayload();
                 return;
             default:
                 throw new ArgumentOutOfRangeException(nameof(EffectType), $"未対応の effectType: {EffectType}");
@@ -76,6 +86,14 @@ public class MoveEffect(
         if (Damage is not null || Ailment is not null)
         {
             throw new InvalidOperationException("Buff では Damage/Ailment を同時指定できません。");
+        }
+    }
+
+    private void ValidateNoPayload()
+    {
+        if (Damage is not null || Ailment is not null || Buff is not null)
+        {
+            throw new InvalidOperationException($"{EffectType} では Damage/Ailment/Buff を同時指定できません。");
         }
     }
 

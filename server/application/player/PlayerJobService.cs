@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using server.domain.move;
 using server.domain.player;
 
@@ -9,8 +10,22 @@ public class PlayerJobService(
     IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
     IMoveRepository moveRepository)
 {
+    private static readonly IReadOnlySet<Job> BaseJobs = new HashSet<Job>
+    {
+        Job.Apprentice,
+        Job.Warrior,
+        Job.Guardian,
+        Job.Mage,
+        Job.Priest
+    };
+
     public async Task<PlayerJobChangeResult> ChangeJobAsync(PlayerId playerId, Job nextJob)
     {
+        if (!BaseJobs.Contains(nextJob))
+        {
+            throw new InvalidOperationException("そのジョブへの転職は転職アイテム使用時にのみ可能です。");
+        }
+
         var player = await playerRepository.GetPlayerAsync(playerId)
             ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
 

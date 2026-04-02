@@ -103,6 +103,7 @@ export const questRoomRestrictionsSchema = z.object({
 
 export const questJoinDisabledReasonSchema = z.enum([
   'LevelRequirementNotMet',
+  'StageRecommendedLevelTooLow',
   'NotAllowedPlayer',
   'CooldownActive',
   'RoomClosed',
@@ -172,6 +173,7 @@ export const questRoomSummaryResponseSchema = z.object({
   hasAllowedPlayerRestriction: z.boolean(),
   isJoinable: z.boolean(),
   joinDisabledReason: questJoinDisabledReasonSchema.nullable(),
+  cooldownRemainingSeconds: z.number().int().nonnegative().nullable().optional(),
   createdAt: z.string().datetime({ offset: true }),
 })
 
@@ -263,6 +265,19 @@ export const questResolvedActionViewSchema = z.object({
   succeeded: z.boolean(),
   targetSummaries: z.array(questActionTargetResultViewSchema),
   logs: z.array(z.string()),
+  logEntries: z
+    .array(
+      z.object({
+        text: z.string().min(1),
+        segments: z.array(
+          z.object({
+            text: z.string(),
+            tone: z.enum(['Default', 'Damage', 'Ailment', 'Buff', 'Heal']),
+          }),
+        ),
+      }),
+    )
+    .default([]),
 })
 
 export const questFloorTransitionViewSchema = z.object({

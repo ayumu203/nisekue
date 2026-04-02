@@ -182,7 +182,7 @@ public class QuestRunServiceTests
     {
         var playerParticipantId = QuestParticipantId.New();
         var rangerParticipantId = QuestParticipantId.New();
-        var trapMoveId = new MoveId(12);
+        var trapMoveId = new MoveId(504);
         var rangerMoveSet = new MoveSet();
         rangerMoveSet.SetSlot(0, trapMoveId);
 
@@ -276,7 +276,7 @@ public class QuestRunServiceTests
     public async Task SubmitCommandAsync_WhenPlayerUsesDamageMove_StoresMoveDamageLog()
     {
         var playerParticipantId = QuestParticipantId.New();
-        var moveId = new MoveId(101);
+        var moveId = new MoveId(421);
         var moveSet = new MoveSet();
         moveSet.SetSlot(0, moveId);
         var run = CreateRunWithParty(
@@ -323,7 +323,7 @@ public class QuestRunServiceTests
     {
         var healerId = QuestParticipantId.New();
         var targetId = QuestParticipantId.New();
-        var moveId = new MoveId(102);
+        var moveId = new MoveId(141);
         var healerMoveSet = new MoveSet();
         healerMoveSet.SetSlot(0, moveId);
         var run = CreateRunWithParty(
@@ -371,7 +371,7 @@ public class QuestRunServiceTests
     {
         var mageId = QuestParticipantId.New();
         var targetId = QuestParticipantId.New();
-        var moveId = new MoveId(103);
+        var moveId = new MoveId(208);
         var mageMoveSet = new MoveSet();
         mageMoveSet.SetSlot(0, moveId);
         var run = CreateRunWithParty(
@@ -415,6 +415,139 @@ public class QuestRunServiceTests
     }
 
     [Fact]
+    public async Task SubmitCommandAsync_WhenEnemyHasPoisonAndTrap_StoresSeparateAilmentLogs()
+    {
+        var playerParticipantId = QuestParticipantId.New();
+        var poisonMoveId = new MoveId(201);
+        var trapMoveId = new MoveId(202);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 20,
+            enemyAilments:
+            [
+                new BattleAilmentState(AilmentType.Poison, 1, sourceMoveId: poisonMoveId),
+                new BattleAilmentState(AilmentType.DamageTrap, 1, new DamageEffect(1, 0.1m, 0, 0m, ElementType.None), trapMoveId)
+            ]);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var poisonMove = new Move(
+            poisonMoveId,
+            "Poison Mist",
+            "poison",
+            TargetType.Enemy,
+            AttackRange.Single,
+            0,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    poisonMoveId,
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(AilmentType.Poison, 1m, 1))
+            ]);
+        var trapMove = new Move(
+            trapMoveId,
+            "Spike Trap",
+            "trap",
+            TargetType.Enemy,
+            AttackRange.Single,
+            0,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(2),
+                    trapMoveId,
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(AilmentType.DamageTrap, 1m, 1, new DamageEffect(1, 0.1m, 0, 0m, ElementType.None)))
+            ]);
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), [poisonMove, trapMove]);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            playerParticipantId,
+            new QuestSubmittedCommand(
+                playerParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Wait,
+                DateTimeOffset.UtcNow));
+
+        repository.StoredRun!.LastTurnResults!.Actions.Should().Contain(x =>
+            x.ActorEnemyInstanceId != null &&
+            x.MoveId == poisonMoveId.Id &&
+            x.Logs.Contains("SlimeはPoison Mistによる毒で2ダメージを受けた"));
+        repository.StoredRun.LastTurnResults.Actions.Should().Contain(x =>
+            x.ActorEnemyInstanceId != null &&
+            x.MoveId == trapMoveId.Id &&
+            x.Logs.Contains("SlimeはSpike Trapによるトラップで2ダメージを受けた"));
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_WhenPoisonAndMaxHpBuffExpire_LogsOnlyPoisonTickDamage()
+    {
+        var playerParticipantId = QuestParticipantId.New();
+        var poisonMoveId = new MoveId(203);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 10,
+            enemyAilments:
+            [
+                new BattleAilmentState(AilmentType.Poison, 1, sourceMoveId: poisonMoveId)
+            ],
+            enemyBuffs:
+            [
+                new BattleBuffState(BuffStat.MaxHp, BuffCalculationType.Mul, 2.0m, 1)
+            ]);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var poisonMove = new Move(
+            poisonMoveId,
+            "Venom",
+            "venom",
+            TargetType.Enemy,
+            AttackRange.Single,
+            0,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(3),
+                    poisonMoveId,
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(AilmentType.Poison, 1m, 1))
+            ]);
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), [poisonMove]);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            playerParticipantId,
+            new QuestSubmittedCommand(
+                playerParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Wait,
+                DateTimeOffset.UtcNow));
+
+        repository.StoredRun!.LastTurnResults!.Actions.Should().Contain(x =>
+            x.ActorEnemyInstanceId != null &&
+            x.MoveId == poisonMoveId.Id &&
+            x.Logs.Contains("SlimeはVenomによる毒で1ダメージを受けた"));
+        repository.StoredRun.LastTurnResults.Actions.Should().NotContain(x =>
+            x.ActorEnemyInstanceId != null &&
+            x.Logs.Any(log => log.Contains("6ダメージ")));
+    }
+
+    [Fact]
     public async Task ResolveTurnAsync_WhenRunEnds_ConsumesSnapshottedEquipmentDurability()
     {
         var playerId = new PlayerId(Guid.NewGuid());
@@ -450,6 +583,7 @@ public class QuestRunServiceTests
             new FakePlayerItemStackRepository(),
             new FakeMarketListingRepository(),
             new FakeEquipmentRepository(),
+            new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -507,6 +641,7 @@ public class QuestRunServiceTests
             new FakePlayerItemStackRepository(),
             new FakeMarketListingRepository(),
             new FakeEquipmentRepository(),
+            new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -566,6 +701,7 @@ public class QuestRunServiceTests
             new FakePlayerItemStackRepository(),
             new FakeMarketListingRepository(),
             new FakeEquipmentRepository(rewardEquipment),
+            new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -640,6 +776,7 @@ public class QuestRunServiceTests
             new FakePlayerItemStackRepository(),
             new FakeMarketListingRepository(),
             new FakeEquipmentRepository(rewardEquipment),
+            new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -689,6 +826,7 @@ public class QuestRunServiceTests
             new FakePlayerItemStackRepository(),
             new FakeMarketListingRepository(),
             new FakeEquipmentRepository(),
+            new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -708,6 +846,121 @@ public class QuestRunServiceTests
         repository.StoredRun.Rewards.SkippedRewardPlayerIds.Should().BeEmpty();
         var grantedEquipments = await playerEquipmentRepository.GetByPlayerAsync(playerId);
         grantedEquipments.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenQuestSucceedsWithGuaranteedItemReward_GrantsItemStackToPlayer()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var participantId = QuestParticipantId.New();
+        var rewardItem = new Item(
+            new ItemId(3001),
+            "命脈の種",
+            "最大HPが1上がる",
+            99,
+            ItemEffectType.StatBoost,
+            statusBonus: new StatusBonus(1, 0, 0, 0, 0, 0, 0));
+        var stage = CreateStage(
+            new QuestStageId(1),
+            itemRewards: [new QuestStageItemRewardEntry(rewardItem.Id, weight: 100, isMiss: false)]);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Apprentice, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 50, 5, 1, 1, 50), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 1);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run, playerId));
+        var playerRepository = new FakePlayerRepository(playerId);
+        var playerItemStackRepository = new FakePlayerItemStackRepository();
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            new FakePlayerEquipmentRepository(),
+            playerItemStackRepository,
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
+            new FakeItemRepository(rewardItem),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            new BattleService(),
+            new QuestBattleFactory());
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        repository.StoredRun!.Rewards.ItemRewardId.Should().Be(rewardItem.Id);
+        var grantedStacks = await playerItemStackRepository.GetByPlayerAsync(playerId);
+        grantedStacks.Should().ContainSingle();
+        grantedStacks[0].ItemId.Should().Be(rewardItem.Id);
+        grantedStacks[0].Quantity.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenItemRewardMatchesExistingStack_AddsQuantityToExistingStack()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var participantId = QuestParticipantId.New();
+        var rewardItem = new Item(
+            new ItemId(3001),
+            "命脈の種",
+            "最大HPが1上がる",
+            99,
+            ItemEffectType.StatBoost,
+            statusBonus: new StatusBonus(1, 0, 0, 0, 0, 0, 0));
+        var existingStack = new PlayerItemStack(PlayerItemStackId.New(), playerId, rewardItem.Id, 3, DateTimeOffset.UtcNow);
+        var stage = CreateStage(
+            new QuestStageId(1),
+            itemRewards: [new QuestStageItemRewardEntry(rewardItem.Id, weight: 100, isMiss: false)]);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Apprentice, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 50, 5, 1, 1, 50), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 1);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run, playerId));
+        var playerRepository = new FakePlayerRepository(playerId);
+        var playerItemStackRepository = new FakePlayerItemStackRepository(existingStack);
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            new FakePlayerEquipmentRepository(),
+            playerItemStackRepository,
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
+            new FakeItemRepository(rewardItem),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            new BattleService(),
+            new QuestBattleFactory());
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        var grantedStacks = await playerItemStackRepository.GetByPlayerAsync(playerId);
+        grantedStacks.Should().ContainSingle();
+        grantedStacks[0].Quantity.Should().Be(4);
     }
 
     [Fact]
@@ -753,6 +1006,7 @@ public class QuestRunServiceTests
             new FakePlayerItemStackRepository(),
             new FakeMarketListingRepository(),
             new FakeEquipmentRepository(rewardEquipment),
+            new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -772,6 +1026,70 @@ public class QuestRunServiceTests
         var memberEquipments = await playerEquipmentRepository.GetByPlayerAsync(memberPlayerId);
         ownerEquipments.Should().ContainSingle(x => x.EquipmentId == rewardEquipment.Id);
         memberEquipments.Should().ContainSingle(x => x.EquipmentId == rewardEquipment.Id);
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenGreatThiefIsInParty_RollsRewardTwiceForSharedReward()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var participantId = QuestParticipantId.New();
+        var rewardEquipment = new Equipment(
+            new EquipmentId(2001),
+            "報酬の剣",
+            "勝者に授けられる剣。",
+            EquipmentType.Weapon,
+            12,
+            20,
+            10,
+            new EquipmentStatusBonus(0, 0, 2, 0, 0, 0, 0),
+            new HashSet<Job> { Job.Apprentice, Job.GreatThief });
+        var stage = CreateStage(
+            new QuestStageId(1),
+            [
+                new QuestStageEquipmentRewardEntry(equipmentId: null, weight: 1, isMiss: true),
+                new QuestStageEquipmentRewardEntry(rewardEquipment.Id, weight: 1, isMiss: false)
+            ]);
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.GreatThief, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 50, 5, 1, 10, 50), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 1);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run, playerId));
+        var playerRepository = new FakePlayerRepository(playerId);
+        var playerEquipmentRepository = new FakePlayerEquipmentRepository();
+        var rolls = new Queue<int>([1, 2]);
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            playerEquipmentRepository,
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(rewardEquipment),
+            new FakeItemRepository(),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            new BattleService(),
+            new QuestBattleFactory(),
+            _ => rolls.Dequeue());
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        repository.StoredRun!.Rewards.EquipmentRewardId.Should().Be(rewardEquipment.Id);
+        var grantedEquipments = await playerEquipmentRepository.GetByPlayerAsync(playerId);
+        grantedEquipments.Should().ContainSingle(x => x.EquipmentId == rewardEquipment.Id);
     }
 
     [Fact]
@@ -846,6 +1164,7 @@ public class QuestRunServiceTests
             new FakePlayerItemStackRepository(),
             new FakeMarketListingRepository(listedMarketEntry),
             new FakeEquipmentRepository(rewardEquipment),
+            new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -951,6 +1270,7 @@ public class QuestRunServiceTests
             new FakePlayerItemStackRepository(),
             new FakeMarketListingRepository(),
             new FakeEquipmentRepository(),
+            new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new BattleService(),
@@ -1035,7 +1355,9 @@ public class QuestRunServiceTests
         int enemyHp = 1,
         DateTimeOffset? deadlineAt = null,
         PlayerEquipmentId? weaponEquipmentId = null,
-        PlayerEquipmentId? armorEquipmentId = null)
+        PlayerEquipmentId? armorEquipmentId = null,
+        IReadOnlyList<BattleAilmentState>? enemyAilments = null,
+        IReadOnlyList<BattleBuffState>? enemyBuffs = null)
     {
         enemyPositions ??= [new BattlePosition(BattleRow.Front, BattleColumn.Right)];
 
@@ -1077,7 +1399,9 @@ public class QuestRunServiceTests
                     position,
                     currentHp: enemyHp,
                     currentMp: 0,
-                    isDead: false)).ToArray()),
+                    isDead: false,
+                    ailments: enemyAilments,
+                    buffs: enemyBuffs)).ToArray()),
             new QuestTurnState(1, deadlineAt ?? DateTimeOffset.UtcNow.AddSeconds(30)),
             new QuestTrapCollection(),
             new QuestRewardAccumulator(),
@@ -1157,7 +1481,8 @@ public class QuestRunServiceTests
 
     private static QuestStageDefinition CreateStage(
         QuestStageId stageId,
-        IReadOnlyList<QuestStageEquipmentRewardEntry>? equipmentRewards = null)
+        IReadOnlyList<QuestStageEquipmentRewardEntry>? equipmentRewards = null,
+        IReadOnlyList<QuestStageItemRewardEntry>? itemRewards = null)
     {
         return new QuestStageDefinition(
             stageId,
@@ -1180,6 +1505,7 @@ public class QuestRunServiceTests
                     new QuestFloorRewardRule(0, 0))
             ],
             equipmentRewards: equipmentRewards ?? [],
+            itemRewards: itemRewards ?? [],
             true);
     }
 
@@ -1350,6 +1676,17 @@ public class QuestRunServiceTests
 
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class FakeItemRepository(params Item[] items) : IItemRepository
+    {
+        private readonly Dictionary<ItemId, Item> itemsById = items.ToDictionary(x => x.Id);
+
+        public Task<Item?> GetAsync(ItemId id)
+            => Task.FromResult(itemsById.TryGetValue(id, out var item) ? item : null);
+
+        public Task<IReadOnlyList<Item>> GetAllAsync()
+            => Task.FromResult((IReadOnlyList<Item>)itemsById.Values.OrderBy(x => x.Id.Value).ToArray());
     }
 
     private sealed class FakeMarketListingRepository(params MarketListing[] listings) : IMarketListingRepository

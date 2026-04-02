@@ -7,6 +7,7 @@ public sealed record ThreadDetailView(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     DateTimeOffset? LastRepliedAt,
+    Guid AuthorPlayerId,
     string AuthorName,
     string? AuthorImagePath,
     IReadOnlyList<ThreadReplyView> Replies);

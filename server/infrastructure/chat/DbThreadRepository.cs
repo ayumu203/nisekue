@@ -128,6 +128,36 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
         }
     }
 
+    public async Task DeleteAsync(ThreadId threadId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        await using var tx = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        try
+        {
+            var exists = await LockThreadAsync(dbContext, threadId.Value);
+            if (!exists)
+            {
+                throw new KeyNotFoundException("対象スレッドが見つかりません。");
+            }
+
+            var threadEntity = await dbContext.Threads
+                .SingleOrDefaultAsync(x => x.Id == threadId);
+
+            if (threadEntity is null)
+            {
+                throw new KeyNotFoundException("対象スレッドが見つかりません。");
+            }
+
+            dbContext.Threads.Remove(threadEntity);
+            await dbContext.SaveChangesAsync();
+            await tx.CommitAsync();
+        }
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.SerializationFailure)
+        {
+            throw new InvalidOperationException("スレッド削除時に競合が発生しました。再試行してください。", ex);
+        }
+    }
+
     public async Task<ThreadPageResult> GetPageAsync(ThreadQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);

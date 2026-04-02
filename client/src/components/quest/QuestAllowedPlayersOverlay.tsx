@@ -43,9 +43,6 @@ export default function QuestAllowedPlayersOverlay({
       <DialogContent dividers>
         <Stack spacing={1.5}>
           <Typography variant="body2" color="text.secondary">
-            {locale.allowedPlayersHint}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
             {locale.selectedAllowedPlayersCount.replace('{{count}}', String(allowedPlayerIds.length))}
           </Typography>
 

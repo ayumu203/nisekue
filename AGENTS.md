@@ -1,5 +1,9 @@
 # リポジトリ運用ガイド
 
+## 重要
+
+- 応答は`日本語`でお願いします.
+
 ## プロジェクト構成
 このリポジトリは Web ゲーム向けのモノレポ構成です（フロントエンド + バックエンド + Supabase）。
 - `client/`: React + Vite + MUI のフロントエンド実装。データ取得は基本的に `useSWR` を利用します。
@@ -53,8 +57,9 @@
 - `pnpx supabase stop`: ローカル Supabase を停止します。
 
 ## マイグレーション運用
-- 開発環境では EF Core マイグレーションを手動適用します。
-- CI/CD では GitHub Actions の `.github/workflows/db-migrate.yml` で適用します。
+- 公開環境の EF Core マイグレーションは GitHub Actions の `.github/workflows/db-migrate-dev.yml` / `.github/workflows/db-migrate-prod.yml` により自動適用します。
+- GitHub Environments (`dev`, `prod`) の `SUPABASE_DB_CONNECTION_STRING` には Session Pooler の接続文字列を設定します。
+- Azure App Service の `ConnectionStrings__Supabase` も Session Pooler を使用します。
 - スキーマ変更を含む PR では、マイグレーションファイルと適用方針（手動/CI）を明記してください。
 
 ## 定期ジョブ運用

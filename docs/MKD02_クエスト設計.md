@@ -84,13 +84,13 @@
 * 階層進行
 * ターン入力と同時解決
 * 放置による自動操作移行
+* 敵 AI の基礎行動選択
 * ページ離脱後の復帰に必要な永続化
 
 今回のドラフトでは以下をスコープ外または簡略化対象とする。
 
 * アイテム所持品の永続化
 * クエスト報酬の最終反映先テーブル
-* 敵 AI の詳細アルゴリズム
 * 戦闘ログの完全リプレイ
 * 装備の入手経路の拡張
 * 修理システム
@@ -361,8 +361,26 @@
 * `MoveName`
 * `TargetSummaries`
 * `Logs`
+* `LogEntries`
 
 味方と敵のどちらが行動主体でも扱えるよう、`ActorParticipantId` と `ActorEnemyInstanceId` は排他的に利用する。
+`Logs` は後方互換のプレーン文字列一覧、`LogEntries` は色分け表示用の構造化ログ一覧とする。
+
+#### `LogEntries`
+
+各要素は `QuestBattleLogEntryView` とし、以下を持つ。
+
+* `Text`
+* `Segments`
+
+`Segments` の各要素は `QuestBattleLogSegmentView` とし、以下を持つ。
+
+* `Text`
+* `Tone` (`Default`, `Damage`, `Ailment`, `Buff`, `Heal`)
+
+クライアントは `Segments` を優先して表示し、未対応クライアント向けには `Text` / `Logs` を後方互換として残す。
+`Damage` はダメージ数値とダメージ技名、`Ailment` は毒・トラップ由来の技名、`Buff` はバフ技名、`Heal` は回復技名に使う。
+毒・トラップの継続ダメージをログ表示するため、`BattleAilmentState` は状態異常付与元の `SourceMoveId` を保持する。
 
 #### `TargetSummaries`
 
@@ -959,6 +977,7 @@
 * 「単体攻撃スキル」「ちょうはつスキル」「防御参照スキル」は `Move` の効果定義から判定できる前提とする。判定に必要な Move メタデータが不足する場合は、後続で `MoveDomain` 設計を補う。
 * 「単体攻撃スキル」は、`Move.TargetType == Enemy` かつ `Move.AttackRange == Single` であり、`Move.Effects` に `Damage` 効果を含むスキルとして判定する。
 * 「ちょうはつスキル」は、`Move.Effects` に `Ailment` 効果を含み、その `AilmentType == Taunt` であるスキルとして判定する。
+* ちょうはつ状態は付与ターンを含めて 2 ターン継続し、2 ターン目終了時に自動的に解除される。クエスト中の行動判定では付与後の最大 2 ターン間、優先対象として扱う。
 * 「防御参照スキル」は、`Move.Effects` に `Damage` 効果を含み、その `Damage.AttackStat == Defense` であるスキルとして判定する。
 * 「範囲攻撃スキル」は、`Move.TargetType == Enemy` かつ `Move.AttackRange != Single` であり、`Move.Effects` に `Damage` 効果を含むスキルとして判定する。
 * 「回復スキル」は、`Move.Effects` に `Heal` 効果を含むスキルとして判定する。
@@ -1036,6 +1055,52 @@
 * 単体攻撃スキルの MP 消費が同値の場合は `MoveSet` のスロット順が先のものを採用する。
 * 上記条件に合うスキルが存在しない場合は通常攻撃とする。
 
+#### 敵 NPC 行動方針
+
+敵 NPC の自動行動は、`QuestRun` を入力として受け取り、現在の敵状態、味方状態、敵マスタに定義された `EnemyAiType` と `MoveIds` を参照して決定する。
+初期実装では、`EnemyAiType` ごとの差分を載せられる構造だけ先に確保し、全タイプ共通の基礎優先規則を優先して実装する。
+判定責務は味方 NPC と同様にクエスト側へ置き、`BattleDomain` へは最終的な `BattleActionInput` のみ渡す。
+
+共通方針:
+
+* 判定単位は敵 1 体ごと、ターンごととする。
+* `QuestEnemyActionPolicy` は `QuestRun`, `enemyInstanceId`, `enemyDefinition`, `availableMoves` を受け取り、その敵の `QuestEnemyState` と対戦相手の `QuestRunPartyMemberState` を `QuestRun` から取得する。
+* `availableMoves` はアプリケーション層が `QuestEnemyDefinition.MoveIds` と `IMoveRepository` から解決した、その敵がそのターンに判定対象とできる `Move` 一覧とする。
+* `availableMoves` は敵マスタに定義された習得スキル一覧を指し、MP 残量、戦闘不能、射程到達可否などのそのターン条件を加味した使用可否判定は `QuestEnemyActionPolicy` 側で行う。
+* 行動選択では少なくとも `EnemyAiType`, `availableMoves`, `CurrentMp`, 敵自身の現在位置, 味方の現在位置, 味方のちょうはつ状態, 各スキルの `TargetType`, `AttackRange`, `Effects` を参照できるようにする。
+* 基本的な対象探索順は `後衛・左` -> `後衛・右` -> `中衛・左` -> `中衛・右` -> `前衛・左` -> `前衛・右` とする。
+* ただし射程内にちょうはつ状態の味方がいる場合は、その味方群を通常の後衛優先より先に対象候補とする。
+* 射程内のちょうはつ対象が複数いる場合の優先順は `前衛・左` -> `前衛・右` -> `中衛・左` -> `中衛・右` -> `後衛・左` -> `後衛・右` とする。
+* ここでいう「射程内」とは、通常攻撃または候補スキルの `AttackRange` と `BattleTargetingResolver` が解決可能な対象位置に含まれることを指す。
+* 「ダメージ系スキル」は、`Move.TargetType == Enemy` であり、`Move.Effects` に `Damage` 効果を含むスキルとして判定する。
+* 「後衛到達可能ダメージ系スキル」は、使用者位置と `BattleTargetingResolver` の判定上、後衛マスを少なくとも 1 つ対象候補に含められるダメージ系スキルとする。
+* 「単体ダメージ系スキル」は、ダメージ系スキルのうち `Move.AttackRange == Single` のものとする。
+* 「範囲ダメージ系スキル」は、ダメージ系スキルのうち `Move.AttackRange != Single` のものとする。
+* 「ちょうはつもち」は、そのターン開始時点で `Taunt` 状態異常が有効な味方参加者とする。
+* ちょうはつ対象が存在する場合は、後衛狙いの優先規則よりも、ちょうはつ対象への攻撃強制を優先する。
+* ただし攻撃行動へ入る前に、HP が `CurrentHp <= floor(MaxHp * 0.5)` の味方が存在するかを確認し、存在する場合は回復行動を最優先で判定する。
+* 回復対象の探索順は `自身` -> `前衛・左` -> `前衛・右` -> `中衛・左` -> `中衛・右` -> `後衛・左` -> `後衛・右` とする。
+* 「回復スキル」は、`Move.Effects` に `Heal` 効果を含むスキルとして判定する。
+* 回復スキルの比較順は、使用後 HP が 100% に最も近いものを優先し、同値なら MP 消費が少ないもの、その後は `QuestEnemyDefinition.MoveIds` の並び順を優先する。
+* 回復対象が存在しない場合に限り、Buff 効果を持つ支援スキルを候補に含めてよい。
+* 「Buff スキル」は、`Move.TargetType == Ally` であり、`Move.Effects` に `Buff` 効果を含むスキルとして判定する。
+* Buff スキルは、自身以外の生存中の味方が 1 体以上いる場合にのみ使用候補にできる。
+* 単体 Buff スキルの対象探索順は `前衛・左` -> `前衛・右` -> `中衛・左` -> `中衛・右` -> `後衛・左` -> `後衛・右` とする。
+* 範囲 Buff スキルが複数ある場合は、攻撃範囲の広い順で比較し、同順位なら `Buff.BuffValue` が大きいものを優先し、それでも同順位なら `QuestEnemyDefinition.MoveIds` の並び順を優先する。
+* Buff スキルを使用する場合でも、ちょうはつ判定は攻撃行動に入った後の対象決定規則として保持し、回復やバフの可否判定を先に行う。
+* まず使用可能な後衛到達可能ダメージ系スキルを列挙し、その中からちょうはつ対象を含めて解決できるものを優先候補とする。
+* ちょうはつ対象がいない場合は、使用可能な後衛到達可能ダメージ系スキルが 1 つでもあれば、それらを通常攻撃より優先して使用する。
+* 後衛到達可能ダメージ系スキルが複数ある場合は、攻撃範囲の広い順で比較する。
+* 攻撃範囲の比較順は `All` > `Square` > `Row` / `Column` > `Single` とする。
+* 攻撃範囲が同順位の場合は、MP 消費が少ないものを優先する。
+* MP 消費も同値の場合は、`QuestEnemyDefinition.MoveIds` の並び順が先のものを採用する。
+* 後衛到達可能ダメージ系スキルを使えない場合は、ちょうはつ優先を保ったうえで、到達可能なダメージ系スキルの中から同じ比較順で選ぶ。
+* ダメージ系スキルが 1 つも使えない場合は通常攻撃を選ぶ。
+* 通常攻撃時の対象も同様に、射程内のちょうはつ対象がいればそれを優先し、いなければ後衛から順に探索する。
+* どの候補でも射程上対象を取れない場合は、対象不在の失敗行動として扱う。
+* `EnemyAiType` は初期実装では主に将来拡張用の識別子として保持し、同一の基礎ロジックを適用する。
+* 将来 `EnemyAiType` ごとの差分を追加する場合も、「ちょうはつもち優先」と「可能なら後列狙い」は共通規則として維持する。
+
 ### 5.8 ドメインサービス案
 
 | サービス | 役割 |
@@ -1044,6 +1109,7 @@
 | `QuestNpcAssignmentService` | 最低出撃人数を満たすために NPC テンプレートを選択する |
 | `QuestSnapshotFactory` | `QuestParticipant` と `Player` / `QuestNpcTemplate` から開始時スナップショットを生成する |
 | `QuestAllyNpcActionPolicy` | 味方 NPC の職業別ルールに従って、そのターンの行動を選択する |
+| `QuestEnemyActionPolicy` | 敵 NPC の基礎優先規則と `EnemyAiType` に従って、そのターンの行動を選択する |
 | `QuestRunFactory` | 開始時スナップショットとステージ定義から `QuestRun` を生成する |
 | `QuestRunService` | 行動受付、放置による自動操作移行、ターン解決、階層遷移、撤退処理、終了時クールダウン付与を行う |
 
@@ -1077,12 +1143,18 @@
 
 * `QuestAllyNpcActionPolicy`
   味方 NPC の職業別ルールに従って毎ターンの行動を選択する専用ポリシーを実装する。
+* `QuestEnemyActionPolicy`
+  敵 NPC の「ちょうはつもち優先」「可能なら後列狙い」を満たす基礎優先規則と、将来の `EnemyAiType` 差し替え点を持つ専用ポリシーを実装する。
 * 味方 NPC 行動生成の差し替え
   現在の単純な自動通常攻撃生成を、`QuestAllyNpcActionPolicy` を使う形へ差し替える。
+* 敵行動生成の差し替え
+  現在の単純な自動通常攻撃生成を、`QuestEnemyActionPolicy` を使う形へ差し替える。
 * 罠の設置状態判定
   レンジャー職の「罠が未設置なら罠設置スキルを優先する」を実装するため、パーティ全体に有効な罠が存在するかを判定するロジックを追加する。
 * 僧侶職の回復量評価
   「使用後 HP が 90% から 100% になる回復スキルを優先する」判定を行うため、回復スキルごとの見込み回復量を比較するロジックを追加する。
+* 敵 AI 用対象探索ヘルパ
+  `BattleTargetingResolver` と同じ到達判定を用いて、「この敵がこのスキルで後衛やちょうはつ対象を狙えるか」を事前評価する補助ロジックを追加する。
 * 範囲スキルの対象表現の修正
   `QuestBattleFactory` が `UseMove` の対象を単一 `TargetActorIds` に確定させず、範囲決定の起点を保持して `BattleTargetingResolver` が正しく `Column` / `Row` / `Square` / `All` を解決できるよう修正する。
 * `AutoAttackOnly` 例外運用

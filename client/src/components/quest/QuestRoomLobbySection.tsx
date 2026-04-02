@@ -4,16 +4,20 @@ import {
   Chip,
   CircularProgress,
   FormControl,
+  IconButton,
   InputLabel,
   MenuItem,
   Paper,
   Select,
   Stack,
-  TextField,
+  SvgIcon,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
-import { useRef, useState } from 'react'
+import CancelIcon from '@mui/icons-material/Cancel'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import { useState } from 'react'
 import {
   greenOutlinedInputSx,
   innerSurfaceSx,
@@ -25,13 +29,21 @@ import locale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestRoomDetailResponse } from '@/schema/quest'
 import type { PlayerSummary } from '@/schema/player'
 import { resolveCharacterAssetPath, resolveJobAssetPath } from '@/lib/assets'
-import QuestAllowedPlayersOverlay from './QuestAllowedPlayersOverlay'
+function GearIcon() {
+  return (
+    <SvgIcon viewBox="0 0 24 24" fontSize="small">
+      <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.49-.42H10.1a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.12.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.39 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.23 1.12-.55 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z" />
+    </SvgIcon>
+  )
+}
+import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestRoomFormationPreview from './QuestRoomFormationPreview'
 
 type QuestRoomLobbySectionProps = {
   currentRoom: QuestRoomDetailResponse | null
   stageLabel: string | null
   selfParticipantId: string | null
+  currentPlayerLevel: number | null
   selectablePlayers: PlayerSummary[]
   minRequiredLevelInput: string
   allowedPlayerIds: string[]
@@ -43,9 +55,11 @@ type QuestRoomLobbySectionProps = {
   isPlayerCandidatesLoading: boolean
   playerCandidatesError: Error | null
   isUpdatingParticipantId: string | null
-  onMinRequiredLevelChange: (value: string) => void
-  onToggleAllowedPlayer: (playerId: string) => void
-  onUpdateRestrictions: () => void | Promise<void>
+  onRestrictionsChange: (value: string, nextAllowedPlayerIds: string[]) => void
+  onUpdateRestrictions: (options?: {
+    minRequiredLevelInput?: string
+    allowedPlayerIds?: string[]
+  }) => void | Promise<void>
   onPositionDraftChange: (participantId: string, nextPosition: { row: BattleRow; column: BattleColumn }) => void
   onUpdateParticipantPosition: (participantId: string) => void | Promise<void>
   onStartQuest: () => void | Promise<void>
@@ -56,6 +70,7 @@ export default function QuestRoomLobbySection({
   currentRoom,
   stageLabel,
   selfParticipantId,
+  currentPlayerLevel,
   selectablePlayers,
   minRequiredLevelInput,
   allowedPlayerIds,
@@ -67,16 +82,14 @@ export default function QuestRoomLobbySection({
   isPlayerCandidatesLoading,
   playerCandidatesError,
   isUpdatingParticipantId,
-  onMinRequiredLevelChange,
-  onToggleAllowedPlayer,
+  onRestrictionsChange,
   onUpdateRestrictions,
   onPositionDraftChange,
   onUpdateParticipantPosition,
   onStartQuest,
   onCancelRoom,
 }: QuestRoomLobbySectionProps) {
-  const positionEditorRef = useRef<HTMLDivElement | null>(null)
-  const [isAllowedPlayersOverlayOpen, setIsAllowedPlayersOverlayOpen] = useState(false)
+  const [isRestrictionsModalOpen, setIsRestrictionsModalOpen] = useState(false)
   const isOwner =
     currentRoom != null && selfParticipantId != null
       ? currentRoom.participants.some(
@@ -106,8 +119,12 @@ export default function QuestRoomLobbySection({
     })
   }
 
-  function handleOpenPositionEditor() {
-    positionEditorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const handleRestrictionsModalApply = async (nextMinRequiredLevelInput: string, nextAllowedPlayerIds: string[]) => {
+    onRestrictionsChange(nextMinRequiredLevelInput, nextAllowedPlayerIds)
+    await onUpdateRestrictions({
+      minRequiredLevelInput: nextMinRequiredLevelInput,
+      allowedPlayerIds: nextAllowedPlayerIds,
+    })
   }
 
   return (
@@ -134,45 +151,105 @@ export default function QuestRoomLobbySection({
           </Stack>
         ) : (
           <Stack spacing={1.5}>
-            <Stack spacing={0.75} alignItems="flex-start">
-              <Typography variant="h5" fontWeight={900} sx={{ color: '#ffffff' }}>
-                {stageLabel ?? `${locale.stage} ${currentRoom.stageId}`}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+              <Stack spacing={0.75} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="h5" fontWeight={900} sx={{ color: '#ffffff' }}>
+                  {stageLabel ?? `${locale.stage} ${currentRoom.stageId}`}
+                </Typography>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
+                  <Chip
+                    size="small"
+                    label={locale.roomStatus[currentRoom.status]}
+                    sx={{
+                      fontWeight: 800,
+                      color: currentRoom.status === 'Recruiting' ? '#173a34' : '#4d1e2a',
+                      backgroundColor: currentRoom.status === 'Recruiting' ? '#9ed8ce' : '#f0b7c0',
+                    }}
+                  />
+                  <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
+                    {locale.participantCountLabel.replace('{{count}}', String(currentRoom.participants.length))}
+                  </Typography>
+                </Stack>
+              </Stack>
+              {isOwner ? (
+                <Tooltip title={locale.openRestrictionsModal}>
+                  <IconButton
+                    onClick={() => setIsRestrictionsModalOpen(true)}
+                    disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'rgba(152, 192, 255, 0.34)',
+                      backgroundColor: '#fffdfa',
+                      color: '#1d2d4a',
+                      alignSelf: 'flex-start',
+                    }}
+                    aria-label={locale.openRestrictionsModal}
+                  >
+                    <GearIcon />
+                  </IconButton>
+                </Tooltip>
+              ) : null}
+            </Box>
+            <Stack spacing={0.5}>
+              <Typography variant="body2" sx={{ color: '#f3f8ff', fontWeight: 600 }}>
+                {currentRoom.restrictions.minRequiredLevel == null
+                  ? `${locale.labels.minRequiredLevel}: ${locale.noRestriction}`
+                  : `${locale.labels.minRequiredLevel}: ${currentRoom.restrictions.minRequiredLevel}`}
               </Typography>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
-                <Chip
-                  size="small"
-                  label={locale.roomStatus[currentRoom.status]}
-                  sx={{
-                    fontWeight: 800,
-                    color: currentRoom.status === 'Recruiting' ? '#173a34' : '#4d1e2a',
-                    backgroundColor: currentRoom.status === 'Recruiting' ? '#9ed8ce' : '#f0b7c0',
-                  }}
-                />
-                <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
-                  {locale.participantCountLabel.replace('{{count}}', String(currentRoom.participants.length))}
-                </Typography>
-              </Stack>
-              <Stack spacing={0.5}>
-                <Typography variant="body2" sx={{ color: '#f3f8ff', fontWeight: 600 }}>
-                  {currentRoom.restrictions.minRequiredLevel == null
-                    ? `${locale.labels.minRequiredLevel}: ${locale.noRestriction}`
-                    : `${locale.labels.minRequiredLevel}: ${currentRoom.restrictions.minRequiredLevel}`}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#f3f8ff', fontWeight: 600 }}>
-                  {currentRoom.restrictions.allowedPlayers.length === 0
-                    ? `${locale.labels.allowedPlayers}: ${locale.noRestriction}`
-                    : `${locale.labels.allowedPlayers}: ${currentRoom.restrictions.allowedPlayers
-                        .map((player) => player.displayName ?? player.playerId)
-                        .join(', ')}`}
-                </Typography>
-              </Stack>
+              <Typography variant="body2" sx={{ color: '#f3f8ff', fontWeight: 600 }}>
+                {currentRoom.restrictions.allowedPlayers.length === 0
+                  ? `${locale.labels.allowedPlayers}: ${locale.noRestriction}`
+                  : `${locale.labels.allowedPlayers}: ${currentRoom.restrictions.allowedPlayers
+                      .map((player) => player.displayName ?? player.playerId)
+                      .join(', ')}`}
+              </Typography>
             </Stack>
+
+            {isOwner ? (
+              <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
+                <Button
+                  variant="contained"
+                  startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
+                  onClick={() => void onStartQuest()}
+                  disabled={
+                    isStarting || isCancellingRoom || !currentRoom.canStart || currentRoom.status !== 'Recruiting'
+                  }
+                  sx={{
+                    ...menuButtonSx,
+                    ...softGreenButtonSx,
+                    color: '#ffffff',
+                    backgroundColor: '#4f79b5',
+                    boxShadow: 'none',
+                    '&:hover': {
+                      backgroundColor: '#5a86c5',
+                      boxShadow: 'none',
+                    },
+                  }}
+                >
+                  {isStarting ? locale.startingQuest : locale.startQuest}
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<CancelIcon sx={{ fontSize: 20 }} />}
+                  onClick={() => void onCancelRoom()}
+                  disabled={isStarting || isCancellingRoom || currentRoom.status !== 'Recruiting'}
+                  sx={{
+                    ...menuButtonSx,
+                    ...mutedRedButtonSx,
+                    color: '#f7f1f2',
+                    borderColor: 'rgba(240, 183, 192, 0.44)',
+                    backgroundColor: 'rgba(116, 46, 61, 0.22)',
+                  }}
+                >
+                  {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
+                </Button>
+              </Stack>
+            ) : null}
 
             <QuestRoomFormationPreview
               currentRoom={currentRoom}
               selfParticipantId={selfParticipantId}
               positionDrafts={positionDrafts}
-              onOpenPositionEditor={handleOpenPositionEditor}
             />
 
             {currentRoom.status !== 'Recruiting' ? (
@@ -181,126 +258,20 @@ export default function QuestRoomLobbySection({
               </Typography>
             ) : null}
 
-            {isOwner ? (
-              <Stack spacing={1.25}>
-                <Stack spacing={1.5}>
-                  <TextField
-                    label={locale.labels.minRequiredLevel}
-                    type="number"
-                    value={minRequiredLevelInput}
-                    onChange={(event) => onMinRequiredLevelChange(event.target.value)}
-                    inputProps={{ min: 1 }}
-                    placeholder={locale.noRestriction}
-                    fullWidth
-                    disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
-                    sx={{
-                      '& .MuiInputLabel-root': {
-                        color: 'rgba(240, 247, 255, 0.82)',
-                      },
-                      '& .MuiInputBase-input': {
-                        color: '#ffffff',
-                      },
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': {
-                          borderColor: 'rgba(152, 192, 255, 0.34)',
-                        },
-                        '&:hover fieldset': {
-                          borderColor: 'rgba(186, 214, 255, 0.6)',
-                        },
-                        '&.Mui-focused fieldset': {
-                          borderColor: '#b9d3ff',
-                        },
-                      },
-                    }}
-                  />
-
-                  <Stack spacing={1}>
-                    <Typography variant="subtitle2" sx={{ color: '#ffffff', fontWeight: 800 }}>
-                      {locale.labels.allowedPlayers}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#f3f8ff', fontWeight: 600 }}>
-                      {allowedPlayerIds.length === 0
-                        ? locale.noRestriction
-                        : locale.selectedAllowedPlayersCount.replace('{{count}}', String(allowedPlayerIds.length))}
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      onClick={() => setIsAllowedPlayersOverlayOpen(true)}
-                      disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
-                      sx={{
-                        ...menuButtonSx,
-                        color: '#eef4ff',
-                        borderColor: 'rgba(152, 192, 255, 0.34)',
-                      }}
-                    >
-                      {locale.limitAllowedPlayers}
-                    </Button>
-                  </Stack>
-
-                  <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
-                    <Button
-                      variant="outlined"
-                      onClick={() => void onUpdateRestrictions()}
-                      disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
-                      sx={{
-                        ...menuButtonSx,
-                        color: '#eef4ff',
-                        borderColor: 'rgba(152, 192, 255, 0.34)',
-                      }}
-                    >
-                      {isUpdatingRestrictions ? locale.updatingRestrictions : locale.updateRestrictions}
-                    </Button>
-                    <Button
-                      variant="contained"
-                      onClick={() => void onStartQuest()}
-                      disabled={
-                        isStarting || isCancellingRoom || !currentRoom.canStart || currentRoom.status !== 'Recruiting'
-                      }
-                      sx={{
-                        ...menuButtonSx,
-                        ...softGreenButtonSx,
-                        color: '#ffffff',
-                        backgroundColor: '#4f79b5',
-                        boxShadow: 'none',
-                        '&:hover': {
-                          backgroundColor: '#5a86c5',
-                          boxShadow: 'none',
-                        },
-                      }}
-                    >
-                      {isStarting ? locale.startingQuest : locale.startQuest}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      onClick={() => void onCancelRoom()}
-                      disabled={isStarting || isCancellingRoom || currentRoom.status !== 'Recruiting'}
-                      sx={{
-                        ...menuButtonSx,
-                        ...mutedRedButtonSx,
-                        color: '#f7f1f2',
-                        borderColor: 'rgba(240, 183, 192, 0.44)',
-                        backgroundColor: 'rgba(116, 46, 61, 0.22)',
-                      }}
-                    >
-                      {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
-                    </Button>
-                  </Stack>
-                </Stack>
-              </Stack>
-            ) : null}
-
-            <QuestAllowedPlayersOverlay
-              open={isAllowedPlayersOverlayOpen}
+            <QuestRestrictionsModal
+              open={isRestrictionsModalOpen}
+              minRequiredLevelInput={minRequiredLevelInput}
+              currentPlayerLevel={currentPlayerLevel}
               selectablePlayers={selectablePlayers}
               allowedPlayerIds={allowedPlayerIds}
               isLoading={isPlayerCandidatesLoading}
               error={playerCandidatesError}
               disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
-              onClose={() => setIsAllowedPlayersOverlayOpen(false)}
-              onToggleAllowedPlayer={onToggleAllowedPlayer}
+              onClose={() => setIsRestrictionsModalOpen(false)}
+              onApply={handleRestrictionsModalApply}
             />
 
-            <div ref={positionEditorRef}>
+            <div>
               <Typography variant="h6" fontWeight={900} sx={{ color: '#ffffff' }}>
                 {isOwner ? locale.ownerPositionTitle : locale.waitingForOwnerTitle}
               </Typography>

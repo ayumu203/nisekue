@@ -1,4 +1,5 @@
 using server.domain.move;
+using server.domain.battle.enums;
 using server.domain.player;
 
 namespace server.domain.battle;
@@ -40,7 +41,17 @@ public class BattleTurnResolver(
         foreach (var state in stateArray)
         {
             var beforeStatus = _battleStatusResolver.BuildEffectiveStatus(snapshotMap[state.Id], state);
-            state.TickTurnEnd();
+            var turnEndResults = state.TickTurnEnd();
+            if (turnEndResults.Count > 0)
+            {
+                actionResults.Add(new BattleActionResult(
+                    state.Id,
+                    BattleActionKind.Wait,
+                    null,
+                    true,
+                    targetResults: turnEndResults,
+                    isTurnEndEffect: true));
+            }
             var afterStatus = _battleStatusResolver.BuildEffectiveStatus(snapshotMap[state.Id], state);
             NormalizeCurrentResources(state, beforeStatus, afterStatus);
         }
@@ -96,7 +107,7 @@ public class BattleTurnResolver(
             state.Id,
             state.CurrentHp,
             state.CurrentMp,
-            state.Ailments.Select(x => new BattleAilmentState(x.Type, x.RemainingTurns, x.TriggerDamage)),
+            state.Ailments.Select(x => new BattleAilmentState(x.Type, x.RemainingTurns, x.TriggerDamage, x.SourceMoveId, x.MaxHpLimit)),
             state.Buffs.Select(x => new BattleBuffState(x.Stat, x.CalculationType, x.Value, x.RemainingTurns)));
     }
 }

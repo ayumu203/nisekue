@@ -335,12 +335,14 @@ export default function QuestBattleStatusPanel({
     { value: 'Escape', label: locale.actionKinds.Escape },
   ]
 
+  const selectedMove = availableMoves.find((move) => move.moveId === selectedMoveId) ?? null
   const selectedTargetKey =
     selectedTargetRow !== '' && selectedTargetColumn !== '' ? `${selectedTargetRow}:${selectedTargetColumn}` : null
-  const selectedMove = availableMoves.find((move) => move.moveId === selectedMoveId) ?? null
   const selfPartyMember = selfParticipantId
     ? (run.partyMembers.find((member) => member.participantId === selfParticipantId) ?? null)
     : null
+  const isAllyTargetingAction = selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Ally'
+  const isSelfTargetingAction = selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Self'
   const aliveEnemies = run.enemies
     .filter((enemy) => !enemy.isDead)
     .sort((left, right) => {
@@ -604,6 +606,17 @@ export default function QuestBattleStatusPanel({
 
           {run.partyMembers.map((member) => {
             const position = allyPositions[member.position.row][member.position.column]
+            const allyKey = `${member.position.row}:${member.position.column}`
+            const isActor = member.participantId === selfParticipantId
+            const isReachableAlly = !member.isDead && !isActor
+            const isSelectedAlly = selectedTargetKey === allyKey
+
+            let allyTargetState: BattleSpriteProps['targetState'] = 'none'
+            if (isAllyTargetingAction) {
+              allyTargetState = isSelectedAlly ? 'preview' : isReachableAlly ? 'reachable' : 'blocked'
+            } else if (isSelfTargetingAction && isActor) {
+              allyTargetState = 'preview'
+            }
 
             return (
               <BattleSprite
@@ -616,6 +629,15 @@ export default function QuestBattleStatusPanel({
                 maxMp={member.maxMp}
                 isDead={member.isDead}
                 isAlly
+                targetState={allyTargetState}
+                onClick={
+                  isAllyTargetingAction && isReachableAlly
+                    ? () => {
+                        onTargetRowChange(member.position.row)
+                        onTargetColumnChange(member.position.column)
+                      }
+                    : undefined
+                }
                 left={position.left}
                 bottom={position.bottom}
               />

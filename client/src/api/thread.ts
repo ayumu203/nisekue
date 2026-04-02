@@ -6,6 +6,7 @@ import type {
   CreateThreadReplyResponse,
   CreateThreadRequest,
   CreateThreadResponse,
+  DeleteThreadResponse,
   GetThreadsRequest,
   GetThreadsResponse,
   ThreadDetail,
@@ -94,4 +95,21 @@ export async function createThreadReply(
   }
 
   return endpoints.thread.reply.responseSchema.parse(json)
+}
+
+export async function deleteThread(threadId: string, accessToken: string): Promise<DeleteThreadResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.thread.delete.path(threadId)}`, {
+    method: endpoints.thread.delete.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'スレッド削除に失敗しました'))
+  }
+
+  return endpoints.thread.delete.responseSchema.parse(json)
 }

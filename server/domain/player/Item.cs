@@ -7,6 +7,7 @@ public class Item(
     int maxStack,
     ItemEffectType effectType,
     StatusBonus? statusBonus = null,
+    StatusBonusPercent? statusBonusPercent = null,
     Job? changeJobTo = null,
     int? requiredLevel = null,
     IReadOnlySet<Job>? requiredMasterJobs = null)
@@ -21,6 +22,7 @@ public class Item(
     public int MaxStack { get; } = maxStack > 0 ? maxStack : throw new ArgumentOutOfRangeException(nameof(maxStack), "スタック上限は1以上である必要があります。");
     public ItemEffectType EffectType { get; } = effectType;
     public StatusBonus? StatusBonus { get; } = statusBonus;
+    public StatusBonusPercent? StatusBonusPercent { get; } = statusBonusPercent;
     public Job? ChangeJobTo { get; } = changeJobTo;
     public int? RequiredLevel { get; } = requiredLevel;
     public IReadOnlySet<Job> RequiredMasterJobs => _requiredMasterJobs;

@@ -26,6 +26,7 @@ import QuestRunSection from '@/components/quest/QuestRunSection'
 import Status from '@/components/home/Status'
 import { useAuth } from '@/contexts/useAuth'
 import { outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
+import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/quest/QuestRoom.json'
 import type {
@@ -118,6 +119,8 @@ export default function Quest() {
   const [isRecoveringQuest, setIsRecoveringQuest] = useState(false)
   const [hasTriedQuestRecovery, setHasTriedQuestRecovery] = useState(false)
   const hasAttemptedQuestRecoveryRef = useRef(false)
+  const questMainRef = useRef<HTMLDivElement | null>(null)
+  useMobileScrollToRef(questMainRef, { enabled: !isLoading })
 
   useEffect(() => {
     hasAttemptedQuestRecoveryRef.current = false
@@ -259,16 +262,10 @@ export default function Quest() {
     }
   }
 
-  function handleMinRequiredLevelChange(value: string): void {
+  function handleRestrictionsChange(nextMinRequiredLevelInput: string, nextAllowedPlayerIds: string[]): void {
     setIsRestrictionsDirty(true)
-    setMinRequiredLevelInput(value)
-  }
-
-  function handleToggleAllowedPlayer(playerId: string): void {
-    setIsRestrictionsDirty(true)
-    setAllowedPlayerIds((current) =>
-      current.includes(playerId) ? current.filter((id) => id !== playerId) : [...current, playerId],
-    )
+    setMinRequiredLevelInput(nextMinRequiredLevelInput)
+    setAllowedPlayerIds(nextAllowedPlayerIds)
   }
 
   const roomsSWRKey =
@@ -336,7 +333,7 @@ export default function Quest() {
 
     setMinRequiredLevelInput(currentRoom.restrictions.minRequiredLevel?.toString() ?? '')
     setAllowedPlayerIds(currentRoom.restrictions.allowedPlayers.map((player) => player.playerId))
-  }, [currentRoomRestrictionSignature, isRestrictionsDirty])
+  }, [currentRoom, currentRoomRestrictionSignature, isRestrictionsDirty])
 
   useEffect(() => {
     setIsRestrictionsDirty(false)
@@ -365,7 +362,10 @@ export default function Quest() {
     }
   }
 
-  async function handleUpdateRoomRestrictions(): Promise<void> {
+  async function handleUpdateRoomRestrictions(options?: {
+    minRequiredLevelInput?: string
+    allowedPlayerIds?: string[]
+  }): Promise<void> {
     if (!session?.access_token) {
       setSubmitError(locale.sessionInfoMissing)
       return
@@ -380,15 +380,20 @@ export default function Quest() {
     setSubmitError(null)
 
     try {
+      const nextMinRequiredLevelInput = options?.minRequiredLevelInput ?? minRequiredLevelInput
+      const nextAllowedPlayerIds = options?.allowedPlayerIds ?? allowedPlayerIds
+
       const room = await updateQuestRoomRestrictions(
         currentRoom.roomId,
         {
-          minRequiredLevel: minRequiredLevelInput.trim() === '' ? null : Number(minRequiredLevelInput),
-          allowedPlayerIds,
+          minRequiredLevel: nextMinRequiredLevelInput.trim() === '' ? null : Number(nextMinRequiredLevelInput),
+          allowedPlayerIds: nextAllowedPlayerIds,
         },
         session.access_token,
       )
       setIsRestrictionsDirty(false)
+      setMinRequiredLevelInput(nextMinRequiredLevelInput)
+      setAllowedPlayerIds(nextAllowedPlayerIds)
       setCreatedRoom(room)
       await mutateRoom(room, { revalidate: false })
       await mutateRooms()
@@ -450,7 +455,8 @@ export default function Quest() {
 
     try {
       const room = await cancelQuestRoom(currentRoom.roomId, session.access_token)
-      setCreatedRoom(room)
+      setCreatedRoom(null)
+      setMultiEntryView('create')
       await mutateRoom(room, { revalidate: false })
       await mutateRooms()
     } catch (error) {
@@ -568,6 +574,15 @@ export default function Quest() {
   }, [currentRun, selfParticipantId])
   const isEnemyTargetingAction =
     selectedActionKind === 'NormalAttack' || (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
+  const isAllyTargetingAction = selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Ally'
+  const isSelfTargetingAction = selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Self'
+  const selfPartyMember = useMemo(
+    () =>
+      currentRun && selfParticipantId
+        ? (currentRun.partyMembers.find((member) => member.participantId === selfParticipantId) ?? null)
+        : null,
+    [currentRun, selfParticipantId],
+  )
 
   useEffect(() => {
     if (!session?.user.id) {
@@ -705,6 +720,30 @@ export default function Quest() {
     setSelectedTargetRow(nextTarget.row)
     setSelectedTargetColumn(nextTarget.column)
   }, [isEnemyTargetingAction, reachableEnemyPositions, selectedTargetColumn, selectedTargetRow])
+
+  useEffect(() => {
+    if (isSelfTargetingAction) {
+      if (selfPartyMember) {
+        setSelectedTargetRow(selfPartyMember.position.row)
+        setSelectedTargetColumn(selfPartyMember.position.column)
+      }
+      return
+    }
+
+    if (isEnemyTargetingAction || isAllyTargetingAction) {
+      return
+    }
+
+    setSelectedTargetRow('')
+    setSelectedTargetColumn('')
+  }, [
+    isEnemyTargetingAction,
+    isAllyTargetingAction,
+    isSelfTargetingAction,
+    selfPartyMember,
+    selfPartyMember?.position.row,
+    selfPartyMember?.position.column,
+  ])
 
   useEffect(() => {
     if (selectedActionKind !== 'UseMove') {
@@ -927,6 +966,8 @@ export default function Quest() {
             >
               <Stack spacing={{ xs: 1.25, sm: 2 }}>
                 <Stack
+                  id="quest-main"
+                  ref={questMainRef}
                   spacing={0.6}
                   sx={{
                     px: { xs: 0.25, sm: 0.5 },
@@ -1018,6 +1059,7 @@ export default function Quest() {
                           activeStages={activeStages}
                           selectedStageId={selectedStageId}
                           mode={mode}
+                          currentPlayerLevel={player?.level ?? null}
                           minRequiredLevelInput={minRequiredLevelInput}
                           selectablePlayers={selectablePlayers}
                           allowedPlayerIds={allowedPlayerIds}
@@ -1028,8 +1070,7 @@ export default function Quest() {
                           isCreateDisabled={isCreateDisabled}
                           onStageChange={setSelectedStageId}
                           onModeChange={setMode}
-                          onMinRequiredLevelChange={handleMinRequiredLevelChange}
-                          onToggleAllowedPlayer={handleToggleAllowedPlayer}
+                          onRestrictionsChange={handleRestrictionsChange}
                           onCreateRoom={handleCreateRoom}
                         />
                       ) : null}
@@ -1053,6 +1094,7 @@ export default function Quest() {
                       currentRoom={currentRoom}
                       stageLabel={currentRoomStage?.name ?? null}
                       selfParticipantId={selfParticipantId}
+                      currentPlayerLevel={player?.level ?? null}
                       selectablePlayers={selectablePlayers}
                       minRequiredLevelInput={minRequiredLevelInput}
                       allowedPlayerIds={allowedPlayerIds}
@@ -1064,8 +1106,7 @@ export default function Quest() {
                       isPlayerCandidatesLoading={isPlayerCandidatesLoading}
                       playerCandidatesError={playerCandidatesError}
                       isUpdatingParticipantId={isUpdatingParticipantId}
-                      onMinRequiredLevelChange={handleMinRequiredLevelChange}
-                      onToggleAllowedPlayer={handleToggleAllowedPlayer}
+                      onRestrictionsChange={handleRestrictionsChange}
                       onUpdateRestrictions={handleUpdateRoomRestrictions}
                       onPositionDraftChange={(participantId, nextPosition) => {
                         setPositionDrafts((current) => ({

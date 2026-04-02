@@ -19,7 +19,7 @@ public class BattleTargetingResolver
 
         var candidates = snapshotMap.Values
             .Where(x => IsTargetTypeMatch(selector.TargetType, actorSnapshot, x))
-            .Where(x => stateMap.TryGetValue(x.Id, out var state) && !state.IsDead)
+            .Where(x => stateMap.TryGetValue(x.Id, out var state) && IsLifeStateMatch(selector.TargetLifeState, state))
             .ToArray();
 
         if (selector.TargetActorIds.Count > 0)
@@ -43,6 +43,77 @@ public class BattleTargetingResolver
             selector.SelectedPosition is null || fieldContext is null || fieldContext.Positions.Count == 0
                 ? candidates.OrderBy(x => x.Id.Value).Select(x => x.Id).ToArray()
                 : candidates.Select(x => x.Id).ToArray());
+    }
+
+    public BattleActorId ResolveDamageReceiver(
+        BattleActorId targetId,
+        IEnumerable<BattleActorSnapshot> snapshots,
+        IEnumerable<BattleActorState> states,
+        BattleFieldContext? fieldContext = null)
+    {
+        var snapshotMap = snapshots?.ToDictionary(x => x.Id) ?? throw new ArgumentNullException(nameof(snapshots));
+        var stateMap = states?.ToDictionary(x => x.Id) ?? throw new ArgumentNullException(nameof(states));
+        if (!snapshotMap.TryGetValue(targetId, out var targetSnapshot) || !stateMap.TryGetValue(targetId, out var targetState))
+        {
+            return targetId;
+        }
+
+        if (targetState.IsDead)
+        {
+            return targetId;
+        }
+
+        var tauntTarget = FindHighestPriorityActorWithAilment(targetSnapshot.Side, AilmentType.Taunt, snapshotMap.Values, stateMap, fieldContext);
+        var preferredTargetId = tauntTarget?.Id ?? targetId;
+
+        var coverActor = FindHighestPriorityActorWithAilment(targetSnapshot.Side, AilmentType.CoverAll, snapshotMap.Values, stateMap, fieldContext);
+        return coverActor?.Id ?? preferredTargetId;
+    }
+
+    private static BattleActorSnapshot? FindHighestPriorityActorWithAilment(
+        BattleSide side,
+        AilmentType ailmentType,
+        IEnumerable<BattleActorSnapshot> snapshots,
+        IReadOnlyDictionary<BattleActorId, BattleActorState> stateMap,
+        BattleFieldContext? fieldContext)
+    {
+        var candidates = snapshots
+            .Where(snapshot => snapshot.Side == side)
+            .Where(snapshot => stateMap.TryGetValue(snapshot.Id, out var state) &&
+                               !state.IsDead &&
+                               state.Ailments.Any(ailment => ailment.Type == ailmentType));
+
+        var positionMap = fieldContext?.Positions.ToDictionary(x => x.ActorId, x => x.Position);
+        if (positionMap is not null)
+        {
+            return candidates
+                .OrderBy(snapshot => GetTauntPriority(positionMap, snapshot.Id))
+                .ThenBy(snapshot => snapshot.Id.Value)
+                .FirstOrDefault();
+        }
+
+        return candidates
+            .OrderBy(snapshot => snapshot.Id.Value)
+            .FirstOrDefault();
+    }
+
+    private static int GetTauntPriority(IReadOnlyDictionary<BattleActorId, BattlePosition> positionMap, BattleActorId actorId)
+    {
+        if (!positionMap.TryGetValue(actorId, out var position))
+        {
+            return int.MaxValue;
+        }
+
+        return position.Row switch
+        {
+            BattleRow.Front when position.Column == BattleColumn.Left => 0,
+            BattleRow.Front when position.Column == BattleColumn.Right => 1,
+            BattleRow.Middle when position.Column == BattleColumn.Left => 2,
+            BattleRow.Middle when position.Column == BattleColumn.Right => 3,
+            BattleRow.Back when position.Column == BattleColumn.Left => 4,
+            BattleRow.Back when position.Column == BattleColumn.Right => 5,
+            _ => int.MaxValue
+        };
     }
 
     private static bool ShouldApplyFormationRangeControl(BattleTargetSelector selector, BattleFieldContext? fieldContext)
@@ -196,6 +267,17 @@ public class BattleTargetingResolver
             TargetType.Ally => actorSnapshot.Side == targetSnapshot.Side && actorSnapshot.Id != targetSnapshot.Id,
             TargetType.Self => actorSnapshot.Id == targetSnapshot.Id,
             _ => throw new ArgumentOutOfRangeException(nameof(targetType), $"未対応の TargetType: {targetType}")
+        };
+    }
+
+    private static bool IsLifeStateMatch(TargetLifeState targetLifeState, BattleActorState state)
+    {
+        return targetLifeState switch
+        {
+            TargetLifeState.Alive => !state.IsDead,
+            TargetLifeState.Dead => state.IsDead,
+            TargetLifeState.Any => true,
+            _ => throw new ArgumentOutOfRangeException(nameof(targetLifeState), $"未対応の TargetLifeState: {targetLifeState}")
         };
     }
 }

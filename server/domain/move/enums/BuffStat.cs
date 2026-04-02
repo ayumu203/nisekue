@@ -8,5 +8,10 @@ public enum BuffStat
     Defense = 4,
     Intelligence = 5,
     Luck = 6,
-    Speed = 7
+    Speed = 7,
+    Accuracy = 8,
+    Evasion = 9,
+    CriticalChance = 10,
+    DamageReduction = 11,
+    StrengthIntelligence = 12
 }

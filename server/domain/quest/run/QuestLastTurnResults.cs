@@ -28,10 +28,12 @@ public class QuestResolvedAction(
     string? moveName,
     bool succeeded,
     IEnumerable<QuestResolvedTargetSummary>? targetSummaries = null,
-    IEnumerable<string>? logs = null)
+    IEnumerable<string>? logs = null,
+    IEnumerable<QuestBattleLogEntry>? logEntries = null)
 {
     private readonly QuestResolvedTargetSummary[] targetSummaries = targetSummaries?.ToArray() ?? [];
     private readonly string[] logs = logs?.ToArray() ?? [];
+    private readonly QuestBattleLogEntry[] logEntries = logEntries?.ToArray() ?? [];
 
     public Guid? ActorParticipantId { get; } = actorParticipantId;
     public Guid? ActorEnemyInstanceId { get; } = actorEnemyInstanceId;
@@ -42,6 +44,21 @@ public class QuestResolvedAction(
     public bool Succeeded { get; } = succeeded;
     public IReadOnlyList<QuestResolvedTargetSummary> TargetSummaries => targetSummaries;
     public IReadOnlyList<string> Logs => logs;
+    public IReadOnlyList<QuestBattleLogEntry> LogEntries => logEntries;
+}
+
+public class QuestBattleLogEntry(string text, IEnumerable<QuestBattleLogSegment>? segments = null)
+{
+    private readonly QuestBattleLogSegment[] segments = segments?.ToArray() ?? [];
+
+    public string Text { get; } = text;
+    public IReadOnlyList<QuestBattleLogSegment> Segments => segments;
+}
+
+public class QuestBattleLogSegment(string text, string tone)
+{
+    public string Text { get; } = text;
+    public string Tone { get; } = tone;
 }
 
 public class QuestResolvedTargetSummary(

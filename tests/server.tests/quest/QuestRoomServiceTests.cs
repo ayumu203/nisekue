@@ -100,7 +100,27 @@ public class QuestRoomServiceTests
         var act = () => service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Solo);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("クエスト終了後3分間は再参加できません。");
+            .WithMessage("クエスト終了後3分間は再参加できません。再参加まであと*です。");
+    }
+
+    [Fact]
+    public async Task CreateRoomAsync_WhenOwnerLevelIsFarBelowRecommended_ThrowsInvalidOperationException()
+    {
+        var owner = CreatePlayer("Owner", level: 5);
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true, recommendedLevel: 20);
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            new FakeQuestRoomRepository(),
+            new FakeQuestRunRepository(),
+            new FakePlayerRepository(owner),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var act = () => service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Solo);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("推奨レベル20に対してレベルが低すぎるためルームを作成できません。最低レベルは14です。");
     }
 
     [Fact]
@@ -126,7 +146,32 @@ public class QuestRoomServiceTests
         var act = () => service.JoinRoomAsync(room.Id, guest.Id);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("クエスト終了後3分間は再参加できません。");
+            .WithMessage("クエスト終了後3分間は再参加できません。再参加まであと*です。");
+    }
+
+    [Fact]
+    public async Task JoinRoomAsync_WhenPlayerLevelIsFarBelowRecommended_ThrowsInvalidOperationException()
+    {
+        var owner = CreatePlayer("Owner", level: 20);
+        var guest = CreatePlayer("Guest", level: 5);
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true, recommendedLevel: 20);
+        var roomRepository = new FakeQuestRoomRepository();
+        var room = new QuestRoom(QuestRoomId.New(), owner.Id, stage.Id, QuestRoomMode.Multi);
+        room.AddPlayer(owner.Id, owner.Name, owner.Level);
+        await roomRepository.SaveAsync(room);
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            roomRepository,
+            new FakeQuestRunRepository(),
+            new FakePlayerRepository(owner, guest),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var act = () => service.JoinRoomAsync(room.Id, guest.Id);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("推奨レベル20に対してレベルが低すぎるためルームに参加できません。最低レベルは14です。");
     }
 
     [Fact]
@@ -352,13 +397,13 @@ public class QuestRoomServiceTests
             new QuestRunFactory(enemyDefinitionRepository));
     }
 
-    private static Player CreatePlayer(string name)
+    private static Player CreatePlayer(string name, int level = 5)
     {
         var moveSet = new MoveSet();
         return new Player(
             new PlayerId(Guid.NewGuid()),
             name,
-            level: 5,
+            level: level,
             exp: 0,
             jobLevel: 1,
             jobExp: 0,
@@ -369,14 +414,14 @@ public class QuestRoomServiceTests
             moveSet: moveSet);
     }
 
-    private static QuestStageDefinition CreateStage(int minPartyMemberCount, int maxPartyMemberCount, bool isActive)
+    private static QuestStageDefinition CreateStage(int minPartyMemberCount, int maxPartyMemberCount, bool isActive, int recommendedLevel = 1)
     {
         return new QuestStageDefinition(
             new QuestStageId(1),
             "quest-001",
             "Test Quest",
             "image/quest/test-battlefield.svg",
-            1,
+            recommendedLevel,
             minPartyMemberCount,
             maxPartyMemberCount,
             [
@@ -392,6 +437,7 @@ public class QuestRoomServiceTests
                     new QuestFloorRewardRule(0, 0))
             ],
             equipmentRewards: [],
+            itemRewards: [],
             isActive);
     }
 

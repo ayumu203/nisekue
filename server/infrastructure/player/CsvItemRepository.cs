@@ -10,7 +10,7 @@ public class CsvItemRepository : IItemRepository
 
     public CsvItemRepository()
     {
-        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "item_master.csv");
+        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "player", "item_master.csv");
         itemsById = LoadItems(csvPath);
         items = itemsById.Values.OrderBy(x => x.Id.Value).ToArray();
     }
@@ -49,7 +49,7 @@ public class CsvItemRepository : IItemRepository
             }
 
             var columns = line.Split(',', StringSplitOptions.TrimEntries);
-            if (columns.Length != 15)
+            if (columns.Length != 22)
             {
                 throw new InvalidOperationException($"item_master.csv の形式が不正です。行: {i + 1}");
             }
@@ -76,6 +76,16 @@ public class CsvItemRepository : IItemRepository
                         ParseInt(columns[11], "bonus_intelligence", i + 1),
                         ParseInt(columns[12], "bonus_luck", i + 1),
                         ParseInt(columns[13], "bonus_speed", i + 1))
+                    : null,
+                statusBonusPercent: effectType == ItemEffectType.StatBoost
+                    ? new StatusBonusPercent(
+                        ParseInt(columns[15], "bonus_percent_max_hp", i + 1),
+                        ParseInt(columns[16], "bonus_percent_max_mp", i + 1),
+                        ParseInt(columns[17], "bonus_percent_strength", i + 1),
+                        ParseInt(columns[18], "bonus_percent_defense", i + 1),
+                        ParseInt(columns[19], "bonus_percent_intelligence", i + 1),
+                        ParseInt(columns[20], "bonus_percent_luck", i + 1),
+                        ParseInt(columns[21], "bonus_percent_speed", i + 1))
                     : null,
                 changeJobTo: string.IsNullOrWhiteSpace(columns[5]) ? null : ParseEnum<Job>(columns[5], "change_job_to", i + 1),
                 requiredLevel: ParseNullableInt(columns[6], "required_level", i + 1),

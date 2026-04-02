@@ -1,0 +1,12 @@
+id,name,image_path,level,max_hp,max_mp,strength,defense,intelligence,luck,speed
+1,見習い,/image/training/04_magic.png,5,58,12,16,12,21,5,12
+2,サヨネコ,/image/training/08_anpo.png,15,210,47,57,34,47,14,28
+3,へいし,/image/training/02_heishi.png,30,415,93,116,75,81,28,58
+4,レヴナント,/image/training/07_rev.png,50,713,224,133,111,201,56,88
+5,たいちょう,/image/training/01_heishi.png,75,1008,301,204,151,264,83,120
+6,だいけんじゃ,/image/training/05_magic.png,100,1602,537,322,239,430,141,198
+7,ねこえりーと,/image/training/03_heishi.png,150,2550,476,712,476,408,218,295
+8,だいまどうし,/image/training/06_magic.png,200,3549,695,912,651,730,296,399
+9,アンポ将軍,/image/training/08_anpo.png,250,5369,1074,1395,996,1044,440,596
+10,てんじょうのきし,/image/training/07_rev.png,300,7198,1489,1588,1291,1787,555,755
+11,しんえいたいちょう,/image/training/01_heishi.png,500,15904,2274,3673,2625,2536,1173,1593

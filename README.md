@@ -70,7 +70,18 @@ $ dotnet test
 
 ### DB マイグレーション (EF Core)
 
-- 開発環境では手動で実行.
+- `dev` / `prod` の公開環境は GitHub Actions で自動適用する.
+- workflow は以下を利用する.
+  - 開発: `.github/workflows/db-migrate-dev.yml`
+  - 本番: `.github/workflows/db-migrate-prod.yml`
+- GitHub Environments (`dev`, `prod`) の Secrets に `SUPABASE_DB_CONNECTION_STRING` を設定する.
+- `SUPABASE_DB_CONNECTION_STRING` には Session Pooler の接続文字列を入れる.
+- Azure App Service の `ConnectionStrings__Supabase` も Session Pooler を使う.
+
+```bash
+# main push: Apply DB Migrations - Development
+# prod push: Apply DB Migrations - Production
+```
 
 ### マーケット期限切れ出品の自動削除
 
@@ -87,6 +98,32 @@ $ dotnet test
 ```bash
 # 開発公開環境で手動実行する例
 curl -X POST "https://www.arm203.org/internal/market/listings/cleanup-expired" \
+  -H "X-Maintenance-Token: <MARKET_CLEANUP_TOKEN>" \
+  -H "Accept: application/json"
+```
+
+### ランキング再集計の定期実行
+
+- ランキングは GitHub Actions の定期実行で 6 時間ごとに再集計する.
+- ランキング機能の有効/無効は `Ranking:Enabled` で切り替える.
+  - 既定値: `appsettings.json` で `true`
+  - ローカル開発時の既定値: `appsettings.Development.json` で `false`
+- `Ranking:Enabled=false` の場合:
+  - `/rankings` は空データを返す.
+  - `/internal/rankings/rebuild` は `404 NotFound` を返す.
+- ローカルでランキング集計を有効化したい場合は `server/appsettings.Development.json` の `Ranking:Enabled` を `true` に変更する.
+- ワークフローは環境別に以下を利用する.
+  - 開発: `.github/workflows/ranking-rebuild-dev.yml`
+  - 本番: `.github/workflows/ranking-rebuild-prod.yml`
+- Actions からはバックエンドの内部メンテナンス API を呼び出す.
+  - `POST /internal/rankings/rebuild`
+- GitHub Environments (`dev`, `prod`) の Secrets に以下を設定する.
+  - `MARKET_CLEANUP_TOKEN`: 内部メンテナンス API 呼び出し用トークン
+- API のベース URL は既存の `VITE_API_BASE_URL` (`vars` または `secrets`) を利用する.
+
+```bash
+# 開発公開環境で手動実行する例
+curl -X POST "https://www.arm203.org/internal/rankings/rebuild" \
   -H "X-Maintenance-Token: <MARKET_CLEANUP_TOKEN>" \
   -H "Accept: application/json"
 ```
@@ -109,17 +146,6 @@ curl -X POST "http://localhost:5068/internal/development/cleanup-game-data" \
 curl -X POST "https://www.arm203.org/internal/development/cleanup-game-data" \
   -H "X-Maintenance-Token: <MARKET_CLEANUP_TOKEN>" \
   -H "Accept: application/json"
-```
-
-### 開発環境での手動適用
-
-```bash
-# /server で実行.
-# 初回のみ (dotnet-ef の導入)
-dotnet tool install --global dotnet-ef --version 10.0.3
-
-# PATH 反映後に migration 適用
-dotnet ef database update
 ```
 
 ### 新しい migration を作る場合

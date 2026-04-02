@@ -11,7 +11,7 @@ public class CsvMoveRepository : IMoveRepository
 
     public CsvMoveRepository()
     {
-        var resourceDir = Path.Combine(AppContext.BaseDirectory, "resources");
+        var resourceDir = Path.Combine(AppContext.BaseDirectory, "resources", "move");
         var moveMasterPath = Path.Combine(resourceDir, "move_master.csv");
         var moveEffectsPath = Path.Combine(resourceDir, "move_effects.csv");
 
@@ -61,6 +61,7 @@ public class CsvMoveRepository : IMoveRepository
                 executionPriority: master.ExecutionPriority,
                 category: master.MoveCategory,
                 effectImagePath: master.EffectImagePath,
+                targetLifeState: master.TargetLifeState,
                 effects: effects);
 
             map.Add(master.MoveId, move);
@@ -92,7 +93,7 @@ public class CsvMoveRepository : IMoveRepository
             }
 
             var columns = line.Split(',', StringSplitOptions.TrimEntries);
-            if (columns.Length is not (8 or 9))
+            if (columns.Length is not (8 or 9 or 10))
             {
                 throw new InvalidOperationException($"move_master.csv の形式が不正です。行: {i + 1}");
             }
@@ -112,7 +113,10 @@ public class CsvMoveRepository : IMoveRepository
                 MpCost: ParseInt(columns[5], "mp_cost", i + 1),
                 ExecutionPriority: ParseInt(columns[6], "execution_priority", i + 1),
                 MoveCategory: ParseEnum<MoveCategory>(columns[7], "move_category", i + 1),
-                EffectImagePath: columns.Length == 9 ? ParseNullableString(columns[8]) : null));
+                EffectImagePath: columns.Length >= 9 ? ParseNullableString(columns[8]) : null,
+                TargetLifeState: columns.Length == 10
+                    ? ParseNullableEnum<TargetLifeState>(columns[9], "target_life_state", i + 1) ?? TargetLifeState.Alive
+                    : TargetLifeState.Alive));
         }
 
         if (map.Count == 0)
@@ -148,9 +152,14 @@ public class CsvMoveRepository : IMoveRepository
             }
 
             var columns = line.Split(',', StringSplitOptions.TrimEntries);
-            if (columns.Length != 19)
+            if (columns.Length < 19 || columns.Length > 23)
             {
                 throw new InvalidOperationException($"move_effects.csv の形式が不正です。行: {i + 1}");
+            }
+
+            if (columns.Length < 23)
+            {
+                Array.Resize(ref columns, 23);
             }
 
             var effectId = ParseInt(columns[0], "effect_id", i + 1);
@@ -172,7 +181,10 @@ public class CsvMoveRepository : IMoveRepository
                 effectType: effectType,
                 damage: damage,
                 ailment: ailment,
-                buff: buff);
+                buff: buff,
+                overrideTargetType: columns[19] is not null ? ParseNullableEnum<TargetType>(columns[19], "override_target_type", i + 1) : null,
+                overrideAttackRange: columns[20] is not null ? ParseNullableEnum<AttackRange>(columns[20], "override_attack_range", i + 1) : null,
+                overrideTargetLifeState: columns[21] is not null ? ParseNullableEnum<TargetLifeState>(columns[21], "override_target_life_state", i + 1) : null);
 
             if (!map.TryGetValue(moveId, out var list))
             {
@@ -225,12 +237,14 @@ public class CsvMoveRepository : IMoveRepository
             ?? throw new InvalidOperationException($"Ailment には ailment_turns が必要です。行: {lineNumber}");
         var triggerDamage = BuildAilmentTriggerDamage(columns, ailmentType, lineNumber);
 
-        return new AilmentEffect(ailmentType, ailmentRate, ailmentTurns, triggerDamage);
+        var allowBossInstantDeath = ParseNullableBool(columns[22], "allow_boss_instant_death", lineNumber) ?? false;
+
+        return new AilmentEffect(ailmentType, ailmentRate, ailmentTurns, triggerDamage, allowBossInstantDeath);
     }
 
     private static DamageEffect? BuildAilmentTriggerDamage(string[] columns, AilmentType ailmentType, int lineNumber)
     {
-        if (ailmentType != AilmentType.DamageTrap)
+        if (ailmentType is not (AilmentType.DamageTrap or AilmentType.Regeneration))
         {
             return null;
         }
@@ -341,5 +355,6 @@ public class CsvMoveRepository : IMoveRepository
         int MpCost,
         int ExecutionPriority,
         MoveCategory MoveCategory,
-        string? EffectImagePath);
+        string? EffectImagePath,
+        TargetLifeState TargetLifeState);
 }

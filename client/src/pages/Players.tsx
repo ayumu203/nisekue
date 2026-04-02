@@ -1,10 +1,12 @@
 import { Alert, Avatar, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, listPlayers } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
+import { resolveRankColor } from '@/lib/playerRank'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../locale/players/Players.json'
 import { innerSurfaceSx, outerPagePaperSx, softGreenButtonSx } from '@/constants/styles'
@@ -114,69 +116,109 @@ function Players() {
                     gap: 2,
                   }}
                 >
-                  {visitTargets.map((player) => (
-                    <Paper
-                      key={player.userId}
-                      variant="outlined"
-                      sx={{
-                        ...innerSurfaceSx,
-                        p: 2,
-                        borderRadius: 3,
-                        backgroundColor: '#fbfffe',
-                        borderColor: 'rgba(126, 189, 181, 0.34)',
-                      }}
-                    >
-                      <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
-                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-                          <Avatar
-                            src={resolveCharacterAssetPath(player.imagePath) ?? undefined}
-                            alt={player.userName ?? player.userId}
-                            sx={{
-                              width: 56,
-                              height: 56,
-                              bgcolor: '#d8f0eb',
-                              color: '#2f646c',
-                              '& .MuiAvatar-img': {
-                                objectFit: 'cover',
-                                objectPosition: 'center top',
-                              },
-                            }}
-                          >
-                            {(player.userName ?? '?').slice(0, 1)}
-                          </Avatar>
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography
-                              variant="h6"
-                              fontWeight={800}
-                              sx={{ wordBreak: 'break-word', color: '#2f646c' }}
-                            >
-                              {player.userName ?? '-'}
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: 'rgba(47, 100, 108, 0.76)' }}>
-                              {`${player.job.displayName} / Lv.${player.level}`}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                        <Button
-                          component={Link}
-                          to={`/players/${player.userId}/visit`}
-                          variant="contained"
+                  {visitTargets.map((player) =>
+                    (() => {
+                      const rankColor = resolveRankColor(player.combatIndexRank) ?? '#68b7a7'
+
+                      return (
+                        <Paper
+                          key={player.userId}
+                          variant="outlined"
                           sx={{
-                            ...softGreenButtonSx,
-                            color: '#fff',
-                            backgroundColor: '#68b7a7',
-                            boxShadow: 'none',
-                            '&:hover': {
-                              backgroundColor: '#75c3b4',
-                              boxShadow: 'none',
-                            },
+                            ...innerSurfaceSx,
+                            p: 2,
+                            borderRadius: 3,
+                            backgroundColor: alpha(rankColor, 0.12),
+                            borderColor: alpha(rankColor, 0.34),
                           }}
                         >
-                          {locale.visit}
-                        </Button>
-                      </Stack>
-                    </Paper>
-                  ))}
+                          <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
+                            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+                              <Avatar
+                                src={resolveCharacterAssetPath(player.imagePath) ?? undefined}
+                                alt={player.userName ?? player.userId}
+                                sx={{
+                                  width: 56,
+                                  height: 56,
+                                  bgcolor: alpha(rankColor, 0.14),
+                                  color: '#2f646c',
+                                  border: '1px solid',
+                                  borderColor: alpha(rankColor, 0.28),
+                                  '& .MuiAvatar-img': {
+                                    objectFit: 'cover',
+                                    objectPosition: 'center top',
+                                  },
+                                }}
+                              >
+                                {(player.userName ?? '?').slice(0, 1)}
+                              </Avatar>
+                              <Box sx={{ minWidth: 0 }}>
+                                <Stack
+                                  direction="row"
+                                  spacing={1}
+                                  alignItems="center"
+                                  useFlexGap
+                                  flexWrap="wrap"
+                                  sx={{ minWidth: 0 }}
+                                >
+                                  <Typography
+                                    variant="h6"
+                                    fontWeight={800}
+                                    sx={{ wordBreak: 'break-word', color: '#2f646c' }}
+                                  >
+                                    {player.userName ?? '-'}
+                                  </Typography>
+                                  <Box
+                                    component="span"
+                                    sx={{
+                                      minWidth: 52,
+                                      px: 1.25,
+                                      py: 0.65,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      borderRadius: 999,
+                                      border: '1px solid',
+                                      borderColor: alpha(rankColor, 0.38),
+                                      backgroundColor: alpha(rankColor, 0.14),
+                                      color: rankColor,
+                                      fontSize: '0.95rem',
+                                      fontWeight: 900,
+                                      lineHeight: 1,
+                                    }}
+                                  >
+                                    {player.combatIndexRank}
+                                  </Box>
+                                </Stack>
+                                <Typography variant="body2" sx={{ color: 'rgba(47, 100, 108, 0.76)' }}>
+                                  {`${player.job.displayName} / Lv.${player.level}`}
+                                </Typography>
+                              </Box>
+                            </Stack>
+                            <Stack spacing={1.25} alignItems="flex-end" sx={{ flexShrink: 0 }}>
+                              <Button
+                                component={Link}
+                                to={`/players/${player.userId}/visit`}
+                                variant="contained"
+                                sx={{
+                                  ...softGreenButtonSx,
+                                  color: '#fff',
+                                  backgroundColor: '#68b7a7',
+                                  boxShadow: 'none',
+                                  '&:hover': {
+                                    backgroundColor: '#75c3b4',
+                                    boxShadow: 'none',
+                                  },
+                                }}
+                              >
+                                {locale.visit}
+                              </Button>
+                            </Stack>
+                          </Stack>
+                        </Paper>
+                      )
+                    })(),
+                  )}
                 </Box>
               )}
             </Stack>

@@ -12,6 +12,9 @@ import type {
   UpdatePlayerImageResponse,
   UpdatePlayerJobRequest,
   UpdatePlayerJobResponse,
+  UpdatePlayerEquipmentRequest,
+  UpdatePlayerEquipmentResponse,
+  RebirthPlayerResponse,
 } from '@/schema/player'
 
 export async function getPlayer(accessToken: string): Promise<GetPlayerResponse> {
@@ -178,4 +181,52 @@ export async function updatePlayerJob(
   }
 
   return endpoints.player.updateJob.responseSchema.parse(json)
+}
+
+export async function updatePlayerEquipment(
+  input: UpdatePlayerEquipmentRequest,
+  accessToken: string,
+): Promise<UpdatePlayerEquipmentResponse> {
+  const parsedPayload = endpoints.player.updateEquipment.requestSchema.safeParse(input)
+  if (!parsedPayload.success) {
+    throw new Error(parsedPayload.error.issues[0]?.message ?? '入力内容が不正です')
+  }
+  const payload = parsedPayload.data
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.updateEquipment.path}`, {
+    method: endpoints.player.updateEquipment.method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '装備の更新に失敗しました'))
+  }
+
+  return endpoints.player.updateEquipment.responseSchema.parse(json)
+}
+
+export async function rebirthPlayer(accessToken: string): Promise<RebirthPlayerResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.rebirth.path}`, {
+    method: endpoints.player.rebirth.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '転生に失敗しました'))
+  }
+
+  return endpoints.player.rebirth.responseSchema.parse(json)
 }

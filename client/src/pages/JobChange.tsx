@@ -16,7 +16,8 @@ import { createPlayer, getPlayer, updatePlayerJob } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { innerSurfaceSx, outerPagePaperSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
-import { resolveJobAssetPath } from '@/lib/assets'
+import { resolveCharacterAssetPath, resolveJobAssetPath } from '@/lib/assets'
+import type { PlayerJobCode } from '@/schema/player'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-job/JobChange.json'
 
@@ -29,6 +30,8 @@ function formatExpProgress(currentExp: number, level: number): { current: number
     ratio: Math.max(0, Math.min(100, (current / required) * 100)),
   }
 }
+
+const baseJobCodes = new Set<PlayerJobCode>(['Warrior', 'Guardian', 'Mage', 'Priest'])
 
 export default function JobChange() {
   const { session, isLoading } = useAuth()
@@ -60,10 +63,12 @@ export default function JobChange() {
       return getPlayer(session.access_token)
     }
   })
-  const currentJobImageSrc = resolveJobAssetPath(player?.job.code)
-  const currentJobs = (player?.jobProfiles ?? []).filter((job) => job.code !== 'Apprentice')
+  const currentPlayerImageSrc = resolveCharacterAssetPath(player?.imagePath)
+  const currentJobs = (player?.jobProfiles ?? []).filter((job) => baseJobCodes.has(job.code))
   const unlockThreshold = 5
   const jobExpProgress = formatExpProgress(player?.jobExp ?? 0, player?.jobLevel ?? 1)
+  const isCurrentJobMastered =
+    player?.job?.code != null && (player?.masteredJobs ?? []).some((job) => job.code === player.job.code)
 
   async function handleChangeJob(nextJobValue: number): Promise<void> {
     if (!session?.access_token) {
@@ -133,6 +138,14 @@ export default function JobChange() {
                 }}
               >
                 <Stack spacing={2}>
+                  <Stack spacing={0.25}>
+                    <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(243, 238, 220, 0.72)' }}>
+                      JOB CHANGE
+                    </Typography>
+                    <Typography variant="h4" fontWeight={900} lineHeight={1.1} color="#fff8ea">
+                      {locale.title}
+                    </Typography>
+                  </Stack>
                   <Stack
                     direction={{ xs: 'column', sm: 'row' }}
                     spacing={2}
@@ -140,20 +153,18 @@ export default function JobChange() {
                     justifyContent="space-between"
                   >
                     <Stack spacing={1}>
-                      <Chip
-                        label={locale.currentBadge}
-                        sx={{
-                          fontWeight: 700,
-                          alignSelf: 'flex-start',
-                          bgcolor: 'rgba(255, 249, 232, 0.92)',
-                          color: '#35513a',
-                          border: '1px solid #cbb783',
-                        }}
-                      />
                       <Stack spacing={0.75}>
-                        <Typography variant="h4" fontWeight={900} lineHeight={1.1} color="#fff8ea">
-                          {player.job.displayName}
-                        </Typography>
+                        <Chip
+                          label={player.job.displayName}
+                          sx={{
+                            width: 'fit-content',
+                            fontWeight: 900,
+                            fontSize: '1rem',
+                            bgcolor: 'rgba(255, 249, 232, 0.92)',
+                            color: '#35513a',
+                            border: '1px solid #cbb783',
+                          }}
+                        />
                         <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.84)' }}>
                           {player.job.description}
                         </Typography>
@@ -166,16 +177,16 @@ export default function JobChange() {
                       display: 'grid',
                       gridTemplateColumns: { xs: '1fr', sm: '220px minmax(0, 1fr)' },
                       gap: 2,
-                      alignItems: 'center',
+                      alignItems: { xs: 'stretch', sm: 'start' },
                     }}
                   >
-                    {currentJobImageSrc ? (
+                    {currentPlayerImageSrc ? (
                       <Box
                         sx={{
                           width: '100%',
                           maxWidth: 240,
                           aspectRatio: '1 / 1',
-                          justifySelf: { sm: 'start' },
+                          justifySelf: 'center',
                           borderRadius: 3,
                           border: '2px solid',
                           borderColor: '#bda86f',
@@ -191,7 +202,7 @@ export default function JobChange() {
                       >
                         <Box
                           component="img"
-                          src={currentJobImageSrc}
+                          src={currentPlayerImageSrc}
                           alt={player.job.displayName}
                           sx={{
                             width: '100%',
@@ -232,7 +243,7 @@ export default function JobChange() {
                             {locale.currentJobLevel.replace('{{level}}', '')}
                           </Typography>
                           <Typography variant="h6" fontWeight={800} color="#324c36">
-                            Lv.{player.jobLevel}
+                            {isCurrentJobMastered ? 'マスター' : `Lv.${player.jobLevel}`}
                           </Typography>
                         </Paper>
                       </Box>

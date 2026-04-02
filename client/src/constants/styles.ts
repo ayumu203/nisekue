@@ -127,7 +127,7 @@ export const outerPagePaperSx = {
   border: '1px solid',
   borderColor: '#d3a93a',
   borderRadius: { xs: 3, sm: 4 },
-  p: { xs: 2, sm: 4 },
+  p: '2%',
 } as const
 
 export const twoColumnContentGridSx = {

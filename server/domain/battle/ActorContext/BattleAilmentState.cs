@@ -3,11 +3,18 @@ using server.domain.move.enums;
 
 namespace server.domain.battle;
 
-public class BattleAilmentState(AilmentType type, int remainingTurns, DamageEffect? triggerDamage = null)
+public class BattleAilmentState(
+    AilmentType type,
+    int remainingTurns,
+    DamageEffect? triggerDamage = null,
+    MoveId? sourceMoveId = null,
+    int? maxHpLimit = null)
 {
     public AilmentType Type { get; } = type;
     public int RemainingTurns { get; } = ValidateTurns(remainingTurns);
     public DamageEffect? TriggerDamage { get; } = triggerDamage;
+    public MoveId? SourceMoveId { get; } = sourceMoveId;
+    public int? MaxHpLimit { get; } = maxHpLimit;
 
     private static int ValidateTurns(int remainingTurns)
     {

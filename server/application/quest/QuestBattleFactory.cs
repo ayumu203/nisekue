@@ -3,6 +3,7 @@ using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.move;
 using server.domain.move.enums;
+using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
 
@@ -11,8 +12,11 @@ namespace server.application.quest;
 public class QuestBattleFactory
 {
     private readonly QuestAllyNpcActionPolicy allyNpcActionPolicy = new();
+    private readonly QuestEnemyActionPolicy enemyActionPolicy = new();
 
-    public BattleActorInput[] CreateActorInputs(QuestRun run)
+    public BattleActorInput[] CreateActorInputs(
+        QuestRun run,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? enemyDefinitions = null)
     {
         ArgumentNullException.ThrowIfNull(run);
 
@@ -34,23 +38,20 @@ public class QuestBattleFactory
             .ToArray();
 
         var enemy = run.BattleState.Enemies
-            .Select(x => new BattleActorInput(
-                ActorId: x.Id.Value,
-                DisplayName: x.EnemyDefinitionId.ToString(),
-                Side: BattleSide.Enemy,
-                BaseStatus: new server.domain.player.Status(
-                    maxHp: Math.Max(1, x.CurrentHp),
-                    maxMp: Math.Max(0, x.CurrentMp),
-                    strength: 1,
-                    defense: 1,
-                    intelligence: 1,
-                    luck: 1,
-                    speed: 1),
-                MoveSet: new server.domain.player.MoveSet(),
-                CurrentHp: x.CurrentHp,
-                CurrentMp: x.CurrentMp,
-                Ailments: x.Ailments.ToArray(),
-                Buffs: x.Buffs.ToArray()))
+            .Select(x =>
+            {
+                var definition = ResolveEnemyDefinition(x, enemyDefinitions);
+                return new BattleActorInput(
+                    ActorId: x.Id.Value,
+                    DisplayName: definition.Name,
+                    Side: BattleSide.Enemy,
+                    BaseStatus: definition.Status,
+                    MoveSet: CreateMoveSet(definition.MoveIds),
+                    CurrentHp: x.CurrentHp,
+                    CurrentMp: x.CurrentMp,
+                    Ailments: x.Ailments.ToArray(),
+                    Buffs: x.Buffs.ToArray());
+            })
             .ToArray();
 
         return party.Concat(enemy).ToArray();
@@ -64,8 +65,11 @@ public class QuestBattleFactory
             .Select(x => new BattleActorPosition(new BattleActorId(x.ParticipantId.Value), x.StartPosition));
         var enemyPositions = run.BattleState.Enemies
             .Select(x => new BattleActorPosition(new BattleActorId(x.Id.Value), x.Position));
+        var bossActorIds = run.FloorState.IsBossFloor
+            ? run.BattleState.Enemies.Select(x => new BattleActorId(x.Id.Value)).ToArray()
+            : [];
 
-        return new BattleFieldContext(partyPositions.Concat(enemyPositions).ToArray());
+        return new BattleFieldContext(partyPositions.Concat(enemyPositions).ToArray(), bossActorIds);
     }
 
     public IReadOnlyDictionary<BattleActorId, QuestParticipantId> CreatePartyActorMap(QuestRun run)
@@ -82,7 +86,10 @@ public class QuestBattleFactory
             x => x.Id);
     }
 
-    public async Task<(BattleActionInput[] Actions, Move[] Moves)> CreateTurnInputsAsync(QuestRun run, IMoveRepository moveRepository)
+    public async Task<(BattleActionInput[] Actions, Move[] Moves)> CreateTurnInputsAsync(
+        QuestRun run,
+        IMoveRepository moveRepository,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? enemyDefinitions = null)
     {
         ArgumentNullException.ThrowIfNull(run);
         ArgumentNullException.ThrowIfNull(moveRepository);
@@ -108,19 +115,25 @@ public class QuestBattleFactory
                 move = await GetMoveAsync(command.MoveId, moveRepository, movesById);
             }
 
-            var action = CreateBattleAction(command, isEnemy: false, move);
+            var action = CreateBattleAction(command, move);
             if (action is not null)
             {
                 partyActions.Add(action);
             }
         }
 
-        var enemyActions = run.BattleState.Enemies
-            .Where(x => !x.IsDead)
-            .Select(enemy => CreateEnemyNormalAttack(run, enemy))
-            .Where(x => x is not null)
-            .Cast<BattleActionInput>()
-            .ToArray();
+        var enemyActions = new List<BattleActionInput>();
+        foreach (var enemy in run.BattleState.Enemies.Where(x => !x.IsDead))
+        {
+            var definition = ResolveEnemyDefinition(enemy, enemyDefinitions);
+            var availableMoves = new List<Move>();
+            foreach (var moveId in definition.MoveIds)
+            {
+                availableMoves.Add(await GetMoveAsync(moveId, moveRepository, movesById));
+            }
+
+            enemyActions.Add(enemyActionPolicy.SelectAction(run, enemy, definition, availableMoves, enemyDefinitions));
+        }
 
         return (partyActions.Concat(enemyActions).ToArray(), movesById.Values.ToArray());
     }
@@ -185,12 +198,12 @@ public class QuestBattleFactory
         return allyNpcActionPolicy.SelectAction(run, member.ParticipantId, availableMoves, DateTimeOffset.UtcNow);
     }
 
-    private static BattleActionInput? CreateBattleAction(QuestSubmittedCommand command, bool isEnemy, Move? move = null)
+    private static BattleActionInput? CreateBattleAction(QuestSubmittedCommand command, Move? move = null)
     {
         return command.ActionKind switch
         {
             ActionKind.NormalAttack => new BattleActionInput(
-                ActorId: isEnemy ? ResolveEnemyActorId(command.ParticipantId) : command.ParticipantId.Value,
+                ActorId: command.ParticipantId.Value,
                 Kind: BattleActionKind.NormalAttack,
                 MoveId: null,
                 TargetType: TargetType.Enemy,
@@ -226,38 +239,42 @@ public class QuestBattleFactory
         };
     }
 
-    private static BattleActionInput? CreateEnemyNormalAttack(QuestRun run, QuestEnemyState enemy)
+    private static QuestEnemyDefinition ResolveEnemyDefinition(
+        QuestEnemyState enemy,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? enemyDefinitions)
     {
-        var reachableRows = QuestBattleReachability.GetReachableRows(enemy.Position.Row);
-        var targetId = run.PartySnapshots
-            .Join(
-                run.BattleState.PartyMembers,
-                snapshot => snapshot.ParticipantId,
-                state => state.ParticipantId,
-                (snapshot, state) => new { snapshot, state })
-            .Where(x => !x.state.IsDead && !x.state.HasLeftQuest)
-            .Where(x => reachableRows.Contains(x.snapshot.StartPosition.Row))
-            .OrderBy(x => (int)x.snapshot.StartPosition.Row)
-            .ThenBy(x => (int)x.snapshot.StartPosition.Column)
-            .Select(x => x.snapshot.ParticipantId.Value)
-            .FirstOrDefault();
-        if (targetId == Guid.Empty)
+        if (enemyDefinitions is not null && enemyDefinitions.TryGetValue(enemy.EnemyDefinitionId, out var definition))
         {
-            return new BattleActionInput(
-                ActorId: enemy.Id.Value,
-                Kind: BattleActionKind.Wait,
-                MoveId: null,
-                TargetType: TargetType.Self,
-                AttackRange: AttackRange.Single);
+            return definition;
         }
 
-        return new BattleActionInput(
-            ActorId: enemy.Id.Value,
-            Kind: BattleActionKind.NormalAttack,
-            MoveId: null,
-            TargetType: TargetType.Enemy,
-            AttackRange: AttackRange.Single,
-            TargetActorIds: [targetId]);
+        return new QuestEnemyDefinition(
+            enemy.EnemyDefinitionId,
+            $"Enemy-{enemy.EnemyDefinitionId.Value}",
+            level: 1,
+            new server.domain.player.Status(
+                maxHp: Math.Max(1, enemy.CurrentHp),
+                maxMp: Math.Max(0, enemy.CurrentMp),
+                strength: 1,
+                defense: 1,
+                intelligence: 1,
+                luck: 1,
+                speed: 1),
+            imagePath: "/image/battle/placeholder.png",
+            aiType: EnemyAiType.Aggressive,
+            moveIds: []);
+    }
+
+    private static MoveSet CreateMoveSet(IEnumerable<MoveId> moveIds)
+    {
+        var moveSet = new MoveSet();
+        var orderedMoveIds = moveIds.ToArray();
+        for (var i = 0; i < orderedMoveIds.Length && i < MoveSet.MaxSlots; i++)
+        {
+            moveSet.SetSlot(i, orderedMoveIds[i]);
+        }
+
+        return moveSet;
     }
 
     private static async Task<Move> GetMoveAsync(
@@ -274,10 +291,5 @@ public class QuestBattleFactory
             ?? throw new KeyNotFoundException($"スキル定義が見つかりません。 moveId={moveId.Id}");
         movesById[moveId.Id] = move;
         return move;
-    }
-
-    private static Guid ResolveEnemyActorId(QuestParticipantId participantId)
-    {
-        return participantId.Value;
     }
 }

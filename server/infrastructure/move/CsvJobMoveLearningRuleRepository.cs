@@ -9,7 +9,7 @@ public class CsvJobMoveLearningRuleRepository : IJobMoveLearningRuleRepository
 
     public CsvJobMoveLearningRuleRepository()
     {
-        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "job_moves.csv");
+        var csvPath = Path.Combine(AppContext.BaseDirectory, "resources", "player", "job_moves.csv");
         ruleByJob = LoadRules(csvPath);
     }
 

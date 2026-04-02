@@ -278,9 +278,23 @@ export default function Threads() {
                           >
                             <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
                               <Avatar
+                                component={Link}
+                                to={`/players/${thread.authorPlayerId}/visit`}
+                                aria-label={locale.visitAuthorRoom.replace('{name}', thread.authorName)}
                                 src={resolveCharacterAssetPath(thread.authorImagePath) ?? undefined}
                                 alt={thread.authorName}
-                                sx={{ width: 42, height: 42, bgcolor: '#c7a57b', color: '#4f392c' }}
+                                sx={{
+                                  width: 42,
+                                  height: 42,
+                                  bgcolor: '#c7a57b',
+                                  color: '#4f392c',
+                                  textDecoration: 'none',
+                                  transition: 'transform 140ms ease, box-shadow 140ms ease',
+                                  '&:hover': {
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 6px 14px rgba(36, 20, 11, 0.16)',
+                                  },
+                                }}
                               >
                                 {thread.authorName.slice(0, 1)}
                               </Avatar>

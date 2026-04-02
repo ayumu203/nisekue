@@ -75,7 +75,7 @@ public class MoveDomainValidationTests
     {
         var effect = new MoveEffect(
             effectId: new MoveEffectId(1),
-            moveId: new MoveId(1),
+            moveId: new MoveId(421),
             sequence: 1,
             effectType: MoveEffectType.Damage);
 
@@ -88,7 +88,7 @@ public class MoveDomainValidationTests
     {
         var effect = new MoveEffect(
             effectId: new MoveEffectId(1),
-            moveId: new MoveId(1),
+            moveId: new MoveId(421),
             sequence: 1,
             effectType: MoveEffectType.Ailment,
             damage: CreateDamageEffect(),
@@ -103,7 +103,7 @@ public class MoveDomainValidationTests
     {
         var effect = new MoveEffect(
             effectId: new MoveEffectId(1),
-            moveId: new MoveId(1),
+            moveId: new MoveId(421),
             sequence: 1,
             effectType: MoveEffectType.RestoreMp);
 
@@ -123,7 +123,7 @@ public class MoveDomainValidationTests
     {
         var effects = new[]
         {
-            new MoveEffect(new MoveEffectId(1), new MoveId(99), 1, MoveEffectType.Damage, damage: CreateDamageEffect())
+            new MoveEffect(new MoveEffectId(1), new MoveId(519), 1, MoveEffectType.Damage, damage: CreateDamageEffect())
         };
 
         var act = () => CreateMove(effects);
@@ -135,8 +135,8 @@ public class MoveDomainValidationTests
     {
         var effects = new[]
         {
-            new MoveEffect(new MoveEffectId(1), new MoveId(1), 1, MoveEffectType.Damage, damage: CreateDamageEffect()),
-            new MoveEffect(new MoveEffectId(2), new MoveId(1), 1, MoveEffectType.Heal, damage: CreateHealEffect())
+            new MoveEffect(new MoveEffectId(1), new MoveId(421), 1, MoveEffectType.Damage, damage: CreateDamageEffect()),
+            new MoveEffect(new MoveEffectId(2), new MoveId(421), 1, MoveEffectType.Heal, damage: CreateHealEffect())
         };
 
         var act = () => CreateMove(effects);
@@ -148,8 +148,8 @@ public class MoveDomainValidationTests
     {
         var effects = new[]
         {
-            new MoveEffect(new MoveEffectId(1), new MoveId(1), 1, MoveEffectType.Damage, damage: CreateDamageEffect()),
-            new MoveEffect(new MoveEffectId(1), new MoveId(1), 2, MoveEffectType.Heal, damage: CreateHealEffect())
+            new MoveEffect(new MoveEffectId(1), new MoveId(421), 1, MoveEffectType.Damage, damage: CreateDamageEffect()),
+            new MoveEffect(new MoveEffectId(1), new MoveId(421), 2, MoveEffectType.Heal, damage: CreateHealEffect())
         };
 
         var act = () => CreateMove(effects);
@@ -161,8 +161,8 @@ public class MoveDomainValidationTests
     {
         var effects = new[]
         {
-            new MoveEffect(new MoveEffectId(2), new MoveId(1), 2, MoveEffectType.Heal, damage: CreateHealEffect()),
-            new MoveEffect(new MoveEffectId(1), new MoveId(1), 1, MoveEffectType.Damage, damage: CreateDamageEffect())
+            new MoveEffect(new MoveEffectId(2), new MoveId(421), 2, MoveEffectType.Heal, damage: CreateHealEffect()),
+            new MoveEffect(new MoveEffectId(1), new MoveId(421), 1, MoveEffectType.Damage, damage: CreateDamageEffect())
         };
 
         var move = CreateMove(effects);
@@ -173,7 +173,7 @@ public class MoveDomainValidationTests
 
     private static Move CreateMove(IEnumerable<MoveEffect> effects) =>
         new(
-            id: new MoveId(1),
+            id: new MoveId(421),
             name: "テストスキル",
             description: "テスト用のスキル説明",
             targetType: TargetType.Enemy,

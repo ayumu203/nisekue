@@ -719,6 +719,14 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasColumnName("exp");
 
+                    b.Property<int>("Gold")
+                        .HasColumnType("integer")
+                        .HasColumnName("gold");
+
+                    b.Property<int?>("ItemRewardId")
+                        .HasColumnType("integer")
+                        .HasColumnName("item_reward_id");
+
                     b.Property<string>("SkippedRewardPlayerIdsJson")
                         .IsRequired()
                         .HasColumnType("jsonb")
@@ -1029,6 +1037,180 @@ namespace server.infrastructure.migrations
                     b.ToTable("quest_turn_commands", "internal");
                 });
 
+            modelBuilder.Entity("server.infrastructure.ranking.RankingEntryEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CombatIndexRank")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("combat_index_rank");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("PeriodKind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("period_kind");
+
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_id");
+
+                    b.Property<int>("RankPosition")
+                        .HasColumnType("integer")
+                        .HasColumnName("rank_position");
+
+                    b.Property<string>("RankingType")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("ranking_type");
+
+                    b.Property<long>("Score")
+                        .HasColumnType("bigint")
+                        .HasColumnName("score");
+
+                    b.Property<Guid>("SnapshotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("snapshot_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.HasIndex("SnapshotId", "RankingType", "PeriodKind", "CombatIndexRank", "RankPosition")
+                        .IsUnique();
+
+                    b.ToTable("ranking_entries", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.ranking.RankingSnapshotEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("IntervalHours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(6)
+                        .HasColumnName("interval_hours");
+
+                    b.Property<DateTimeOffset>("SnapshotAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("snapshot_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SnapshotAt");
+
+                    b.ToTable("ranking_snapshots", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.treasuremap.TreasureMapClaimHistoryEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("ClaimedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("claimed_at");
+
+                    b.Property<Guid>("ExpeditionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("expedition_id");
+
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_id");
+
+                    b.Property<string>("RewardSummaryJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("reward_summary_json");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpeditionId")
+                        .IsUnique();
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("treasure_map_claim_histories", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.treasuremap.TreasureMapExpeditionEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("EndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ends_at");
+
+                    b.Property<int>("MapId")
+                        .HasColumnType("integer")
+                        .HasColumnName("map_id");
+
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_id");
+
+                    b.Property<bool>("RewardClaimed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("reward_claimed");
+
+                    b.Property<string>("RewardSummaryJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("reward_summary_json");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.HasIndex("PlayerId", "Status");
+
+                    b.ToTable("treasure_map_expeditions", "internal");
+                });
+
             modelBuilder.Entity("server.infrastructure.chat.ThreadEntity", b =>
                 {
                     b.HasOne("server.infrastructure.player.PlayerEntity", null)
@@ -1100,6 +1282,21 @@ namespace server.infrastructure.migrations
                     b.HasOne("server.infrastructure.quest.room.QuestRoomEntity", null)
                         .WithMany()
                         .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("server.infrastructure.ranking.RankingEntryEntity", b =>
+                {
+                    b.HasOne("server.infrastructure.player.PlayerEntity", null)
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("server.infrastructure.ranking.RankingSnapshotEntity", null)
+                        .WithMany()
+                        .HasForeignKey("SnapshotId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
