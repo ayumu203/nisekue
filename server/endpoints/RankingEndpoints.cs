@@ -38,7 +38,15 @@ internal static class RankingEndpoints
                     {
                         userId = x.PlayerId,
                         userName = x.PlayerName,
-                        imagePath = x.PlayerImagePath
+                        imagePath = x.PlayerImagePath,
+                        level = x.Level,
+                        combatIndexRank = x.PlayerCombatIndexRank,
+                        job = new
+                        {
+                            code = x.Job.ToString(),
+                            displayName = x.JobDisplayName
+                        },
+                        rebirthCount = x.RebirthCount
                     }
                 })
             });

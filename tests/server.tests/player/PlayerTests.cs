@@ -152,8 +152,8 @@ public class PlayerTests
     public void Rebirth_WhenEligible_ResetsLevelsAndKeepsJobMovesAndMasteredJobs()
     {
         var moveSet = new MoveSet();
-        moveSet.SetSlot(0, new MoveId(101));
-        moveSet.SetSlot(1, new MoveId(102));
+        moveSet.SetSlot(0, new MoveId(421));
+        moveSet.SetSlot(1, new MoveId(141));
         var player = CreatePlayer(
             level: 120,
             exp: 45,
@@ -176,7 +176,7 @@ public class PlayerTests
         player.Status.MaxHp.Should().Be(35);
         player.Status.MaxMp.Should().Be(24);
         player.Status.Strength.Should().Be(9);
-        player.MoveSet.GetLearnedMoveIds().Select(x => x.Id).Should().Equal(101, 102);
+        player.MoveSet.GetLearnedMoveIds().Select(x => x.Id).Should().Equal(421, 141);
         player.MasteredJobs.Should().BeEquivalentTo(new[] { Job.Warrior, Job.Priest });
     }
 

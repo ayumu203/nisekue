@@ -466,7 +466,7 @@ public class QuestRoomTests
             BattleRow.Back,
             1,
             new Status(10, 1, 1, 1, 1, 1, 1),
-            [new server.domain.move.MoveId(1)],
+            [new server.domain.move.MoveId(421)],
             NpcRole.FrontGuard);
 
         room.AddNpcParticipants([npcTemplate]);
@@ -577,7 +577,7 @@ public class QuestRoomTests
             preferredRow,
             1,
             new Status(10, 1, 1, 1, 1, 1, 1),
-            [new server.domain.move.MoveId(1)],
+            [new server.domain.move.MoveId(421)],
             NpcRole.FrontGuard);
     }
 }

@@ -44,6 +44,11 @@ public class BattleDamageCalculator(Func<double>? randomProvider = null)
 
     private static int CalculateIntelligenceDamage(int baseDamage, int attackPower, int defensePower)
     {
+        if (attackPower + defensePower <= 0)
+        {
+            return 1;
+        }
+
         var ratio = (decimal)attackPower / (attackPower + defensePower);
         return Math.Max(1, (int)Math.Round(baseDamage * ratio, MidpointRounding.AwayFromZero));
     }

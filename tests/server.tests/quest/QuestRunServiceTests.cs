@@ -182,7 +182,7 @@ public class QuestRunServiceTests
     {
         var playerParticipantId = QuestParticipantId.New();
         var rangerParticipantId = QuestParticipantId.New();
-        var trapMoveId = new MoveId(12);
+        var trapMoveId = new MoveId(504);
         var rangerMoveSet = new MoveSet();
         rangerMoveSet.SetSlot(0, trapMoveId);
 
@@ -276,7 +276,7 @@ public class QuestRunServiceTests
     public async Task SubmitCommandAsync_WhenPlayerUsesDamageMove_StoresMoveDamageLog()
     {
         var playerParticipantId = QuestParticipantId.New();
-        var moveId = new MoveId(101);
+        var moveId = new MoveId(421);
         var moveSet = new MoveSet();
         moveSet.SetSlot(0, moveId);
         var run = CreateRunWithParty(
@@ -323,7 +323,7 @@ public class QuestRunServiceTests
     {
         var healerId = QuestParticipantId.New();
         var targetId = QuestParticipantId.New();
-        var moveId = new MoveId(102);
+        var moveId = new MoveId(141);
         var healerMoveSet = new MoveSet();
         healerMoveSet.SetSlot(0, moveId);
         var run = CreateRunWithParty(
@@ -371,7 +371,7 @@ public class QuestRunServiceTests
     {
         var mageId = QuestParticipantId.New();
         var targetId = QuestParticipantId.New();
-        var moveId = new MoveId(103);
+        var moveId = new MoveId(208);
         var mageMoveSet = new MoveSet();
         mageMoveSet.SetSlot(0, moveId);
         var run = CreateRunWithParty(

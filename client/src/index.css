@@ -8,12 +8,22 @@
 
 :root {
   font-family: 'DotGothic16', sans-serif;
+  --app-bg-color: #eaf3f8;
 }
 
 html,
 body,
 #root {
   font-family: 'DotGothic16', sans-serif;
+}
+
+body {
+  margin: 0;
+  background-color: var(--app-bg-color);
+}
+
+.MuiContainer-root {
+  padding-top: 2% !important;
 }
 
 body,

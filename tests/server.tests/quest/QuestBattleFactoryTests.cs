@@ -17,7 +17,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenUseMoveCommandHasTargetPosition_PreservesSelectedPosition()
     {
         var participantId = QuestParticipantId.New();
-        var moveId = new MoveId(99);
+        var moveId = new MoveId(519);
         var targetPosition = new BattlePosition(BattleRow.Front, BattleColumn.Right);
         var moveSet = new MoveSet();
         moveSet.SetSlot(0, moveId);
@@ -142,7 +142,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenNpcRangerHasNoTrap_UsesTrapMove()
     {
         var participantId = QuestParticipantId.New();
-        var trapMoveId = new MoveId(12);
+        var trapMoveId = new MoveId(504);
         var run = CreateNpcRun(
             participantId,
             Job.Ranger,
@@ -193,7 +193,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenNpcWarriorOnBossFloor_UsesSingleAttackMove()
     {
         var participantId = QuestParticipantId.New();
-        var attackMoveId = new MoveId(1);
+        var attackMoveId = new MoveId(421);
         var run = CreateNpcRun(
             participantId,
             Job.Warrior,
@@ -243,7 +243,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenNpcGuardianWithoutTaunt_UsesTauntMove()
     {
         var participantId = QuestParticipantId.New();
-        var tauntMoveId = new MoveId(7);
+        var tauntMoveId = new MoveId(501);
         var run = CreateNpcRun(
             participantId,
             Job.Guardian,
@@ -291,9 +291,9 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenNpcMageHasHalfMp_UsesAreaAttack()
     {
         var participantId = QuestParticipantId.New();
-        var areaMoveId = new MoveId(18);
-        var singleMoveId = new MoveId(19);
-        var restoreMoveId = new MoveId(50);
+        var areaMoveId = new MoveId(108);
+        var singleMoveId = new MoveId(109);
+        var restoreMoveId = new MoveId(509);
         var run = CreateNpcRun(
             participantId,
             Job.Mage,
@@ -424,7 +424,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenEnemyHasRearReachDamageMove_UsesMoveAgainstBackRow()
     {
         var participantId = QuestParticipantId.New();
-        var enemyMoveId = new MoveId(70);
+        var enemyMoveId = new MoveId(407);
         var run = CreateNpcRun(
             participantId,
             Job.Warrior,
@@ -517,7 +517,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenEnemySelfHpIsHalfOrLess_UsesSelfHeal()
     {
         var participantId = QuestParticipantId.New();
-        var enemyMoveId = new MoveId(71);
+        var enemyMoveId = new MoveId(408);
         var run = CreateNpcRun(
             participantId,
             Job.Warrior,
@@ -571,7 +571,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenEnemyFrontAllyHpIsHalfOrLess_UsesAllyHealOnFrontTarget()
     {
         var participantId = QuestParticipantId.New();
-        var enemyMoveId = new MoveId(72);
+        var enemyMoveId = new MoveId(409);
         var run = CreateNpcRun(
             participantId,
             Job.Warrior,
@@ -627,7 +627,7 @@ public class QuestBattleFactoryTests
     public async Task CreateTurnInputsAsync_WhenEnemyHasOtherAlly_UsesBuffBeforeAttack()
     {
         var participantId = QuestParticipantId.New();
-        var enemyMoveId = new MoveId(73);
+        var enemyMoveId = new MoveId(203);
         var run = CreateNpcRun(
             participantId,
             Job.Warrior,

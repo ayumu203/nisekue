@@ -67,6 +67,8 @@ export default function JobChange() {
   const currentJobs = (player?.jobProfiles ?? []).filter((job) => baseJobCodes.has(job.code))
   const unlockThreshold = 5
   const jobExpProgress = formatExpProgress(player?.jobExp ?? 0, player?.jobLevel ?? 1)
+  const isCurrentJobMastered =
+    player?.job?.code != null && (player?.masteredJobs ?? []).some((job) => job.code === player.job.code)
 
   async function handleChangeJob(nextJobValue: number): Promise<void> {
     if (!session?.access_token) {
@@ -241,7 +243,7 @@ export default function JobChange() {
                             {locale.currentJobLevel.replace('{{level}}', '')}
                           </Typography>
                           <Typography variant="h6" fontWeight={800} color="#324c36">
-                            Lv.{player.jobLevel}
+                            {isCurrentJobMastered ? 'マスター' : `Lv.${player.jobLevel}`}
                           </Typography>
                         </Paper>
                       </Box>

@@ -29,7 +29,7 @@ type QuestRestrictionsModalProps = {
   error: Error | null
   disabled?: boolean
   onClose: () => void
-  onApply: (nextMinRequiredLevelInput: string, nextAllowedPlayerIds: string[]) => void
+  onApply: (nextMinRequiredLevelInput: string, nextAllowedPlayerIds: string[]) => void | Promise<void>
 }
 
 export default function QuestRestrictionsModal({
@@ -66,12 +66,12 @@ export default function QuestRestrictionsModal({
     )
   }
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (isMinRequiredLevelTooHigh) {
       return
     }
 
-    onApply(draftMinRequiredLevelInput, draftAllowedPlayerIds)
+    await onApply(draftMinRequiredLevelInput, draftAllowedPlayerIds)
     onClose()
   }
 

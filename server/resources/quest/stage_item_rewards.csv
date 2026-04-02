@@ -1,11 +1,13 @@
 stage_id,item_id,weight,is_miss
 1,,60,true
+1,4001,11,false
 1,3002,12,false
 1,3004,12,false
 1,3001,8,false
 1,3028,4,false
 1,3032,4,false
 2,,55,true
+2,4002,11,false
 2,3002,5,false
 2,3004,5,false
 2,3003,10,false
@@ -14,6 +16,7 @@ stage_id,item_id,weight,is_miss
 2,3041,5,false
 2,3049,5,false
 3,,6,true
+3,4003,11,false
 3,3026,10,false
 3,3030,8,false
 3,3034,8,false
@@ -32,6 +35,7 @@ stage_id,item_id,weight,is_miss
 3,3061,4,false
 3,3062,4,false
 4,,5,true
+4,4004,11,false
 4,3006,6,false
 4,3009,6,false
 4,3012,6,false
@@ -56,6 +60,7 @@ stage_id,item_id,weight,is_miss
 4,3066,2,false
 4,3067,2,false
 5,,37,true
+5,4005,11,false
 5,3027,6,false
 5,3031,6,false
 5,3035,6,false

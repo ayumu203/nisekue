@@ -138,7 +138,7 @@ internal static class PlayerEndpoints
             try
             {
                 var moveSet = new MoveSet();
-                moveSet.SetSlot(0, new MoveId(1));
+                moveSet.SetSlot(0, new MoveId(101));
 
                 var player = new Player(
                     playerId.Value,

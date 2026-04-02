@@ -250,11 +250,7 @@ export default function QuestMultiRoomList({
       }}
     >
       <Stack spacing={2}>
-        <Stack spacing={0.5}>
-          <Typography variant="h6" fontWeight={900} sx={{ color: '#ffffff' }}>
-            参加募集一覧
-          </Typography>
-        </Stack>
+        <Stack spacing={0.5}></Stack>
         {isLoading ? (
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={18} />

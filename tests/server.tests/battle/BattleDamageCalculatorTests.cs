@@ -160,6 +160,25 @@ public class BattleDamageCalculatorTests
         result.IsCritical.Should().BeFalse();
     }
 
+    [Fact]
+    public void Calculate_WhenIntelligenceAttackAndBothIntelligenceAreZero_ReturnsMinimumDamage()
+    {
+        var calculator = new BattleDamageCalculator(() => 0.99d);
+
+        var result = calculator.Calculate(CreateInput(
+            attackerLuck: 10,
+            defenderLuck: 10,
+            criticalRate: 0m,
+            attackerStrength: 4,
+            attackerIntelligence: 0,
+            defenderDefense: 10,
+            defenderIntelligence: 0,
+            attackStat: BuffStat.Intelligence));
+
+        result.Damage.Should().Be(1);
+        result.IsCritical.Should().BeFalse();
+    }
+
     private static BattleDamageInput CreateInput(
         int attackerLuck,
         int defenderLuck,

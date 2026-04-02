@@ -157,7 +157,7 @@ export default function ThreadDetail() {
               {isDeleting ? <CircularProgress size={18} color="inherit" /> : locale.deleteButton}
             </Button>
           ) : null}
-          <Button component={Link} to="/threads" variant="outlined" sx={flatSecondaryButtonSx}>
+          <Button component={Link} to="/threads" variant="outlined" sx={{ ...flatSecondaryButtonSx, color: '#295d63' }}>
             {locale.backToList}
           </Button>
         </Stack>
@@ -227,8 +227,8 @@ export default function ThreadDetail() {
                     </Box>
                   </Stack>
 
-                  <Box sx={{ ...accentSx, opacity: 0.9 }}>
-                    <Typography variant="body2">
+                  <Box sx={{ color: 'rgba(245, 234, 220, 0.9)' }}>
+                    <Typography variant="body2" sx={{ color: '#f0e2d3' }}>
                       {locale.replyCount
                         .replace('{count}', String(data.replies.length))
                         .replace('{last}', formatDate(data.lastRepliedAt))}

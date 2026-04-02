@@ -362,7 +362,10 @@ export default function Quest() {
     }
   }
 
-  async function handleUpdateRoomRestrictions(): Promise<void> {
+  async function handleUpdateRoomRestrictions(options?: {
+    minRequiredLevelInput?: string
+    allowedPlayerIds?: string[]
+  }): Promise<void> {
     if (!session?.access_token) {
       setSubmitError(locale.sessionInfoMissing)
       return
@@ -377,15 +380,20 @@ export default function Quest() {
     setSubmitError(null)
 
     try {
+      const nextMinRequiredLevelInput = options?.minRequiredLevelInput ?? minRequiredLevelInput
+      const nextAllowedPlayerIds = options?.allowedPlayerIds ?? allowedPlayerIds
+
       const room = await updateQuestRoomRestrictions(
         currentRoom.roomId,
         {
-          minRequiredLevel: minRequiredLevelInput.trim() === '' ? null : Number(minRequiredLevelInput),
-          allowedPlayerIds,
+          minRequiredLevel: nextMinRequiredLevelInput.trim() === '' ? null : Number(nextMinRequiredLevelInput),
+          allowedPlayerIds: nextAllowedPlayerIds,
         },
         session.access_token,
       )
       setIsRestrictionsDirty(false)
+      setMinRequiredLevelInput(nextMinRequiredLevelInput)
+      setAllowedPlayerIds(nextAllowedPlayerIds)
       setCreatedRoom(room)
       await mutateRoom(room, { revalidate: false })
       await mutateRooms()
@@ -447,7 +455,8 @@ export default function Quest() {
 
     try {
       const room = await cancelQuestRoom(currentRoom.roomId, session.access_token)
-      setCreatedRoom(room)
+      setCreatedRoom(null)
+      setMultiEntryView('create')
       await mutateRoom(room, { revalidate: false })
       await mutateRooms()
     } catch (error) {

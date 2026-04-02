@@ -28,6 +28,7 @@ type StatItem = {
   label: string
   value: StatValue
   normalized: number
+  rank?: string
 }
 
 type StatusProps = {
@@ -158,38 +159,46 @@ export default function Status({
       label: locale.labels.strength,
       value: formatStatusValue(player?.baseStatus?.strength, player?.status.strength, locale.unknownValue),
       normalized: toNormalized(player?.status.strength, maxAttributeValue),
+      rank: player?.statusRanks?.strength,
     },
     {
       key: 'defense',
       label: locale.labels.defense,
       value: formatStatusValue(player?.baseStatus?.defense, player?.status.defense, locale.unknownValue),
       normalized: toNormalized(player?.status.defense, maxAttributeValue),
+      rank: player?.statusRanks?.defense,
     },
     {
       key: 'intelligence',
       label: locale.labels.intelligence,
       value: formatStatusValue(player?.baseStatus?.intelligence, player?.status.intelligence, locale.unknownValue),
       normalized: toNormalized(player?.status.intelligence, maxAttributeValue),
+      rank: player?.statusRanks?.intelligence,
     },
     {
       key: 'luck',
       label: locale.labels.luck,
       value: formatStatusValue(player?.baseStatus?.luck, player?.status.luck, locale.unknownValue),
       normalized: toNormalized(player?.status.luck, maxAttributeValue),
+      rank: player?.statusRanks?.luck,
     },
     {
       key: 'speed',
       label: locale.labels.speed,
       value: formatStatusValue(player?.baseStatus?.speed, player?.status.speed, locale.unknownValue),
       normalized: toNormalized(player?.status.speed, maxAttributeValue),
+      rank: player?.statusRanks?.speed,
     },
   ]
 
   const characterImageSrc =
     player?.imagePath && player.imagePath !== failedImagePath ? resolveCharacterAssetPath(player.imagePath) : null
   const characterBackgroundSrc = resolveStatusAssetPath('back-image.jpg')
-  const currentJobLevelLabel =
-    typeof player?.jobLevel === 'number'
+  const isCurrentJobMastered =
+    player?.job?.code != null && player.masteredJobs.some((job) => job.code === player.job.code)
+  const currentJobLevelLabel = isCurrentJobMastered
+    ? `${player?.job.displayName ?? locale.unknownValue} マスター`
+    : typeof player?.jobLevel === 'number'
       ? `${player?.job.displayName ?? locale.unknownValue} Lv.${player.jobLevel}`
       : (player?.job.displayName ?? locale.unknownValue)
 
@@ -289,7 +298,14 @@ export default function Status({
               }}
             >
               {resourceItems.map((item) => (
-                <StatusStatRow key={item.key} label={item.label} value={item.value} normalized={item.normalized} />
+                <StatusStatRow
+                  key={item.key}
+                  label={item.label}
+                  value={item.value}
+                  normalized={item.normalized}
+                  rank={item.rank}
+                  compact
+                />
               ))}
             </Box>
           </Box>
@@ -378,6 +394,7 @@ export default function Status({
                         label={item.label}
                         value={item.value}
                         normalized={item.normalized}
+                        rank={item.rank}
                         hideGauge
                       />
                     ))}

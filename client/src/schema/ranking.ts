@@ -1,9 +1,18 @@
 import { z } from 'zod'
 
+export const rankingJobSchema = z.object({
+  code: z.string().min(1),
+  displayName: z.string().min(1),
+})
+
 export const rankingPlayerSchema = z.object({
   userId: z.string().uuid('ユーザーIDの形式が不正です'),
   userName: z.string().min(1).nullable().optional(),
   imagePath: z.string().min(1).nullable().optional(),
+  level: z.number().int().nonnegative(),
+  combatIndexRank: z.enum(['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E', 'F', 'G']),
+  job: rankingJobSchema,
+  rebirthCount: z.number().int().nonnegative(),
 })
 
 export const rankingRowSchema = z.object({
