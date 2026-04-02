@@ -1,4 +1,5 @@
 import { Avatar, Box, Stack, Typography } from '@mui/material'
+import { Link as RouterLink } from 'react-router-dom'
 import type { GetChatRoomResponse } from '@/schema/chat'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 
@@ -25,11 +26,13 @@ function formatTime(value: string): string {
 
 function ChatMessageItem({ message, isOwnMessage }: Props) {
   const avatarSrc = resolveCharacterAssetPath(message.imagePath)
+  const visitPlayerPath = !isOwnMessage && message.senderId ? `/players/${message.senderId}/visit` : null
 
   return (
     <Stack direction="row" spacing={1} alignItems="flex-end" justifyContent={isOwnMessage ? 'flex-end' : 'flex-start'}>
       {isOwnMessage ? null : (
         <Avatar
+          {...(visitPlayerPath ? { component: RouterLink, to: visitPlayerPath } : {})}
           src={avatarSrc ?? undefined}
           alt={message.senderName}
           imgProps={{ referrerPolicy: 'no-referrer' }}
@@ -39,10 +42,18 @@ function ChatMessageItem({ message, isOwnMessage }: Props) {
             bgcolor: 'grey.300',
             fontSize: 14,
             flexShrink: 0,
+            textDecoration: 'none',
+            transition: visitPlayerPath ? 'transform 140ms ease, box-shadow 140ms ease' : 'none',
             '& .MuiAvatar-img': {
               objectFit: 'cover',
               objectPosition: 'center top',
             },
+            '&:hover': visitPlayerPath
+              ? {
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 8px 18px rgba(36, 20, 11, 0.18)',
+                }
+              : undefined,
           }}
         >
           {message.senderName.slice(0, 1)}

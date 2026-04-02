@@ -1,11 +1,12 @@
 erDiagram
-    %% 転生は既存 internal.players の level / exp / job_level / job_exp / gold / status 系カラム更新で表現する
-    %% player_moves と player_master_jobs は維持し、転生専用の追加テーブル・追加カラムは作成しない
+    %% 転生は既存 internal.players の rebirth_count / level / exp / job_level / job_exp / gold / status 系カラム更新で表現する
+    %% player_moves と player_master_jobs は維持し、転生回数は internal.players.rebirth_count で保持する
     PLAYERS {
         uuid id PK "internal.players.id"
         varchar(20) name "NOT NULL"
         varchar(255) image_path "NULL"
         int job "NOT NULL, DEFAULT 1 (Apprentice)"
+        int rebirth_count "NOT NULL, DEFAULT 0"
         int level "NOT NULL, DEFAULT 1"
         int exp "NOT NULL, DEFAULT 0"
         int job_level "NOT NULL, DEFAULT 1"

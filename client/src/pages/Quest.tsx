@@ -1,4 +1,4 @@
-import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import { createPlayer, getPlayer, listPlayers } from '@/api/player'
@@ -93,6 +93,8 @@ function clearPersistedQuestSession(userId: string): void {
 export default function Quest() {
   const { session, isLoading } = useAuth()
   const { mutate: mutateCache } = useSWRConfig()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [selectedStageId, setSelectedStageId] = useState<number | ''>('')
   const [mode, setMode] = useState<CreateQuestRoomRequest['mode']>('Solo')
   const [multiEntryView, setMultiEntryView] = useState<'create' | 'list'>('create')
@@ -883,6 +885,11 @@ export default function Quest() {
       return
     }
 
+    if (normalizedMessage.length > 50) {
+      setSubmitError(locale.chatSubmitFailed)
+      return
+    }
+
     setIsChatSubmitting(true)
     setSubmitError(null)
 
@@ -947,11 +954,17 @@ export default function Quest() {
         <Stack spacing={{ xs: 1.25, sm: 2 }}>
           <Box sx={twoColumnContentGridSx}>
             <Stack spacing={0}>
-              <Status
-                player={player}
-                showDesktopActions={false}
-                topAction={<HomeNavIconButton ariaLabel={locale.backToHome} />}
-              />
+              {isMobile ? (
+                <Box sx={{ px: 0.5, pb: 1 }}>
+                  <HomeNavIconButton ariaLabel={locale.backToHome} />
+                </Box>
+              ) : (
+                <Status
+                  player={player}
+                  showDesktopActions={false}
+                  topAction={<HomeNavIconButton ariaLabel={locale.backToHome} />}
+                />
+              )}
             </Stack>
 
             <Paper

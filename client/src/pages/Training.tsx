@@ -284,13 +284,19 @@ export default function Training() {
                 </Stack>
               ) : playerError ? (
                 <Alert severity="warning">{playerError.message}</Alert>
-              ) : (
+              ) : isMobile ? (
+                <Box sx={{ px: 0.5, pb: 1 }}>
+                  <HomeNavIconButton ariaLabel={locale.backToHome} />
+                </Box>
+              ) : !isMobile ? (
                 <Status
                   player={player}
                   compactTrainingMobile={isMobile}
                   showDesktopActions={false}
                   topAction={<HomeNavIconButton ariaLabel={locale.backToHome} />}
                 />
+              ) : (
+                null
               )}
             </Stack>
 

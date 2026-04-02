@@ -94,6 +94,29 @@ export default function TrainingBattleResult({
         <Typography variant="subtitle1" fontWeight={800} textAlign="center" sx={{ color: '#fff7dd' }}>
           {battleAgainst}
         </Typography>
+        <Button
+          variant="contained"
+          disabled={isActionDisabled}
+          onClick={onRematch}
+          sx={{
+            borderRadius: 999,
+            py: 1.1,
+            fontWeight: 800,
+            color: '#fff5ef',
+            backgroundColor: '#b65f49',
+            boxShadow: 'none',
+            '&:hover': {
+              backgroundColor: '#c96a52',
+              boxShadow: 'none',
+            },
+            '&.Mui-disabled': {
+              color: 'rgba(255, 238, 229, 0.58)',
+              backgroundColor: 'rgba(182, 95, 73, 0.24)',
+            },
+          }}
+        >
+          {isActionDisabled ? rematchInSeconds : locale.rematch}
+        </Button>
         <Paper
           variant="outlined"
           sx={{
@@ -231,29 +254,6 @@ export default function TrainingBattleResult({
           />
         </Stack>
         {movePlanSlot}
-        <Button
-          variant="contained"
-          disabled={isActionDisabled}
-          onClick={onRematch}
-          sx={{
-            borderRadius: 999,
-            py: 1.1,
-            fontWeight: 800,
-            color: '#fff5ef',
-            backgroundColor: '#b65f49',
-            boxShadow: 'none',
-            '&:hover': {
-              backgroundColor: '#c96a52',
-              boxShadow: 'none',
-            },
-            '&.Mui-disabled': {
-              color: 'rgba(255, 238, 229, 0.58)',
-              backgroundColor: 'rgba(182, 95, 73, 0.24)',
-            },
-          }}
-        >
-          {isActionDisabled ? rematchInSeconds : locale.rematch}
-        </Button>
       </Stack>
     </Paper>
   )
