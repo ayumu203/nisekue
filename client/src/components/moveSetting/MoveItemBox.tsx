@@ -113,7 +113,7 @@ export default function MoveItemBox({ player }: MoveItemBoxProps) {
                 sx={{ borderRadius: 2.5, p: 1.25, borderColor: '#d2c08b', bgcolor: 'rgba(255, 249, 232, 0.92)' }}
               >
                 <Typography variant="caption" color="text.secondary">
-                  装備済み
+                  スロット
                 </Typography>
                 <Typography variant="h6" fontWeight={900} color="#324c36">
                   {equippedMoves.length} / {player.moveSlots.length}
@@ -146,7 +146,7 @@ export default function MoveItemBox({ player }: MoveItemBoxProps) {
                 sx={{ borderRadius: 2.5, p: 1.25, borderColor: '#d8c07d', bgcolor: 'rgba(255, 248, 224, 0.92)' }}
               >
                 <Typography variant="caption" color="text.secondary">
-                  複合
+                  特殊
                 </Typography>
                 <Typography variant="h6" fontWeight={900} color="#7b5a15">
                   {hybridCount}

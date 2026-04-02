@@ -144,7 +144,7 @@ export default function Ranking() {
                         <Typography variant="overline" sx={{ letterSpacing: '0.25em', color: 'rgba(79, 57, 44, 0.7)' }}>
                           {locale.overline}
                         </Typography>
-                        <Typography variant="h4" fontWeight={900}>
+                        <Typography variant="h4" fontWeight={900} sx={{ color: '#f8c058' }}>
                           {locale.title}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
