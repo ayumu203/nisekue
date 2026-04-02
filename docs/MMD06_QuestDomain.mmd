@@ -92,6 +92,7 @@ classDiagram
             +EnemyAiType AiType
             +IReadOnlyList~MoveId~ MoveIds
         }
+        %% QuestEnemyDefinition.Status is loaded from server/resources/quest/enemies.csv final tuned values.
 
         class QuestEnemyDefinitionId {
             <<Value Object>>
@@ -109,6 +110,7 @@ classDiagram
             +IReadOnlyList~MoveId~ MoveIds
             +NpcRole Role
         }
+        %% QuestNpcTemplate.BaseStatus is loaded from server/resources/quest/npc_templates.csv final tuned values.
 
         class QuestNpcTemplateId {
             <<Value Object>>

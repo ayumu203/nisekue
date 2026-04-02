@@ -11,12 +11,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
-import {
-  greenOutlinedInputSx,
-  innerSurfaceSx,
-  playerHpBarSx,
-  softGreenButtonSx,
-} from '@/constants/styles'
+import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import type {
   BattleColumn,

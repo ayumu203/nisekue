@@ -295,9 +295,7 @@ export default function Training() {
                   showDesktopActions={false}
                   topAction={<HomeNavIconButton ariaLabel={locale.backToHome} />}
                 />
-              ) : (
-                null
-              )}
+              ) : null}
             </Stack>
 
             <Paper
