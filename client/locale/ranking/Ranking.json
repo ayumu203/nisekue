@@ -10,12 +10,12 @@
   "daily": "日次",
   "overline": "RANKING",
   "levelLabel": "レベル",
-  "rebirthLabel": "転生",
+  "rebirthLabel": "転生回数",
   "jobLabel": "ジョブ",
   "rank": "順位",
   "score": "スコア",
   "player": "プレイヤー",
-  "combatRank": "戦闘指数ランク",
+  "combatRank": "戦闘指数",
   "allCombatRanks": "全ランク",
   "rankingTypes": {
     "combatIndexTop": "戦闘指数 Top10",
@@ -27,8 +27,8 @@
     "statusLuckTop": "運 Top10",
     "statusSpeedTop": "素早さ Top10",
     "rebirthCountTop": "転生回数 Top10",
-    "questClearByCombatRank": "戦闘指数ランク別 クエストクリア Top5",
-    "trainingBattleByCombatRank": "戦闘指数ランク別 討伐数 Top5",
-    "treasureMapUsageByCombatRank": "戦闘指数ランク別 宝の地図使用回数 Top5"
+    "questClearByCombatRank": "戦闘指数別 クエストクリア Top5",
+    "trainingBattleByCombatRank": "戦闘指数別 討伐数 Top5",
+    "treasureMapUsageByCombatRank": "戦闘指数別 宝の地図使用回数 Top5"
   }
 }

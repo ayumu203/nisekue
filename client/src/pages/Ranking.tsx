@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material'
 import { Link } from 'react-router-dom'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { getRankings } from '@/api/ranking'
@@ -32,6 +32,12 @@ function periodPriority(period: string): number {
   if (period === 'Daily') return 2
   return 99
 }
+
+const combatRankApplicableTypes = new Set([
+  'questClearByCombatRank',
+  'trainingBattleByCombatRank',
+  'treasureMapUsageByCombatRank',
+])
 
 export default function Ranking() {
   const { session, isLoading } = useAuth()
@@ -57,6 +63,13 @@ export default function Ranking() {
   const [combatRank, setCombatRank] = useState<string>('ALL')
 
   const activeType = selectedType || types[0] || ''
+  const isCombatRankSelectorEnabled = combatRankApplicableTypes.has(activeType)
+
+  useEffect(() => {
+    if (!isCombatRankSelectorEnabled && combatRank !== 'ALL') {
+      setCombatRank('ALL')
+    }
+  }, [isCombatRankSelectorEnabled, combatRank])
 
   const baseFilteredRows = (data?.rows ?? [])
     .filter((row) => !activeType || row.rankingType === activeType)
@@ -159,11 +172,12 @@ export default function Ranking() {
                           </FormControl>
                           <FormControl fullWidth>
                             <InputLabel>{locale.combatRank}</InputLabel>
-                            <Select
-                              value={combatRank}
-                              label={locale.combatRank}
-                              onChange={(e) => setCombatRank(e.target.value)}
-                            >
+                          <Select
+                            value={combatRank}
+                            label={locale.combatRank}
+                            disabled={!isCombatRankSelectorEnabled}
+                            onChange={(e) => setCombatRank(e.target.value)}
+                          >
                               <MenuItem value="ALL">{locale.allCombatRanks}</MenuItem>
                               {['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E', 'F', 'G'].map((r) => (
                                 <MenuItem key={r} value={r}>
