@@ -7,7 +7,7 @@ move_id,move_name,description,target_type,attack_range,mp_cost,execution_priorit
 106,ヴズルイフ,敵横一列に衝撃波を放つ魔法攻撃.,Enemy,Row,6,0,Attack,,
 107,ヒルフェ,敵単体に聖なる一撃.,Enemy,Single,5,0,Attack,,
 108,プラーミア,敵横一列を焼く火炎魔法.,Enemy,Row,6,0,Attack,,
-109,クラインプラーミヤ,敵単体を焦がす小さな火炎魔法.,Enemy,Single,3,0,Attack,,
+109,クラインプラーミヤ,敵単体を焦がす火炎魔法.,Enemy,Single,6,0,Attack,,
 110,ミッテルプラーミヤ,敵単体を焼き払う火炎魔法.,Enemy,Single,6,0,Attack,,
 111,グロースプラーミヤ,敵単体を灼熱で包む火炎魔法.,Enemy,Single,10,0,Attack,,
 112,ウアプラーミヤ,敵単体を灰に変える極大火炎魔法.,Enemy,Single,16,0,Attack,,

@@ -18,7 +18,7 @@ effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical
 17,304,1,Heal,,2.10,150,,Holy,,,,,,,,,,,,,,
 18,107,1,Damage,1,1.20,3,0.03,Holy,,,,,,,,,,,,,,
 19,108,1,Damage,1,1.25,4,0.02,Fire,,,,,,,,,,,,,,
-20,109,1,Damage,1,1.05,2,0.02,Fire,,,,,,,,,,,,,,
+20,109,1,Damage,1,1.35,2,0.02,Fire,,,,,,,,,,,,,,
 21,110,1,Damage,1,1.35,5,0.03,Fire,,,,,,,,,,,,,,
 22,111,1,Damage,1,1.75,10,0.04,Fire,,,,,,,,,,,,,,
 23,112,1,Damage,1,2.30,18,0.05,Fire,,,,,,,,,,,,,,
