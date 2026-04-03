@@ -234,7 +234,12 @@ export default function MoveItemBox({ player, accessToken, onSaved }: MoveItemBo
 
         {feedback ? <Alert severity={feedback.type}>{feedback.message}</Alert> : null}
 
-        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5} alignItems={{ sm: 'center' }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          spacing={1.5}
+          alignItems={{ sm: 'center' }}
+        >
           <Typography variant="h6" fontWeight={900}>
             {locale.editingOrderTitle}
           </Typography>

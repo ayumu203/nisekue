@@ -323,19 +323,19 @@ export default function Items() {
         <Stack spacing={2.5}>
           <PageFrame>
             <ControlFrame>
-              <Stack spacing={2}>
-                <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Stack spacing={1.5}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
                   <HomeNavIconButton ariaLabel={locale.backToHome} />
-                  <Box>
-                    <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}>
-                      ITEM CONTROL
-                    </Typography>
-                    <Typography variant="h4" fontWeight={900} color="#ffffff">
-                      {locale.title}
-                    </Typography>
-                  </Box>
+                  <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.items} inverted />
                 </Stack>
-                <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.items} inverted />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}>
+                    ITEM CONTROL
+                  </Typography>
+                  <Typography variant="h4" fontWeight={900} color="#ffffff">
+                    {locale.title}
+                  </Typography>
+                </Box>
               </Stack>
             </ControlFrame>
 
@@ -516,13 +516,15 @@ export default function Items() {
                         />
                       </Stack>
                       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        {([
-                          ['all', locale.categoryAll],
-                          ['Weapon', locale.categoryWeapon],
-                          ['Armor', locale.categoryArmor],
-                          ['Item', locale.categoryItem],
-                          ['Map', locale.categoryMap],
-                        ] as const).map(([value, label]) => (
+                        {(
+                          [
+                            ['all', locale.categoryAll],
+                            ['Weapon', locale.categoryWeapon],
+                            ['Armor', locale.categoryArmor],
+                            ['Item', locale.categoryItem],
+                            ['Map', locale.categoryMap],
+                          ] as const
+                        ).map(([value, label]) => (
                           <Chip
                             key={value}
                             label={label}

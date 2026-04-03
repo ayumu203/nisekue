@@ -131,7 +131,9 @@ function VisitPlayer() {
     return getChatRoom({ ownerId: playerId }, session.access_token)
   })
 
-  const giftEquipments = (giftInventory?.inventoryItems ?? []).filter((item): item is ItemEquipmentView => item.kind === 'equipment')
+  const giftEquipments = (giftInventory?.inventoryItems ?? []).filter(
+    (item): item is ItemEquipmentView => item.kind === 'equipment',
+  )
   const giftItems = (giftInventory?.inventoryItems ?? []).filter((item): item is ItemStackView => item.kind === 'item')
   const visibleGiftItems = giftTab === 'equipments' ? giftEquipments : giftItems
   const actionButtonSx = (isActive: boolean) => ({
@@ -220,7 +222,11 @@ function VisitPlayer() {
                         <Alert severity="warning">{giftInventoryError.message || locale.giftListLoadFailed}</Alert>
                       ) : (
                         <Stack spacing={1.5}>
-                          <Tabs value={giftTab} onChange={(_, value: 'equipments' | 'items') => setGiftTab(value)} variant="fullWidth">
+                          <Tabs
+                            value={giftTab}
+                            onChange={(_, value: 'equipments' | 'items') => setGiftTab(value)}
+                            variant="fullWidth"
+                          >
                             <Tab value="equipments" label={locale.giftEquipmentsTab} />
                             <Tab value="items" label={locale.giftItemsTab} />
                           </Tabs>
@@ -244,14 +250,21 @@ function VisitPlayer() {
                                           {item.flavorText || '-'}
                                         </Typography>
                                       </Box>
-                                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+                                      <Stack
+                                        direction={{ xs: 'column', sm: 'row' }}
+                                        spacing={1}
+                                        alignItems={{ sm: 'center' }}
+                                      >
                                         {item.kind === 'item' ? (
                                           <TextField
                                             size="small"
                                             label={locale.giftQuantity}
                                             value={giftQuantities[key] ?? '1'}
                                             onChange={(event) =>
-                                              setGiftQuantities((current) => ({ ...current, [key]: event.target.value }))
+                                              setGiftQuantities((current) => ({
+                                                ...current,
+                                                [key]: event.target.value,
+                                              }))
                                             }
                                             inputProps={{ inputMode: 'numeric', min: 1, max: item.quantity }}
                                             sx={{ width: 104 }}
@@ -261,7 +274,9 @@ function VisitPlayer() {
                                         )}
                                         <Button
                                           variant="contained"
-                                          disabled={giftBusyKey !== null || !visitedPlayer?.userId || !session?.access_token}
+                                          disabled={
+                                            giftBusyKey !== null || !visitedPlayer?.userId || !session?.access_token
+                                          }
                                           onClick={async () => {
                                             if (!visitedPlayer?.userId || !session?.access_token) {
                                               return
@@ -285,12 +300,16 @@ function VisitPlayer() {
                                                     },
                                                 session.access_token,
                                               )
-                                              setGiftFeedback({ type: 'success', message: response.message || locale.giftSuccess })
+                                              setGiftFeedback({
+                                                type: 'success',
+                                                message: response.message || locale.giftSuccess,
+                                              })
                                               await Promise.all([mutateGiftInventory(), mutateChatRoom()])
                                             } catch (error) {
                                               setGiftFeedback({
                                                 type: 'error',
-                                                message: error instanceof Error ? error.message : locale.giftListLoadFailed,
+                                                message:
+                                                  error instanceof Error ? error.message : locale.giftListLoadFailed,
                                               })
                                             } finally {
                                               setGiftBusyKey(null)

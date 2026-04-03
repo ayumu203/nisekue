@@ -994,24 +994,29 @@ export default function Quest() {
                 <Stack
                   id="quest-main"
                   ref={questMainRef}
-                  spacing={0.6}
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="flex-end"
+                  spacing={1.5}
                   sx={{
                     px: { xs: 0.25, sm: 0.5 },
                     pb: 1.5,
                     borderBottom: '1px solid rgba(152, 192, 255, 0.18)',
                   }}
                 >
-                  <Typography
-                    variant="overline"
-                    sx={{ color: 'rgba(222, 236, 255, 0.72)', letterSpacing: '0.18em', lineHeight: 1.2 }}
-                  >
-                    QUEST BOARD
-                  </Typography>
-                  <Typography variant="h5" fontWeight={900} sx={{ color: '#ffffff', lineHeight: 1.15 }}>
-                    クエスト
-                  </Typography>
+                  <Stack spacing={0.6} sx={{ minWidth: 0 }}>
+                    <Typography
+                      variant="overline"
+                      sx={{ color: 'rgba(222, 236, 255, 0.72)', letterSpacing: '0.18em', lineHeight: 1.2 }}
+                    >
+                      QUEST BOARD
+                    </Typography>
+                    <Typography variant="h5" fontWeight={900} sx={{ color: '#ffffff', lineHeight: 1.15 }}>
+                      クエスト
+                    </Typography>
+                  </Stack>
+                  <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.quest} inverted />
                 </Stack>
-                <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.quest} inverted />
                 <Stack spacing={{ xs: 1.25, sm: 2 }}>
                   {playerError ? <Alert severity="warning">{playerError.message}</Alert> : null}
                   {stagesError ? <Alert severity="warning">{stagesError.message}</Alert> : null}
