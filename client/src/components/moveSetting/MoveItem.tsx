@@ -1,11 +1,15 @@
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
+import type { PointerEventHandler } from 'react'
 import type { PlayerMoveSlot } from '@/schema/player'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
 
 type MoveItemProps = {
   slot: PlayerMoveSlot
+  onHandlePointerDown?: PointerEventHandler<HTMLDivElement>
+  isDragging?: boolean
 }
 
 function resolveElementTypeLabel(elementType: PlayerMoveSlot['elementType']): string | null {
@@ -114,7 +118,7 @@ function resolveAttackRangeLabel(attackRange: PlayerMoveSlot['attackRange']): st
   }
 }
 
-export default function MoveItem({ slot }: MoveItemProps) {
+export default function MoveItem({ slot, onHandlePointerDown, isDragging = false }: MoveItemProps) {
   const isEmpty = slot.moveId === null
   const moveName = slot.moveName ?? (slot.moveId === null ? locale.emptySlot : locale.unknownMove)
   const moveDescription = slot.description ?? locale.unknownMoveDescription
@@ -173,9 +177,30 @@ export default function MoveItem({ slot }: MoveItemProps) {
             border: '1px solid #c0b07a',
           }}
         >
-          <Typography variant="h6" fontWeight={900} sx={{ lineHeight: 1.2, color: '#fff8e8' }}>
-            {moveName}
-          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
+            <Box
+              onPointerDown={onHandlePointerDown}
+              aria-label={locale.dragHandle}
+              sx={{
+                width: 34,
+                height: 34,
+                borderRadius: 1,
+                display: 'grid',
+                placeItems: 'center',
+                bgcolor: isDragging ? 'rgba(238, 219, 155, 0.28)' : 'rgba(255, 255, 255, 0.12)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                color: '#fff8e8',
+                cursor: 'grab',
+                touchAction: 'none',
+                flexShrink: 0,
+              }}
+            >
+              <DragIndicatorIcon fontSize="small" />
+            </Box>
+            <Typography variant="h6" fontWeight={900} sx={{ lineHeight: 1.2, color: '#fff8e8' }}>
+              {moveName}
+            </Typography>
+          </Stack>
           {typeof slot.mpCost === 'number' ? (
             <Chip
               size="small"

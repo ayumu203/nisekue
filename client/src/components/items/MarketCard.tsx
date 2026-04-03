@@ -8,6 +8,13 @@ import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../../locale/items/Items.json'
 import type { MarketListingView } from '@/schema/item'
 
+const categoryLabelMap: Record<string, string> = {
+  Weapon: locale.categoryWeapon,
+  Armor: locale.categoryArmor,
+  Item: locale.categoryItem,
+  Map: locale.categoryMap,
+}
+
 export function MarketCard({
   listing,
   quantityValue,
@@ -56,6 +63,12 @@ export function MarketCard({
           {listing.flavorText || '-'}
         </Typography>
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap justifyContent="center">
+          <Chip
+            size="small"
+            label={categoryLabelMap[listing.listingCategory] ?? listing.listingCategory}
+            variant="outlined"
+            sx={{ borderRadius: 1, bgcolor: 'rgba(255,255,255,0.92)' }}
+          />
           <Chip
             size="small"
             label={`${locale.quantity} ${listing.quantity}`}

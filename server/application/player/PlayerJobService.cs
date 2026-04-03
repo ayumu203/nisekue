@@ -16,7 +16,8 @@ public class PlayerJobService(
         Job.Warrior,
         Job.Guardian,
         Job.Mage,
-        Job.Priest
+        Job.Priest,
+        Job.Ranger
     };
 
     public async Task<PlayerJobChangeResult> ChangeJobAsync(PlayerId playerId, Job nextJob)

@@ -236,6 +236,28 @@ export const updatePlayerEquipmentResponseSchema = z.object({
   player: getPlayerResponseSchema,
 })
 
+export const updatePlayerMoveSetRequestSchema = z.object({
+  moveIds: z.array(z.number().int().min(1).nullable()).length(10),
+})
+
+export const updatePlayerMoveSetResponseSchema = z.object({
+  message: z.string().min(1, 'レスポンスメッセージが空です'),
+})
+
+export const sendPlayerGiftRequestSchema = z
+  .object({
+    playerEquipmentId: z.string().uuid().nullable().optional(),
+    itemStackId: z.string().uuid().nullable().optional(),
+    quantity: z.number().int().min(1).nullable().optional(),
+  })
+  .refine((value) => Boolean(value.playerEquipmentId) !== Boolean(value.itemStackId), {
+    message: '装備かアイテムのどちらか一方を指定してください',
+  })
+
+export const sendPlayerGiftResponseSchema = z.object({
+  message: z.string().min(1, 'レスポンスメッセージが空です'),
+})
+
 export const rebirthPlayerResponseSchema = z.object({
   message: z.string().min(1, 'レスポンスメッセージが空です'),
   userId: playerIdSchema,
@@ -265,4 +287,8 @@ export type UpdatePlayerJobRequest = z.infer<typeof updatePlayerJobRequestSchema
 export type UpdatePlayerJobResponse = z.infer<typeof updatePlayerJobResponseSchema>
 export type UpdatePlayerEquipmentRequest = z.infer<typeof updatePlayerEquipmentRequestSchema>
 export type UpdatePlayerEquipmentResponse = z.infer<typeof updatePlayerEquipmentResponseSchema>
+export type UpdatePlayerMoveSetRequest = z.infer<typeof updatePlayerMoveSetRequestSchema>
+export type UpdatePlayerMoveSetResponse = z.infer<typeof updatePlayerMoveSetResponseSchema>
+export type SendPlayerGiftRequest = z.infer<typeof sendPlayerGiftRequestSchema>
+export type SendPlayerGiftResponse = z.infer<typeof sendPlayerGiftResponseSchema>
 export type RebirthPlayerResponse = z.infer<typeof rebirthPlayerResponseSchema>

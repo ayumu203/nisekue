@@ -1,6 +1,7 @@
 import {
   Alert,
   Box,
+  Chip,
   CircularProgress,
   Container,
   Pagination,
@@ -25,6 +26,7 @@ import {
   useItem as consumeItem,
 } from '@/api/item'
 import { createPlayer, updatePlayerEquipment } from '@/api/player'
+import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { ConsumableCard } from '@/components/items/ConsumableCard'
 import { EquipmentCard } from '@/components/items/EquipmentCard'
@@ -35,6 +37,7 @@ import { normalizeText, parsePositiveInteger } from '@/components/items/itemUtil
 import { MarketCard } from '@/components/items/MarketCard'
 import { useAuth } from '@/contexts/useAuth'
 import { outerPagePaperSx } from '@/constants/styles'
+import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/items/Items.json'
 import type { InventoryItemView, ItemEquipmentView, ItemStackView, MarketListingView } from '@/schema/item'
@@ -43,6 +46,7 @@ const PAGE_SIZE = 30
 
 type PrimaryTab = 'items' | 'market'
 type MarketTab = 'public' | 'mine'
+type MarketCategoryFilter = 'all' | 'Weapon' | 'Armor' | 'Item' | 'Map'
 
 function paginate<T>(items: T[], page: number): T[] {
   const start = (page - 1) * PAGE_SIZE
@@ -59,6 +63,10 @@ function matchesMarketSearch(listing: MarketListingView, searchText: string): bo
   )
 }
 
+function matchesMarketCategory(listing: MarketListingView, category: MarketCategoryFilter): boolean {
+  return category === 'all' || listing.listingCategory === category
+}
+
 export default function Items() {
   const { session, isLoading } = useAuth()
   const { mutate: mutateCache } = useSWRConfig()
@@ -67,8 +75,10 @@ export default function Items() {
   const [marketPage, setMarketPage] = useState(1)
   const [myMarketPage, setMyMarketPage] = useState(1)
   const [marketSearch, setMarketSearch] = useState('')
+  const [marketCategory, setMarketCategory] = useState<MarketCategoryFilter>('all')
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [busyKey, setBusyKey] = useState<string | null>(null)
+  const [listingEditorKey, setListingEditorKey] = useState<string | null>(null)
   const [quantities, setQuantities] = useState<Record<string, string>>({})
   const [unitPrices, setUnitPrices] = useState<Record<string, string>>({})
 
@@ -136,12 +146,18 @@ export default function Items() {
   }, [items])
 
   const publicMarketListings = useMemo(
-    () => (marketListings ?? []).filter((item) => matchesMarketSearch(item, normalizedMarketSearch)),
-    [marketListings, normalizedMarketSearch],
+    () =>
+      (marketListings ?? []).filter(
+        (item) => matchesMarketSearch(item, normalizedMarketSearch) && matchesMarketCategory(item, marketCategory),
+      ),
+    [marketCategory, marketListings, normalizedMarketSearch],
   )
   const ownMarketListings = useMemo(
-    () => (myListings ?? []).filter((item) => matchesMarketSearch(item, normalizedMarketSearch)),
-    [myListings, normalizedMarketSearch],
+    () =>
+      (myListings ?? []).filter(
+        (item) => matchesMarketSearch(item, normalizedMarketSearch) && matchesMarketCategory(item, marketCategory),
+      ),
+    [marketCategory, myListings, normalizedMarketSearch],
   )
 
   const currentMarketListings = marketTab === 'public' ? publicMarketListings : ownMarketListings
@@ -181,18 +197,20 @@ export default function Items() {
     setUnitPrices((current) => ({ ...current, [key]: value }))
   }
 
-  async function runAction(actionKey: string, action: () => Promise<{ message: string }>): Promise<void> {
+  async function runAction(actionKey: string, action: () => Promise<{ message: string }>): Promise<boolean> {
     setBusyKey(actionKey)
     setFeedback(null)
     try {
       const result = await action()
       setFeedback({ type: 'success', message: result.message })
       await refreshAll()
+      return true
     } catch (error) {
       setFeedback({
         type: 'error',
         message: error instanceof Error ? error.message : locale.actionFailed,
       })
+      return false
     } finally {
       setBusyKey(null)
     }
@@ -256,7 +274,7 @@ export default function Items() {
     if (!session?.access_token) return
 
     const key = item.kind === 'item' ? item.itemStackId : item.playerEquipmentId
-    await runAction(`list:${key}`, () =>
+    const succeeded = await runAction(`list:${key}`, () =>
       createMarketListing(
         item.kind === 'item'
           ? {
@@ -274,6 +292,9 @@ export default function Items() {
         session.access_token,
       ),
     )
+    if (succeeded) {
+      setListingEditorKey(null)
+    }
   }
 
   async function handlePurchase(listing: MarketListingView): Promise<void> {
@@ -302,18 +323,19 @@ export default function Items() {
         <Stack spacing={2.5}>
           <PageFrame>
             <ControlFrame>
-              <Stack spacing={2}>
-                <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Stack spacing={1.5}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
                   <HomeNavIconButton ariaLabel={locale.backToHome} />
-                  <Box>
-                    <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}>
-                      ITEM CONTROL
-                    </Typography>
-                    <Typography variant="h4" fontWeight={900} color="#ffffff">
-                      {locale.title}
-                    </Typography>
-                  </Box>
+                  <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.items} inverted />
                 </Stack>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}>
+                    ITEM CONTROL
+                  </Typography>
+                  <Typography variant="h4" fontWeight={900} color="#ffffff">
+                    {locale.title}
+                  </Typography>
+                </Box>
               </Stack>
             </ControlFrame>
 
@@ -368,6 +390,8 @@ export default function Items() {
                             onSynthesize={() => undefined}
                             onDelete={() => undefined}
                             onList={() => undefined}
+                            onStartListing={() => undefined}
+                            onCancelListing={() => undefined}
                             actionDisabled
                             showActions={false}
                           />
@@ -411,8 +435,11 @@ export default function Items() {
                               onSynthesize={() => void handleSynthesize(item)}
                               onDelete={() => void handleDeleteEquipment(item)}
                               onList={() => void handleListInventoryItem(item)}
+                              onStartListing={() => setListingEditorKey(key)}
+                              onCancelListing={() => setListingEditorKey(null)}
                               onEquip={() => void handleEquip(item)}
                               actionDisabled={busyKey !== null}
+                              isListingMode={listingEditorKey === key}
                             />
                           )
                         })}
@@ -455,7 +482,10 @@ export default function Items() {
                               onUse={() => void handleUseItem(item)}
                               onDelete={() => void handleDeleteItem(item)}
                               onList={() => void handleListInventoryItem(item)}
+                              onStartListing={() => setListingEditorKey(key)}
+                              onCancelListing={() => setListingEditorKey(null)}
                               actionDisabled={busyKey !== null}
+                              isListingMode={listingEditorKey === key}
                             />
                           )
                         })}
@@ -484,6 +514,29 @@ export default function Items() {
                           fullWidth
                           sx={inputSx}
                         />
+                      </Stack>
+                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                        {(
+                          [
+                            ['all', locale.categoryAll],
+                            ['Weapon', locale.categoryWeapon],
+                            ['Armor', locale.categoryArmor],
+                            ['Item', locale.categoryItem],
+                            ['Map', locale.categoryMap],
+                          ] as const
+                        ).map(([value, label]) => (
+                          <Chip
+                            key={value}
+                            label={label}
+                            color={marketCategory === value ? 'primary' : 'default'}
+                            variant={marketCategory === value ? 'filled' : 'outlined'}
+                            onClick={() => {
+                              setMarketCategory(value)
+                              setMarketPage(1)
+                              setMyMarketPage(1)
+                            }}
+                          />
+                        ))}
                       </Stack>
                     </Paper>
 

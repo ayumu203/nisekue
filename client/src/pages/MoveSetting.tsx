@@ -1,10 +1,12 @@
 import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
+import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import MoveItemBox from '@/components/moveSetting/MoveItemBox'
 import { outerPagePaperSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-setting/PlayerSetting.json'
 
@@ -16,6 +18,7 @@ export default function MoveSetting() {
     data: player,
     error: playerError,
     isLoading: isPlayerLoading,
+    mutate: mutatePlayer,
   } = useSWR(playerSWRKey, async () => {
     if (!session?.access_token) {
       throw new Error(locale.sessionMissing)
@@ -49,8 +52,18 @@ export default function MoveSetting() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Stack direction="row" justifyContent="flex-start">
+          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
             <HomeNavIconButton ariaLabel={locale.backToHome} />
+            <BeginnerGuide
+              userId={session?.user.id}
+              guide={beginnerGuides.moveSetting}
+              triggerSx={{
+                minHeight: 44,
+                height: 44,
+                px: 1.5,
+                alignSelf: 'center',
+              }}
+            />
           </Stack>
 
           {isPlayerLoading ? (
@@ -63,7 +76,13 @@ export default function MoveSetting() {
           ) : !player ? (
             <Alert severity="warning">{locale.loadingPlayer}</Alert>
           ) : (
-            <MoveItemBox player={player} />
+            <MoveItemBox
+              player={player}
+              accessToken={session?.access_token ?? ''}
+              onSaved={async () => {
+                await mutatePlayer()
+              }}
+            />
           )}
         </Stack>
       </Paper>

@@ -25,8 +25,11 @@ export function EquipmentCard({
   onSynthesize,
   onDelete,
   onList,
+  onStartListing,
+  onCancelListing,
   onEquip,
   actionDisabled,
+  isListingMode = false,
   showActions = true,
 }: {
   item: ItemEquipmentView
@@ -37,12 +40,14 @@ export function EquipmentCard({
   onSynthesize: () => void
   onDelete: () => void
   onList: () => void
+  onStartListing: () => void
+  onCancelListing: () => void
   onEquip?: () => void
   actionDisabled: boolean
+  isListingMode?: boolean
   showActions?: boolean
 }) {
   const [showDetails, setShowDetails] = useState(false)
-  const [showListingControls, setShowListingControls] = useState(false)
 
   return (
     <Paper
@@ -111,7 +116,7 @@ export function EquipmentCard({
         ) : null}
         {showActions ? (
           <>
-            {showListingControls ? (
+            {isListingMode ? (
               <ListingControls
                 quantityValue={quantityValue}
                 unitPriceValue={unitPriceValue}
@@ -119,43 +124,33 @@ export function EquipmentCard({
                 onUnitPriceChange={onUnitPriceChange}
               />
             ) : null}
-            {onEquip ? (
+            {!isListingMode && onEquip ? (
               <Button variant="contained" onClick={onEquip} disabled={actionDisabled} sx={primaryActionSx}>
                 {locale.actionEquip}
               </Button>
             ) : null}
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="center" alignItems="center">
-              <Button variant="outlined" onClick={onSynthesize} disabled={actionDisabled} sx={secondaryActionSx}>
-                {locale.actionSynthesize}
-              </Button>
-              {showListingControls ? (
+            {isListingMode ? (
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="center" alignItems="center">
                 <Button variant="contained" sx={secondaryActionSx} onClick={onList} disabled={actionDisabled}>
                   {locale.actionListConfirm}
                 </Button>
-              ) : (
-                <Button
-                  variant="outlined"
-                  sx={secondaryActionSx}
-                  onClick={() => setShowListingControls(true)}
-                  disabled={actionDisabled}
-                >
+                <Button variant="outlined" onClick={onCancelListing} disabled={actionDisabled} sx={destructiveActionSx}>
+                  {locale.actionCancel}
+                </Button>
+              </Stack>
+            ) : (
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="center" alignItems="center">
+                <Button variant="outlined" onClick={onSynthesize} disabled={actionDisabled} sx={secondaryActionSx}>
+                  {locale.actionSynthesize}
+                </Button>
+                <Button variant="outlined" sx={secondaryActionSx} onClick={onStartListing} disabled={actionDisabled}>
                   {locale.actionList}
                 </Button>
-              )}
-              <Button variant="outlined" sx={destructiveActionSx} onClick={onDelete} disabled={actionDisabled}>
-                {locale.actionDelete}
-              </Button>
-            </Stack>
-            {showListingControls ? (
-              <Button
-                variant="text"
-                onClick={() => setShowListingControls(false)}
-                disabled={actionDisabled}
-                sx={{ alignSelf: 'flex-end', color: 'text.secondary' }}
-              >
-                {locale.actionClose}
-              </Button>
-            ) : null}
+                <Button variant="outlined" sx={destructiveActionSx} onClick={onDelete} disabled={actionDisabled}>
+                  {locale.actionDelete}
+                </Button>
+              </Stack>
+            )}
           </>
         ) : null}
       </Stack>

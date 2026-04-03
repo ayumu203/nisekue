@@ -140,6 +140,33 @@ public class BattleServiceTests
     }
 
     [Fact]
+    public void ResolveTurn_WhenSpeedBuffMoveIsUsed_SameTurnOrderDoesNotChangeButNextTurnActsFirst()
+    {
+        var service = new BattleService();
+        const int moveId = 108;
+        var speedMove = CreateSpeedBuffMove(moveId);
+        var actor = CreateActorInput(1, BattleSide.Ally, currentHp: 30, currentMp: 10, learnedMoveIds: [moveId], speed: 5);
+        var enemy = CreateActorInput(2, BattleSide.Enemy, currentHp: 30, currentMp: 10, speed: 10);
+        var actors = new[] { actor, enemy };
+
+        var turn1 = service.ResolveTurn(new BattleTurnRequest(
+            actors,
+            [CreateMoveAction(actor.ActorId, moveId, TargetType.Self, AttackRange.Single), CreateNormalAttackAction(enemy.ActorId)],
+            [speedMove]));
+
+        turn1.ActionResults[0].ActorId.Value.Should().Be(enemy.ActorId);
+
+        actors = CarryForwardActors(actors, turn1.UpdatedStates);
+
+        var turn2 = service.ResolveTurn(new BattleTurnRequest(
+            actors,
+            [CreateNormalAttackAction(actor.ActorId), CreateNormalAttackAction(enemy.ActorId)],
+            [speedMove]));
+
+        turn2.ActionResults[0].ActorId.Value.Should().Be(actor.ActorId);
+    }
+
+    [Fact]
     public void ResolveTurn_WhenDefenseScaledMoveIsUsed_DealsDamageUsingDefense()
     {
         var service = new BattleService();
@@ -474,6 +501,28 @@ public class BattleServiceTests
                     1,
                     MoveEffectType.Damage,
                     damage: new DamageEffect(1, 1.25m, 4, 0.02m, ElementType.Fire))
+            ]);
+    }
+
+    private static Move CreateSpeedBuffMove(int moveId)
+    {
+        return new Move(
+            new MoveId(moveId),
+            "アクセル",
+            "自分の速度を上げる",
+            TargetType.Self,
+            AttackRange.Single,
+            3,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    new MoveId(moveId),
+                    1,
+                    MoveEffectType.Buff,
+                    buff: new BuffEffect(BuffStat.Speed, BuffCalculationType.Add, 10m, 2, 1m, false))
             ]);
     }
 

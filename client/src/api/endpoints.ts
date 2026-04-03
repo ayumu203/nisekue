@@ -11,6 +11,10 @@ import {
   updatePlayerJobResponseSchema,
   updatePlayerEquipmentRequestSchema,
   updatePlayerEquipmentResponseSchema,
+  updatePlayerMoveSetRequestSchema,
+  updatePlayerMoveSetResponseSchema,
+  sendPlayerGiftRequestSchema,
+  sendPlayerGiftResponseSchema,
   rebirthPlayerResponseSchema,
 } from '@/schema/player'
 import {
@@ -88,6 +92,10 @@ export type {
   UpdatePlayerJobResponse,
   UpdatePlayerEquipmentRequest,
   UpdatePlayerEquipmentResponse,
+  UpdatePlayerMoveSetRequest,
+  UpdatePlayerMoveSetResponse,
+  SendPlayerGiftRequest,
+  SendPlayerGiftResponse,
   RebirthPlayerResponse,
 } from '@/schema/player'
 export type {
@@ -205,6 +213,18 @@ export const endpoints = {
       method: 'PUT',
       requestSchema: updatePlayerEquipmentRequestSchema,
       responseSchema: updatePlayerEquipmentResponseSchema,
+    },
+    updateMoveSet: {
+      path: '/player/move-set',
+      method: 'PUT',
+      requestSchema: updatePlayerMoveSetRequestSchema,
+      responseSchema: updatePlayerMoveSetResponseSchema,
+    },
+    sendGift: {
+      path: (playerId: string) => `/players/${playerId}/gifts`,
+      method: 'POST',
+      requestSchema: sendPlayerGiftRequestSchema,
+      responseSchema: sendPlayerGiftResponseSchema,
     },
     rebirth: {
       path: '/player/rebirth',

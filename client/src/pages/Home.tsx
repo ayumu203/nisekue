@@ -8,6 +8,7 @@ import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/home/Home.json'
 import ChatMessages from '@/components/chat/ChatMessages'
 import ChatForm from '@/components/chat/ChatForm'
+import BeginnerGuide from '@/components/common/BeginnerGuide'
 import Status from '@/components/home/Status'
 import {
   ItemsIcon,
@@ -29,6 +30,7 @@ import {
   softGreenButtonSx,
   twoColumnContentGridSx,
 } from '@/constants/styles'
+import { beginnerGuides } from '@/lib/beginnerGuides'
 
 function Home() {
   const { session, isLoading } = useAuth()
@@ -95,7 +97,21 @@ function Home() {
               ) : playerError ? (
                 <Alert severity="warning">{playerError.message}</Alert>
               ) : (
-                <Status player={player} actionAlign="start" />
+                <Status
+                  player={player}
+                  actionAlign="start"
+                  topAction={
+                    <BeginnerGuide
+                      userId={session?.user.id}
+                      guide={beginnerGuides.home}
+                      triggerSx={{
+                        minHeight: 44,
+                        px: 2,
+                        fontWeight: 700,
+                      }}
+                    />
+                  }
+                />
               )}
               <Button
                 component={Link}
