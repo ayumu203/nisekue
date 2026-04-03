@@ -3,8 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ItemArtwork } from './ItemIllustrations'
 import { ListingControls } from './ListingControls'
-import { formatDateTime } from './itemUtils'
-import { formatStatusBonus } from './itemUtils'
+import { formatDateTime, formatStatusBonus } from './itemUtils'
 import { accentBeige, accentBeigeBorder, deepGreen, listCardSx, primaryActionSx } from './ItemsConstants'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../../locale/items/Items.json'
@@ -36,6 +35,7 @@ export function MarketCard({
   const sellerImageSrc = resolveCharacterAssetPath(listing.sellerImagePath)
   const sellerRoomPath = listing.sellerId ? `/players/${listing.sellerId}/visit` : null
   const equipmentDetail = listing.equipmentDetail ?? null
+  const detailRegionId = `market-detail-${listing.listingId}`
 
   return (
     <Paper
@@ -70,6 +70,8 @@ export function MarketCard({
           <Button
             variant="text"
             onClick={() => setShowDetails((current) => !current)}
+            aria-expanded={showDetails}
+            aria-controls={detailRegionId}
             sx={{ alignSelf: 'center', color: deepGreen, fontWeight: 700 }}
           >
             {showDetails ? locale.hideDetails : locale.showDetails}
@@ -77,6 +79,7 @@ export function MarketCard({
         ) : null}
         {showDetails && equipmentDetail ? (
           <Stack
+            id={detailRegionId}
             spacing={0.75}
             sx={{
               px: 1,
