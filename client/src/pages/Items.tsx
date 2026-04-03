@@ -25,6 +25,7 @@ import {
   useItem as consumeItem,
 } from '@/api/item'
 import { createPlayer, updatePlayerEquipment } from '@/api/player'
+import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { ConsumableCard } from '@/components/items/ConsumableCard'
 import { EquipmentCard } from '@/components/items/EquipmentCard'
@@ -35,6 +36,7 @@ import { normalizeText, parsePositiveInteger } from '@/components/items/itemUtil
 import { MarketCard } from '@/components/items/MarketCard'
 import { useAuth } from '@/contexts/useAuth'
 import { outerPagePaperSx } from '@/constants/styles'
+import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/items/Items.json'
 import type { InventoryItemView, ItemEquipmentView, ItemStackView, MarketListingView } from '@/schema/item'
@@ -314,6 +316,7 @@ export default function Items() {
                     </Typography>
                   </Box>
                 </Stack>
+                <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.items} inverted />
               </Stack>
             </ControlFrame>
 

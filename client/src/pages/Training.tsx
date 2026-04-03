@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import { executeTraining, getTrainingEnemies, TrainingCooldownError } from '@/api/training'
 import { createPlayer, getPlayer } from '@/api/player'
+import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import Status from '@/components/home/Status'
 import TrainingBattleResult from '@/components/training/TrainingBattleResult'
@@ -21,6 +22,7 @@ import TrainingMovePlanForm from '@/components/training/TrainingMovePlanForm'
 import { useAuth } from '@/contexts/useAuth'
 import { innerSurfaceSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
+import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
@@ -331,6 +333,7 @@ export default function Training() {
                     訓練場
                   </Typography>
                 </Stack>
+                <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.training} inverted />
                 {selectedEnemy && trainingResult ? (
                   <Box ref={battleResultRef}>
                     <TrainingBattleResult

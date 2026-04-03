@@ -1,10 +1,12 @@
 import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
+import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import MoveItemBox from '@/components/moveSetting/MoveItemBox'
 import { outerPagePaperSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-setting/PlayerSetting.json'
 
@@ -52,6 +54,7 @@ export default function MoveSetting() {
           <Stack direction="row" justifyContent="flex-start">
             <HomeNavIconButton ariaLabel={locale.backToHome} />
           </Stack>
+          <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.moveSetting} />
 
           {isPlayerLoading ? (
             <Stack direction="row" spacing={1} alignItems="center">

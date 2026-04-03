@@ -29,6 +29,7 @@ import {
   updateQuestRoomRestrictions,
   updateQuestRoomPosition,
 } from '@/api/quest'
+import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import QuestRoomCreateSection from '@/components/quest/QuestRoomCreateSection'
 import QuestRoomLobbySection from '@/components/quest/QuestRoomLobbySection'
@@ -38,6 +39,7 @@ import Status from '@/components/home/Status'
 import { useAuth } from '@/contexts/useAuth'
 import { outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
+import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/quest/QuestRoom.json'
 import type {
@@ -1009,6 +1011,7 @@ export default function Quest() {
                     クエスト
                   </Typography>
                 </Stack>
+                <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.quest} inverted />
                 <Stack spacing={{ xs: 1.25, sm: 2 }}>
                   {playerError ? <Alert severity="warning">{playerError.message}</Alert> : null}
                   {stagesError ? <Alert severity="warning">{stagesError.message}</Alert> : null}
