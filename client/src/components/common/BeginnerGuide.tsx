@@ -16,7 +16,7 @@ import {
   useMediaQuery,
 } from '@mui/material'
 import { alpha, type SxProps, type Theme, useTheme } from '@mui/material/styles'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   beginnerGuideBadge,
   beginnerGuideCloseLabel,
@@ -33,8 +33,12 @@ type BeginnerGuideProps = {
   triggerSx?: SxProps<Theme>
 }
 
+function shouldOpenGuideInitially(userId: string | null | undefined, pageKey: string): boolean {
+  return Boolean(userId && !hasSeenBeginnerGuide(userId, pageKey))
+}
+
 export default function BeginnerGuide({ userId, guide, inverted = false, triggerSx }: BeginnerGuideProps) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(() => shouldOpenGuideInitially(userId, guide.pageKey))
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
   const guidePalette = {
@@ -200,14 +204,6 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
     indexBorderColor: '#8d7a46',
     footerTextColor: '#556277',
   }
-
-  useEffect(() => {
-    if (!userId || hasSeenBeginnerGuide(userId, guide.pageKey)) {
-      return
-    }
-
-    setOpen(true)
-  }, [guide.pageKey, userId])
 
   function handleClose(): void {
     if (userId) {
