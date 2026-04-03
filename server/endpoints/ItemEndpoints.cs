@@ -459,6 +459,7 @@ internal static class ItemEndpoints
             IMarketListingRepository marketListingRepository,
             IPlayerRepository playerRepository,
             ITreasureMapRepository treasureMapRepository,
+            IEquipmentRepository equipmentRepository,
             IDbContextFactory<AppDbContext> dbContextFactory) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
@@ -471,7 +472,9 @@ internal static class ItemEndpoints
             var filtered = listings.Where(x => x.SellerId != playerId.Value).ToArray();
             var players = await playerRepository.GetAllAsync();
             var playerMap = players.ToDictionary(x => x.Id);
-            var listingCategoryMap = await BuildListingCategoryMapAsync(filtered, treasureMapRepository, dbContextFactory);
+            var playerEquipmentSnapshotMap = await LoadListedPlayerEquipmentSnapshotMapAsync(filtered, dbContextFactory);
+            var listingCategoryMap = await BuildListingCategoryMapAsync(filtered, treasureMapRepository, playerEquipmentSnapshotMap);
+            var equipmentDetailMap = await BuildEquipmentMarketDetailMapAsync(filtered, equipmentRepository, playerEquipmentSnapshotMap);
 
             return Results.Ok(filtered.Select(listing =>
             {
@@ -487,7 +490,8 @@ internal static class ItemEndpoints
                     quantity = listing.RemainingQuantity,
                     unitPrice = listing.UnitPrice,
                     expiresAt = listing.ExpiresAt,
-                    listingCategory = listingCategoryMap.GetValueOrDefault(listing.Id.Value, "Item")
+                    listingCategory = listingCategoryMap.GetValueOrDefault(listing.Id.Value, "Item"),
+                    equipmentDetail = equipmentDetailMap.GetValueOrDefault(listing.Id.Value)
                 };
             }));
         }).RequireAuthorization();
@@ -496,6 +500,7 @@ internal static class ItemEndpoints
             ClaimsPrincipal user,
             IMarketListingRepository marketListingRepository,
             ITreasureMapRepository treasureMapRepository,
+            IEquipmentRepository equipmentRepository,
             IDbContextFactory<AppDbContext> dbContextFactory) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
@@ -505,7 +510,9 @@ internal static class ItemEndpoints
             }
 
             var listings = await marketListingRepository.GetBySellerAsync(playerId.Value, DateTimeOffset.UtcNow);
-            var listingCategoryMap = await BuildListingCategoryMapAsync(listings, treasureMapRepository, dbContextFactory);
+            var playerEquipmentSnapshotMap = await LoadListedPlayerEquipmentSnapshotMapAsync(listings, dbContextFactory);
+            var listingCategoryMap = await BuildListingCategoryMapAsync(listings, treasureMapRepository, playerEquipmentSnapshotMap);
+            var equipmentDetailMap = await BuildEquipmentMarketDetailMapAsync(listings, equipmentRepository, playerEquipmentSnapshotMap);
             return Results.Ok(listings.Select(x => new
             {
                 listingId = x.Id.Value,
@@ -514,7 +521,8 @@ internal static class ItemEndpoints
                 quantity = x.RemainingQuantity,
                 unitPrice = x.UnitPrice,
                 expiresAt = x.ExpiresAt,
-                listingCategory = listingCategoryMap.GetValueOrDefault(x.Id.Value, "Item")
+                listingCategory = listingCategoryMap.GetValueOrDefault(x.Id.Value, "Item"),
+                equipmentDetail = equipmentDetailMap.GetValueOrDefault(x.Id.Value)
             }));
         }).RequireAuthorization();
 
@@ -820,16 +828,7 @@ internal static class ItemEndpoints
             mastery = playerEquipment.Mastery,
             masteryCap = equipment.MasteryCap,
             synthesisGoldCost = equipment.SynthesisGoldCost,
-            statusBonus = new
-            {
-                maxHp = equipment.BonusValues.MaxHp,
-                maxMp = equipment.BonusValues.MaxMp,
-                strength = equipment.BonusValues.Strength,
-                defense = equipment.BonusValues.Defense,
-                intelligence = equipment.BonusValues.Intelligence,
-                luck = equipment.BonusValues.Luck,
-                speed = equipment.BonusValues.Speed
-            }
+            statusBonus = ToStatusBonusView(equipment.BonusValues)
         };
     }
 
@@ -908,34 +907,49 @@ internal static class ItemEndpoints
         return ids;
     }
 
+    private static async Task<IReadOnlyDictionary<Guid, ListedPlayerEquipmentSnapshot>> LoadListedPlayerEquipmentSnapshotMapAsync(
+        IReadOnlyList<MarketListing> listings,
+        IDbContextFactory<AppDbContext> dbContextFactory)
+    {
+        var playerEquipmentIds = listings
+            .Where(x => x.PlayerEquipmentId is not null)
+            .Select(x => x.PlayerEquipmentId!.Value.Value)
+            .Distinct()
+            .ToArray();
+
+        if (playerEquipmentIds.Length == 0)
+        {
+            return new Dictionary<Guid, ListedPlayerEquipmentSnapshot>();
+        }
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        return await dbContext.PlayerEquipments
+            .AsNoTracking()
+            .Where(x => playerEquipmentIds.Contains(x.Id))
+            .ToDictionaryAsync(
+                x => x.Id,
+                x => new ListedPlayerEquipmentSnapshot(
+                    x.EquipmentId,
+                    (EquipmentType)x.EquipmentType,
+                    x.Durability,
+                    x.Mastery));
+    }
+
     private static async Task<IReadOnlyDictionary<Guid, string>> BuildListingCategoryMapAsync(
         IReadOnlyList<MarketListing> listings,
         ITreasureMapRepository treasureMapRepository,
-        IDbContextFactory<AppDbContext> dbContextFactory)
+        IReadOnlyDictionary<Guid, ListedPlayerEquipmentSnapshot> playerEquipmentSnapshotMap)
     {
         var treasureMapItemIds = await ResolveTreasureMapItemIdsAsync(treasureMapRepository);
-        var equipmentIds = listings
-            .Where(x => x.PlayerEquipmentId is not null)
-            .Select(x => x.PlayerEquipmentId!.Value.Value)
-            .ToArray();
-
-        var equipmentTypeById = new Dictionary<Guid, int>();
-        if (equipmentIds.Length > 0)
-        {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            equipmentTypeById = await dbContext.PlayerEquipments
-                .AsNoTracking()
-                .Where(x => equipmentIds.Contains(x.Id))
-                .ToDictionaryAsync(x => x.Id, x => x.EquipmentType);
-        }
 
         return listings.ToDictionary(
             x => x.Id.Value,
             x =>
             {
-                if (x.PlayerEquipmentId is not null && equipmentTypeById.TryGetValue(x.PlayerEquipmentId.Value.Value, out var equipmentType))
+                if (x.PlayerEquipmentId is not null
+                    && playerEquipmentSnapshotMap.TryGetValue(x.PlayerEquipmentId.Value.Value, out var playerEquipmentSnapshot))
                 {
-                    return (EquipmentType)equipmentType == EquipmentType.Weapon
+                    return playerEquipmentSnapshot.EquipmentType == EquipmentType.Weapon
                         ? "Weapon"
                         : "Armor";
                 }
@@ -945,6 +959,85 @@ internal static class ItemEndpoints
                     : "Item";
             });
     }
+
+    private static async Task<IReadOnlyDictionary<Guid, EquipmentMarketDetailView>> BuildEquipmentMarketDetailMapAsync(
+        IReadOnlyList<MarketListing> listings,
+        IEquipmentRepository equipmentRepository,
+        IReadOnlyDictionary<Guid, ListedPlayerEquipmentSnapshot> playerEquipmentSnapshotMap)
+    {
+        if (playerEquipmentSnapshotMap.Count == 0)
+        {
+            return new Dictionary<Guid, EquipmentMarketDetailView>();
+        }
+
+        var equipmentById = (await equipmentRepository.GetAllAsync()).ToDictionary(x => x.Id);
+        var details = new Dictionary<Guid, EquipmentMarketDetailView>();
+
+        foreach (var listing in listings)
+        {
+            if (listing.PlayerEquipmentId is null)
+            {
+                continue;
+            }
+
+            var playerEquipmentId = listing.PlayerEquipmentId.Value.Value;
+            if (!playerEquipmentSnapshotMap.TryGetValue(playerEquipmentId, out var playerEquipmentSnapshot))
+            {
+                continue;
+            }
+
+            var equipmentId = new EquipmentId(playerEquipmentSnapshot.EquipmentId);
+            if (!equipmentById.TryGetValue(equipmentId, out var equipment))
+            {
+                continue;
+            }
+
+            details[listing.Id.Value] = new EquipmentMarketDetailView(
+                equipment.Type.ToString(),
+                playerEquipmentSnapshot.Durability,
+                equipment.MaxDurability,
+                playerEquipmentSnapshot.Mastery,
+                equipment.MasteryCap,
+                ToStatusBonusView(equipment.BonusValues));
+        }
+
+        return details;
+    }
+
+    private static StatusBonusView ToStatusBonusView(EquipmentStatusBonus bonus)
+    {
+        return new StatusBonusView(
+            bonus.MaxHp,
+            bonus.MaxMp,
+            bonus.Strength,
+            bonus.Defense,
+            bonus.Intelligence,
+            bonus.Luck,
+            bonus.Speed);
+    }
+
+    private sealed record ListedPlayerEquipmentSnapshot(
+        int EquipmentId,
+        EquipmentType EquipmentType,
+        int Durability,
+        int Mastery);
+
+    private sealed record EquipmentMarketDetailView(
+        string EquipmentType,
+        int Durability,
+        int MaxDurability,
+        int Mastery,
+        int MasteryCap,
+        StatusBonusView StatusBonus);
+
+    private sealed record StatusBonusView(
+        int MaxHp,
+        int MaxMp,
+        int Strength,
+        int Defense,
+        int Intelligence,
+        int Luck,
+        int Speed);
 
     private static bool SecureEquals(string actual, string expected)
     {

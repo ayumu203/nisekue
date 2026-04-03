@@ -62,6 +62,7 @@ export function ItemArtwork({
   sellerImagePath?: string | null
 }) {
   const sellerImageSrc = resolveCharacterAssetPath(sellerImagePath)
+  const marketEquipmentType = 'equipmentDetail' in item ? item.equipmentDetail?.equipmentType : null
 
   return (
     <Box
@@ -88,6 +89,10 @@ export function ItemArtwork({
         ) : (
           <JobChangeIllustration sx={{ fontSize: 72, color: '#4f7148' }} />
         )
+      ) : marketEquipmentType === 'Weapon' ? (
+        <WeaponIllustration sx={{ fontSize: 72, color: '#6d5630' }} />
+      ) : marketEquipmentType === 'Armor' ? (
+        <ArmorIllustration sx={{ fontSize: 72, color: '#5a7387' }} />
       ) : item.itemName.includes('剣') ? (
         <WeaponIllustration sx={{ fontSize: 72, color: '#6d5630' }} />
       ) : item.itemName.includes('服') || item.itemName.includes('鎧') ? (

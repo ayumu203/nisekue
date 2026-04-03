@@ -71,9 +71,10 @@
 
 * 武器・防具: `StatusBonus` の要約値
 * 消費アイテム: 使用時に反映される補正量
-  * 固定値上昇は `StatusBonus`
-  * 割合上昇は `StatusBonusPercent`
-  * 割合上昇は、使用時点のプレイヤー基礎ステータスに対して `ceil(現在値 * 割合 / 100)` を恒久加算する
+* 固定値上昇は `StatusBonus`
+* 割合上昇は `StatusBonusPercent`
+* 割合上昇は、使用時点のプレイヤー基礎ステータスに対して `ceil(現在値 * 割合 / 100)` を恒久加算する
+* 装備出品は詳細トグルから `StatusBonus` の要約値に加えて耐久値・熟練度を確認できるようにする
 
 ## 4. 設計方針
 
@@ -253,11 +254,14 @@
 * 残数量
 * 期限日時
 * カテゴリ
+* 装備出品時の性能詳細
 
 * カテゴリは `Weapon | Armor | Item | Map` の 4 種とする。
 * 装備は `equipmentType` から `Weapon` / `Armor` を導出する。
 * 消費アイテムは宝の地図 ID 一覧に含まれるものを `Map`、それ以外を `Item` として導出する。
 * マーケット画面ではカテゴリフィルタと文字列検索を併用できるようにする。
+* 装備出品はカードの初期高さを維持し、詳細トグルを開いたときだけ `効果量`, `耐久値`, `熟練度` を表示する。
+* 装備性能詳細は `market_listings` へ複製保存せず、`playerEquipmentId` と装備マスタから一覧レスポンス生成時に組み立てる。
 
 ### 6.3 購入
 
@@ -375,11 +379,14 @@
 * `GET /market/listings`
 * 認証必須
 * フィルタは将来拡張として `itemType`, `sellerName`, `sort` を受け取ってよい
+* レスポンス要素は既存の出品情報に加え、装備出品時のみ `equipmentDetail` を含めてよい
+* `equipmentDetail` は `equipmentType`, `durability`, `maxDurability`, `mastery`, `masteryCap`, `statusBonus` を持つ
 
 ### 9.7 自分の出品一覧取得
 
 * `GET /market/my-listings`
 * 認証必須
+* レスポンス契約は `GET /market/listings` と同一とし、装備出品時は `equipmentDetail` を返す
 
 ### 9.8 購入
 
