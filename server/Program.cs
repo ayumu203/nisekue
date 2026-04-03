@@ -158,6 +158,8 @@ builder.Services.AddSingleton<CombatIndexCalculator>();
 builder.Services.AddSingleton<CombatIndexRankEvaluator>();
 builder.Services.AddScoped<ItemStatBoostService>();
 builder.Services.AddScoped<PlayerJobService>();
+builder.Services.AddScoped<PlayerMoveSetService>();
+builder.Services.AddScoped<PlayerMoveSetSanitizer>();
 builder.Services.AddScoped<PlayerRebirthService>();
 builder.Services.AddScoped<MarketListingCleanupService>();
 builder.Services.AddScoped<DevelopmentDataCleanupService>();

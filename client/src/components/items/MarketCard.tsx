@@ -58,6 +58,12 @@ export function MarketCard({
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap justifyContent="center">
           <Chip
             size="small"
+            label={listing.listingCategory}
+            variant="outlined"
+            sx={{ borderRadius: 1, bgcolor: 'rgba(255,255,255,0.92)' }}
+          />
+          <Chip
+            size="small"
             label={`${locale.quantity} ${listing.quantity}`}
             variant="outlined"
             sx={{ borderRadius: 1, bgcolor: 'rgba(255,255,255,0.92)' }}

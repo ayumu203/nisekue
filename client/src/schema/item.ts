@@ -24,6 +24,7 @@ const statusBonusPercentSchema = z.object({
 export const itemEquipmentTypeSchema = z.enum(['Weapon', 'Armor'])
 export const itemEquipmentStatusSchema = z.enum(['Inventory', 'Equipped', 'Broken'])
 export const itemEffectTypeSchema = z.enum(['StatBoost', 'ChangeJob'])
+export const marketListingCategorySchema = z.enum(['Weapon', 'Armor', 'Item', 'Map'])
 
 export const itemEquipmentViewSchema = z.object({
   kind: z.literal('equipment'),
@@ -107,6 +108,7 @@ export const marketListingViewSchema = z.object({
   quantity: z.number().int().min(0),
   unitPrice: z.number().int().min(1),
   expiresAt: z.string().datetime({ offset: true }),
+  listingCategory: marketListingCategorySchema,
 })
 
 export const getMarketListingsResponseSchema = z.array(marketListingViewSchema)

@@ -97,6 +97,18 @@ public sealed class RankingAggregationService(
         AddTop(entries, snapshotId, now, RankingConstants.StatusSpeedTop, RankingPeriodKind.Total, null, playerRows, x => x.Status.Speed, 10);
         AddTop(entries, snapshotId, now, RankingConstants.RebirthCountTop, RankingPeriodKind.Total, null, playerRows, x => x.RebirthCount, 10);
 
+        AddTop(entries, snapshotId, now, RankingConstants.QuestClearByCombatRank, RankingPeriodKind.Total, null, playerRows, x => x.QuestClearTotal, 5);
+        AddTop(entries, snapshotId, now, RankingConstants.QuestClearByCombatRank, RankingPeriodKind.Weekly, null, playerRows, x => x.QuestClearWeekly, 5);
+        AddTop(entries, snapshotId, now, RankingConstants.QuestClearByCombatRank, RankingPeriodKind.Daily, null, playerRows, x => x.QuestClearDaily, 5);
+
+        AddTop(entries, snapshotId, now, RankingConstants.TrainingBattleByCombatRank, RankingPeriodKind.Total, null, playerRows, x => x.TrainingBattleCount, 5);
+        AddTop(entries, snapshotId, now, RankingConstants.TrainingBattleByCombatRank, RankingPeriodKind.Weekly, null, playerRows, x => x.TrainingBattleCount, 5);
+        AddTop(entries, snapshotId, now, RankingConstants.TrainingBattleByCombatRank, RankingPeriodKind.Daily, null, playerRows, x => x.TrainingBattleCount, 5);
+
+        AddTop(entries, snapshotId, now, RankingConstants.TreasureMapUsageByCombatRank, RankingPeriodKind.Total, null, playerRows, x => x.TreasureMapUsageTotal, 5);
+        AddTop(entries, snapshotId, now, RankingConstants.TreasureMapUsageByCombatRank, RankingPeriodKind.Weekly, null, playerRows, x => x.TreasureMapUsageWeekly, 5);
+        AddTop(entries, snapshotId, now, RankingConstants.TreasureMapUsageByCombatRank, RankingPeriodKind.Daily, null, playerRows, x => x.TreasureMapUsageDaily, 5);
+
         foreach (var rank in Enum.GetValues<StatusRank>())
         {
             AddTop(entries, snapshotId, now, RankingConstants.QuestClearByCombatRank, RankingPeriodKind.Total, rank, playerRows, x => x.QuestClearTotal, 5);

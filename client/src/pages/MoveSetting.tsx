@@ -18,6 +18,7 @@ export default function MoveSetting() {
     data: player,
     error: playerError,
     isLoading: isPlayerLoading,
+    mutate: mutatePlayer,
   } = useSWR(playerSWRKey, async () => {
     if (!session?.access_token) {
       throw new Error(locale.sessionMissing)
@@ -66,7 +67,13 @@ export default function MoveSetting() {
           ) : !player ? (
             <Alert severity="warning">{locale.loadingPlayer}</Alert>
           ) : (
-            <MoveItemBox player={player} />
+            <MoveItemBox
+              player={player}
+              accessToken={session?.access_token ?? ''}
+              onSaved={async () => {
+                await mutatePlayer()
+              }}
+            />
           )}
         </Stack>
       </Paper>

@@ -244,6 +244,58 @@ public class QuestRunServiceTests
     }
 
     [Fact]
+    public async Task SubmitCommandAsync_WhenTwoTurnBuffMoveIsUsed_PersistsBuffInQuestBattleState()
+    {
+        var playerParticipantId = QuestParticipantId.New();
+        var moveId = new MoveId(901);
+        var moveSet = new MoveSet();
+        moveSet.SetSlot(0, moveId);
+
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 5), moveSet, 40, 10)
+            ],
+            enemyHp: 20);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var move = new Move(
+            moveId,
+            "戦意高揚",
+            "自分の筋力を高める",
+            TargetType.Self,
+            AttackRange.Single,
+            2,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    moveId,
+                    1,
+                    MoveEffectType.Buff,
+                    buff: new BuffEffect(BuffStat.Strength, BuffCalculationType.Add, 10m, 2, 1m, false))
+            ]);
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), [move]);
+
+        var result = await service.SubmitCommandAsync(
+            run.Id,
+            playerParticipantId,
+            new QuestSubmittedCommand(
+                playerParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.UseMove,
+                DateTimeOffset.UtcNow,
+                moveId: moveId));
+
+        result.ResolvedInThisRequest.Should().BeTrue();
+        repository.StoredRun!.BattleState.PartyMembers
+            .Single(x => x.ParticipantId == playerParticipantId)
+            .Buffs.Should()
+            .ContainSingle(x => x.Stat == BuffStat.Strength && x.Value == 10m && x.RemainingTurns == 1);
+    }
+
+    [Fact]
     public async Task SubmitCommandAsync_WhenPlayerUsesNormalAttack_StoresDamageLog()
     {
         var playerParticipantId = QuestParticipantId.New();

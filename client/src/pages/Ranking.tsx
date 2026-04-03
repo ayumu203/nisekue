@@ -71,7 +71,17 @@ export default function Ranking() {
   const baseFilteredRows = (data?.rows ?? [])
     .filter((row) => !activeType || row.rankingType === activeType)
     .filter((row) => period === 'ALL' || row.periodKind === period)
-    .filter((row) => activeCombatRank === 'ALL' || row.combatIndexRank === activeCombatRank)
+    .filter((row) => {
+      if (!isCombatRankSelectorEnabled) {
+        return true
+      }
+
+      if (activeCombatRank === 'ALL') {
+        return row.combatIndexRank === null
+      }
+
+      return row.combatIndexRank === activeCombatRank
+    })
     .sort((a, b) => a.rankPosition - b.rankPosition)
 
   const formattedSnapshot = data?.snapshotAt
@@ -83,7 +93,7 @@ export default function Ranking() {
       ? Array.from(
           baseFilteredRows
             .reduce((map, row) => {
-              const dedupeKey = `${row.player.userId}:${row.combatIndexRank ?? ''}`
+              const dedupeKey = `${row.player.userId}:${row.combatIndexRank ?? 'ALL'}`
               const existing = map.get(dedupeKey)
               if (!existing || periodPriority(row.periodKind) < periodPriority(existing.periodKind)) {
                 map.set(dedupeKey, row)

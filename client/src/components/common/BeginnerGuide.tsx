@@ -1,6 +1,7 @@
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material'
-import { useEffect, useState, type SxProps, type Theme } from 'react'
+import type { SxProps, Theme } from '@mui/material/styles'
+import { useEffect, useState } from 'react'
 import {
   beginnerGuideBadge,
   beginnerGuideCloseLabel,

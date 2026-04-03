@@ -1,19 +1,92 @@
-import { Box, Chip, Paper, Stack, Typography } from '@mui/material'
-import { resolveCharacterAssetPath } from '@/lib/assets'
-import type { GetPlayerResponse } from '@/schema/player'
-import locale from '../../../locale/player-setting/PlayerSetting.json'
+import { Alert, Box, Button, Chip, Paper, Stack, Typography } from '@mui/material'
+import type { PointerEvent } from 'react'
+import { useEffect, useState } from 'react'
+import { updatePlayerMoveSet } from '@/api/player'
 import MoveItem from '@/components/moveSetting/MoveItem'
+import { resolveCharacterAssetPath } from '@/lib/assets'
+import type { GetPlayerResponse, PlayerMoveSlot } from '@/schema/player'
+import locale from '../../../locale/player-setting/PlayerSetting.json'
 
 type MoveItemBoxProps = {
   player: GetPlayerResponse
+  accessToken: string
+  onSaved: () => Promise<void>
 }
 
-export default function MoveItemBox({ player }: MoveItemBoxProps) {
-  const equippedMoves = player.moveSlots.filter((slot) => slot.moveId !== null)
+function reorderSlots(slots: PlayerMoveSlot[], fromIndex: number, toIndex: number): PlayerMoveSlot[] {
+  const next = slots.slice()
+  const [moved] = next.splice(fromIndex, 1)
+  next.splice(toIndex, 0, moved)
+  return next.map((slot, index) => ({ ...slot, slot: index + 1 }))
+}
+
+export default function MoveItemBox({ player, accessToken, onSaved }: MoveItemBoxProps) {
+  const [editableSlots, setEditableSlots] = useState(player.moveSlots)
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  useEffect(() => {
+    setEditableSlots(player.moveSlots)
+  }, [player.moveSlots])
+
+  const equippedMoves = editableSlots.filter((slot) => slot.moveId !== null)
   const attackCount = equippedMoves.filter((slot) => slot.category === 'Attack').length
   const supportCount = equippedMoves.filter((slot) => slot.category === 'Support').length
   const hybridCount = equippedMoves.filter((slot) => slot.category === 'Hybrid').length
   const playerImageSrc = resolveCharacterAssetPath(player.imagePath)
+  const hasChanges = editableSlots.some((slot, index) => slot.moveId !== player.moveSlots[index]?.moveId)
+
+  async function handleSave(): Promise<void> {
+    setIsSaving(true)
+    setFeedback(null)
+    try {
+      const response = await updatePlayerMoveSet(
+        {
+          moveIds: editableSlots.map((slot) => slot.moveId),
+        },
+        accessToken,
+      )
+      setFeedback({ type: 'success', message: response.message || locale.moveOrderSaved })
+      await onSaved()
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message: error instanceof Error ? error.message : locale.moveOrderSaveFailed,
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  function handleCancel(): void {
+    setEditableSlots(player.moveSlots)
+    setDraggingIndex(null)
+    setFeedback(null)
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>): void {
+    if (draggingIndex === null) {
+      return
+    }
+
+    const hovered = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-move-slot-index]')
+    if (!(hovered instanceof HTMLElement)) {
+      return
+    }
+
+    const nextIndex = Number(hovered.dataset.moveSlotIndex)
+    if (Number.isNaN(nextIndex) || nextIndex === draggingIndex) {
+      return
+    }
+
+    setEditableSlots((current) => reorderSlots(current, draggingIndex, nextIndex))
+    setDraggingIndex(nextIndex)
+  }
+
+  function finishDragging(): void {
+    setDraggingIndex(null)
+  }
 
   return (
     <Paper
@@ -79,6 +152,9 @@ export default function MoveItemBox({ player }: MoveItemBoxProps) {
                   <Typography variant="h4" fontWeight={900} lineHeight={1.1} color="#fff8ea">
                     {locale.moveListTitle}
                   </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(242, 235, 207, 0.82)' }}>
+                    {locale.moveListDescription}
+                  </Typography>
                 </Stack>
 
                 <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
@@ -116,7 +192,7 @@ export default function MoveItemBox({ player }: MoveItemBoxProps) {
                   スロット
                 </Typography>
                 <Typography variant="h6" fontWeight={900} color="#324c36">
-                  {equippedMoves.length} / {player.moveSlots.length}
+                  {equippedMoves.length} / {editableSlots.length}
                 </Typography>
               </Paper>
               <Paper
@@ -156,23 +232,52 @@ export default function MoveItemBox({ player }: MoveItemBoxProps) {
           </Stack>
         </Paper>
 
-        <Stack spacing={1}>
+        {feedback ? <Alert severity={feedback.type}>{feedback.message}</Alert> : null}
+
+        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5} alignItems={{ sm: 'center' }}>
           <Typography variant="h6" fontWeight={900}>
-            スロット編成
+            {locale.editingOrderTitle}
           </Typography>
+          <Stack direction="row" spacing={1}>
+            <Button variant="outlined" onClick={handleCancel} disabled={isSaving || !hasChanges}>
+              {locale.cancelMoveOrder}
+            </Button>
+            <Button variant="contained" onClick={() => void handleSave()} disabled={isSaving || !hasChanges}>
+              {isSaving ? locale.savingMoveOrder : locale.saveMoveOrder}
+            </Button>
+          </Stack>
         </Stack>
 
-        <Stack
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-            gap: 1.5,
-          }}
-        >
-          {player.moveSlots.map((slot) => (
-            <MoveItem key={slot.slot} slot={slot} />
-          ))}
-        </Stack>
+        <Box onPointerMove={handlePointerMove} onPointerUp={finishDragging} onPointerCancel={finishDragging}>
+          <Stack
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+              gap: 1.5,
+            }}
+          >
+            {editableSlots.map((slot, index) => (
+              <Box
+                key={`${slot.moveId ?? 'empty'}-${index}`}
+                data-move-slot-index={index}
+                sx={{
+                  transition: 'transform 120ms ease, opacity 120ms ease',
+                  opacity: draggingIndex === index ? 0.9 : 1,
+                  transform: draggingIndex === index ? 'scale(1.01)' : 'none',
+                }}
+              >
+                <MoveItem
+                  slot={slot}
+                  isDragging={draggingIndex === index}
+                  onHandlePointerDown={(event) => {
+                    event.preventDefault()
+                    setDraggingIndex(index)
+                  }}
+                />
+              </Box>
+            ))}
+          </Stack>
+        </Box>
       </Stack>
     </Paper>
   )

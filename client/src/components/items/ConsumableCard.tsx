@@ -24,7 +24,10 @@ export function ConsumableCard({
   onUse,
   onDelete,
   onList,
+  onStartListing,
+  onCancelListing,
   actionDisabled,
+  isListingMode = false,
 }: {
   item: ItemStackView
   quantityValue: string
@@ -34,10 +37,12 @@ export function ConsumableCard({
   onUse: () => void
   onDelete: () => void
   onList: () => void
+  onStartListing: () => void
+  onCancelListing: () => void
   actionDisabled: boolean
+  isListingMode?: boolean
 }) {
   const [showDetails, setShowDetails] = useState(false)
-  const [showListingControls, setShowListingControls] = useState(false)
 
   return (
     <Paper
@@ -104,7 +109,7 @@ export function ConsumableCard({
             ) : null}
           </Stack>
         ) : null}
-        {showListingControls ? (
+        {isListingMode ? (
           <ListingControls
             quantityValue={quantityValue}
             unitPriceValue={unitPriceValue}
@@ -112,38 +117,28 @@ export function ConsumableCard({
             onUnitPriceChange={onUnitPriceChange}
           />
         ) : null}
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-          <Button variant="contained" onClick={onUse} disabled={actionDisabled} sx={primaryActionSx}>
-            {locale.actionUse}
-          </Button>
-          {showListingControls ? (
+        {isListingMode ? (
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
             <Button variant="contained" sx={secondaryActionSx} onClick={onList} disabled={actionDisabled}>
               {locale.actionListConfirm}
             </Button>
-          ) : (
-            <Button
-              variant="outlined"
-              sx={secondaryActionSx}
-              onClick={() => setShowListingControls(true)}
-              disabled={actionDisabled}
-            >
+            <Button variant="outlined" sx={destructiveActionSx} onClick={onCancelListing} disabled={actionDisabled}>
+              {locale.actionCancel}
+            </Button>
+          </Stack>
+        ) : (
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+            <Button variant="contained" onClick={onUse} disabled={actionDisabled} sx={primaryActionSx}>
+              {locale.actionUse}
+            </Button>
+            <Button variant="outlined" sx={secondaryActionSx} onClick={onStartListing} disabled={actionDisabled}>
               {locale.actionList}
             </Button>
-          )}
-          <Button variant="outlined" sx={destructiveActionSx} onClick={onDelete} disabled={actionDisabled}>
-            {locale.actionDelete}
-          </Button>
-        </Stack>
-        {showListingControls ? (
-          <Button
-            variant="text"
-            onClick={() => setShowListingControls(false)}
-            disabled={actionDisabled}
-            sx={{ alignSelf: 'flex-end', color: 'text.secondary' }}
-          >
-            {locale.actionClose}
-          </Button>
-        ) : null}
+            <Button variant="outlined" sx={destructiveActionSx} onClick={onDelete} disabled={actionDisabled}>
+              {locale.actionDelete}
+            </Button>
+          </Stack>
+        )}
       </Stack>
     </Paper>
   )

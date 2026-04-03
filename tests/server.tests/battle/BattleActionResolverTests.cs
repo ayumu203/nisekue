@@ -680,6 +680,7 @@ public class BattleActionResolverTests
             ]);
     }
 
+
     private static Move CreateCriticalDamageMove(int moveId)
     {
         return new Move(

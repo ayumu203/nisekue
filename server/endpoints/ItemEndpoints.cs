@@ -438,7 +438,9 @@ internal static class ItemEndpoints
         app.MapGet("/market/listings", async (
             ClaimsPrincipal user,
             IMarketListingRepository marketListingRepository,
-            IPlayerRepository playerRepository) =>
+            IPlayerRepository playerRepository,
+            ITreasureMapRepository treasureMapRepository,
+            IDbContextFactory<AppDbContext> dbContextFactory) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -450,6 +452,7 @@ internal static class ItemEndpoints
             var filtered = listings.Where(x => x.SellerId != playerId.Value).ToArray();
             var players = await playerRepository.GetAllAsync();
             var playerMap = players.ToDictionary(x => x.Id);
+            var listingCategoryMap = await BuildListingCategoryMapAsync(filtered, treasureMapRepository, dbContextFactory);
 
             return Results.Ok(filtered.Select(listing =>
             {
@@ -464,14 +467,17 @@ internal static class ItemEndpoints
                     sellerImagePath = seller?.ImagePath,
                     quantity = listing.RemainingQuantity,
                     unitPrice = listing.UnitPrice,
-                    expiresAt = listing.ExpiresAt
+                    expiresAt = listing.ExpiresAt,
+                    listingCategory = listingCategoryMap.GetValueOrDefault(listing.Id.Value, "Item")
                 };
             }));
         }).RequireAuthorization();
 
         app.MapGet("/market/my-listings", async (
             ClaimsPrincipal user,
-            IMarketListingRepository marketListingRepository) =>
+            IMarketListingRepository marketListingRepository,
+            ITreasureMapRepository treasureMapRepository,
+            IDbContextFactory<AppDbContext> dbContextFactory) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -480,6 +486,7 @@ internal static class ItemEndpoints
             }
 
             var listings = await marketListingRepository.GetBySellerAsync(playerId.Value, DateTimeOffset.UtcNow);
+            var listingCategoryMap = await BuildListingCategoryMapAsync(listings, treasureMapRepository, dbContextFactory);
             return Results.Ok(listings.Select(x => new
             {
                 listingId = x.Id.Value,
@@ -487,7 +494,8 @@ internal static class ItemEndpoints
                 flavorText = x.FlavorText,
                 quantity = x.RemainingQuantity,
                 unitPrice = x.UnitPrice,
-                expiresAt = x.ExpiresAt
+                expiresAt = x.ExpiresAt,
+                listingCategory = listingCategoryMap.GetValueOrDefault(x.Id.Value, "Item")
             }));
         }).RequireAuthorization();
 
@@ -874,6 +882,44 @@ internal static class ItemEndpoints
         }
 
         return ids;
+    }
+
+    private static async Task<IReadOnlyDictionary<Guid, string>> BuildListingCategoryMapAsync(
+        IReadOnlyList<MarketListing> listings,
+        ITreasureMapRepository treasureMapRepository,
+        IDbContextFactory<AppDbContext> dbContextFactory)
+    {
+        var treasureMapItemIds = await ResolveTreasureMapItemIdsAsync(treasureMapRepository);
+        var equipmentIds = listings
+            .Where(x => x.PlayerEquipmentId is not null)
+            .Select(x => x.PlayerEquipmentId!.Value.Value)
+            .ToArray();
+
+        var equipmentTypeById = new Dictionary<Guid, int>();
+        if (equipmentIds.Length > 0)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            equipmentTypeById = await dbContext.PlayerEquipments
+                .AsNoTracking()
+                .Where(x => equipmentIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, x => x.EquipmentType);
+        }
+
+        return listings.ToDictionary(
+            x => x.Id.Value,
+            x =>
+            {
+                if (x.PlayerEquipmentId is not null && equipmentTypeById.TryGetValue(x.PlayerEquipmentId.Value.Value, out var equipmentType))
+                {
+                    return (EquipmentType)equipmentType == EquipmentType.Weapon
+                        ? "Weapon"
+                        : "Armor";
+                }
+
+                return x.ItemId is not null && treasureMapItemIds.Contains(x.ItemId.Value.Value)
+                    ? "Map"
+                    : "Item";
+            });
     }
 
     private static bool SecureEquals(string actual, string expected)
