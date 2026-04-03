@@ -37,64 +37,169 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
   const [open, setOpen] = useState(false)
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
-  const shellColor = '#131a26'
-  const shellBorderColor = '#70613b'
-  const shellTextColor = '#f5f7fb'
-  const shellMutedTextColor = 'rgba(245, 247, 251, 0.76)'
-  const surfaceColor = '#f4f5f1'
-  const surfaceBorderColor = '#d5d9e1'
-  const strongTextColor = '#152033'
-  const bodyTextColor = '#314156'
-  const accentColor = '#8d7a46'
-  const triggerPalette =
+  const guidePalette =
     {
       home: {
-        backgroundColor: '#78c27d',
-        hoverBackgroundColor: '#69b46f',
-        borderColor: '#eef8ef',
-        textColor: '#ffffff',
-        badgeBackgroundColor: 'rgba(255,255,255,0.18)',
-        badgeTextColor: 'rgba(255,255,255,0.8)',
+        triggerBackgroundColor: '#78c27d',
+        triggerHoverBackgroundColor: '#69b46f',
+        triggerBorderColor: '#eef8ef',
+        triggerTextColor: '#ffffff',
+        triggerBadgeBackgroundColor: 'rgba(255,255,255,0.18)',
+        triggerBadgeTextColor: 'rgba(255,255,255,0.8)',
+        dialogBackgroundColor: '#f7f7f4',
+        dialogBorderColor: '#d7d9d2',
+        headerBackgroundColor: '#365b3a',
+        headerBorderColor: '#a3cca7',
+        headerTextColor: '#f5fbf5',
+        headerMutedTextColor: 'rgba(245,251,245,0.78)',
+        headerChipBackgroundColor: 'rgba(255,255,255,0.12)',
+        headerChipBorderColor: 'rgba(163,204,167,0.72)',
+        headerChipIconColor: '#edf8ee',
+        closeButtonBackgroundColor: 'rgba(255,255,255,0.05)',
+        closeButtonHoverBackgroundColor: 'rgba(255,255,255,0.12)',
+        sectionBackgroundColor: '#ffffff',
+        sectionBorderColor: '#dde0d8',
+        sectionTitleColor: '#213c25',
+        sectionBodyColor: '#3c5b41',
+        indexBackgroundColor: '#365b3a',
+        indexTextColor: '#eef8ef',
+        indexBorderColor: '#9dc9a2',
+        footerTextColor: '#4f6953',
       },
       quest: {
-        backgroundColor: '#284a74',
-        hoverBackgroundColor: '#1f3d61',
-        borderColor: '#b9cdee',
-        textColor: '#f7fbff',
-        badgeBackgroundColor: 'rgba(255,255,255,0.14)',
-        badgeTextColor: 'rgba(226,239,255,0.82)',
+        triggerBackgroundColor: '#284a74',
+        triggerHoverBackgroundColor: '#1f3d61',
+        triggerBorderColor: '#b9cdee',
+        triggerTextColor: '#f7fbff',
+        triggerBadgeBackgroundColor: 'rgba(255,255,255,0.14)',
+        triggerBadgeTextColor: 'rgba(226,239,255,0.82)',
+        dialogBackgroundColor: '#f7f7f4',
+        dialogBorderColor: '#d7d9d2',
+        headerBackgroundColor: '#1f3554',
+        headerBorderColor: '#9fbbe2',
+        headerTextColor: '#f7fbff',
+        headerMutedTextColor: 'rgba(231,240,251,0.8)',
+        headerChipBackgroundColor: 'rgba(255,255,255,0.1)',
+        headerChipBorderColor: 'rgba(159,187,226,0.72)',
+        headerChipIconColor: '#dceafe',
+        closeButtonBackgroundColor: 'rgba(255,255,255,0.05)',
+        closeButtonHoverBackgroundColor: 'rgba(255,255,255,0.12)',
+        sectionBackgroundColor: '#ffffff',
+        sectionBorderColor: '#dde0e6',
+        sectionTitleColor: '#1d3455',
+        sectionBodyColor: '#3b5170',
+        indexBackgroundColor: '#1f3554',
+        indexTextColor: '#eaf3ff',
+        indexBorderColor: '#9fbbe2',
+        footerTextColor: '#556b86',
       },
       training: {
-        backgroundColor: '#5b3430',
-        hoverBackgroundColor: '#4a2a27',
-        borderColor: '#d3ab93',
-        textColor: '#fff6ec',
-        badgeBackgroundColor: 'rgba(255,255,255,0.14)',
-        badgeTextColor: 'rgba(255,231,216,0.84)',
+        triggerBackgroundColor: '#5b3430',
+        triggerHoverBackgroundColor: '#4a2a27',
+        triggerBorderColor: '#d3ab93',
+        triggerTextColor: '#fff6ec',
+        triggerBadgeBackgroundColor: 'rgba(255,255,255,0.14)',
+        triggerBadgeTextColor: 'rgba(255,231,216,0.84)',
+        dialogBackgroundColor: '#f7f7f4',
+        dialogBorderColor: '#d7d9d2',
+        headerBackgroundColor: '#472824',
+        headerBorderColor: '#d0a08d',
+        headerTextColor: '#fff6ef',
+        headerMutedTextColor: 'rgba(255,236,224,0.8)',
+        headerChipBackgroundColor: 'rgba(255,255,255,0.1)',
+        headerChipBorderColor: 'rgba(208,160,141,0.74)',
+        headerChipIconColor: '#ffe7dc',
+        closeButtonBackgroundColor: 'rgba(255,255,255,0.05)',
+        closeButtonHoverBackgroundColor: 'rgba(255,255,255,0.12)',
+        sectionBackgroundColor: '#ffffff',
+        sectionBorderColor: '#e2dddd',
+        sectionTitleColor: '#5a312c',
+        sectionBodyColor: '#764d47',
+        indexBackgroundColor: '#472824',
+        indexTextColor: '#fff1ea',
+        indexBorderColor: '#d0a08d',
+        footerTextColor: '#84665f',
       },
       items: {
-        backgroundColor: '#8a6045',
-        hoverBackgroundColor: '#744f38',
-        borderColor: '#e4c48c',
-        textColor: '#fff9ef',
-        badgeBackgroundColor: 'rgba(255,255,255,0.14)',
-        badgeTextColor: 'rgba(255,236,204,0.84)',
+        triggerBackgroundColor: '#8a6045',
+        triggerHoverBackgroundColor: '#744f38',
+        triggerBorderColor: '#e4c48c',
+        triggerTextColor: '#fff9ef',
+        triggerBadgeBackgroundColor: 'rgba(255,255,255,0.14)',
+        triggerBadgeTextColor: 'rgba(255,236,204,0.84)',
+        dialogBackgroundColor: '#f7f7f4',
+        dialogBorderColor: '#d7d9d2',
+        headerBackgroundColor: '#6a4833',
+        headerBorderColor: '#ddb57e',
+        headerTextColor: '#fff8f0',
+        headerMutedTextColor: 'rgba(255,240,220,0.8)',
+        headerChipBackgroundColor: 'rgba(255,255,255,0.1)',
+        headerChipBorderColor: 'rgba(221,181,126,0.74)',
+        headerChipIconColor: '#fff0d4',
+        closeButtonBackgroundColor: 'rgba(255,255,255,0.05)',
+        closeButtonHoverBackgroundColor: 'rgba(255,255,255,0.12)',
+        sectionBackgroundColor: '#ffffff',
+        sectionBorderColor: '#e3ded8',
+        sectionTitleColor: '#654632',
+        sectionBodyColor: '#7c5d48',
+        indexBackgroundColor: '#6a4833',
+        indexTextColor: '#fff3e3',
+        indexBorderColor: '#ddb57e',
+        footerTextColor: '#876b55',
       },
       'move-setting': {
-        backgroundColor: '#295d63',
-        hoverBackgroundColor: '#224f54',
-        borderColor: '#b8dbde',
-        textColor: '#f3fcfc',
-        badgeBackgroundColor: 'rgba(255,255,255,0.14)',
-        badgeTextColor: 'rgba(224,248,248,0.82)',
+        triggerBackgroundColor: '#295d63',
+        triggerHoverBackgroundColor: '#224f54',
+        triggerBorderColor: '#b8dbde',
+        triggerTextColor: '#f3fcfc',
+        triggerBadgeBackgroundColor: 'rgba(255,255,255,0.14)',
+        triggerBadgeTextColor: 'rgba(224,248,248,0.82)',
+        dialogBackgroundColor: '#f7f7f4',
+        dialogBorderColor: '#d7d9d2',
+        headerBackgroundColor: '#20464b',
+        headerBorderColor: '#9dcdd0',
+        headerTextColor: '#f3fcfc',
+        headerMutedTextColor: 'rgba(226,248,248,0.8)',
+        headerChipBackgroundColor: 'rgba(255,255,255,0.1)',
+        headerChipBorderColor: 'rgba(157,205,208,0.74)',
+        headerChipIconColor: '#d7f3f4',
+        closeButtonBackgroundColor: 'rgba(255,255,255,0.05)',
+        closeButtonHoverBackgroundColor: 'rgba(255,255,255,0.12)',
+        sectionBackgroundColor: '#ffffff',
+        sectionBorderColor: '#dde0e0',
+        sectionTitleColor: '#21484d',
+        sectionBodyColor: '#41656a',
+        indexBackgroundColor: '#20464b',
+        indexTextColor: '#ebfafb',
+        indexBorderColor: '#9dcdd0',
+        footerTextColor: '#557377',
       },
     }[guide.pageKey] ?? {
-      backgroundColor: shellColor,
-      hoverBackgroundColor: '#182131',
-      borderColor: shellBorderColor,
-      textColor: shellTextColor,
-      badgeBackgroundColor: 'rgba(141,122,70,0.18)',
-      badgeTextColor: 'rgba(232,221,189,0.78)',
+      triggerBackgroundColor: '#131a26',
+      triggerHoverBackgroundColor: '#182131',
+      triggerBorderColor: '#70613b',
+      triggerTextColor: '#f5f7fb',
+      triggerBadgeBackgroundColor: 'rgba(141,122,70,0.18)',
+      triggerBadgeTextColor: 'rgba(232,221,189,0.78)',
+      dialogBackgroundColor: '#f7f7f4',
+      dialogBorderColor: '#d7d9d2',
+      headerBackgroundColor: '#131a26',
+      headerBorderColor: '#70613b',
+      headerTextColor: '#f5f7fb',
+      headerMutedTextColor: 'rgba(245,247,251,0.76)',
+      headerChipBackgroundColor: 'rgba(141,122,70,0.18)',
+      headerChipBorderColor: 'rgba(112,97,59,0.72)',
+      headerChipIconColor: '#d8cba5',
+      closeButtonBackgroundColor: 'rgba(255,255,255,0.04)',
+      closeButtonHoverBackgroundColor: 'rgba(255,255,255,0.1)',
+      sectionBackgroundColor: '#ffffff',
+      sectionBorderColor: '#dde0e0',
+      sectionTitleColor: '#152033',
+      sectionBodyColor: '#314156',
+      indexBackgroundColor: '#131a26',
+      indexTextColor: '#e7ddbf',
+      indexBorderColor: '#8d7a46',
+      footerTextColor: '#556277',
     }
 
   useEffect(() => {
@@ -124,14 +229,14 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
           borderRadius: 999,
           minHeight: 46,
           px: 1.75,
-          color: triggerPalette.textColor,
+          color: guidePalette.triggerTextColor,
           border: '1px solid',
-          borderColor: triggerPalette.borderColor,
-          backgroundColor: triggerPalette.backgroundColor,
+          borderColor: guidePalette.triggerBorderColor,
+          backgroundColor: guidePalette.triggerBackgroundColor,
           boxShadow: inverted ? '0 10px 24px rgba(8, 12, 18, 0.18)' : '0 16px 36px rgba(10, 15, 23, 0.16)',
           '&:hover': {
-            borderColor: triggerPalette.borderColor,
-            backgroundColor: triggerPalette.hoverBackgroundColor,
+            borderColor: guidePalette.triggerBorderColor,
+            backgroundColor: guidePalette.triggerHoverBackgroundColor,
             boxShadow: inverted ? '0 14px 28px rgba(8, 12, 18, 0.24)' : '0 18px 40px rgba(10, 15, 23, 0.2)',
           },
           ...triggerSx,
@@ -145,7 +250,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
               display: 'grid',
               placeItems: 'center',
               borderRadius: '50%',
-              backgroundColor: triggerPalette.badgeBackgroundColor,
+              backgroundColor: guidePalette.triggerBadgeBackgroundColor,
             }}
           >
             <HelpOutlineIcon fontSize="small" />
@@ -157,7 +262,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                 lineHeight: 1,
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                color: triggerPalette.badgeTextColor,
+                color: guidePalette.triggerBadgeTextColor,
               }}
             >
               {beginnerGuideBadge}
@@ -179,8 +284,8 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
           sx: {
             overflow: 'hidden',
             borderRadius: fullScreen ? 0 : 4,
-            backgroundColor: surfaceColor,
-            border: `1px solid ${alpha(shellBorderColor, 0.45)}`,
+            backgroundColor: guidePalette.dialogBackgroundColor,
+            border: `1px solid ${guidePalette.dialogBorderColor}`,
             boxShadow: '0 32px 80px rgba(7, 10, 15, 0.4)',
           },
         }}
@@ -191,9 +296,9 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
               px: { xs: 2, sm: 3 },
               pt: { xs: 2, sm: 2.5 },
               pb: { xs: 2.5, sm: 3 },
-              backgroundColor: shellColor,
-              color: shellTextColor,
-              borderBottom: `1px solid ${alpha(shellBorderColor, 0.56)}`,
+              backgroundColor: guidePalette.headerBackgroundColor,
+              color: guidePalette.headerTextColor,
+              borderBottom: `1px solid ${guidePalette.headerBorderColor}`,
             }}
           >
             <Stack spacing={2}>
@@ -204,12 +309,12 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                     label={beginnerGuideBadge}
                     sx={{
                       alignSelf: 'flex-start',
-                      color: shellTextColor,
+                      color: guidePalette.headerTextColor,
                       borderRadius: 999,
-                      backgroundColor: 'rgba(141,122,70,0.18)',
-                      border: `1px solid ${alpha(shellBorderColor, 0.72)}`,
+                      backgroundColor: guidePalette.headerChipBackgroundColor,
+                      border: `1px solid ${guidePalette.headerChipBorderColor}`,
                       '.MuiChip-icon': {
-                        color: '#d8cba5',
+                        color: guidePalette.headerChipIconColor,
                       },
                     }}
                   />
@@ -226,7 +331,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                       variant="body1"
                       sx={{
                         maxWidth: 560,
-                        color: shellMutedTextColor,
+                        color: guidePalette.headerMutedTextColor,
                         whiteSpace: 'pre-line',
                       }}
                     >
@@ -238,11 +343,11 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                   aria-label={beginnerGuideCloseLabel}
                   onClick={handleClose}
                   sx={{
-                    color: shellTextColor,
-                    border: `1px solid ${alpha(shellBorderColor, 0.72)}`,
-                    backgroundColor: 'rgba(255,255,255,0.04)',
+                    color: guidePalette.headerTextColor,
+                    border: `1px solid ${guidePalette.headerChipBorderColor}`,
+                    backgroundColor: guidePalette.closeButtonBackgroundColor,
                     '&:hover': {
-                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      backgroundColor: guidePalette.closeButtonHoverBackgroundColor,
                     },
                   }}
                 >
@@ -261,8 +366,8 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                 sx={{
                   p: { xs: 1.5, sm: 2 },
                   borderRadius: 3,
-                  borderColor: surfaceBorderColor,
-                  backgroundColor: '#fbfcf8',
+                  borderColor: guidePalette.sectionBorderColor,
+                  backgroundColor: guidePalette.sectionBackgroundColor,
                   boxShadow: '0 10px 24px rgba(17, 24, 39, 0.05)',
                 }}
               >
@@ -275,9 +380,9 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                       display: 'grid',
                       placeItems: 'center',
                       borderRadius: 2.5,
-                      backgroundColor: shellColor,
-                      color: '#e7ddbf',
-                      boxShadow: `inset 0 0 0 1px ${alpha(accentColor, 0.48)}`,
+                      backgroundColor: guidePalette.indexBackgroundColor,
+                      color: guidePalette.indexTextColor,
+                      boxShadow: `inset 0 0 0 1px ${alpha(guidePalette.indexBorderColor, 0.48)}`,
                     }}
                   >
                     <Typography fontSize="0.95rem" fontWeight={900}>
@@ -285,10 +390,13 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                     </Typography>
                   </Box>
                   <Stack spacing={0.75}>
-                    <Typography variant="subtitle1" fontWeight={900} color={strongTextColor}>
+                    <Typography variant="subtitle1" fontWeight={900} color={guidePalette.sectionTitleColor}>
                       {section.title}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: bodyTextColor, whiteSpace: 'pre-line', lineHeight: 1.8 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: guidePalette.sectionBodyColor, whiteSpace: 'pre-line', lineHeight: 1.8 }}
+                    >
                       {section.body}
                     </Typography>
                   </Stack>
@@ -308,7 +416,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
               gap: 1.5,
             }}
           >
-            <Typography variant="caption" sx={{ color: '#556277', px: { sm: 0.5 } }}>
+            <Typography variant="caption" sx={{ color: guidePalette.footerTextColor, px: { sm: 0.5 } }}>
               {beginnerGuideFooterHint}
             </Typography>
             <Button
@@ -320,12 +428,12 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                 px: 2.5,
                 py: 1,
                 fontWeight: 800,
-                backgroundColor: shellColor,
-                color: shellTextColor,
+                backgroundColor: guidePalette.headerBackgroundColor,
+                color: guidePalette.headerTextColor,
                 boxShadow: 'none',
-                border: `1px solid ${shellBorderColor}`,
+                border: `1px solid ${guidePalette.headerBorderColor}`,
                 '&:hover': {
-                  backgroundColor: '#182131',
+                  backgroundColor: guidePalette.triggerHoverBackgroundColor,
                   boxShadow: 'none',
                 },
               }}

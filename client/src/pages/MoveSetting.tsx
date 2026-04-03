@@ -52,10 +52,19 @@ export default function MoveSetting() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Stack direction="row" justifyContent="flex-start">
+          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
             <HomeNavIconButton ariaLabel={locale.backToHome} />
+            <BeginnerGuide
+              userId={session?.user.id}
+              guide={beginnerGuides.moveSetting}
+              triggerSx={{
+                minHeight: 44,
+                height: 44,
+                px: 1.5,
+                alignSelf: 'center',
+              }}
+            />
           </Stack>
-          <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.moveSetting} />
 
           {isPlayerLoading ? (
             <Stack direction="row" spacing={1} alignItems="center">
