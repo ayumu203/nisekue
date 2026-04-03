@@ -135,7 +135,13 @@ export default function Quest() {
   const [hasTriedQuestRecovery, setHasTriedQuestRecovery] = useState(false)
   const hasAttemptedQuestRecoveryRef = useRef(false)
   const questMainRef = useRef<HTMLDivElement | null>(null)
+  const errorAlertRef = useRef<HTMLDivElement | null>(null)
   useMobileScrollToRef(questMainRef, { enabled: !isLoading })
+  useMobileScrollToRef(errorAlertRef, {
+    enabled: submitError != null,
+    offsetTop: 12,
+    trigger: submitError,
+  })
 
   useEffect(() => {
     hasAttemptedQuestRecoveryRef.current = false
@@ -1023,7 +1029,11 @@ export default function Quest() {
                   {roomsError ? <Alert severity="warning">{roomsError.message}</Alert> : null}
                   {roomError ? <Alert severity="warning">{roomError.message}</Alert> : null}
                   {runError ? <Alert severity="warning">{runError.message}</Alert> : null}
-                  {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+                  {submitError ? (
+                    <Box ref={errorAlertRef}>
+                      <Alert severity="error">{submitError}</Alert>
+                    </Box>
+                  ) : null}
                   {isRecoveringQuest ? (
                     <Stack direction="row" spacing={1} alignItems="center">
                       <CircularProgress size={16} />
