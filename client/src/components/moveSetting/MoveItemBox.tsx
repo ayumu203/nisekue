@@ -1,6 +1,6 @@
 import { Alert, Box, Button, Chip, Paper, Stack, Typography } from '@mui/material'
 import type { PointerEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { updatePlayerMoveSet } from '@/api/player'
 import MoveItem from '@/components/moveSetting/MoveItem'
 import { resolveCharacterAssetPath } from '@/lib/assets'
@@ -23,6 +23,8 @@ function reorderSlots(slots: PlayerMoveSlot[], fromIndex: number, toIndex: numbe
 export default function MoveItemBox({ player, accessToken, onSaved }: MoveItemBoxProps) {
   const [editableSlots, setEditableSlots] = useState(player.moveSlots)
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
+  const pointerCaptureRef = useRef<HTMLDivElement | null>(null)
+  const pointerIdRef = useRef<number | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
@@ -84,9 +86,36 @@ export default function MoveItemBox({ player, accessToken, onSaved }: MoveItemBo
     setDraggingIndex(nextIndex)
   }
 
-  function finishDragging(): void {
-    setDraggingIndex(null)
-  }
+  const finishDragging = useCallback(() => {
+    try {
+      if (
+        pointerCaptureRef.current &&
+        pointerIdRef.current !== null &&
+        typeof pointerCaptureRef.current.hasPointerCapture === 'function' &&
+        pointerCaptureRef.current.hasPointerCapture(pointerIdRef.current)
+      ) {
+        pointerCaptureRef.current.releasePointerCapture(pointerIdRef.current)
+      }
+    } finally {
+      pointerCaptureRef.current = null
+      pointerIdRef.current = null
+      setDraggingIndex(null)
+    }
+  }, [setDraggingIndex])
+
+  useEffect(() => {
+    if (draggingIndex === null) {
+      return
+    }
+
+    const handleWindowPointerEnd = () => finishDragging()
+    window.addEventListener('pointerup', handleWindowPointerEnd)
+    window.addEventListener('pointercancel', handleWindowPointerEnd)
+    return () => {
+      window.removeEventListener('pointerup', handleWindowPointerEnd)
+      window.removeEventListener('pointercancel', handleWindowPointerEnd)
+    }
+  }, [draggingIndex, finishDragging])
 
   return (
     <Paper
@@ -276,6 +305,11 @@ export default function MoveItemBox({ player, accessToken, onSaved }: MoveItemBo
                   isDragging={draggingIndex === index}
                   onHandlePointerDown={(event) => {
                     event.preventDefault()
+                    pointerIdRef.current = event.pointerId
+                    if (typeof event.currentTarget.setPointerCapture === 'function') {
+                      event.currentTarget.setPointerCapture(event.pointerId)
+                      pointerCaptureRef.current = event.currentTarget
+                    }
                     setDraggingIndex(index)
                   }}
                 />

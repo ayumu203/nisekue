@@ -549,6 +549,14 @@ internal static class PlayerEndpoints
                     return Results.BadRequest(new { message = "装備中アイテムはプレゼントできません。" });
                 }
 
+                var isListedForMarket = await dbContext.MarketListings
+                    .Where(x => x.PlayerEquipmentId == equipmentEntity.Id && x.ExpiresAt > now && x.RemainingQuantity > 0)
+                    .AnyAsync();
+                if (isListedForMarket)
+                {
+                    return Results.BadRequest(new { message = "出品中の装備はプレゼントできません。" });
+                }
+
                 if (await CalculateUsedSlotsForPlayerAsync(dbContext, recipient.Id) + 1 > 20)
                 {
                     return Results.UnprocessableEntity(new { message = "受信者の所持枠が不足しています。" });
