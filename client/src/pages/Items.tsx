@@ -12,7 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import {
   createMarketListing,
@@ -37,6 +37,7 @@ import { normalizeText, parsePositiveInteger } from '@/components/items/itemUtil
 import { MarketCard } from '@/components/items/MarketCard'
 import { useAuth } from '@/contexts/useAuth'
 import { outerPagePaperSx } from '@/constants/styles'
+import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/items/Items.json'
@@ -81,6 +82,13 @@ export default function Items() {
   const [listingEditorKey, setListingEditorKey] = useState<string | null>(null)
   const [quantities, setQuantities] = useState<Record<string, string>>({})
   const [unitPrices, setUnitPrices] = useState<Record<string, string>>({})
+  const errorAlertRef = useRef<HTMLDivElement | null>(null)
+
+  useMobileScrollToRef(errorAlertRef, {
+    enabled: feedback?.type === 'error',
+    offsetTop: 12,
+    trigger: feedback?.type === 'error' ? feedback.message : null,
+  })
 
   const itemsSWRKey = session?.user.id ? ([`items`, session.user.id] as const) : null
   const {
@@ -339,7 +347,11 @@ export default function Items() {
               </Stack>
             </ControlFrame>
 
-            {feedback ? <Alert severity={feedback.type}>{feedback.message}</Alert> : null}
+            {feedback ? (
+              <Box ref={feedback.type === 'error' ? errorAlertRef : undefined}>
+                <Alert severity={feedback.type}>{feedback.message}</Alert>
+              </Box>
+            ) : null}
             {itemsError ? <Alert severity="warning">{itemsError.message}</Alert> : null}
             {marketError ? <Alert severity="warning">{marketError.message}</Alert> : null}
             {myListingsError ? <Alert severity="warning">{myListingsError.message}</Alert> : null}
