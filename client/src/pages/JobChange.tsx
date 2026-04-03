@@ -31,7 +31,7 @@ function formatExpProgress(currentExp: number, level: number): { current: number
   }
 }
 
-const baseJobCodes = new Set<PlayerJobCode>(['Warrior', 'Guardian', 'Mage', 'Priest'])
+const baseJobCodes = new Set<PlayerJobCode>(['Warrior', 'Guardian', 'Mage', 'Priest', 'Ranger'])
 
 export default function JobChange() {
   const { session, isLoading } = useAuth()

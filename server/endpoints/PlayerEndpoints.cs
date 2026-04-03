@@ -1,8 +1,11 @@
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 using server.application.chat;
 using server.application.player;
 using server.domain.move;
 using server.domain.player;
+using server.infrastructure;
+using server.infrastructure.player;
 using server.shared.constants.player;
 
 namespace server.endpoints;
@@ -45,6 +48,7 @@ internal static class PlayerEndpoints
             IPlayerEquipmentRepository playerEquipmentRepository,
             IEquipmentRepository equipmentRepository,
             IMoveRepository moveRepository,
+            PlayerMoveSetSanitizer playerMoveSetSanitizer,
             IJobProfileRepository jobProfileRepository,
             EquipmentStatusResolver equipmentStatusResolver,
             StatusRankEvaluator statusRankEvaluator,
@@ -68,6 +72,10 @@ internal static class PlayerEndpoints
             }
 
             var allMoves = await moveRepository.GetAllMovesAsync();
+            if (playerMoveSetSanitizer.TrySanitize(player, allMoves))
+            {
+                await playerRepository.SaveAsync(player);
+            }
             var playerEquipments = await playerEquipmentRepository.GetByPlayerAsync(player.Id);
             var equipments = await equipmentRepository.GetAllAsync();
             return Results.Ok(ToPlayerResponse(
@@ -88,6 +96,7 @@ internal static class PlayerEndpoints
             IPlayerEquipmentRepository playerEquipmentRepository,
             IEquipmentRepository equipmentRepository,
             IMoveRepository moveRepository,
+            PlayerMoveSetSanitizer playerMoveSetSanitizer,
             IJobProfileRepository jobProfileRepository,
             EquipmentStatusResolver equipmentStatusResolver,
             StatusRankEvaluator statusRankEvaluator,
@@ -105,6 +114,10 @@ internal static class PlayerEndpoints
             }
 
             var allMoves = await moveRepository.GetAllMovesAsync();
+            if (playerMoveSetSanitizer.TrySanitize(player, allMoves))
+            {
+                await playerRepository.SaveAsync(player);
+            }
             var playerEquipments = await playerEquipmentRepository.GetByPlayerAsync(player.Id);
             var equipments = await equipmentRepository.GetAllAsync();
             return Results.Ok(ToPlayerResponse(
@@ -427,6 +440,221 @@ internal static class PlayerEndpoints
             }
         }).RequireAuthorization();
 
+        app.MapPut("/player/move-set", async (
+            ClaimsPrincipal user,
+            UpdatePlayerMoveSetRequest request,
+            PlayerMoveSetService playerMoveSetService) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                await playerMoveSetService.UpdateAsync(playerId.Value, request.MoveIds);
+                return Results.Ok(new
+                {
+                    message = "スキル順を更新しました。"
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message, userId = playerId.Value.Value });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
+        }).RequireAuthorization();
+
+        app.MapPost("/players/{targetPlayerId:guid}/gifts", async (
+            ClaimsPrincipal user,
+            Guid targetPlayerId,
+            SendPlayerGiftRequest request,
+            IDbContextFactory<AppDbContext> dbContextFactory,
+            IItemRepository itemRepository,
+            IEquipmentRepository equipmentRepository,
+            ChatService chatService) =>
+        {
+            var senderId = EndpointHelpers.TryGetPlayerId(user);
+            if (senderId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            var sendingEquipment = request.PlayerEquipmentId is not null;
+            var sendingItem = request.ItemStackId is not null;
+            if (sendingEquipment == sendingItem)
+            {
+                return Results.BadRequest(new { message = "装備かアイテムのどちらか一方を指定してください。" });
+            }
+
+            if (senderId.Value.Value == targetPlayerId)
+            {
+                return Results.BadRequest(new { message = "自分自身にはプレゼントできません。" });
+            }
+
+            var quantity = request.Quantity ?? 1;
+            if (request.ItemStackId is not null && quantity <= 0)
+            {
+                return Results.BadRequest(new { message = "送信数は1以上で指定してください。" });
+            }
+
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var tx = await dbContext.Database.BeginTransactionAsync();
+
+            var lockedPlayerIds = new[] { senderId.Value.Value, targetPlayerId }
+                .Distinct()
+                .OrderBy(x => x)
+                .ToArray();
+            var lockedPlayers = new Dictionary<Guid, PlayerEntity>(lockedPlayerIds.Length);
+
+            foreach (var lockedPlayerId in lockedPlayerIds)
+            {
+                var lockedPlayer = await dbContext.Players
+                    .FromSqlInterpolated($"SELECT * FROM internal.players WHERE id = {lockedPlayerId} FOR UPDATE")
+                    .SingleOrDefaultAsync();
+                if (lockedPlayer is null)
+                {
+                    return Results.NotFound(new { message = "プレイヤーが見つかりません。", userId = lockedPlayerId });
+                }
+
+                lockedPlayers[lockedPlayerId] = lockedPlayer;
+            }
+
+            var sender = lockedPlayers[senderId.Value.Value];
+            var recipient = lockedPlayers[targetPlayerId];
+            var now = DateTimeOffset.UtcNow;
+            string giftItemName;
+            int giftQuantity;
+
+            if (request.PlayerEquipmentId is not null)
+            {
+                var equipmentEntity = await dbContext.PlayerEquipments
+                    .FromSqlInterpolated($"SELECT * FROM internal.player_equipments WHERE id = {request.PlayerEquipmentId.Value} FOR UPDATE")
+                    .SingleOrDefaultAsync();
+                if (equipmentEntity is null || equipmentEntity.PlayerId != sender.Id)
+                {
+                    return Results.NotFound(new { message = "送信対象の装備が見つかりません。" });
+                }
+
+                if ((EquipmentStatus)equipmentEntity.EquipmentStatus == EquipmentStatus.Equipped)
+                {
+                    return Results.BadRequest(new { message = "装備中アイテムはプレゼントできません。" });
+                }
+
+                var isListedForMarket = await dbContext.MarketListings
+                    .Where(x => x.PlayerEquipmentId == equipmentEntity.Id && x.ExpiresAt > now && x.RemainingQuantity > 0)
+                    .AnyAsync();
+                if (isListedForMarket)
+                {
+                    return Results.BadRequest(new { message = "出品中の装備はプレゼントできません。" });
+                }
+
+                if (await CalculateUsedSlotsForPlayerAsync(dbContext, recipient.Id) + 1 > 20)
+                {
+                    return Results.UnprocessableEntity(new { message = "受信者の所持枠が不足しています。" });
+                }
+
+                var equipment = MapToDomain(equipmentEntity);
+                equipment.TransferOwnership(new PlayerId(recipient.Id), now);
+                ApplyPlayerEquipmentEntity(equipmentEntity, equipment);
+
+                var equipmentMaster = await equipmentRepository.GetAsync(new EquipmentId(equipmentEntity.EquipmentId));
+                giftItemName = equipmentMaster?.Name ?? "装備";
+                giftQuantity = 1;
+            }
+            else
+            {
+                if (request.ItemStackId is null)
+                {
+                    return Results.BadRequest(new { message = "送信対象のアイテムが見つかりません。" });
+                }
+
+                var senderStackEntity = await dbContext.PlayerItemStacks
+                    .FromSqlInterpolated($"SELECT * FROM internal.player_item_stacks WHERE id = {request.ItemStackId.Value} FOR UPDATE")
+                    .SingleOrDefaultAsync();
+                if (senderStackEntity is null || senderStackEntity.PlayerId != sender.Id)
+                {
+                    return Results.NotFound(new { message = "送信対象のアイテムスタックが見つかりません。" });
+                }
+
+                var item = await itemRepository.GetAsync(new ItemId(senderStackEntity.ItemId));
+                if (item is null)
+                {
+                    return Results.BadRequest(new { message = "アイテムマスタが見つかりません。" });
+                }
+
+                var senderStack = MapToDomain(senderStackEntity);
+                try
+                {
+                    senderStack.ConsumeQuantity(quantity, now);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.BadRequest(new { message = ex.Message });
+                }
+
+                var recipientStackEntity = await dbContext.PlayerItemStacks
+                    .SingleOrDefaultAsync(x => x.PlayerId == recipient.Id && x.ItemId == item.Id.Value);
+
+                if (recipientStackEntity is null)
+                {
+                    if (await CalculateUsedSlotsForPlayerAsync(dbContext, recipient.Id) + 1 > 20)
+                    {
+                        return Results.UnprocessableEntity(new { message = "受信者の所持枠が不足しています。" });
+                    }
+
+                    dbContext.PlayerItemStacks.Add(new PlayerItemStackEntity
+                    {
+                        Id = Guid.NewGuid(),
+                        PlayerId = recipient.Id,
+                        ItemId = item.Id.Value,
+                        Quantity = quantity,
+                        UpdatedAt = now
+                    });
+                }
+                else
+                {
+                    var recipientStack = MapToDomain(recipientStackEntity);
+                    if (recipientStack.Quantity + quantity > item.MaxStack)
+                    {
+                        return Results.UnprocessableEntity(new { message = "受信者のスタック上限を超えるため送信できません。" });
+                    }
+
+                    recipientStack.AddQuantity(quantity, item.MaxStack, now);
+                    ApplyPlayerItemStackEntity(recipientStackEntity, recipientStack);
+                }
+
+                if (senderStack.Quantity == 0)
+                {
+                    dbContext.PlayerItemStacks.Remove(senderStackEntity);
+                }
+                else
+                {
+                    ApplyPlayerItemStackEntity(senderStackEntity, senderStack);
+                }
+
+                giftItemName = item.Name;
+                giftQuantity = quantity;
+            }
+
+            await dbContext.SaveChangesAsync();
+            await tx.CommitAsync();
+            await chatService.PostSystemMessageAsync(new PlayerId(recipient.Id), $"{sender.Name} から {giftItemName} x{giftQuantity} を受け取りました。");
+
+            return Results.Ok(new
+            {
+                message = "プレゼントを送信しました。"
+            });
+        }).RequireAuthorization();
+
         app.MapPost("/player/rebirth", async (
             ClaimsPrincipal user,
             PlayerRebirthService playerRebirthService,
@@ -657,6 +885,62 @@ internal static class PlayerEndpoints
             luck = evaluator.Evaluate(RankingStatusKeys.Luck, status.Luck).ToString(),
             speed = evaluator.Evaluate(RankingStatusKeys.Speed, status.Speed).ToString()
         };
+    }
+
+    private static async Task<int> CalculateUsedSlotsForPlayerAsync(AppDbContext dbContext, Guid playerId)
+    {
+        var listedEquipmentIds = await dbContext.MarketListings
+            .AsNoTracking()
+            .Where(x => x.SellerId == playerId && x.ExpiresAt > DateTimeOffset.UtcNow && x.RemainingQuantity > 0 && x.PlayerEquipmentId != null)
+            .Select(x => x.PlayerEquipmentId!.Value)
+            .ToHashSetAsync();
+        var equipmentCount = await dbContext.PlayerEquipments
+            .AsNoTracking()
+            .CountAsync(x => x.PlayerId == playerId && x.EquipmentStatus != (int)EquipmentStatus.Equipped && !listedEquipmentIds.Contains(x.Id));
+        var stackCount = await dbContext.PlayerItemStacks
+            .AsNoTracking()
+            .CountAsync(x => x.PlayerId == playerId);
+
+        return equipmentCount + stackCount;
+    }
+
+    private static PlayerEquipment MapToDomain(PlayerEquipmentEntity entity)
+    {
+        return new PlayerEquipment(
+            new PlayerEquipmentId(entity.Id),
+            new PlayerId(entity.PlayerId),
+            new EquipmentId(entity.EquipmentId),
+            (EquipmentType)entity.EquipmentType,
+            (EquipmentStatus)entity.EquipmentStatus,
+            entity.Durability,
+            entity.Mastery,
+            entity.AcquiredAt,
+            entity.UpdatedAt);
+    }
+
+    private static void ApplyPlayerEquipmentEntity(PlayerEquipmentEntity entity, PlayerEquipment equipment)
+    {
+        entity.PlayerId = equipment.PlayerId.Value;
+        entity.EquipmentStatus = (int)equipment.Status;
+        entity.Durability = equipment.Durability;
+        entity.Mastery = equipment.Mastery;
+        entity.UpdatedAt = equipment.UpdatedAt;
+    }
+
+    private static PlayerItemStack MapToDomain(PlayerItemStackEntity entity)
+    {
+        return new PlayerItemStack(
+            new PlayerItemStackId(entity.Id),
+            new PlayerId(entity.PlayerId),
+            new ItemId(entity.ItemId),
+            entity.Quantity,
+            entity.UpdatedAt);
+    }
+
+    private static void ApplyPlayerItemStackEntity(PlayerItemStackEntity entity, PlayerItemStack stack)
+    {
+        entity.Quantity = stack.Quantity;
+        entity.UpdatedAt = stack.UpdatedAt;
     }
 
     private static IReadOnlyList<PlayerEquipment> CreateStarterEquipments(Player player, IReadOnlyList<Equipment> equipments, DateTimeOffset now)

@@ -14,6 +14,10 @@ import type {
   UpdatePlayerJobResponse,
   UpdatePlayerEquipmentRequest,
   UpdatePlayerEquipmentResponse,
+  UpdatePlayerMoveSetRequest,
+  UpdatePlayerMoveSetResponse,
+  SendPlayerGiftRequest,
+  SendPlayerGiftResponse,
   RebirthPlayerResponse,
 } from '@/schema/player'
 
@@ -210,6 +214,61 @@ export async function updatePlayerEquipment(
   }
 
   return endpoints.player.updateEquipment.responseSchema.parse(json)
+}
+
+export async function updatePlayerMoveSet(
+  input: UpdatePlayerMoveSetRequest,
+  accessToken: string,
+): Promise<UpdatePlayerMoveSetResponse> {
+  const parsedPayload = endpoints.player.updateMoveSet.requestSchema.safeParse(input)
+  if (!parsedPayload.success) {
+    throw new Error(parsedPayload.error.issues[0]?.message ?? '入力内容が不正です')
+  }
+
+  const apiBaseUrl = resolveApiBaseUrl()
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.updateMoveSet.path}`, {
+    method: endpoints.player.updateMoveSet.method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(parsedPayload.data),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'スキル順の更新に失敗しました'))
+  }
+
+  return endpoints.player.updateMoveSet.responseSchema.parse(json)
+}
+
+export async function sendPlayerGift(
+  targetPlayerId: string,
+  input: SendPlayerGiftRequest,
+  accessToken: string,
+): Promise<SendPlayerGiftResponse> {
+  const parsedPayload = endpoints.player.sendGift.requestSchema.safeParse(input)
+  if (!parsedPayload.success) {
+    throw new Error(parsedPayload.error.issues[0]?.message ?? '入力内容が不正です')
+  }
+
+  const apiBaseUrl = resolveApiBaseUrl()
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.sendGift.path(targetPlayerId)}`, {
+    method: endpoints.player.sendGift.method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(parsedPayload.data),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'プレゼント送信に失敗しました'))
+  }
+
+  return endpoints.player.sendGift.responseSchema.parse(json)
 }
 
 export async function rebirthPlayer(accessToken: string): Promise<RebirthPlayerResponse> {

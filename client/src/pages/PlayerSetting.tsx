@@ -162,7 +162,7 @@ export default function PlayerSetting() {
     <Container maxWidth="lg" sx={{ py: '1%' }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Stack direction="row" justifyContent="flex-end">
+          <Stack direction="row" justifyContent="flex-start">
             <HomeNavIconButton ariaLabel={locale.backToHome} />
           </Stack>
 
