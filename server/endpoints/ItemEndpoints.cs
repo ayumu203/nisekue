@@ -459,6 +459,7 @@ internal static class ItemEndpoints
             IMarketListingRepository marketListingRepository,
             IPlayerRepository playerRepository,
             ITreasureMapRepository treasureMapRepository,
+            IEquipmentRepository equipmentRepository,
             IDbContextFactory<AppDbContext> dbContextFactory) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
@@ -472,6 +473,7 @@ internal static class ItemEndpoints
             var players = await playerRepository.GetAllAsync();
             var playerMap = players.ToDictionary(x => x.Id);
             var listingCategoryMap = await BuildListingCategoryMapAsync(filtered, treasureMapRepository, dbContextFactory);
+            var equipmentDetailMap = await BuildEquipmentMarketDetailMapAsync(filtered, equipmentRepository, dbContextFactory);
 
             return Results.Ok(filtered.Select(listing =>
             {
@@ -487,7 +489,8 @@ internal static class ItemEndpoints
                     quantity = listing.RemainingQuantity,
                     unitPrice = listing.UnitPrice,
                     expiresAt = listing.ExpiresAt,
-                    listingCategory = listingCategoryMap.GetValueOrDefault(listing.Id.Value, "Item")
+                    listingCategory = listingCategoryMap.GetValueOrDefault(listing.Id.Value, "Item"),
+                    equipmentDetail = equipmentDetailMap.GetValueOrDefault(listing.Id.Value)
                 };
             }));
         }).RequireAuthorization();
@@ -496,6 +499,7 @@ internal static class ItemEndpoints
             ClaimsPrincipal user,
             IMarketListingRepository marketListingRepository,
             ITreasureMapRepository treasureMapRepository,
+            IEquipmentRepository equipmentRepository,
             IDbContextFactory<AppDbContext> dbContextFactory) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
@@ -506,6 +510,7 @@ internal static class ItemEndpoints
 
             var listings = await marketListingRepository.GetBySellerAsync(playerId.Value, DateTimeOffset.UtcNow);
             var listingCategoryMap = await BuildListingCategoryMapAsync(listings, treasureMapRepository, dbContextFactory);
+            var equipmentDetailMap = await BuildEquipmentMarketDetailMapAsync(listings, equipmentRepository, dbContextFactory);
             return Results.Ok(listings.Select(x => new
             {
                 listingId = x.Id.Value,
@@ -514,7 +519,8 @@ internal static class ItemEndpoints
                 quantity = x.RemainingQuantity,
                 unitPrice = x.UnitPrice,
                 expiresAt = x.ExpiresAt,
-                listingCategory = listingCategoryMap.GetValueOrDefault(x.Id.Value, "Item")
+                listingCategory = listingCategoryMap.GetValueOrDefault(x.Id.Value, "Item"),
+                equipmentDetail = equipmentDetailMap.GetValueOrDefault(x.Id.Value)
             }));
         }).RequireAuthorization();
 
@@ -820,16 +826,7 @@ internal static class ItemEndpoints
             mastery = playerEquipment.Mastery,
             masteryCap = equipment.MasteryCap,
             synthesisGoldCost = equipment.SynthesisGoldCost,
-            statusBonus = new
-            {
-                maxHp = equipment.BonusValues.MaxHp,
-                maxMp = equipment.BonusValues.MaxMp,
-                strength = equipment.BonusValues.Strength,
-                defense = equipment.BonusValues.Defense,
-                intelligence = equipment.BonusValues.Intelligence,
-                luck = equipment.BonusValues.Luck,
-                speed = equipment.BonusValues.Speed
-            }
+            statusBonus = ToStatusBonusView(equipment.BonusValues)
         };
     }
 
@@ -944,6 +941,78 @@ internal static class ItemEndpoints
                     ? "Map"
                     : "Item";
             });
+    }
+
+    private static async Task<IReadOnlyDictionary<Guid, object>> BuildEquipmentMarketDetailMapAsync(
+        IReadOnlyList<MarketListing> listings,
+        IEquipmentRepository equipmentRepository,
+        IDbContextFactory<AppDbContext> dbContextFactory)
+    {
+        var equipmentIds = listings
+            .Where(x => x.PlayerEquipmentId is not null)
+            .Select(x => x.PlayerEquipmentId!.Value.Value)
+            .Distinct()
+            .ToArray();
+
+        if (equipmentIds.Length == 0)
+        {
+            return new Dictionary<Guid, object>();
+        }
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var playerEquipments = await dbContext.PlayerEquipments
+            .AsNoTracking()
+            .Where(x => equipmentIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id);
+
+        var equipmentById = (await equipmentRepository.GetAllAsync()).ToDictionary(x => x.Id);
+        var details = new Dictionary<Guid, object>();
+
+        foreach (var listing in listings)
+        {
+            if (listing.PlayerEquipmentId is null)
+            {
+                continue;
+            }
+
+            var playerEquipmentId = listing.PlayerEquipmentId.Value.Value;
+            if (!playerEquipments.TryGetValue(playerEquipmentId, out var playerEquipmentEntity))
+            {
+                continue;
+            }
+
+            var equipmentId = new EquipmentId(playerEquipmentEntity.EquipmentId);
+            if (!equipmentById.TryGetValue(equipmentId, out var equipment))
+            {
+                continue;
+            }
+
+            details[listing.Id.Value] = new
+            {
+                equipmentType = equipment.Type.ToString(),
+                durability = playerEquipmentEntity.Durability,
+                maxDurability = equipment.MaxDurability,
+                mastery = playerEquipmentEntity.Mastery,
+                masteryCap = equipment.MasteryCap,
+                statusBonus = ToStatusBonusView(equipment.BonusValues)
+            };
+        }
+
+        return details;
+    }
+
+    private static object ToStatusBonusView(EquipmentStatusBonus bonus)
+    {
+        return new
+        {
+            maxHp = bonus.MaxHp,
+            maxMp = bonus.MaxMp,
+            strength = bonus.Strength,
+            defense = bonus.Defense,
+            intelligence = bonus.Intelligence,
+            luck = bonus.Luck,
+            speed = bonus.Speed
+        };
     }
 
     private static bool SecureEquals(string actual, string expected)

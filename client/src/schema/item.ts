@@ -25,6 +25,14 @@ export const itemEquipmentTypeSchema = z.enum(['Weapon', 'Armor'])
 export const itemEquipmentStatusSchema = z.enum(['Inventory', 'Equipped', 'Broken'])
 export const itemEffectTypeSchema = z.enum(['StatBoost', 'ChangeJob'])
 export const marketListingCategorySchema = z.enum(['Weapon', 'Armor', 'Item', 'Map'])
+export const marketEquipmentDetailSchema = z.object({
+  equipmentType: itemEquipmentTypeSchema,
+  durability: z.number().int().min(0),
+  maxDurability: z.number().int().min(1),
+  mastery: z.number().int().min(0),
+  masteryCap: z.number().int().min(0),
+  statusBonus: statusBonusSchema,
+})
 
 export const itemEquipmentViewSchema = z.object({
   kind: z.literal('equipment'),
@@ -109,6 +117,7 @@ export const marketListingViewSchema = z.object({
   unitPrice: z.number().int().min(1),
   expiresAt: z.string().datetime({ offset: true }),
   listingCategory: marketListingCategorySchema,
+  equipmentDetail: marketEquipmentDetailSchema.nullable().optional(),
 })
 
 export const getMarketListingsResponseSchema = z.array(marketListingViewSchema)
@@ -132,6 +141,7 @@ export type SynthesizeEquipmentResponse = z.infer<typeof synthesizeEquipmentResp
 export type CreateMarketListingRequest = z.infer<typeof createMarketListingRequestSchema>
 export type CreateMarketListingResponse = z.infer<typeof createMarketListingResponseSchema>
 export type MarketListingView = z.infer<typeof marketListingViewSchema>
+export type MarketEquipmentDetail = z.infer<typeof marketEquipmentDetailSchema>
 export type GetMarketListingsResponse = z.infer<typeof getMarketListingsResponseSchema>
 export type PurchaseMarketListingRequest = z.infer<typeof purchaseMarketListingRequestSchema>
 export type PurchaseMarketListingResponse = z.infer<typeof purchaseMarketListingResponseSchema>

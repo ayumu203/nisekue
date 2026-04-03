@@ -58,7 +58,7 @@ item_id,name,flavor_text,effect_type,max_stack,change_job_to,required_level,bonu
 3057,水魔導の証,雨水に光る蒼玉の紋章。水魔導への転職を認める証,ChangeJob,99,WaterMage,30,0,0,0,0,0,0,0,Mage,0,0,0,0,0,0,0
 3058,風魔導の証,疾風の軌跡を記す羽根章。風魔導への転職に示される証,ChangeJob,99,WindMage,30,0,0,0,0,0,0,0,Mage,0,0,0,0,0,0,0
 3059,神官の証,天の光で磨かれた聖十字。神官への転職に欠かせぬ証,ChangeJob,99,HighPriest,30,0,0,0,0,0,0,0,Priest,0,0,0,0,0,0,0
-3060,死霊の証,黄泉の影を映す黒鉄の印。死霊への転職に使われる証,ChangeJob,99,Necromancer,30,0,0,0,0,0,0,0,Priest,0,0,0,0,0,0,0
+3060,死霊の証,黄泉の影を映す黒鉄の印。死霊使いへの転職に使われる証,ChangeJob,99,Necromancer,30,0,0,0,0,0,0,0,Priest,0,0,0,0,0,0,0
 3061,スナイパーの証,一射一殺の矢筒に収まる刻印。スナイパーへの転職を導く証,ChangeJob,99,Sniper,30,0,0,0,0,0,0,0,Ranger,0,0,0,0,0,0,0
 3062,罠師の証,罠の歯車が刻んだ鋼の章。罠師への転職を認める証,ChangeJob,99,TrapMaster,30,0,0,0,0,0,0,0,Ranger,0,0,0,0,0,0,0
 3063,覇道の証,雄壮な剣気を刻んだ石板。グランドウォリアーへの転職に使う証,ChangeJob,99,GrandWarrior,40,0,0,0,0,0,0,0,OniWarrior|SwordMaster,0,0,0,0,0,0,0

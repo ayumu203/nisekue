@@ -1,8 +1,10 @@
 import { Box, Button, Chip, Paper, Stack, Typography } from '@mui/material'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ItemArtwork } from './ItemIllustrations'
 import { ListingControls } from './ListingControls'
 import { formatDateTime } from './itemUtils'
+import { formatStatusBonus } from './itemUtils'
 import { accentBeige, accentBeigeBorder, deepGreen, listCardSx, primaryActionSx } from './ItemsConstants'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../../locale/items/Items.json'
@@ -30,8 +32,10 @@ export function MarketCard({
   actionDisabled: boolean
   showSeller: boolean
 }) {
+  const [showDetails, setShowDetails] = useState(false)
   const sellerImageSrc = resolveCharacterAssetPath(listing.sellerImagePath)
   const sellerRoomPath = listing.sellerId ? `/players/${listing.sellerId}/visit` : null
+  const equipmentDetail = listing.equipmentDetail ?? null
 
   return (
     <Paper
@@ -62,6 +66,37 @@ export function MarketCard({
         <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', minHeight: 34 }}>
           {listing.flavorText || '-'}
         </Typography>
+        {equipmentDetail ? (
+          <Button
+            variant="text"
+            onClick={() => setShowDetails((current) => !current)}
+            sx={{ alignSelf: 'center', color: deepGreen, fontWeight: 700 }}
+          >
+            {showDetails ? locale.hideDetails : locale.showDetails}
+          </Button>
+        ) : null}
+        {showDetails && equipmentDetail ? (
+          <Stack
+            spacing={0.75}
+            sx={{
+              px: 1,
+              py: 1,
+              borderRadius: 1.5,
+              backgroundColor: '#f8fbf8',
+              border: '1px solid #d5e0d6',
+            }}
+          >
+            <Typography variant="body2">
+              {locale.effectAmount} {formatStatusBonus(equipmentDetail)}
+            </Typography>
+            <Typography variant="body2">
+              {locale.durability} {equipmentDetail.durability}/{equipmentDetail.maxDurability}
+            </Typography>
+            <Typography variant="body2">
+              {locale.mastery} {equipmentDetail.mastery}/{equipmentDetail.masteryCap}
+            </Typography>
+          </Stack>
+        ) : null}
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap justifyContent="center">
           <Chip
             size="small"
