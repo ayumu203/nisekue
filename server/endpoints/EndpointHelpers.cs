@@ -52,6 +52,7 @@ internal static class EndpointHelpers
         stageCode = stage.StageCode,
         name = stage.Name,
         recommendedLevel = stage.RecommendedLevel,
+        minimumEntryLevel = stage.MinimumEntryLevel ?? Math.Max(1, (int)Math.Ceiling(stage.RecommendedLevel * 0.7m)),
         minPartyMemberCount = stage.MinPartyMemberCount,
         maxPartyMemberCount = stage.MaxPartyMemberCount,
         isActive = stage.IsActive,

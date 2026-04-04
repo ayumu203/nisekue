@@ -67,7 +67,7 @@ public class CsvQuestStageRepository : IQuestStageRepository
             }
 
             var columns = CsvQuestParser.SplitColumns(line);
-            if (columns.Length != 8)
+            if (columns.Length != 9)
             {
                 throw new InvalidOperationException($"stages.csv の形式が不正です。行: {i + 1}");
             }
@@ -104,12 +104,13 @@ public class CsvQuestStageRepository : IQuestStageRepository
                 columns[2],
                 columns[3],
                 CsvQuestParser.ParseInt(columns[4], "recommended_level", i + 1),
-                CsvQuestParser.ParseInt(columns[5], "min_party_member_count", i + 1),
-                CsvQuestParser.ParseInt(columns[6], "max_party_member_count", i + 1),
+                string.IsNullOrWhiteSpace(columns[5]) ? null : CsvQuestParser.ParseInt(columns[5], "minimum_entry_level", i + 1),
+                CsvQuestParser.ParseInt(columns[6], "min_party_member_count", i + 1),
+                CsvQuestParser.ParseInt(columns[7], "max_party_member_count", i + 1),
                 floors,
                 rewardRows.OrderByDescending(x => x.Weight).Select(x => x.ToRewardEntry()).ToArray(),
                 itemRewardRows.OrderByDescending(x => x.Weight).Select(x => x.ToRewardEntry()).ToArray(),
-                CsvQuestParser.ParseBool(columns[7], "is_active", i + 1)));
+                CsvQuestParser.ParseBool(columns[8], "is_active", i + 1)));
         }
 
         return map;

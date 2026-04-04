@@ -24,6 +24,7 @@ classDiagram
             +string Name
             +string BattlefieldImagePath
             +int RecommendedLevel
+            +int? MinimumEntryLevel
             +int MinPartyMemberCount
             +int MaxPartyMemberCount
             +IReadOnlyList~QuestFloorDefinition~ Floors
@@ -39,6 +40,7 @@ classDiagram
             +string Name
             +string BattlefieldImagePath
             +int RecommendedLevel
+            +int MinimumEntryLevel
             +string? PreviewEnemyImagePath
         }
 
@@ -75,6 +77,7 @@ classDiagram
             +bool IsMiss
         }
         %% QuestStageItemRewardEntry.Weight is tuned from stage_item_rewards.csv; current target includes treasure maps 20% and change-job items 30%.
+        %% QuestStageDefinition.MinimumEntryLevel is optional. When absent, entry level falls back to ceil(recommended_level * 0.7). The final stage overrides it to 300.
 
         class QuestEnemyPlacement {
             <<Entity>>
@@ -94,6 +97,8 @@ classDiagram
             +IReadOnlyList~MoveId~ MoveIds
         }
         %% QuestEnemyDefinition.Status is loaded from server/resources/quest/enemies.csv final tuned values.
+        %% Quest stages are configured as 5-floor runs; floor 1 starts with a single enemy, later floors can expand the formation.
+        %% Enemy lineups are assembled by reusing existing enemy definitions from the quest master data.
 
         class QuestEnemyDefinitionId {
             <<Value Object>>
@@ -112,6 +117,7 @@ classDiagram
             +NpcRole Role
         }
         %% QuestNpcTemplate.BaseStatus is loaded from server/resources/quest/npc_templates.csv final tuned values.
+        %% High-end equipment balance references nearby NPC template status bands; armor tuning uses approximately 20% of HP and a role-specific primary stat.
 
         class QuestNpcTemplateId {
             <<Value Object>>

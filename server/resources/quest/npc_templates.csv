@@ -23,3 +23,8 @@ id,name,job,preferred_row,level,max_hp,max_mp,strength,defense,intelligence,luck
 22,てんえいけんし,Warrior,Front,300,8450,857,1124,734,294,416,490,FrontGuard
 23,てんえいまどうし,Mage,Back,300,6363,1835,319,465,1189,440,538,MidSupport
 24,てんえいしんかん,Priest,Back,300,6863,2084,294,515,1268,465,442,RearHealer
+25,しんえんガード,Guardian,Front,600,32000,3000,2800,3500,900,820,900,FrontGuard
+26,しんえんけんし,Warrior,Front,600,29000,1800,3600,2200,700,980,1200,FrontGuard
+27,しんえんまどうし,Mage,Back,600,22000,4200,750,1200,3600,1100,1300,MidSupport
+28,しんえんしんかん,Priest,Back,600,24000,4600,700,1400,3900,1200,1000,RearHealer
+29,しんえんれんじゃー,Ranger,Middle,600,25000,2100,2200,1700,1300,1500,1650,MidSupport

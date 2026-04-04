@@ -422,6 +422,7 @@ public class QuestRoomServiceTests
             "Test Quest",
             "image/quest/test-battlefield.svg",
             recommendedLevel,
+            minimumEntryLevel: null,
             minPartyMemberCount,
             maxPartyMemberCount,
             [
@@ -438,7 +439,7 @@ public class QuestRoomServiceTests
             ],
             equipmentRewards: [],
             itemRewards: [],
-            isActive);
+            isActive: isActive);
     }
 
     private static QuestEnemyDefinition CreateEnemyDefinition()
