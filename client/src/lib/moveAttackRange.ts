@@ -4,8 +4,10 @@ export function getMoveAttackRangeLabel(attackRange: MoveAttackRange | null): st
   switch (attackRange) {
     case 'Single':
       return '単体'
+    case 'Column':
     case 'AcrossRows':
       return '同側縦列'
+    case 'Row':
     case 'AcrossColumns':
       return '同列2体'
     case 'Square':

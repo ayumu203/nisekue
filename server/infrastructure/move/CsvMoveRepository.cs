@@ -336,8 +336,8 @@ public class CsvMoveRepository : IMoveRepository
         var normalized = value.Trim();
         return normalized switch
         {
-            "Column" => AttackRange.AcrossRows,
-            "Row" => AttackRange.AcrossColumns,
+            "Column" => AttackRange.Column,
+            "Row" => AttackRange.Row,
             _ when Enum.TryParse<AttackRange>(normalized, ignoreCase: false, out var parsed) => parsed,
             _ => throw new InvalidOperationException(
                 $"CSVのenum変換に失敗しました。column: {columnName}, value: {value}, 行: {lineNumber}")

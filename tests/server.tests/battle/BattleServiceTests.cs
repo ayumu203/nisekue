@@ -195,7 +195,7 @@ public class BattleServiceTests
 
         var resolution = service.ResolveTurn(new BattleTurnRequest(
             [actor, enemy1, enemy2],
-            [CreateMoveAction(actor.ActorId, moveId, TargetType.Enemy, AttackRange.AcrossColumns)],
+            [CreateMoveAction(actor.ActorId, moveId, TargetType.Enemy, AttackRange.Row)],
             [fireMove]));
 
         resolution.ActionResults.Single().TargetResults.Should().HaveCount(2);
@@ -489,7 +489,7 @@ public class BattleServiceTests
             "プラーミア",
             "敵横一列を焼く",
             TargetType.Enemy,
-            AttackRange.AcrossColumns,
+            AttackRange.Row,
             6,
             0,
             MoveCategory.Attack,

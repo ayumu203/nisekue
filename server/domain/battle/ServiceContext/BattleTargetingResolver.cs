@@ -187,11 +187,11 @@ public class BattleTargetingResolver
                 .Select(x => x.Id)
                 .Take(1)
                 .ToArray(),
-            AttackRange.AcrossRows => orderedCandidates
+            AttackRange.Column => orderedCandidates
                 .Where(x => positionMap[x.Id].Column == anchor.Column)
                 .Select(x => x.Id)
                 .ToArray(),
-            AttackRange.AcrossColumns => orderedCandidates
+            AttackRange.Row => orderedCandidates
                 .Where(x => positionMap[x.Id].Row == anchor.Row)
                 .Select(x => x.Id)
                 .ToArray(),
@@ -251,8 +251,8 @@ public class BattleTargetingResolver
         return attackRange switch
         {
             AttackRange.Single => candidates.Take(1).ToArray(),
-            AttackRange.AcrossRows => candidates.Take(2).ToArray(),
-            AttackRange.AcrossColumns => candidates.Take(2).ToArray(),
+            AttackRange.Column => candidates.Take(2).ToArray(),
+            AttackRange.Row => candidates.Take(2).ToArray(),
             AttackRange.Square => candidates.Take(4).ToArray(),
             AttackRange.All => candidates,
             _ => throw new ArgumentOutOfRangeException(nameof(attackRange), $"未対応の AttackRange: {attackRange}")

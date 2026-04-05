@@ -19,7 +19,7 @@ public class BattleTargetingResolverTests
         var enemy3 = CreateSnapshot(4, BattleSide.Enemy);
 
         var result = resolver.ResolveTargets(
-            new BattleTargetSelector(TargetType.Enemy, AttackRange.AcrossColumns),
+            new BattleTargetSelector(TargetType.Enemy, AttackRange.Row),
             actor,
             [actor, enemy1, enemy2, enemy3],
             CreateStates(actor, enemy1, enemy2, enemy3));
@@ -85,7 +85,7 @@ public class BattleTargetingResolverTests
         var enemyMiddleLeft = CreateSnapshot(4, BattleSide.Enemy);
 
         var result = resolver.ResolveTargets(
-            new BattleTargetSelector(TargetType.Enemy, AttackRange.AcrossColumns),
+            new BattleTargetSelector(TargetType.Enemy, AttackRange.Row),
             actor,
             [actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft],
             CreateStates(actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft),
@@ -130,7 +130,7 @@ public class BattleTargetingResolverTests
         var result = resolver.ResolveTargets(
             new BattleTargetSelector(
                 TargetType.Enemy,
-                AttackRange.AcrossRows,
+                AttackRange.Column,
                 selectedPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)),
             actor,
             [actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft, enemyMiddleRight],
@@ -219,7 +219,7 @@ public class BattleTargetingResolverTests
         var enemy3 = CreateSnapshot(4, BattleSide.Enemy);
 
         var result = resolver.ResolveTargets(
-            new BattleTargetSelector(TargetType.Enemy, AttackRange.AcrossColumns),
+            new BattleTargetSelector(TargetType.Enemy, AttackRange.Row),
             actor,
             [actor, enemy1, enemy2, enemy3],
             CreateStates(actor, enemy1, enemy2, enemy3),
@@ -244,7 +244,7 @@ public class BattleTargetingResolverTests
         var enemyBackRight = CreateSnapshot(5, BattleSide.Enemy);
 
         var result = resolver.ResolveTargets(
-            new BattleTargetSelector(TargetType.Enemy, AttackRange.AcrossRows),
+            new BattleTargetSelector(TargetType.Enemy, AttackRange.Column),
             actor,
             [actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft, enemyBackRight],
             CreateStates(actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft, enemyBackRight),

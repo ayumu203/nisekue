@@ -47,7 +47,18 @@ export type PlayerJob = z.infer<typeof playerJobSchema>
 export type PlayerJobCode = z.infer<typeof playerJobCodeSchema>
 
 export const moveTargetTypeSchema = z.enum(['Enemy', 'Ally', 'Self'])
-export const moveAttackRangeSchema = z.enum(['Single', 'AcrossRows', 'AcrossColumns', 'Square', 'All'])
+const moveAttackRangeCanonicalSchema = z.enum(['Single', 'Column', 'Row', 'Square', 'All'])
+export const moveAttackRangeSchema = z.preprocess((value) => {
+  if (value === 'AcrossRows') {
+    return 'Column'
+  }
+
+  if (value === 'AcrossColumns') {
+    return 'Row'
+  }
+
+  return value
+}, moveAttackRangeCanonicalSchema)
 export const moveCategorySchema = z.enum(['Attack', 'Support', 'Hybrid'])
 export const moveElementTypeSchema = z.enum([
   'Strike',
