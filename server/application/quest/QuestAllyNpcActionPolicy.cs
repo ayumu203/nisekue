@@ -395,8 +395,8 @@ public class QuestAllyNpcActionPolicy
         {
             AttackRange.All => 5,
             AttackRange.Square => 4,
-            AttackRange.Row => 3,
-            AttackRange.Column => 3,
+            AttackRange.AcrossColumns => 3,
+            AttackRange.AcrossRows => 3,
             AttackRange.Single => 2,
             _ => 0
         };

@@ -19,7 +19,7 @@ public class BattleTargetingResolverTests
         var enemy3 = CreateSnapshot(4, BattleSide.Enemy);
 
         var result = resolver.ResolveTargets(
-            new BattleTargetSelector(TargetType.Enemy, AttackRange.Row),
+            new BattleTargetSelector(TargetType.Enemy, AttackRange.AcrossColumns),
             actor,
             [actor, enemy1, enemy2, enemy3],
             CreateStates(actor, enemy1, enemy2, enemy3));
@@ -76,7 +76,7 @@ public class BattleTargetingResolverTests
     }
 
     [Fact]
-    public void ResolveTargets_WithFormationRangeControl_RowTargetsSameRowAcrossColumns()
+    public void ResolveTargets_WithFormationRangeControl_AcrossColumnsTargetsSameBattleRow()
     {
         var resolver = new BattleTargetingResolver();
         var actor = CreateSnapshot(1, BattleSide.Ally);
@@ -85,7 +85,7 @@ public class BattleTargetingResolverTests
         var enemyMiddleLeft = CreateSnapshot(4, BattleSide.Enemy);
 
         var result = resolver.ResolveTargets(
-            new BattleTargetSelector(TargetType.Enemy, AttackRange.Row),
+            new BattleTargetSelector(TargetType.Enemy, AttackRange.AcrossColumns),
             actor,
             [actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft],
             CreateStates(actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft),
@@ -130,7 +130,7 @@ public class BattleTargetingResolverTests
         var result = resolver.ResolveTargets(
             new BattleTargetSelector(
                 TargetType.Enemy,
-                AttackRange.Column,
+                AttackRange.AcrossRows,
                 selectedPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)),
             actor,
             [actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft, enemyMiddleRight],
@@ -219,7 +219,7 @@ public class BattleTargetingResolverTests
         var enemy3 = CreateSnapshot(4, BattleSide.Enemy);
 
         var result = resolver.ResolveTargets(
-            new BattleTargetSelector(TargetType.Enemy, AttackRange.Row),
+            new BattleTargetSelector(TargetType.Enemy, AttackRange.AcrossColumns),
             actor,
             [actor, enemy1, enemy2, enemy3],
             CreateStates(actor, enemy1, enemy2, enemy3),
@@ -234,7 +234,7 @@ public class BattleTargetingResolverTests
     }
 
     [Fact]
-    public void ResolveTargets_WithFormationRangeControl_ColumnTargetsSameColumnAcrossRows()
+    public void ResolveTargets_WithFormationRangeControl_AcrossRowsTargetsSameBattleColumn()
     {
         var resolver = new BattleTargetingResolver();
         var actor = CreateSnapshot(1, BattleSide.Ally);
@@ -244,7 +244,7 @@ public class BattleTargetingResolverTests
         var enemyBackRight = CreateSnapshot(5, BattleSide.Enemy);
 
         var result = resolver.ResolveTargets(
-            new BattleTargetSelector(TargetType.Enemy, AttackRange.Column),
+            new BattleTargetSelector(TargetType.Enemy, AttackRange.AcrossRows),
             actor,
             [actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft, enemyBackRight],
             CreateStates(actor, enemyFrontLeft, enemyFrontRight, enemyMiddleLeft, enemyBackRight),

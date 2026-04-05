@@ -4,6 +4,7 @@ import type { SxProps, Theme } from '@mui/material/styles'
 import type { PointerEventHandler } from 'react'
 import type { PlayerMoveSlot } from '@/schema/player'
 import { resolvePublicAssetPath } from '@/lib/assets'
+import { getMoveAttackRangeLabel } from '@/lib/moveAttackRange'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
 
 type MoveItemProps = {
@@ -101,23 +102,6 @@ function resolveTargetTypeLabel(targetType: PlayerMoveSlot['targetType']): strin
   }
 }
 
-function resolveAttackRangeLabel(attackRange: PlayerMoveSlot['attackRange']): string | null {
-  switch (attackRange) {
-    case 'Single':
-      return '単体'
-    case 'Column':
-      return '縦列'
-    case 'Row':
-      return '横列'
-    case 'Square':
-      return '範囲'
-    case 'All':
-      return '全体'
-    default:
-      return null
-  }
-}
-
 export default function MoveItem({ slot, onHandlePointerDown, isDragging = false }: MoveItemProps) {
   const isEmpty = slot.moveId === null
   const moveName = slot.moveName ?? (slot.moveId === null ? locale.emptySlot : locale.unknownMove)
@@ -125,7 +109,7 @@ export default function MoveItem({ slot, onHandlePointerDown, isDragging = false
   const categoryLabel = resolveCategoryLabel(slot.category)
   const elementTypeLabel = resolveElementTypeLabel(slot.elementType)
   const targetTypeLabel = resolveTargetTypeLabel(slot.targetType)
-  const attackRangeLabel = resolveAttackRangeLabel(slot.attackRange)
+  const attackRangeLabel = getMoveAttackRangeLabel(slot.attackRange)
   const effectImageSrc = slot.effectImagePath ? resolvePublicAssetPath(slot.effectImagePath) : null
 
   return (
