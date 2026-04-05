@@ -44,6 +44,7 @@ export const questStageSummarySchema = z.object({
   name: z.string().min(1),
   battlefieldImagePath: z.string().min(1),
   recommendedLevel: z.number().int().nonnegative(),
+  minimumEntryLevel: z.number().int().positive(),
   previewEnemyImagePath: z.string().min(1).nullable().optional(),
   minPartyMemberCount: z.number().int().positive(),
   maxPartyMemberCount: z.number().int().positive(),

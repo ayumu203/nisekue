@@ -463,6 +463,7 @@ public class QuestResponseMapper(
             name = stage.Name,
             battlefieldImagePath = stage.BattlefieldImagePath,
             recommendedLevel = stage.RecommendedLevel,
+            minimumEntryLevel = QuestStageEntryPolicy.GetMinimumAllowedLevel(stage),
             previewEnemyImagePath,
             minPartyMemberCount = stage.MinPartyMemberCount,
             maxPartyMemberCount = stage.MaxPartyMemberCount,

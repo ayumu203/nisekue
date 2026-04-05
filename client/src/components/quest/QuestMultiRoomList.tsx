@@ -49,6 +49,7 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
       ? `${room.participantCount} / ${room.maxPartyMemberCount}人`
       : `${room.participantCount}人`
   const roomModeLabel = room.mode === 'Solo' ? 'ソロ' : 'マルチ'
+  const displayedMinimumLevel = room.minRequiredLevel ?? stage?.minimumEntryLevel ?? null
   const cooldownRemainingText =
     room.joinDisabledReason === 'CooldownActive' && room.cooldownRemainingSeconds != null
       ? formatCooldownRemainingMessage(room.cooldownRemainingSeconds, locale.cooldownRemaining)
@@ -123,9 +124,9 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
             <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
               {`${locale.recommendedLevel} ${stage?.recommendedLevel ?? '-'}`}
             </Typography>
-            {room.minRequiredLevel != null ? (
+            {displayedMinimumLevel != null ? (
               <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
-                {`${locale.minRequiredLevel} ${room.minRequiredLevel}`}
+                {`${locale.minRequiredLevel} ${displayedMinimumLevel}`}
               </Typography>
             ) : null}
             <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
