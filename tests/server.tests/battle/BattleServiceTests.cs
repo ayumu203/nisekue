@@ -184,11 +184,11 @@ public class BattleServiceTests
     }
 
     [Fact]
-    public void ResolveTurn_WhenFireRowMoveIsUsed_HitsTwoEnemies()
+    public void ResolveTurn_WhenFireAcrossColumnsMoveIsUsed_HitsTwoEnemies()
     {
         var service = new BattleService();
         const int moveId = 106;
-        var fireMove = CreateFireRowMove(moveId);
+        var fireMove = CreateFireAcrossColumnsMove(moveId);
         var actor = CreateActorInput(1, BattleSide.Ally, currentHp: 30, currentMp: 10, learnedMoveIds: [moveId], intelligence: 14, speed: 10);
         var enemy1 = CreateActorInput(2, BattleSide.Enemy, currentHp: 30, currentMp: 10, defense: 4, intelligence: 2, speed: 5);
         var enemy2 = CreateActorInput(3, BattleSide.Enemy, currentHp: 30, currentMp: 10, defense: 4, intelligence: 2, speed: 4);
@@ -482,7 +482,7 @@ public class BattleServiceTests
             ]);
     }
 
-    private static Move CreateFireRowMove(int moveId)
+    private static Move CreateFireAcrossColumnsMove(int moveId)
     {
         return new Move(
             new MoveId(moveId),

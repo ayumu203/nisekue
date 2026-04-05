@@ -109,7 +109,7 @@ public class CsvMoveRepository : IMoveRepository
                 MoveName: columns[1],
                 Description: columns[2],
                 TargetType: ParseEnum<TargetType>(columns[3], "target_type", i + 1),
-                AttackRange: ParseEnum<AttackRange>(columns[4], "attack_range", i + 1),
+                AttackRange: ParseAttackRange(columns[4], "attack_range", i + 1),
                 MpCost: ParseInt(columns[5], "mp_cost", i + 1),
                 ExecutionPriority: ParseInt(columns[6], "execution_priority", i + 1),
                 MoveCategory: ParseEnum<MoveCategory>(columns[7], "move_category", i + 1),
@@ -183,7 +183,7 @@ public class CsvMoveRepository : IMoveRepository
                 ailment: ailment,
                 buff: buff,
                 overrideTargetType: columns[19] is not null ? ParseNullableEnum<TargetType>(columns[19], "override_target_type", i + 1) : null,
-                overrideAttackRange: columns[20] is not null ? ParseNullableEnum<AttackRange>(columns[20], "override_attack_range", i + 1) : null,
+                overrideAttackRange: ParseNullableAttackRange(columns[20], "override_attack_range", i + 1),
                 overrideTargetLifeState: columns[21] is not null ? ParseNullableEnum<TargetLifeState>(columns[21], "override_target_life_state", i + 1) : null);
 
             if (!map.TryGetValue(moveId, out var list))
@@ -329,6 +329,24 @@ public class CsvMoveRepository : IMoveRepository
     private static string? ParseNullableString(string value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static AttackRange ParseAttackRange(string value, string columnName, int lineNumber)
+    {
+        var normalized = value.Trim();
+        return normalized switch
+        {
+            "Column" => AttackRange.Column,
+            "Row" => AttackRange.Row,
+            _ when Enum.TryParse<AttackRange>(normalized, ignoreCase: false, out var parsed) => parsed,
+            _ => throw new InvalidOperationException(
+                $"CSVのenum変換に失敗しました。column: {columnName}, value: {value}, 行: {lineNumber}")
+        };
+    }
+
+    private static AttackRange? ParseNullableAttackRange(string value, string columnName, int lineNumber)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : ParseAttackRange(value, columnName, lineNumber);
     }
 
     private static T ParseEnum<T>(string value, string columnName, int lineNumber) where T : struct

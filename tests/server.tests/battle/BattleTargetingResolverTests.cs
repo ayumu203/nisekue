@@ -76,7 +76,7 @@ public class BattleTargetingResolverTests
     }
 
     [Fact]
-    public void ResolveTargets_WithFormationRangeControl_RowTargetsSameRowAcrossColumns()
+    public void ResolveTargets_WithFormationRangeControl_AcrossColumnsTargetsSameBattleRow()
     {
         var resolver = new BattleTargetingResolver();
         var actor = CreateSnapshot(1, BattleSide.Ally);
@@ -234,7 +234,7 @@ public class BattleTargetingResolverTests
     }
 
     [Fact]
-    public void ResolveTargets_WithFormationRangeControl_ColumnTargetsSameColumnAcrossRows()
+    public void ResolveTargets_WithFormationRangeControl_AcrossRowsTargetsSameBattleColumn()
     {
         var resolver = new BattleTargetingResolver();
         var actor = CreateSnapshot(1, BattleSide.Ally);

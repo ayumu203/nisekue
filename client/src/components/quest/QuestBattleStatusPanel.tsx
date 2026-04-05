@@ -13,6 +13,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
+import type { MoveAttackRange } from '@/schema/player'
 import type {
   BattleColumn,
   BattleRow,
@@ -27,7 +28,7 @@ type AvailableMove = {
   moveId: number | null
   moveName: string
   targetType: 'Enemy' | 'Ally' | 'Self' | null
-  attackRange: 'Single' | 'Column' | 'Row' | 'Square' | 'All' | null
+  attackRange: MoveAttackRange | null
 }
 
 type QuestBattleStatusPanelProps = {
