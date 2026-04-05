@@ -1542,6 +1542,7 @@ public class QuestRunServiceTests
             "Test Quest",
             "image/quest/test-battlefield.svg",
             1,
+            minimumEntryLevel: null,
             1,
             6,
             [
@@ -1558,7 +1559,7 @@ public class QuestRunServiceTests
             ],
             equipmentRewards: equipmentRewards ?? [],
             itemRewards: itemRewards ?? [],
-            true);
+            isActive: true);
     }
 
     private sealed class FakeQuestRunRepository(QuestRun run) : IQuestRunRepository

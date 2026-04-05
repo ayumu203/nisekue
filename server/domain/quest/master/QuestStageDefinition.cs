@@ -6,6 +6,7 @@ public class QuestStageDefinition(
     string name,
     string battlefieldImagePath,
     int recommendedLevel,
+    int? minimumEntryLevel,
     int minPartyMemberCount,
     int maxPartyMemberCount,
     IEnumerable<QuestFloorDefinition> floors,
@@ -23,6 +24,7 @@ public class QuestStageDefinition(
     public string Name { get; } = ValidateText(name, nameof(name));
     public string BattlefieldImagePath { get; } = ValidateText(battlefieldImagePath, nameof(battlefieldImagePath));
     public int RecommendedLevel { get; } = ValidateNonNegative(recommendedLevel, nameof(recommendedLevel));
+    public int? MinimumEntryLevel { get; } = ValidateNullablePositive(minimumEntryLevel, nameof(minimumEntryLevel));
     public int MinPartyMemberCount { get; } = ValidatePartyCount(minPartyMemberCount, nameof(minPartyMemberCount));
     public int MaxPartyMemberCount { get; } = ValidatePartyCount(maxPartyMemberCount, nameof(maxPartyMemberCount));
     public IReadOnlyList<QuestFloorDefinition> Floors => floors;
@@ -59,5 +61,20 @@ public class QuestStageDefinition(
         }
 
         return value;
+    }
+
+    private static int? ValidateNullablePositive(int? value, string paramName)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        if (value.Value <= 0)
+        {
+            throw new ArgumentOutOfRangeException(paramName, "1以上である必要があります。");
+        }
+
+        return value.Value;
     }
 }

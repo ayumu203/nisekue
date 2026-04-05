@@ -94,6 +94,9 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
             <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.78)' }}>
               {`${locale.recommendedLevel} ${stage.recommendedLevel}`}
             </Typography>
+            <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.78)' }}>
+              {`${locale.minRequiredLevel} ${stage.minimumEntryLevel}`}
+            </Typography>
           </Stack>
 
           <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ width: '100%' }}>

@@ -18,6 +18,7 @@ internal static class QuestStageEntryPolicy
     internal static int GetMinimumAllowedLevel(QuestStageDefinition stage)
     {
         ArgumentNullException.ThrowIfNull(stage);
-        return Math.Max(1, (int)Math.Ceiling(stage.RecommendedLevel * MinimumRecommendedLevelRatio));
+        return stage.MinimumEntryLevel
+            ?? Math.Max(1, (int)Math.Ceiling(stage.RecommendedLevel * MinimumRecommendedLevelRatio));
     }
 }
