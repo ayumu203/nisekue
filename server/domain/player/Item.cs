@@ -31,14 +31,26 @@ public class Item(
     {
         ArgumentNullException.ThrowIfNull(player);
 
-        var canIgnoreRequiredLevelForRebirth = EffectType == ItemEffectType.ChangeJob
-            && player.RebirthCount > 0
-            && _requiredMasterJobs.Count > 0
-            && _requiredMasterJobs.All(player.MasteredJobs.Contains);
+        var skipLevelCheckForRebirth = ShouldSkipLevelCheckForRebirth(player);
 
-        if (!canIgnoreRequiredLevelForRebirth
+        if (!skipLevelCheckForRebirth
             && RequiredLevel is not null
             && player.Level < RequiredLevel.Value)
+        {
+            return false;
+        }
+
+        return _requiredMasterJobs.All(player.MasteredJobs.Contains);
+    }
+
+    private bool ShouldSkipLevelCheckForRebirth(Player player)
+    {
+        if (EffectType != ItemEffectType.ChangeJob || player.RebirthCount <= 0)
+        {
+            return false;
+        }
+
+        if (_requiredMasterJobs.Count == 0)
         {
             return false;
         }

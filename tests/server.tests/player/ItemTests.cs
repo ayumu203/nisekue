@@ -56,7 +56,7 @@ public class ItemTests
     }
 
     [Fact]
-    public void CanUse_WhenRebirthedAndMasterRequirementsSatisfied_IgnoresRequiredLevelForChangeJob()
+    public void CanUse_RebirthPlayerWithRequiredMasterJobs_ReturnsTrue()
     {
         var item = new Item(
             new ItemId(3065),
@@ -76,7 +76,7 @@ public class ItemTests
     }
 
     [Fact]
-    public void CanUse_WhenRebirthedButMasterRequirementsMissing_DoesNotIgnoreRequiredLevelForChangeJob()
+    public void CanUse_RebirthPlayerWithInsufficientMasterJobs_ReturnsFalse()
     {
         var item = new Item(
             new ItemId(3065),
