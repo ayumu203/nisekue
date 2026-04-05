@@ -55,7 +55,50 @@ public class ItemTests
         item.CanUse(player).Should().BeTrue();
     }
 
-    private static Player CreatePlayer(int level, IReadOnlySet<Job>? masteredJobs = null)
+    [Fact]
+    public void CanUse_WhenRebirthedAndMasterRequirementsSatisfied_IgnoresRequiredLevelForChangeJob()
+    {
+        var item = new Item(
+            new ItemId(3065),
+            "大魔導の証",
+            "グランドキャスターへの転職証。",
+            maxStack: 99,
+            effectType: ItemEffectType.ChangeJob,
+            changeJobTo: Job.GrandCaster,
+            requiredLevel: 40,
+            requiredMasterJobs: new HashSet<Job> { Job.FireMage, Job.WaterMage, Job.WindMage });
+        var player = CreatePlayer(
+            level: 1,
+            rebirthCount: 1,
+            masteredJobs: new HashSet<Job> { Job.FireMage, Job.WaterMage, Job.WindMage });
+
+        item.CanUse(player).Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanUse_WhenRebirthedButMasterRequirementsMissing_DoesNotIgnoreRequiredLevelForChangeJob()
+    {
+        var item = new Item(
+            new ItemId(3065),
+            "大魔導の証",
+            "グランドキャスターへの転職証。",
+            maxStack: 99,
+            effectType: ItemEffectType.ChangeJob,
+            changeJobTo: Job.GrandCaster,
+            requiredLevel: 40,
+            requiredMasterJobs: new HashSet<Job> { Job.FireMage, Job.WaterMage, Job.WindMage });
+        var player = CreatePlayer(
+            level: 1,
+            rebirthCount: 1,
+            masteredJobs: new HashSet<Job> { Job.FireMage, Job.WaterMage });
+
+        item.CanUse(player).Should().BeFalse();
+    }
+
+    private static Player CreatePlayer(
+        int level,
+        IReadOnlySet<Job>? masteredJobs = null,
+        int rebirthCount = 0)
     {
         return new Player(
             new PlayerId(Guid.NewGuid()),
@@ -68,6 +111,7 @@ public class ItemTests
             status: new Status(10, 10, 10, 10, 10, 10, 10),
             job: Job.Apprentice,
             moveSet: new MoveSet(),
-            masteredJobs: masteredJobs);
+            masteredJobs: masteredJobs,
+            rebirthCount: rebirthCount);
     }
 }

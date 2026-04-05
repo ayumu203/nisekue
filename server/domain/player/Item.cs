@@ -31,7 +31,14 @@ public class Item(
     {
         ArgumentNullException.ThrowIfNull(player);
 
-        if (RequiredLevel is not null && player.Level < RequiredLevel.Value)
+        var canIgnoreRequiredLevelForRebirth = EffectType == ItemEffectType.ChangeJob
+            && player.RebirthCount > 0
+            && _requiredMasterJobs.Count > 0
+            && _requiredMasterJobs.All(player.MasteredJobs.Contains);
+
+        if (!canIgnoreRequiredLevelForRebirth
+            && RequiredLevel is not null
+            && player.Level < RequiredLevel.Value)
         {
             return false;
         }
