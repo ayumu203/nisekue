@@ -5,13 +5,11 @@ export function getMoveAttackRangeLabel(attackRange: MoveAttackRange | null): st
     case 'Single':
       return '単体'
     case 'Column':
-    case 'AcrossRows':
-      return '同側縦列'
+      return '縦1列'
     case 'Row':
-    case 'AcrossColumns':
-      return '同列2体'
+      return '横1列'
     case 'Square':
-      return '範囲'
+      return '前方2列'
     case 'All':
       return '全体'
     default:

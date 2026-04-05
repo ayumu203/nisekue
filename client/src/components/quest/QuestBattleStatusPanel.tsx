@@ -497,11 +497,11 @@ export default function QuestBattleStatusPanel({
               return enemy.enemyInstanceId === anchorEnemy.enemyInstanceId
             }
 
-            if (effectiveAttackRange === 'Column' || effectiveAttackRange === 'AcrossRows') {
+            if (effectiveAttackRange === 'Column') {
               return enemy.position.column === anchorEnemy.position.column
             }
 
-            if (effectiveAttackRange === 'Row' || effectiveAttackRange === 'AcrossColumns') {
+            if (effectiveAttackRange === 'Row') {
               return enemy.position.row === anchorEnemy.position.row
             }
 
