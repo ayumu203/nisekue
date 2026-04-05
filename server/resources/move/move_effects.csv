@@ -1,8 +1,8 @@
 effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical_rate,element_type,attack_stat,ailment_type,ailment_rate,ailment_turns,buff_stat,buff_op,buff_value,buff_turns,buff_rate,can_stack,override_target_type,override_attack_range,override_target_life_state,allow_boss_instant_death
 1,101,1,Damage,1,1.30,0,0.03,Strike,,,,,,,,,,,,,,
-2,102,1,Damage,1,1.10,2,0.03,Slash,,,,,,,,,,,,,,
-3,103,1,Damage,1,1.35,4,0.04,Slash,,,,,,,,,,,,,,
-4,104,1,Damage,1,1.80,12,0.05,Slash,,,,,,,,,,,,,,
+2,102,1,Damage,1,0.75,2,0.03,Slash,,,,,,,,,,,,,,
+3,103,1,Damage,1,0.90,4,0.04,Slash,,,,,,,,,,,,,,
+4,104,1,Damage,1,1.20,12,0.05,Slash,,,,,,,,,,,,,,
 5,105,1,Damage,1,1.20,6,0.03,Strike,Defense,,,,,,,,,,,,,
 6,106,1,Damage,1,1.25,4,0.02,None,,,,,,,,,,,,,,
 7,501,1,Ailment,,,,,,,Taunt,1.00,2,,,,,,,,,,
@@ -137,3 +137,12 @@ effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical
 136,422,2,Ailment,,,,,,,Poison,0.30,3,,,,,,,,,,false
 137,422,3,Ailment,,,,,,,Burn,0.30,3,,,,,,,,,,false
 138,422,4,Buff,,,,,,,,,,Accuracy,Add,-30,3,0.30,false,,,,
+139,603,1,Ailment,,,,,,,Taunt,1.00,3,,,,,,,,,,false
+140,603,2,Buff,,,,,,,,,,Defense,Add,25,3,1.00,false,,,,
+141,604,1,Heal,,1.80,120,,Holy,Intelligence,,,,,,,,,,,,
+142,605,1,Heal,,0.00,99999,,Holy,,,,,,,,,,,,,Dead,
+143,606,1,Buff,,,,,,,,,,Strength,Add,30,3,1.00,false,,,,
+144,606,2,Buff,,,,,,,,,,Defense,Add,30,3,1.00,false,,,,
+145,606,3,Buff,,,,,,,,,,Intelligence,Add,30,3,1.00,false,,,,
+146,607,1,Ailment,,,,,,,InstantDeath,0.60,1,,,,,,,,,,false
+147,608,1,Damage,1,2.80,40,0.06,None,Intelligence,,,,,,,,,,,,,

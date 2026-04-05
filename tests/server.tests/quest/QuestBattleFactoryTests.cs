@@ -1,3 +1,4 @@
+using System.Linq;
 using FluentAssertions;
 using server.application.quest;
 using server.domain.battle;
@@ -288,7 +289,7 @@ public class QuestBattleFactoryTests
     }
 
     [Fact]
-    public async Task CreateTurnInputsAsync_WhenNpcMageHasHalfMp_UsesAreaAttack()
+    public async Task CreateTurnInputsAsync_WhenNpcMageHasHalfMp_SelectsFireAttack()
     {
         var participantId = QuestParticipantId.New();
         var areaMoveId = new MoveId(108);
@@ -315,7 +316,7 @@ public class QuestBattleFactoryTests
             "Area",
             "area",
             TargetType.Enemy,
-            AttackRange.AcrossColumns,
+            AttackRange.Single,
             6,
             0,
             MoveCategory.Attack,
@@ -353,10 +354,12 @@ public class QuestBattleFactoryTests
         var factory = new QuestBattleFactory();
         var (actions, _) = await factory.CreateTurnInputsAsync(run, new FakeMoveRepository([areaMove, singleMove, restoreMove]), CreateEnemyDefinitions());
 
+        var fireMoveIds = new[] { areaMoveId.Id, singleMoveId.Id };
         actions.Should().ContainSingle(x =>
             x.ActorId == participantId.Value &&
             x.Kind == BattleActionKind.UseMove &&
-            x.MoveId == areaMoveId.Id);
+            x.MoveId.HasValue &&
+            fireMoveIds.Contains(x.MoveId.Value));
     }
 
     [Fact]

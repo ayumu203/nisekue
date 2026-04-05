@@ -138,9 +138,33 @@ public class QuestEnemyActionPolicy
             return null;
         }
 
+        var resurrectionMoves = healMoves
+            .Where(move => move.TargetLifeState == TargetLifeState.Dead)
+            .ToArray();
+        if (resurrectionMoves.Length > 0)
+        {
+            foreach (var target in planningContext.FriendlyTargets
+                         .Where(candidate => candidate.CurrentHp <= 0)
+                         .OrderBy(candidate => GetFrontPriority(candidate.Position)))
+            {
+                var applicableMoves = resurrectionMoves
+                    .Where(move => CanMoveTarget(move, target, planningContext))
+                    .OrderBy(move => move.MpCost)
+                    .ThenBy(move => GetMoveDefinitionIndex(enemyDefinition, move.Id))
+                    .ToArray();
+                if (applicableMoves.Length == 0)
+                {
+                    continue;
+                }
+
+                return CreateActionForTarget(enemy, applicableMoves[0], target);
+            }
+        }
+
         foreach (var target in EnumerateHealTargets(planningContext))
         {
             var applicableMoves = healMoves
+                .Where(move => move.TargetLifeState != TargetLifeState.Dead)
                 .Where(move => CanMoveTarget(move, target, planningContext))
                 .ToArray();
             if (applicableMoves.Length == 0)
@@ -187,7 +211,7 @@ public class QuestEnemyActionPolicy
         {
             if (move.TargetType == TargetType.Self)
             {
-                continue;
+                return CreateActionForTarget(enemy, move, planningContext.SelfTarget);
             }
 
             foreach (var target in planningContext.FriendlyTargets.OrderBy(candidate => GetFrontPriority(candidate.Position)))
