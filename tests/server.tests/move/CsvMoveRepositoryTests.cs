@@ -240,16 +240,16 @@ public class CsvMoveRepositoryTests
     public static TheoryData<int, string, TargetType, AttackRange, int, ElementType> AttackMoveDefinitions => new()
     {
         { 101, "ルーキーストライク", TargetType.Enemy, AttackRange.Single, 4, ElementType.Strike },
-        { 102, "なぎはらい", TargetType.Enemy, AttackRange.Column, 4, ElementType.Slash },
-        { 103, "スラッシュ", TargetType.Enemy, AttackRange.Column, 6, ElementType.Slash },
-        { 104, "ギガスラッシュ", TargetType.Enemy, AttackRange.Column, 12, ElementType.Slash },
-        { 105, "シールドバッシュ", TargetType.Enemy, AttackRange.Single, 5, ElementType.Strike },
-        { 106, "ヴズルイフ", TargetType.Enemy, AttackRange.Row, 6, ElementType.None },
+        { 102, "なぎはらい", TargetType.Enemy, AttackRange.Row, 3, ElementType.Slash },
+        { 103, "スラッシュ", TargetType.Enemy, AttackRange.Row, 5, ElementType.Slash },
+        { 104, "ギガスラッシュ", TargetType.Enemy, AttackRange.Row, 12, ElementType.Slash },
+        { 105, "シールドバッシュ", TargetType.Enemy, AttackRange.Single, 3, ElementType.Strike },
+        { 106, "ヴズルイフ", TargetType.Enemy, AttackRange.Row, 4, ElementType.None },
         { 107, "ヒルフェ", TargetType.Enemy, AttackRange.Single, 5, ElementType.Holy },
-        { 108, "プラーミア", TargetType.Enemy, AttackRange.Row, 6, ElementType.Fire },
+        { 108, "プラーミア", TargetType.Enemy, AttackRange.Single, 3, ElementType.Fire },
         { 109, "クラインプラーミヤ", TargetType.Enemy, AttackRange.Single, 6, ElementType.Fire },
         { 110, "ミッテルプラーミヤ", TargetType.Enemy, AttackRange.Single, 6, ElementType.Fire },
-        { 111, "グロースプラーミヤ", TargetType.Enemy, AttackRange.Single, 10, ElementType.Fire },
+        { 111, "グロースプラーミヤ", TargetType.Enemy, AttackRange.Single, 25, ElementType.Fire },
         { 112, "ウアプラーミヤ", TargetType.Enemy, AttackRange.Single, 16, ElementType.Fire },
         { 113, "クラインヴォーダ", TargetType.Enemy, AttackRange.Column, 4, ElementType.Water },
         { 114, "ミッテルヴォーダ", TargetType.Enemy, AttackRange.Column, 7, ElementType.Water },
@@ -263,16 +263,16 @@ public class CsvMoveRepositoryTests
         { 122, "ミッテルゼムリャ", TargetType.Enemy, AttackRange.Row, 7, ElementType.Earth },
         { 123, "グロースゼムリャ", TargetType.Enemy, AttackRange.Row, 11, ElementType.Earth },
         { 124, "ウアゼムリャ", TargetType.Enemy, AttackRange.Row, 17, ElementType.Earth },
-        { 138, "魔神斬り", TargetType.Enemy, AttackRange.Single, 8, ElementType.Slash },
-        { 203, "フレアライン", TargetType.Enemy, AttackRange.Column, 9, ElementType.Fire },
-        { 205, "テンペスト", TargetType.Enemy, AttackRange.All, 12, ElementType.Wind },
-        { 206, "死霊召喚", TargetType.Enemy, AttackRange.Single, 10, ElementType.None }
+        { 138, "魔神斬り", TargetType.Enemy, AttackRange.Single, 23, ElementType.Slash },
+        { 203, "フレアライン", TargetType.Enemy, AttackRange.Column, 37, ElementType.Fire },
+        { 205, "テンペスト", TargetType.Enemy, AttackRange.All, 92, ElementType.Wind },
+        { 206, "死霊召喚", TargetType.Enemy, AttackRange.Single, 26, ElementType.None }
     };
 
     public static TheoryData<int, string, MoveCategory, TargetType, AttackRange> FamilyRepresentativeDefinitions => new()
     {
         { 101, "ルーキーストライク", MoveCategory.Attack, TargetType.Enemy, AttackRange.Single },
-        { 102, "なぎはらい", MoveCategory.Attack, TargetType.Enemy, AttackRange.Column },
+        { 102, "なぎはらい", MoveCategory.Attack, TargetType.Enemy, AttackRange.Row },
         { 105, "シールドバッシュ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Single },
         { 106, "ヴズルイフ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Row },
         { 501, "ちょうはつ", MoveCategory.Support, TargetType.Self, AttackRange.Single },
@@ -283,7 +283,7 @@ public class CsvMoveRepositoryTests
         { 504, "トラップセット", MoveCategory.Support, TargetType.Enemy, AttackRange.Single },
         { 301, "マールイテラピー", MoveCategory.Support, TargetType.Ally, AttackRange.Single },
         { 107, "ヒルフェ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Single },
-        { 108, "プラーミア", MoveCategory.Attack, TargetType.Enemy, AttackRange.Row },
+        { 108, "プラーミア", MoveCategory.Attack, TargetType.Enemy, AttackRange.Single },
         { 113, "クラインヴォーダ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Column },
         { 117, "クラインヴェーチェル", MoveCategory.Attack, TargetType.Enemy, AttackRange.Square },
         { 121, "クラインゼムリャ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Row },
@@ -295,8 +295,8 @@ public class CsvMoveRepositoryTests
 
     public static TheoryData<int, string, int, decimal, int> HealMoveDefinitions => new()
     {
-        { 301, "マールイテラピー", 5, 1.00m, 20 },
-        { 302, "スレドニーテラピー", 8, 1.25m, 45 },
+        { 301, "マールイテラピー", 2, 1.00m, 20 },
+        { 302, "スレドニーテラピー", 30, 1.25m, 45 },
         { 303, "ボリショイテラピー", 12, 1.60m, 85 },
         { 304, "ヴェリーキーテラピー", 18, 2.10m, 150 }
     };

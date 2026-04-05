@@ -47,7 +47,33 @@ export type PlayerJob = z.infer<typeof playerJobSchema>
 export type PlayerJobCode = z.infer<typeof playerJobCodeSchema>
 
 export const moveTargetTypeSchema = z.enum(['Enemy', 'Ally', 'Self'])
-export const moveAttackRangeSchema = z.enum(['Single', 'Column', 'Row', 'Square', 'All'])
+const moveAttackRangeCanonicalSchema = z.enum(['Single', 'Column', 'Row', 'Square', 'All'])
+const moveAttackRangeLegacyInputSchema = z.enum([
+  'Single',
+  'Column',
+  'Row',
+  'Square',
+  'All',
+  'AcrossRows',
+  'AcrossColumns',
+])
+export const moveAttackRangeSchema = z.preprocess((value) => {
+  const parsedValue = moveAttackRangeLegacyInputSchema.safeParse(value)
+
+  if (!parsedValue.success) {
+    return value
+  }
+
+  if (parsedValue.data === 'AcrossRows') {
+    return 'Column'
+  }
+
+  if (parsedValue.data === 'AcrossColumns') {
+    return 'Row'
+  }
+
+  return parsedValue.data
+}, moveAttackRangeCanonicalSchema)
 export const moveCategorySchema = z.enum(['Attack', 'Support', 'Hybrid'])
 export const moveElementTypeSchema = z.enum([
   'Strike',
@@ -73,6 +99,9 @@ export const playerMoveSlotSchema = z.object({
   mpCost: z.number().int().min(0).nullable(),
   category: moveCategorySchema.nullable(),
 })
+
+export type MoveAttackRange = z.infer<typeof moveAttackRangeSchema>
+export type MoveAttackRangeInput = z.input<typeof moveAttackRangeSchema>
 
 export const learnedMoveSchema = z.object({
   moveId: z.number().int().min(1),

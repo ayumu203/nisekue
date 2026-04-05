@@ -1,6 +1,7 @@
 import QuestBattleStatusPanel from '@/components/quest/QuestBattleStatusPanel'
 import QuestLastTurnResultsPanel from '@/components/quest/QuestLastTurnResultsPanel'
 import QuestRunResultPanel from '@/components/quest/QuestRunResultPanel'
+import type { MoveAttackRange } from '@/schema/player'
 import locale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestActionKind, QuestRunDetailResponse } from '@/schema/quest'
 
@@ -9,7 +10,7 @@ type AvailableMove = {
   moveId: number | null
   moveName: string
   targetType: 'Enemy' | 'Ally' | 'Self' | null
-  attackRange: 'Single' | 'Column' | 'Row' | 'Square' | 'All' | null
+  attackRange: MoveAttackRange | null
 }
 
 type QuestRunSectionProps = {

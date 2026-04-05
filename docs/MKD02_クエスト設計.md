@@ -1254,6 +1254,7 @@ CSV 採用理由:
 * ステージや敵を追加するたびに DB seed や migration を増やさずに済む。
 * `stages.csv` は少なくとも `stage_code`, `name`, `battlefield_image_path`, `recommended_level`, `min_party_member_count`, `max_party_member_count`, `is_active` を持ち、背景画像を含むステージ表示設定を一元管理する。
 * 既存のトレーニング敵定義と同じ運用パターンに寄せられる。
+* 高難度ステージでは、既存ボスと同じ見た目・モチーフを使う終盤専用の派生敵を別 ID で追加してよい。これにより既存ステージの敵定義を固定したまま、終盤向けに技構成と能力値だけを強化できる。
 
 ### 7.3 募集系テーブル案
 
