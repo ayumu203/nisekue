@@ -48,16 +48,31 @@ export type PlayerJobCode = z.infer<typeof playerJobCodeSchema>
 
 export const moveTargetTypeSchema = z.enum(['Enemy', 'Ally', 'Self'])
 const moveAttackRangeCanonicalSchema = z.enum(['Single', 'Column', 'Row', 'Square', 'All'])
+const moveAttackRangeLegacyInputSchema = z.enum([
+  'Single',
+  'Column',
+  'Row',
+  'Square',
+  'All',
+  'AcrossRows',
+  'AcrossColumns',
+])
 export const moveAttackRangeSchema = z.preprocess((value) => {
-  if (value === 'AcrossRows') {
+  const parsedValue = moveAttackRangeLegacyInputSchema.safeParse(value)
+
+  if (!parsedValue.success) {
+    return value
+  }
+
+  if (parsedValue.data === 'AcrossRows') {
     return 'Column'
   }
 
-  if (value === 'AcrossColumns') {
+  if (parsedValue.data === 'AcrossColumns') {
     return 'Row'
   }
 
-  return value
+  return parsedValue.data
 }, moveAttackRangeCanonicalSchema)
 export const moveCategorySchema = z.enum(['Attack', 'Support', 'Hybrid'])
 export const moveElementTypeSchema = z.enum([
@@ -86,6 +101,7 @@ export const playerMoveSlotSchema = z.object({
 })
 
 export type MoveAttackRange = z.infer<typeof moveAttackRangeSchema>
+export type MoveAttackRangeInput = z.input<typeof moveAttackRangeSchema>
 
 export const learnedMoveSchema = z.object({
   moveId: z.number().int().min(1),
