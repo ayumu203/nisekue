@@ -21,7 +21,10 @@ import type { PlayerJobCode } from '@/schema/player'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-job/JobChange.json'
 
-function formatExpProgress(currentExp: number, requiredExp: number): { current: number; required: number; ratio: number } {
+function formatExpProgress(
+  currentExp: number,
+  requiredExp: number,
+): { current: number; required: number; ratio: number } {
   const required = Math.max(1, requiredExp)
   const current = Math.max(0, currentExp)
   return {
