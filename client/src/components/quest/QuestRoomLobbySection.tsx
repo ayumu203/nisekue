@@ -17,7 +17,9 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select'
 import CancelIcon from '@mui/icons-material/Cancel'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import QuestRestrictionsModal from './QuestRestrictionsModal'
+import QuestRoomFormationPreview from './QuestRoomFormationPreview'
 import {
   greenOutlinedInputSx,
   innerSurfaceSx,
@@ -29,6 +31,7 @@ import locale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestRoomDetailResponse } from '@/schema/quest'
 import type { PlayerSummary } from '@/schema/player'
 import { resolveCharacterAssetPath, resolveJobAssetPath } from '@/lib/assets'
+
 function GearIcon() {
   return (
     <SvgIcon viewBox="0 0 24 24" fontSize="small">
@@ -36,8 +39,14 @@ function GearIcon() {
     </SvgIcon>
   )
 }
-import QuestRestrictionsModal from './QuestRestrictionsModal'
-import QuestRoomFormationPreview from './QuestRoomFormationPreview'
+
+function PanelIcon() {
+  return (
+    <SvgIcon viewBox="0 0 24 24" fontSize="small">
+      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5Zm1.5-.5a.5.5 0 0 0-.5.5v3h14v-3a.5.5 0 0 0-.5-.5Zm13.5 4.5H5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5ZM7 6.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5m3 0a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5m-3 5h10v1H7zm0 3h6v1H7z" />
+    </SvgIcon>
+  )
+}
 
 type QuestRoomLobbySectionProps = {
   currentRoom: QuestRoomDetailResponse | null
@@ -90,6 +99,7 @@ export default function QuestRoomLobbySection({
   onCancelRoom,
 }: QuestRoomLobbySectionProps) {
   const [isRestrictionsModalOpen, setIsRestrictionsModalOpen] = useState(false)
+  const formationEditorRef = useRef<HTMLDivElement | null>(null)
   const isOwner =
     currentRoom != null && selfParticipantId != null
       ? currentRoom.participants.some(
@@ -125,6 +135,10 @@ export default function QuestRoomLobbySection({
       minRequiredLevelInput: nextMinRequiredLevelInput,
       allowedPlayerIds: nextAllowedPlayerIds,
     })
+  }
+
+  function handleJumpToFormationEditor(): void {
+    formationEditorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   return (
@@ -172,22 +186,39 @@ export default function QuestRoomLobbySection({
                 </Stack>
               </Stack>
               {isOwner ? (
-                <Tooltip title={locale.openRestrictionsModal}>
-                  <IconButton
-                    onClick={() => setIsRestrictionsModalOpen(true)}
-                    disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
-                    sx={{
-                      border: '1px solid',
-                      borderColor: 'rgba(152, 192, 255, 0.34)',
-                      backgroundColor: '#fffdfa',
-                      color: '#1d2d4a',
-                      alignSelf: 'flex-start',
-                    }}
-                    aria-label={locale.openRestrictionsModal}
-                  >
-                    <GearIcon />
-                  </IconButton>
-                </Tooltip>
+                <Stack spacing={1} alignItems="center">
+                  <Tooltip title={locale.openRestrictionsModal}>
+                    <IconButton
+                      onClick={() => setIsRestrictionsModalOpen(true)}
+                      disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
+                      sx={{
+                        border: '1px solid',
+                        borderColor: 'rgba(152, 192, 255, 0.34)',
+                        backgroundColor: '#fffdfa',
+                        color: '#1d2d4a',
+                        alignSelf: 'flex-start',
+                      }}
+                      aria-label={locale.openRestrictionsModal}
+                    >
+                      <GearIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={locale.jumpToFormationEditor}>
+                    <IconButton
+                      onClick={handleJumpToFormationEditor}
+                      sx={{
+                        border: '1px solid',
+                        borderColor: 'rgba(152, 192, 255, 0.24)',
+                        backgroundColor: 'rgba(255, 253, 250, 0.88)',
+                        color: '#1d2d4a',
+                        alignSelf: 'flex-start',
+                      }}
+                      aria-label={locale.jumpToFormationEditor}
+                    >
+                      <PanelIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
               ) : null}
             </Box>
             <Stack spacing={0.5}>
@@ -271,7 +302,7 @@ export default function QuestRoomLobbySection({
               onApply={handleRestrictionsModalApply}
             />
 
-            <div>
+            <div ref={formationEditorRef}>
               <Typography variant="h6" fontWeight={900} sx={{ color: '#ffffff' }}>
                 {isOwner ? locale.ownerPositionTitle : locale.waitingForOwnerTitle}
               </Typography>

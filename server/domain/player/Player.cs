@@ -158,6 +158,10 @@ public class Player(
         Gold -= validated;
     }
 
+    public int RequiredExpForNextLevel() => Level * 10;
+
+    public int RequiredJobExpForNextLevel() => JobLevel * 10;
+
     public LevelUpResult LevelUp(JobProfile jobProfile, JobMoveLearningRule learningRule)
     {
         if (jobProfile.Job != Job)
@@ -172,17 +176,17 @@ public class Player(
 
         var growth = jobProfile.GrowthValue;
         var hasPlayerLeveledUp = false;
-        while (Exp >= Level * 10)
+        while (Exp >= RequiredExpForNextLevel())
         {
-            Exp -= Level * 10;
+            Exp -= RequiredExpForNextLevel();
             Level++;
             hasPlayerLeveledUp = true;
         }
 
         var hasJobLeveledUp = false;
-        while (JobExp >= JobLevel * 10)
+        while (JobExp >= RequiredJobExpForNextLevel())
         {
-            JobExp -= JobLevel * 10;
+            JobExp -= RequiredJobExpForNextLevel();
             JobLevel++;
             Status = new Status(
                 maxHp: Status.MaxHp + growth.MaxHp,

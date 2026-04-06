@@ -21,8 +21,11 @@ import type { PlayerJobCode } from '@/schema/player'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-job/JobChange.json'
 
-function formatExpProgress(currentExp: number, level: number): { current: number; required: number; ratio: number } {
-  const required = Math.max(1, level * 10)
+function formatExpProgress(
+  currentExp: number,
+  requiredExp: number,
+): { current: number; required: number; ratio: number } {
+  const required = Math.max(1, requiredExp)
   const current = Math.max(0, currentExp)
   return {
     current,
@@ -66,7 +69,7 @@ export default function JobChange() {
   const currentPlayerImageSrc = resolveCharacterAssetPath(player?.imagePath)
   const currentJobs = (player?.jobProfiles ?? []).filter((job) => baseJobCodes.has(job.code))
   const unlockThreshold = 5
-  const jobExpProgress = formatExpProgress(player?.jobExp ?? 0, player?.jobLevel ?? 1)
+  const jobExpProgress = formatExpProgress(player?.jobExp ?? 0, player?.requiredJobExpForNextLevel ?? 1)
   const isCurrentJobMastered =
     player?.job?.code != null && (player?.masteredJobs ?? []).some((job) => job.code === player.job.code)
 
