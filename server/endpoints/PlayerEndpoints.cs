@@ -685,8 +685,10 @@ internal static class PlayerEndpoints
                     },
                     level = player.Level,
                     exp = player.Exp,
+                    requiredExpForNextLevel = player.RequiredExpForNextLevel(),
                     jobLevel = player.JobLevel,
                     jobExp = player.JobExp,
+                    requiredJobExpForNextLevel = player.RequiredJobExpForNextLevel(),
                     gold = player.Gold,
                     status = new
                     {

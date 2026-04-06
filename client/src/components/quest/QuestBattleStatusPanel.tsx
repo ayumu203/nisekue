@@ -138,21 +138,21 @@ function AllyStatusCard({ member }: { member: QuestPartyMemberView }) {
           variant="caption"
           noWrap
           title={member.displayName}
-          sx={{ fontWeight: 800, color: '#503717', fontSize: { xs: '0.42rem', sm: '0.68rem' }, lineHeight: 1.05 }}
+          sx={{ fontWeight: 800, color: '#503717', fontSize: { xs: '0.56rem', sm: '0.82rem' }, lineHeight: 1.1 }}
         >
           {member.displayName}
         </Typography>
         <Typography
           variant="caption"
           noWrap
-          sx={{ color: '#624927', fontSize: { xs: '0.38rem', sm: '0.62rem' }, lineHeight: 1.05 }}
+          sx={{ color: '#624927', fontSize: { xs: '0.5rem', sm: '0.76rem' }, lineHeight: 1.1 }}
         >
           HP {member.currentHp}/{member.maxHp ?? '-'}
         </Typography>
         <Typography
           variant="caption"
           noWrap
-          sx={{ color: '#30506e', fontSize: { xs: '0.38rem', sm: '0.62rem' }, lineHeight: 1.05 }}
+          sx={{ color: '#30506e', fontSize: { xs: '0.5rem', sm: '0.76rem' }, lineHeight: 1.1 }}
         >
           MP {member.currentMp}/{member.maxMp ?? '-'}
         </Typography>
@@ -253,7 +253,7 @@ function BattleSprite({
               color: '#503717',
               textAlign: 'center',
               lineHeight: 1.35,
-              fontSize: { xs: '0.62rem', sm: '0.7rem' },
+              fontSize: { xs: '0.72rem', sm: '0.82rem' },
               wordBreak: 'break-word',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
@@ -271,20 +271,27 @@ function BattleSprite({
           px: 0.25,
           width: isAlly
             ? { xs: 'calc(100% - 34px)', sm: 'calc(100% - 10px)' }
-            : { xs: 'calc(100% - 14px)', sm: 'calc(100% + 10px)' },
-          ml: isAlly ? { xs: '17px', sm: '5px' } : { xs: '7px', sm: '-5px' },
+            : { xs: 'calc(100% + 22px)', sm: 'calc(100% + 10px)' },
+          ml: isAlly ? { xs: '17px', sm: '5px' } : { xs: '-11px', sm: '-5px' },
         }}
       >
         <Typography
           variant="caption"
           fontWeight={700}
-          noWrap
+          noWrap={isAlly}
           title={name}
           textAlign="center"
           sx={{
-            fontSize: { xs: '0.46rem', sm: '0.75rem' },
+            fontSize: { xs: '0.62rem', sm: '0.88rem' },
             color: isDead ? 'rgba(90,90,90,0.92)' : '#3f2f16',
             textShadow: '0 1px 0 rgba(255,255,255,0.55)',
+            lineHeight: isAlly ? 1.1 : { xs: 1.02, sm: 1.1 },
+            wordBreak: isAlly ? 'normal' : 'keep-all',
+            display: isAlly ? 'block' : '-webkit-box',
+            overflow: 'hidden',
+            WebkitLineClamp: isAlly ? 'none' : 2,
+            WebkitBoxOrient: isAlly ? 'initial' : 'vertical',
+            minHeight: isAlly ? 'auto' : { xs: '1.26rem', sm: 'auto' },
           }}
         >
           {name}
@@ -293,7 +300,7 @@ function BattleSprite({
           variant="caption"
           color="text.secondary"
           textAlign="center"
-          sx={{ fontSize: { xs: '0.43rem', sm: '0.75rem' }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
+          sx={{ fontSize: { xs: '0.58rem', sm: '0.84rem' }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
         >
           HP {hp}/{maxHp ?? '-'}
         </Typography>

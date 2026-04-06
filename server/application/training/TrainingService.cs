@@ -80,9 +80,8 @@ public class TrainingService(
 
         var exp = trainingExpCalculator.Calculate(player, enemy, metrics, summary.Outcome);
         var levelUpResult = ApplyExp(player, exp);
-        var weaponMasteryDelta = ApplyWeaponMastery(player, enemy, playerEquipments, equipments, nowUtc);
+        var weaponMasteryDelta = ApplyWeaponUpdates(player, enemy, playerEquipments, equipments, nowUtc);
 
-        ConsumeEquippedDurability(playerEquipments, nowUtc);
         await playerRepository.SaveAsync(player);
         await playerEquipmentRepository.SaveAsync(playerEquipments);
 
@@ -261,15 +260,7 @@ public class TrainingService(
         return moves.ToArray();
     }
 
-    private static void ConsumeEquippedDurability(IReadOnlyList<PlayerEquipment> playerEquipments, DateTimeOffset now)
-    {
-        foreach (var equipment in playerEquipments.Where(x => x.Status == EquipmentStatus.Equipped))
-        {
-            equipment.ConsumeDurability(1, now);
-        }
-    }
-
-    private int ApplyWeaponMastery(
+    private int ApplyWeaponUpdates(
         Player player,
         TrainingEnemy enemy,
         IReadOnlyList<PlayerEquipment> playerEquipments,
@@ -281,6 +272,8 @@ public class TrainingService(
         {
             return 0;
         }
+
+        weapon.ConsumeDurability(1, now);
 
         if (!trainingWeaponMasteryPolicy.ShouldIncrease(player.Level, enemy.Level))
         {

@@ -47,16 +47,15 @@ function toNormalized(value: number | undefined, maxValue: number): number {
   return Math.max(0, Math.min(100, (value / maxValue) * 100))
 }
 
-function formatExpProgress(exp: number | undefined, level: number | undefined, fallback: string): string {
-  if (typeof exp !== 'number' || typeof level !== 'number') {
+function formatExpProgress(exp: number | undefined, requiredExp: number | undefined, fallback: string): string {
+  if (typeof exp !== 'number' || typeof requiredExp !== 'number') {
     return `${fallback} / ${fallback}`
   }
 
-  if (!Number.isFinite(exp) || !Number.isFinite(level) || level <= 0) {
+  if (!Number.isFinite(exp) || !Number.isFinite(requiredExp) || requiredExp <= 0) {
     return `${fallback} / ${fallback}`
   }
 
-  const requiredExp = level * 10
   return `${exp} / ${requiredExp}`
 }
 
@@ -337,13 +336,13 @@ export default function Status({
                 <Stack spacing={1.5}>
                   <StatusStatRow
                     label={locale.labels.exp}
-                    value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+                    value={formatExpProgress(player?.exp, player?.requiredExpForNextLevel, locale.unknownValue)}
                     normalized={0}
                     hideGauge
                   />
                   <StatusStatRow
                     label={locale.labels.jobExp}
-                    value={formatExpProgress(player?.jobExp, player?.jobLevel, locale.unknownValue)}
+                    value={formatExpProgress(player?.jobExp, player?.requiredJobExpForNextLevel, locale.unknownValue)}
                     normalized={0}
                     hideGauge
                   />
@@ -400,13 +399,13 @@ export default function Status({
                     ))}
                     <StatusStatRow
                       label={locale.labels.exp}
-                      value={formatExpProgress(player?.exp, player?.level, locale.unknownValue)}
+                      value={formatExpProgress(player?.exp, player?.requiredExpForNextLevel, locale.unknownValue)}
                       normalized={0}
                       hideGauge
                     />
                     <StatusStatRow
                       label={locale.labels.jobExp}
-                      value={formatExpProgress(player?.jobExp, player?.jobLevel, locale.unknownValue)}
+                      value={formatExpProgress(player?.jobExp, player?.requiredJobExpForNextLevel, locale.unknownValue)}
                       normalized={0}
                       hideGauge
                     />

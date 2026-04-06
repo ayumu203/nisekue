@@ -171,6 +171,9 @@ export default function Training() {
   }
 
   const isTrainingActionDisabled = isTrainingSubmitting || trainingLockRemainingSeconds > 0
+  const playerLevel = player?.level
+  const playerExp = player?.exp
+  const nextLevelRequiredExp = player?.requiredExpForNextLevel
 
   useEffect(() => {
     if (!player) {
@@ -220,7 +223,9 @@ export default function Training() {
       setLastSubmittedMoveIds(normalizedMoveIds)
       setPlannedMoveIds(normalizedMoveIds)
       setTrainingResult(result)
-      await refreshPlayerStatus()
+      await refreshPlayerStatus().catch((error) => {
+        console.error('Failed to refresh player status after training.', error)
+      })
     } catch (error) {
       if (error instanceof TrainingCooldownError) {
         const retryAfterMessage = locale.retryAfterSeconds.replace('{{seconds}}', String(error.retryAfterSeconds))
@@ -344,6 +349,9 @@ export default function Training() {
                     <TrainingBattleResult
                       enemy={selectedEnemy}
                       result={trainingResult}
+                      playerLevel={playerLevel}
+                      playerExp={playerExp}
+                      nextLevelRequiredExp={nextLevelRequiredExp}
                       isActionDisabled={isTrainingActionDisabled}
                       lockRemainingSeconds={trainingLockRemainingSeconds}
                       movePlanSlot={

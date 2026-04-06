@@ -83,7 +83,6 @@ classDiagram
             <<Application Service>>
             +GetTrainingEnemies(playerId: PlayerId) TrainingEnemyView[]
             +ExecuteTraining(playerId : PlayerId, enemyId : TrainingEnemyId) TrainingResultView
-            -ConsumeEquippedDurability(playerEquipments: IReadOnlyList~PlayerEquipment~, now: DateTimeOffset) void
             -ApplyWeaponMastery(player: Player, enemy: TrainingEnemy, playerEquipments: IReadOnlyList~PlayerEquipment~, now: DateTimeOffset) TrainingWeaponMasteryResult
             -ResolveBattleUntilFinished(actors: IReadOnlyList~BattleActorInput~, playerMoves: IReadOnlyList~Move~, moves: IReadOnlyList~Move~) (TrainingBattleSummary, TrainingContributionMetrics)
             -BuildNextTurnActors(actors: IReadOnlyList~BattleActorInput~, states: IReadOnlyList~BattleActorState~) BattleActorInput[]
