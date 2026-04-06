@@ -82,7 +82,6 @@ public class TrainingService(
         var levelUpResult = ApplyExp(player, exp);
         var weaponMasteryDelta = ApplyWeaponMastery(player, enemy, playerEquipments, equipments, nowUtc);
 
-        ConsumeEquippedDurability(playerEquipments, nowUtc);
         await playerRepository.SaveAsync(player);
         await playerEquipmentRepository.SaveAsync(playerEquipments);
 
@@ -259,14 +258,6 @@ public class TrainingService(
         }
 
         return moves.ToArray();
-    }
-
-    private static void ConsumeEquippedDurability(IReadOnlyList<PlayerEquipment> playerEquipments, DateTimeOffset now)
-    {
-        foreach (var equipment in playerEquipments.Where(x => x.Status == EquipmentStatus.Equipped))
-        {
-            equipment.ConsumeDurability(1, now);
-        }
     }
 
     private int ApplyWeaponMastery(

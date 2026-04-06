@@ -102,9 +102,8 @@
 * 計算した経験値は `Player.GainExp(exp)` で加算する。
 * その後 `Player.LevelUp(growthValueRepository)` を呼び、レベルアップ可否を判定する。
 * 特訓結果の保存時にはプレイヤーを `playerRepository.SaveAsync(player)` で保存する。
-* 特訓で永続化されるのはプレイヤーの経験値・レベル関連の更新と、装備中個体の耐久値更新である。
-* 特訓終了時、装備中だった武器・防具の耐久値をそれぞれ `1` 減らす。
-* 耐久値が `0` になった個体は削除せず `Broken` として保存する。
+* 特訓で永続化されるのはプレイヤーの経験値・レベル関連の更新、および必要に応じた熟練度更新である。
+* 特訓では装備中だった武器・防具の耐久値は減らさない。
 * 特訓中の現在 HP は恒久データとして保存しない。
 
 ## API
@@ -127,7 +126,7 @@
 * 指定した `MoveId` が未習得である場合の扱いは今後定義する。少なくとも MP 不足時はエラーにせず `Wait` とする。
 * 正常時レスポンスは `TrainingResultView` とする。
 * レスポンスは `TrainingResult`、`Turn`、`CurrentPlayerHp`、`MaxPlayerHp`、`CurrentEnemyHp`、`MaxEnemyHp`、`Exp`、`IsPlayerLevelUp`、`IsJobLevelUp`、`NewlyLearnedMoves` を持つ。
-* 必要に応じて装備耐久変化後の装備情報を同レスポンスまたは後続のプレイヤー取得 API で確認できるようにする。
+* 必要に応じて特訓後の装備情報を後続のプレイヤー取得 API で確認できるようにする。
 
 ## 現状実装に基づく制約
 
