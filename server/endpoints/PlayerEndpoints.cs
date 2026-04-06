@@ -682,16 +682,16 @@ internal static class PlayerEndpoints
                         value = (int)player.Job,
                         displayName = EndpointHelpers.GetJobDisplayName(player.Job),
                         description = jobProfileRepository.GetByJob(player.Job).Description
-            },
-            level = player.Level,
-            exp = player.Exp,
-            requiredExpForNextLevel = player.RequiredExpForNextLevel(),
-            jobLevel = player.JobLevel,
-            jobExp = player.JobExp,
-            requiredJobExpForNextLevel = player.RequiredJobExpForNextLevel(),
-            gold = player.Gold,
-            status = new
-            {
+                    },
+                    level = player.Level,
+                    exp = player.Exp,
+                    requiredExpForNextLevel = player.RequiredExpForNextLevel(),
+                    jobLevel = player.JobLevel,
+                    jobExp = player.JobExp,
+                    requiredJobExpForNextLevel = player.RequiredJobExpForNextLevel(),
+                    gold = player.Gold,
+                    status = new
+                    {
                         baseValues = new
                         {
                             maxHp = player.Status.MaxHp,
