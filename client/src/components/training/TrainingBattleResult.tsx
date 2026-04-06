@@ -8,6 +8,9 @@ import locale from '../../../locale/training/Training.json'
 type TrainingBattleResultProps = {
   enemy: TrainingEnemy
   result: ExecuteTrainingResponse
+  playerLevel?: number
+  playerExp?: number
+  nextLevelRequiredExp?: number
   isActionDisabled: boolean
   lockRemainingSeconds: number
   movePlanSlot?: ReactNode
@@ -37,6 +40,9 @@ function normalizeHp(current: number, max: number): number {
 export default function TrainingBattleResult({
   enemy,
   result,
+  playerLevel,
+  playerExp,
+  nextLevelRequiredExp,
   isActionDisabled,
   lockRemainingSeconds,
   movePlanSlot,
@@ -50,11 +56,15 @@ export default function TrainingBattleResult({
   const enemyHp = locale.enemyHp
     .replace('{{current}}', String(result.currentEnemyHp))
     .replace('{{max}}', String(result.maxEnemyHp))
-  const resultSummary = locale.resultSummary
-    .replace('{{trainingResult}}', result.trainingResult)
-    .replace('{{turn}}', String(result.turn))
-    .replace('{{exp}}', String(result.exp))
   const expValue = locale.expValue.replace('{{exp}}', String(result.exp))
+  const currentLevelLabel =
+    typeof playerLevel === 'number' ? locale.currentLevel.replace('{{level}}', String(playerLevel)) : null
+  const expProgressLabel =
+    typeof playerExp === 'number' && typeof nextLevelRequiredExp === 'number'
+      ? locale.expProgress
+          .replace('{{current}}', String(playerExp))
+          .replace('{{required}}', String(nextLevelRequiredExp))
+      : null
   const levelUpLabel =
     result.isPlayerLevelUp && result.isJobLevelUp
       ? locale.playerAndJobLevelUp
@@ -132,9 +142,16 @@ export default function TrainingBattleResult({
             <Typography variant="h4" fontWeight={900} sx={{ color: '#f3b38d' }}>
               {expValue}
             </Typography>
-            <Typography variant="body2" textAlign="center" sx={{ color: 'rgba(245, 240, 223, 0.72)' }}>
-              {resultSummary}
-            </Typography>
+            {currentLevelLabel ? (
+              <Typography variant="body1" fontWeight={800} textAlign="center" sx={{ color: '#fff7dd' }}>
+                {currentLevelLabel}
+              </Typography>
+            ) : null}
+            {expProgressLabel ? (
+              <Typography variant="body2" textAlign="center" sx={{ color: 'rgba(245, 240, 223, 0.72)' }}>
+                {expProgressLabel}
+              </Typography>
+            ) : null}
             {levelUpLabel ? (
               <Chip
                 label={levelUpLabel}
@@ -170,7 +187,7 @@ export default function TrainingBattleResult({
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
             gap: 1,
           }}
         >
@@ -206,23 +223,6 @@ export default function TrainingBattleResult({
             </Typography>
             <Typography variant="subtitle2" fontWeight={800}>
               {result.turn}
-            </Typography>
-          </Paper>
-          <Paper
-            variant="outlined"
-            sx={{
-              ...innerSurfaceSx,
-              p: 1.25,
-              color: '#f5f0df',
-              backgroundColor: '#382526',
-              borderColor: 'rgba(214, 146, 112, 0.22)',
-            }}
-          >
-            <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.62)' }}>
-              {locale.expGained}
-            </Typography>
-            <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#f3b38d' }}>
-              {expValue}
             </Typography>
           </Paper>
         </Box>

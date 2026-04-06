@@ -29,6 +29,7 @@ import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import type { GetPlayerResponse } from '@/schema/player'
 
 const TRAINING_COOLDOWN_MS = 3000
+const PLAYER_LEVEL_REQUIRED_EXP_FACTOR = 10
 
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
   return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
@@ -171,6 +172,12 @@ export default function Training() {
   }
 
   const isTrainingActionDisabled = isTrainingSubmitting || trainingLockRemainingSeconds > 0
+  const playerLevel = player?.level
+  const playerExp = player?.exp
+  const nextLevelRequiredExp =
+    typeof playerLevel === 'number' && Number.isFinite(playerLevel) && playerLevel > 0
+      ? playerLevel * PLAYER_LEVEL_REQUIRED_EXP_FACTOR
+      : undefined
 
   useEffect(() => {
     if (!player) {
@@ -219,8 +226,8 @@ export default function Training() {
       )
       setLastSubmittedMoveIds(normalizedMoveIds)
       setPlannedMoveIds(normalizedMoveIds)
-      setTrainingResult(result)
       await refreshPlayerStatus()
+      setTrainingResult(result)
     } catch (error) {
       if (error instanceof TrainingCooldownError) {
         const retryAfterMessage = locale.retryAfterSeconds.replace('{{seconds}}', String(error.retryAfterSeconds))
@@ -344,6 +351,9 @@ export default function Training() {
                     <TrainingBattleResult
                       enemy={selectedEnemy}
                       result={trainingResult}
+                      playerLevel={playerLevel}
+                      playerExp={playerExp}
+                      nextLevelRequiredExp={nextLevelRequiredExp}
                       isActionDisabled={isTrainingActionDisabled}
                       lockRemainingSeconds={trainingLockRemainingSeconds}
                       movePlanSlot={
