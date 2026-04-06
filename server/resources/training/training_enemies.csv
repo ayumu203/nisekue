@@ -4,13 +4,13 @@ id,name,image_path,level,max_hp,max_mp,strength,defense,intelligence,luck,speed
 3,へいし,/image/training/02_heishi.png,30,540,93,92,60,64,28,58
 12,れんせいへい,/image/training/02_heishi.png,42,772,172,100,77,122,45,76
 4,レヴナント,/image/training/07_rev.png,50,927,224,106,88,160,56,88
-13,えいこうのきし,/image/training/07_rev.png,72,1264,292,156,116,205,80,116
+13,えいこうのきし,/image/training/12_return.png,72,1264,292,156,116,205,80,116
 5,たいちょう,/image/training/01_heishi.png,75,1310,301,163,120,211,83,120
-14,せいてんのまどう,/image/training/06_magic.png,92,1836,461,227,168,301,122,173
+14,せいてんのまどう,/image/training/14_angle.png,92,1836,461,227,168,301,122,173
 6,だいけんじゃ,/image/training/05_magic.png,100,2083,537,257,191,344,141,198
-15,かがやきのけんごう,/image/training/03_heishi.png,102,2132,535,275,202,347,144,202
+15,かがやきのけんごう,/image/training/13_blood.png,102,2132,535,275,202,347,144,202
 7,ねこえりーと,/image/training/03_heishi.png,150,3315,476,712,476,408,218,295
 8,だいまどうし,/image/training/06_magic.png,200,4614,695,912,651,730,296,399
 9,アンポ将軍,/image/training/08_anpo.png,250,6980,1074,1395,996,1044,440,596
-10,てんじょうのきし,/image/training/07_rev.png,300,9357,1489,1588,1291,1787,555,755
+10,てんじょうのきし,/image/training/15_brave.png,300,9357,1489,1588,1291,1787,555,755
 11,しんえいたいちょう,/image/training/01_heishi.png,500,20675,2274,3673,2625,2536,1173,1593
