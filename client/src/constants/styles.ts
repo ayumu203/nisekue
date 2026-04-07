@@ -46,6 +46,31 @@ export const mutedGreenButtonSx = {
   },
 } as const
 
+export const softGoldButtonSx = {
+  '&&': {
+    backgroundColor: '#f2d27a',
+    backgroundImage: 'none',
+    border: '2px solid #8f6b2f',
+    borderColor: '#8f6b2f',
+    color: '#6a4b35',
+    boxShadow: 'none',
+  },
+  '&&:hover': {
+    backgroundColor: '#e4c062',
+    backgroundImage: 'none',
+    borderColor: '#7f5d26',
+    boxShadow: 'none',
+  },
+  '&&.Mui-disabled': {
+    backgroundColor: '#ead9a7',
+    backgroundImage: 'none',
+    border: '2px solid #b59a69',
+    borderColor: '#b59a69',
+    color: '#927b56',
+    boxShadow: 'none',
+  },
+} as const
+
 export const mutedRedButtonSx = {
   '&&': {
     backgroundColor: '#fff1ef',

@@ -1,6 +1,7 @@
 import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, TextField, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import type { User } from '@supabase/supabase-js'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayer, updatePlayerImage } from '@/api/player'
@@ -10,21 +11,47 @@ import {
   innerSurfaceSx,
   mutedGreenButtonSx,
   outerPagePaperSx,
+  softGoldButtonSx,
   softGreenButtonSx,
 } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { supabase } from '@/lib/supabase'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import { PLAYER_IMAGE_COUNT, resolvePlayerImageFileName, resolvePlayerImageNo } from '@/lib/playerImages'
 import locale from '../../locale/player-setting/PlayerSetting.json'
 
+function getUserProviders(user: User | null): string[] {
+  const providers = user?.app_metadata?.providers
+  if (!Array.isArray(providers)) {
+    return []
+  }
+
+  return providers.filter((provider): provider is string => typeof provider === 'string')
+}
+
+function hasAnonymousIdentity(user: User | null): boolean {
+  const providers = getUserProviders(user)
+  const isAnonymous = (user as (User & { is_anonymous?: boolean }) | null)?.is_anonymous
+
+  return isAnonymous === true || providers.includes('anonymous')
+}
+
 export default function PlayerSetting() {
   const { session, isLoading } = useAuth()
+  const [accountEmail, setAccountEmail] = useState<string | null>(session?.user.email ?? null)
+  const [accountIsAnonymous, setAccountIsAnonymous] = useState(hasAnonymousIdentity(session?.user ?? null))
+  const [needsPasswordSetup, setNeedsPasswordSetup] = useState(false)
   const [userName, setUserName] = useState('')
   const [imageNoInput, setImageNoInput] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [linkEmail, setLinkEmail] = useState('')
+  const [linkPassword, setLinkPassword] = useState('')
+  const [accountError, setAccountError] = useState<string | null>(null)
+  const [accountSuccess, setAccountSuccess] = useState<string | null>(null)
+  const [accountAction, setAccountAction] = useState<'email' | 'password' | null>(null)
   const settingInputSx = {
     ...greenOutlinedInputSx,
     '& .MuiInputLabel-root.Mui-focused': {
@@ -67,6 +94,20 @@ export default function PlayerSetting() {
     const imageNo = resolvePlayerImageNo(player?.imagePath)
     setImageNoInput(imageNo ? String(imageNo) : '')
   }, [player?.imagePath])
+
+  useEffect(() => {
+    setAccountEmail(session?.user.email ?? null)
+    setAccountIsAnonymous(hasAnonymousIdentity(session?.user ?? null))
+    if (!session?.user.email) {
+      setNeedsPasswordSetup(false)
+    }
+  }, [session?.user])
+
+  useEffect(() => {
+    if (session?.user.email) {
+      setLinkEmail(session.user.email)
+    }
+  }, [session?.user.email])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
@@ -146,6 +187,78 @@ export default function PlayerSetting() {
     Number.isInteger(selectedImageNo) && selectedImageNo >= 1 && selectedImageNo <= PLAYER_IMAGE_COUNT
       ? resolveCharacterAssetPath(resolvePlayerImageFileName(selectedImageNo))
       : null
+  const anonymousIdentity = accountIsAnonymous
+  const hasLinkedEmail = Boolean(accountEmail)
+  const shouldShowPasswordSetup = hasLinkedEmail && (anonymousIdentity || needsPasswordSetup)
+
+  async function handleLinkEmail(): Promise<void> {
+    const trimmedEmail = linkEmail.trim()
+    if (!trimmedEmail) {
+      setAccountError(locale.linkEmailDefaultError)
+      setAccountSuccess(null)
+      return
+    }
+
+    setAccountAction('email')
+    setAccountError(null)
+    setAccountSuccess(null)
+
+    const emailRedirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
+    const { data, error } = await supabase.auth.updateUser({ email: trimmedEmail }, { emailRedirectTo })
+
+    if (error) {
+      const normalized = error.message.trim().toLowerCase()
+      const existingAccountMessages = new Set([
+        'user already registered',
+        'email address already in use',
+        'email exists',
+      ])
+
+      setAccountError(
+        existingAccountMessages.has(normalized)
+          ? locale.linkEmailExistingAccount
+          : locale.linkEmailDefaultError,
+      )
+      setAccountAction(null)
+      return
+    }
+
+    const latestEmail = data.user?.email?.trim().toLowerCase()
+    const nextAnonymousIdentity = hasAnonymousIdentity(data.user ?? null)
+    setAccountEmail(data.user?.email ?? trimmedEmail)
+    setAccountIsAnonymous(nextAnonymousIdentity)
+    setNeedsPasswordSetup(true)
+    setLinkEmail(data.user?.email ?? trimmedEmail)
+    setAccountSuccess(
+      latestEmail === trimmedEmail.toLowerCase() ? locale.linkEmailImmediateSuccess : locale.linkEmailSuccess,
+    )
+    setAccountAction(null)
+  }
+
+  async function handleSetPassword(): Promise<void> {
+    if (linkPassword.length < 6) {
+      setAccountError(locale.passwordMinLength)
+      setAccountSuccess(null)
+      return
+    }
+
+    setAccountAction('password')
+    setAccountError(null)
+    setAccountSuccess(null)
+
+    const { error } = await supabase.auth.updateUser({ password: linkPassword })
+
+    if (error) {
+      setAccountError(locale.setPasswordDefaultError)
+      setAccountAction(null)
+      return
+    }
+
+    setLinkPassword('')
+    setNeedsPasswordSetup(false)
+    setAccountSuccess(locale.setPasswordSuccess)
+    setAccountAction(null)
+  }
 
   if (isLoading) {
     return (
@@ -174,131 +287,224 @@ export default function PlayerSetting() {
           ) : playerError ? (
             <Alert severity="warning">{playerError.message}</Alert>
           ) : (
-            <Paper
-              variant="outlined"
-              sx={{
-                ...innerSurfaceSx,
-                borderRadius: 3,
-                p: { xs: 2, sm: 2.5 },
-                backgroundColor: '#44644a',
-                borderColor: '#b8ab7a',
-                color: '#fff8ea',
-              }}
-            >
-              <Box component="form" onSubmit={handleSubmit}>
-                <Stack spacing={2}>
-                  <Stack spacing={0.25}>
-                    <Typography variant="overline" sx={{ letterSpacing: '0.18em', color: 'rgba(243, 238, 220, 0.72)' }}>
-                      {locale.titleRuby}
-                    </Typography>
-                    <Typography variant="h4" fontWeight={900} color="#fff8ea">
-                      {locale.title}
-                    </Typography>
-                  </Stack>
-                  <Stack spacing={0.75}>
-                    <Typography id="player-name-label" variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
-                      {locale.playerNameLabel}
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      placeholder={locale.playerNamePlaceholder}
-                      value={userName}
-                      onChange={(event) => {
-                        setUserName(event.target.value)
-                      }}
-                      inputProps={{
-                        'aria-labelledby': 'player-name-label',
-                      }}
-                      sx={settingInputSx}
-                    />
-                  </Stack>
-                  <Stack spacing={1.5}>
-                    <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
-                      {locale.playerImageLabel}
-                    </Typography>
-                    <Box
-                      sx={{
-                        width: '100%',
-                        maxWidth: 237,
-                        aspectRatio: '338 / 350',
-                        borderRadius: 2,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        bgcolor: 'rgba(255,255,255,0.72)',
-                        overflow: 'hidden',
-                        alignSelf: 'center',
-                      }}
-                    >
-                      {previewImagePath ? (
-                        <Box
-                          component="img"
-                          src={previewImagePath}
-                          alt={locale.playerImagePreviewAlt}
-                          sx={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'contain',
-                            objectPosition: 'center bottom',
-                            display: 'block',
-                          }}
-                        />
-                      ) : (
-                        <Box sx={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', px: 2 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            {locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                    <Stack spacing={0.75}>
+            <Stack spacing={{ xs: 1.5, sm: 2 }}>
+              <Paper
+                variant="outlined"
+                sx={{
+                  ...innerSurfaceSx,
+                  borderRadius: 3,
+                  p: { xs: 2, sm: 2.5 },
+                  backgroundColor: '#44644a',
+                  borderColor: '#b8ab7a',
+                  color: '#fff8ea',
+                }}
+              >
+                <Box component="form" onSubmit={handleSubmit}>
+                  <Stack spacing={2}>
+                    <Stack spacing={0.25}>
                       <Typography
-                        id="player-image-no-label"
-                        variant="subtitle1"
-                        sx={{ color: 'rgba(243, 238, 220, 0.9)' }}
+                        variant="overline"
+                        sx={{ letterSpacing: '0.18em', color: 'rgba(243, 238, 220, 0.72)' }}
                       >
-                        {locale.playerImageNoLabel}
+                        {locale.titleRuby}
+                      </Typography>
+                      <Typography variant="h4" fontWeight={900} color="#fff8ea">
+                        {locale.title}
+                      </Typography>
+                    </Stack>
+                    <Stack spacing={0.75}>
+                      <Typography id="player-name-label" variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                        {locale.playerNameLabel}
                       </Typography>
                       <TextField
                         fullWidth
-                        type="number"
-                        value={imageNoInput}
+                        placeholder={locale.playerNamePlaceholder}
+                        value={userName}
                         onChange={(event) => {
-                          setImageNoInput(event.target.value)
+                          setUserName(event.target.value)
                         }}
                         inputProps={{
-                          min: 1,
-                          max: PLAYER_IMAGE_COUNT,
-                          'aria-labelledby': 'player-image-no-label',
+                          'aria-labelledby': 'player-name-label',
                         }}
-                        helperText={locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
                         sx={settingInputSx}
                       />
                     </Stack>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                      <Button
-                        type="button"
-                        variant="contained"
-                        sx={mutedGreenButtonSx}
-                        onClick={() => {
-                          const randomImageNo = Math.floor(Math.random() * PLAYER_IMAGE_COUNT) + 1
-                          setImageNoInput(String(randomImageNo))
+                    <Stack spacing={1.5}>
+                      <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                        {locale.playerImageLabel}
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: '100%',
+                          maxWidth: 237,
+                          aspectRatio: '338 / 350',
+                          borderRadius: 2,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: 'rgba(255,255,255,0.72)',
+                          overflow: 'hidden',
+                          alignSelf: 'center',
                         }}
                       >
-                        {locale.randomSelect}
-                      </Button>
-                      <Button component={Link} to="/player-images" variant="contained" sx={mutedGreenButtonSx}>
-                        {locale.openImageList}
-                      </Button>
+                        {previewImagePath ? (
+                          <Box
+                            component="img"
+                            src={previewImagePath}
+                            alt={locale.playerImagePreviewAlt}
+                            sx={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'contain',
+                              objectPosition: 'center bottom',
+                              display: 'block',
+                            }}
+                          />
+                        ) : (
+                          <Box sx={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', px: 2 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              {locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                      <Stack spacing={0.75}>
+                        <Typography
+                          id="player-image-no-label"
+                          variant="subtitle1"
+                          sx={{ color: 'rgba(243, 238, 220, 0.9)' }}
+                        >
+                          {locale.playerImageNoLabel}
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          type="number"
+                          value={imageNoInput}
+                          onChange={(event) => {
+                            setImageNoInput(event.target.value)
+                          }}
+                          inputProps={{
+                            min: 1,
+                            max: PLAYER_IMAGE_COUNT,
+                            'aria-labelledby': 'player-image-no-label',
+                          }}
+                          helperText={locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
+                          sx={settingInputSx}
+                        />
+                      </Stack>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                        <Button
+                          type="button"
+                          variant="contained"
+                          sx={mutedGreenButtonSx}
+                          onClick={() => {
+                            const randomImageNo = Math.floor(Math.random() * PLAYER_IMAGE_COUNT) + 1
+                            setImageNoInput(String(randomImageNo))
+                          }}
+                        >
+                          {locale.randomSelect}
+                        </Button>
+                        <Button component={Link} to="/player-images" variant="contained" sx={mutedGreenButtonSx}>
+                          {locale.openImageList}
+                        </Button>
+                      </Stack>
                     </Stack>
+                    {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
+                    {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
+                    <Button type="submit" variant="contained" disabled={isSubmitting} sx={softGreenButtonSx}>
+                      {isSubmitting ? locale.saving : locale.submitButton}
+                    </Button>
                   </Stack>
-                  {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
-                  {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
-                  <Button type="submit" variant="contained" disabled={isSubmitting} sx={softGreenButtonSx}>
-                    {isSubmitting ? locale.saving : locale.submitButton}
-                  </Button>
+                </Box>
+              </Paper>
+
+              <Paper
+                variant="outlined"
+                sx={{
+                  ...innerSurfaceSx,
+                  borderRadius: 3,
+                  p: { xs: 2, sm: 2.5 },
+                  backgroundColor: '#44644a',
+                  borderColor: '#b8ab7a',
+                  color: '#fff8ea',
+                }}
+              >
+                <Stack spacing={2}>
+                  <Stack spacing={0.5}>
+                    <Typography variant="h5" fontWeight={800} color="#fff8ea">
+                      {locale.accountLinkTitle}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
+                      {anonymousIdentity ? locale.accountLinkDescription : locale.accountLinkedDescription}
+                    </Typography>
+                  </Stack>
+
+                  {anonymousIdentity || shouldShowPasswordSetup ? (
+                    <>
+                      {anonymousIdentity ? (
+                        <>
+                          <Stack spacing={0.75}>
+                            <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                              {hasLinkedEmail ? locale.linkedEmailLabel : locale.linkEmailLabel}
+                            </Typography>
+                            <TextField
+                              fullWidth
+                              type="email"
+                              placeholder={locale.linkEmailPlaceholder}
+                              value={linkEmail}
+                              onChange={(event) => {
+                                setLinkEmail(event.target.value)
+                              }}
+                              sx={settingInputSx}
+                            />
+                          </Stack>
+                          <Button
+                            type="button"
+                            variant="contained"
+                            disabled={accountAction !== null}
+                            onClick={handleLinkEmail}
+                            sx={softGoldButtonSx}
+                          >
+                            {accountAction === 'email' ? locale.linkEmailSubmitting : locale.linkEmailSubmit}
+                          </Button>
+                        </>
+                      ) : null}
+
+                      {shouldShowPasswordSetup ? (
+                        <>
+                          <Stack spacing={0.75}>
+                            <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                              {locale.setPasswordLabel}
+                            </Typography>
+                            <TextField
+                              fullWidth
+                              type="password"
+                              placeholder={locale.setPasswordPlaceholder}
+                              value={linkPassword}
+                              onChange={(event) => {
+                                setLinkPassword(event.target.value)
+                              }}
+                              sx={settingInputSx}
+                            />
+                          </Stack>
+                          <Button
+                            type="button"
+                            variant="contained"
+                            disabled={accountAction !== null}
+                            onClick={handleSetPassword}
+                            sx={softGreenButtonSx}
+                          >
+                            {accountAction === 'password' ? locale.setPasswordSubmitting : locale.setPasswordSubmit}
+                          </Button>
+                        </>
+                      ) : null}
+                    </>
+                  ) : null}
+
+                  {accountError ? <Alert severity="warning">{accountError}</Alert> : null}
+                  {accountSuccess ? <Alert severity="success">{accountSuccess}</Alert> : null}
                 </Stack>
-              </Box>
-            </Paper>
+              </Paper>
+            </Stack>
           )}
         </Stack>
       </Paper>

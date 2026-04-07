@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Alert, Box, Button, Stack, TextField } from '@mui/material'
-import { greenOutlinedInputSx, softGreenButtonSx } from '@/constants/styles'
+import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material'
+import { greenOutlinedInputSx, softGoldButtonSx, softGreenButtonSx } from '@/constants/styles'
 import { supabase } from '@/lib/supabase'
 import locale from '../../../locale/auth/SignUp.json'
 
@@ -12,19 +12,19 @@ type SignUpProps = {
 function SignUp({ onMessage }: SignUpProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitMode, setSubmitMode] = useState<'email' | 'anonymous' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const minPasswordErrorMessage = locale.errorMessages['password should be at least 6 characters']
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setIsSubmitting(true)
+    setSubmitMode('email')
     setError(null)
 
     if (password.length < 6) {
       setError(minPasswordErrorMessage)
       onMessage?.(locale.toastFailed)
-      setIsSubmitting(false)
+      setSubmitMode(null)
       return
     }
 
@@ -42,19 +42,37 @@ function SignUp({ onMessage }: SignUpProps) {
       const normalized = signUpError.message.trim().toLowerCase()
       setError(locale.errorMessages[normalized as keyof typeof locale.errorMessages] ?? locale.defaultError)
       onMessage?.(locale.toastFailed)
-      setIsSubmitting(false)
+      setSubmitMode(null)
       return
     }
 
     if (!data.session?.access_token) {
       onMessage?.(locale.toastNeedsEmailConfirm)
-      setIsSubmitting(false)
+      setSubmitMode(null)
       return
     }
 
     onMessage?.(locale.toastSuccess)
 
-    setIsSubmitting(false)
+    setSubmitMode(null)
+  }
+
+  const handleAnonymousSignIn = async () => {
+    setSubmitMode('anonymous')
+    setError(null)
+
+    const { error: anonymousError } = await supabase.auth.signInAnonymously()
+
+    if (anonymousError) {
+      const normalized = anonymousError.message.trim().toLowerCase()
+      setError(locale.errorMessages[normalized as keyof typeof locale.errorMessages] ?? locale.defaultError)
+      onMessage?.(locale.anonymousToastFailed)
+      setSubmitMode(null)
+      return
+    }
+
+    onMessage?.(locale.anonymousToastSuccess)
+    setSubmitMode(null)
   }
 
   return (
@@ -82,8 +100,20 @@ function SignUp({ onMessage }: SignUpProps) {
           fullWidth
           sx={greenOutlinedInputSx}
         />
-        <Button type="submit" variant="contained" disabled={isSubmitting} sx={softGreenButtonSx}>
-          {isSubmitting ? locale.submitting : locale.submit}
+        <Button type="submit" variant="contained" disabled={submitMode !== null} sx={softGreenButtonSx}>
+          {submitMode === 'email' ? locale.submitting : locale.submit}
+        </Button>
+        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line', textAlign: 'center' }}>
+          {locale.anonymousDescription}
+        </Typography>
+        <Button
+          type="button"
+          variant="contained"
+          disabled={submitMode !== null}
+          onClick={handleAnonymousSignIn}
+          sx={softGoldButtonSx}
+        >
+          {submitMode === 'anonymous' ? locale.anonymousSubmitting : locale.anonymousSubmit}
         </Button>
         {error ? <Alert severity="error">{error}</Alert> : null}
       </Stack>

@@ -4,9 +4,14 @@
   "passwordLabel": "パスワード",
   "submit": "新規登録",
   "submitting": "登録中...",
+  "anonymousDescription": "メールアドレス無しでゲームを開始できます。\n※データの保存にはメールアドレスが必要です。",
+  "anonymousSubmit": "メールアドレス無しでプレイ",
+  "anonymousSubmitting": "匿名ログイン中...",
   "toastFailed": "ユーザー登録に失敗しました",
   "toastSuccess": "ユーザー登録が完了しました。",
   "toastNeedsEmailConfirm": "ユーザー登録が完了しました。確認メールのリンクから認証してください。",
+  "anonymousToastFailed": "匿名ログインに失敗しました",
+  "anonymousToastSuccess": "匿名でログインしました。",
   "defaultError": "ユーザー登録に失敗しました。入力内容を確認してください。",
   "switchLink": "ログインはこちら",
   "errorMessages": {
@@ -17,6 +22,7 @@
     "password is too short": "パスワードは6文字以上で入力してください。",
     "email rate limit exceeded": "メール送信回数の上限を超えました。時間をおいて再度お試しください。",
     "user already registered": "このメールアドレスは既に登録されています。",
+    "email address already in use": "このメールアドレスは既に登録されています。",
     "anonymous sign-ins are disabled": "匿名サインインは無効になっています。"
   }
 }
