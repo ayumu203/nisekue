@@ -199,9 +199,7 @@ export default function PlayerSetting() {
       ])
 
       setAccountError(
-        existingAccountMessages.has(normalized)
-          ? locale.linkEmailExistingAccount
-          : locale.linkEmailDefaultError,
+        existingAccountMessages.has(normalized) ? locale.linkEmailExistingAccount : locale.linkEmailDefaultError,
       )
       setAccountAction(null)
       return
