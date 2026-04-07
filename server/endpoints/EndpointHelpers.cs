@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using server.application.chat;
 using server.domain.player;
 using server.domain.quest;
@@ -7,12 +8,86 @@ namespace server.endpoints;
 
 internal static class EndpointHelpers
 {
+    internal const string AnonymousPostingForbiddenMessage = "匿名ログイン中は投稿できません。アカウント連携後に利用してください。";
+
     internal static PlayerId? TryGetPlayerId(ClaimsPrincipal user)
     {
         var subject = user.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? user.FindFirstValue("sub");
 
         return Guid.TryParse(subject, out var guid) ? new PlayerId(guid) : null;
+    }
+
+    internal static bool IsAnonymousUser(ClaimsPrincipal user)
+    {
+        if (TryGetBooleanClaim(user, "is_anonymous") is true)
+        {
+            return true;
+        }
+
+        return ClaimContainsAnonymousProvider(user, "providers")
+            || JsonClaimContainsAnonymousProvider(user, "app_metadata")
+            || JsonClaimContainsAnonymousProvider(user, "user_metadata");
+    }
+
+    internal static IResult AnonymousPostingForbidden() =>
+        Results.Json(
+            new { message = AnonymousPostingForbiddenMessage },
+            options: null,
+            contentType: null,
+            statusCode: StatusCodes.Status403Forbidden);
+
+    private static bool? TryGetBooleanClaim(ClaimsPrincipal user, string claimType)
+    {
+        var value = user.FindFirstValue(claimType);
+        return bool.TryParse(value, out var result) ? result : null;
+    }
+
+    private static bool ClaimContainsAnonymousProvider(ClaimsPrincipal user, string claimType)
+    {
+        foreach (var claim in user.FindAll(claimType))
+        {
+            if (claim.Value.Contains("anonymous", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool JsonClaimContainsAnonymousProvider(ClaimsPrincipal user, string claimType)
+    {
+        var raw = user.FindFirstValue(claimType);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(raw);
+            if (!document.RootElement.TryGetProperty("providers", out var providers)
+                || providers.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            foreach (var provider in providers.EnumerateArray())
+            {
+                if (provider.ValueKind == JsonValueKind.String
+                    && string.Equals(provider.GetString(), "anonymous", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+
+        return false;
     }
 
     internal static string GetJobDisplayName(Job job) =>

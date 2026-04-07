@@ -37,6 +37,11 @@ internal static class ThreadEndpoints
                 return Results.Unauthorized();
             }
 
+            if (EndpointHelpers.IsAnonymousUser(user))
+            {
+                return EndpointHelpers.AnonymousPostingForbidden();
+            }
+
             var player = await playerRepository.GetPlayerAsync(currentPlayerId.Value);
             if (player is null)
             {
@@ -69,6 +74,11 @@ internal static class ThreadEndpoints
             if (currentPlayerId is null)
             {
                 return Results.Unauthorized();
+            }
+
+            if (EndpointHelpers.IsAnonymousUser(user))
+            {
+                return EndpointHelpers.AnonymousPostingForbidden();
             }
 
             var player = await playerRepository.GetPlayerAsync(currentPlayerId.Value);

@@ -5,6 +5,8 @@ import locale from '../../../locale/chat/Chat.json'
 
 type Props = {
   isSubmitting: boolean
+  disabled?: boolean
+  disabledReason?: string | null
   onSubmit: (text: string) => Promise<void>
 }
 
@@ -16,7 +18,7 @@ function SendIcon(props: SvgIconProps) {
   )
 }
 
-function ChatForm({ isSubmitting, onSubmit }: Props) {
+function ChatForm({ isSubmitting, disabled = false, disabledReason = null, onSubmit }: Props) {
   const [text, setText] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -39,6 +41,7 @@ function ChatForm({ isSubmitting, onSubmit }: Props) {
 
   return (
     <Stack spacing={1}>
+      {disabledReason ? <Alert severity="info">{disabledReason}</Alert> : null}
       {errorMessage ? <Alert severity="warning">{errorMessage}</Alert> : null}
       <Stack component="form" direction="row" spacing={1} alignItems="stretch" onSubmit={handleSubmit}>
         <TextField
@@ -52,7 +55,7 @@ function ChatForm({ isSubmitting, onSubmit }: Props) {
           size="small"
           placeholder={locale.placeholder}
           fullWidth
-          disabled={isSubmitting}
+          disabled={disabled || isSubmitting}
           inputProps={{ maxLength: 200 }}
           sx={{
             ...greenOutlinedInputSx,
@@ -65,7 +68,7 @@ function ChatForm({ isSubmitting, onSubmit }: Props) {
         <Button
           type="submit"
           variant="contained"
-          disabled={isSubmitting || text.trim().length === 0}
+          disabled={disabled || isSubmitting || text.trim().length === 0}
           aria-label={locale.send}
           sx={{
             ...softGreenButtonSx,

@@ -1,4 +1,4 @@
-import { Box, Button, Paper, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Paper, Stack, TextField, Typography } from '@mui/material'
 import { greenOutlinedInputSx, innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { QuestRunDetailResponse } from '@/schema/quest'
@@ -8,6 +8,7 @@ type QuestLastTurnResultsPanelProps = {
   chatMessage: string
   isChatSubmitting: boolean
   canPostChat: boolean
+  chatDisabledReason?: string | null
   onChatMessageChange: (value: string) => void
   onSubmitChatMessage: () => void | Promise<void>
   locale: {
@@ -112,11 +113,13 @@ export default function QuestLastTurnResultsPanel({
   chatMessage,
   isChatSubmitting,
   canPostChat,
+  chatDisabledReason = null,
   onChatMessageChange,
   onSubmitChatMessage,
   locale,
 }: QuestLastTurnResultsPanelProps) {
   const maxQuestChatMessageLength = 50
+  const isChatDisabled = !canPostChat || isChatSubmitting || Boolean(chatDisabledReason)
   const currentTurnMessages = run?.chatMessages ?? []
   const lastTurnMessages = run?.lastTurnResults?.chatMessages ?? []
   const logs =
@@ -133,6 +136,7 @@ export default function QuestLastTurnResultsPanel({
   return (
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
       <Stack spacing={2}>
+        {chatDisabledReason ? <Alert severity="info">{chatDisabledReason}</Alert> : null}
         <Stack direction="row" spacing={1} alignItems="flex-start">
           <TextField
             value={chatMessage}
@@ -143,7 +147,7 @@ export default function QuestLastTurnResultsPanel({
             maxRows={3}
             inputProps={{ maxLength: maxQuestChatMessageLength }}
             fullWidth
-            disabled={!canPostChat || isChatSubmitting}
+            disabled={isChatDisabled}
             sx={{
               ...greenOutlinedInputSx,
               '& .MuiInputBase-root': {
@@ -154,7 +158,7 @@ export default function QuestLastTurnResultsPanel({
           <Button
             variant="contained"
             onClick={() => void onSubmitChatMessage()}
-            disabled={!canPostChat || isChatSubmitting || chatMessage.trim().length === 0}
+            disabled={isChatDisabled || chatMessage.trim().length === 0}
             sx={{ minWidth: 78, minHeight: 40, ...softGreenButtonSx }}
           >
             {isChatSubmitting ? locale.chatSending : locale.chatSend}

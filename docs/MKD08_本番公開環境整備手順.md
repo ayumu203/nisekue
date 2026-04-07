@@ -98,7 +98,11 @@
 1. 本番専用 Supabase プロジェクトを作成する。
 2. 接続文字列を取得する。
 3. Supabase URL と anon key を取得する。
-4. GitHub の production 用 secret / variable に登録する。
+4. Authentication > Providers で Email を有効化する。
+5. Authentication > Providers で Anonymous Sign-Ins を有効化する。
+6. Authentication > Providers で Manual Linking を有効化する。
+7. Authentication > URL Configuration にフロントエンドの戻り先 URL を追加する。
+8. GitHub の production 用 secret / variable に登録する。
 
 登録対象:
 
@@ -143,6 +147,14 @@
   - `Maintenance__MarketCleanupToken=<development 用 token>`
 - 本番 App Service
   - `Maintenance__MarketCleanupToken=<production 用 token>`
+
+### 5.2.2 認証運用メモ
+
+- Supabase Auth の `sub` を backend の `PlayerId` として扱う。
+- 匿名ログイン直後は内部 `players` が未作成のため、frontend は初回 `/player` 取得時に `404` を受けたら `POST /player` で自動作成する。
+- 匿名ユーザーをメールアドレス付きアカウントへ移行する場合は、ログイン中ユーザーにメールアドレスを追加し、メール確認後にパスワードを設定する。
+- 既存メールアドレスへの統合は別対応とし、匿名ユーザーが既存メールを入力した場合は通常ログインへ誘導する。
+- このリポジトリの client は `sessionStorage` を使うため、匿名セッションはタブ/ブラウザを閉じると消える。
 
 ### 5.3 Cloudflare Pages 本番プロジェクトの作成
 

@@ -48,7 +48,7 @@ function GiftPanelIcon(props: SvgIconProps) {
 
 function VisitPlayer() {
   const { playerId } = useParams<{ playerId: string }>()
-  const { session, isLoading } = useAuth()
+  const { session, isLoading, isAnonymous } = useAuth()
   const [activePanel, setActivePanel] = useState<'chat' | 'gift'>('chat')
   const [giftTab, setGiftTab] = useState<'equipments' | 'items'>('items')
   const [giftQuantities, setGiftQuantities] = useState<Record<string, string>>({})
@@ -351,6 +351,8 @@ function VisitPlayer() {
                       <Stack spacing={2}>
                         <ChatForm
                           isSubmitting={isChatValidating}
+                          disabled={isAnonymous}
+                          disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
                           onSubmit={async (text) => {
                             if (!session?.access_token) {
                               throw new Error(locale.sessionInfoMissing)

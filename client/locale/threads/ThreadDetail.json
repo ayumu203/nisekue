@@ -13,6 +13,7 @@
   "noReplies": "返信なし",
   "replyFailed": "返信送信に失敗しました",
   "deleteFailed": "スレッドの削除に失敗しました",
+  "anonymousPostingRestricted": "匿名ログイン中は返信できません。プレイヤー設定からアカウント連携してください。",
   "replyForm": {
     "title": "返信する",
     "body": "返信本文",

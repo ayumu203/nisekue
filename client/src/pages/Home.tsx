@@ -33,7 +33,7 @@ import {
 import { beginnerGuides } from '@/lib/beginnerGuides'
 
 function Home() {
-  const { session, isLoading } = useAuth()
+  const { session, isLoading, isAnonymous } = useAuth()
   const playerSWRKey = session?.user.id ? (['player', session.user.id] as const) : null
   const {
     data: player,
@@ -217,6 +217,8 @@ function Home() {
                   <Stack spacing={2}>
                     <ChatForm
                       isSubmitting={isChatValidating}
+                      disabled={isAnonymous}
+                      disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
                       onSubmit={async (text) => {
                         if (!session?.access_token || !player?.userId) {
                           throw new Error(locale.sessionInfoMissing)
