@@ -76,6 +76,7 @@
   "commandAlreadyConfirmed": "このターンの行動はすでに確定しています。最新の進行状況を待ってください。",
   "commandSubmitFailed": "コマンド送信に失敗しました",
   "chatSubmitFailed": "メッセージ送信に失敗しました",
+  "anonymousPostingRestricted": "匿名ログイン中はクエストチャットを投稿できません。プレイヤー設定からアカウント連携してください。",
   "submitCommand": "送信",
   "submittingCommand": "送信",
   "chatPlaceholder": "メッセージを送る",

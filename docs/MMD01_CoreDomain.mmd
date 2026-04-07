@@ -1,5 +1,9 @@
 classDiagram
     %% Enum 定義は docs/MMD21_Enum.mmd を参照
+    %% 認証方針:
+    %% - Supabase Auth の subject(sub) を PlayerId として扱う。
+    %% - 匿名ログインでも subject は払い出され、初回の /player 取得時に未作成なら内部 Player を自動生成する。
+    %% - 匿名ユーザーは後からメールアドレス/パスワードを紐付けて通常アカウントへ移行できる。
     namespace CoreDomain {
         %% Player の基本情報
         class Player {

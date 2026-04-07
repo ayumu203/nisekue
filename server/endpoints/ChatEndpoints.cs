@@ -37,6 +37,11 @@ internal static class ChatEndpoints
                 return Results.Unauthorized();
             }
 
+            if (EndpointHelpers.IsAnonymousUser(user))
+            {
+                return EndpointHelpers.AnonymousPostingForbidden();
+            }
+
             var ownerId = new PlayerId(request.OwnerId);
             var senderId = currentPlayerId.Value;
             var owner = await playerRepository.GetPlayerAsync(ownerId);

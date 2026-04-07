@@ -16,5 +16,6 @@
   "chatButtonAriaLabel": "チャットを表示",
   "giftButtonAriaLabel": "プレゼントを表示",
   "backToHome": "ホームへ戻る",
-  "sessionInfoMissing": "セッション情報が不足しています"
+  "sessionInfoMissing": "セッション情報が不足しています",
+  "anonymousPostingRestricted": "匿名ログイン中は投稿できません。プレイヤー設定からアカウント連携してください。"
 }

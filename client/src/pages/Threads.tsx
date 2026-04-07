@@ -86,7 +86,7 @@ function formatDate(value: string | null): string {
 }
 
 export default function Threads() {
-  const { session, isLoading } = useAuth()
+  const { session, isLoading, isAnonymous } = useAuth()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [title, setTitle] = useState('')
@@ -176,6 +176,7 @@ export default function Threads() {
                 <Box sx={{ mt: 1, width: 52, height: 4, borderRadius: 999, backgroundColor: '#295d63' }} />
               </Box>
 
+              {isAnonymous ? <Alert severity="info">{locale.anonymousPostingRestricted}</Alert> : null}
               {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
 
               <TextField
@@ -183,6 +184,7 @@ export default function Threads() {
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 inputProps={{ maxLength: 50 }}
+                disabled={isAnonymous || isSubmitting}
                 sx={inputSx}
               />
               <TextField
@@ -192,6 +194,7 @@ export default function Threads() {
                 multiline
                 minRows={8}
                 inputProps={{ maxLength: 500 }}
+                disabled={isAnonymous || isSubmitting}
                 sx={inputSx}
               />
               <Typography variant="caption" sx={{ color: 'rgba(79, 57, 44, 0.7)' }}>
@@ -199,9 +202,14 @@ export default function Threads() {
               </Typography>
               <Button
                 variant="contained"
-                disabled={isSubmitting}
+                disabled={isAnonymous || isSubmitting}
                 sx={flatPrimaryButtonSx}
                 onClick={async () => {
+                  if (isAnonymous) {
+                    setSubmitError(locale.anonymousPostingRestricted)
+                    return
+                  }
+
                   if (!session?.access_token) {
                     setSubmitError(locale.sessionMissing)
                     return

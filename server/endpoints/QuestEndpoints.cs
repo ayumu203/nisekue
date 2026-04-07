@@ -371,6 +371,11 @@ internal static class QuestEndpoints
                 return Results.Unauthorized();
             }
 
+            if (EndpointHelpers.IsAnonymousUser(user))
+            {
+                return EndpointHelpers.AnonymousPostingForbidden();
+            }
+
             var run = await questRunRepository.GetAsync(new QuestRunId(runId));
             if (run is null)
             {
