@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { AuthContext, type AuthContextValue } from '@/contexts/AuthContext'
+import { hasAnonymousIdentity } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -42,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user: session?.user ?? null,
       isLoading,
+      isAnonymous: hasAnonymousIdentity(session?.user ?? null),
     }),
     [session, isLoading],
   )

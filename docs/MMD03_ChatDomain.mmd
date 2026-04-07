@@ -62,6 +62,8 @@ classDiagram
             +Task PostSystemMessageAsync(ownerId: PlayerId, text: string)
         }
 
+        note for ChatService "匿名ログイン中のユーザーは ChatRoom への投稿不可。\n閲覧のみ許可し、投稿要求はエンドポイントで拒否する。"
+
         %% スレッド機能
         class Thread {
             <<Aggregate Root>>
@@ -177,6 +179,8 @@ classDiagram
             +Task~ThreadDetailView~ CreateAsync(authorPlayerId: PlayerId, title: string, body: string)
             +Task~ThreadDetailView~ AddReplyAsync(threadId: ThreadId, authorPlayerId: PlayerId, body: string)
         }
+
+        note for ThreadService "匿名ログイン中のユーザーはスレッド作成・返信不可。\nスレッド一覧/詳細の閲覧は継続して許可する。"
     }
 
     ChatRoom *-- ChatMessage : 0..50

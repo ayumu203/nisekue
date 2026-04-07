@@ -104,7 +104,7 @@ function clearPersistedQuestSession(userId: string): void {
 }
 
 export default function Quest() {
-  const { session, isLoading } = useAuth()
+  const { session, isLoading, isAnonymous } = useAuth()
   const { mutate: mutateCache } = useSWRConfig()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -889,6 +889,11 @@ export default function Quest() {
   }
 
   async function handleSubmitChatMessage(): Promise<void> {
+    if (isAnonymous) {
+      setSubmitError(locale.anonymousPostingRestricted)
+      return
+    }
+
     if (!session?.access_token) {
       setSubmitError(locale.sessionInfoMissing)
       return
@@ -1179,6 +1184,7 @@ export default function Quest() {
                       canSubmitCurrentTurn={canSubmitCurrentTurn}
                       isCommandSubmitting={isCommandSubmitting}
                       isChatSubmitting={isChatSubmitting}
+                      chatDisabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
                       onActionKindChange={setSelectedActionKind}
                       onMoveChange={setSelectedMoveId}
                       onTargetRowChange={setSelectedTargetRow}

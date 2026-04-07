@@ -30,6 +30,7 @@ type QuestRunSectionProps = {
   canSubmitCurrentTurn: boolean
   isCommandSubmitting: boolean
   isChatSubmitting: boolean
+  chatDisabledReason?: string | null
   onActionKindChange: (actionKind: QuestActionKind) => void
   onMoveChange: (moveId: number | '') => void
   onTargetRowChange: (row: BattleRow | '') => void
@@ -54,6 +55,7 @@ export default function QuestRunSection({
   canSubmitCurrentTurn,
   isCommandSubmitting,
   isChatSubmitting,
+  chatDisabledReason = null,
   onActionKindChange,
   onMoveChange,
   onTargetRowChange,
@@ -97,6 +99,7 @@ export default function QuestRunSection({
           chatMessage={chatMessage}
           isChatSubmitting={isChatSubmitting}
           canPostChat={selfParticipantId != null}
+          chatDisabledReason={chatDisabledReason}
           onChatMessageChange={onChatMessageChange}
           onSubmitChatMessage={onSubmitChatMessage}
           locale={locale}

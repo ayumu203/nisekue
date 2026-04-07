@@ -14,6 +14,7 @@
   "backToHome": "ホームに戻る",
   "sessionMissing": "セッション情報が不足しています",
   "createFailed": "スレッド作成に失敗しました",
+  "anonymousPostingRestricted": "匿名ログイン中はスレッドを投稿できません。プレイヤー設定からアカウント連携してください。",
   "form": {
     "heading": "新しい話題を立てる",
     "title": "タイトル",

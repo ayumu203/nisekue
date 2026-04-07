@@ -1,7 +1,6 @@
 import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, TextField, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import type { User } from '@supabase/supabase-js'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayer, updatePlayerImage } from '@/api/player'
@@ -15,27 +14,12 @@ import {
   softGreenButtonSx,
 } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { hasAnonymousIdentity } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import { PLAYER_IMAGE_COUNT, resolvePlayerImageFileName, resolvePlayerImageNo } from '@/lib/playerImages'
 import locale from '../../locale/player-setting/PlayerSetting.json'
-
-function getUserProviders(user: User | null): string[] {
-  const providers = user?.app_metadata?.providers
-  if (!Array.isArray(providers)) {
-    return []
-  }
-
-  return providers.filter((provider): provider is string => typeof provider === 'string')
-}
-
-function hasAnonymousIdentity(user: User | null): boolean {
-  const providers = getUserProviders(user)
-  const isAnonymous = (user as (User & { is_anonymous?: boolean }) | null)?.is_anonymous
-
-  return isAnonymous === true || providers.includes('anonymous')
-}
 
 export default function PlayerSetting() {
   const { session, isLoading } = useAuth()

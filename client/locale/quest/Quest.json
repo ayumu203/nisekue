@@ -65,6 +65,7 @@
   "notJoinedRoom": "このルームにはまだ参加していません",
   "alreadyJoinedRoom": "このルームに参加済みです",
   "ownerOnlyStart": "開始はオーナーのみ可能です",
+  "anonymousPostingRestricted": "匿名ログイン中はクエストチャットを投稿できません。プレイヤー設定からアカウント連携してください。",
   "labels": {
     "stageSelect": "作成するステージ",
     "modeSelect": "ルーム種別",

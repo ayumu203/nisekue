@@ -90,7 +90,7 @@ function formatDate(value: string | null): string {
 
 export default function ThreadDetail() {
   const { threadId } = useParams<{ threadId: string }>()
-  const { session, isLoading } = useAuth()
+  const { session, isLoading, isAnonymous } = useAuth()
   const navigate = useNavigate()
   const [replyBody, setReplyBody] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -266,6 +266,7 @@ export default function ThreadDetail() {
                   <Box sx={{ mt: 1, width: 52, height: 4, borderRadius: 999, backgroundColor: '#295d63' }} />
                 </Box>
 
+                {isAnonymous ? <Alert severity="info">{locale.anonymousPostingRestricted}</Alert> : null}
                 {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
 
                 <TextField
@@ -275,6 +276,7 @@ export default function ThreadDetail() {
                   multiline
                   minRows={5}
                   inputProps={{ maxLength: 250 }}
+                  disabled={isAnonymous || isSubmitting}
                   sx={inputSx}
                 />
                 <Typography variant="caption" sx={{ color: 'rgba(79, 57, 44, 0.68)' }}>
@@ -282,9 +284,14 @@ export default function ThreadDetail() {
                 </Typography>
                 <Button
                   variant="contained"
-                  disabled={isSubmitting}
+                  disabled={isAnonymous || isSubmitting}
                   sx={flatPrimaryButtonSx}
                   onClick={async () => {
+                    if (isAnonymous) {
+                      setSubmitError(locale.anonymousPostingRestricted)
+                      return
+                    }
+
                     if (!session?.access_token || !threadId) {
                       setSubmitError(locale.threadMissing)
                       return

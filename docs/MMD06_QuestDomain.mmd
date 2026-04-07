@@ -508,6 +508,8 @@ classDiagram
             -GrantStageRewardsAsync(run: QuestRun, now: DateTimeOffset) IReadOnlyList~QuestRewardEquipmentGrant~
         }
 
+        note for QuestRunService "匿名ログイン中のユーザーはクエスト進行の閲覧は可能。\nただし QuestChatMessage の投稿は不可とし、投稿要求はエンドポイントで拒否する。"
+
         class QuestStageRewardLotteryService {
             <<Domain Service>>
             +Draw(stage: QuestStageDefinition) EquipmentId?
