@@ -19,8 +19,8 @@ public class CsvQuestResourceRepositoryTests
         stage.Name.Should().Be("虚鉄の兵装墓所");
         stage.RecommendedLevel.Should().Be(2000);
         stage.MinimumEntryLevel.Should().Be(1000);
-        stage.Floors.Should().HaveCount(5);
-        stage.Floors.Single(x => x.FloorNo == 5).Placements.Should().HaveCount(5);
+        stage.Floors.Should().HaveCount(10);
+        stage.Floors.Single(x => x.FloorNo == 10).Placements.Should().HaveCount(5);
     }
 
     [Fact]
