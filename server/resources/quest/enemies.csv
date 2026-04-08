@@ -57,3 +57,7 @@ id,name,level,max_hp,max_mp,strength,defense,intelligence,luck,speed,image_path,
 56,妖星の導師,382,29200,1180,840,900,1360,390,345,image/battle/Enemy61.png,Supportive
 57,蒼天の死告騎,384,49800,520,1280,1180,520,360,285,image/battle/Enemy66.png,Defensive
 58,妖星の魔導姫,386,27500,1260,760,860,1490,410,370,image/battle/Enemy61.png,Supportive
+59,断罪の黒盾騎士,1920,145000,2200,12600,10800,4600,4300,5600,image/battle/Enemy111.png,Defensive
+60,奈落機兵グレイブ,1980,126000,5000,9000,8400,10800,4500,6600,image/battle/Enemy116.png,Supportive
+61,断罪の黒盾大騎士,2000,182000,2600,14200,12400,5200,4800,6100,image/battle/Enemy111.png,Defensive
+62,冥機将グレイブコア,2020,152000,6200,9800,9200,12400,5000,7600,image/battle/Enemy116.png,Supportive

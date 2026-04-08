@@ -3,3 +3,5 @@ bin/
 publish/
 *.zip
 node_modules/
+supabase/.temp/
+supabase/.branches/
