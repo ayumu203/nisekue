@@ -35,6 +35,12 @@ public class QuestEnemyActionPolicy
             return healAction;
         }
 
+        var supportAilmentAction = TryCreateSupportAilmentAction(enemy, enemyDefinition, usableMoves, planningContext);
+        if (supportAilmentAction is not null)
+        {
+            return supportAilmentAction;
+        }
+
         var buffAction = TryCreateBuffAction(enemy, enemyDefinition, usableMoves, planningContext);
         if (buffAction is not null)
         {
@@ -217,6 +223,46 @@ public class QuestEnemyActionPolicy
             foreach (var target in planningContext.FriendlyTargets.OrderBy(candidate => GetFrontPriority(candidate.Position)))
             {
                 if (!CanMoveTarget(move, target, planningContext))
+                {
+                    continue;
+                }
+
+                return CreateActionForTarget(enemy, move, target);
+            }
+        }
+
+        return null;
+    }
+
+    private BattleActionInput? TryCreateSupportAilmentAction(
+        QuestEnemyState enemy,
+        QuestEnemyDefinition enemyDefinition,
+        IReadOnlyList<Move> usableMoves,
+        EnemyPlanningContext planningContext)
+    {
+        var supportAilmentMoves = usableMoves
+            .Where(IsSupportAilmentMove)
+            .OrderByDescending(GetAttackRangePriority)
+            .ThenBy(move => move.MpCost)
+            .ThenBy(move => GetMoveDefinitionIndex(enemyDefinition, move.Id))
+            .ToArray();
+        if (supportAilmentMoves.Length == 0)
+        {
+            return null;
+        }
+
+        var targets = planningContext.FriendlyTargets
+            .Append(planningContext.SelfTarget)
+            .OrderBy(candidate => candidate.ActorId == planningContext.SelfTarget.ActorId ? 0 : 1)
+            .ThenBy(candidate => GetFrontPriority(candidate.Position))
+            .ToArray();
+
+        foreach (var move in supportAilmentMoves)
+        {
+            foreach (var target in targets)
+            {
+                if (!CanMoveTarget(move, target, planningContext) ||
+                    !NeedsSupportAilment(move, target))
                 {
                     continue;
                 }
@@ -554,6 +600,34 @@ public class QuestEnemyActionPolicy
     {
         return move.TargetType is TargetType.Ally or TargetType.Self &&
                move.Effects.Any(effect => effect.EffectType == MoveEffectType.Buff);
+    }
+
+    private static bool IsSupportAilmentMove(Move move)
+    {
+        return move.TargetType is TargetType.Ally or TargetType.Self &&
+               move.Effects.Any(effect =>
+                   effect.EffectType == MoveEffectType.Ailment &&
+                   effect.Ailment is not null &&
+                   effect.Ailment.AilmentType == AilmentType.Regeneration);
+    }
+
+    private static bool NeedsSupportAilment(Move move, CombatTargetCandidate target)
+    {
+        foreach (var effect in move.Effects)
+        {
+            if (effect.EffectType != MoveEffectType.Ailment || effect.Ailment is null)
+            {
+                continue;
+            }
+
+            if (effect.Ailment.AilmentType == AilmentType.Regeneration &&
+                target.State.Ailments.All(ailment => ailment.Type != AilmentType.Regeneration))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static int EstimateHealAmount(Status healerStatus, Move move)
