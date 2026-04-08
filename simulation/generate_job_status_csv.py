@@ -38,6 +38,11 @@ GRAND_JOBS = {
     "GrandPriest": "HighPriest",
     "GrandRanger": "Sniper",
 }
+DAI_JOBS = {
+    "Shogun": "GrandWarrior",
+    "Archmage": "GrandCaster",
+    "GreatThief": "GrandRanger",
+}
 
 
 @dataclass(frozen=True)
@@ -186,6 +191,7 @@ def main() -> None:
         }
 
     grand_rows: list[dict[str, int | str]] = []
+    grand_status_at_300: dict[str, dict[str, int]] = {}
     for grand_code, advanced_code in GRAND_JOBS.items():
         job = growths[grand_code]
         rows = build_rows_for_job(
@@ -197,10 +203,33 @@ def main() -> None:
             phase_start_level=200,
         )
         grand_rows.extend(rows)
+        grand_status_at_300[grand_code] = {
+            "max_hp": int(rows[-1]["max_hp"]),
+            "max_mp": int(rows[-1]["max_mp"]),
+            "strength": int(rows[-1]["strength"]),
+            "defense": int(rows[-1]["defense"]),
+            "intelligence": int(rows[-1]["intelligence"]),
+            "luck": int(rows[-1]["luck"]),
+            "speed": int(rows[-1]["speed"]),
+        }
+
+    dai_rows: list[dict[str, int | str]] = []
+    for dai_code, grand_code in DAI_JOBS.items():
+        job = growths[dai_code]
+        rows = build_rows_for_job(
+            job=job,
+            start_status=grand_status_at_300[grand_code],
+            start_level=300,
+            end_level=10000,
+            sample_levels=set(range(1000, 10001, 1000)),
+            phase_start_level=300,
+        )
+        dai_rows.extend(rows)
 
     write_csv(OUTPUT_DIR / "base_jobs_lv10_to_100.csv", base_rows)
     write_csv(OUTPUT_DIR / "advanced_jobs_lv100_to_200.csv", advanced_rows)
     write_csv(OUTPUT_DIR / "grand_jobs_lv200_to_300.csv", grand_rows)
+    write_csv(OUTPUT_DIR / "dai_jobs_lv1000_to_10000.csv", dai_rows)
 
 
 if __name__ == "__main__":
