@@ -182,14 +182,14 @@ public class CsvMoveRepositoryTests
     {
         var repository = new CsvMoveRepository();
 
-        var move = await repository.GetMoveAsync(new(516));
+        var move = await repository.GetMoveAsync(new(520));
 
         move.Should().NotBeNull();
-        move!.Name.Should().Be("急所撃ち");
+        move!.Name.Should().Be("デスハント");
         move.Effects.Should().ContainSingle();
         move.Effects[0].Ailment.Should().NotBeNull();
         move.Effects[0].Ailment!.AilmentType.Should().Be(AilmentType.InstantDeath);
-        move.Effects[0].Ailment!.AllowBossInstantDeath.Should().BeTrue();
+        move.Effects[0].Ailment!.AllowBossInstantDeath.Should().BeFalse();
     }
 
     [Fact]

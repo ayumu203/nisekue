@@ -681,6 +681,156 @@ public class QuestBattleFactoryTests
             x.SelectedPosition == new BattlePosition(BattleRow.Front, BattleColumn.Right));
     }
 
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenEnemyAllyLacksRegeneration_UsesRegenerationMove()
+    {
+        var participantId = QuestParticipantId.New();
+        var regenMoveId = new MoveId(513);
+        var run = CreateNpcRun(
+            participantId,
+            Job.Warrior,
+            actionMode: ActionMode.Manual,
+            initialActionMode: ActionMode.Manual,
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Front", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), 40, 10, 12, 5, 3)
+            ],
+            enemyStatesFactory: position =>
+                new QuestEnemyState(QuestEnemyInstanceId.New(), new QuestEnemyDefinitionId(1), position, 20, 60, false),
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Back, BattleColumn.Left),
+                new BattlePosition(BattleRow.Front, BattleColumn.Right)
+            ]);
+
+        var regenMove = new Move(
+            regenMoveId,
+            "Regen",
+            "regen",
+            TargetType.Ally,
+            AttackRange.Single,
+            2,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    regenMoveId,
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(
+                        AilmentType.Regeneration,
+                        1m,
+                        3,
+                        new DamageEffect(1, 0m, 35, 0m, ElementType.Holy)))
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, _) = await factory.CreateTurnInputsAsync(
+            run,
+            new FakeMoveRepository([regenMove]),
+            CreateEnemyDefinitions(moveIds: [regenMoveId]));
+
+        actions.Should().Contain(x =>
+            x.ActorId != participantId.Value &&
+            x.Kind == BattleActionKind.UseMove &&
+            x.MoveId == regenMoveId.Id &&
+            x.SelectedPosition == new BattlePosition(BattleRow.Front, BattleColumn.Right));
+    }
+
+    [Fact]
+    public async Task CreateTurnInputsAsync_WhenAllEnemiesAlreadyHaveRegeneration_FallsBackToBuff()
+    {
+        var participantId = QuestParticipantId.New();
+        var regenMoveId = new MoveId(513);
+        var buffMoveId = new MoveId(402);
+        var regeneration = new BattleAilmentState(
+            AilmentType.Regeneration,
+            2,
+            new DamageEffect(1, 0m, 35, 0m, ElementType.Holy),
+            regenMoveId);
+
+        var run = CreateNpcRun(
+            participantId,
+            Job.Warrior,
+            actionMode: ActionMode.Manual,
+            initialActionMode: ActionMode.Manual,
+            party:
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Front", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), 40, 10, 12, 5, 3)
+            ],
+            enemyStatesFactory: position =>
+                new QuestEnemyState(
+                    QuestEnemyInstanceId.New(),
+                    new QuestEnemyDefinitionId(1),
+                    position,
+                    20,
+                    60,
+                    false,
+                    ailments: [regeneration]),
+            enemyPositions:
+            [
+                new BattlePosition(BattleRow.Back, BattleColumn.Left),
+                new BattlePosition(BattleRow.Front, BattleColumn.Right)
+            ]);
+
+        var regenMove = new Move(
+            regenMoveId,
+            "Regen",
+            "regen",
+            TargetType.Ally,
+            AttackRange.Single,
+            2,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    regenMoveId,
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(
+                        AilmentType.Regeneration,
+                        1m,
+                        3,
+                        new DamageEffect(1, 0m, 35, 0m, ElementType.Holy)))
+            ]);
+        var buffMove = new Move(
+            buffMoveId,
+            "Buff",
+            "buff",
+            TargetType.Ally,
+            AttackRange.Single,
+            1,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(2),
+                    buffMoveId,
+                    1,
+                    MoveEffectType.Buff,
+                    buff: new BuffEffect(BuffStat.Defense, BuffCalculationType.Add, 5m, 2, 1m, false))
+            ]);
+
+        var factory = new QuestBattleFactory();
+
+        var (actions, _) = await factory.CreateTurnInputsAsync(
+            run,
+            new FakeMoveRepository([regenMove, buffMove]),
+            CreateEnemyDefinitions(moveIds: [regenMoveId, buffMoveId]));
+
+        actions.Should().Contain(x =>
+            x.ActorId != participantId.Value &&
+            x.Kind == BattleActionKind.UseMove &&
+            x.MoveId == buffMoveId.Id &&
+            x.SelectedPosition == new BattlePosition(BattleRow.Front, BattleColumn.Right));
+    }
+
     private static QuestRun CreateNpcRun(
         QuestParticipantId actorId,
         Job actorJob,

@@ -90,11 +90,11 @@ effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical
 89,412,1,Buff,,,,,,,,,,Intelligence,Add,20,3,1.00,false,,,, 
 90,310,1,Heal,,1.50,65,,Holy,Intelligence,,,,,,,,,,,, ,
 91,513,1,Ailment,1,0.00,35,0.00,Holy,,Regeneration,1.00,3,,,,,,,,,,false
-92,514,1,Ailment,,,,,,,InstantDeath,0.30,1,,,,,,,,,,false
+92,514,1,Ailment,,,,,,,InstantDeath,0.20,1,,,,,,,,,,false
 93,206,1,Damage,1,1.70,6,0.03,None,StrengthIntelligence,,,,,,,,,,,, ,
 94,515,1,Damage,1,1.60,4,0.02,Pierce,Strength,,,,,,,,,,,, ,
 95,515,2,Ailment,,,,,,,Poison,1.00,3,,,,,,,,,,false
-96,516,1,Ailment,,,,,,,InstantDeath,0.025,1,,,,,,,,,,true
+96,516,1,Ailment,,,,,,,InstantDeath,0.025,1,,,,,,,,,,false
 97,517,1,Damage,1,1.60,3,0.01,Pierce,Strength,,,,,,,,,,,, ,
 98,517,2,Ailment,,,,,,,Paralysis,1.00,1,,,,,,,,,,false
 99,413,1,Buff,,,,,,,,,,Accuracy,Add,-35,3,1.00,false,,,, 
@@ -120,7 +120,7 @@ effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical
 119,312,1,Heal,,0.00,99999,,Holy,,,,,,,,,,,,,,
 120,420,1,Buff,,,,,,,,,,DamageReduction,Add,20,3,1.00,false,,,,
 121,519,1,Ailment,1,0.20,18,0.00,None,,DamageTrap,1.00,2,,,,,,,,,,false
-122,520,1,Ailment,,,,,,,InstantDeath,0.05,1,,,,,,,,,,true
+122,520,1,Ailment,,,,,,,InstantDeath,0.05,1,,,,,,,,,,false
 123,421,1,Buff,,,,,,,,,,MaxHp,Add,50,3,1.00,false,,,,
 124,421,2,Buff,,,,,,,,,,MaxMp,Add,25,3,1.00,false,,,,
 125,421,3,Buff,,,,,,,,,,Strength,Add,25,3,1.00,false,,,,
@@ -149,3 +149,5 @@ effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical
 148,609,1,Damage,1,1.90,16,0.05,Pierce,Strength,,,,,,,,,,,,,
 149,610,1,Damage,1,2.80,40,0.06,Pierce,Strength,,,,,,,,,,,,,
 150,611,1,Damage,1,1.35,60,0.06,Slash,Strength,,,,,,,,,,,,,
+151,612,1,Damage,1,1.90,32,0.05,None,Strength,,,,,,,,,,,,,
+152,612,2,Ailment,,,,,,,InstantDeath,0.25,1,,,,,,,,,,false
