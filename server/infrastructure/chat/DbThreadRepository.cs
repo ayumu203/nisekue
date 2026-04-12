@@ -158,6 +158,69 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
         }
     }
 
+    public async Task<IReadOnlyList<ThreadAlertSummary>> GetAlertSummariesAsync(PlayerId authorPlayerId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        var rows = await dbContext.ThreadReplies
+            .AsNoTracking()
+            .Where(reply => !reply.IsAuthorAlerted)
+            .Join(
+                dbContext.Threads.AsNoTracking().Where(thread => thread.AuthorPlayerId == authorPlayerId.Value),
+                reply => reply.ThreadId,
+                thread => thread.Id,
+                (reply, thread) => new
+                {
+                    thread.Id,
+                    thread.Title,
+                    ReplyId = reply.Id,
+                    reply.AuthorPlayerId,
+                    reply.CreatedAt
+                })
+            .OrderBy(x => x.CreatedAt)
+            .ThenBy(x => x.ReplyId)
+            .ToListAsync();
+
+        return rows
+            .GroupBy(x => new { x.Id, x.Title })
+            .Select(group =>
+            {
+                var latest = group
+                    .OrderByDescending(x => x.CreatedAt)
+                    .ThenByDescending(x => x.ReplyId)
+                    .First();
+                return new ThreadAlertSummary(
+                    group.Key.Id,
+                    group.Key.Title,
+                    group.Select(x => x.ReplyId).ToArray(),
+                    new PlayerId(latest.AuthorPlayerId),
+                    latest.CreatedAt,
+                    group.Count());
+            })
+            .ToArray();
+    }
+
+    public async Task<int> MarkRepliesAlertedAsync(PlayerId authorPlayerId, IReadOnlyCollection<ThreadReplyId> replyIds)
+    {
+        ArgumentNullException.ThrowIfNull(replyIds);
+
+        if (replyIds.Count == 0)
+        {
+            return 0;
+        }
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var distinctIds = replyIds.Distinct().ToArray();
+        return await dbContext.ThreadReplies
+            .Where(x => distinctIds.Contains(x.Id) && !x.IsAuthorAlerted)
+            .Join(
+                dbContext.Threads.Where(thread => thread.AuthorPlayerId == authorPlayerId.Value),
+                reply => reply.ThreadId,
+                thread => thread.Id,
+                (reply, _) => reply)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsAuthorAlerted, true));
+    }
+
     public async Task<ThreadPageResult> GetPageAsync(ThreadQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -202,7 +265,8 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
             threadId,
             reply.AuthorPlayerId.Value,
             reply.Body.Value,
-            reply.CreatedAt);
+            reply.CreatedAt,
+            reply.IsAuthorAlerted);
 
     private static DomainThread MapToDomain(ThreadEntity entity, IReadOnlyList<ThreadReplyEntity> replyEntities) =>
         new(
@@ -217,7 +281,8 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
                 reply.Id,
                 new PlayerId(reply.AuthorPlayerId),
                 new ThreadReplyBody(reply.Body),
-                reply.CreatedAt)));
+                reply.CreatedAt,
+                reply.IsAuthorAlerted)));
 
     private static async Task LockPlayerAsync(AppDbContext dbContext, Guid playerId)
     {

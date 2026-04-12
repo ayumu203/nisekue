@@ -43,7 +43,8 @@ public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerReposito
                     SenderName: senderProfile.Name,
                     ImagePath: senderProfile.ImagePath,
                     Message: x.Body.Text,
-                    CreatedAt: x.CreatedAt);
+                    CreatedAt: x.CreatedAt,
+                    IsAlerted: x.IsAlerted);
             })
             .ToArray();
 
@@ -73,5 +74,12 @@ public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerReposito
         var room = await chatRoomRepository.GetChatRoomAsync(ownerId);
         room.PostSystemMessage(text);
         await chatRoomRepository.SaveAsync(room);
+    }
+
+    public Task<int> MarkMessagesAlertedAsync(PlayerId ownerId, IReadOnlyCollection<int> chatIds)
+    {
+        return chatIds.Count == 0
+            ? Task.FromResult(0)
+            : chatRoomRepository.MarkMessagesAlertedAsync(ownerId, chatIds);
     }
 }

@@ -20,6 +20,8 @@ import {
 import {
   getChatRoomRequestSchema,
   getChatRoomResponseSchema,
+  markChatMessagesAlertedRequestSchema,
+  markChatMessagesAlertedResponseSchema,
   postChatMessageRequestSchema,
   postChatMessageResponseSchema,
 } from '@/schema/chat'
@@ -29,8 +31,11 @@ import {
   createThreadRequestSchema,
   createThreadResponseSchema,
   deleteThreadResponseSchema,
+  getThreadAlertsResponseSchema,
   getThreadsRequestSchema,
   getThreadsResponseSchema,
+  markThreadRepliesAlertedRequestSchema,
+  markThreadRepliesAlertedResponseSchema,
   threadDetailSchema,
 } from '@/schema/thread'
 import {
@@ -101,6 +106,8 @@ export type {
 export type {
   GetChatRoomRequest,
   GetChatRoomResponse,
+  MarkChatMessagesAlertedRequest,
+  MarkChatMessagesAlertedResponse,
   PostChatMessageRequest,
   PostChatMessageResponse,
 } from '@/schema/chat'
@@ -108,8 +115,12 @@ export type {
   ThreadSummary,
   ThreadReply,
   ThreadDetail,
+  ThreadAlertSummary,
   GetThreadsRequest,
   GetThreadsResponse,
+  GetThreadAlertsResponse,
+  MarkThreadRepliesAlertedRequest,
+  MarkThreadRepliesAlertedResponse,
   CreateThreadRequest,
   CreateThreadResponse,
   CreateThreadReplyRequest,
@@ -245,6 +256,12 @@ export const endpoints = {
       requestSchema: postChatMessageRequestSchema,
       responseSchema: postChatMessageResponseSchema,
     },
+    markAlerts: {
+      path: '/chat/room/messages/alerts',
+      method: 'POST',
+      requestSchema: markChatMessagesAlertedRequestSchema,
+      responseSchema: markChatMessagesAlertedResponseSchema,
+    },
   },
   thread: {
     list: {
@@ -274,6 +291,17 @@ export const endpoints = {
       path: (threadId: string) => `/threads/${threadId}`,
       method: 'DELETE',
       responseSchema: deleteThreadResponseSchema,
+    },
+    alerts: {
+      path: '/threads/alerts',
+      method: 'GET',
+      responseSchema: getThreadAlertsResponseSchema,
+    },
+    markAlerts: {
+      path: '/threads/alerts',
+      method: 'POST',
+      requestSchema: markThreadRepliesAlertedRequestSchema,
+      responseSchema: markThreadRepliesAlertedResponseSchema,
     },
   },
   training: {

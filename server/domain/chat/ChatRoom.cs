@@ -28,7 +28,8 @@ public class ChatRoom(PlayerId ownerId, int lastChatId = 0)
         var chatId = GetNextMessageId();
         ChatText body = new(text);
         var now = DateTimeOffset.UtcNow;
-        ChatMessage chatMessage = new(ChatMessageSenderType.Player, senderId, chatId, body, now);
+        var isAlerted = senderId == OwnerId;
+        ChatMessage chatMessage = new(ChatMessageSenderType.Player, senderId, chatId, body, now, isAlerted);
         _messages.Add(chatMessage);
         LastChatId = chatId;
         EnforceMessageLimit();
@@ -39,7 +40,7 @@ public class ChatRoom(PlayerId ownerId, int lastChatId = 0)
         var chatId = GetNextMessageId();
         ChatText body = new(text);
         var now = DateTimeOffset.UtcNow;
-        ChatMessage chatMessage = new(ChatMessageSenderType.System, senderId: null, chatId, body, now);
+        ChatMessage chatMessage = new(ChatMessageSenderType.System, senderId: null, chatId, body, now, isAlerted: false);
         _messages.Add(chatMessage);
         LastChatId = chatId;
         EnforceMessageLimit();

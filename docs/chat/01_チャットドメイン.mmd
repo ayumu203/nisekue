@@ -23,6 +23,7 @@ classDiagram
             +int ChatId
             +ChatText Body
             +DateTimeOffset CreatedAt
+            +bool IsAlerted
         }
 
         class ChatText {
@@ -52,6 +53,7 @@ classDiagram
             +string? ImagePath
             +string Message
             +DateTimeOffset CreatedAt
+            +bool IsAlerted
         }
 
         class ChatService {
@@ -60,6 +62,7 @@ classDiagram
             +Task~ChatRoomView~ GetRoomAsync(ownerId: PlayerId)
             +Task~ChatRoomView~ PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
             +Task PostSystemMessageAsync(ownerId: PlayerId, text: string)
+            +Task MarkMessagesAlertedAsync(ownerId: PlayerId, chatIds: IEnumerable~int~)
         }
 
         note for ChatService "匿名ログイン中のユーザーは ChatRoom への投稿不可。\n閲覧のみ許可し、投稿要求はエンドポイントで拒否する。"
@@ -86,6 +89,7 @@ classDiagram
             +PlayerId AuthorPlayerId
             +ThreadReplyBody Body
             +DateTimeOffset CreatedAt
+            +bool IsAuthorAlerted
         }
 
         class ThreadId {
@@ -148,6 +152,15 @@ classDiagram
             +DateTimeOffset CreatedAt
             +string AuthorName
             +string? AuthorImagePath
+            +bool IsAuthorAlerted
+        }
+
+        class ThreadAlertSummaryView {
+            <<Read Model>>
+            +ThreadId ThreadId
+            +string ThreadTitle
+            +IReadOnlyList~ThreadReplyId~ ReplyIds
+            +int UnalertedReplyCount
         }
 
         class ThreadListPage {
@@ -178,9 +191,12 @@ classDiagram
             +Task~ThreadDetailView?~ GetByIdAsync(threadId: ThreadId)
             +Task~ThreadDetailView~ CreateAsync(authorPlayerId: PlayerId, title: string, body: string)
             +Task~ThreadDetailView~ AddReplyAsync(threadId: ThreadId, authorPlayerId: PlayerId, body: string)
+            +Task~IReadOnlyList~ThreadAlertSummaryView~~ GetAlertSummariesAsync(authorPlayerId: PlayerId)
+            +Task MarkRepliesAlertedAsync(replyIds: IEnumerable~ThreadReplyId~)
         }
 
         note for ThreadService "匿名ログイン中のユーザーはスレッド作成・返信不可。\nスレッド一覧/詳細の閲覧は継続して許可する。"
+        note for ThreadService "通知の検知はホーム画面の初回取得時のみ行う。\n未通知のメッセージ/返信を検知したらトースト表示し、その直後に alert 済みに更新する。"
     }
 
     ChatRoom *-- ChatMessage : 0..50
@@ -200,3 +216,4 @@ classDiagram
     ThreadService ..> IThreadRepository : use
     ThreadService ..> ThreadDetailView : builds
     ThreadService ..> ThreadListPage : builds
+    ThreadService ..> ThreadAlertSummaryView : builds

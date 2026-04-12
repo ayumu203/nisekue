@@ -7,8 +7,11 @@ import type {
   CreateThreadRequest,
   CreateThreadResponse,
   DeleteThreadResponse,
+  GetThreadAlertsResponse,
   GetThreadsRequest,
   GetThreadsResponse,
+  MarkThreadRepliesAlertedRequest,
+  MarkThreadRepliesAlertedResponse,
   ThreadDetail,
 } from '@/schema/thread'
 
@@ -112,4 +115,44 @@ export async function deleteThread(threadId: string, accessToken: string): Promi
   }
 
   return endpoints.thread.delete.responseSchema.parse(json)
+}
+
+export async function getThreadAlerts(accessToken: string): Promise<GetThreadAlertsResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.thread.alerts.path}`, {
+    method: endpoints.thread.alerts.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'スレッド通知の取得に失敗しました'))
+  }
+
+  return endpoints.thread.alerts.responseSchema.parse(json)
+}
+
+export async function markThreadRepliesAlerted(
+  input: MarkThreadRepliesAlertedRequest,
+  accessToken: string,
+): Promise<MarkThreadRepliesAlertedResponse> {
+  const payload = endpoints.thread.markAlerts.requestSchema.parse(input)
+  const apiBaseUrl = resolveApiBaseUrl()
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.thread.markAlerts.path}`, {
+    method: endpoints.thread.markAlerts.method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'スレッド通知の更新に失敗しました'))
+  }
+
+  return endpoints.thread.markAlerts.responseSchema.parse(json)
 }
