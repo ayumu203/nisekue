@@ -34,6 +34,7 @@ erDiagram
         int chat_id PK "NOT NULL"
         varchar(200) message "NOT NULL"
         timestamptz created_at "NOT NULL, DEFAULT CURRENT_TIMESTAMP"
+        boolean is_alerted "NOT NULL, DEFAULT FALSE"
     }
     THREADS {
         uuid id PK "internal.threads.id"
@@ -50,6 +51,7 @@ erDiagram
         uuid author_player_id FK "internal.players.id"
         varchar(250) body "NOT NULL"
         timestamptz created_at "NOT NULL"
+        boolean is_author_alerted "NOT NULL, DEFAULT FALSE"
     }
     PLAYER_MOVES {
         uuid player_id PK, FK "internal.players.id"
