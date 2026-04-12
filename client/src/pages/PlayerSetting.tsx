@@ -10,7 +10,6 @@ import {
   innerSurfaceSx,
   mutedGreenButtonSx,
   outerPagePaperSx,
-  softGoldButtonSx,
   softGreenButtonSx,
 } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
@@ -25,17 +24,16 @@ export default function PlayerSetting() {
   const { session, isLoading } = useAuth()
   const [accountEmail, setAccountEmail] = useState<string | null>(session?.user.email ?? null)
   const [accountIsAnonymous, setAccountIsAnonymous] = useState(hasAnonymousIdentity(session?.user ?? null))
-  const [needsPasswordSetup, setNeedsPasswordSetup] = useState(false)
   const [userName, setUserName] = useState('')
   const [imageNoInput, setImageNoInput] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [linkEmail, setLinkEmail] = useState('')
-  const [linkPassword, setLinkPassword] = useState('')
+  const [accountEmailInput, setAccountEmailInput] = useState(session?.user.email ?? '')
+  const [accountPasswordInput, setAccountPasswordInput] = useState('')
   const [accountError, setAccountError] = useState<string | null>(null)
   const [accountSuccess, setAccountSuccess] = useState<string | null>(null)
-  const [accountAction, setAccountAction] = useState<'email' | 'password' | null>(null)
+  const [accountAction, setAccountAction] = useState<'account' | null>(null)
   const settingInputSx = {
     ...greenOutlinedInputSx,
     '& .MuiInputLabel-root.Mui-focused': {
@@ -82,14 +80,11 @@ export default function PlayerSetting() {
   useEffect(() => {
     setAccountEmail(session?.user.email ?? null)
     setAccountIsAnonymous(hasAnonymousIdentity(session?.user ?? null))
-    if (!session?.user.email) {
-      setNeedsPasswordSetup(false)
-    }
   }, [session?.user])
 
   useEffect(() => {
     if (session?.user.email) {
-      setLinkEmail(session.user.email)
+      setAccountEmailInput(session.user.email)
     }
   }, [session?.user.email])
 
@@ -172,23 +167,37 @@ export default function PlayerSetting() {
       ? resolveCharacterAssetPath(resolvePlayerImageFileName(selectedImageNo))
       : null
   const anonymousIdentity = accountIsAnonymous
-  const hasLinkedEmail = Boolean(accountEmail)
-  const shouldShowPasswordSetup = hasLinkedEmail && (anonymousIdentity || needsPasswordSetup)
 
-  async function handleLinkEmail(): Promise<void> {
-    const trimmedEmail = linkEmail.trim()
+  async function handleAccountSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault()
+
+    const trimmedEmail = accountEmailInput.trim()
+    const trimmedPassword = accountPasswordInput.trim()
+
     if (!trimmedEmail) {
-      setAccountError(locale.linkEmailDefaultError)
+      setAccountError(locale.accountEmailRequired)
       setAccountSuccess(null)
       return
     }
 
-    setAccountAction('email')
+    if (trimmedPassword.length < 6) {
+      setAccountError(locale.passwordMinLength)
+      setAccountSuccess(null)
+      return
+    }
+
+    setAccountAction('account')
     setAccountError(null)
     setAccountSuccess(null)
 
     const emailRedirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
-    const { data, error } = await supabase.auth.updateUser({ email: trimmedEmail }, { emailRedirectTo })
+    const { data, error } = await supabase.auth.updateUser(
+      {
+        email: trimmedEmail,
+        password: trimmedPassword,
+      },
+      { emailRedirectTo },
+    )
 
     if (error) {
       const normalized = error.message.trim().toLowerCase()
@@ -197,9 +206,8 @@ export default function PlayerSetting() {
         'email address already in use',
         'email exists',
       ])
-
       setAccountError(
-        existingAccountMessages.has(normalized) ? locale.linkEmailExistingAccount : locale.linkEmailDefaultError,
+        existingAccountMessages.has(normalized) ? locale.linkEmailExistingAccount : locale.setAccountDefaultError,
       )
       setAccountAction(null)
       return
@@ -209,36 +217,13 @@ export default function PlayerSetting() {
     const nextAnonymousIdentity = hasAnonymousIdentity(data.user ?? null)
     setAccountEmail(data.user?.email ?? trimmedEmail)
     setAccountIsAnonymous(nextAnonymousIdentity)
-    setNeedsPasswordSetup(true)
-    setLinkEmail(data.user?.email ?? trimmedEmail)
+    setAccountEmailInput(data.user?.email ?? trimmedEmail)
+    setAccountPasswordInput('')
     setAccountSuccess(
-      latestEmail === trimmedEmail.toLowerCase() ? locale.linkEmailImmediateSuccess : locale.linkEmailSuccess,
+      latestEmail === trimmedEmail.toLowerCase()
+        ? locale.setAccountImmediateSuccess
+        : locale.setAccountEmailPendingSuccess,
     )
-    setAccountAction(null)
-  }
-
-  async function handleSetPassword(): Promise<void> {
-    if (linkPassword.length < 6) {
-      setAccountError(locale.passwordMinLength)
-      setAccountSuccess(null)
-      return
-    }
-
-    setAccountAction('password')
-    setAccountError(null)
-    setAccountSuccess(null)
-
-    const { error } = await supabase.auth.updateUser({ password: linkPassword })
-
-    if (error) {
-      setAccountError(locale.setPasswordDefaultError)
-      setAccountAction(null)
-      return
-    }
-
-    setLinkPassword('')
-    setNeedsPasswordSetup(false)
-    setAccountSuccess(locale.setPasswordSuccess)
     setAccountAction(null)
   }
 
@@ -418,69 +403,60 @@ export default function PlayerSetting() {
                     <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
                       {anonymousIdentity ? locale.accountLinkDescription : locale.accountLinkedDescription}
                     </Typography>
+                    {accountEmail ? (
+                      <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.72)' }}>
+                        {locale.accountCurrentEmail.replace('{email}', accountEmail)}
+                      </Typography>
+                    ) : null}
                   </Stack>
 
-                  {anonymousIdentity || shouldShowPasswordSetup ? (
-                    <>
-                      {anonymousIdentity ? (
-                        <>
-                          <Stack spacing={0.75}>
-                            <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
-                              {hasLinkedEmail ? locale.linkedEmailLabel : locale.linkEmailLabel}
-                            </Typography>
-                            <TextField
-                              fullWidth
-                              type="email"
-                              placeholder={locale.linkEmailPlaceholder}
-                              value={linkEmail}
-                              onChange={(event) => {
-                                setLinkEmail(event.target.value)
-                              }}
-                              sx={settingInputSx}
-                            />
-                          </Stack>
-                          <Button
-                            type="button"
-                            variant="contained"
-                            disabled={accountAction !== null}
-                            onClick={handleLinkEmail}
-                            sx={softGoldButtonSx}
-                          >
-                            {accountAction === 'email' ? locale.linkEmailSubmitting : locale.linkEmailSubmit}
-                          </Button>
-                        </>
-                      ) : null}
+                  <Box component="form" onSubmit={handleAccountSubmit} noValidate>
+                    <Stack spacing={2}>
+                      <Stack spacing={0.75}>
+                        <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                          {locale.accountEmailLabel}
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          type="email"
+                          placeholder={locale.accountEmailPlaceholder}
+                          value={accountEmailInput}
+                          onChange={(event) => {
+                            setAccountEmailInput(event.target.value)
+                          }}
+                          sx={settingInputSx}
+                        />
+                      </Stack>
 
-                      {shouldShowPasswordSetup ? (
-                        <>
-                          <Stack spacing={0.75}>
-                            <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
-                              {locale.setPasswordLabel}
-                            </Typography>
-                            <TextField
-                              fullWidth
-                              type="password"
-                              placeholder={locale.setPasswordPlaceholder}
-                              value={linkPassword}
-                              onChange={(event) => {
-                                setLinkPassword(event.target.value)
-                              }}
-                              sx={settingInputSx}
-                            />
-                          </Stack>
-                          <Button
-                            type="button"
-                            variant="contained"
-                            disabled={accountAction !== null}
-                            onClick={handleSetPassword}
-                            sx={softGreenButtonSx}
-                          >
-                            {accountAction === 'password' ? locale.setPasswordSubmitting : locale.setPasswordSubmit}
-                          </Button>
-                        </>
-                      ) : null}
-                    </>
-                  ) : null}
+                      <Stack spacing={0.75}>
+                        <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                          {locale.setPasswordLabel}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
+                          {locale.setAccountDescription}
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          type="password"
+                          placeholder={locale.setPasswordPlaceholder}
+                          value={accountPasswordInput}
+                          onChange={(event) => {
+                            setAccountPasswordInput(event.target.value)
+                          }}
+                          sx={settingInputSx}
+                        />
+                      </Stack>
+
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={accountAction !== null}
+                        sx={softGreenButtonSx}
+                      >
+                        {accountAction === 'account' ? locale.setAccountSubmitting : locale.setAccountSubmit}
+                      </Button>
+                    </Stack>
+                  </Box>
 
                   {accountError ? <Alert severity="warning">{accountError}</Alert> : null}
                   {accountSuccess ? <Alert severity="success">{accountSuccess}</Alert> : null}

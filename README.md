@@ -1,5 +1,10 @@
 # README
 
+## 資料
+
+- 開発内容に関する資料は以下のリンクから飛べます.
+- [開発資料](https://github.com/ayumu203/nisekue/blob/main/docs/%E7%99%BA%E8%A1%A8%E8%B3%87%E6%96%99.pdf)
+
 ## 公開先
 
 - [本番用](https://game.arm203.org/)
@@ -7,10 +12,8 @@
 
 ## 作るもの
 
-- 某ゲームオマージュの開発.
-- 冒険やエンドレスバトル等を実装.
-- クエストと装備進行は主に `server/resources/**` の CSV マスタで拡張する.
-- クエストの最終ステージは推奨Lv600帯を想定し、ステージごとに必要なら参加可能Lvを個別設定できる.
+- 某ゲームのオマージュゲー開発.
+- 冒険やエンドレスバトル等を実装する.
 
 ## システムのアーキテクチャ構成
 
@@ -19,14 +22,13 @@
 - React + Vite
 - MUI(Material UI)
 - ![Tech Stack](https://skillicons.dev/icons?i=react,vite,mui,nodejs)
-- ゲームの処理等はHTTPによるリクエストとレスポンスで行う.
-- 基本的にはuseSWRを利用.
 
 ### バックエンド
 
 - .NET(Minimal API)
 - EF Core(Entity Framework Core)
-- SignalR ※ もしリアルタイム性が必要になれば.
+- xUnit
+- SignalR
 - ![Tech Stack](https://skillicons.dev/icons?i=cs,dotnet)
 
 ### インフラ
@@ -74,93 +76,6 @@ $ dotnet run
 $ dotnet test
 ```
 
-### DB マイグレーション (EF Core)
-
-- `dev` / `prod` の公開環境は GitHub Actions で自動適用する.
-- workflow は以下を利用する.
-  - 開発: `.github/workflows/db-migrate-dev.yml`
-  - 本番: `.github/workflows/db-migrate-prod.yml`
-- GitHub Environments (`dev`, `prod`) の Secrets に `SUPABASE_DB_CONNECTION_STRING` を設定する.
-- `SUPABASE_DB_CONNECTION_STRING` には Session Pooler の接続文字列を入れる.
-- Azure App Service の `ConnectionStrings__Supabase` も Session Pooler を使う.
-
-```bash
-# main push: Apply DB Migrations - Development
-# prod push: Apply DB Migrations - Production
-```
-
-### マーケット期限切れ出品の自動削除
-
-- 期限切れ出品の削除は GitHub Actions の定期実行で行う.
-- ワークフローは環境別に以下を利用する.
-  - 開発: `.github/workflows/cleanup-expired-market-listings-dev.yml`
-  - 本番: `.github/workflows/cleanup-expired-market-listings-prod.yml`
-- Actions からはバックエンドの内部メンテナンス API を呼び出す.
-- GitHub Environments (`dev`, `prod`) の Secrets に以下を設定する.
-  - `MARKET_CLEANUP_TOKEN`: 内部メンテナンス API 呼び出し用トークン
-- API のベース URL は既存の `VITE_API_BASE_URL` (`vars` または `secrets`) を流用する.
-- バックエンド側にも同じ値を `Maintenance:MarketCleanupToken` として設定する.
-
-```bash
-# 開発公開環境で手動実行する例
-curl -X POST "https://www.arm203.org/internal/market/listings/cleanup-expired" \
-  -H "X-Maintenance-Token: <MARKET_CLEANUP_TOKEN>" \
-  -H "Accept: application/json"
-```
-
-### ランキング再集計の定期実行
-
-- ランキングは GitHub Actions の定期実行で 6 時間ごとに再集計する.
-- ランキング機能の有効/無効は `Ranking:Enabled` で切り替える.
-  - 既定値: `appsettings.json` で `true`
-  - ローカル開発時の既定値: `appsettings.Development.json` で `false`
-- `Ranking:Enabled=false` の場合:
-  - `/rankings` は空データを返す.
-  - `/internal/rankings/rebuild` は `404 NotFound` を返す.
-- ローカルでランキング集計を有効化したい場合は `server/appsettings.Development.json` の `Ranking:Enabled` を `true` に変更する.
-- ワークフローは環境別に以下を利用する.
-  - 開発: `.github/workflows/ranking-rebuild-dev.yml`
-  - 本番: `.github/workflows/ranking-rebuild-prod.yml`
-- Actions からはバックエンドの内部メンテナンス API を呼び出す.
-  - `POST /internal/rankings/rebuild`
-- GitHub Environments (`dev`, `prod`) の Secrets に以下を設定する.
-  - `MARKET_CLEANUP_TOKEN`: 内部メンテナンス API 呼び出し用トークン
-- API のベース URL は既存の `VITE_API_BASE_URL` (`vars` または `secrets`) を利用する.
-
-```bash
-# 開発公開環境で手動実行する例
-curl -X POST "https://www.arm203.org/internal/rankings/rebuild" \
-  -H "X-Maintenance-Token: <MARKET_CLEANUP_TOKEN>" \
-  -H "Accept: application/json"
-```
-
-### 開発用ゲームデータ一括削除
-
-- 開発環境では `POST /internal/development/cleanup-game-data` でプレイヤー・チャット・アイテム・クエスト進行データを一括削除できる.
-- このエンドポイントは `Development` 環境でのみ有効.
-- ローカルで `localhost` / `127.0.0.1` / `::1` 宛てに叩く場合は認証不要.
-- 開発公開環境へ叩く場合の認証には `X-Maintenance-Token` を使い、値は `Maintenance:MarketCleanupToken` を流用する.
-- CSV マスタ、EF Core migration 履歴、アプリ設定は削除対象に含めない.
-- GitHub Actions から手動実行する場合は `.github/workflows/cleanup-game-data-dev.yml` を利用する.
-
-```bash
-# ローカル開発環境で実行する例
-curl -X POST "http://localhost:5068/internal/development/cleanup-game-data" \
-  -H "Accept: application/json"
-
-# 開発公開環境で実行する例
-curl -X POST "https://www.arm203.org/internal/development/cleanup-game-data" \
-  -H "X-Maintenance-Token: <MARKET_CLEANUP_TOKEN>" \
-  -H "Accept: application/json"
-```
-
-### 新しい migration を作る場合
-
-```bash
-# /server で実行.
-dotnet ef migrations add <MigrationName>
-```
-
 ### Supabase
 
 - 起動関連
@@ -182,8 +97,8 @@ $ pnpx supabase stop
   - 主要な機能のうち今後も大きな変更があるものに関しては機能要件・設計を整理したドキュメントを作成しています.
   - 関連する機能を変更・修正する場合はこちらも合わせて修正してください.
   - 例:
-    - `docs/MKD02_クエスト設計.md`: クエスト全体の設計ドラフト.
-    - `docs/MKD04_クエストターンチャット設計.md`: クエスト中チャットのターン連動表示設計.
+    - `docs/quest/02_クエスト設計.md`: クエスト全体の設計ドラフト.
+    - `docs/quest/03_クエストターンチャット設計.md`: クエスト中チャットのターン連動表示設計.
 - MMD**系
   - 各ドメインに関してのドメインモデルを設計しています.
   - 実行・変更・修正を行った場合は追記・修正をお願いします.
@@ -216,3 +131,8 @@ $ pnpx supabase stop
 - 適切なレビューをしていないAIのコード.
 - テストやビルド・フォーマットが通らないコード.
 - 設計を変更せずに実装だけを行ったもの.
+
+## 権利関係
+
+- ソースコードの改変は自由ですが、使用画像に関しては私が再配布を禁止されているものです。したがってこのゲームの改造による再配布は禁止させていただきます。
+- バグ・変更案等はIssue、Pull Request等で提案いただきたいです。
