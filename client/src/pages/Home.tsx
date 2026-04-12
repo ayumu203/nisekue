@@ -1,8 +1,10 @@
-import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, CircularProgress, Container, Paper, Snackbar, Stack, Typography } from '@mui/material'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
-import { getChatRoom, postChatMessage } from '@/api/chat'
+import { getChatRoom, markChatMessagesAlerted, postChatMessage } from '@/api/chat'
+import { getThreadAlerts, markThreadRepliesAlerted } from '@/api/thread'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/home/Home.json'
@@ -34,6 +36,12 @@ import { beginnerGuides } from '@/lib/beginnerGuides'
 
 function Home() {
   const { session, isLoading, isAnonymous } = useAuth()
+  const [toastQueue, setToastQueue] = useState<string[]>([])
+  const handledChatIdsRef = useRef<Set<number>>(new Set())
+  const handledReplyIdsRef = useRef<Set<string>>(new Set())
+  const enqueueToast = useEffectEvent((message: string) => {
+    setToastQueue((current) => [...current, message])
+  })
   const playerSWRKey = session?.user.id ? (['player', session.user.id] as const) : null
   const {
     data: player,
@@ -71,6 +79,64 @@ function Home() {
 
     return getChatRoom({ ownerId: player.userId }, session.access_token)
   })
+  const threadAlertsSWRKey =
+    session?.access_token && player?.userId ? (['thread-alerts', player.userId] as const) : null
+  const { data: threadAlerts } = useSWR(threadAlertsSWRKey, async () => {
+    if (!session?.access_token) {
+      throw new Error(locale.sessionInfoMissing)
+    }
+
+    return getThreadAlerts(session.access_token)
+  })
+
+  useEffect(() => {
+    if (!session?.access_token || !player?.userId || !chatRoom) {
+      return
+    }
+
+    const unalertedMessages = chatRoom.messages.filter(
+      (message) =>
+        !message.isAlerted &&
+        !handledChatIdsRef.current.has(message.chatId) &&
+        (message.senderId == null || message.senderId !== player.userId),
+    )
+
+    if (unalertedMessages.length === 0) {
+      return
+    }
+
+    unalertedMessages.forEach((message) => handledChatIdsRef.current.add(message.chatId))
+    enqueueToast(locale.newMessageToast)
+    void markChatMessagesAlerted(
+      {
+        ownerId: player.userId,
+        chatIds: unalertedMessages.map((message) => message.chatId),
+      },
+      session.access_token,
+    ).catch(() => {
+      unalertedMessages.forEach((message) => handledChatIdsRef.current.delete(message.chatId))
+    })
+  }, [chatRoom, player?.userId, session?.access_token])
+
+  useEffect(() => {
+    if (!session?.access_token || !threadAlerts) {
+      return
+    }
+
+    const pendingReplyIds = threadAlerts.items
+      .flatMap((item) => item.replyIds)
+      .filter((replyId) => !handledReplyIdsRef.current.has(replyId))
+
+    if (pendingReplyIds.length === 0) {
+      return
+    }
+
+    pendingReplyIds.forEach((replyId) => handledReplyIdsRef.current.add(replyId))
+    enqueueToast(locale.newThreadReplyToast)
+    void markThreadRepliesAlerted({ replyIds: pendingReplyIds }, session.access_token).catch(() => {
+      pendingReplyIds.forEach((replyId) => handledReplyIdsRef.current.delete(replyId))
+    })
+  }, [session?.access_token, threadAlerts])
 
   if (isLoading) {
     return (
@@ -242,6 +308,27 @@ function Home() {
           </Box>
         </Stack>
       </Paper>
+      <Snackbar
+        open={toastQueue.length > 0}
+        autoHideDuration={4000}
+        onClose={(_, reason) => {
+          if (reason === 'clickaway') {
+            return
+          }
+
+          setToastQueue((current) => current.slice(1))
+        }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity="info"
+          variant="filled"
+          onClose={() => setToastQueue((current) => current.slice(1))}
+          sx={{ width: '100%', alignItems: 'center' }}
+        >
+          {toastQueue[0] ?? ''}
+        </Alert>
+      </Snackbar>
     </Container>
   )
 }
