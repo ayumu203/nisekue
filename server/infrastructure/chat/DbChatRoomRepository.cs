@@ -59,8 +59,8 @@ namespace server.infrastructure.chat
                 foreach (var message in messagesToPersist)
                 {
                     await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
-                        INSERT INTO internal.chat_messages(owner_id, chat_id, sender_type, sender_id, message)
-                        VALUES ({ownerId}, {message.ChatId}, {(int)message.SenderType}, {(message.SenderId == null ? (Guid?)null : message.SenderId.Value.Value)}, {message.Body.Text})
+                        INSERT INTO internal.chat_messages(owner_id, chat_id, sender_type, sender_id, message, is_alerted)
+                        VALUES ({ownerId}, {message.ChatId}, {(int)message.SenderType}, {(message.SenderId == null ? (Guid?)null : message.SenderId.Value.Value)}, {message.Body.Text}, {message.IsAlerted})
                         ON CONFLICT (owner_id, chat_id) DO NOTHING");
                 }
 
@@ -100,6 +100,22 @@ namespace server.infrastructure.chat
             }
         }
 
+        public async Task<int> MarkMessagesAlertedAsync(PlayerId ownerId, IReadOnlyCollection<int> chatIds)
+        {
+            ArgumentNullException.ThrowIfNull(chatIds);
+
+            if (chatIds.Count == 0)
+            {
+                return 0;
+            }
+
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var distinctIds = chatIds.Distinct().ToArray();
+            return await dbContext.ChatMessages
+                .Where(x => x.OwnerId == ownerId && distinctIds.Contains(x.ChatId) && !x.IsAlerted)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsAlerted, true));
+        }
+
         private static async Task<int?> LockRoomAndGetLastChatIdAsync(AppDbContext dbContext, Guid ownerId)
         {
             var rows = await dbContext.Database
@@ -110,6 +126,6 @@ namespace server.infrastructure.chat
         }
 
         private static ChatMessage MapToDomain(ChatMessageEntity entity) =>
-            new(entity.SenderType, entity.SenderId, entity.ChatId, new ChatText(entity.Message), entity.CreatedAt);
+            new(entity.SenderType, entity.SenderId, entity.ChatId, new ChatText(entity.Message), entity.CreatedAt, entity.IsAlerted);
     }
 }

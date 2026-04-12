@@ -4,6 +4,8 @@ import { extractErrorMessage, resolveApiBaseUrl } from '@/api/util'
 import type {
   GetChatRoomRequest,
   GetChatRoomResponse,
+  MarkChatMessagesAlertedRequest,
+  MarkChatMessagesAlertedResponse,
   PostChatMessageRequest,
   PostChatMessageResponse,
 } from '@/schema/chat'
@@ -53,4 +55,29 @@ export async function postChatMessage(
   }
 
   return endpoints.chatRoom.postMessage.responseSchema.parse(json)
+}
+
+export async function markChatMessagesAlerted(
+  input: MarkChatMessagesAlertedRequest,
+  accessToken: string,
+): Promise<MarkChatMessagesAlertedResponse> {
+  const payload = endpoints.chatRoom.markAlerts.requestSchema.parse(input)
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.chatRoom.markAlerts.path}`, {
+    method: endpoints.chatRoom.markAlerts.method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'チャット通知の更新に失敗しました'))
+  }
+
+  return endpoints.chatRoom.markAlerts.responseSchema.parse(json)
 }

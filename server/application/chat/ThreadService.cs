@@ -93,6 +93,37 @@ public class ThreadService(IThreadRepository threadRepository, IPlayerRepository
         await threadRepository.DeleteAsync(threadId);
     }
 
+    public async Task<IReadOnlyList<ThreadAlertSummaryView>> GetAlertSummariesAsync(PlayerId authorPlayerId)
+    {
+        var alerts = await threadRepository.GetAlertSummariesAsync(authorPlayerId);
+        if (alerts.Count == 0)
+        {
+            return [];
+        }
+
+        var profileMap = await LoadProfilesAsync(alerts.Select(x => x.LatestReplyAuthorPlayerId));
+        return alerts
+            .Select(alert =>
+            {
+                var latestAuthor = ResolveProfile(profileMap, alert.LatestReplyAuthorPlayerId);
+                return new ThreadAlertSummaryView(
+                    alert.ThreadId.Value,
+                    alert.ThreadTitle,
+                    alert.ReplyIds.Select(x => x.Value).ToArray(),
+                    latestAuthor.Name,
+                    alert.LatestReplyCreatedAt,
+                    alert.UnalertedReplyCount);
+            })
+            .ToArray();
+    }
+
+    public Task<int> MarkRepliesAlertedAsync(PlayerId authorPlayerId, IReadOnlyCollection<ThreadReplyId> replyIds)
+    {
+        return replyIds.Count == 0
+            ? Task.FromResult(0)
+            : threadRepository.MarkRepliesAlertedAsync(authorPlayerId, replyIds);
+    }
+
     private async Task<ThreadDetailView> BuildDetailAsync(DomainThread thread)
     {
         var profileMap = await LoadProfilesAsync([thread.AuthorPlayerId, .. thread.Replies.Select(x => x.AuthorPlayerId)]);

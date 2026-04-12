@@ -105,7 +105,8 @@ public class DevelopmentDataCleanupServiceTests
             ChatMessageSenderType.System,
             senderId: null,
             "hello",
-            DateTimeOffset.UtcNow));
+            DateTimeOffset.UtcNow,
+            isAlerted: true));
         seedContext.QuestRooms.Add(new QuestRoomEntity
         {
             Id = roomId,

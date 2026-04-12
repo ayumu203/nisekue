@@ -38,6 +38,11 @@ public class ChatServiceTests
             storedRoom = room;
             return Task.CompletedTask;
         }
+
+        public Task<int> MarkMessagesAlertedAsync(PlayerId ownerId, IReadOnlyCollection<int> chatIds)
+        {
+            return Task.FromResult(0);
+        }
     }
 
     private sealed class FakePlayerRepository : IPlayerRepository

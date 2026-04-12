@@ -2,7 +2,13 @@ using server.domain.player;
 
 namespace server.domain.chat;
 
-public class ChatMessage(ChatMessageSenderType senderType, PlayerId? senderId, int chatId, ChatText body, DateTimeOffset createdAt)
+public class ChatMessage(
+    ChatMessageSenderType senderType,
+    PlayerId? senderId,
+    int chatId,
+    ChatText body,
+    DateTimeOffset createdAt,
+    bool isAlerted)
 {
     public ChatMessageSenderType SenderType { get; } = senderType;
     public PlayerId? SenderId { get; } = senderType == ChatMessageSenderType.Player
@@ -11,6 +17,7 @@ public class ChatMessage(ChatMessageSenderType senderType, PlayerId? senderId, i
     public int ChatId { get; } = ValidateChatId(chatId);
     public ChatText Body { get; } = body ?? throw new ArgumentNullException(nameof(body));
     public DateTimeOffset CreatedAt { get; } = createdAt;
+    public bool IsAlerted { get; } = isAlerted;
 
     private static int ValidateChatId(int chatId)
     {

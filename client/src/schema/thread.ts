@@ -66,6 +66,27 @@ export const deleteThreadResponseSchema = z.object({
   message: z.string(),
 })
 
+export const threadAlertSummarySchema = z.object({
+  threadId: threadIdSchema,
+  threadTitle: z.string().trim().min(1).max(50),
+  replyIds: z.array(replyIdSchema),
+  latestReplyAuthorName: z.string().trim().min(1),
+  latestReplyCreatedAt: z.string().datetime({ offset: true, message: '日時の形式が不正です' }),
+  unalertedReplyCount: z.number().int().min(1),
+})
+
+export const getThreadAlertsResponseSchema = z.object({
+  items: z.array(threadAlertSummarySchema),
+})
+
+export const markThreadRepliesAlertedRequestSchema = z.object({
+  replyIds: z.array(replyIdSchema).min(1),
+})
+
+export const markThreadRepliesAlertedResponseSchema = z.object({
+  updatedCount: z.number().int().min(0),
+})
+
 export type ThreadSummary = z.infer<typeof threadSummarySchema>
 export type ThreadReply = z.infer<typeof threadReplySchema>
 export type ThreadDetail = z.infer<typeof threadDetailSchema>
@@ -76,3 +97,7 @@ export type CreateThreadResponse = z.infer<typeof createThreadResponseSchema>
 export type CreateThreadReplyRequest = z.infer<typeof createThreadReplyRequestSchema>
 export type CreateThreadReplyResponse = z.infer<typeof createThreadReplyResponseSchema>
 export type DeleteThreadResponse = z.infer<typeof deleteThreadResponseSchema>
+export type ThreadAlertSummary = z.infer<typeof threadAlertSummarySchema>
+export type GetThreadAlertsResponse = z.infer<typeof getThreadAlertsResponseSchema>
+export type MarkThreadRepliesAlertedRequest = z.infer<typeof markThreadRepliesAlertedRequestSchema>
+export type MarkThreadRepliesAlertedResponse = z.infer<typeof markThreadRepliesAlertedResponseSchema>
