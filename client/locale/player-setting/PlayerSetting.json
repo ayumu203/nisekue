@@ -42,6 +42,8 @@
   "linkEmailExistingAccount": "このメールアドレスは既存アカウントです。ログイン画面からログインしてください。",
   "linkEmailDefaultError": "メールアドレスの登録に失敗しました。",
   "setPasswordLabel": "パスワードを設定",
+  "setPasswordAnonymousDescription": "メールアドレスを追加したあと、ログイン用のパスワードを設定してください。",
+  "setPasswordLinkedDescription": "ログイン用のパスワードを設定または変更できます。",
   "setPasswordPlaceholder": "6文字以上のパスワード",
   "setPasswordSubmit": "パスワードを設定",
   "setPasswordSubmitting": "設定中...",
