@@ -310,7 +310,7 @@ function Home() {
       </Paper>
       <Snackbar
         open={toastQueue.length > 0}
-        autoHideDuration={4000}
+        autoHideDuration={1500}
         onClose={(_, reason) => {
           if (reason === 'clickaway') {
             return
