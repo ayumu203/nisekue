@@ -9,4 +9,5 @@ public sealed record ChatMessageView(
     string SenderName,
     string? ImagePath,
     string Message,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    bool IsAlerted);

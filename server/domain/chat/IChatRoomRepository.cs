@@ -6,4 +6,5 @@ public interface IChatRoomRepository
 {
     Task<ChatRoom> GetChatRoomAsync(PlayerId ownerId);
     Task SaveAsync(ChatRoom room);
+    Task<int> MarkMessagesAlertedAsync(PlayerId ownerId, IReadOnlyCollection<int> chatIds);
 }

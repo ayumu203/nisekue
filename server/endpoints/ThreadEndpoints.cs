@@ -25,6 +25,29 @@ internal static class ThreadEndpoints
                 : Results.Ok(EndpointHelpers.MapThreadDetail(thread));
         }).RequireAuthorization();
 
+        app.MapGet("/threads/alerts", async (ClaimsPrincipal user, ThreadService threadService) =>
+        {
+            var currentPlayerId = EndpointHelpers.TryGetPlayerId(user);
+            if (currentPlayerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            var alerts = await threadService.GetAlertSummariesAsync(currentPlayerId.Value);
+            return Results.Ok(new
+            {
+                items = alerts.Select(x => new
+                {
+                    threadId = x.ThreadId,
+                    threadTitle = x.ThreadTitle,
+                    replyIds = x.ReplyIds,
+                    latestReplyAuthorName = x.LatestReplyAuthorName,
+                    latestReplyCreatedAt = x.LatestReplyCreatedAt,
+                    unalertedReplyCount = x.UnalertedReplyCount
+                })
+            });
+        }).RequireAuthorization();
+
         app.MapPost("/threads", async (
             ClaimsPrincipal user,
             CreateThreadRequest request,
@@ -104,6 +127,25 @@ internal static class ThreadEndpoints
             {
                 return Results.Conflict(new { message = ex.Message });
             }
+        }).RequireAuthorization();
+
+        app.MapPost("/threads/alerts", async (
+            ClaimsPrincipal user,
+            MarkThreadRepliesAlertedRequest request,
+            ThreadService threadService) =>
+        {
+            var currentPlayerId = EndpointHelpers.TryGetPlayerId(user);
+            if (currentPlayerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            var replyIds = request.ReplyIds
+                .Distinct()
+                .Select(x => new ThreadReplyId(x))
+                .ToArray();
+            var updatedCount = await threadService.MarkRepliesAlertedAsync(currentPlayerId.Value, replyIds);
+            return Results.Ok(new { updatedCount });
         }).RequireAuthorization();
 
         app.MapDelete("/threads/{threadId:guid}", async (

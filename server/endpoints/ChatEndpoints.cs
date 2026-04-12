@@ -24,7 +24,8 @@ internal static class ChatEndpoints
                     senderName = x.SenderName,
                     imagePath = x.ImagePath,
                     text = x.Message,
-                    createdAt = x.CreatedAt
+                    createdAt = x.CreatedAt,
+                    isAlerted = x.IsAlerted
                 })
             });
         }).RequireAuthorization();
@@ -67,12 +68,13 @@ internal static class ChatEndpoints
                     {
                         chatId = x.ChatId,
                         senderType = x.SenderType,
-                        senderId = x.SenderId?.Value,
-                        senderName = x.SenderName,
-                        imagePath = x.ImagePath,
-                        text = x.Message,
-                        createdAt = x.CreatedAt
-                    })
+                    senderId = x.SenderId?.Value,
+                    senderName = x.SenderName,
+                    imagePath = x.ImagePath,
+                    text = x.Message,
+                    createdAt = x.CreatedAt,
+                    isAlerted = x.IsAlerted
+                })
                 });
             }
             catch (ArgumentException ex)
@@ -83,6 +85,26 @@ internal static class ChatEndpoints
             {
                 return Results.Conflict(new { message = ex.Message });
             }
+        }).RequireAuthorization();
+
+        app.MapPost("/chat/room/messages/alerts", async (
+            ClaimsPrincipal user,
+            MarkChatMessagesAlertedRequest request,
+            ChatService chatService) =>
+        {
+            var currentPlayerId = EndpointHelpers.TryGetPlayerId(user);
+            if (currentPlayerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (currentPlayerId.Value.Value != request.OwnerId)
+            {
+                return Results.Json(new { message = "他プレイヤーの通知状態は更新できません。" }, statusCode: StatusCodes.Status403Forbidden);
+            }
+
+            var updatedCount = await chatService.MarkMessagesAlertedAsync(currentPlayerId.Value, request.ChatIds.Distinct().ToArray());
+            return Results.Ok(new { updatedCount });
         }).RequireAuthorization();
 
         return app;

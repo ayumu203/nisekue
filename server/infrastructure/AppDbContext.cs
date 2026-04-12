@@ -271,6 +271,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("created_at")
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .IsRequired();
+        chatMessage.Property(x => x.IsAlerted)
+            .HasColumnName("is_alerted")
+            .HasDefaultValue(false)
+            .IsRequired();
 
         var thread = modelBuilder.Entity<ThreadEntity>();
         thread.ToTable("threads", "internal");
@@ -331,6 +335,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired();
         threadReply.Property(x => x.CreatedAt)
             .HasColumnName("created_at")
+            .IsRequired();
+        threadReply.Property(x => x.IsAuthorAlerted)
+            .HasColumnName("is_author_alerted")
+            .HasDefaultValue(false)
             .IsRequired();
         threadReply.HasIndex(x => x.ThreadId);
         threadReply.HasIndex(x => x.AuthorPlayerId);
