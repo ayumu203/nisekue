@@ -25,7 +25,6 @@ export default function PlayerSetting() {
   const { session, isLoading } = useAuth()
   const [accountEmail, setAccountEmail] = useState<string | null>(session?.user.email ?? null)
   const [accountIsAnonymous, setAccountIsAnonymous] = useState(hasAnonymousIdentity(session?.user ?? null))
-  const [needsPasswordSetup, setNeedsPasswordSetup] = useState(false)
   const [userName, setUserName] = useState('')
   const [imageNoInput, setImageNoInput] = useState('')
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -82,9 +81,6 @@ export default function PlayerSetting() {
   useEffect(() => {
     setAccountEmail(session?.user.email ?? null)
     setAccountIsAnonymous(hasAnonymousIdentity(session?.user ?? null))
-    if (!session?.user.email) {
-      setNeedsPasswordSetup(false)
-    }
   }, [session?.user])
 
   useEffect(() => {
@@ -173,7 +169,6 @@ export default function PlayerSetting() {
       : null
   const anonymousIdentity = accountIsAnonymous
   const hasLinkedEmail = Boolean(accountEmail)
-  const shouldShowPasswordSetup = hasLinkedEmail && (anonymousIdentity || needsPasswordSetup)
 
   async function handleLinkEmail(): Promise<void> {
     const trimmedEmail = linkEmail.trim()
@@ -209,7 +204,6 @@ export default function PlayerSetting() {
     const nextAnonymousIdentity = hasAnonymousIdentity(data.user ?? null)
     setAccountEmail(data.user?.email ?? trimmedEmail)
     setAccountIsAnonymous(nextAnonymousIdentity)
-    setNeedsPasswordSetup(true)
     setLinkEmail(data.user?.email ?? trimmedEmail)
     setAccountSuccess(
       latestEmail === trimmedEmail.toLowerCase() ? locale.linkEmailImmediateSuccess : locale.linkEmailSuccess,
@@ -237,7 +231,6 @@ export default function PlayerSetting() {
     }
 
     setLinkPassword('')
-    setNeedsPasswordSetup(false)
     setAccountSuccess(locale.setPasswordSuccess)
     setAccountAction(null)
   }
@@ -420,7 +413,7 @@ export default function PlayerSetting() {
                     </Typography>
                   </Stack>
 
-                  {anonymousIdentity || shouldShowPasswordSetup ? (
+                  {anonymousIdentity || hasLinkedEmail ? (
                     <>
                       {anonymousIdentity ? (
                         <>
@@ -451,11 +444,16 @@ export default function PlayerSetting() {
                         </>
                       ) : null}
 
-                      {shouldShowPasswordSetup ? (
+                      {hasLinkedEmail ? (
                         <>
                           <Stack spacing={0.75}>
                             <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
                               {locale.setPasswordLabel}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
+                              {anonymousIdentity
+                                ? locale.setPasswordAnonymousDescription
+                                : locale.setPasswordLinkedDescription}
                             </Typography>
                             <TextField
                               fullWidth
