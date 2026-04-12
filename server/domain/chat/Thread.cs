@@ -58,7 +58,8 @@ public class Thread
         }
 
         var now = DateTimeOffset.UtcNow;
-        _replies.Add(new ThreadReply(replyId, authorPlayerId, body, now));
+        var isAuthorAlerted = authorPlayerId == AuthorPlayerId;
+        _replies.Add(new ThreadReply(replyId, authorPlayerId, body, now, isAuthorAlerted));
         UpdatedAt = now;
         LastRepliedAt = now;
     }
