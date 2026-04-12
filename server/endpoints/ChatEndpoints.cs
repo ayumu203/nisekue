@@ -68,13 +68,13 @@ internal static class ChatEndpoints
                     {
                         chatId = x.ChatId,
                         senderType = x.SenderType,
-                    senderId = x.SenderId?.Value,
-                    senderName = x.SenderName,
-                    imagePath = x.ImagePath,
-                    text = x.Message,
-                    createdAt = x.CreatedAt,
-                    isAlerted = x.IsAlerted
-                })
+                        senderId = x.SenderId?.Value,
+                        senderName = x.SenderName,
+                        imagePath = x.ImagePath,
+                        text = x.Message,
+                        createdAt = x.CreatedAt,
+                        isAlerted = x.IsAlerted
+                    })
                 });
             }
             catch (ArgumentException ex)

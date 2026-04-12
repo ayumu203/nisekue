@@ -76,7 +76,7 @@ export async function markChatMessagesAlerted(
   const json: unknown = await response.json().catch(() => null)
 
   if (!response.ok) {
-    throw new Error(extractErrorMessage(json, 'チャット通知の取得に失敗しました'))
+    throw new Error(extractErrorMessage(json, 'チャット通知の更新に失敗しました'))
   }
 
   return endpoints.chatRoom.markAlerts.responseSchema.parse(json)
