@@ -451,7 +451,9 @@ export default function PlayerSetting() {
                               {locale.setPasswordLabel}
                             </Typography>
                             <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
-                              {anonymousIdentity ? locale.setPasswordAnonymousDescription : locale.setPasswordLinkedDescription}
+                              {anonymousIdentity
+                                ? locale.setPasswordAnonymousDescription
+                                : locale.setPasswordLinkedDescription}
                             </Typography>
                             <TextField
                               fullWidth
