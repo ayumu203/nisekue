@@ -180,14 +180,6 @@ public class Player(
         {
             Exp -= RequiredExpForNextLevel();
             Level++;
-            hasPlayerLeveledUp = true;
-        }
-
-        var hasJobLeveledUp = false;
-        while (JobExp >= RequiredJobExpForNextLevel())
-        {
-            JobExp -= RequiredJobExpForNextLevel();
-            JobLevel++;
             Status = new Status(
                 maxHp: Status.MaxHp + growth.MaxHp,
                 maxMp: Status.MaxMp + growth.MaxMp,
@@ -200,6 +192,14 @@ public class Player(
                 evasion: Status.Evasion,
                 criticalChance: Status.CriticalChance,
                 damageReduction: Status.DamageReduction);
+            hasPlayerLeveledUp = true;
+        }
+
+        var hasJobLeveledUp = false;
+        while (JobExp >= RequiredJobExpForNextLevel())
+        {
+            JobExp -= RequiredJobExpForNextLevel();
+            JobLevel++;
             hasJobLeveledUp = true;
         }
 
