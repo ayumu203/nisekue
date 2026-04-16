@@ -83,6 +83,48 @@ public class PlayerTests
     }
 
     [Fact]
+    public void LevelUp_WhenPlayerExpReachThreshold_UpdatesBothLevelsAndLearnsMoves()
+    {
+        var player = CreatePlayer(level: 1, exp: 10, jobExp: 9, job: Job.Warrior);
+        var beforeStatus = player.Status;
+
+        var result = player.LevelUp(CreateJobProfile(Job.Warrior, masterLevel: 4), CreateLearningRule(Job.Warrior, 101, 102));
+
+        result.HasPlayerLeveledUp.Should().BeTrue();
+        result.HasJobLeveledUp.Should().BeFalse();
+        result.HasMasteredCurrentJob.Should().BeFalse();
+        player.Level.Should().Be(2);
+        player.JobLevel.Should().Be(1);
+        player.Exp.Should().Be(0);
+        player.JobExp.Should().Be(9);
+        player.Status.MaxHp.Should().Be(beforeStatus.MaxHp + 3);
+        player.Status.Strength.Should().Be(beforeStatus.Strength + 2);
+        player.Status.Defense.Should().Be(beforeStatus.Defense + 1);
+    }
+
+    [Fact]
+    public void LevelUp_WhenPlayerJobExpReachThreshold_UpdatesBothLevelsAndLearnsMoves()
+    {
+        var player = CreatePlayer(level: 1, exp: 9, jobExp: 10, job: Job.Warrior);
+        var beforeStatus = player.Status;
+
+        var result = player.LevelUp(CreateJobProfile(Job.Warrior, masterLevel: 4), CreateLearningRule(Job.Warrior, 101, 102));
+
+        result.HasPlayerLeveledUp.Should().BeFalse();
+        result.HasJobLeveledUp.Should().BeTrue();
+        result.HasMasteredCurrentJob.Should().BeFalse();
+        result.NewlyLearnedMoveIds.Select(x => x.Id).Should().Equal(101);
+        player.Level.Should().Be(1);
+        player.JobLevel.Should().Be(2);
+        player.Exp.Should().Be(9);
+        player.JobExp.Should().Be(0);
+        player.Status.MaxHp.Should().Be(beforeStatus.MaxHp);
+        player.Status.Strength.Should().Be(beforeStatus.Strength);
+        player.Status.Defense.Should().Be(beforeStatus.Defense);
+        player.MoveSet.GetLearnedMoveIds().Select(x => x.Id).Should().Equal(101);
+    }
+
+    [Fact]
     public void LevelUp_WhenJobReachesMasterLevel_AddsMasteredJobOnlyOnce()
     {
         var player = CreatePlayer(level: 5, exp: 0, jobLevel: 3, jobExp: 30, job: Job.Warrior);

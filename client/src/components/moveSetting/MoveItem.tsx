@@ -3,6 +3,8 @@ import { Box, Chip, Paper, Stack, Typography } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import type { PointerEventHandler } from 'react'
 import type { PlayerMoveSlot } from '@/schema/player'
+import { type z } from 'zod'
+import { moveAilmentTypeSchema, moveBuffStatSchema, moveEffectSummarySchema } from '@/schema/player'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import { getMoveAttackRangeLabel } from '@/lib/moveAttackRange'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
@@ -89,6 +91,85 @@ function resolveElementTypeChipSx(elementType: PlayerMoveSlot['elementType']): S
   }
 }
 
+type MoveEffectSummary = z.infer<typeof moveEffectSummarySchema>
+type BuffStat = z.infer<typeof moveBuffStatSchema>
+type AilmentType = z.infer<typeof moveAilmentTypeSchema>
+
+function resolveBuffStatLabel(stat: BuffStat): string {
+  switch (stat) {
+    case 'MaxHp':
+      return '最大HP'
+    case 'MaxMp':
+      return '最大MP'
+    case 'Strength':
+      return '攻撃力'
+    case 'Defense':
+      return '防御力'
+    case 'Intelligence':
+      return '知力'
+    case 'Luck':
+      return '運'
+    case 'Speed':
+      return '素早さ'
+    case 'Accuracy':
+      return '命中'
+    case 'Evasion':
+      return '回避'
+    case 'CriticalChance':
+      return '会心率'
+    case 'DamageReduction':
+      return 'ダメージ軽減'
+    case 'StrengthIntelligence':
+      return '攻撃力・知力'
+  }
+}
+
+function resolveAilmentTypeLabel(ailmentType: AilmentType): string {
+  switch (ailmentType) {
+    case 'Paralysis':
+      return '麻痺'
+    case 'Poison':
+      return '毒'
+    case 'Sleep':
+      return '睡眠'
+    case 'Burn':
+      return 'やけど'
+    case 'Taunt':
+      return '挑発'
+    case 'PoisonTrap':
+      return '毒の罠'
+    case 'DamageTrap':
+      return 'ダメージの罠'
+    case 'InstantDeath':
+      return '即死'
+    case 'Regeneration':
+      return '再生'
+    case 'CoverAll':
+      return 'かばう'
+  }
+}
+
+function buildEffectChips(effectSummaries: MoveEffectSummary[]): { label: string; color: string }[] {
+  const chips: { label: string; color: string }[] = []
+
+  for (const effect of effectSummaries) {
+    if (effect.effectType === 'Buff' && effect.buffStat && effect.buffTurns) {
+      chips.push({
+        label: `${resolveBuffStatLabel(effect.buffStat)} ${effect.buffTurns}T`,
+        color: '#1565c0',
+      })
+    }
+    if (effect.effectType === 'Ailment' && effect.ailmentType && effect.ailmentTurns) {
+      chips.push({
+        label: `${resolveAilmentTypeLabel(effect.ailmentType)} ${effect.ailmentTurns}T`,
+        color: '#6a1b9a',
+      })
+    }
+  }
+
+  return chips
+}
+
 function resolveTargetTypeLabel(targetType: PlayerMoveSlot['targetType']): string | null {
   switch (targetType) {
     case 'Enemy':
@@ -110,6 +191,7 @@ export default function MoveItem({ slot, onHandlePointerDown, isDragging = false
   const elementTypeLabel = resolveElementTypeLabel(slot.elementType)
   const targetTypeLabel = resolveTargetTypeLabel(slot.targetType)
   const attackRangeLabel = getMoveAttackRangeLabel(slot.attackRange)
+  const effectChips = slot.effectSummaries ? buildEffectChips(slot.effectSummaries) : []
   const effectImageSrc = slot.effectImagePath ? resolvePublicAssetPath(slot.effectImagePath) : null
 
   return (
@@ -230,6 +312,14 @@ export default function MoveItem({ slot, onHandlePointerDown, isDragging = false
                 sx={{ borderRadius: 1, bgcolor: 'rgba(255,255,255,0.7)' }}
               />
             ) : null}
+            {effectChips.map((chip) => (
+              <Chip
+                key={chip.label}
+                size="small"
+                label={chip.label}
+                sx={{ borderRadius: 1, bgcolor: chip.color, color: '#fff', fontWeight: 700 }}
+              />
+            ))}
           </Stack>
         )}
       </Stack>

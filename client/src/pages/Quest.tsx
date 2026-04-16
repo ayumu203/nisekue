@@ -12,6 +12,7 @@ import {
 } from '@mui/material'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
+import { useQuestRunHub } from '@/hooks/useQuestRunHub'
 import { createPlayer, getPlayer, listPlayers } from '@/api/player'
 import {
   cancelQuestRoom,
@@ -134,6 +135,7 @@ export default function Quest() {
   const [isRecoveringQuest, setIsRecoveringQuest] = useState(false)
   const [hasTriedQuestRecovery, setHasTriedQuestRecovery] = useState(false)
   const hasAttemptedQuestRecoveryRef = useRef(false)
+  const mutateRunRef = useRef<((data: QuestRunDetailResponse, opts: { revalidate: boolean }) => void) | null>(null)
   const questMainRef = useRef<HTMLDivElement | null>(null)
   const errorAlertRef = useRef<HTMLDivElement | null>(null)
   useMobileScrollToRef(questMainRef, { enabled: !isLoading })
@@ -487,6 +489,18 @@ export default function Quest() {
     }
   }
 
+  const hubRunId = startedRun?.status === 'InProgress' ? startedRun.runId : null
+  const { isConnected: isHubConnected } = useQuestRunHub({
+    runId: hubRunId,
+    accessToken: session?.access_token ?? null,
+    onSnapshot: (event) => {
+      mutateRunRef.current?.(event, { revalidate: false })
+    },
+    onUpdated: (event) => {
+      mutateRunRef.current?.(event, { revalidate: false })
+    },
+  })
+
   const runSWRKey =
     session?.access_token && startedRun?.runId
       ? ([`quest-run`, startedRun.runId] as const)
@@ -515,11 +529,18 @@ export default function Quest() {
       throw new Error(locale.commandUnavailable)
     },
     {
-      refreshInterval: currentRoom?.closeReason === 'Started' || startedRun?.status === 'InProgress' ? 2000 : 0,
+      refreshInterval: isHubConnected
+        ? 0
+        : currentRoom?.closeReason === 'Started' || startedRun?.status === 'InProgress'
+          ? 2000
+          : 0,
     },
   )
 
+  mutateRunRef.current = mutateRun
+
   const currentRun = liveRun ?? startedRun
+
   const currentRoomStage = currentRoom
     ? (activeStages.find((stage) => stage.stageId === currentRoom.stageId) ?? null)
     : null
