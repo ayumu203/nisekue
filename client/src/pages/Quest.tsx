@@ -134,8 +134,8 @@ export default function Quest() {
   const [isChatSubmitting, setIsChatSubmitting] = useState(false)
   const [isRecoveringQuest, setIsRecoveringQuest] = useState(false)
   const [hasTriedQuestRecovery, setHasTriedQuestRecovery] = useState(false)
-  const [isHubConnected, setIsHubConnected] = useState(false)
   const hasAttemptedQuestRecoveryRef = useRef(false)
+  const mutateRunRef = useRef<((data: QuestRunDetailResponse, opts: { revalidate: boolean }) => void) | null>(null)
   const questMainRef = useRef<HTMLDivElement | null>(null)
   const errorAlertRef = useRef<HTMLDivElement | null>(null)
   useMobileScrollToRef(questMainRef, { enabled: !isLoading })
@@ -489,6 +489,18 @@ export default function Quest() {
     }
   }
 
+  const hubRunId = startedRun?.status === 'InProgress' ? startedRun.runId : null
+  const { isConnected: isHubConnected } = useQuestRunHub({
+    runId: hubRunId,
+    accessToken: session?.access_token ?? null,
+    onSnapshot: (event) => {
+      mutateRunRef.current?.(event, { revalidate: false })
+    },
+    onUpdated: (event) => {
+      mutateRunRef.current?.(event, { revalidate: false })
+    },
+  })
+
   const runSWRKey =
     session?.access_token && startedRun?.runId
       ? ([`quest-run`, startedRun.runId] as const)
@@ -525,23 +537,9 @@ export default function Quest() {
     },
   )
 
+  mutateRunRef.current = mutateRun
+
   const currentRun = liveRun ?? startedRun
-
-  const hubRunId = currentRun?.status === 'InProgress' ? currentRun.runId : null
-  const { isConnected: isHubReallyConnected } = useQuestRunHub({
-    runId: hubRunId,
-    accessToken: session?.access_token ?? null,
-    onSnapshot: (event) => {
-      void mutateRun(event, { revalidate: false })
-    },
-    onUpdated: (event) => {
-      void mutateRun(event, { revalidate: false })
-    },
-  })
-
-  useEffect(() => {
-    setIsHubConnected(isHubReallyConnected)
-  }, [isHubReallyConnected])
 
   const currentRoomStage = currentRoom
     ? (activeStages.find((stage) => stage.stageId === currentRoom.stageId) ?? null)
