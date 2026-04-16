@@ -751,6 +751,8 @@ internal static class PlayerEndpoints
                     ? null
                     : moveById.GetValueOrDefault(moveId.Id);
 
+                var effects = move?.GetOrderedEffects();
+
                 return new
                 {
                     slot = index + 1,
@@ -758,7 +760,7 @@ internal static class PlayerEndpoints
                     moveName = move?.Name,
                     description = move?.Description,
                     effectImagePath = move?.EffectImagePath,
-                    elementType = move?.GetOrderedEffects()
+                    elementType = effects?
                         .FirstOrDefault(effect => effect.Damage is not null)?
                         .Damage?
                         .ElementType
@@ -766,7 +768,17 @@ internal static class PlayerEndpoints
                     targetType = move?.TargetType.ToString(),
                     attackRange = move?.AttackRange.ToString(),
                     mpCost = move?.MpCost,
-                    category = move?.Category.ToString()
+                    category = move?.Category.ToString(),
+                    effectSummaries = effects?
+                        .Select(effect => new
+                        {
+                            effectType = effect.EffectType.ToString(),
+                            buffStat = effect.Buff?.BuffStat.ToString(),
+                            buffTurns = effect.Buff?.BuffTurns,
+                            ailmentType = effect.Ailment?.AilmentType.ToString(),
+                            ailmentTurns = effect.Ailment?.AilmentTurns,
+                        })
+                        .ToArray()
                 };
             });
         var equipmentItems = playerEquipments
