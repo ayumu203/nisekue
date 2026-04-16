@@ -87,6 +87,50 @@ export const moveElementTypeSchema = z.enum([
   'None',
 ])
 
+export const moveEffectTypeSchema = z.enum([
+  'Damage',
+  'Heal',
+  'RestoreMp',
+  'Ailment',
+  'Buff',
+  'Knockout',
+  'HalveSelfHp',
+])
+export const moveBuffStatSchema = z.enum([
+  'MaxHp',
+  'MaxMp',
+  'Strength',
+  'Defense',
+  'Intelligence',
+  'Luck',
+  'Speed',
+  'Accuracy',
+  'Evasion',
+  'CriticalChance',
+  'DamageReduction',
+  'StrengthIntelligence',
+])
+export const moveAilmentTypeSchema = z.enum([
+  'Paralysis',
+  'Poison',
+  'Sleep',
+  'Burn',
+  'Taunt',
+  'PoisonTrap',
+  'DamageTrap',
+  'InstantDeath',
+  'Regeneration',
+  'CoverAll',
+])
+
+export const moveEffectSummarySchema = z.object({
+  effectType: moveEffectTypeSchema,
+  buffStat: moveBuffStatSchema.nullable().optional(),
+  buffTurns: z.number().int().min(1).nullable().optional(),
+  ailmentType: moveAilmentTypeSchema.nullable().optional(),
+  ailmentTurns: z.number().int().min(1).nullable().optional(),
+})
+
 export const playerMoveSlotSchema = z.object({
   slot: z.number().int().min(1).max(10),
   moveId: z.number().int().min(1).nullable(),
@@ -98,6 +142,7 @@ export const playerMoveSlotSchema = z.object({
   attackRange: moveAttackRangeSchema.nullable(),
   mpCost: z.number().int().min(0).nullable(),
   category: moveCategorySchema.nullable(),
+  effectSummaries: z.array(moveEffectSummarySchema).nullable().optional(),
 })
 
 export type MoveAttackRange = z.infer<typeof moveAttackRangeSchema>
