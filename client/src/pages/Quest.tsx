@@ -12,6 +12,7 @@ import {
 } from '@mui/material'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
+import { useQuestRunHub } from '@/hooks/useQuestRunHub'
 import { createPlayer, getPlayer, listPlayers } from '@/api/player'
 import {
   cancelQuestRoom,
@@ -133,6 +134,7 @@ export default function Quest() {
   const [isChatSubmitting, setIsChatSubmitting] = useState(false)
   const [isRecoveringQuest, setIsRecoveringQuest] = useState(false)
   const [hasTriedQuestRecovery, setHasTriedQuestRecovery] = useState(false)
+  const [isHubConnected, setIsHubConnected] = useState(false)
   const hasAttemptedQuestRecoveryRef = useRef(false)
   const questMainRef = useRef<HTMLDivElement | null>(null)
   const errorAlertRef = useRef<HTMLDivElement | null>(null)
@@ -515,11 +517,32 @@ export default function Quest() {
       throw new Error(locale.commandUnavailable)
     },
     {
-      refreshInterval: currentRoom?.closeReason === 'Started' || startedRun?.status === 'InProgress' ? 2000 : 0,
+      refreshInterval: isHubConnected
+        ? 0
+        : currentRoom?.closeReason === 'Started' || startedRun?.status === 'InProgress'
+          ? 2000
+          : 0,
     },
   )
 
   const currentRun = liveRun ?? startedRun
+
+  const hubRunId = currentRun?.status === 'InProgress' ? currentRun.runId : null
+  const { isConnected: isHubReallyConnected } = useQuestRunHub({
+    runId: hubRunId,
+    accessToken: session?.access_token ?? null,
+    onSnapshot: (event) => {
+      void mutateRun(event, { revalidate: false })
+    },
+    onUpdated: (event) => {
+      void mutateRun(event, { revalidate: false })
+    },
+  })
+
+  useEffect(() => {
+    setIsHubConnected(isHubReallyConnected)
+  }, [isHubReallyConnected])
+
   const currentRoomStage = currentRoom
     ? (activeStages.find((stage) => stage.stageId === currentRoom.stageId) ?? null)
     : null
