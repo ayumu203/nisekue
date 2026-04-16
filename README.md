@@ -3,7 +3,6 @@
 ## 資料
 
 - 開発内容に関する資料は以下のリンクから飛べます.
-- [開発資料](https://github.com/ayumu203/nisekue/blob/main/docs/%E7%99%BA%E8%A1%A8%E8%B3%87%E6%96%99.pdf)
 
 ## 公開先
 
