@@ -190,7 +190,7 @@ public class BattleTargetingResolverTests
                 new BattleActorPosition(ally2.Id, new BattlePosition(BattleRow.Back, BattleColumn.Right))
             ]));
 
-        result.Should().Equal(ally1.Id, ally2.Id);
+        result.Should().Equal(ally1.Id, ally2.Id, actor.Id);
     }
 
     [Fact]
@@ -207,6 +207,41 @@ public class BattleTargetingResolverTests
             CreateStates(actor, ally));
 
         result.Should().Equal(actor.Id);
+    }
+
+    [Fact]
+    public void ResolveTargets_WhenTargetTypeIsAllyAndLifeStateAlive_IncludesSelf()
+    {
+        var resolver = new BattleTargetingResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var ally = CreateSnapshot(2, BattleSide.Ally);
+
+        var result = resolver.ResolveTargets(
+            new BattleTargetSelector(TargetType.Ally, AttackRange.All, targetLifeState: TargetLifeState.Alive),
+            actor,
+            [actor, ally],
+            CreateStates(actor, ally));
+
+        result.Should().Equal(ally.Id, actor.Id);
+    }
+
+    [Fact]
+    public void ResolveTargets_WhenTargetTypeIsAllyAndLifeStateDead_DoesNotIncludeSelf()
+    {
+        var resolver = new BattleTargetingResolver();
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var deadAlly = CreateSnapshot(2, BattleSide.Ally);
+
+        var result = resolver.ResolveTargets(
+            new BattleTargetSelector(TargetType.Ally, AttackRange.All, targetLifeState: TargetLifeState.Dead),
+            actor,
+            [actor, deadAlly],
+            [
+                new BattleActorState(actor.Id, currentHp: 0, currentMp: actor.BaseStatus.MaxMp),
+                new BattleActorState(deadAlly.Id, currentHp: 0, currentMp: deadAlly.BaseStatus.MaxMp)
+            ]);
+
+        result.Should().Equal(deadAlly.Id);
     }
 
     [Fact]

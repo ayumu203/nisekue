@@ -153,6 +153,15 @@ function buildEffectChips(effectSummaries: MoveEffectSummary[]): { label: string
   const chips: { label: string; color: string }[] = []
 
   for (const effect of effectSummaries) {
+    if (
+      (effect.effectType === 'Damage' || effect.effectType === 'Heal' || effect.effectType === 'RestoreMp') &&
+      effect.powerRate != null
+    ) {
+      chips.push({
+        label: `x${effect.powerRate}`,
+        color: '#2e7d32',
+      })
+    }
     if (effect.effectType === 'Buff' && effect.buffStat && effect.buffTurns) {
       chips.push({
         label: `${resolveBuffStatLabel(effect.buffStat)} ${effect.buffTurns}T`,

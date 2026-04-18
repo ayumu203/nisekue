@@ -61,6 +61,7 @@
   "waitingForOwnerSubtitle": "リーダーが配置を決めています。",
   "emptyPosition": "未配置",
   "openPositionEditor": "配置変更",
+  "confirmFormation": "この配置で決定",
   "modeMultiFixed": "マルチ",
   "savePosition": "この配置を保存",
   "updatingPosition": "保存中...",

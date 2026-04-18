@@ -10,6 +10,7 @@ type AvailableMove = {
   moveId: number | null
   moveName: string
   targetType: 'Enemy' | 'Ally' | 'Self' | null
+  targetLifeState: 'Alive' | 'Dead' | 'Any' | null | undefined
   attackRange: MoveAttackRange | null
 }
 
