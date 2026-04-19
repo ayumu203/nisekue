@@ -28,6 +28,11 @@ export const executeTrainingResponseSchema = z.object({
   newlyLearnedMoves: z.array(learnedMoveSchema),
 })
 
+export const executePvpTrainingRequestSchema = z.object({
+  opponentPlayerId: z.string().uuid('opponentPlayerIdはUUID形式である必要があります'),
+  moveIds: z.array(z.number().int().min(1, 'moveIdは1以上である必要があります').nullable()).length(3),
+})
+
 export const trainingCooldownErrorSchema = z.object({
   message: z.string().trim().min(1, 'エラーメッセージが不正です'),
   retryAfterSeconds: z.number().int().min(1, '再試行秒数は1以上である必要があります'),
@@ -37,5 +42,6 @@ export const trainingCooldownErrorSchema = z.object({
 export type TrainingEnemy = z.infer<typeof trainingEnemySchema>
 export type GetTrainingEnemiesResponse = z.infer<typeof getTrainingEnemiesResponseSchema>
 export type ExecuteTrainingRequest = z.infer<typeof executeTrainingRequestSchema>
+export type ExecutePvpTrainingRequest = z.infer<typeof executePvpTrainingRequestSchema>
 export type ExecuteTrainingResponse = z.infer<typeof executeTrainingResponseSchema>
 export type TrainingCooldownError = z.infer<typeof trainingCooldownErrorSchema>

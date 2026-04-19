@@ -13,6 +13,7 @@ public class TrainingBattleFactory
     private static readonly Guid EnemyBattleActorId = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff");
     private const int PlayerTrainingMoveId = 900001;
     private const int EnemyTrainingMoveId = 900002;
+    private const int OpponentTrainingMoveId = 900003;
 
     public Guid PlayerActorId => PlayerBattleActorId;
     public Guid EnemyActorId => EnemyBattleActorId;
@@ -75,6 +76,52 @@ public class TrainingBattleFactory
         moveMap[EnemyTrainingMoveId] = CreateTrainingNormalAttack(EnemyTrainingMoveId, enemy.Status);
 
         return moveMap.Values.ToArray();
+    }
+
+    public BattleActorInput CreateOpponentPlayerActor(Player opponent, Status opponentEffectiveStatus, Guid actorId)
+    {
+        ArgumentNullException.ThrowIfNull(opponent);
+        ArgumentNullException.ThrowIfNull(opponentEffectiveStatus);
+
+        return new BattleActorInput(
+            actorId,
+            opponent.Name,
+            BattleSide.Enemy,
+            opponentEffectiveStatus,
+            new MoveSet(CreateTrainingMoveSlots(OpponentTrainingMoveId)),
+            CurrentHp: opponentEffectiveStatus.MaxHp,
+            CurrentMp: opponentEffectiveStatus.MaxMp);
+    }
+
+    public Move[] CreatePvpTrainingMoves(Status opponentStatus, IEnumerable<Move> playerMoves)
+    {
+        ArgumentNullException.ThrowIfNull(opponentStatus);
+        ArgumentNullException.ThrowIfNull(playerMoves);
+
+        var moveMap = new Dictionary<int, Move>();
+        foreach (var move in playerMoves)
+        {
+            moveMap[move.Id.Id] = move;
+        }
+
+        moveMap[OpponentTrainingMoveId] = CreateTrainingNormalAttack(OpponentTrainingMoveId, opponentStatus);
+
+        return moveMap.Values.ToArray();
+    }
+
+    public BattleActionInput[] CreatePvpTurnActions(
+        BattleActorInput playerActor,
+        BattleActorInput opponentActor,
+        Move playerMove)
+    {
+        ArgumentNullException.ThrowIfNull(opponentActor);
+        ArgumentNullException.ThrowIfNull(playerMove);
+
+        return
+        [
+            CreatePlayerTurnAction(playerActor, opponentActor.ActorId, playerMove),
+            new BattleActionInput(opponentActor.ActorId, BattleActionKind.UseMove, OpponentTrainingMoveId, TargetType.Enemy, AttackRange.Single, [playerActor.ActorId])
+        ];
     }
 
     public Move CreatePlayerTrainingNormalAttack(Status status)

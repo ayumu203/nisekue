@@ -12,15 +12,17 @@ export function resolvePublicAssetPath(path: string): string {
   return `${baseUrl}/${normalizedPath}`.replace(/\/{2,}/g, '/')
 }
 
+export function normalizeCharacterPath(imagePath: string): string {
+  const normalizedPath = imagePath.replace(/^\/+/, '')
+  return normalizedPath.startsWith('image/') ? normalizedPath : `image/character/${normalizedPath}`
+}
+
 export function resolveCharacterAssetPath(imagePath: string | null | undefined): string | null {
   if (!imagePath) {
     return null
   }
 
-  const normalizedPath = imagePath.replace(/^\/+/, '')
-  const characterPath = normalizedPath.startsWith('image/') ? normalizedPath : `image/character/${normalizedPath}`
-
-  return resolvePublicAssetPath(characterPath)
+  return resolvePublicAssetPath(normalizeCharacterPath(imagePath))
 }
 
 export function resolveStatusAssetPath(fileName: string): string {
