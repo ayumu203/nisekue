@@ -5,20 +5,23 @@ import {
   Container,
   Paper,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
-import { executeTraining, getTrainingEnemies, TrainingCooldownError } from '@/api/training'
-import { createPlayer, getPlayer } from '@/api/player'
+import { executeTraining, executeTrainingPvp, getTrainingEnemies, TrainingCooldownError } from '@/api/training'
+import { createPlayer, getPlayer, listPlayers } from '@/api/player'
 import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import Status from '@/components/home/Status'
 import TrainingBattleResult from '@/components/training/TrainingBattleResult'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
 import TrainingMovePlanForm from '@/components/training/TrainingMovePlanForm'
+import TrainingOpponentSelect from '@/components/training/TrainingOpponentSelect'
 import { useAuth } from '@/contexts/useAuth'
 import { innerSurfaceSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
@@ -26,7 +29,24 @@ import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
-import type { GetPlayerResponse } from '@/schema/player'
+import type { GetPlayerResponse, PlayerSummary } from '@/schema/player'
+
+type TrainingMode = 'npc' | 'player'
+
+function playerSummaryToDisplayEnemy(opponent: PlayerSummary): TrainingEnemy {
+  const rawPath = opponent.imagePath
+  const imagePath = rawPath
+    ? rawPath.startsWith('image/')
+      ? rawPath
+      : `image/character/${rawPath}`
+    : 'image/character/ch001_bmnpc.png'
+  return {
+    id: -1,
+    name: opponent.userName ?? locale.anonymousPlayer,
+    imagePath,
+    level: opponent.level,
+  }
+}
 
 const TRAINING_COOLDOWN_MS = 3000
 
@@ -78,7 +98,9 @@ export default function Training() {
   const trainingPanelRef = useRef<HTMLDivElement | null>(null)
   const battleResultRef = useRef<HTMLDivElement | null>(null)
   const trainingMovePlanRef = useRef<HTMLDivElement | null>(null)
+  const [mode, setMode] = useState<TrainingMode>('npc')
   const [selectedEnemy, setSelectedEnemy] = useState<TrainingEnemy | null>(null)
+  const [selectedOpponent, setSelectedOpponent] = useState<PlayerSummary | null>(null)
   const [trainingResult, setTrainingResult] = useState<ExecuteTrainingResponse | null>(null)
   const [trainingError, setTrainingError] = useState<string | null>(null)
   const [isTrainingSubmitting, setIsTrainingSubmitting] = useState(false)
@@ -155,6 +177,22 @@ export default function Training() {
     }
 
     return getTrainingEnemies(session.access_token)
+  })
+
+  const playerListSWRKey =
+    session?.access_token && player && mode === 'player'
+      ? ([`training-opponents`, session.user.id] as const)
+      : null
+  const {
+    data: playerList,
+    error: playerListError,
+    isLoading: isPlayerListLoading,
+  } = useSWR(playerListSWRKey, async () => {
+    if (!session?.access_token) {
+      throw new Error(locale.sessionInfoMissing)
+    }
+
+    return listPlayers(session.access_token)
   })
 
   async function refreshPlayerStatus(): Promise<void> {
@@ -241,8 +279,69 @@ export default function Training() {
     }
   }
 
+  async function runPvpTraining(opponent: PlayerSummary, moveIds: Array<number | null>): Promise<void> {
+    if (!session?.access_token) {
+      throw new Error(locale.sessionInfoMissing)
+    }
+
+    if (isTrainingActionDisabled) {
+      return
+    }
+
+    setIsTrainingSubmitting(true)
+    setTrainingError(null)
+    setSelectedOpponent(opponent)
+
+    try {
+      if (!player) {
+        throw new Error(locale.playerLoading)
+      }
+
+      const normalizedMoveIds = normalizeTrainingMoveIds(player, moveIds)
+      const result = await executeTrainingPvp(
+        {
+          opponentPlayerId: opponent.userId,
+          moveIds: normalizedMoveIds,
+        },
+        session.access_token,
+      )
+      setLastSubmittedMoveIds(normalizedMoveIds)
+      setPlannedMoveIds(normalizedMoveIds)
+      setTrainingResult(result)
+      await refreshPlayerStatus().catch((error) => {
+        console.error('Failed to refresh player status after pvp training.', error)
+      })
+    } catch (error) {
+      if (error instanceof TrainingCooldownError) {
+        const retryAfterMessage = locale.retryAfterSeconds.replace('{{seconds}}', String(error.retryAfterSeconds))
+        setTrainingError(`${error.message} (${retryAfterMessage})`)
+      } else if (error instanceof Error) {
+        setTrainingError(error.message)
+      } else {
+        setTrainingError(locale.trainingFailed)
+      }
+    } finally {
+      setIsTrainingSubmitting(false)
+      setTrainingLockUntilMs(Date.now() + TRAINING_COOLDOWN_MS)
+    }
+  }
+
   function handleSelectEnemy(enemy: TrainingEnemy): void {
     setSelectedEnemy(enemy)
+    setSelectedOpponent(null)
+    setTrainingResult(null)
+    setTrainingError(null)
+
+    if (!player) {
+      return
+    }
+
+    setPlannedMoveIds(normalizeTrainingMoveIds(player, lastSubmittedMoveIds))
+  }
+
+  function handleSelectOpponent(opponent: PlayerSummary): void {
+    setSelectedOpponent(opponent)
+    setSelectedEnemy(null)
     setTrainingResult(null)
     setTrainingError(null)
 
@@ -344,71 +443,134 @@ export default function Training() {
                   </Stack>
                   <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.training} inverted />
                 </Stack>
-                {selectedEnemy && trainingResult ? (
-                  <Box ref={battleResultRef}>
-                    <TrainingBattleResult
-                      enemy={selectedEnemy}
-                      result={trainingResult}
-                      playerLevel={playerLevel}
-                      playerExp={playerExp}
-                      nextLevelRequiredExp={nextLevelRequiredExp}
-                      isActionDisabled={isTrainingActionDisabled}
-                      lockRemainingSeconds={trainingLockRemainingSeconds}
-                      movePlanSlot={
-                        player && plannedMoveIds ? (
+
+                <ToggleButtonGroup
+                  value={mode}
+                  exclusive
+                  onChange={(_e, next: TrainingMode | null) => {
+                    if (next === null) return
+                    setMode(next)
+                    setSelectedEnemy(null)
+                    setSelectedOpponent(null)
+                    setTrainingResult(null)
+                    setTrainingError(null)
+                  }}
+                  size="small"
+                  sx={{
+                    alignSelf: 'flex-start',
+                    '& .MuiToggleButton-root': {
+                      color: 'rgba(248, 221, 207, 0.7)',
+                      borderColor: 'rgba(214, 146, 112, 0.4)',
+                      fontWeight: 700,
+                      px: 2,
+                    },
+                    '& .Mui-selected': {
+                      color: '#fff5ef !important',
+                      backgroundColor: 'rgba(182, 95, 73, 0.35) !important',
+                    },
+                  }}
+                >
+                  <ToggleButton value="npc">{locale.modeNpc}</ToggleButton>
+                  <ToggleButton value="player">{locale.modePlayer}</ToggleButton>
+                </ToggleButtonGroup>
+
+                {(() => {
+                  const displayEnemy = selectedEnemy ?? (selectedOpponent ? playerSummaryToDisplayEnemy(selectedOpponent) : null)
+                  const isOpponentMode = mode === 'player' && selectedOpponent !== null
+                  return (
+                    <>
+                      {displayEnemy && trainingResult ? (
+                        <Box ref={battleResultRef}>
+                          <TrainingBattleResult
+                            enemy={displayEnemy}
+                            result={trainingResult}
+                            playerLevel={playerLevel}
+                            playerExp={playerExp}
+                            nextLevelRequiredExp={nextLevelRequiredExp}
+                            isActionDisabled={isTrainingActionDisabled}
+                            lockRemainingSeconds={trainingLockRemainingSeconds}
+                            movePlanSlot={
+                              player && plannedMoveIds ? (
+                                <TrainingMovePlanForm
+                                  enemy={displayEnemy}
+                                  player={player}
+                                  moveIds={plannedMoveIds}
+                                  isActionDisabled={isTrainingActionDisabled}
+                                  lockRemainingSeconds={trainingLockRemainingSeconds}
+                                  onChangeMoveId={handleChangePlannedMoveId}
+                                  showEnemyHeader={false}
+                                  showSubmitButton={false}
+                                  onSubmit={() => {}}
+                                />
+                              ) : null
+                            }
+                            onRematch={async () => {
+                              if (!player || !plannedMoveIds) {
+                                throw new Error(locale.playerLoading)
+                              }
+
+                              if (isOpponentMode && selectedOpponent) {
+                                await runPvpTraining(selectedOpponent, plannedMoveIds)
+                              } else if (selectedEnemy) {
+                                await runTraining(selectedEnemy, plannedMoveIds)
+                              }
+                            }}
+                          />
+                        </Box>
+                      ) : null}
+
+                      {displayEnemy && player && plannedMoveIds && !trainingResult ? (
+                        <Box ref={trainingMovePlanRef}>
                           <TrainingMovePlanForm
-                            enemy={selectedEnemy}
+                            enemy={displayEnemy}
                             player={player}
                             moveIds={plannedMoveIds}
                             isActionDisabled={isTrainingActionDisabled}
                             lockRemainingSeconds={trainingLockRemainingSeconds}
                             onChangeMoveId={handleChangePlannedMoveId}
-                            showEnemyHeader={false}
-                            showSubmitButton={false}
-                            onSubmit={() => {}}
+                            onSubmit={async () => {
+                              if (isOpponentMode && selectedOpponent) {
+                                await runPvpTraining(selectedOpponent, plannedMoveIds)
+                              } else if (selectedEnemy) {
+                                await runTraining(selectedEnemy, plannedMoveIds)
+                              }
+                            }}
                           />
-                        ) : null
-                      }
-                      onRematch={async () => {
-                        if (!player || !plannedMoveIds) {
-                          throw new Error(locale.playerLoading)
-                        }
+                        </Box>
+                      ) : null}
+                    </>
+                  )
+                })()}
 
-                        await runTraining(selectedEnemy, plannedMoveIds)
-                      }}
-                    />
-                  </Box>
-                ) : null}
-
-                {selectedEnemy && player && plannedMoveIds && !trainingResult ? (
-                  <Box ref={trainingMovePlanRef}>
-                    <TrainingMovePlanForm
-                      enemy={selectedEnemy}
-                      player={player}
-                      moveIds={plannedMoveIds}
+                {mode === 'npc' ? (
+                  isTrainingEnemiesLoading ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CircularProgress size={16} />
+                      <Typography variant="body2">{locale.enemiesLoading}</Typography>
+                    </Stack>
+                  ) : trainingEnemiesError ? (
+                    <Alert severity="warning">{trainingEnemiesError.message}</Alert>
+                  ) : (
+                    <TrainingEnemySelect
+                      enemies={trainingEnemies ?? []}
                       isActionDisabled={isTrainingActionDisabled}
                       lockRemainingSeconds={trainingLockRemainingSeconds}
-                      onChangeMoveId={handleChangePlannedMoveId}
-                      onSubmit={async () => {
-                        await runTraining(selectedEnemy, plannedMoveIds)
-                      }}
+                      onFight={handleSelectEnemy}
                     />
-                  </Box>
-                ) : null}
-
-                {isTrainingEnemiesLoading ? (
+                  )
+                ) : isPlayerListLoading ? (
                   <Stack direction="row" spacing={1} alignItems="center">
                     <CircularProgress size={16} />
-                    <Typography variant="body2">{locale.enemiesLoading}</Typography>
+                    <Typography variant="body2">{locale.opponentsLoading}</Typography>
                   </Stack>
-                ) : trainingEnemiesError ? (
-                  <Alert severity="warning">{trainingEnemiesError.message}</Alert>
+                ) : playerListError ? (
+                  <Alert severity="warning">{playerListError.message}</Alert>
                 ) : (
-                  <TrainingEnemySelect
-                    enemies={trainingEnemies ?? []}
+                  <TrainingOpponentSelect
+                    opponents={(playerList ?? []).filter((p) => p.userId !== session?.user.id).sort((a, b) => a.level - b.level)}
                     isActionDisabled={isTrainingActionDisabled}
                     lockRemainingSeconds={trainingLockRemainingSeconds}
-                    onFight={handleSelectEnemy}
+                    onFight={handleSelectOpponent}
                   />
                 )}
 

@@ -41,6 +41,7 @@ import {
 import {
   getTrainingEnemiesResponseSchema,
   executeTrainingRequestSchema,
+  executePvpTrainingRequestSchema,
   executeTrainingResponseSchema,
 } from '@/schema/training'
 import {
@@ -131,6 +132,7 @@ export type {
   TrainingEnemy,
   GetTrainingEnemiesResponse,
   ExecuteTrainingRequest,
+  ExecutePvpTrainingRequest,
   ExecuteTrainingResponse,
   TrainingCooldownError,
 } from '@/schema/training'
@@ -314,6 +316,12 @@ export const endpoints = {
       path: '/training/execute',
       method: 'POST',
       requestSchema: executeTrainingRequestSchema,
+      responseSchema: executeTrainingResponseSchema,
+    },
+    executePvp: {
+      path: '/training/execute-pvp',
+      method: 'POST',
+      requestSchema: executePvpTrainingRequestSchema,
       responseSchema: executeTrainingResponseSchema,
     },
   },
