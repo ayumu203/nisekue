@@ -22,6 +22,7 @@ import TrainingBattleResult from '@/components/training/TrainingBattleResult'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
 import TrainingMovePlanForm from '@/components/training/TrainingMovePlanForm'
 import TrainingOpponentSelect from '@/components/training/TrainingOpponentSelect'
+import { normalizeCharacterPath } from '@/lib/assets'
 import { useAuth } from '@/contexts/useAuth'
 import { innerSurfaceSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
@@ -33,17 +34,13 @@ import type { GetPlayerResponse, PlayerSummary } from '@/schema/player'
 
 type TrainingMode = 'npc' | 'player'
 
+const DEFAULT_CHARACTER_PATH = 'image/character/ch001_bmnpc.png'
+
 function playerSummaryToDisplayEnemy(opponent: PlayerSummary): TrainingEnemy {
-  const rawPath = opponent.imagePath
-  const imagePath = rawPath
-    ? rawPath.startsWith('image/')
-      ? rawPath
-      : `image/character/${rawPath}`
-    : 'image/character/ch001_bmnpc.png'
   return {
     id: -1,
     name: opponent.userName ?? locale.anonymousPlayer,
-    imagePath,
+    imagePath: opponent.imagePath ? normalizeCharacterPath(opponent.imagePath) : DEFAULT_CHARACTER_PATH,
     level: opponent.level,
   }
 }
