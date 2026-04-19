@@ -1,4 +1,15 @@
-import { Alert, Box, Button, CircularProgress, Container, Paper, Snackbar, Stack, Typography } from '@mui/material'
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Collapse,
+  Container,
+  Paper,
+  Snackbar,
+  Stack,
+  Typography,
+} from '@mui/material'
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
@@ -21,9 +32,11 @@ import {
   RankingIcon,
   SpecialThanksIcon,
   ThreadsIcon,
+  TrainingGroupIcon,
   TrainingIcon,
   TreasureMapIcon,
   VisitPlayersIcon,
+  SocialGroupIcon,
 } from '@/components/home/HomeIcons'
 import {
   innerSurfaceSx,
@@ -37,6 +50,8 @@ import { beginnerGuides } from '@/lib/beginnerGuides'
 function Home() {
   const { session, isLoading, isAnonymous } = useAuth()
   const [toastQueue, setToastQueue] = useState<string[]>([])
+  const [isTrainingGroupOpen, setIsTrainingGroupOpen] = useState(false)
+  const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
   const handledChatIdsRef = useRef<Set<number>>(new Set())
   const handledReplyIdsRef = useRef<Set<string>>(new Set())
   const enqueueToast = useEffectEvent((message: string) => {
@@ -216,47 +231,83 @@ function Home() {
                 {locale.items}
               </Button>
               <Button
-                component={Link}
-                to="/move-setting"
                 variant="contained"
-                startIcon={<MoveSettingIcon />}
+                startIcon={<TrainingGroupIcon />}
+                onClick={() => setIsTrainingGroupOpen((prev) => !prev)}
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
-                {locale.moveSetting}
+                {locale.trainingGroup}
               </Button>
+              <Collapse in={isTrainingGroupOpen}>
+                <Stack spacing={1} sx={{ pl: 1, pr: 1, pt: 1 }}>
+                  <Button
+                    component={Link}
+                    to="/move-setting"
+                    variant="contained"
+                    startIcon={<MoveSettingIcon />}
+                    sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                  >
+                    {locale.moveSetting}
+                  </Button>
+                  <Button
+                    component={Link}
+                    to="/job-change"
+                    variant="contained"
+                    startIcon={<JobChangeIcon />}
+                    sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                  >
+                    {locale.jobChange}
+                  </Button>
+                  <Button
+                    component={Link}
+                    to="/rebirth"
+                    variant="contained"
+                    startIcon={<RebirthIcon />}
+                    sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                  >
+                    {locale.rebirth}
+                  </Button>
+                </Stack>
+              </Collapse>
               <Button
-                component={Link}
-                to="/job-change"
-                variant="contained"
-                startIcon={<JobChangeIcon />}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-              >
-                {locale.jobChange}
-              </Button>
-              <Button
-                component={Link}
-                to="/rebirth"
-                variant="contained"
-                startIcon={<RebirthIcon />}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-              >
-                {locale.rebirth}
-              </Button>
-              <Button
-                component={Link}
-                to="/players"
                 variant="outlined"
-                startIcon={<VisitPlayersIcon />}
+                startIcon={<SocialGroupIcon />}
+                onClick={() => setIsSocialGroupOpen((prev) => !prev)}
                 sx={menuButtonSx}
               >
-                {locale.visitPlayers}
+                {locale.socialGroup}
               </Button>
-              <Button component={Link} to="/threads" variant="outlined" startIcon={<ThreadsIcon />} sx={menuButtonSx}>
-                {locale.threads}
-              </Button>
-              <Button component={Link} to="/ranking" variant="outlined" startIcon={<RankingIcon />} sx={menuButtonSx}>
-                {locale.ranking}
-              </Button>
+              <Collapse in={isSocialGroupOpen}>
+                <Stack spacing={1} sx={{ pl: 1, pr: 1, pt: 1 }}>
+                  <Button
+                    component={Link}
+                    to="/players"
+                    variant="outlined"
+                    startIcon={<VisitPlayersIcon />}
+                    sx={menuButtonSx}
+                  >
+                    {locale.visitPlayers}
+                  </Button>
+                  <Button
+                    component={Link}
+                    to="/threads"
+                    variant="outlined"
+                    startIcon={<ThreadsIcon />}
+                    sx={menuButtonSx}
+                  >
+                    {locale.threads}
+                  </Button>
+                  <Button
+                    component={Link}
+                    to="/ranking"
+                    variant="outlined"
+                    startIcon={<RankingIcon />}
+                    sx={menuButtonSx}
+                  >
+                    {locale.ranking}
+                  </Button>
+                </Stack>
+              </Collapse>
               <Button
                 component={Link}
                 to="/thanks"
