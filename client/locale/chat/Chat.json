@@ -2,5 +2,7 @@
   "placeholder": "メッセージを入力",
   "send": "送信",
   "sendFailed": "メッセージ送信に失敗しました",
-  "anonymousPostingRestricted": "匿名ログイン中は投稿できません。プレイヤー設定からアカウント連携してください。"
+  "anonymousPostingRestricted": "匿名ログイン中は投稿できません。プレイヤー設定からアカウント連携してください。",
+  "showSystemMessages": "システム通知を表示",
+  "noVisibleMessages": "表示するメッセージはありません。"
 }

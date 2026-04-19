@@ -28,6 +28,7 @@ type AvailableMove = {
   moveId: number | null
   moveName: string
   targetType: 'Enemy' | 'Ally' | 'Self' | null
+  targetLifeState: 'Alive' | 'Dead' | 'Any' | null | undefined
   attackRange: MoveAttackRange | null
 }
 
@@ -715,7 +716,7 @@ export default function QuestBattleStatusPanel({
             const position = allyPositions[member.position.row][member.position.column]
             const allyKey = `${member.position.row}:${member.position.column}`
             const isActor = member.participantId === selfParticipantId
-            const isReachableAlly = !member.isDead && !isActor
+            const isReachableAlly = !member.isDead && (!isActor || selectedMove?.targetLifeState === 'Alive')
             const isSelectedAlly = selectedTargetKey === allyKey
 
             let allyTargetState: BattleSpriteProps['targetState'] = 'none'

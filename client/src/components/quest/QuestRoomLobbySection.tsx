@@ -63,14 +63,14 @@ type QuestRoomLobbySectionProps = {
   isUpdatingRestrictions: boolean
   isPlayerCandidatesLoading: boolean
   playerCandidatesError: Error | null
-  isUpdatingParticipantId: string | null
+  isSavingFormation: boolean
   onRestrictionsChange: (value: string, nextAllowedPlayerIds: string[]) => void
   onUpdateRestrictions: (options?: {
     minRequiredLevelInput?: string
     allowedPlayerIds?: string[]
   }) => void | Promise<void>
   onPositionDraftChange: (participantId: string, nextPosition: { row: BattleRow; column: BattleColumn }) => void
-  onUpdateParticipantPosition: (participantId: string) => void | Promise<void>
+  onSaveFormation: () => void | Promise<void>
   onStartQuest: () => void | Promise<void>
   onCancelRoom: () => void | Promise<void>
 }
@@ -90,11 +90,11 @@ export default function QuestRoomLobbySection({
   isUpdatingRestrictions,
   isPlayerCandidatesLoading,
   playerCandidatesError,
-  isUpdatingParticipantId,
+  isSavingFormation,
   onRestrictionsChange,
   onUpdateRestrictions,
   onPositionDraftChange,
-  onUpdateParticipantPosition,
+  onSaveFormation,
   onStartQuest,
   onCancelRoom,
 }: QuestRoomLobbySectionProps) {
@@ -106,6 +106,12 @@ export default function QuestRoomLobbySection({
           (participant) => participant.participantId === selfParticipantId && participant.isOwner,
         )
       : false
+  const isStartDisabled =
+    currentRoom == null ||
+    isStarting ||
+    isCancellingRoom ||
+    !currentRoom.canStart ||
+    currentRoom.status !== 'Recruiting'
 
   function handleRowChange(
     participantId: string,
@@ -237,14 +243,12 @@ export default function QuestRoomLobbySection({
             </Stack>
 
             {isOwner ? (
-              <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
+              <Stack direction="column" spacing={1} alignItems="flex-start">
                 <Button
                   variant="contained"
                   startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
                   onClick={() => void onStartQuest()}
-                  disabled={
-                    isStarting || isCancellingRoom || !currentRoom.canStart || currentRoom.status !== 'Recruiting'
-                  }
+                  disabled={isStartDisabled || isSavingFormation}
                   sx={{
                     ...menuButtonSx,
                     ...softGreenButtonSx,
@@ -522,32 +526,6 @@ export default function QuestRoomLobbySection({
                               {`${locale.positionRow}: ${locale.rows[participant.position.row]} / ${locale.positionColumn}: ${locale.columns[participant.position.column]}`}
                             </Typography>
                           )}
-
-                          {isOwner ? (
-                            <Button
-                              variant="contained"
-                              onClick={() => void onUpdateParticipantPosition(participant.participantId)}
-                              disabled={
-                                isUpdatingParticipantId === participant.participantId ||
-                                currentRoom.status !== 'Recruiting'
-                              }
-                              sx={{
-                                ...menuButtonSx,
-                                ...softGreenButtonSx,
-                                color: '#ffffff',
-                                backgroundColor: '#4f79b5',
-                                boxShadow: 'none',
-                                '&:hover': {
-                                  backgroundColor: '#5a86c5',
-                                  boxShadow: 'none',
-                                },
-                              }}
-                            >
-                              {isUpdatingParticipantId === participant.participantId
-                                ? locale.updatingPosition
-                                : locale.savePosition}
-                            </Button>
-                          ) : null}
                         </Stack>
                       </Stack>
                     </Stack>
@@ -555,6 +533,47 @@ export default function QuestRoomLobbySection({
                 )
               })}
             </Stack>
+            {isOwner ? (
+              <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
+                <Button
+                  variant="contained"
+                  onClick={() => void onSaveFormation()}
+                  disabled={isSavingFormation || isStarting || isCancellingRoom || currentRoom.status !== 'Recruiting'}
+                  sx={{
+                    ...menuButtonSx,
+                    ...softGreenButtonSx,
+                    color: '#ffffff',
+                    backgroundColor: '#4f79b5',
+                    boxShadow: 'none',
+                    '&:hover': {
+                      backgroundColor: '#5a86c5',
+                      boxShadow: 'none',
+                    },
+                  }}
+                >
+                  {isSavingFormation ? locale.updatingPosition : locale.confirmFormation}
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
+                  onClick={() => void onStartQuest()}
+                  disabled={isStartDisabled || isSavingFormation}
+                  sx={{
+                    ...menuButtonSx,
+                    ...softGreenButtonSx,
+                    color: '#ffffff',
+                    backgroundColor: '#4f79b5',
+                    boxShadow: 'none',
+                    '&:hover': {
+                      backgroundColor: '#5a86c5',
+                      boxShadow: 'none',
+                    },
+                  }}
+                >
+                  {isStarting ? locale.startingQuest : locale.startQuest}
+                </Button>
+              </Stack>
+            ) : null}
           </Stack>
         )}
       </Stack>
