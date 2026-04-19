@@ -41,7 +41,7 @@ public class BattleTargetingResolver
 
         return ApplyDefaultAttackRange(
             selector.AttackRange,
-            ResolveDefaultOrderedCandidates(selector, candidates, fieldContext));
+            ResolveDefaultOrderedCandidates(selector, actorSnapshot, candidates, fieldContext));
     }
 
     public BattleActorId ResolveDamageReceiver(
@@ -291,6 +291,7 @@ public class BattleTargetingResolver
 
     private static IReadOnlyList<BattleActorId> ResolveDefaultOrderedCandidates(
         BattleTargetSelector selector,
+        BattleActorSnapshot actorSnapshot,
         IReadOnlyList<BattleActorSnapshot> candidates,
         BattleFieldContext? fieldContext)
     {
@@ -301,7 +302,11 @@ public class BattleTargetingResolver
 
         if (selector.TargetType == TargetType.Ally && selector.TargetLifeState == TargetLifeState.Alive)
         {
-            return candidates.Select(x => x.Id).ToArray();
+            var self = candidates.FirstOrDefault(x => x.Id == actorSnapshot.Id);
+            var others = candidates.Where(x => x.Id != actorSnapshot.Id).OrderBy(x => x.Id.Value);
+            return self is not null
+                ? [.. others.Select(x => x.Id), self.Id]
+                : candidates.OrderBy(x => x.Id.Value).Select(x => x.Id).ToArray();
         }
 
         return candidates.OrderBy(x => x.Id.Value).Select(x => x.Id).ToArray();
