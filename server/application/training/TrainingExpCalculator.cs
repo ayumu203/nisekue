@@ -12,6 +12,19 @@ public class TrainingExpCalculator
         ArgumentNullException.ThrowIfNull(enemy);
         ArgumentNullException.ThrowIfNull(metrics);
 
+        return CalculateInternal(player, enemy.Level, enemy.Status.MaxHp, metrics, outcome);
+    }
+
+    public int CalculatePvp(Player player, int opponentLevel, int opponentMaxHp, TrainingContributionMetrics metrics, TrainingOutcome outcome)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        ArgumentNullException.ThrowIfNull(metrics);
+
+        return CalculateInternal(player, opponentLevel, opponentMaxHp, metrics, outcome);
+    }
+
+    private int CalculateInternal(Player player, int enemyLevel, int enemyMaxHp, TrainingContributionMetrics metrics, TrainingOutcome outcome)
+    {
         var outcomeRate = outcome switch
         {
             TrainingOutcome.Win => TrainingConstants.Exp.WinMultiplier,
@@ -19,8 +32,8 @@ public class TrainingExpCalculator
             _ => TrainingConstants.Exp.DrawMultiplier
         };
 
-        var baseExp = enemy.Level * TrainingConstants.Exp.BaseExpPerEnemyLevel;
-        var levelDiff = enemy.Level - player.Level;
+        var baseExp = enemyLevel * TrainingConstants.Exp.BaseExpPerEnemyLevel;
+        var levelDiff = enemyLevel - player.Level;
         var levelRate = levelDiff switch
         {
             <= TrainingConstants.Exp.LevelRateVeryLowThreshold => TrainingConstants.Exp.LevelRateVeryLow,
@@ -30,7 +43,7 @@ public class TrainingExpCalculator
             _ => TrainingConstants.Exp.LevelRateVeryHigh
         };
 
-        var attackScore = ClampRatio(metrics.PlayerDealtTotalDamage, enemy.Status.MaxHp);
+        var attackScore = ClampRatio(metrics.PlayerDealtTotalDamage, enemyMaxHp);
         var healScore = ClampRatio(metrics.PlayerEffectiveHealTotal, player.Status.MaxHp);
         var survivalScore = ClampRatio(metrics.CurrentPlayerHp, player.Status.MaxHp);
         var contributionRate = TrainingConstants.Exp.BaseContribution

@@ -47,6 +47,7 @@ export type PlayerJob = z.infer<typeof playerJobSchema>
 export type PlayerJobCode = z.infer<typeof playerJobCodeSchema>
 
 export const moveTargetTypeSchema = z.enum(['Enemy', 'Ally', 'Self'])
+export const moveTargetLifeStateSchema = z.enum(['Alive', 'Dead', 'Any'])
 const moveAttackRangeCanonicalSchema = z.enum(['Single', 'Column', 'Row', 'Square', 'All'])
 const moveAttackRangeLegacyInputSchema = z.enum([
   'Single',
@@ -125,6 +126,7 @@ export const moveAilmentTypeSchema = z.enum([
 
 export const moveEffectSummarySchema = z.object({
   effectType: moveEffectTypeSchema,
+  powerRate: z.number().nonnegative().nullable().optional(),
   buffStat: moveBuffStatSchema.nullable().optional(),
   buffTurns: z.number().int().min(1).nullable().optional(),
   ailmentType: moveAilmentTypeSchema.nullable().optional(),
@@ -139,6 +141,7 @@ export const playerMoveSlotSchema = z.object({
   effectImagePath: z.string().min(1).nullable().optional(),
   elementType: moveElementTypeSchema.nullable(),
   targetType: moveTargetTypeSchema.nullable(),
+  targetLifeState: moveTargetLifeStateSchema.nullable().optional(),
   attackRange: moveAttackRangeSchema.nullable(),
   mpCost: z.number().int().min(0).nullable(),
   category: moveCategorySchema.nullable(),

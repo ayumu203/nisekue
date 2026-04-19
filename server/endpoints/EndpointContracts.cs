@@ -24,6 +24,7 @@ public record CreateThreadRequest(string Title, string Body);
 public record CreateThreadReplyRequest(string Body);
 public record MarkThreadRepliesAlertedRequest(IReadOnlyList<Guid> ReplyIds);
 public record ExecuteTrainingRequest(int EnemyId, IReadOnlyList<int?> MoveIds);
+public record ExecutePvpTrainingRequest(Guid OpponentPlayerId, IReadOnlyList<int?> MoveIds);
 public record UseItemRequest(int Quantity);
 public record StartTreasureMapExpeditionRequest(int MapId);
 public record CreateMarketListingRequest(Guid? PlayerEquipmentId, Guid? ItemStackId, int Quantity, int UnitPrice);

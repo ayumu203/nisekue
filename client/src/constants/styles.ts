@@ -2,6 +2,7 @@ export const menuButtonSx = {
   width: '100%',
   minHeight: 48,
   whiteSpace: 'nowrap',
+  justifyContent: 'center',
 } as const
 
 export const softGreenButtonSx = {

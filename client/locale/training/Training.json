@@ -39,5 +39,10 @@
   "newlyLearnedMoves": "新しく覚えたスキル",
   "playerHp": "プレイヤー HP: {{current}} / {{max}}",
   "enemyHp": "敵 HP: {{current}} / {{max}}",
-  "rematch": "再戦する"
+  "rematch": "再戦する",
+  "modeNpc": "NPC",
+  "modePlayer": "PLAYER",
+  "opponentsLoading": "対戦相手を読み込み中...",
+  "noOpponentsAvailable": "現在対戦可能なプレイヤーがいません",
+  "anonymousPlayer": "名無しプレイヤー"
 }

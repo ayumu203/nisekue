@@ -766,6 +766,7 @@ internal static class PlayerEndpoints
                         .ElementType
                         .ToString(),
                     targetType = move?.TargetType.ToString(),
+                    targetLifeState = move?.TargetLifeState.ToString(),
                     attackRange = move?.AttackRange.ToString(),
                     mpCost = move?.MpCost,
                     category = move?.Category.ToString(),
@@ -773,6 +774,7 @@ internal static class PlayerEndpoints
                         .Select(effect => new
                         {
                             effectType = effect.EffectType.ToString(),
+                            powerRate = effect.Damage?.PowerRate,
                             buffStat = effect.Buff?.BuffStat.ToString(),
                             buffTurns = effect.Buff?.BuffTurns,
                             ailmentType = effect.Ailment?.AilmentType.ToString(),

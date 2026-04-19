@@ -2,7 +2,12 @@ import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
 import { extractErrorMessage, resolveApiBaseUrl } from '@/api/util'
 import { trainingCooldownErrorSchema } from '@/schema/training'
-import type { ExecuteTrainingRequest, ExecuteTrainingResponse, GetTrainingEnemiesResponse } from '@/schema/training'
+import type {
+  ExecutePvpTrainingRequest,
+  ExecuteTrainingRequest,
+  ExecuteTrainingResponse,
+  GetTrainingEnemiesResponse,
+} from '@/schema/training'
 
 export class TrainingCooldownError extends Error {
   public readonly retryAfterSeconds: number
@@ -72,4 +77,42 @@ export async function executeTraining(
   }
 
   return endpoints.training.execute.responseSchema.parse(json)
+}
+
+export async function executeTrainingPvp(
+  input: ExecutePvpTrainingRequest,
+  accessToken: string,
+): Promise<ExecuteTrainingResponse> {
+  const payload = endpoints.training.executePvp.requestSchema.parse(input)
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.training.executePvp.path}`, {
+    method: endpoints.training.executePvp.method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (response.status === 429) {
+    const cooldown = trainingCooldownErrorSchema.safeParse(json)
+    if (cooldown.success) {
+      throw new TrainingCooldownError(
+        cooldown.data.message,
+        cooldown.data.retryAfterSeconds,
+        cooldown.data.cooldownUntil,
+      )
+    }
+
+    throw new Error('訓練のクールダウン中です')
+  }
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '対人訓練の実行に失敗しました'))
+  }
+
+  return endpoints.training.executePvp.responseSchema.parse(json)
 }

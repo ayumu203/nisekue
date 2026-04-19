@@ -76,7 +76,7 @@ public class TrainingService(
         };
         var moves = trainingBattleFactory.CreateTrainingMoves(enemy, playerMoves);
 
-        var (summary, metrics) = ResolveBattleUntilFinished(actors, playerMoves, moves);
+        var (summary, metrics) = ResolveBattleUntilFinished(actors, playerMoves, moves, trainingBattleFactory.EnemyActorId);
 
         var exp = trainingExpCalculator.Calculate(player, enemy, metrics, summary.Outcome);
         var levelUpResult = ApplyExp(player, exp);
@@ -92,6 +92,62 @@ public class TrainingService(
             MaxPlayerHp: effectiveStatus.MaxHp,
             CurrentEnemyHp: summary.CurrentEnemyHp,
             MaxEnemyHp: enemy.Status.MaxHp,
+            Exp: exp,
+            IsPlayerLevelUp: levelUpResult.HasPlayerLeveledUp,
+            IsJobLevelUp: levelUpResult.HasJobLeveledUp,
+            WeaponMasteryDelta: weaponMasteryDelta,
+            NewlyLearnedMoves: await playerJobService.BuildLearnedMoveViewsAsync(levelUpResult.NewlyLearnedMoveIds));
+    }
+
+    public async Task<TrainingResultView> ExecutePvpTraining(PlayerId playerId, PlayerId opponentPlayerId, IReadOnlyList<int?> playerMoveIds)
+    {
+        var player = await playerRepository.GetPlayerAsync(playerId)
+            ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
+        var opponent = await playerRepository.GetPlayerAsync(opponentPlayerId)
+            ?? throw new KeyNotFoundException("対戦相手のプレイヤーが見つかりません。");
+
+        var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(playerId)).ToList();
+        var equipments = await equipmentRepository.GetAllAsync();
+        var effectiveStatus = equipmentStatusResolver.BuildEffectiveStatus(player.Status, player.Job, playerEquipments, equipments);
+        var playerMoves = await LoadTrainingMovesAsync(player, effectiveStatus, playerMoveIds);
+
+        var nowUtc = DateTimeOffset.UtcNow;
+        var cooldownUntil = await playerRepository.TryStartTrainingCooldownAsync(
+            playerId,
+            nowUtc,
+            TimeSpan.FromSeconds(TrainingConstants.Battle.CooldownSeconds));
+        if (cooldownUntil is not null && cooldownUntil.Value > nowUtc)
+        {
+            throw new TrainingCooldownException(cooldownUntil.Value);
+        }
+
+        var opponentEquipments = (await playerEquipmentRepository.GetByPlayerAsync(opponentPlayerId)).ToList();
+        var opponentEffectiveStatus = equipmentStatusResolver.BuildEffectiveStatus(opponent.Status, opponent.Job, opponentEquipments, equipments);
+
+        var opponentActorId = Guid.NewGuid();
+        var actors = new[]
+        {
+            trainingBattleFactory.CreatePlayerActor(player, effectiveStatus, playerMoves),
+            trainingBattleFactory.CreateOpponentPlayerActor(opponent, opponentEffectiveStatus, opponentActorId),
+        };
+        var moves = trainingBattleFactory.CreatePvpTrainingMoves(opponentEffectiveStatus, playerMoves);
+
+        var (summary, metrics) = ResolveBattleUntilFinished(actors, playerMoves, moves, opponentActorId);
+
+        var exp = trainingExpCalculator.CalculatePvp(player, opponent.Level, opponentEffectiveStatus.MaxHp, metrics, summary.Outcome);
+        var levelUpResult = ApplyExp(player, exp);
+        var weaponMasteryDelta = ApplyWeaponUpdates(player, opponent.Level, playerEquipments, equipments, nowUtc);
+
+        await playerRepository.SaveAsync(player);
+        await playerEquipmentRepository.SaveAsync(playerEquipments);
+
+        return new TrainingResultView(
+            TrainingResult: summary.Outcome.ToString(),
+            Turn: summary.Turn,
+            CurrentPlayerHp: summary.CurrentPlayerHp,
+            MaxPlayerHp: effectiveStatus.MaxHp,
+            CurrentEnemyHp: summary.CurrentEnemyHp,
+            MaxEnemyHp: opponentEffectiveStatus.MaxHp,
             Exp: exp,
             IsPlayerLevelUp: levelUpResult.HasPlayerLeveledUp,
             IsJobLevelUp: levelUpResult.HasJobLeveledUp,
@@ -120,12 +176,14 @@ public class TrainingService(
     private (TrainingBattleSummary Summary, TrainingContributionMetrics Metrics) ResolveBattleUntilFinished(
         IReadOnlyList<BattleActorInput> actors,
         IReadOnlyList<Move> playerMoves,
-        IReadOnlyList<Move> moves)
+        IReadOnlyList<Move> moves,
+        Guid enemyActorId)
     {
         ArgumentNullException.ThrowIfNull(actors);
         ArgumentNullException.ThrowIfNull(playerMoves);
         ArgumentNullException.ThrowIfNull(moves);
 
+        var playerActorId = trainingBattleFactory.PlayerActorId;
         var currentActors = actors.ToArray();
         var turn = 0;
         var playerDealtTotalDamage = 0;
@@ -133,30 +191,32 @@ public class TrainingService(
 
         while (turn < TrainingConstants.Battle.MaxTurns && turn < playerMoves.Count)
         {
-            var playerActor = currentActors.Single(x => x.ActorId == trainingBattleFactory.PlayerActorId);
-            var enemyActor = currentActors.Single(x => x.ActorId == trainingBattleFactory.EnemyActorId);
+            var playerActor = currentActors.Single(x => x.ActorId == playerActorId);
+            var enemyActor = currentActors.Single(x => x.ActorId == enemyActorId);
             if (playerActor.CurrentHp <= 0 || enemyActor.CurrentHp <= 0)
             {
                 break;
             }
 
-            var actions = trainingBattleFactory.CreateTurnActions(playerActor, enemyActor.ActorId, playerMoves[turn]);
+            var actions = enemyActorId == trainingBattleFactory.EnemyActorId
+                ? trainingBattleFactory.CreateTurnActions(playerActor, enemyActor.ActorId, playerMoves[turn])
+                : trainingBattleFactory.CreatePvpTurnActions(playerActor, enemyActor, playerMoves[turn]);
             var resolution = battleService.ResolveTurn(new BattleTurnRequest(currentActors, actions, moves));
             playerDealtTotalDamage += resolution.ActionResults
-                .Where(x => x.ActorId.Value == trainingBattleFactory.PlayerActorId)
+                .Where(x => x.ActorId.Value == playerActorId)
                 .SelectMany(x => x.TargetResults)
-                .Where(x => x.TargetActorId.Value == trainingBattleFactory.EnemyActorId)
+                .Where(x => x.TargetActorId.Value == enemyActorId)
                 .Sum(x => x.Damage);
             playerEffectiveHealTotal += resolution.ActionResults
-                .Where(x => x.ActorId.Value == trainingBattleFactory.PlayerActorId)
+                .Where(x => x.ActorId.Value == playerActorId)
                 .SelectMany(x => x.TargetResults)
-                .Where(x => x.TargetActorId.Value == trainingBattleFactory.PlayerActorId)
+                .Where(x => x.TargetActorId.Value == playerActorId)
                 .Sum(x => Math.Max(0, x.HpChange));
             turn++;
             currentActors = BuildNextTurnActors(currentActors, resolution.UpdatedStates);
         }
 
-        var summary = BuildSummary(currentActors, turn);
+        var summary = BuildSummary(currentActors, turn, enemyActorId);
         var metrics = BuildContributionMetrics(summary, playerDealtTotalDamage, playerEffectiveHealTotal);
         return (summary, metrics);
     }
@@ -183,17 +243,18 @@ public class TrainingService(
 
     private TrainingBattleSummary BuildSummary(
         IReadOnlyList<BattleActorInput> actors,
-        int turn)
+        int turn,
+        Guid enemyActorId)
     {
         var playerActor = actors.Single(x => x.ActorId == trainingBattleFactory.PlayerActorId);
-        var enemyActor = actors.Single(x => x.ActorId == trainingBattleFactory.EnemyActorId);
+        var enemyActor = actors.Single(x => x.ActorId == enemyActorId);
         var outcome = trainingOutcomeJudge.Judge(
             [
                 new BattleActorState(new BattleActorId(playerActor.ActorId), playerActor.CurrentHp ?? playerActor.BaseStatus.MaxHp, playerActor.CurrentMp ?? playerActor.BaseStatus.MaxMp),
                 new BattleActorState(new BattleActorId(enemyActor.ActorId), enemyActor.CurrentHp ?? enemyActor.BaseStatus.MaxHp, enemyActor.CurrentMp ?? enemyActor.BaseStatus.MaxMp)
             ],
             new BattleActorId(trainingBattleFactory.PlayerActorId),
-            new BattleActorId(trainingBattleFactory.EnemyActorId));
+            new BattleActorId(enemyActorId));
 
         return new TrainingBattleSummary(
             Turn: turn,
@@ -267,6 +328,16 @@ public class TrainingService(
         IReadOnlyList<Equipment> equipments,
         DateTimeOffset now)
     {
+        return ApplyWeaponUpdates(player, enemy.Level, playerEquipments, equipments, now);
+    }
+
+    private int ApplyWeaponUpdates(
+        Player player,
+        int opponentLevel,
+        IReadOnlyList<PlayerEquipment> playerEquipments,
+        IReadOnlyList<Equipment> equipments,
+        DateTimeOffset now)
+    {
         var weapon = playerEquipments.FirstOrDefault(x => x.Status == EquipmentStatus.Equipped && x.Type == EquipmentType.Weapon);
         if (weapon is null || weapon.IsBroken)
         {
@@ -275,7 +346,7 @@ public class TrainingService(
 
         weapon.ConsumeDurability(1, now);
 
-        if (!trainingWeaponMasteryPolicy.ShouldIncrease(player.Level, enemy.Level))
+        if (!trainingWeaponMasteryPolicy.ShouldIncrease(player.Level, opponentLevel))
         {
             return 0;
         }
