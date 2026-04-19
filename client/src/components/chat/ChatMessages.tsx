@@ -2,6 +2,7 @@ import { Alert, FormControlLabel, Stack, Switch, Typography } from '@mui/materia
 import { useState } from 'react'
 import type { GetChatRoomResponse } from '@/schema/chat'
 import ChatMessageItem from '@/components/chat/ChatMessageItem'
+import { getShowSystemMessages, saveShowSystemMessages } from '@/lib/chatPreferencesStorage'
 import locale from '../../../locale/chat/Chat.json'
 
 type Props = {
@@ -10,7 +11,7 @@ type Props = {
 }
 
 function ChatMessages({ messages, currentPlayerId }: Props) {
-  const [showSystemMessages, setShowSystemMessages] = useState(true)
+  const [showSystemMessages, setShowSystemMessages] = useState(() => getShowSystemMessages(currentPlayerId))
 
   if (messages.length === 0) {
     return <Alert severity="info">まだメッセージはありません。</Alert>
@@ -26,7 +27,10 @@ function ChatMessages({ messages, currentPlayerId }: Props) {
           <Switch
             size="small"
             checked={showSystemMessages}
-            onChange={(event) => setShowSystemMessages(event.target.checked)}
+            onChange={(event) => {
+              setShowSystemMessages(event.target.checked)
+              saveShowSystemMessages(currentPlayerId, event.target.checked)
+            }}
           />
         }
         label={locale.showSystemMessages}
