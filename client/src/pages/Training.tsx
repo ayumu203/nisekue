@@ -122,12 +122,12 @@ export default function Training() {
   }, [trainingLockUntilMs])
 
   useEffect(() => {
-    if (!isMobile || !selectedEnemy || trainingResult || !plannedMoveIds) {
+    if (!isMobile || (!selectedEnemy && !selectedOpponent) || trainingResult || !plannedMoveIds) {
       return
     }
 
     trainingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [isMobile, plannedMoveIds, selectedEnemy, trainingResult])
+  }, [isMobile, plannedMoveIds, selectedEnemy, selectedOpponent, trainingResult])
 
   useEffect(() => {
     if (!isMobile || !trainingResult) {
