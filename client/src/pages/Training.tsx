@@ -180,9 +180,7 @@ export default function Training() {
   })
 
   const playerListSWRKey =
-    session?.access_token && player && mode === 'player'
-      ? ([`training-opponents`, session.user.id] as const)
-      : null
+    session?.access_token && player && mode === 'player' ? ([`training-opponents`, session.user.id] as const) : null
   const {
     data: playerList,
     error: playerListError,
@@ -475,7 +473,8 @@ export default function Training() {
                 </ToggleButtonGroup>
 
                 {(() => {
-                  const displayEnemy = selectedEnemy ?? (selectedOpponent ? playerSummaryToDisplayEnemy(selectedOpponent) : null)
+                  const displayEnemy =
+                    selectedEnemy ?? (selectedOpponent ? playerSummaryToDisplayEnemy(selectedOpponent) : null)
                   const isOpponentMode = mode === 'player' && selectedOpponent !== null
                   return (
                     <>
@@ -567,7 +566,9 @@ export default function Training() {
                   <Alert severity="warning">{playerListError.message}</Alert>
                 ) : (
                   <TrainingOpponentSelect
-                    opponents={(playerList ?? []).filter((p) => p.userId !== session?.user.id).sort((a, b) => a.level - b.level)}
+                    opponents={(playerList ?? [])
+                      .filter((p) => p.userId !== session?.user.id)
+                      .sort((a, b) => a.level - b.level)}
                     isActionDisabled={isTrainingActionDisabled}
                     lockRemainingSeconds={trainingLockRemainingSeconds}
                     onFight={handleSelectOpponent}
