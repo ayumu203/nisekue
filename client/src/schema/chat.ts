@@ -3,6 +3,7 @@ import { playerIdSchema } from '@/schema/player'
 
 export const chatMessageSchema = z.object({
   chatId: z.number().int().min(1, 'chatIdは1以上である必要があります'),
+  senderType: z.enum(['Player', 'System']).default('Player'),
   senderId: playerIdSchema.nullable(),
   senderName: z.string().trim().min(1, '投稿者名が不正です'),
   imagePath: z.string().min(1).nullable().optional(),

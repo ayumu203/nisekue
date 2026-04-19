@@ -128,7 +128,7 @@ export default function Quest() {
   const [selectedTargetColumn, setSelectedTargetColumn] = useState<BattleColumn | ''>('')
   const [isCommandSubmitting, setIsCommandSubmitting] = useState(false)
   const [positionDrafts, setPositionDrafts] = useState<Record<string, { row: BattleRow; column: BattleColumn }>>({})
-  const [isUpdatingParticipantId, setIsUpdatingParticipantId] = useState<string | null>(null)
+  const [isSavingFormation, setIsSavingFormation] = useState(false)
   const [isJoiningRoomId, setIsJoiningRoomId] = useState<string | null>(null)
   const [chatMessage, setChatMessage] = useState('')
   const [isChatSubmitting, setIsChatSubmitting] = useState(false)
@@ -560,6 +560,7 @@ export default function Quest() {
           moveId: slot.moveId,
           moveName: slot.moveName!,
           targetType: slot.targetType,
+          targetLifeState: slot.targetLifeState,
           attackRange: slot.attackRange,
         })),
     [player],
@@ -812,36 +813,57 @@ export default function Quest() {
     )
   }, [currentRoom])
 
-  async function handleUpdateParticipantPosition(participantId: string): Promise<void> {
+  async function handleSaveFormation(): Promise<void> {
     if (!session?.access_token || !currentRoom) {
       setSubmitError(locale.sessionInfoMissing)
       return
     }
 
-    const draft = positionDrafts[participantId]
-    if (!draft) {
+    const participantsToUpdate = currentRoom.participants.filter((participant) => {
+      const draft = positionDrafts[participant.participantId]
+      return draft != null && (draft.row !== participant.position.row || draft.column !== participant.position.column)
+    })
+    if (participantsToUpdate.length === 0) {
       return
     }
 
-    setIsUpdatingParticipantId(participantId)
+    setIsSavingFormation(true)
     setSubmitError(null)
+    let successfulUpdates = 0
 
     try {
-      const room = await updateQuestRoomPosition(
-        currentRoom.roomId,
-        {
-          participantId,
-          row: draft.row,
-          column: draft.column,
-        },
-        session.access_token,
-      )
-      setCreatedRoom(room)
-      await mutateRoom(room, { revalidate: false })
+      let latestRoom = currentRoom
+      for (const participant of participantsToUpdate) {
+        const draft = positionDrafts[participant.participantId]
+        if (!draft) {
+          continue
+        }
+
+        latestRoom = await updateQuestRoomPosition(
+          latestRoom.roomId,
+          {
+            participantId: participant.participantId,
+            row: draft.row,
+            column: draft.column,
+          },
+          session.access_token,
+        )
+        successfulUpdates += 1
+      }
+      if (successfulUpdates > 0) {
+        setCreatedRoom(latestRoom)
+        await mutateRoom(latestRoom, { revalidate: false })
+      }
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.updatePositionFailed)
+      const baseMessage = error instanceof Error ? error.message : locale.updatePositionFailed
+      if (successfulUpdates > 0) {
+        await mutateRoom()
+        setSubmitError(`${baseMessage} ${locale.updatePositionPartiallyFailedSuffix}`)
+      } else {
+        setSubmitError(baseMessage)
+      }
     } finally {
-      setIsUpdatingParticipantId(null)
+      setIsSavingFormation(false)
     }
   }
 
@@ -1173,7 +1195,7 @@ export default function Quest() {
                       isUpdatingRestrictions={isUpdatingRestrictions}
                       isPlayerCandidatesLoading={isPlayerCandidatesLoading}
                       playerCandidatesError={playerCandidatesError}
-                      isUpdatingParticipantId={isUpdatingParticipantId}
+                      isSavingFormation={isSavingFormation}
                       onRestrictionsChange={handleRestrictionsChange}
                       onUpdateRestrictions={handleUpdateRoomRestrictions}
                       onPositionDraftChange={(participantId, nextPosition) => {
@@ -1182,7 +1204,7 @@ export default function Quest() {
                           [participantId]: nextPosition,
                         }))
                       }}
-                      onUpdateParticipantPosition={handleUpdateParticipantPosition}
+                      onSaveFormation={handleSaveFormation}
                       onStartQuest={handleStartQuest}
                       onCancelRoom={handleCancelRoom}
                     />

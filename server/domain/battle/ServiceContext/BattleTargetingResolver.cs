@@ -18,7 +18,7 @@ public class BattleTargetingResolver
         var stateMap = states?.ToDictionary(x => x.Id) ?? throw new ArgumentNullException(nameof(states));
 
         var candidates = snapshotMap.Values
-            .Where(x => IsTargetTypeMatch(selector.TargetType, actorSnapshot, x))
+            .Where(x => IsTargetTypeMatch(selector, actorSnapshot, x))
             .Where(x => stateMap.TryGetValue(x.Id, out var state) && IsLifeStateMatch(selector.TargetLifeState, state))
             .ToArray();
 
@@ -31,6 +31,7 @@ public class BattleTargetingResolver
         }
 
         candidates = ReorderCandidatesBySelectedPosition(selector, candidates, fieldContext).ToArray();
+        candidates = ReorderAllyCandidatesForSelfTargeting(selector, actorSnapshot, candidates, fieldContext).ToArray();
 
         if (ShouldApplyFormationRangeControl(selector, fieldContext))
         {
@@ -40,9 +41,7 @@ public class BattleTargetingResolver
 
         return ApplyDefaultAttackRange(
             selector.AttackRange,
-            selector.SelectedPosition is null || fieldContext is null || fieldContext.Positions.Count == 0
-                ? candidates.OrderBy(x => x.Id.Value).Select(x => x.Id).ToArray()
-                : candidates.Select(x => x.Id).ToArray());
+            ResolveDefaultOrderedCandidates(selector, actorSnapshot, candidates, fieldContext));
     }
 
     public BattleActorId ResolveDamageReceiver(
@@ -227,6 +226,37 @@ public class BattleTargetingResolver
         return [anchor, .. candidates.Where(x => x.Id != anchor.Id)];
     }
 
+    private static IReadOnlyList<BattleActorSnapshot> ReorderAllyCandidatesForSelfTargeting(
+        BattleTargetSelector selector,
+        BattleActorSnapshot actorSnapshot,
+        IReadOnlyList<BattleActorSnapshot> candidates,
+        BattleFieldContext? fieldContext)
+    {
+        if (selector.TargetType != TargetType.Ally || selector.TargetLifeState != TargetLifeState.Alive)
+        {
+            return candidates;
+        }
+
+        if (!candidates.Any(x => x.Id == actorSnapshot.Id))
+        {
+            return candidates;
+        }
+
+        if (selector.TargetActorIds.Contains(actorSnapshot.Id))
+        {
+            return candidates;
+        }
+
+        if (selector.SelectedPosition is not null &&
+            fieldContext is not null &&
+            fieldContext.Positions.Any(x => x.ActorId == actorSnapshot.Id && x.Position == selector.SelectedPosition.Value))
+        {
+            return candidates;
+        }
+
+        return [.. candidates.Where(x => x.Id != actorSnapshot.Id), actorSnapshot];
+    }
+
     private static BattlePosition ResolveAnchorPosition(
         BattleTargetSelector selector,
         IReadOnlyList<BattleActorSnapshot> orderedCandidates,
@@ -259,14 +289,38 @@ public class BattleTargetingResolver
         };
     }
 
-    private static bool IsTargetTypeMatch(TargetType targetType, BattleActorSnapshot actorSnapshot, BattleActorSnapshot targetSnapshot)
+    private static IReadOnlyList<BattleActorId> ResolveDefaultOrderedCandidates(
+        BattleTargetSelector selector,
+        BattleActorSnapshot actorSnapshot,
+        IReadOnlyList<BattleActorSnapshot> candidates,
+        BattleFieldContext? fieldContext)
     {
-        return targetType switch
+        if (selector.SelectedPosition is not null && fieldContext is not null && fieldContext.Positions.Count > 0)
+        {
+            return candidates.Select(x => x.Id).ToArray();
+        }
+
+        if (selector.TargetType == TargetType.Ally && selector.TargetLifeState == TargetLifeState.Alive)
+        {
+            var self = candidates.FirstOrDefault(x => x.Id == actorSnapshot.Id);
+            var others = candidates.Where(x => x.Id != actorSnapshot.Id).OrderBy(x => x.Id.Value);
+            return self is not null
+                ? [.. others.Select(x => x.Id), self.Id]
+                : candidates.OrderBy(x => x.Id.Value).Select(x => x.Id).ToArray();
+        }
+
+        return candidates.OrderBy(x => x.Id.Value).Select(x => x.Id).ToArray();
+    }
+
+    private static bool IsTargetTypeMatch(BattleTargetSelector selector, BattleActorSnapshot actorSnapshot, BattleActorSnapshot targetSnapshot)
+    {
+        return selector.TargetType switch
         {
             TargetType.Enemy => actorSnapshot.Side != targetSnapshot.Side,
-            TargetType.Ally => actorSnapshot.Side == targetSnapshot.Side && actorSnapshot.Id != targetSnapshot.Id,
+            TargetType.Ally => actorSnapshot.Side == targetSnapshot.Side &&
+                               (actorSnapshot.Id != targetSnapshot.Id || selector.TargetLifeState == TargetLifeState.Alive),
             TargetType.Self => actorSnapshot.Id == targetSnapshot.Id,
-            _ => throw new ArgumentOutOfRangeException(nameof(targetType), $"未対応の TargetType: {targetType}")
+            _ => throw new ArgumentOutOfRangeException(nameof(selector.TargetType), $"未対応の TargetType: {selector.TargetType}")
         };
     }
 
