@@ -402,6 +402,31 @@ public class BattleTargetingResolverTests
         receiverId.Should().Be(frontTaunter.Id);
     }
 
+    [Fact]
+    public void ResolveTargets_WhenAllyAliveTargeting_ReturnsSelfLastAndOthersInIdOrder()
+    {
+        var resolver = new BattleTargetingResolver();
+        var actor = CreateSnapshot(3, BattleSide.Ally);
+        var ally1 = CreateSnapshot(1, BattleSide.Ally);
+        var ally2 = CreateSnapshot(2, BattleSide.Ally);
+
+        // snapshots の挿入順を逆にしても結果が安定していることを確認
+        var resultForwardOrder = resolver.ResolveTargets(
+            new BattleTargetSelector(TargetType.Ally, AttackRange.All, targetLifeState: TargetLifeState.Alive),
+            actor,
+            [ally1, ally2, actor],
+            CreateStates(ally1, ally2, actor));
+
+        var resultReverseOrder = resolver.ResolveTargets(
+            new BattleTargetSelector(TargetType.Ally, AttackRange.All, targetLifeState: TargetLifeState.Alive),
+            actor,
+            [actor, ally2, ally1],
+            CreateStates(actor, ally2, ally1));
+
+        resultForwardOrder.Should().Equal(ally1.Id, ally2.Id, actor.Id);
+        resultReverseOrder.Should().Equal(ally1.Id, ally2.Id, actor.Id);
+    }
+
     private static BattleActorSnapshot CreateSnapshot(int seed, BattleSide side)
     {
         return new BattleActorSnapshot(

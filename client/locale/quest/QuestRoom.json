@@ -24,6 +24,7 @@
   "updateRestrictionsFailed": "参加制限の更新に失敗しました",
   "roomCancelled": "募集をキャンセルしました",
   "updatePositionFailed": "配置更新に失敗しました",
+  "updatePositionPartiallyFailedSuffix": "一部の配置変更が保存されている可能性があるため、最新状態を再取得しました。",
   "escapeRun": "この冒険から撤退",
   "escapingRun": "撤退中...",
   "escapeRunFailed": "撤退に失敗しました",

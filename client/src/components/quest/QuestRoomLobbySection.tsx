@@ -538,7 +538,12 @@ export default function QuestRoomLobbySection({
                 <Button
                   variant="contained"
                   onClick={() => void onSaveFormation()}
-                  disabled={isSavingFormation || currentRoom.status !== 'Recruiting'}
+                  disabled={
+                    isSavingFormation ||
+                    isStarting ||
+                    isCancellingRoom ||
+                    currentRoom.status !== 'Recruiting'
+                  }
                   sx={{
                     ...menuButtonSx,
                     ...softGreenButtonSx,

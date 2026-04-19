@@ -829,6 +829,7 @@ export default function Quest() {
 
     setIsSavingFormation(true)
     setSubmitError(null)
+    let successfulUpdates = 0
 
     try {
       let latestRoom = currentRoom
@@ -847,11 +848,20 @@ export default function Quest() {
           },
           session.access_token,
         )
+        successfulUpdates += 1
+      }
+      if (successfulUpdates > 0) {
         setCreatedRoom(latestRoom)
         await mutateRoom(latestRoom, { revalidate: false })
       }
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.updatePositionFailed)
+      const baseMessage = error instanceof Error ? error.message : locale.updatePositionFailed
+      if (successfulUpdates > 0) {
+        await mutateRoom()
+        setSubmitError(`${baseMessage} ${locale.updatePositionPartiallyFailedSuffix}`)
+      } else {
+        setSubmitError(baseMessage)
+      }
     } finally {
       setIsSavingFormation(false)
     }
