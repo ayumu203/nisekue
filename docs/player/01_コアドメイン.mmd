@@ -299,6 +299,7 @@ classDiagram
 
         class IPlayerRepository {
             +Task~Player?~ GetPlayerAsync(id: PlayerId)
+            +Task~IReadOnlyList~Player~~ GetPlayersAsync(ids: IEnumerable~PlayerId~)
             +Task~IReadOnlyList~Player~~ GetAllAsync()
             +Task~bool~ UpdateNameAsync(id: PlayerId, name: string)
             +Task~DateTimeOffset?~ TryStartTrainingCooldownAsync(id: PlayerId, nowUtc: DateTimeOffset, cooldown: TimeSpan)

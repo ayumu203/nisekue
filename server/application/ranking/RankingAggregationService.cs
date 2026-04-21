@@ -22,21 +22,19 @@ public sealed class RankingAggregationService(
 
         var keepSnapshotIds = await dbContext.RankingSnapshots
             .OrderByDescending(x => x.SnapshotAt)
+            .ThenByDescending(x => x.Id)
             .Take(10)
             .Select(x => x.Id)
             .ToListAsync();
 
         if (keepSnapshotIds.Count > 0)
         {
-            var staleEntries = await dbContext.RankingEntries
+            await dbContext.RankingEntries
                 .Where(x => !keepSnapshotIds.Contains(x.SnapshotId))
-                .ToListAsync();
-            dbContext.RankingEntries.RemoveRange(staleEntries);
-
-            var staleSnapshots = await dbContext.RankingSnapshots
+                .ExecuteDeleteAsync();
+            await dbContext.RankingSnapshots
                 .Where(x => !keepSnapshotIds.Contains(x.Id))
-                .ToListAsync();
-            dbContext.RankingSnapshots.RemoveRange(staleSnapshots);
+                .ExecuteDeleteAsync();
         }
 
         var players = await dbContext.Players
