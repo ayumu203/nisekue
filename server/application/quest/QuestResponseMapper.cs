@@ -71,9 +71,8 @@ public class QuestResponseMapper(
             .Distinct()
             .ToArray();
 
-        var players = (await Task.WhenAll(playerIds.Select(playerRepository.GetPlayerAsync)))
-            .Where(x => x is not null)
-            .ToDictionary(x => x!.Id, x => x!);
+        var players = (await playerRepository.GetPlayersAsync(playerIds))
+            .ToDictionary(x => x.Id, x => x);
 
         return new
         {

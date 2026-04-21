@@ -32,6 +32,25 @@ namespace server.infrastructure.player
             return MapToDomain(entity, moveEntity, masteredJobEntities);
         }
 
+        public async Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
+        {
+            var idValues = ids.Select(x => x.Value).ToList();
+            if (idValues.Count == 0)
+            {
+                return [];
+            }
+
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var playerEntities = await dbContext.Players
+                .AsNoTracking()
+                .Where(x => idValues.Contains(x.Id))
+                .ToListAsync();
+
+            return playerEntities
+                .Select(entity => MapToDomain(entity, moveEntity: null))
+                .ToArray();
+        }
+
         public async Task<IReadOnlyList<Player>> GetAllAsync()
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();

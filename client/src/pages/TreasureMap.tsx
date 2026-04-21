@@ -250,7 +250,7 @@ export default function TreasureMap() {
       return getCurrentTreasureMapExpedition(session.access_token)
     },
     {
-      refreshInterval: 5000,
+      refreshInterval: (data) => (data?.status === 'InProgress' ? 5000 : 0),
     },
   )
 
