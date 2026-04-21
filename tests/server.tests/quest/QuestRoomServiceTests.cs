@@ -557,6 +557,12 @@ public class QuestRoomServiceTests
         public Task<IReadOnlyList<Player>> GetAllAsync()
             => Task.FromResult<IReadOnlyList<Player>>(players.Values.ToArray());
 
+        public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
+        {
+            var idSet = ids.ToHashSet();
+            return Task.FromResult<IReadOnlyList<Player>>(players.Values.Where(p => idSet.Contains(p.Id)).ToArray());
+        }
+
         public Task<bool> UpdateNameAsync(PlayerId id, string name)
             => Task.FromResult(false);
 

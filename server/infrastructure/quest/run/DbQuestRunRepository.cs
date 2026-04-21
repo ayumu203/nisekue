@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using System.Text.Json;
 using server.domain.battle;
 using server.domain.battle.enums;
@@ -117,13 +118,12 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         await dbContext.SaveChangesAsync();
     }
 
-    private async Task<QuestRun?> LoadAsync(Func<QuestRunEntity, bool> predicate)
+    private async Task<QuestRun?> LoadAsync(Expression<Func<QuestRunEntity, bool>> predicate)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var runEntity = dbContext.QuestRuns
+        var runEntity = await dbContext.QuestRuns
             .AsNoTracking()
-            .AsEnumerable()
-            .SingleOrDefault(predicate);
+            .SingleOrDefaultAsync(predicate);
         if (runEntity is null)
         {
             return null;
