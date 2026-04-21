@@ -34,7 +34,7 @@ namespace server.infrastructure.player
 
         public async Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
         {
-            var idValues = ids.Select(x => x.Value).ToList();
+            var idValues = ids.Select(x => x.Value).Distinct().ToList();
             if (idValues.Count == 0)
             {
                 return [];
