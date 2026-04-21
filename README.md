@@ -6,8 +6,9 @@
 
 ## 公開先
 
+- 2026年5月3日までデータベースの利用上限のため動作しない可能性が高いです.
 - [本番用](https://game.arm203.org/)
-- [開発用](https://ayumu203.github.io/nisekue/)
+- [開発用(開発者が確認する用です)](https://ayumu203.github.io/nisekue/)
 
 ## 作るもの
 

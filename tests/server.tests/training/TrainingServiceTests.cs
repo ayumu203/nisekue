@@ -866,6 +866,13 @@ public class TrainingServiceTests
             return Task.FromResult(players);
         }
 
+        public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
+        {
+            var idSet = ids.ToHashSet();
+            IReadOnlyList<Player> result = idSet.Contains(playerState.Id) ? [playerState] : [];
+            return Task.FromResult(result);
+        }
+
         public Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown)
         {
             return Task.FromResult<DateTimeOffset?>(null);
