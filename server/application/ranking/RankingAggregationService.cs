@@ -20,6 +20,23 @@ public sealed class RankingAggregationService(
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         await using var tx = await dbContext.Database.BeginTransactionAsync();
 
+        var keepSnapshotIds = await dbContext.RankingSnapshots
+            .OrderByDescending(x => x.SnapshotAt)
+            .ThenByDescending(x => x.Id)
+            .Take(10)
+            .Select(x => x.Id)
+            .ToListAsync();
+
+        if (keepSnapshotIds.Count > 0)
+        {
+            await dbContext.RankingEntries
+                .Where(x => !keepSnapshotIds.Contains(x.SnapshotId))
+                .ExecuteDeleteAsync();
+            await dbContext.RankingSnapshots
+                .Where(x => !keepSnapshotIds.Contains(x.Id))
+                .ExecuteDeleteAsync();
+        }
+
         var players = await dbContext.Players
             .AsNoTracking()
             .Select(x => new

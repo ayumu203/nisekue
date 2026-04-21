@@ -49,6 +49,7 @@ public class ChatServiceTests
     {
         public Task<Player?> GetPlayerAsync(PlayerId id) => Task.FromResult<Player?>(null);
         public Task<IReadOnlyList<Player>> GetAllAsync() => Task.FromResult<IReadOnlyList<Player>>([]);
+        public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids) => Task.FromResult<IReadOnlyList<Player>>([]);
         public Task<bool> UpdateNameAsync(PlayerId id, string name) => Task.FromResult(false);
         public Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown) => Task.FromResult<DateTimeOffset?>(null);
         public Task SaveAsync(Player player) => Task.CompletedTask;

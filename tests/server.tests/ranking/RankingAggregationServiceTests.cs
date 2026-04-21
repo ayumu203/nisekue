@@ -1,10 +1,12 @@
 using FluentAssertions;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using server.application.ranking;
 using server.domain.player;
 using server.infrastructure;
 using server.infrastructure.player;
+using server.infrastructure.ranking;
 using Xunit;
 
 namespace server.tests.ranking;
@@ -45,6 +47,75 @@ public class RankingAggregationServiceTests
         trainingAllRankRows.Select(x => x.PeriodKind).Distinct().Should().BeEquivalentTo(["Total", "Weekly", "Daily"]);
         trainingAllRankRows.Should().OnlyContain(x => x.CombatIndexRank == null);
         trainingAllRankRows.Where(x => x.PeriodKind == "Total").Select(x => x.RankPosition).Should().Equal(1, 2);
+    }
+
+    [Fact]
+    public async Task RebuildAsync_WhenMoreThan10SnapshotsExist_PrunesOldestAndKeepsLatest10PlusNewSnapshot()
+    {
+        var baseTime = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+
+        Guid oldestSnapshotId;
+        await using (var seedContext = CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+            var player = CreatePlayer("Alice", maxHp: 80, maxMp: 20, strength: 30, defense: 20, intelligence: 10, luck: 10, speed: 20, trainingBattleCount: 5);
+            seedContext.Players.Add(player);
+
+            oldestSnapshotId = Guid.NewGuid();
+            seedContext.RankingSnapshots.Add(new RankingSnapshotEntity
+            {
+                Id = oldestSnapshotId,
+                SnapshotAt = baseTime,
+                IntervalHours = 6,
+                CreatedAt = baseTime
+            });
+            seedContext.RankingEntries.Add(new RankingEntryEntity
+            {
+                Id = Guid.NewGuid(),
+                SnapshotId = oldestSnapshotId,
+                RankingType = "test",
+                PeriodKind = "Total",
+                PlayerId = player.Id,
+                RankPosition = 1,
+                Score = 100,
+                CreatedAt = baseTime
+            });
+
+            for (var i = 1; i <= 10; i++)
+            {
+                var snapshotAt = baseTime.AddHours(i * 6);
+                seedContext.RankingSnapshots.Add(new RankingSnapshotEntity
+                {
+                    Id = Guid.NewGuid(),
+                    SnapshotAt = snapshotAt,
+                    IntervalHours = 6,
+                    CreatedAt = snapshotAt
+                });
+            }
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        var now = baseTime.AddHours(72);
+        var service = new RankingAggregationService(
+            new SqliteDbContextFactory(connection),
+            new CombatIndexCalculator(new StaticCombatIndexWeightRepository()),
+            new CombatIndexRankEvaluator(new StaticCombatIndexRankThresholdRepository()));
+
+        await service.RebuildAsync(now);
+
+        await using var verifyContext = CreateSqliteDbContext(connection);
+        var snapshots = await verifyContext.RankingSnapshots.AsNoTracking().ToListAsync();
+        var orphanedEntries = await verifyContext.RankingEntries.AsNoTracking()
+            .Where(x => x.SnapshotId == oldestSnapshotId)
+            .ToListAsync();
+
+        snapshots.Should().HaveCount(11);
+        snapshots.Should().NotContain(x => x.Id == oldestSnapshotId);
+        orphanedEntries.Should().BeEmpty();
     }
 
     private static PlayerEntity CreatePlayer(
@@ -89,12 +160,39 @@ public class RankingAggregationServiceTests
         return new AppDbContext(options);
     }
 
+    private static AppDbContext CreateSqliteDbContext(SqliteConnection connection)
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(connection)
+            .Options;
+        return new SqliteTestAppDbContext(options);
+    }
+
+    // DateTimeOffset は SQLite が ORDER BY 不可のため long (Ticks) に変換するサブクラス。
+    private sealed class SqliteTestAppDbContext(DbContextOptions<AppDbContext> options) : AppDbContext(options)
+    {
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            base.ConfigureConventions(configurationBuilder);
+            configurationBuilder.Properties<DateTimeOffset>().HaveConversion<long>();
+            configurationBuilder.Properties<DateTimeOffset?>().HaveConversion<long?>();
+        }
+    }
+
     private sealed class TestDbContextFactory(string databaseName) : IDbContextFactory<AppDbContext>
     {
         public AppDbContext CreateDbContext() => RankingAggregationServiceTests.CreateDbContext(databaseName);
 
         public Task<AppDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(RankingAggregationServiceTests.CreateDbContext(databaseName));
+    }
+
+    private sealed class SqliteDbContextFactory(SqliteConnection connection) : IDbContextFactory<AppDbContext>
+    {
+        public AppDbContext CreateDbContext() => RankingAggregationServiceTests.CreateSqliteDbContext(connection);
+
+        public Task<AppDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(RankingAggregationServiceTests.CreateSqliteDbContext(connection));
     }
 
     private sealed class StaticCombatIndexWeightRepository : ICombatIndexWeightRepository

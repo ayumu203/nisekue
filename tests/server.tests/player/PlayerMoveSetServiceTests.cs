@@ -80,6 +80,13 @@ public class PlayerMoveSetServiceTests
             return Task.FromResult<IReadOnlyList<Player>>([player]);
         }
 
+        public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
+        {
+            var idSet = ids.ToHashSet();
+            IReadOnlyList<Player> result = idSet.Contains(player.Id) ? [player] : [];
+            return Task.FromResult(result);
+        }
+
         public Task<bool> UpdateNameAsync(PlayerId id, string name)
         {
             throw new NotSupportedException();
