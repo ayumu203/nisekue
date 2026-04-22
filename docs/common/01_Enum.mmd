@@ -28,6 +28,14 @@ classDiagram
             Shogun
             Archmage
             GreatThief
+            Fighter
+            Enchanter
+            Alchemist
+            Berserker
+            Breaker
+            Shaman
+            Commander
+            Seer
         }
 
         class StatusRank {
@@ -238,6 +246,7 @@ classDiagram
             Wait
             LeaveQuest
             Escape
+            UseItem
         }
 
         class NpcRole {
@@ -251,5 +260,45 @@ classDiagram
             <<Enum>>
             Normal
             Boss
+        }
+    }
+
+    namespace RoguelikeDomain {
+        class RoguelikeRunStatus {
+            <<Enum>>
+            InProgress
+            Cleared
+            GameOver
+            Aborted
+        }
+
+        class RoguelikeNodeEventType {
+            <<Enum>>
+            Battle
+            Oracle
+            Encounter
+            Inn
+            Shop
+        }
+
+        class RoguelikePartyMemberSource {
+            <<Enum>>
+            Player
+            Npc
+        }
+
+        class RoguelikeItemCategory {
+            <<Enum>>
+            Consumable
+            Equipment
+            JobToken
+            Buff
+        }
+
+        class RoguelikeEquipmentType {
+            <<Enum>>
+            None
+            Weapon
+            Armor
         }
     }

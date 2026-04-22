@@ -1,0 +1,29 @@
+stateDiagram-v2
+    [*] --> InProgress : POST /roguelike/runs
+
+    state InProgress {
+        [*] --> NodeSelectable
+        NodeSelectable --> EventResolving : ノード選択
+        EventResolving --> NodeSelectable : ノードクリア && reachableNodeIds >= 1
+        EventResolving --> GameOver : reachableNodeIds = 0
+
+        state BattleFlow {
+            [*] --> Commanding
+            Commanding --> Resolving : battle/resolve
+            Resolving --> Commanding : IsBattleFinished = false
+            Resolving --> [*] : IsBattleFinished = true
+        }
+
+        EventResolving --> BattleFlow : eventType = Battle
+        BattleFlow --> GameOver : 主プレイヤーHP = 0
+        BattleFlow --> NodeSelectable : 勝利
+    }
+
+    InProgress --> Cleared : 5F最終ボス撃破
+    InProgress --> Aborted : POST /abort
+    InProgress --> Aborted : 30分無活動
+    InProgress --> Aborted : BattleStateLost(409)
+
+    Cleared --> [*]
+    GameOver --> [*]
+    Aborted --> [*]

@@ -1,0 +1,286 @@
+classDiagram
+    %% Enum 定義は docs/common/01_Enum.mmd を参照
+    %% 本図は docs/roguelike/02_ローグライク詳細仕様書.md のクラススケルトン要約
+
+    namespace DomainContext {
+        class RoguelikeRunId {
+            <<Value Object>>
+            +Guid Value
+            +New() RoguelikeRunId
+        }
+
+        class RoguelikeNodeId {
+            <<Value Object>>
+            +Guid Value
+            +New() RoguelikeNodeId
+        }
+
+        class RoguelikeItemId {
+            <<Value Object>>
+            +int Value
+        }
+
+        class RoguelikeRun {
+            <<Aggregate Root>>
+            +RoguelikeRunId Id
+            +PlayerId PlayerId
+            +long Seed
+            +RoguelikeRunStatus Status
+            +int CurrentFloorNo
+            +RoguelikeNodeId? CurrentNodeId
+            +int Gold
+            +RoguelikeMap Map
+            +RoguelikeParty Party
+            +RoguelikeInventory Inventory
+            +DateTimeOffset StartedAt
+            +DateTimeOffset? EndedAt
+            +DateTimeOffset LastActivityAt
+            +SelectNode(nodeId: RoguelikeNodeId, now: DateTimeOffset) void
+            +MarkCurrentNodeCleared(now: DateTimeOffset) void
+            +AdvanceToNextFloor(now: DateTimeOffset) void
+            +MarkCleared(now: DateTimeOffset) void
+            +MarkGameOver(now: DateTimeOffset) void
+            +Abort(reason: string, now: DateTimeOffset) void
+            +GainGold(gold: int) void
+            +SpendGold(gold: int) void
+            +TryAddItem(stack: RoguelikeItemStack) bool
+            +DiscardItem(slotNo: int) void
+            +CanMoveTo(nodeId: RoguelikeNodeId) bool
+        }
+
+        class RoguelikeMap {
+            <<Value Object>>
+            +IReadOnlyList~RoguelikeNode~ Nodes
+            +IReadOnlyList~RoguelikeNodeEdge~ Edges
+            +GetNode(id: RoguelikeNodeId) RoguelikeNode
+            +GetStartingNodes() IReadOnlyList~RoguelikeNode~
+            +GetReachable(fromNodeId: RoguelikeNodeId) IReadOnlyList~RoguelikeNode~
+            +GetBossNode(floorNo: int) RoguelikeNode
+        }
+
+        class RoguelikeNode {
+            <<Entity>>
+            +RoguelikeNodeId Id
+            +int FloorNo
+            +int ColumnNo
+            +int RowNo
+            +RoguelikeNodeEventType EventType
+            +bool IsBossNode
+            +string ParametersJson
+            +bool IsCleared
+            +MarkCleared() void
+        }
+
+        class RoguelikeNodeEdge {
+            <<Entity>>
+            +RoguelikeNodeId FromNodeId
+            +RoguelikeNodeId ToNodeId
+        }
+
+        class RoguelikeParty {
+            <<Value Object>>
+            +IReadOnlyList~RoguelikePartyMember~ Members
+            +GetPlayerMember() RoguelikePartyMember
+            +GetBySlot(slotNo: int) RoguelikePartyMember
+            +SumLevel() int
+            +AverageLevel() double
+            +IsFull() bool
+            +FindEmptySlot() int
+            +AddMember(member: RoguelikePartyMember, slotNo: int) void
+            +RemoveMember(slotNo: int) void
+            +DistributeExp(totalExp: int) void
+            +IsPlayerDead() bool
+            +AreAllDead() bool
+        }
+
+        class RoguelikePartyMember {
+            <<Entity>>
+            +int SlotNo
+            +RoguelikePartyMemberSource Source
+            +int? SourceNpcTemplateId
+            +string DisplayName
+            +Job Job
+            +int Level
+            +int Exp
+            +int JobLevel
+            +int JobExp
+            +Status BaseStatus
+            +int CurrentHp
+            +int CurrentMp
+            +BattleRow PreferredRow
+            +NpcRole Role
+            +MoveSet MoveSet
+            +RoguelikeItemId? EquippedWeaponId
+            +RoguelikeItemId? EquippedArmorId
+            +IReadOnlySet~Job~ MasteredJobs
+            +ApplyDamage(damage: int) void
+            +Heal(hpAmount: int, mpAmount: int) void
+            +FullRestore() void
+            +ClearAilments() void
+            +GainExp(exp: int) void
+            +LevelUp(profile: JobProfile, rule: JobMoveLearningRule) LevelUpResult
+            +ChangeJob(nextJob: Job, profile: JobProfile, rule: JobMoveLearningRule) IReadOnlyList~MoveId~
+            +EquipWeapon(newWeapon: RoguelikeItemId?) void
+            +EquipArmor(newArmor: RoguelikeItemId?) void
+            +UpdateStatus(newStatus: Status) void
+        }
+
+        class RoguelikeInventory {
+            <<Value Object>>
+            +MaxSize = 20
+            +IReadOnlyList~RoguelikeItemStack~ Stacks
+            +IsFull() bool
+            +FindEmptySlot() int
+            +TryAdd(stack: RoguelikeItemStack) bool
+            +Discard(slotNo: int) void
+            +GetBySlot(slotNo: int) RoguelikeItemStack?
+            +ReplaceSlot(slotNo: int, stack: RoguelikeItemStack?) void
+        }
+
+        class RoguelikeItemStack {
+            <<Entity>>
+            +int SlotNo
+            +RoguelikeItemId ItemId
+            +int RemainingCount
+            +Consume() void
+        }
+
+        class RoguelikeItemDefinition {
+            <<Aggregate Root>>
+            +RoguelikeItemId Id
+            +string Name
+            +string FlavorText
+            +RoguelikeItemCategory Category
+            +int FloorAvailabilityMin
+            +int FloorAvailabilityMax
+            +MoveId? GrantMoveId
+            +RoguelikeEquipmentType EquipmentType
+            +int BasePrice
+        }
+
+        class IRoguelikeRunRepository {
+            <<Repository>>
+            +GetActiveAsync(playerId: PlayerId, ct: CancellationToken) Task~RoguelikeRun?~
+            +GetByIdAsync(id: RoguelikeRunId, ct: CancellationToken) Task~RoguelikeRun?~
+            +AddAsync(run: RoguelikeRun, ct: CancellationToken) Task
+            +UpdateAsync(run: RoguelikeRun, ct: CancellationToken) Task
+            +ListTimedOutAsync(cutoff: DateTimeOffset, ct: CancellationToken) Task~IReadOnlyList~RoguelikeRun~~
+        }
+
+        class IRoguelikeMasterRepository {
+            <<Repository>>
+            +GetFloorConfigs() IReadOnlyList~RoguelikeFloorConfig~
+            +GetEventWeights(floorNo: int) IReadOnlyList~RoguelikeEventWeight~
+            +GetEnemySpawns(floorNo: int, isBoss: bool) IReadOnlyList~RoguelikeEnemySpawn~
+            +GetFloorNpcPool(floorNo: int) IReadOnlyList~RoguelikeFloorNpcEntry~
+            +GetShopOffers(floorNo: int) IReadOnlyList~RoguelikeShopOffer~
+            +GetJobCandidates(floorNo: int) IReadOnlyList~RoguelikeJobCandidate~
+        }
+
+        class IRoguelikeItemMasterRepository {
+            <<Repository>>
+            +GetById(id: RoguelikeItemId) RoguelikeItemDefinition
+            +ListByFloor(floorNo: int) IReadOnlyList~RoguelikeItemDefinition~
+            +ListByCategory(category: RoguelikeItemCategory) IReadOnlyList~RoguelikeItemDefinition~
+        }
+    }
+
+    namespace ApplicationContext {
+        class RoguelikeRunService {
+            <<Application Service>>
+            +StartRunAsync(playerId: PlayerId, ct: CancellationToken) Task~RoguelikeRun~
+            +GetActiveRunAsync(playerId: PlayerId, ct: CancellationToken) Task~RoguelikeRun?~
+            +GetRunAsync(id: RoguelikeRunId, playerId: PlayerId, ct: CancellationToken) Task~RoguelikeRun~
+            +SelectNodeAsync(id: RoguelikeRunId, playerId: PlayerId, nodeId: RoguelikeNodeId, ct: CancellationToken) Task~RoguelikeRun~
+            +AbortRunAsync(id: RoguelikeRunId, playerId: PlayerId, ct: CancellationToken) Task~RoguelikeRun~
+            +TouchActivityAsync(id: RoguelikeRunId, playerId: PlayerId, ct: CancellationToken) Task
+        }
+
+        class RoguelikeMapGenerator {
+            <<Domain Service>>
+            +Generate(seed: long) RoguelikeMap
+        }
+
+        class RoguelikeBattleAdapter {
+            <<Application Service>>
+            +StartBattle(run: RoguelikeRun, node: RoguelikeNode) void
+            +GetActiveBattle(runId: RoguelikeRunId) QuestRun
+            +SubmitCommand(runId: RoguelikeRunId, partySlotNo: int, command: QuestSubmittedCommand) void
+            +ResolveTurn(runId: RoguelikeRunId, now: DateTimeOffset) RoguelikeBattleResolution
+            +AbortBattle(runId: RoguelikeRunId, reason: string) void
+        }
+
+        class RoguelikeOracleService {
+            <<Application Service>>
+            +PickCandidates(floorNo: int, excludedJobs: IReadOnlySet~Job~, rng: Random) IReadOnlyList~Job~
+            +ApplyOracle(run: RoguelikeRun, selectedJob: Job?) void
+        }
+
+        class RoguelikeRecruitService {
+            <<Application Service>>
+            +PickCandidates(floorNo: int, rng: Random) IReadOnlyList~QuestNpcTemplate~
+            +Recruit(run: RoguelikeRun, selectedTemplateId: QuestNpcTemplateId?, kickSlotNo: int?) void
+        }
+
+        class RoguelikeInnService {
+            <<Application Service>>
+            +ComputeFullCost(run: RoguelikeRun) int
+            +UseInn(run: RoguelikeRun, confirm: bool) void
+        }
+
+        class RoguelikeShopService {
+            <<Application Service>>
+            +Purchase(run: RoguelikeRun, node: RoguelikeNode, offerIndex: int) void
+        }
+
+        class RoguelikeItemUseService {
+            <<Application Service>>
+            +UseOutOfBattle(run: RoguelikeRun, slotNo: int, targetSlotNo: int?) void
+            +UseInBattle(run: RoguelikeRun, slotNo: int, partySlotNo: int, targetSlotNo: int?) void
+            +Discard(run: RoguelikeRun, slotNo: int) void
+        }
+
+        class RoguelikeRewardApplier {
+            <<Application Helper>>
+            +Apply(run: RoguelikeRun, resolution: RoguelikeBattleResolution) void
+        }
+
+        class RoguelikeRunTimeoutService {
+            <<Hosted Service>>
+            +ExecuteAsync(stoppingToken: CancellationToken) Task
+        }
+    }
+
+    RoguelikeRun *-- RoguelikeRunId : has
+    RoguelikeRun *-- RoguelikeMap : has
+    RoguelikeRun *-- RoguelikeParty : has
+    RoguelikeRun *-- RoguelikeInventory : has
+    RoguelikeMap *-- RoguelikeNode : 1..*
+    RoguelikeMap *-- RoguelikeNodeEdge : 1..*
+    RoguelikeNode *-- RoguelikeNodeId : has
+    RoguelikeParty *-- RoguelikePartyMember : 1..5
+    RoguelikeInventory *-- RoguelikeItemStack : 0..20
+    RoguelikeItemStack *-- RoguelikeItemId : has
+    RoguelikeItemDefinition *-- RoguelikeItemId : has
+
+    RoguelikeRunService ..> IRoguelikeRunRepository : use
+    RoguelikeRunService ..> RoguelikeMapGenerator : use
+    RoguelikeRunService ..> RoguelikeBattleAdapter : use
+    RoguelikeRunService ..> RoguelikeOracleService : use
+    RoguelikeRunService ..> RoguelikeRecruitService : use
+    RoguelikeRunService ..> RoguelikeInnService : use
+    RoguelikeRunService ..> RoguelikeShopService : use
+    RoguelikeRunService ..> RoguelikeItemUseService : use
+    RoguelikeRunService ..> RoguelikeRewardApplier : use
+    RoguelikeMapGenerator ..> IRoguelikeMasterRepository : use
+    RoguelikeMapGenerator ..> IRoguelikeItemMasterRepository : use
+    RoguelikeBattleAdapter ..> BattleService : use
+    RoguelikeBattleAdapter ..> QuestRun : temporary_state
+    RoguelikeOracleService ..> IJobProfileRepository : use
+    RoguelikeOracleService ..> IJobMoveLearningRuleRepository : use
+    RoguelikeRecruitService ..> IQuestNpcTemplateRepository : use
+    RoguelikeItemUseService ..> IMoveRepository : use
+
+    note for RoguelikeNode "ParametersJson はノード生成時に確定し固定。\nOracle/Encounter/Shop の候補は再抽選しない。"
+    note for RoguelikeRun "ノード解決後の reachable が 0 件なら即 GameOver。\n主プレイヤー HP=0 でも即 GameOver。"
+    note for RoguelikeBattleAdapter "戦闘状態はプロセス内メモリ保持。\n消失時は BattleStateLost(409) を返し Aborted へ遷移。"

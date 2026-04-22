@@ -1,0 +1,69 @@
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant FE as RoguelikePage
+    participant API as RoguelikeEndpoints
+    participant RS as RoguelikeRunService
+    participant MG as RoguelikeMapGenerator
+    participant BA as RoguelikeBattleAdapter
+    participant DB as PostgreSQL
+
+    U->>FE: 冒険の塔を開始
+    FE->>API: POST /roguelike/runs
+    API->>RS: StartRunAsync(playerId)
+    RS->>MG: Generate(seed)
+    Note over MG: ノードと parameters_json を生成時に固定\n(Oracle/Encounter/Shop 候補を確定)
+    RS->>DB: runs / nodes / edges / members / items INSERT
+    API-->>FE: RoguelikeRunSnapshotDto
+
+    loop ノード進行
+        U->>FE: ノード選択
+        FE->>API: POST /runs/{id}/nodes/{nodeId}/select
+        API->>RS: SelectNodeAsync(...)
+        RS->>DB: current_node_id, last_activity_at UPDATE
+
+        alt eventType = Battle
+            RS->>BA: StartBattle(run, node)
+            loop 戦闘ターン
+                U->>FE: 行動入力
+                FE->>API: POST /runs/{id}/battle/commands
+                API->>BA: SubmitCommand(...)
+                API->>RS: TouchActivityAsync(...)
+                RS->>DB: last_activity_at UPDATE
+
+                FE->>API: POST /runs/{id}/battle/resolve
+                API->>BA: ResolveTurn(...)
+                alt バトル継続
+                    BA-->>API: RoguelikeBattleSnapshotDto
+                else バトル終了
+                    BA->>RS: RoguelikeBattleResolution
+                    RS->>DB: party/run/inventory/event_logs UPDATE
+                    API-->>FE: RoguelikeRunSnapshotDto
+                end
+            end
+            alt 主プレイヤーHP=0 or reachableNodeIds=0
+                RS->>DB: status=GameOver, ended_at UPDATE
+                API-->>FE: 結果ダイアログ表示
+            end
+            alt _activeBattles が消失
+                BA-->>API: 409 BattleStateLost
+                API->>RS: AbortRunAsync(...)
+                RS->>DB: status=Aborted UPDATE
+            end
+        else eventType = Oracle/Encounter/Inn/Shop
+            FE->>API: イベント操作 API
+            API->>RS: Apply event service
+            RS->>DB: run/member/item/event_logs, last_activity_at UPDATE
+            API-->>FE: RoguelikeRunSnapshotDto
+        end
+    end
+
+    alt 5F ボス勝利
+        RS->>DB: status=Cleared, ended_at UPDATE
+    else 手動中断
+        FE->>API: POST /runs/{id}/abort
+        API->>RS: AbortRunAsync(...)
+        RS->>DB: status=Aborted, ended_at UPDATE
+    else 30分無活動
+        RS->>DB: (HostedService) status=Aborted, ended_at UPDATE
+    end

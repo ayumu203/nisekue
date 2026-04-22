@@ -306,3 +306,86 @@ erDiagram
     TREASURE_MAP_EXPEDITIONS ||--o{ TREASURE_MAP_CLAIM_HISTORIES : claimed_by
     RANKING_SNAPSHOTS ||--o{ RANKING_ENTRIES : has
     PLAYERS ||--o{ RANKING_ENTRIES : ranked_in
+
+    ROGUELIKE_RUNS {
+        uuid id PK "internal.roguelike_runs.id"
+        uuid player_id FK "internal.players.id"
+        bigint seed "NOT NULL"
+        int status "NOT NULL (1:InProgress/2:Cleared/3:GameOver/4:Aborted)"
+        int current_floor_no "NOT NULL DEFAULT 1"
+        uuid current_node_id "NULL references roguelike_nodes.id"
+        int gold "NOT NULL DEFAULT 0"
+        timestamptz started_at "NOT NULL"
+        timestamptz ended_at "NULL"
+        timestamptz last_activity_at "NOT NULL"
+    }
+    ROGUELIKE_NODES {
+        uuid id PK
+        uuid run_id FK "internal.roguelike_runs.id"
+        int floor_no "NOT NULL"
+        int column_no "NOT NULL"
+        int row_no "NOT NULL (0..2)"
+        int event_type "NOT NULL (1:Battle/2:Oracle/3:Encounter/4:Inn/5:Shop)"
+        boolean is_boss_node "NOT NULL DEFAULT false"
+        jsonb parameters_json "NOT NULL"
+        boolean is_cleared "NOT NULL DEFAULT false"
+    }
+    ROGUELIKE_NODE_EDGES {
+        bigserial id PK
+        uuid run_id FK "internal.roguelike_runs.id"
+        uuid from_node_id FK "internal.roguelike_nodes.id"
+        uuid to_node_id FK "internal.roguelike_nodes.id"
+    }
+    ROGUELIKE_RUN_MEMBERS {
+        uuid run_id PK, FK "internal.roguelike_runs.id"
+        int slot_no PK "1..5"
+        int source "NOT NULL (1:Player/2:Npc)"
+        int npc_template_id "NULL"
+        varchar(64) display_name "NOT NULL"
+        int job "NOT NULL"
+        int level "NOT NULL"
+        int exp "NOT NULL"
+        int job_level "NOT NULL"
+        int job_exp "NOT NULL"
+        int max_hp "NOT NULL"
+        int max_mp "NOT NULL"
+        int strength "NOT NULL"
+        int defense "NOT NULL"
+        int intelligence "NOT NULL"
+        int luck "NOT NULL"
+        int speed "NOT NULL"
+        int accuracy "NOT NULL DEFAULT 100"
+        int evasion "NOT NULL DEFAULT 0"
+        int critical_chance "NOT NULL DEFAULT 0"
+        int damage_reduction "NOT NULL DEFAULT 0"
+        int current_hp "NOT NULL"
+        int current_mp "NOT NULL"
+        int preferred_row "NOT NULL"
+        int role "NOT NULL"
+        jsonb move_ids_json "NOT NULL"
+        jsonb mastered_jobs_json "NOT NULL DEFAULT []"
+        int equipped_weapon_item_id "NULL"
+        int equipped_armor_item_id "NULL"
+    }
+    ROGUELIKE_RUN_ITEMS {
+        uuid run_id PK, FK "internal.roguelike_runs.id"
+        int slot_no PK "1..20"
+        int rogue_item_id "NOT NULL references CSV roguelike_item_master.rogue_item_id"
+        int remaining_count "NOT NULL DEFAULT 1"
+    }
+    ROGUELIKE_RUN_EVENT_LOGS {
+        bigserial id PK
+        uuid run_id FK "internal.roguelike_runs.id"
+        int sequence "NOT NULL"
+        uuid node_id FK "internal.roguelike_nodes.id"
+        int event_type "NOT NULL"
+        jsonb payload_json "NOT NULL"
+        timestamptz occurred_at "NOT NULL"
+    }
+
+    PLAYERS ||--o{ ROGUELIKE_RUNS : runs
+    ROGUELIKE_RUNS ||--o{ ROGUELIKE_NODES : has
+    ROGUELIKE_RUNS ||--o{ ROGUELIKE_NODE_EDGES : connects
+    ROGUELIKE_RUNS ||--o{ ROGUELIKE_RUN_MEMBERS : party
+    ROGUELIKE_RUNS ||--o{ ROGUELIKE_RUN_ITEMS : inventory
+    ROGUELIKE_RUNS ||--o{ ROGUELIKE_RUN_EVENT_LOGS : logs
