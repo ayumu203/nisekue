@@ -174,7 +174,7 @@ export default function Training() {
     }
 
     return getTrainingEnemies(session.access_token)
-  })
+  }, { dedupingInterval: 300000 })
 
   const playerListSWRKey =
     session?.access_token && player && mode === 'player' ? ([`training-opponents`, session.user.id] as const) : null
@@ -188,7 +188,7 @@ export default function Training() {
     }
 
     return listPlayers(session.access_token)
-  })
+  }, { dedupingInterval: 300000 })
 
   async function refreshPlayerStatus(): Promise<void> {
     if (!session?.user.id) {

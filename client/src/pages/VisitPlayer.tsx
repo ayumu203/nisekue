@@ -114,7 +114,7 @@ function VisitPlayer() {
     }
 
     return getPlayerById(playerId, session.access_token)
-  })
+  }, { dedupingInterval: 300000 })
 
   const chatSWRKey = session?.access_token && playerId ? (['chat-room-visit', playerId] as const) : null
   const {

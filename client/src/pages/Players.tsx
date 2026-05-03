@@ -48,7 +48,7 @@ function Players() {
     }
 
     return listPlayers(session.access_token)
-  })
+  }, { dedupingInterval: 300000 })
 
   const visitTargets = players?.filter((player) => player.userId !== currentPlayer?.userId) ?? []
 
