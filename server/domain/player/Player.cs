@@ -138,13 +138,13 @@ public class Player(
     public void GainExp(int exp)
     {
         if (exp < 0) exp = 0;
-        Exp += exp;
-        JobExp += exp;
+        Exp = ClampedAdd(Exp, exp);
+        JobExp = ClampedAdd(JobExp, exp);
     }
 
     public void GainGold(int gold)
     {
-        Gold += ValidateNonNegative(gold, nameof(gold));
+        Gold = ClampedAdd(Gold, ValidateNonNegative(gold, nameof(gold)));
     }
 
     public void SpendGold(int gold)
@@ -181,13 +181,13 @@ public class Player(
             Exp -= RequiredExpForNextLevel();
             Level++;
             Status = new Status(
-                maxHp: Status.MaxHp + growth.MaxHp,
-                maxMp: Status.MaxMp + growth.MaxMp,
-                strength: Status.Strength + growth.Strength,
-                defense: Status.Defense + growth.Defense,
-                intelligence: Status.Intelligence + growth.Intelligence,
-                luck: Status.Luck + growth.Luck,
-                speed: Status.Speed + growth.Speed,
+                maxHp: ClampedAdd(Status.MaxHp, growth.MaxHp),
+                maxMp: ClampedAdd(Status.MaxMp, growth.MaxMp),
+                strength: ClampedAdd(Status.Strength, growth.Strength),
+                defense: ClampedAdd(Status.Defense, growth.Defense),
+                intelligence: ClampedAdd(Status.Intelligence, growth.Intelligence),
+                luck: ClampedAdd(Status.Luck, growth.Luck),
+                speed: ClampedAdd(Status.Speed, growth.Speed),
                 accuracy: Status.Accuracy,
                 evasion: Status.Evasion,
                 criticalChance: Status.CriticalChance,
@@ -293,4 +293,6 @@ public class Player(
 
         return value;
     }
+
+    private static int ClampedAdd(int a, int b) => (int)Math.Min((long)a + b, int.MaxValue);
 }
