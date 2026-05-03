@@ -1,10 +1,17 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using server.domain.player;
 
 namespace server.infrastructure.player;
 
-public class DbPlayerEquipmentRepository(IDbContextFactory<AppDbContext> dbContextFactory) : IPlayerEquipmentRepository
+public class DbPlayerEquipmentRepository(
+    IDbContextFactory<AppDbContext> dbContextFactory,
+    IMemoryCache cache) : IPlayerEquipmentRepository
 {
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
+
+    private static string EquippedKey(Guid playerId) => $"player:equipped:{playerId}";
+
     public async Task<IReadOnlyList<PlayerEquipment>> GetByPlayerAsync(PlayerId playerId)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -17,6 +24,25 @@ public class DbPlayerEquipmentRepository(IDbContextFactory<AppDbContext> dbConte
             .ToListAsync();
 
         return entities.Select(MapToDomain).ToArray();
+    }
+
+    public async Task<IReadOnlyList<PlayerEquipment>> GetEquippedByPlayerAsync(PlayerId playerId)
+    {
+        var key = EquippedKey(playerId.Value);
+        if (cache.TryGetValue(key, out IReadOnlyList<PlayerEquipment>? cached))
+        {
+            return cached!;
+        }
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var entities = await dbContext.PlayerEquipments
+            .AsNoTracking()
+            .Where(x => x.PlayerId == playerId.Value && x.EquipmentStatus == (int)EquipmentStatus.Equipped)
+            .ToListAsync();
+
+        var result = (IReadOnlyList<PlayerEquipment>)entities.Select(MapToDomain).ToArray();
+        cache.Set(key, result, CacheTtl);
+        return result;
     }
 
     public async Task<PlayerEquipment?> GetAsync(PlayerEquipmentId playerEquipmentId)
@@ -65,6 +91,11 @@ public class DbPlayerEquipmentRepository(IDbContextFactory<AppDbContext> dbConte
         }
 
         await dbContext.SaveChangesAsync();
+
+        foreach (var playerId in playerEquipments.Select(x => x.PlayerId.Value).Distinct())
+        {
+            cache.Remove(EquippedKey(playerId));
+        }
     }
 
     public async Task DeleteAsync(PlayerEquipmentId playerEquipmentId)
@@ -78,6 +109,8 @@ public class DbPlayerEquipmentRepository(IDbContextFactory<AppDbContext> dbConte
 
         dbContext.PlayerEquipments.Remove(existing);
         await dbContext.SaveChangesAsync();
+
+        cache.Remove(EquippedKey(existing.PlayerId));
     }
 
     private static PlayerEquipment MapToDomain(PlayerEquipmentEntity entity)

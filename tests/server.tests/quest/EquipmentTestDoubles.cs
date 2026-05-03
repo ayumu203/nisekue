@@ -15,6 +15,14 @@ internal sealed class FakePlayerEquipmentRepository(params PlayerEquipment[] equ
             : (IReadOnlyList<PlayerEquipment>)[]);
     }
 
+    public Task<IReadOnlyList<PlayerEquipment>> GetEquippedByPlayerAsync(PlayerId playerId)
+    {
+        var all = equipmentsByPlayerId.TryGetValue(playerId, out var playerEquipments)
+            ? playerEquipments
+            : (IReadOnlyList<PlayerEquipment>)[];
+        return Task.FromResult((IReadOnlyList<PlayerEquipment>)all.Where(x => x.Status == EquipmentStatus.Equipped).ToArray());
+    }
+
     public Task<PlayerEquipment?> GetAsync(PlayerEquipmentId playerEquipmentId)
     {
         var equipment = equipmentsByPlayerId.Values

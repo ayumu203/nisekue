@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Npgsql;
 using server.domain.move;
 using server.domain.player;
@@ -6,10 +7,23 @@ using server.shared.constants.player;
 
 namespace server.infrastructure.player
 {
-    public class SupabasePlayerRepository(IDbContextFactory<AppDbContext> dbContextFactory) : IPlayerRepository
+    public class SupabasePlayerRepository(
+        IDbContextFactory<AppDbContext> dbContextFactory,
+        IMemoryCache cache) : IPlayerRepository
     {
+        private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
+
+        private static string PlayerKey(Guid id) => $"player:{id}";
+        private const string AllPlayersKey = "players:all";
+
         public async Task<Player?> GetPlayerAsync(PlayerId id)
         {
+            var key = PlayerKey(id.Value);
+            if (cache.TryGetValue(key, out Player? cached))
+            {
+                return cached;
+            }
+
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             var entity = await dbContext.Players
                 .AsNoTracking()
@@ -29,7 +43,9 @@ namespace server.infrastructure.player
                 .Where(x => x.PlayerId == id.Value)
                 .ToListAsync();
 
-            return MapToDomain(entity, moveEntity, masteredJobEntities);
+            var player = MapToDomain(entity, moveEntity, masteredJobEntities);
+            cache.Set(key, player, CacheTtl);
+            return player;
         }
 
         public async Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
@@ -53,6 +69,11 @@ namespace server.infrastructure.player
 
         public async Task<IReadOnlyList<Player>> GetAllAsync()
         {
+            if (cache.TryGetValue(AllPlayersKey, out IReadOnlyList<Player>? cached))
+            {
+                return cached!;
+            }
+
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             var playerEntities = await dbContext.Players
                 .AsNoTracking()
@@ -60,9 +81,12 @@ namespace server.infrastructure.player
                 .ThenBy(x => x.Id)
                 .ToListAsync();
 
-            return playerEntities
+            var players = playerEntities
                 .Select(entity => MapToDomain(entity, moveEntity: null))
                 .ToArray();
+
+            cache.Set(AllPlayersKey, (IReadOnlyList<Player>)players, CacheTtl);
+            return players;
         }
 
         public async Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown)
@@ -200,6 +224,9 @@ namespace server.infrastructure.player
             {
                 throw new InvalidOperationException("プレイヤー情報の保存に失敗しました。", ex);
             }
+
+            cache.Remove(PlayerKey(player.Id.Value));
+            cache.Remove(AllPlayersKey);
         }
 
         private static Player MapToDomain(
