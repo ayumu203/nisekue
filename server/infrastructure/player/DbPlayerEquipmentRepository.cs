@@ -29,20 +29,22 @@ public class DbPlayerEquipmentRepository(
     public async Task<IReadOnlyList<PlayerEquipment>> GetEquippedByPlayerAsync(PlayerId playerId)
     {
         var key = EquippedKey(playerId.Value);
-        if (cache.TryGetValue(key, out IReadOnlyList<PlayerEquipment>? cached))
+        if (cache.TryGetValue(key, out IReadOnlyList<PlayerEquipmentEntity>? cachedEntities))
         {
-            return cached!;
+            return cachedEntities!.Select(MapToDomain).ToArray();
         }
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var entities = await dbContext.PlayerEquipments
             .AsNoTracking()
             .Where(x => x.PlayerId == playerId.Value && x.EquipmentStatus == (int)EquipmentStatus.Equipped)
+            .OrderBy(x => x.EquipmentType)
+            .ThenBy(x => x.AcquiredAt)
+            .ThenBy(x => x.Id)
             .ToListAsync();
 
-        var result = (IReadOnlyList<PlayerEquipment>)entities.Select(MapToDomain).ToArray();
-        cache.Set(key, result, CacheTtl);
-        return result;
+        cache.Set(key, (IReadOnlyList<PlayerEquipmentEntity>)entities, CacheTtl);
+        return entities.Select(MapToDomain).ToArray();
     }
 
     public async Task<PlayerEquipment?> GetAsync(PlayerEquipmentId playerEquipmentId)

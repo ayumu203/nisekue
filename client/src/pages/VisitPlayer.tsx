@@ -108,13 +108,17 @@ function VisitPlayer() {
     data: visitedPlayer,
     error: visitedPlayerError,
     isLoading: isVisitedPlayerLoading,
-  } = useSWR(visitedPlayerSWRKey, async () => {
-    if (!session?.access_token || !playerId) {
-      throw new Error(locale.playerNotFound)
-    }
+  } = useSWR(
+    visitedPlayerSWRKey,
+    async () => {
+      if (!session?.access_token || !playerId) {
+        throw new Error(locale.playerNotFound)
+      }
 
-    return getPlayerById(playerId, session.access_token)
-  }, { dedupingInterval: 300000 })
+      return getPlayerById(playerId, session.access_token)
+    },
+    { dedupingInterval: 300000 },
+  )
 
   const chatSWRKey = session?.access_token && playerId ? (['chat-room-visit', playerId] as const) : null
   const {

@@ -42,13 +42,17 @@ function Players() {
     data: players,
     error: playersError,
     isLoading: isPlayersLoading,
-  } = useSWR(playersSWRKey, async () => {
-    if (!session?.access_token) {
-      throw new Error(locale.sessionInfoMissing)
-    }
+  } = useSWR(
+    playersSWRKey,
+    async () => {
+      if (!session?.access_token) {
+        throw new Error(locale.sessionInfoMissing)
+      }
 
-    return listPlayers(session.access_token)
-  }, { dedupingInterval: 300000 })
+      return listPlayers(session.access_token)
+    },
+    { dedupingInterval: 300000 },
+  )
 
   const visitTargets = players?.filter((player) => player.userId !== currentPlayer?.userId) ?? []
 

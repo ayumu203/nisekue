@@ -168,13 +168,17 @@ export default function Training() {
     data: trainingEnemies,
     error: trainingEnemiesError,
     isLoading: isTrainingEnemiesLoading,
-  } = useSWR(trainingEnemiesSWRKey, async () => {
-    if (!session?.access_token) {
-      throw new Error(locale.sessionInfoMissing)
-    }
+  } = useSWR(
+    trainingEnemiesSWRKey,
+    async () => {
+      if (!session?.access_token) {
+        throw new Error(locale.sessionInfoMissing)
+      }
 
-    return getTrainingEnemies(session.access_token)
-  }, { dedupingInterval: 300000 })
+      return getTrainingEnemies(session.access_token)
+    },
+    { dedupingInterval: 300000 },
+  )
 
   const playerListSWRKey =
     session?.access_token && player && mode === 'player' ? ([`training-opponents`, session.user.id] as const) : null
@@ -182,13 +186,17 @@ export default function Training() {
     data: playerList,
     error: playerListError,
     isLoading: isPlayerListLoading,
-  } = useSWR(playerListSWRKey, async () => {
-    if (!session?.access_token) {
-      throw new Error(locale.sessionInfoMissing)
-    }
+  } = useSWR(
+    playerListSWRKey,
+    async () => {
+      if (!session?.access_token) {
+        throw new Error(locale.sessionInfoMissing)
+      }
 
-    return listPlayers(session.access_token)
-  }, { dedupingInterval: 300000 })
+      return listPlayers(session.access_token)
+    },
+    { dedupingInterval: 300000 },
+  )
 
   async function refreshPlayerStatus(): Promise<void> {
     if (!session?.user.id) {

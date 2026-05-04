@@ -16,12 +16,17 @@ namespace server.infrastructure.player
         private static string PlayerKey(Guid id) => $"player:{id}";
         private const string AllPlayersKey = "players:all";
 
+        private record PlayerSnapshot(
+            PlayerEntity Entity,
+            PlayerMoveEntity? MoveEntity,
+            IReadOnlyList<PlayerMasterJobEntity> MasteredJobEntities);
+
         public async Task<Player?> GetPlayerAsync(PlayerId id)
         {
             var key = PlayerKey(id.Value);
-            if (cache.TryGetValue(key, out Player? cached))
+            if (cache.TryGetValue(key, out PlayerSnapshot? snapshot))
             {
-                return cached;
+                return MapToDomain(snapshot!.Entity, snapshot.MoveEntity, snapshot.MasteredJobEntities);
             }
 
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -43,9 +48,8 @@ namespace server.infrastructure.player
                 .Where(x => x.PlayerId == id.Value)
                 .ToListAsync();
 
-            var player = MapToDomain(entity, moveEntity, masteredJobEntities);
-            cache.Set(key, player, CacheTtl);
-            return player;
+            cache.Set(key, new PlayerSnapshot(entity, moveEntity, masteredJobEntities), CacheTtl);
+            return MapToDomain(entity, moveEntity, masteredJobEntities);
         }
 
         public async Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
@@ -69,9 +73,9 @@ namespace server.infrastructure.player
 
         public async Task<IReadOnlyList<Player>> GetAllAsync()
         {
-            if (cache.TryGetValue(AllPlayersKey, out IReadOnlyList<Player>? cached))
+            if (cache.TryGetValue(AllPlayersKey, out IReadOnlyList<PlayerEntity>? cachedEntities))
             {
-                return cached!;
+                return cachedEntities!.Select(e => MapToDomain(e, moveEntity: null)).ToArray();
             }
 
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -81,12 +85,10 @@ namespace server.infrastructure.player
                 .ThenBy(x => x.Id)
                 .ToListAsync();
 
-            var players = playerEntities
+            cache.Set(AllPlayersKey, (IReadOnlyList<PlayerEntity>)playerEntities, CacheTtl);
+            return playerEntities
                 .Select(entity => MapToDomain(entity, moveEntity: null))
                 .ToArray();
-
-            cache.Set(AllPlayersKey, (IReadOnlyList<Player>)players, CacheTtl);
-            return players;
         }
 
         public async Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown)
@@ -103,6 +105,8 @@ namespace server.infrastructure.player
 
             if (affectedRows > 0)
             {
+                cache.Remove(PlayerKey(id.Value));
+                cache.Remove(AllPlayersKey);
                 return null;
             }
 
@@ -136,6 +140,12 @@ namespace server.infrastructure.player
                 UPDATE internal.players
                 SET name = {normalized}
                 WHERE id = {id.Value}");
+
+            if (affectedRows > 0)
+            {
+                cache.Remove(PlayerKey(id.Value));
+                cache.Remove(AllPlayersKey);
+            }
 
             return affectedRows > 0;
         }
