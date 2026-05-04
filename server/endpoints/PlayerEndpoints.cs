@@ -17,7 +17,6 @@ internal static class PlayerEndpoints
         app.MapGet("/players", async (
             IPlayerRepository playerRepository,
             IJobProfileRepository jobProfileRepository,
-            StatusRankEvaluator statusRankEvaluator,
             CombatIndexCalculator combatIndexCalculator,
             CombatIndexRankEvaluator combatIndexRankEvaluator) =>
         {
@@ -36,9 +35,7 @@ internal static class PlayerEndpoints
                     displayName = EndpointHelpers.GetJobDisplayName(player.Job),
                     description = jobProfileRepository.GetByJob(player.Job).Description
                 },
-                combatIndex = combatIndexCalculator.Calculate(player.Status),
-                combatIndexRank = combatIndexRankEvaluator.Evaluate(combatIndexCalculator.Calculate(player.Status)).ToString(),
-                statusRanks = BuildStatusRankResponse(player.Status, statusRankEvaluator)
+                combatIndexRank = combatIndexRankEvaluator.Evaluate(combatIndexCalculator.Calculate(player.Status)).ToString()
             }));
         }).RequireAuthorization();
 
@@ -118,7 +115,7 @@ internal static class PlayerEndpoints
             {
                 await playerRepository.SaveAsync(player);
             }
-            var playerEquipments = await playerEquipmentRepository.GetByPlayerAsync(player.Id);
+            var playerEquipments = await playerEquipmentRepository.GetEquippedByPlayerAsync(player.Id);
             var equipments = await equipmentRepository.GetAllAsync();
             return Results.Ok(ToPlayerResponse(
                 player,

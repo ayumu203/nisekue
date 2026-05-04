@@ -1,15 +1,33 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Npgsql;
 using server.domain.move;
 using server.domain.player;
 using server.shared.constants.player;
+using static server.shared.constants.player.PlayerCacheConstants;
 
 namespace server.infrastructure.player
 {
-    public class SupabasePlayerRepository(IDbContextFactory<AppDbContext> dbContextFactory) : IPlayerRepository
+    public class SupabasePlayerRepository(
+        IDbContextFactory<AppDbContext> dbContextFactory,
+        IMemoryCache cache) : IPlayerRepository
     {
+        private static string PlayerKey(Guid id) => $"player:{id}";
+        private const string AllPlayersKey = "players:all";
+
+        private record PlayerSnapshot(
+            PlayerEntity Entity,
+            PlayerMoveEntity? MoveEntity,
+            IReadOnlyList<PlayerMasterJobEntity> MasteredJobEntities);
+
         public async Task<Player?> GetPlayerAsync(PlayerId id)
         {
+            var key = PlayerKey(id.Value);
+            if (cache.TryGetValue(key, out PlayerSnapshot? snapshot))
+            {
+                return MapToDomain(snapshot!.Entity, snapshot.MoveEntity, snapshot.MasteredJobEntities);
+            }
+
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             var entity = await dbContext.Players
                 .AsNoTracking()
@@ -29,6 +47,7 @@ namespace server.infrastructure.player
                 .Where(x => x.PlayerId == id.Value)
                 .ToListAsync();
 
+            cache.Set(key, new PlayerSnapshot(entity, moveEntity, masteredJobEntities), CacheTtl);
             return MapToDomain(entity, moveEntity, masteredJobEntities);
         }
 
@@ -53,6 +72,11 @@ namespace server.infrastructure.player
 
         public async Task<IReadOnlyList<Player>> GetAllAsync()
         {
+            if (cache.TryGetValue(AllPlayersKey, out IReadOnlyList<PlayerEntity>? cachedEntities))
+            {
+                return cachedEntities!.Select(e => MapToDomain(e, moveEntity: null)).ToArray();
+            }
+
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             var playerEntities = await dbContext.Players
                 .AsNoTracking()
@@ -60,6 +84,7 @@ namespace server.infrastructure.player
                 .ThenBy(x => x.Id)
                 .ToListAsync();
 
+            cache.Set(AllPlayersKey, (IReadOnlyList<PlayerEntity>)playerEntities, CacheTtl);
             return playerEntities
                 .Select(entity => MapToDomain(entity, moveEntity: null))
                 .ToArray();
@@ -79,6 +104,8 @@ namespace server.infrastructure.player
 
             if (affectedRows > 0)
             {
+                cache.Remove(PlayerKey(id.Value));
+                cache.Remove(AllPlayersKey);
                 return null;
             }
 
@@ -112,6 +139,12 @@ namespace server.infrastructure.player
                 UPDATE internal.players
                 SET name = {normalized}
                 WHERE id = {id.Value}");
+
+            if (affectedRows > 0)
+            {
+                cache.Remove(PlayerKey(id.Value));
+                cache.Remove(AllPlayersKey);
+            }
 
             return affectedRows > 0;
         }
@@ -200,6 +233,9 @@ namespace server.infrastructure.player
             {
                 throw new InvalidOperationException("プレイヤー情報の保存に失敗しました。", ex);
             }
+
+            cache.Remove(PlayerKey(player.Id.Value));
+            cache.Remove(AllPlayersKey);
         }
 
         private static Player MapToDomain(

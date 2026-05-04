@@ -809,6 +809,14 @@ public class TrainingServiceTests
                 ? playerEquipments.ToArray()
                 : []));
 
+        public Task<IReadOnlyList<PlayerEquipment>> GetEquippedByPlayerAsync(PlayerId playerId)
+        {
+            var all = equipmentsByPlayerId.TryGetValue(playerId, out var playerEquipments)
+                ? playerEquipments.ToArray()
+                : [];
+            return Task.FromResult((IReadOnlyList<PlayerEquipment>)all.Where(x => x.Status == EquipmentStatus.Equipped).ToArray());
+        }
+
         public Task<PlayerEquipment?> GetAsync(PlayerEquipmentId playerEquipmentId)
             => Task.FromResult(StoredEquipments.FirstOrDefault(x => x.Id == playerEquipmentId));
 

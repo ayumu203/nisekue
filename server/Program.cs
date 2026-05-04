@@ -99,6 +99,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 builder.Services.AddSignalR();
+builder.Services.AddMemoryCache();
 
 var supabaseConnectionString = builder.Configuration.GetConnectionString("Supabase")
     ?? throw new InvalidOperationException("Connection string 'Supabase' is not configured.");
