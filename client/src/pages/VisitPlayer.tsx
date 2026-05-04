@@ -127,13 +127,17 @@ function VisitPlayer() {
     isLoading: isChatLoading,
     isValidating: isChatValidating,
     mutate: mutateChatRoom,
-  } = useSWR(chatSWRKey, async () => {
-    if (!session?.access_token || !playerId) {
-      throw new Error(locale.playerNotFound)
-    }
+  } = useSWR(
+    chatSWRKey,
+    async () => {
+      if (!session?.access_token || !playerId) {
+        throw new Error(locale.playerNotFound)
+      }
 
-    return getChatRoom({ ownerId: playerId }, session.access_token)
-  })
+      return getChatRoom({ ownerId: playerId }, session.access_token)
+    },
+    { revalidateOnFocus: true },
+  )
 
   const giftEquipments = (giftInventory?.inventoryItems ?? []).filter(
     (item): item is ItemEquipmentView => item.kind === 'equipment',

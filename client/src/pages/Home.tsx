@@ -87,22 +87,30 @@ function Home() {
     isLoading: isChatLoading,
     isValidating: isChatValidating,
     mutate: mutateChatRoom,
-  } = useSWR(chatSWRKey, async () => {
-    if (!session?.access_token || !player?.userId) {
-      throw new Error(locale.chatFetchInfoMissing)
-    }
+  } = useSWR(
+    chatSWRKey,
+    async () => {
+      if (!session?.access_token || !player?.userId) {
+        throw new Error(locale.chatFetchInfoMissing)
+      }
 
-    return getChatRoom({ ownerId: player.userId }, session.access_token)
-  })
+      return getChatRoom({ ownerId: player.userId }, session.access_token)
+    },
+    { revalidateOnFocus: true },
+  )
   const threadAlertsSWRKey =
     session?.access_token && player?.userId ? (['thread-alerts', player.userId] as const) : null
-  const { data: threadAlerts } = useSWR(threadAlertsSWRKey, async () => {
-    if (!session?.access_token) {
-      throw new Error(locale.sessionInfoMissing)
-    }
+  const { data: threadAlerts } = useSWR(
+    threadAlertsSWRKey,
+    async () => {
+      if (!session?.access_token) {
+        throw new Error(locale.sessionInfoMissing)
+      }
 
-    return getThreadAlerts(session.access_token)
-  })
+      return getThreadAlerts(session.access_token)
+    },
+    { revalidateOnFocus: true },
+  )
 
   useEffect(() => {
     if (!session?.access_token || !player?.userId || !chatRoom) {
