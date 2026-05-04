@@ -13,6 +13,7 @@ import {
 } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
+import { PLAYER_DEDUPING_INTERVAL } from '@/constants/swr'
 import { executeTraining, executeTrainingPvp, getTrainingEnemies, TrainingCooldownError } from '@/api/training'
 import { createPlayer, getPlayer, listPlayers } from '@/api/player'
 import BeginnerGuide from '@/components/common/BeginnerGuide'
@@ -168,13 +169,17 @@ export default function Training() {
     data: trainingEnemies,
     error: trainingEnemiesError,
     isLoading: isTrainingEnemiesLoading,
-  } = useSWR(trainingEnemiesSWRKey, async () => {
-    if (!session?.access_token) {
-      throw new Error(locale.sessionInfoMissing)
-    }
+  } = useSWR(
+    trainingEnemiesSWRKey,
+    async () => {
+      if (!session?.access_token) {
+        throw new Error(locale.sessionInfoMissing)
+      }
 
-    return getTrainingEnemies(session.access_token)
-  })
+      return getTrainingEnemies(session.access_token)
+    },
+    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
+  )
 
   const playerListSWRKey =
     session?.access_token && player && mode === 'player' ? ([`training-opponents`, session.user.id] as const) : null
@@ -182,13 +187,17 @@ export default function Training() {
     data: playerList,
     error: playerListError,
     isLoading: isPlayerListLoading,
-  } = useSWR(playerListSWRKey, async () => {
-    if (!session?.access_token) {
-      throw new Error(locale.sessionInfoMissing)
-    }
+  } = useSWR(
+    playerListSWRKey,
+    async () => {
+      if (!session?.access_token) {
+        throw new Error(locale.sessionInfoMissing)
+      }
 
-    return listPlayers(session.access_token)
-  })
+      return listPlayers(session.access_token)
+    },
+    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
+  )
 
   async function refreshPlayerStatus(): Promise<void> {
     if (!session?.user.id) {
