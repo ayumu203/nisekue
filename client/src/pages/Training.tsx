@@ -13,6 +13,7 @@ import {
 } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
+import { PLAYER_DEDUPING_INTERVAL } from '@/constants/swr'
 import { executeTraining, executeTrainingPvp, getTrainingEnemies, TrainingCooldownError } from '@/api/training'
 import { createPlayer, getPlayer, listPlayers } from '@/api/player'
 import BeginnerGuide from '@/components/common/BeginnerGuide'
@@ -177,7 +178,7 @@ export default function Training() {
 
       return getTrainingEnemies(session.access_token)
     },
-    { dedupingInterval: 300000 },
+    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
   )
 
   const playerListSWRKey =
@@ -195,7 +196,7 @@ export default function Training() {
 
       return listPlayers(session.access_token)
     },
-    { dedupingInterval: 300000 },
+    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
   )
 
   async function refreshPlayerStatus(): Promise<void> {

@@ -17,6 +17,7 @@ import {
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import useSWR from 'swr'
+import { PLAYER_DEDUPING_INTERVAL } from '@/constants/swr'
 import { getChatRoom, postChatMessage } from '@/api/chat'
 import { getItems } from '@/api/item'
 import { createPlayer, getPlayer, getPlayerById, sendPlayerGift } from '@/api/player'
@@ -117,7 +118,7 @@ function VisitPlayer() {
 
       return getPlayerById(playerId, session.access_token)
     },
-    { dedupingInterval: 300000 },
+    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
   )
 
   const chatSWRKey = session?.access_token && playerId ? (['chat-room-visit', playerId] as const) : null

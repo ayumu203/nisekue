@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using server.domain.player;
+using static server.shared.constants.player.PlayerCacheConstants;
 
 namespace server.infrastructure.player;
 
@@ -8,8 +9,6 @@ public class DbPlayerEquipmentRepository(
     IDbContextFactory<AppDbContext> dbContextFactory,
     IMemoryCache cache) : IPlayerEquipmentRepository
 {
-    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
-
     private static string EquippedKey(Guid playerId) => $"player:equipped:{playerId}";
 
     public async Task<IReadOnlyList<PlayerEquipment>> GetByPlayerAsync(PlayerId playerId)

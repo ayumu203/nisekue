@@ -3,6 +3,7 @@ import { alpha } from '@mui/material/styles'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, listPlayers } from '@/api/player'
+import { PLAYER_DEDUPING_INTERVAL } from '@/constants/swr'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
@@ -51,7 +52,7 @@ function Players() {
 
       return listPlayers(session.access_token)
     },
-    { dedupingInterval: 300000 },
+    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
   )
 
   const visitTargets = players?.filter((player) => player.userId !== currentPlayer?.userId) ?? []

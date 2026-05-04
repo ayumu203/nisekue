@@ -4,6 +4,7 @@ using Npgsql;
 using server.domain.move;
 using server.domain.player;
 using server.shared.constants.player;
+using static server.shared.constants.player.PlayerCacheConstants;
 
 namespace server.infrastructure.player
 {
@@ -11,8 +12,6 @@ namespace server.infrastructure.player
         IDbContextFactory<AppDbContext> dbContextFactory,
         IMemoryCache cache) : IPlayerRepository
     {
-        private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
-
         private static string PlayerKey(Guid id) => $"player:{id}";
         private const string AllPlayersKey = "players:all";
 
