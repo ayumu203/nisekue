@@ -324,6 +324,11 @@ export const endpoints = {
       requestSchema: executePvpTrainingRequestSchema,
       responseSchema: executeTrainingResponseSchema,
     },
+    getPvpOpponents: {
+      path: '/training/pvp-opponents',
+      method: 'GET',
+      responseSchema: listPlayersResponseSchema,
+    },
   },
   quest: {
     getStages: {

@@ -8,6 +8,7 @@ import type {
   ExecuteTrainingResponse,
   GetTrainingEnemiesResponse,
 } from '@/schema/training'
+import type { ListPlayersResponse } from '@/schema/player'
 
 export class TrainingCooldownError extends Error {
   public readonly retryAfterSeconds: number
@@ -20,6 +21,25 @@ export class TrainingCooldownError extends Error {
     this.retryAfterSeconds = retryAfterSeconds
     this.cooldownUntil = cooldownUntil
   }
+}
+
+export async function getPvpOpponents(accessToken: string): Promise<ListPlayersResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.training.getPvpOpponents.path}`, {
+    method: endpoints.training.getPvpOpponents.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '対戦相手一覧の取得に失敗しました'))
+  }
+
+  return endpoints.training.getPvpOpponents.responseSchema.parse(json)
 }
 
 export async function getTrainingEnemies(accessToken: string): Promise<GetTrainingEnemiesResponse> {

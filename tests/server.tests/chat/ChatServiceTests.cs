@@ -48,6 +48,8 @@ public class ChatServiceTests
     private sealed class FakePlayerRepository : IPlayerRepository
     {
         public Task<Player?> GetPlayerAsync(PlayerId id) => Task.FromResult<Player?>(null);
+        public Task<Player?> GetPlayerWithinLevelCapAsync(PlayerId id, int maxLevel) => Task.FromResult<Player?>(null);
+        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel) => Task.FromResult<IReadOnlyList<Player>>([]);
         public Task<IReadOnlyList<Player>> GetAllAsync() => Task.FromResult<IReadOnlyList<Player>>([]);
         public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids) => Task.FromResult<IReadOnlyList<Player>>([]);
         public Task<bool> UpdateNameAsync(PlayerId id, string name) => Task.FromResult(false);

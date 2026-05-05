@@ -51,6 +51,28 @@ namespace server.infrastructure.player
             return MapToDomain(entity, moveEntity, masteredJobEntities);
         }
 
+        public async Task<Player?> GetPlayerWithinLevelCapAsync(PlayerId id, int maxLevel)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var entity = await dbContext.Players
+                .AsNoTracking()
+                .SingleOrDefaultAsync(x => x.Id == id.Value && x.Level <= maxLevel);
+
+            if (entity is null) return null;
+            return MapToDomain(entity, moveEntity: null);
+        }
+
+        public async Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var entities = await dbContext.Players
+                .AsNoTracking()
+                .Where(x => x.Id != excludeId.Value && x.Level <= maxLevel)
+                .ToListAsync();
+
+            return entities.Select(e => MapToDomain(e, moveEntity: null)).ToArray();
+        }
+
         public async Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
         {
             var idValues = ids.Select(x => x.Value).Distinct().ToList();
