@@ -2,6 +2,7 @@ using System.Security.Claims;
 using server.application.training;
 using server.domain.player;
 using server.domain.training;
+using server.shared.constants.training;
 
 namespace server.endpoints;
 
@@ -103,6 +104,46 @@ internal static class TrainingEndpoints
             {
                 return Results.BadRequest(new { message = ex.Message });
             }
+        }).RequireAuthorization();
+
+        app.MapGet("/training/pvp-opponents", async (
+            ClaimsPrincipal user,
+            IPlayerRepository playerRepository,
+            IJobProfileRepository jobProfileRepository,
+            CombatIndexCalculator combatIndexCalculator,
+            CombatIndexRankEvaluator combatIndexRankEvaluator) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            var player = await playerRepository.GetPlayerAsync(playerId.Value);
+            if (player is null)
+            {
+                return Results.NotFound(new { message = "プレイヤーが見つかりません。" });
+            }
+
+            var maxOpponentLevel = (int)(player.Level * TrainingConstants.Battle.PvpOpponentLevelCapMultiplier);
+            var opponents = await playerRepository.GetPvpOpponentsAsync(playerId.Value, maxOpponentLevel);
+
+            return Results.Ok(opponents
+                .Select(p => new
+                {
+                    userId = p.Id.Value,
+                    userName = p.Name,
+                    imagePath = p.ImagePath,
+                    level = p.Level,
+                    job = new
+                    {
+                        code = p.Job.ToString(),
+                        value = (int)p.Job,
+                        displayName = EndpointHelpers.GetJobDisplayName(p.Job),
+                        description = jobProfileRepository.GetByJob(p.Job).Description
+                    },
+                    combatIndexRank = combatIndexRankEvaluator.Evaluate(combatIndexCalculator.Calculate(p.Status)).ToString()
+                }));
         }).RequireAuthorization();
 
         return app;

@@ -43,6 +43,17 @@ public class PlayerJobServiceTests
             return Task.FromResult<Player?>(player.Id == id ? player : null);
         }
 
+        public Task<Player?> GetPlayerWithinLevelCapAsync(PlayerId id, int maxLevel)
+        {
+            return Task.FromResult<Player?>(player.Id == id && player.Level <= maxLevel ? player : null);
+        }
+
+        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        {
+            IReadOnlyList<Player> result = player.Id != excludeId && player.Level <= maxLevel ? [player] : [];
+            return Task.FromResult(result);
+        }
+
         public Task<IReadOnlyList<Player>> GetAllAsync()
         {
             return Task.FromResult<IReadOnlyList<Player>>([player]);

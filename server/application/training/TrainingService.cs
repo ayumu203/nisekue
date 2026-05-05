@@ -103,8 +103,10 @@ public class TrainingService(
     {
         var player = await playerRepository.GetPlayerAsync(playerId)
             ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
-        var opponent = await playerRepository.GetPlayerAsync(opponentPlayerId)
-            ?? throw new KeyNotFoundException("対戦相手のプレイヤーが見つかりません。");
+
+        var maxOpponentLevel = (int)(player.Level * TrainingConstants.Battle.PvpOpponentLevelCapMultiplier);
+        var opponent = await playerRepository.GetPlayerWithinLevelCapAsync(opponentPlayerId, maxOpponentLevel)
+            ?? throw new ArgumentException($"対戦相手のレベルが上限（Lv.{maxOpponentLevel}）を超えているか、見つかりません。");
 
         var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(playerId)).ToList();
         var equipments = await equipmentRepository.GetAllAsync();
