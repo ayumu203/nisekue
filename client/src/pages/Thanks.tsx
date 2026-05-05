@@ -57,7 +57,7 @@ export default function Thanks() {
                 <Typography variant="h4" fontWeight={900} color="#fff8ea" lineHeight={1.1}>
                   スペシャルサンクス
                 </Typography>
-                <Typography>
+                <Typography color="rgba(242, 235, 207, 0.92)">
                   画像素材の権利関係はすべて製作者様へ帰属します。製作者様の許可なく再配布・改変は行わないでください。
                 </Typography>
               </Stack>
