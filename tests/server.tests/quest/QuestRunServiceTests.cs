@@ -1681,6 +1681,12 @@ public class QuestRunServiceTests
             return Task.FromResult(p is not null && p.Level <= maxLevel ? p : null);
         }
 
+        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        {
+            IReadOnlyList<Player> result = players.Values.Where(p => p.Id != excludeId && p.Level <= maxLevel).ToArray();
+            return Task.FromResult(result);
+        }
+
         public Task<IReadOnlyList<Player>> GetAllAsync()
             => Task.FromResult<IReadOnlyList<Player>>(players.Values.ToArray());
 

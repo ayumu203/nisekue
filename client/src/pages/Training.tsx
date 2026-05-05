@@ -14,8 +14,14 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import { PLAYER_DEDUPING_INTERVAL } from '@/constants/swr'
-import { executeTraining, executeTrainingPvp, getTrainingEnemies, TrainingCooldownError } from '@/api/training'
-import { createPlayer, getPlayer, listPlayers } from '@/api/player'
+import {
+  executeTraining,
+  executeTrainingPvp,
+  getTrainingEnemies,
+  getPvpOpponents,
+  TrainingCooldownError,
+} from '@/api/training'
+import { createPlayer, getPlayer } from '@/api/player'
 import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import Status from '@/components/home/Status'
@@ -194,7 +200,7 @@ export default function Training() {
         throw new Error(locale.sessionInfoMissing)
       }
 
-      return listPlayers(session.access_token)
+      return getPvpOpponents(session.access_token)
     },
     { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
   )
