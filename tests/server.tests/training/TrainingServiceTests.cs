@@ -868,6 +868,11 @@ public class TrainingServiceTests
             return Task.FromResult(playerState.Id == id ? playerState : null);
         }
 
+        public Task<Player?> GetPlayerWithinLevelCapAsync(PlayerId id, int maxLevel)
+        {
+            return Task.FromResult(playerState.Id == id && playerState.Level <= maxLevel ? playerState : null);
+        }
+
         public Task<IReadOnlyList<Player>> GetAllAsync()
         {
             IReadOnlyList<Player> players = [playerState];

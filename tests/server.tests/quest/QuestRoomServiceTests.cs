@@ -554,6 +554,12 @@ public class QuestRoomServiceTests
         public Task<Player?> GetPlayerAsync(PlayerId id)
             => Task.FromResult(players.GetValueOrDefault(id));
 
+        public Task<Player?> GetPlayerWithinLevelCapAsync(PlayerId id, int maxLevel)
+        {
+            var p = players.GetValueOrDefault(id);
+            return Task.FromResult(p is not null && p.Level <= maxLevel ? p : null);
+        }
+
         public Task<IReadOnlyList<Player>> GetAllAsync()
             => Task.FromResult<IReadOnlyList<Player>>(players.Values.ToArray());
 

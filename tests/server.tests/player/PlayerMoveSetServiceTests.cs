@@ -75,6 +75,11 @@ public class PlayerMoveSetServiceTests
             return Task.FromResult<Player?>(player.Id == id ? player : null);
         }
 
+        public Task<Player?> GetPlayerWithinLevelCapAsync(PlayerId id, int maxLevel)
+        {
+            return Task.FromResult<Player?>(player.Id == id && player.Level <= maxLevel ? player : null);
+        }
+
         public Task<IReadOnlyList<Player>> GetAllAsync()
         {
             return Task.FromResult<IReadOnlyList<Player>>([player]);

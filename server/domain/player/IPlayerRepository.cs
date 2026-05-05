@@ -3,6 +3,7 @@ namespace server.domain.player;
 public interface IPlayerRepository
 {
     Task<Player?> GetPlayerAsync(PlayerId id);
+    Task<Player?> GetPlayerWithinLevelCapAsync(PlayerId id, int maxLevel);
     Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids);
     Task<IReadOnlyList<Player>> GetAllAsync();
     Task<bool> UpdateNameAsync(PlayerId id, string name);
