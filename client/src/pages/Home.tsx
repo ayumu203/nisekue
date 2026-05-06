@@ -30,7 +30,9 @@ import {
   QuestIcon,
   RebirthIcon,
   RankingIcon,
+  ReportIcon,
   SpecialThanksIcon,
+  SurveyIcon,
   ThreadsIcon,
   TrainingGroupIcon,
   TrainingIcon,
@@ -324,6 +326,28 @@ function Home() {
                 sx={menuButtonSx}
               >
                 {locale.specialThanks}
+              </Button>
+              <Button
+                component="a"
+                href="https://docs.google.com/forms/d/e/1FAIpQLScQGhSmvuy99jOyKKvHIYtKcbZOGpYucamzrza5CRKezS054A/viewform?usp=dialog"
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="outlined"
+                startIcon={<SurveyIcon />}
+                sx={menuButtonSx}
+              >
+                {locale.survey}
+              </Button>
+              <Button
+                component="a"
+                href="https://docs.google.com/forms/d/e/1FAIpQLSduEn4lqqHBp4zuaXKehG3w4DQBXWmp2GdkMNU1tqO5_VAQUw/viewform?usp=publish-editor"
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="outlined"
+                startIcon={<ReportIcon />}
+                sx={menuButtonSx}
+              >
+                {locale.report}
               </Button>
             </Stack>
 
