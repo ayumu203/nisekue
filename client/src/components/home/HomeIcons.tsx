@@ -96,6 +96,22 @@ export function TrainingGroupIcon(props: SvgIconProps) {
   )
 }
 
+export function SurveyIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m-5 14H7v-2h7zm3-4H7v-2h10zm0-4H7V7h10z" />
+    </SvgIcon>
+  )
+}
+
+export function ReportIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z" />
+    </SvgIcon>
+  )
+}
+
 export function SocialGroupIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
