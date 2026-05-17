@@ -2,7 +2,7 @@
 
 ## 開発資料
 
-- [こちら](docs/開発資料.pdf)よりご覧いただけます。
+- [こちら](https://docs.google.com/presentation/d/1CH4CUAGjw3HgIID_wlaz-j8JuY-V16gEYpGhag1mcgM/edit?usp=sharing)よりご覧いただけます。
 
 ## 公開先
 
