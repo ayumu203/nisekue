@@ -1,0 +1,269 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1080" font-family="'Helvetica Neue', 'Hiragino Sans', 'Yu Gothic', sans-serif">
+  <!-- Background -->
+  <rect width="1500" height="1080" fill="#FBF4E4"/>
+
+  <!-- ===== External User ===== -->
+  <g transform="translate(110, 110)">
+    <circle cx="40" cy="30" r="40" fill="none" stroke="#3498DB" stroke-width="3"/>
+    <circle cx="40" cy="22" r="12" fill="none" stroke="#3498DB" stroke-width="3"/>
+    <path d="M22 42 Q40 28 58 42 L58 50 L22 50 Z" fill="none" stroke="#3498DB" stroke-width="3"/>
+    <text x="40" y="-15" text-anchor="middle" font-size="15" fill="#555">エンドユーザー</text>
+  </g>
+
+  <!-- ===== External Developer ===== -->
+  <g transform="translate(1310, 110)">
+    <rect x="0" y="10" width="80" height="53" rx="3" fill="#E8E8E8" stroke="#888" stroke-width="2"/>
+    <rect x="6" y="16" width="64" height="37" fill="#FFF"/>
+    <rect x="26" y="50" width="26" height="8" fill="#E8E8E8" stroke="#888" stroke-width="2"/>
+    <text x="40" y="5" text-anchor="middle" font-size="15" fill="#555">開発者</text>
+  </g>
+
+  <!-- Arrow from user to frontend -->
+  <path d="M150 165 L150 245" stroke="#E74C3C" stroke-width="2.5" fill="none" marker-end="url(#arrowRed)"/>
+  <text x="160" y="210" font-size="11" fill="#888">HTTPS</text>
+
+  <!-- Arrow from developer to CI/CD -->
+  <path d="M1348 165 L1348 840" stroke="#2980B9" stroke-width="2.5" fill="none" stroke-dasharray="6,4" marker-end="url(#arrowBlue)"/>
+  <text x="1360" y="205" font-size="11" fill="#888">push/pull req</text>
+
+  <!-- ===== Outer Cloud Boundary ===== -->
+  <rect x="60" y="180" width="1380" height="780" rx="10" fill="none" stroke="#666" stroke-width="2" stroke-dasharray="10,6"/>
+  <text x="80" y="945" font-size="13" fill="#666" font-style="italic">全体構成</text>
+
+  <!-- ===== Frontend Section ===== -->
+  <g>
+    <!-- Frontend boundary -->
+    <rect x="100" y="240" width="360" height="280" rx="8" fill="#FFFAEC" stroke="#F39C12" stroke-width="2"/>
+    <text x="120" y="270" font-size="18" font-weight="bold" fill="#7B3F99">フロントエンド</text>
+    <text x="120" y="290" font-size="11" fill="#888">本番: Cloudflare Pages / 開発: GitHub Pages</text>
+
+    <!-- React -->
+    <g transform="translate(130, 320)">
+      <rect width="90" height="80" rx="6" fill="#FFFFFF" stroke="#61DAFB" stroke-width="2"/>
+      <circle cx="45" cy="35" r="6" fill="#61DAFB"/>
+      <ellipse cx="45" cy="35" rx="22" ry="8" fill="none" stroke="#61DAFB" stroke-width="2"/>
+      <ellipse cx="45" cy="35" rx="22" ry="8" fill="none" stroke="#61DAFB" stroke-width="2" transform="rotate(60 45 35)"/>
+      <ellipse cx="45" cy="35" rx="22" ry="8" fill="none" stroke="#61DAFB" stroke-width="2" transform="rotate(120 45 35)"/>
+      <text x="45" y="70" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">React</text>
+    </g>
+
+    <!-- Vite -->
+    <g transform="translate(235, 320)">
+      <rect width="90" height="80" rx="6" fill="#FFFFFF" stroke="#FFC107" stroke-width="2"/>
+      <polygon points="35,18 55,18 45,55" fill="#FFC107"/>
+      <polygon points="40,18 50,18 45,28" fill="#9C27B0"/>
+      <text x="45" y="70" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">Vite</text>
+    </g>
+
+    <!-- TypeScript -->
+    <g transform="translate(340, 320)">
+      <rect width="90" height="80" rx="6" fill="#FFFFFF" stroke="#3178C6" stroke-width="2"/>
+      <rect x="22" y="18" width="46" height="32" fill="#3178C6"/>
+      <text x="45" y="42" text-anchor="middle" font-size="14" font-weight="bold" fill="#FFFFFF">TS</text>
+      <text x="45" y="70" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">TypeScript</text>
+    </g>
+
+    <!-- Hosting label -->
+    <rect x="130" y="425" width="300" height="80" rx="6" fill="#FFF8DC" stroke="#F39C12" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="280" y="448" text-anchor="middle" font-size="11" font-weight="bold" fill="#555">ホスティング</text>
+    <text x="280" y="468" text-anchor="middle" font-size="11" fill="#F38020">☁ Cloudflare Pages（本番）</text>
+    <text x="280" y="488" text-anchor="middle" font-size="11" fill="#333">⚙ GitHub Pages（開発）</text>
+  </g>
+
+  <!-- ===== Backend Section ===== -->
+  <g>
+    <rect x="540" y="240" width="380" height="280" rx="8" fill="#EDF7EE" stroke="#27AE60" stroke-width="2"/>
+    <text x="560" y="270" font-size="18" font-weight="bold" fill="#C0392B">アプリケーションサーバ（バックエンド）</text>
+    <text x="560" y="290" font-size="11" fill="#888">本番: 韓国 / 開発: 香港</text>
+
+    <!-- Azure App Service -->
+    <g transform="translate(612.5, 320)">
+      <rect width="90" height="80" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="2"/>
+      <g transform="translate(22.5, 12.5) scale(2.5)">
+        <defs>
+          <radialGradient id="e2cf8746-c9a8-4eee-86c2-4951983c6032" cx="13428.81" cy="3518.86" r="56.67" gradientTransform="translate(-2005.33 -518.83) scale(0.15)" gradientUnits="userSpaceOnUse">
+            <stop offset="0.18" stop-color="#5ea0ef" />
+            <stop offset="1" stop-color="#0078d4" />
+          </radialGradient>
+          <linearGradient id="bdd213dd-d313-473c-8ff4-0133fd3a9033" x1="4.4" y1="11.48" x2="4.37" y2="7.53" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#ccc" />
+            <stop offset="1" stop-color="#fcfcfc" />
+          </linearGradient>
+          <linearGradient id="afcc63c5-3649-4476-a742-bcb53a569f3c" x1="10.13" y1="15.45" x2="10.13" y2="11.9" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#ccc" />
+            <stop offset="1" stop-color="#fcfcfc" />
+          </linearGradient>
+          <linearGradient id="bd873f0b-9954-4aa5-a3df-9f4c64e8729d" x1="14.18" y1="11.15" x2="14.18" y2="7.38" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#ccc" />
+            <stop offset="1" stop-color="#fcfcfc" />
+          </linearGradient>
+        </defs>
+        <path id="ee75dd06-1aca-4f76-9d11-d05a284020ad" d="M14.21,15.72A8.5,8.5,0,0,1,3.79,2.28l.09-.06a8.5,8.5,0,0,1,10.33,13.5" fill="url(#e2cf8746-c9a8-4eee-86c2-4951983c6032)" />
+        <path d="M6.69,7.23A13,13,0,0,1,15.6,3.65a8.47,8.47,0,0,0-1.49-1.44,14.34,14.34,0,0,0-4.69,1.1A12.54,12.54,0,0,0,5.34,6.13,2.76,2.76,0,0,1,6.69,7.23Z" fill="#fff" opacity="0.6" />
+        <path d="M2.48,10.65a17.86,17.86,0,0,0-.83,2.62,7.82,7.82,0,0,0,.62.92c.18.23.35.44.55.65A17.94,17.94,0,0,1,3.9,11.37,2.76,2.76,0,0,1,2.48,10.65Z" fill="#fff" opacity="0.6" />
+        <path d="M3.46,6.11a12,12,0,0,1-.69-2.94,8.15,8.15,0,0,0-1.1,1.45A12.69,12.69,0,0,0,2.24,7,2.69,2.69,0,0,1,3.46,6.11Z" fill="#f2f2f2" opacity="0.55" />
+        <circle cx="4.38" cy="8.68" r="2.73" fill="url(#bdd213dd-d313-473c-8ff4-0133fd3a9033)" />
+        <path d="M8.36,13.67A1.77,1.77,0,0,1,8.9,12.4a11.88,11.88,0,0,1-2.53-1.86,2.74,2.74,0,0,1-1.49.83,13.1,13.1,0,0,0,1.45,1.28A12.12,12.12,0,0,0,8.38,13.9,1.79,1.79,0,0,1,8.36,13.67Z" fill="#f2f2f2" opacity="0.55" />
+        <path d="M14.66,13.88a12,12,0,0,1-2.76-.32.41.41,0,0,1,0,.11,1.75,1.75,0,0,1-.51,1.24,13.69,13.69,0,0,0,3.42.24A8.21,8.21,0,0,0,16,13.81,11.5,11.5,0,0,1,14.66,13.88Z" fill="#f2f2f2" opacity="0.55" />
+        <circle cx="10.13" cy="13.67" r="1.78" fill="url(#afcc63c5-3649-4476-a742-bcb53a569f3c)" />
+        <path d="M12.32,8.93a1.83,1.83,0,0,1,.61-1A25.5,25.5,0,0,1,8.47,3.79a16.91,16.91,0,0,1-2-2.92,7.64,7.64,0,0,0-1.09.42A18.14,18.14,0,0,0,7.53,4.47,26.44,26.44,0,0,0,12.32,8.93Z" fill="#f2f2f2" opacity="0.7" />
+        <circle cx="14.18" cy="9.27" r="1.89" fill="url(#bd873f0b-9954-4aa5-a3df-9f4c64e8729d)" />
+        <path d="M17.35,10.54,17,10.37l0,0-.3-.16-.06,0L16.38,10l-.07,0L16,9.8a1.76,1.76,0,0,1-.64.92c.12.08.25.15.38.22l.08.05.35.19,0,0,.86.45h0a8.63,8.63,0,0,0,.29-1.11Z" fill="#f2f2f2" opacity="0.55" />
+        <circle cx="4.38" cy="8.68" r="2.73" fill="url(#bdd213dd-d313-473c-8ff4-0133fd3a9033)" />
+        <circle cx="10.13" cy="13.67" r="1.78" fill="url(#afcc63c5-3649-4476-a742-bcb53a569f3c)" />
+      </g>
+      <text x="45" y="70" text-anchor="middle" font-size="10" font-weight="bold" fill="#333">Azure App Svc</text>
+    </g>
+
+    <!-- C# -->
+    <g transform="translate(717.5, 320)">
+      <rect width="60" height="80" rx="6" fill="#FFFFFF" stroke="#9B4F96" stroke-width="2"/>
+      <circle cx="30" cy="35" r="18" fill="#9B4F96"/>
+      <text x="30" y="40" text-anchor="middle" font-size="14" font-weight="bold" fill="#FFFFFF">C#</text>
+      <text x="30" y="70" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">C#</text>
+    </g>
+
+    <!-- ASP.NET -->
+    <g transform="translate(792.5, 320)">
+      <rect width="55" height="80" rx="6" fill="#FFFFFF" stroke="#0072C6" stroke-width="2"/>
+      <rect x="8" y="22" width="40" height="22" fill="#0072C6"/>
+      <text x="28" y="38" text-anchor="middle" font-size="9" font-weight="bold" fill="#FFFFFF">ASP.net</text>
+      <text x="28" y="70" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">ASP.NET</text>
+    </g>
+
+    <!-- Region note -->
+    <rect x="570" y="425" width="340" height="80" rx="6" fill="#F0FAF1" stroke="#27AE60" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="740" y="448" text-anchor="middle" font-size="11" font-weight="bold" fill="#555">ホスティング</text>
+    <text x="740" y="468" text-anchor="middle" font-size="11" fill="#C0392B">🇰🇷 韓国リージョン（本番）</text>
+    <text x="740" y="488" text-anchor="middle" font-size="11" fill="#333">🇭🇰 香港リージョン（開発）</text>  </g>
+
+  <!-- ===== Database Section ===== -->
+  <g>
+    <rect x="980" y="240" width="380" height="280" rx="8" fill="#F5EEF8" stroke="#7B3F99" stroke-width="2"/>
+    <text x="1000" y="270" font-size="18" font-weight="bold" fill="#7B3F99">データベース / 認証</text>
+    <text x="1000" y="290" font-size="11" fill="#888">本番: 韓国 / 開発: シンガポール</text>
+
+    <!-- Supabase -->
+    <g transform="translate(1072.5, 320)">
+      <rect width="90" height="80" rx="6" fill="#FFFFFF" stroke="#3ECF8E" stroke-width="2"/>
+      <g transform="translate(26, 15) scale(0.35)">
+        <defs>
+          <linearGradient id="supabase_paint0_linear" x1="53.9738" y1="54.974" x2="94.1635" y2="71.8295" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#249361"/>
+            <stop offset="1" stop-color="#3ECF8E"/>
+          </linearGradient>
+          <linearGradient id="supabase_paint1_linear" x1="36.1558" y1="30.578" x2="54.4844" y2="65.0806" gradientUnits="userSpaceOnUse">
+            <stop/>
+            <stop offset="1" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M63.7076 110.284C60.8481 113.885 55.0502 111.912 54.9813 107.314L53.9738 40.0627L99.1935 40.0627C107.384 40.0627 111.952 49.5228 106.859 55.9374L63.7076 110.284Z" fill="url(#supabase_paint0_linear)"/>
+        <path d="M63.7076 110.284C60.8481 113.885 55.0502 111.912 54.9813 107.314L53.9738 40.0627L99.1935 40.0627C107.384 40.0627 111.952 49.5228 106.859 55.9374L63.7076 110.284Z" fill="url(#supabase_paint1_linear)" fill-opacity="0.2"/>
+        <path d="M45.317 2.07103C48.1765 -1.53037 53.9745 0.442937 54.0434 5.041L54.4849 72.2922H9.83113C1.64038 72.2922 -2.92775 62.8321 2.1655 56.4175L45.317 2.07103Z" fill="#3ECF8E"/>
+      </g>
+      <text x="45" y="70" text-anchor="middle" font-size="10" font-weight="bold" fill="#333">Supabase</text>
+    </g>
+
+    <!-- Resend -->
+    <g transform="translate(1177.5, 320)">
+      <rect width="90" height="80" rx="6" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+      <g transform="translate(0, -10) scale(0.05)">
+        <path d="M1000.46 450C1174.77 450 1278.43 553.669 1278.43 691.282C1278.43 828.896 1174.77 932.563 1000.46 932.563H912.382L1350 1350H1040.82L707.794 1033.48C683.944 1011.47 672.936 985.781 672.935 963.765C672.935 932.572 694.959 905.049 737.161 893.122L908.712 847.244C973.85 829.812 1018.81 779.353 1018.81 713.298C1018.8 632.567 952.745 585.78 871.095 585.78H450V450H1000.46Z" fill="black"/>
+      </g>
+      <text x="45" y="70" text-anchor="middle" font-size="10" font-weight="bold" fill="#333">Resend</text>
+    </g>
+
+    <!-- Region note -->
+    <rect x="1000" y="430" width="340" height="75" rx="6" fill="#FAF5FD" stroke="#7B3F99" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="1170" y="453" text-anchor="middle" font-size="11" font-weight="bold" fill="#555">データストア・認証基盤</text>
+    <text x="1170" y="473" text-anchor="middle" font-size="11" fill="#3ECF8E">● データ永続化 (Supabase PostgreSQL)</text>
+    <text x="1170" y="491" text-anchor="middle" font-size="11" fill="#0078D4">● ユーザー認証 (Supabase Auth)</text>
+  </g>
+  
+  <!-- ===== CI/CD Section ===== -->
+  <g>
+    <rect x="100" y="600" width="1260" height="240" rx="8" fill="#FFF5F0" stroke="#E67E22" stroke-width="2" stroke-dasharray="8,5"/>
+    <text x="120" y="630" font-size="18" font-weight="bold" fill="#C0392B">デプロイ・マイグレーション (CI/CD)</text>
+    <text x="120" y="650" font-size="11" fill="#888">GitHub Actions による自動ビルド・デプロイ・DBマイグレーション</text>
+
+    <!-- GitHub -->
+    <g transform="translate(180, 680)">
+    <rect width="140" height="120" rx="6" fill="#FFFFFF" stroke="#181717" stroke-width="2"/>
+    <circle cx="70" cy="45" r="28" fill="#181717"/>
+    <path d="M70 19.5c-14.1 0-25.5 11.4-25.5 25.5 0 11.3 7.3 20.9 17.4 24.3 1.3.2 1.7-.6 1.7-1.2v-4.2c-7.1 1.5-8.6-3.4-8.6-3.4-1.2-3-2.9-3.8-2.9-3.8-2.3-1.6.1-1.6.1-1.6 2.6.2 3.9 2.7 3.9 2.7 2.3 3.9 6 2.7 7.5 2.1.2-1.7.9-2.7 1.7-3.4-5.6-.6-11.6-2.9-11.6-12.7 0-2.7 1-5.1 2.6-6.9-.3-.7-1.2-3.3.3-6.9 0 0 2.1-.6 7.1 2.6a24.3 24.3 0 0113.1 0c5-3.3 7.1-2.6 7.1-2.6 1.4 3.7.5 6.3.3 6.9 1.7 1.8 2.6 4.2 2.6 6.9 0 9.8-6 12-11.6 12.5.9.8 1.7 2.4 1.7 4.7v6.9c0 .7.5 1.4 1.7 1.2 10.1-3.4 17.4-13 17.4-24.3 0-14.1-11.4-25.5-25.5-25.5z" fill="#FFFFFF"/>
+    <text x="70" y="105" text-anchor="middle" font-size="11" font-weight="bold" fill="#181717">GitHub</text>
+    </g>
+
+    <!-- Cloudflare -->
+    <g transform="translate(360, 680)">
+    <rect width="140" height="120" rx="6" fill="#FFFFFF" stroke="#F57C00" stroke-width="2"/>
+    <g transform="translate(39.5, 10) scale(1.3)">
+        <path fill="#FDD835" d="M41.008 26.487L40.4 24.249 44.096 23.56 40.427 22.733 43.88 21.24 40.119 21.25 43.151 19.028 39.488 19.875 41.948 17.033 38.564 18.675 40.331 15.355 37.398 17.709 38.383 14.079 36.049 17.028 36.197 13.27 34.579 16.663 33.89 12.966 33.064 16.636 31.57 13.184 31.58 16.944 29.969 17.372 27.362 15.115 29.005 18.498 25.686 16.732 28.039 19.662 24.409 18.68 27.356 21.015 23.601 20.864 26.993 22.484 23.296 23.173 26.966 23.999 24.941 24.875 17.125 24.875 17.125 29.5 34.461 29.5 39 30 38.827 29.5 39 29.5 39 28.56 39.515 28.834 40.771 28.834 39.354 27.07 42.984 28.053z"></path>
+        <path fill="#F57C00" d="M38.265,23.789c-0.884,0-1.708,0.218-2.454,0.573l2.564,4.763l-4-3.875l-15,4.375l13.75-5.25L25.5,21.5l9.041,2.083l0.262,0.053c0.008,0.028,0.035-0.366,0.035-0.769c0-5.25-4.267-9.505-9.533-9.505c-4.374,0-8.057,2.938-9.178,6.946c-0.746-0.701-1.748-1.134-2.85-1.134c-2.303,0-4.166,1.861-4.166,4.154c0,0.46,0.077,0.906,0.216,1.318c-0.192-0.016-0.389-0.028-0.586-0.028C5.57,24.619,3,27.18,3,30.34c0,0.577,0.089,1.136,0.249,1.66h40.173C43.789,31.247,44,30.403,44,29.513C44,26.348,41.432,23.789,38.265,23.789z"></path>
+        <path fill="#FFB74D" d="M25.5 19c2.851 0 5.453 1.043 7.463 2.761C32.591 17.967 29.391 15 25.5 15s-7.091 2.967-7.463 6.761C20.047 20.043 22.649 19 25.5 19zM14.737 22.026C14.395 21.417 13.749 21 13 21c-1.104 0-2 .896-2 2 0 .465.165.888.432 1.228C12.049 22.987 13.282 22.123 14.737 22.026zM7.05 32c.251-2.734 2.482-4.895 5.259-4.99C11.537 26.388 10.568 26 9.5 26 7.015 26 5 28.015 5 30.5c0 .529.102 1.031.271 1.5H7.05z"></path>
+    </g>
+    <text x="70" y="105" text-anchor="middle" font-size="11" font-weight="bold" fill="#F57C00">Cloudflare</text>
+    </g>
+
+    <!-- Azure -->
+    <g transform="translate(540, 680)">
+    <rect width="140" height="120" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="2"/>
+    <g transform="translate(45, 22) scale(2.8)">
+        <path d="M5.33492 1.37491C5.44717 1.04229 5.75909 0.818359 6.11014 0.818359H11.25L5.91513 16.6255C5.80287 16.9581 5.49095 17.182 5.13991 17.182H1.13968C0.579936 17.182 0.185466 16.6325 0.364461 16.1022L5.33492 1.37491Z" fill="url(#paint0_linear_6102_134469)" />
+        <path d="M13.5517 11.4546H5.45126C5.1109 11.4546 4.94657 11.8715 5.19539 12.1037L10.4005 16.9618C10.552 17.1032 10.7515 17.1819 10.9587 17.1819H15.5453L13.5517 11.4546Z" fill="#0078D4" />
+        <path d="M6.11014 0.818359C5.75909 0.818359 5.44717 1.04229 5.33492 1.37491L0.364461 16.1022C0.185466 16.6325 0.579936 17.182 1.13968 17.182H5.13991C5.49095 17.182 5.80287 16.9581 5.91513 16.6255L6.90327 13.6976L10.4005 16.9617C10.552 17.1032 10.7515 17.1818 10.9588 17.1818H15.5454L13.5517 11.4545H7.66032L11.25 0.818359H6.11014Z" fill="url(#paint1_linear_6102_134469)" />
+        <path d="M12.665 1.37478C12.5528 1.04217 12.2409 0.818237 11.8898 0.818237H6.13629H6.16254C6.51358 0.818237 6.82551 1.04217 6.93776 1.37478L11.9082 16.1021C12.0872 16.6324 11.6927 17.1819 11.133 17.1819H11.0454H16.8603C17.42 17.1819 17.8145 16.6324 17.6355 16.1021L12.665 1.37478Z" fill="url(#paint2_linear_6102_134469)" />
+        <defs>
+        <linearGradient id="paint0_linear_6102_134469" x1="6.07512" y1="1.38476" x2="0.738178" y2="17.1514" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#114A8B" />
+            <stop offset="1" stop-color="#0669BC" />
+        </linearGradient>
+        <linearGradient id="paint1_linear_6102_134469" x1="10.3402" y1="11.4564" x2="9.107" y2="11.8734" gradientUnits="userSpaceOnUse">
+            <stop stop-opacity="0.3" />
+            <stop offset="0.0711768" stop-opacity="0.2" />
+            <stop offset="0.321031" stop-opacity="0.1" />
+            <stop offset="0.623053" stop-opacity="0.05" />
+            <stop offset="1" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="paint2_linear_6102_134469" x1="9.45858" y1="1.38467" x2="15.3168" y2="16.9926" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#3CCBF4" />
+            <stop offset="1" stop-color="#2892DF" />
+        </linearGradient>
+        </defs>
+    </g>
+    <text x="70" y="105" text-anchor="middle" font-size="11" font-weight="bold" fill="#0078D4">Azure</text>
+    </g>
+    <!-- Pipeline description -->
+    <g>
+      <rect x="720" y="680" width="600" height="120" rx="6" fill="#FFFFFF" stroke="#E67E22" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="740" y="705" font-size="12" font-weight="bold" fill="#333">パイプライン処理</text>
+      <text x="740" y="728" font-size="11" fill="#555">① GitHub Push → Actions トリガー</text>
+      <text x="740" y="748" font-size="11" fill="#555">② フロントエンドビルド → Cloudflare Pages / GitHub Pages へデプロイ</text>
+      <text x="740" y="768" font-size="11" fill="#555">③ バックエンドビルド → Azure App Service へデプロイ</text>
+      <text x="740" y="788" font-size="11" fill="#555">④ Supabase へ DB マイグレーション実行</text>
+    </g>
+  </g>
+
+  <!-- ===== Connection Arrows ===== -->
+  <!-- Frontend → Backend -->
+  <path d="M460 380 L540 380" stroke="#E74C3C" stroke-width="2.5" fill="none" marker-end="url(#arrowRed)"/>
+  <text x="500" y="372" text-anchor="middle" font-size="11" fill="#888">API</text>
+
+  <!-- Backend → Database -->
+  <path d="M920 380 L980 380" stroke="#E74C3C" stroke-width="2.5" fill="none" marker-end="url(#arrowRed)"/>
+  <text x="950" y="372" text-anchor="middle" font-size="11" fill="#888">Query</text>
+
+  <!-- CI/CD → Frontend -->
+  <path d="M250 680 L250 520" stroke="#2980B9" stroke-width="2.5" fill="none" marker-end="url(#arrowBlue)"/>
+  <text x="200" y="590" font-size="11" fill="#2980B9">Deploy</text>
+
+  <!-- CI/CD → Backend -->
+  <path d="M430 680 L700 520" stroke="#2980B9" stroke-width="2.5" fill="none" marker-end="url(#arrowBlue)"/>
+  <text x="535" y="590" font-size="11" fill="#2980B9">Deploy</text>
+
+  <!-- CI/CD → Database -->
+  <path d="M610 680 L1140 520" stroke="#2980B9" stroke-width="2.5" fill="none" marker-end="url(#arrowBlue)"/>
+  <text x="955" y="590" font-size="11" fill="#2980B9">Migration</text>
+
+
+</svg>
