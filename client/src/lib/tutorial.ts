@@ -10,25 +10,47 @@ export type TutorialStep =
   | 'completed'
 
 const KEY_PREFIX = 'nisekue:tutorial'
+const DEFAULT_TUTORIAL_STEP: TutorialStep = 'home-training'
+const TUTORIAL_STEPS: readonly TutorialStep[] = [
+  'home-training',
+  'training-fight',
+  'training-confirm',
+  'training-to-lv5',
+  'home-job-change',
+  'job-change-info',
+  'training-to-lv7',
+  'training-quest-guide',
+  'completed',
+]
 
 function getStorageKey(userId: string): string {
   return `${KEY_PREFIX}:${userId}:step`
 }
 
+function isTutorialStep(value: string): value is TutorialStep {
+  return TUTORIAL_STEPS.includes(value as TutorialStep)
+}
+
 export function getTutorialStep(userId: string): TutorialStep {
   if (typeof window === 'undefined') {
-    return 'home-training'
+    return DEFAULT_TUTORIAL_STEP
   }
 
   try {
-    const stored = window.localStorage.getItem(getStorageKey(userId))
+    const storageKey = getStorageKey(userId)
+    const stored = window.localStorage.getItem(storageKey)
     if (!stored) {
-      return 'home-training'
+      return DEFAULT_TUTORIAL_STEP
     }
 
-    return stored as TutorialStep
+    if (isTutorialStep(stored)) {
+      return stored
+    }
+
+    window.localStorage.setItem(storageKey, DEFAULT_TUTORIAL_STEP)
+    return DEFAULT_TUTORIAL_STEP
   } catch {
-    return 'home-training'
+    return DEFAULT_TUTORIAL_STEP
   }
 }
 
