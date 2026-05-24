@@ -23,6 +23,7 @@ type TrainingEnemySelectProps = {
   enemies: TrainingEnemy[]
   isActionDisabled: boolean
   lockRemainingSeconds: number
+  tutorialHighlightFirstFightButton?: boolean
   onFight: (enemy: TrainingEnemy) => Promise<void> | void
 }
 
@@ -30,6 +31,7 @@ export default function TrainingEnemySelect({
   enemies,
   isActionDisabled,
   lockRemainingSeconds,
+  tutorialHighlightFirstFightButton = false,
   onFight,
 }: TrainingEnemySelectProps) {
   const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
@@ -37,7 +39,7 @@ export default function TrainingEnemySelect({
   return (
     <Stack spacing={2}>
       <Grid container spacing={2}>
-        {enemies.map((enemy) => (
+        {enemies.map((enemy, index) => (
           <Grid key={enemy.id} size={{ xs: 12, sm: 6, md: 4 }}>
             <Card
               variant="outlined"
@@ -94,6 +96,7 @@ export default function TrainingEnemySelect({
                     </Typography>
                   </Stack>
                   <Button
+                    id={tutorialHighlightFirstFightButton && index === 0 ? 'tutorial-fight-btn' : undefined}
                     variant="contained"
                     disabled={isActionDisabled}
                     onClick={() => onFight(enemy)}

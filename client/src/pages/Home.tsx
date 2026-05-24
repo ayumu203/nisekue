@@ -48,11 +48,17 @@ import {
   twoColumnContentGridSx,
 } from '@/constants/styles'
 import { beginnerGuides } from '@/lib/beginnerGuides'
+import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import SpotlightTutorial from '@/components/common/SpotlightTutorial'
+import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 
 function Home() {
   const { session, isLoading, isAnonymous } = useAuth()
   const [toastQueue, setToastQueue] = useState<string[]>([])
-  const [isTrainingGroupOpen, setIsTrainingGroupOpen] = useState(false)
+  const userId = session?.user.id ?? null
+  const tutorialStep = userId ? getTutorialStep(userId) : null
+  const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
+  const isTrainingGroupOpen = tutorialStep === 'home-job-change' || isTrainingGroupOpenByUser
   const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
   const handledChatIdsRef = useRef<Set<number>>(new Set())
   const handledReplyIdsRef = useRef<Set<string>>(new Set())
@@ -214,11 +220,17 @@ function Home() {
                 {locale.quest}
               </Button>
               <Button
+                id="tutorial-training-btn"
                 component={Link}
                 to="/training"
                 variant="contained"
                 startIcon={<TrainingIcon />}
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                onClick={() => {
+                  if (userId && tutorialStep === 'home-training') {
+                    setTutorialStep(userId, 'training-fight')
+                  }
+                }}
               >
                 {locale.training}
               </Button>
@@ -243,7 +255,7 @@ function Home() {
               <Button
                 variant="contained"
                 startIcon={<TrainingGroupIcon />}
-                onClick={() => setIsTrainingGroupOpen((prev) => !prev)}
+                onClick={() => setIsTrainingGroupOpenByUser((prev) => !prev)}
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
                 {locale.trainingGroup}
@@ -260,11 +272,17 @@ function Home() {
                     {locale.moveSetting}
                   </Button>
                   <Button
+                    id="tutorial-job-change-btn"
                     component={Link}
                     to="/job-change"
                     variant="contained"
                     startIcon={<JobChangeIcon />}
                     sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                    onClick={() => {
+                      if (userId && tutorialStep === 'home-job-change') {
+                        setTutorialStep(userId, 'job-change-info')
+                      }
+                    }}
                   >
                     {locale.jobChange}
                   </Button>
@@ -391,6 +409,15 @@ function Home() {
           </Box>
         </Stack>
       </Paper>
+      {tutorialStep === 'home-training' && (
+        <SpotlightTutorial targetId="tutorial-training-btn" message={tutorialLocale.steps.homeTraining.message} />
+      )}
+      {tutorialStep === 'home-job-change' && (
+        <SpotlightTutorial targetId="tutorial-job-change-btn" message={tutorialLocale.steps.homeJobChange.message} />
+      )}
+      {tutorialStep === 'training-to-lv7' && (
+        <SpotlightTutorial targetId="tutorial-training-btn" message={tutorialLocale.steps.backToTraining.message} />
+      )}
       <Snackbar
         open={toastQueue.length > 0}
         autoHideDuration={1500}

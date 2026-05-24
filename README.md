@@ -1,14 +1,14 @@
 # README
 
-## 資料
+## 開発資料
 
-- 開発内容に関する資料は以下のリンクから飛べます.
+- [こちら](https://docs.google.com/presentation/d/1CH4CUAGjw3HgIID_wlaz-j8JuY-V16gEYpGhag1mcgM/edit?usp=sharing)よりご覧いただけます。
 
 ## 公開先
 
-- 2026年5月3日までデータベースの利用上限のため動作しない可能性が高いです.
+- 以下のリンクよりゲームをプレイすることができます。
 - [本番用](https://game.arm203.org/)
-- [開発用(開発者が確認する用です)](https://ayumu203.github.io/nisekue/)
+- [開発用(開発者が確認する用途)](https://ayumu203.github.io/nisekue/)
 
 ## 作るもの
 
@@ -16,6 +16,8 @@
 - 冒険やエンドレスバトル等を実装する.
 
 ## システムのアーキテクチャ構成
+
+![アーキテクチャ構成](docs/arch.svg)
 
 ### フロントエンド
 
