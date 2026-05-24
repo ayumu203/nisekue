@@ -24,10 +24,7 @@ function useTargetRect(targetId: string | undefined, padding: number): TargetRec
   const [rect, setRect] = useState<TargetRect | null>(null)
 
   useLayoutEffect(() => {
-    if (!targetId) {
-      setRect(null)
-      return
-    }
+    if (!targetId) return
 
     function measure() {
       const el = document.getElementById(targetId!)
@@ -59,7 +56,7 @@ function useTargetRect(targetId: string | undefined, padding: number): TargetRec
     }
   }, [targetId, padding])
 
-  return rect
+  return targetId ? rect : null
 }
 
 export default function SpotlightTutorial({
