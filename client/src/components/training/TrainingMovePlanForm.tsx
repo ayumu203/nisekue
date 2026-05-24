@@ -15,6 +15,7 @@ type TrainingMovePlanFormProps = {
   onChangeMoveId: (turnIndex: number, moveId: number | null) => void
   showEnemyHeader?: boolean
   submitLabel?: string
+  submitButtonId?: string
   showSubmitButton?: boolean
   onSubmit: () => Promise<void> | void
 }
@@ -83,6 +84,7 @@ export default function TrainingMovePlanForm({
   onChangeMoveId,
   showEnemyHeader = true,
   submitLabel,
+  submitButtonId,
   showSubmitButton = true,
   onSubmit,
 }: TrainingMovePlanFormProps) {
@@ -289,6 +291,7 @@ export default function TrainingMovePlanForm({
 
         {showSubmitButton ? (
           <Button
+            id={submitButtonId}
             variant="contained"
             disabled={isActionDisabled}
             onClick={onSubmit}
