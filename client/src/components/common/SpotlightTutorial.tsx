@@ -148,7 +148,14 @@ export default function SpotlightTutorial({
         {subMessage && (
           <Typography
             variant="body2"
-            sx={{ color: '#5c4a1e', whiteSpace: 'pre-line', lineHeight: 1.7, mt: 1, pt: 1, borderTop: '1px solid #e8d49c' }}
+            sx={{
+              color: '#5c4a1e',
+              whiteSpace: 'pre-line',
+              lineHeight: 1.7,
+              mt: 1,
+              pt: 1,
+              borderTop: '1px solid #e8d49c',
+            }}
           >
             {subMessage}
           </Typography>

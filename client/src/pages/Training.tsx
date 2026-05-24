@@ -668,10 +668,7 @@ export default function Training() {
         </Stack>
       </Paper>
       {tutorialStep === 'home-job-change' && (
-        <SpotlightTutorial
-          targetId="tutorial-home-btn"
-          message={tutorialLocale.steps.homeJobChange.message}
-        />
+        <SpotlightTutorial targetId="tutorial-home-btn" message={tutorialLocale.steps.homeJobChange.message} />
       )}
       {tutorialStep === 'training-fight' && (
         <SpotlightTutorial targetId="tutorial-fight-btn" message={tutorialLocale.steps.trainingFight.message} />
