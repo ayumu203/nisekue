@@ -25,12 +25,14 @@ function useTargetRect(targetId: string | undefined, padding: number): TargetRec
 
   useLayoutEffect(() => {
     if (!targetId) {
+      setRect(null)
       return
     }
 
     function measure() {
       const el = document.getElementById(targetId!)
       if (!el) {
+        setRect(null)
         return
       }
 
