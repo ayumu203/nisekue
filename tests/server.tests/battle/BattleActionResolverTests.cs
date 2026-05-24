@@ -451,6 +451,48 @@ public class BattleActionResolverTests
     }
 
     [Fact]
+    public void Resolve_WhenInstantDeathRateBelowThreshold_DoesNotApply()
+    {
+        var resolver = CreateResolver(randomProvider: () => 0.31d);
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var targetState = CreateState(target.Id);
+        var move = CreateInstantDeathMove(1, allowBossInstantDeath: false, ailmentRate: 0.30m);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].AppliedAilment.Should().BeNull();
+        targetState.IsDead.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Resolve_WhenInstantDeathRateAboveThreshold_Applies()
+    {
+        var resolver = CreateResolver(randomProvider: () => 0.29d);
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var targetState = CreateState(target.Id);
+        var move = CreateInstantDeathMove(1, allowBossInstantDeath: false, ailmentRate: 0.30m);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults.Should().ContainSingle();
+        result.TargetResults[0].AppliedAilment.Should().Be(AilmentType.InstantDeath);
+        targetState.IsDead.Should().BeTrue();
+    }
+
+    [Fact]
     public void Resolve_WhenAllyHasCoverAll_RedirectsNormalAttackDamageToCoverActor()
     {
         var resolver = CreateResolver();
@@ -703,7 +745,7 @@ public class BattleActionResolverTests
             ]);
     }
 
-    private static Move CreateInstantDeathMove(int moveId, bool allowBossInstantDeath)
+    private static Move CreateInstantDeathMove(int moveId, bool allowBossInstantDeath, decimal ailmentRate = 1m)
     {
         return new Move(
             new MoveId(moveId),
@@ -721,7 +763,7 @@ public class BattleActionResolverTests
                     new MoveId(moveId),
                     1,
                     MoveEffectType.Ailment,
-                    ailment: new AilmentEffect(AilmentType.InstantDeath, 1m, 1, allowBossInstantDeath: allowBossInstantDeath))
+                    ailment: new AilmentEffect(AilmentType.InstantDeath, ailmentRate, 1, allowBossInstantDeath: allowBossInstantDeath))
             ]);
     }
 }
