@@ -1,0 +1,33 @@
+{
+  "steps": {
+    "homeTraining": {
+      "message": "まずは訓練場で戦ってみましょう！"
+    },
+    "trainingFight": {
+      "message": "敵を選んで「戦う」を押してみよう！"
+    },
+    "trainingConfirm": {
+      "message": "技を選んで特訓を開始しよう！"
+    },
+    "trainingToLv5": {
+      "message": "レベル5まで敵と戦ってみよう！"
+    },
+    "homeJobChange": {
+      "message": "転職してみましょう！\nレベルが上がると新しい技を覚えます"
+    },
+    "jobChangeInfo": {
+      "message": "おすすめは盾兵（ガーディアン）と魔法使いです。\n転職するとジョブ固有の技を覚えます",
+      "dismissLabel": "OK!"
+    },
+    "backToTraining": {
+      "message": "訓練場に戻りましょう！"
+    },
+    "trainingToLv7": {
+      "message": "次はレベル7を目指しましょう！"
+    },
+    "trainingQuestGuide": {
+      "message": "クエストに挑戦できるようになりました。\nホームへ戻ってクエストを選んでみましょう",
+      "dismissLabel": "OK!"
+    }
+  }
+}

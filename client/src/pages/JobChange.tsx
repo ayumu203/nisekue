@@ -10,7 +10,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayerJob } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
@@ -19,6 +19,9 @@ import { useAuth } from '@/contexts/useAuth'
 import { resolveCharacterAssetPath, resolveJobAssetPath } from '@/lib/assets'
 import type { PlayerJobCode } from '@/schema/player'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
+import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import SpotlightTutorial from '@/components/common/SpotlightTutorial'
+import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import locale from '../../locale/player-job/JobChange.json'
 
 function formatExpProgress(
@@ -38,10 +41,26 @@ const baseJobCodes = new Set<PlayerJobCode>(['Warrior', 'Guardian', 'Mage', 'Pri
 
 export default function JobChange() {
   const { session, isLoading } = useAuth()
+  const userId = session?.user.id ?? null
+  const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [learnedMoveNames, setLearnedMoveNames] = useState<string[]>([])
   const [isSubmittingJobValue, setIsSubmittingJobValue] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!userId) {
+      return
+    }
+
+    const step = getTutorialStep(userId)
+    if (step === 'home-job-change') {
+      setTutorialStep(userId, 'job-change-info')
+      setTutorialStepState('job-change-info')
+    } else {
+      setTutorialStepState(step)
+    }
+  }, [userId])
 
   const playerSWRKey = session?.user.id ? (['job-change', session.user.id] as const) : null
   const {
@@ -116,7 +135,10 @@ export default function JobChange() {
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Stack direction="row" justifyContent="flex-start">
-            <HomeNavIconButton ariaLabel={locale.backToHome} />
+            <HomeNavIconButton
+              id={tutorialStep === 'training-to-lv7' ? 'tutorial-home-btn' : undefined}
+              ariaLabel={locale.backToHome}
+            />
           </Stack>
 
           {isPlayerLoading ? (
@@ -483,6 +505,27 @@ export default function JobChange() {
           )}
         </Stack>
       </Paper>
+      {tutorialStep === 'training-to-lv7' && (
+        <SpotlightTutorial
+          targetId="tutorial-home-btn"
+          message={tutorialLocale.steps.backToTraining.message}
+        />
+      )}
+      {tutorialStep === 'job-change-info' && (
+        <SpotlightTutorial
+          message={tutorialLocale.steps.jobChangeInfo.message}
+          showDismiss
+          dismissLabel={tutorialLocale.steps.jobChangeInfo.dismissLabel}
+          onDismiss={() => {
+            if (!userId) {
+              return
+            }
+
+            setTutorialStep(userId, 'training-to-lv7')
+            setTutorialStepState('training-to-lv7')
+          }}
+        />
+      )}
     </Container>
   )
 }

@@ -44,5 +44,6 @@
   "modePlayer": "PLAYER",
   "opponentsLoading": "対戦相手を読み込み中...",
   "noOpponentsAvailable": "現在対戦可能なプレイヤーがいません",
-  "anonymousPlayer": "名無しプレイヤー"
+  "anonymousPlayer": "名無しプレイヤー",
+  "newEnemiesUnlocked": "新たな相手と戦えるようになったよ。"
 }

@@ -34,6 +34,9 @@ import { useAuth } from '@/contexts/useAuth'
 import { innerSurfaceSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { beginnerGuides } from '@/lib/beginnerGuides'
+import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import SpotlightTutorial from '@/components/common/SpotlightTutorial'
+import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
@@ -112,6 +115,28 @@ export default function Training() {
   const [trainingLockRemainingSeconds, setTrainingLockRemainingSeconds] = useState(0)
   const [plannedMoveIds, setPlannedMoveIds] = useState<Array<number | null> | null>(null)
   const [lastSubmittedMoveIds, setLastSubmittedMoveIds] = useState<Array<number | null> | null>(null)
+  const [newEnemiesMessage, setNewEnemiesMessage] = useState<string | null>(null)
+  const prevLevelRef = useRef<number | undefined>(undefined)
+  const userId = session?.user.id ?? null
+  const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
+
+  function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
+    if (!userId) {
+      return
+    }
+
+    setTutorialStep(userId, next)
+    setTutorialStepState(next)
+  }
+
+  useEffect(() => {
+    if (!userId) {
+      return
+    }
+
+    const step = getTutorialStep(userId)
+    setTutorialStepState(step)
+  }, [userId])
 
   useEffect(() => {
     if (trainingLockUntilMs <= Date.now()) {
@@ -218,6 +243,34 @@ export default function Training() {
     ])
   }
 
+  useEffect(() => {
+    if (!player || !tutorialStep || !userId) {
+      return
+    }
+
+    if (tutorialStep === 'training-to-lv5' && player.level >= 5) {
+      setTutorialStep(userId, 'home-job-change')
+      setTutorialStepState('home-job-change')
+    } else if (tutorialStep === 'training-to-lv7' && player.level >= 7) {
+      setTutorialStep(userId, 'training-quest-guide')
+      setTutorialStepState('training-quest-guide')
+    }
+  }, [player, tutorialStep, userId])
+
+  useEffect(() => {
+    if (!player || !userId) {
+      return
+    }
+
+    const prevLevel = prevLevelRef.current
+    prevLevelRef.current = player.level
+
+    if (prevLevel !== undefined && prevLevel < 3 && player.level >= 3) {
+      void mutateCache([`training-enemies`, userId])
+      setNewEnemiesMessage(locale.newEnemiesUnlocked)
+    }
+  }, [player, mutateCache, userId])
+
   const isTrainingActionDisabled = isTrainingSubmitting || trainingLockRemainingSeconds > 0
   const playerLevel = player?.level
   const playerExp = player?.exp
@@ -271,6 +324,11 @@ export default function Training() {
       setLastSubmittedMoveIds(normalizedMoveIds)
       setPlannedMoveIds(normalizedMoveIds)
       setTrainingResult(result)
+
+      if (tutorialStep === 'training-confirm') {
+        advanceTutorial('training-to-lv5')
+      }
+
       await refreshPlayerStatus().catch((error) => {
         console.error('Failed to refresh player status after training.', error)
       })
@@ -342,6 +400,10 @@ export default function Training() {
     setTrainingResult(null)
     setTrainingError(null)
 
+    if (tutorialStep === 'training-fight') {
+      advanceTutorial('training-confirm')
+    }
+
     if (!player) {
       return
     }
@@ -402,14 +464,22 @@ export default function Training() {
                 <Alert severity="warning">{playerError.message}</Alert>
               ) : isMobile ? (
                 <Box sx={{ px: 0.5, pb: 1 }}>
-                  <HomeNavIconButton ariaLabel={locale.backToHome} />
+                  <HomeNavIconButton
+                    id={tutorialStep === 'home-job-change' ? 'tutorial-home-btn' : undefined}
+                    ariaLabel={locale.backToHome}
+                  />
                 </Box>
               ) : !isMobile ? (
                 <Status
                   player={player}
                   compactTrainingMobile={isMobile}
                   showDesktopActions={false}
-                  topAction={<HomeNavIconButton ariaLabel={locale.backToHome} />}
+                  topAction={
+                    <HomeNavIconButton
+                      id={tutorialStep === 'home-job-change' ? 'tutorial-home-btn' : undefined}
+                      ariaLabel={locale.backToHome}
+                    />
+                  }
                 />
               ) : null}
             </Stack>
@@ -538,6 +608,9 @@ export default function Training() {
                             moveIds={plannedMoveIds}
                             isActionDisabled={isTrainingActionDisabled}
                             lockRemainingSeconds={trainingLockRemainingSeconds}
+                            submitButtonId={
+                              tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined
+                            }
                             onChangeMoveId={handleChangePlannedMoveId}
                             onSubmit={async () => {
                               if (isOpponentMode && selectedOpponent) {
@@ -566,6 +639,7 @@ export default function Training() {
                       enemies={trainingEnemies ?? []}
                       isActionDisabled={isTrainingActionDisabled}
                       lockRemainingSeconds={trainingLockRemainingSeconds}
+                      tutorialHighlightFirstFightButton={tutorialStep === 'training-fight'}
                       onFight={handleSelectEnemy}
                     />
                   )
@@ -593,6 +667,36 @@ export default function Training() {
           </Box>
         </Stack>
       </Paper>
+      {tutorialStep === 'home-job-change' && (
+        <SpotlightTutorial
+          targetId="tutorial-home-btn"
+          message={tutorialLocale.steps.homeJobChange.message}
+        />
+      )}
+      {tutorialStep === 'training-fight' && (
+        <SpotlightTutorial targetId="tutorial-fight-btn" message={tutorialLocale.steps.trainingFight.message} />
+      )}
+      {tutorialStep === 'training-confirm' && (
+        <SpotlightTutorial
+          targetId="tutorial-start-training-btn"
+          message={tutorialLocale.steps.trainingConfirm.message}
+        />
+      )}
+      {tutorialStep === 'training-to-lv5' && (
+        <SpotlightTutorial
+          message={tutorialLocale.steps.trainingToLv5.message}
+          subMessage={newEnemiesMessage ?? undefined}
+        />
+      )}
+      {tutorialStep === 'training-to-lv7' && <SpotlightTutorial message={tutorialLocale.steps.trainingToLv7.message} />}
+      {tutorialStep === 'training-quest-guide' && (
+        <SpotlightTutorial
+          message={tutorialLocale.steps.trainingQuestGuide.message}
+          showDismiss
+          dismissLabel={tutorialLocale.steps.trainingQuestGuide.dismissLabel}
+          onDismiss={() => advanceTutorial('completed')}
+        />
+      )}
     </Container>
   )
 }

@@ -24,7 +24,7 @@ import {
   beginnerGuideOpenLabel,
   type BeginnerGuideDefinition,
 } from '@/lib/beginnerGuides'
-import { hasSeenBeginnerGuide, markBeginnerGuideSeen } from '@/lib/beginnerGuideStorage'
+import { markBeginnerGuideSeen } from '@/lib/beginnerGuideStorage'
 
 type BeginnerGuideProps = {
   userId?: string | null
@@ -33,12 +33,8 @@ type BeginnerGuideProps = {
   triggerSx?: SxProps<Theme>
 }
 
-function shouldOpenGuideInitially(userId: string | null | undefined, pageKey: string): boolean {
-  return Boolean(userId && !hasSeenBeginnerGuide(userId, pageKey))
-}
-
 export default function BeginnerGuide({ userId, guide, inverted = false, triggerSx }: BeginnerGuideProps) {
-  const [open, setOpen] = useState(() => shouldOpenGuideInitially(userId, guide.pageKey))
+  const [open, setOpen] = useState(false)
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
   const guidePalette = {

@@ -1,5 +1,5 @@
 id,name,image_path,level,max_hp,max_mp,strength,defense,intelligence,luck,speed
-1,見習い,/image/training/04_magic.png,3,48,21,10,10,22,8,9
+1,見習い,/image/training/04_magic.png,3,48,21,10,5,22,8,9
 2,サヨネコ,/image/training/08_anpo.png,15,141,54,52,28,28,46,69
 3,へいし,/image/training/02_heishi.png,30,297,56,141,94,8,48,50
 12,れんせいへい,/image/training/02_heishi.png,50,477,86,231,154,8,78,80
