@@ -493,6 +493,158 @@ public class BattleActionResolverTests
     }
 
     [Fact]
+    public void Resolve_WhenSleepAilmentRateIsMax_AlwaysApplies()
+    {
+        var resolver = CreateResolver(randomProvider: () => 0.99d);
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var targetState = CreateState(target.Id);
+        var move = CreateSleepMove(1, ailmentRate: 1m);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults[0].AppliedAilment.Should().Be(AilmentType.Sleep);
+    }
+
+    [Fact]
+    public void Resolve_WhenSleepAilmentRateIsMin_NeverApplies()
+    {
+        var resolver = CreateResolver(randomProvider: () => 0.0d);
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var targetState = CreateState(target.Id);
+        var move = CreateSleepMove(1, ailmentRate: 0m);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults[0].AppliedAilment.Should().BeNull();
+    }
+
+    [Fact]
+    public void Resolve_WhenSleepAilmentRateAboveRandom_Applies()
+    {
+        var resolver = CreateResolver(randomProvider: () => 0.29d);
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var targetState = CreateState(target.Id);
+        var move = CreateSleepMove(1, ailmentRate: 0.30m);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults[0].AppliedAilment.Should().Be(AilmentType.Sleep);
+    }
+
+    [Fact]
+    public void Resolve_WhenSleepAilmentRateBelowRandom_DoesNotApply()
+    {
+        var resolver = CreateResolver(randomProvider: () => 0.31d);
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(2, BattleSide.Enemy);
+        var targetState = CreateState(target.Id);
+        var move = CreateSleepMove(1, ailmentRate: 0.30m);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, EnemyTarget(), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        result.TargetResults[0].AppliedAilment.Should().BeNull();
+    }
+
+    [Fact]
+    public void Resolve_WhenBuffRateIsMax_AlwaysApplies()
+    {
+        var resolver = CreateResolver(randomProvider: () => 0.99d);
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var targetState = CreateState(target.Id);
+        var move = CreateStrengthBuffMove(1, buffRate: 1m);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id]), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        targetState.Buffs.Should().ContainSingle(x => x.Stat == BuffStat.Strength);
+    }
+
+    [Fact]
+    public void Resolve_WhenBuffRateIsMin_NeverApplies()
+    {
+        var resolver = CreateResolver(randomProvider: () => 0.0d);
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var targetState = CreateState(target.Id);
+        var move = CreateStrengthBuffMove(1, buffRate: 0m);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id]), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        targetState.Buffs.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Resolve_WhenBuffRateAboveRandom_Applies()
+    {
+        var resolver = CreateResolver(randomProvider: () => 0.29d);
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var targetState = CreateState(target.Id);
+        var move = CreateStrengthBuffMove(1, buffRate: 0.30m);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id]), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        targetState.Buffs.Should().ContainSingle(x => x.Stat == BuffStat.Strength);
+    }
+
+    [Fact]
+    public void Resolve_WhenBuffRateBelowRandom_DoesNotApply()
+    {
+        var resolver = CreateResolver(randomProvider: () => 0.31d);
+        var actor = CreateSnapshot(1, BattleSide.Ally);
+        var target = CreateSnapshot(3, BattleSide.Ally, learnedMoveIds: []);
+        var targetState = CreateState(target.Id);
+        var move = CreateStrengthBuffMove(1, buffRate: 0.30m);
+
+        var result = resolver.Resolve(
+            new BattleAction(actor.Id, BattleActionKind.UseMove, new BattleTargetSelector(TargetType.Ally, AttackRange.Single, [target.Id]), new MoveId(1)),
+            [actor, target],
+            [CreateState(actor.Id), targetState],
+            [move]);
+
+        result.Succeeded.Should().BeTrue();
+        targetState.Buffs.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Resolve_WhenAllyHasCoverAll_RedirectsNormalAttackDamageToCoverActor()
     {
         var resolver = CreateResolver();
@@ -742,6 +894,50 @@ public class BattleActionResolverTests
                     1,
                     MoveEffectType.Damage,
                     damage: new DamageEffect(hitCount: 1, powerRate: 1m, fixedValue: 1, criticalRate: 1m, elementType: ElementType.None))
+            ]);
+    }
+
+    private static Move CreateSleepMove(int moveId, decimal ailmentRate)
+    {
+        return new Move(
+            new MoveId(moveId),
+            "Sleep",
+            "sleep ailment",
+            TargetType.Enemy,
+            AttackRange.Single,
+            1,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    new MoveId(moveId),
+                    1,
+                    MoveEffectType.Ailment,
+                    ailment: new AilmentEffect(AilmentType.Sleep, ailmentRate, 2))
+            ]);
+    }
+
+    private static Move CreateStrengthBuffMove(int moveId, decimal buffRate)
+    {
+        return new Move(
+            new MoveId(moveId),
+            "Strengthen",
+            "strength buff",
+            TargetType.Ally,
+            AttackRange.Single,
+            1,
+            0,
+            MoveCategory.Support,
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(1),
+                    new MoveId(moveId),
+                    1,
+                    MoveEffectType.Buff,
+                    buff: new BuffEffect(BuffStat.Strength, BuffCalculationType.Mul, 1.5m, 2, buffRate, canStack: false))
             ]);
     }
 
