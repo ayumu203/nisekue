@@ -50,5 +50,5 @@
   "autoBattleStop": "停止",
   "autoBattleRemaining": "残り {{minutes}}分{{seconds}}秒",
   "autoBattleRequirement": "Lv.30以上で自動再戦が利用できます",
-  "autoBattleCount": "{{count}}回戦闘"
+  "autoBattleCount": "{{count}}回訓練しました."
 }
