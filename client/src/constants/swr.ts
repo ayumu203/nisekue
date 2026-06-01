@@ -1,1 +1,1 @@
-export const PLAYER_DEDUPING_INTERVAL = 5 * 60 * 1000
+export const PLAYER_DEDUPING_INTERVAL = 3 * 60 * 1000
