@@ -56,6 +56,7 @@ function playerSummaryToDisplayEnemy(opponent: PlayerSummary): TrainingEnemy {
 }
 
 const TRAINING_COOLDOWN_MS = 3000
+const AUTO_BATTLE_DURATION_MS = 5 * 60 * 1000
 
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
   return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
@@ -117,8 +118,14 @@ export default function Training() {
   const [lastSubmittedMoveIds, setLastSubmittedMoveIds] = useState<Array<number | null> | null>(null)
   const [newEnemiesMessage, setNewEnemiesMessage] = useState<string | null>(null)
   const prevLevelRef = useRef<number | undefined>(undefined)
+  const prevTrainingResultRef = useRef(trainingResult)
+  const isAutoBattleRequestInFlightRef = useRef(false)
   const userId = session?.user.id ?? null
   const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
+  const [isAutoBattling, setIsAutoBattling] = useState(false)
+  const [autoBattleEndTimeMs, setAutoBattleEndTimeMs] = useState(0)
+  const [autoBattleRemainingSeconds, setAutoBattleRemainingSeconds] = useState(0)
+  const [autoBattleCount, setAutoBattleCount] = useState(0)
 
   function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
     if (!userId) {
@@ -271,7 +278,10 @@ export default function Training() {
     }
   }, [player, mutateCache, userId])
 
-  const isTrainingActionDisabled = isTrainingSubmitting || trainingLockRemainingSeconds > 0
+  const isBattleLocked = isTrainingSubmitting || trainingLockRemainingSeconds > 0
+  const isTrainingActionDisabled = isBattleLocked || isAutoBattling
+  const canUseAutoBattle = (player?.level ?? 0) >= 30
+  const isOpponentMode = mode === 'player' && selectedOpponent !== null
   const playerLevel = player?.level
   const playerExp = player?.exp
   const nextLevelRequiredExp = player?.requiredExpForNextLevel
@@ -300,7 +310,7 @@ export default function Training() {
       throw new Error(locale.sessionInfoMissing)
     }
 
-    if (isTrainingActionDisabled) {
+    if (isBattleLocked) {
       return
     }
 
@@ -352,7 +362,7 @@ export default function Training() {
       throw new Error(locale.sessionInfoMissing)
     }
 
-    if (isTrainingActionDisabled) {
+    if (isBattleLocked) {
       return
     }
 
@@ -431,6 +441,92 @@ export default function Training() {
       return next
     })
   }
+
+  const runTrainingRef = useRef(runTraining)
+  runTrainingRef.current = runTraining
+  const runPvpTrainingRef = useRef(runPvpTraining)
+  runPvpTrainingRef.current = runPvpTraining
+
+  function handleToggleAutoBattle(): void {
+    if (isAutoBattling) {
+      setIsAutoBattling(false)
+      setAutoBattleRemainingSeconds(0)
+      return
+    }
+    const target = isOpponentMode ? selectedOpponent : selectedEnemy
+    if (!target || !player || !plannedMoveIds) return
+    setIsAutoBattling(true)
+    setAutoBattleEndTimeMs(Date.now() + AUTO_BATTLE_DURATION_MS)
+    setAutoBattleCount(0)
+  }
+
+  useEffect(() => {
+    if (!isAutoBattling) return
+    if (Date.now() >= autoBattleEndTimeMs) {
+      setAutoBattleRemainingSeconds(0)
+      setIsAutoBattling(false)
+      return
+    }
+    // isBattleLocked is derived from isTrainingSubmitting + trainingLockRemainingSeconds.
+    // trainingLockRemainingSeconds is updated asynchronously by a setInterval (250ms poll),
+    // so it may be stale for one render after runTraining's finally block sets trainingLockUntilMs.
+    // The Date.now() < trainingLockUntilMs guard below covers that async gap synchronously.
+    if (isBattleLocked) return
+    if (Date.now() < trainingLockUntilMs) return
+    if (isAutoBattleRequestInFlightRef.current) return
+
+    const handleError = () => {
+      isAutoBattleRequestInFlightRef.current = false
+      setIsAutoBattling(false)
+      setAutoBattleRemainingSeconds(0)
+    }
+    const handleDone = () => {
+      isAutoBattleRequestInFlightRef.current = false
+    }
+
+    isAutoBattleRequestInFlightRef.current = true
+
+    if (isOpponentMode && selectedOpponent && player && plannedMoveIds) {
+      runPvpTrainingRef.current(selectedOpponent, plannedMoveIds).then(handleDone).catch(handleError)
+    } else if (selectedEnemy && player && plannedMoveIds) {
+      runTrainingRef.current(selectedEnemy, plannedMoveIds).then(handleDone).catch(handleError)
+    }
+  }, [
+    isAutoBattling,
+    autoBattleEndTimeMs,
+    isBattleLocked,
+    trainingLockUntilMs,
+    isOpponentMode,
+    selectedOpponent,
+    selectedEnemy,
+    player,
+    plannedMoveIds,
+  ])
+
+  useEffect(() => {
+    if (!trainingResult) return
+    if (trainingResult === prevTrainingResultRef.current) return
+    prevTrainingResultRef.current = trainingResult
+    setAutoBattleCount((c) => c + 1)
+  }, [trainingResult])
+
+  useEffect(() => {
+    if (!isAutoBattling) return
+
+    const tick = () => {
+      const remaining = Math.max(0, autoBattleEndTimeMs - Date.now())
+      if (remaining <= 0) {
+        setAutoBattleRemainingSeconds(0)
+        setIsAutoBattling(false)
+        return
+      }
+      setAutoBattleRemainingSeconds(Math.ceil(remaining / 1000))
+    }
+
+    tick()
+    const timerId = setInterval(tick, 1000)
+    return () => clearInterval(timerId)
+  }, [isAutoBattling, autoBattleEndTimeMs])
 
   if (isLoading) {
     return (
@@ -528,7 +624,7 @@ export default function Training() {
                   value={mode}
                   exclusive
                   onChange={(_e, next: TrainingMode | null) => {
-                    if (next === null) return
+                    if (next === null || isAutoBattling) return
                     setMode(next)
                     setSelectedEnemy(null)
                     setSelectedOpponent(null)
@@ -550,14 +646,17 @@ export default function Training() {
                     },
                   }}
                 >
-                  <ToggleButton value="npc">{locale.modeNpc}</ToggleButton>
-                  <ToggleButton value="player">{locale.modePlayer}</ToggleButton>
+                  <ToggleButton value="npc" disabled={isAutoBattling}>
+                    {locale.modeNpc}
+                  </ToggleButton>
+                  <ToggleButton value="player" disabled={isAutoBattling}>
+                    {locale.modePlayer}
+                  </ToggleButton>
                 </ToggleButtonGroup>
 
                 {(() => {
                   const displayEnemy =
                     selectedEnemy ?? (selectedOpponent ? playerSummaryToDisplayEnemy(selectedOpponent) : null)
-                  const isOpponentMode = mode === 'player' && selectedOpponent !== null
                   return (
                     <>
                       {displayEnemy && trainingResult ? (
@@ -570,6 +669,11 @@ export default function Training() {
                             nextLevelRequiredExp={nextLevelRequiredExp}
                             isActionDisabled={isTrainingActionDisabled}
                             lockRemainingSeconds={trainingLockRemainingSeconds}
+                            canUseAutoBattle={canUseAutoBattle}
+                            isAutoBattling={isAutoBattling}
+                            autoBattleRemainingSeconds={autoBattleRemainingSeconds}
+                            autoBattleCount={autoBattleCount}
+                            onToggleAutoBattle={handleToggleAutoBattle}
                             movePlanSlot={
                               player && plannedMoveIds ? (
                                 <TrainingMovePlanForm
