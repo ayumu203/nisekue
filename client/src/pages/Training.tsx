@@ -56,7 +56,7 @@ function playerSummaryToDisplayEnemy(opponent: PlayerSummary): TrainingEnemy {
 }
 
 const TRAINING_COOLDOWN_MS = 3000
-const AUTO_BATTLE_DURATION_MS = 5 * 60 * 1000
+const AUTO_BATTLE_DURATION_MS = 3 * 60 * 1000
 
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
   return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
