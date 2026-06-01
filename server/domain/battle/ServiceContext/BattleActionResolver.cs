@@ -394,7 +394,7 @@ public class BattleActionResolver(
 
         var appliedAilment = default(AilmentType?);
         if (ShouldHit(attackerStatus, defenderStatus, effect.OverrideTargetType ?? move.TargetType) &&
-            ShouldApplySecondaryEffect(effect.Ailment.AilmentRate, attackerStatus, defenderStatus))
+            ShouldApplySecondaryEffect(effect.Ailment.AilmentRate))
         {
             if (effect.Ailment.AilmentType == AilmentType.InstantDeath)
             {
@@ -430,7 +430,7 @@ public class BattleActionResolver(
         ArgumentNullException.ThrowIfNull(effect.Buff);
 
         if (ShouldHit(attackerStatus, defenderStatus, effect.OverrideTargetType ?? move.TargetType) &&
-            ShouldApplySecondaryEffect(effect.Buff.BuffRate, attackerStatus, defenderStatus))
+            ShouldApplySecondaryEffect(effect.Buff.BuffRate))
         {
             targetState.ApplyBuff(
                 new BattleBuffState(effect.Buff.BuffStat, effect.Buff.BuffCalculationType, effect.Buff.BuffValue, effect.Buff.BuffTurns),
@@ -448,7 +448,7 @@ public class BattleActionResolver(
         MoveEffect effect)
     {
         if (ShouldHit(attackerStatus, defenderStatus, effect.OverrideTargetType ?? move.TargetType) &&
-            ShouldApplySecondaryEffect(1m, attackerStatus, defenderStatus))
+            ShouldApplySecondaryEffect(1m))
         {
             targetState.ReceiveDamage(targetState.CurrentHp);
         }
@@ -481,9 +481,11 @@ public class BattleActionResolver(
             : BuffStat.Strength;
     }
 
-    private static bool ShouldApplySecondaryEffect(decimal rate, Status attackerStatus, Status defenderStatus)
+    private bool ShouldApplySecondaryEffect(decimal rate)
     {
-        return rate >= 1m || (rate > 0m && attackerStatus.Luck >= defenderStatus.Luck);
+        if (rate >= 1m) return true;
+        if (rate <= 0m) return false;
+        return _randomProvider() < (double)rate;
     }
 
     private bool ShouldSkipActionByParalysis(BattleActorState actorState)
