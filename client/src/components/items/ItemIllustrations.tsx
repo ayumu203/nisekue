@@ -118,6 +118,8 @@ export function ItemArtwork({
         <ArmorIllustration sx={{ fontSize: 72, color: '#5a7387' }} />
       ) : item.itemName.includes('証') ? (
         <JobChangeIllustration sx={{ fontSize: 72, color: '#4f7148' }} />
+      ) : item.itemName.includes('経験') ? (
+        <ExpMultiplierIllustration sx={{ fontSize: 72, color: '#5b4e8c' }} />
       ) : (
         <StatBoostIllustration sx={{ fontSize: 72, color: '#a53636' }} />
       )}

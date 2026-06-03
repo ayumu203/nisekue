@@ -18,7 +18,16 @@ export function getEffectTypeLabel(effectType: ItemStackView['effectType']): str
       return locale.effectTypeChangeJob
     case 'ExpMultiplier':
       return locale.effectTypeExpMultiplier
+    default:
+      return effectType satisfies never
   }
+}
+
+export function formatEffectAmount(item: ItemStackView): string {
+  if (item.effectType === 'ExpMultiplier') {
+    return item.expMultiplier != null ? `${item.expMultiplier}倍` : '-'
+  }
+  return formatStatusBonus(item)
 }
 
 export function formatStatusBonus(item: {
