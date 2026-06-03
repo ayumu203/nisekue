@@ -17,7 +17,8 @@ public class Player(
     DateTimeOffset? questCooldownUntil = null,
     MoveSet? moveSet = null,
     IReadOnlySet<Job>? masteredJobs = null,
-    int rebirthCount = 0)
+    int rebirthCount = 0,
+    int expMultiplierFlags = 0)
 {
     private readonly HashSet<Job> masteredJobs = masteredJobs is null ? [] : new HashSet<Job>(masteredJobs);
 
@@ -35,6 +36,7 @@ public class Player(
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
     public MoveSet MoveSet { get; private set; } = moveSet ?? new MoveSet();
     public IReadOnlySet<Job> MasteredJobs => masteredJobs;
+    public int ExpMultiplierFlags { get; private set; } = ValidateNonNegative(expMultiplierFlags, nameof(expMultiplierFlags));
 
     public void UpdateName(string name)
     {
@@ -140,6 +142,31 @@ public class Player(
         if (exp < 0) exp = 0;
         Exp = ClampedAdd(Exp, exp);
         JobExp = ClampedAdd(JobExp, exp);
+    }
+
+    public void SetExpMultiplierFlag(int flag)
+    {
+        if (!ExpMultiplierFlag.IsValidFlag(flag))
+        {
+            throw new ArgumentException("無効な経験値倍率フラグです。", nameof(flag));
+        }
+
+        if (ExpMultiplierFlags != 0)
+        {
+            throw new InvalidOperationException("すでに経験値倍率が設定されています。");
+        }
+
+        ExpMultiplierFlags = flag;
+    }
+
+    public bool HasAnyExpMultiplierFlag()
+    {
+        return ExpMultiplierFlags != 0;
+    }
+
+    public void ClearExpMultiplierFlags()
+    {
+        ExpMultiplierFlags = 0;
     }
 
     public void GainGold(int gold)

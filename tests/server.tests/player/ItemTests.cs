@@ -55,6 +55,21 @@ public class ItemTests
         item.CanUse(player).Should().BeTrue();
     }
 
+    [Fact]
+    public void Constructor_WhenExpMultiplierItem_CreatesItemSuccessfully()
+    {
+        var item = new Item(
+            new ItemId(3071),
+            "経験の秘石",
+            "経験値が1.1倍になる",
+            maxStack: 99,
+            effectType: ItemEffectType.ExpMultiplier,
+            expMultiplier: 1.1m);
+
+        item.EffectType.Should().Be(ItemEffectType.ExpMultiplier);
+        item.ExpMultiplier.Should().Be(1.1m);
+    }
+
     private static Player CreatePlayer(int level, IReadOnlySet<Job>? masteredJobs = null)
     {
         return new Player(

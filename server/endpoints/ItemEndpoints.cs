@@ -162,6 +162,27 @@ internal static class ItemEndpoints
                             player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
                             break;
                         }
+                    case ItemEffectType.ExpMultiplier:
+                        {
+                            if (request.Quantity != 1)
+                            {
+                                return Results.BadRequest(new { message = "経験値倍率アイテムは1個ずつのみ使用できます。" });
+                            }
+
+                            if (item.ExpMultiplier is null)
+                            {
+                                return Results.BadRequest(new { message = "経験値倍率が定義されていません。" });
+                            }
+
+                            if (player.HasAnyExpMultiplierFlag())
+                            {
+                                return Results.BadRequest(new { message = "すでに経験値倍率が設定されています。効果が切れてから使用してください。" });
+                            }
+
+                            var flag = ExpMultiplierFlag.ToFlag(item.ExpMultiplier.Value);
+                            player.SetExpMultiplierFlag(flag);
+                            break;
+                        }
                     default:
                         return Results.BadRequest(new { message = "未対応のアイテム効果です。" });
                 }
@@ -177,7 +198,7 @@ internal static class ItemEndpoints
                     await playerItemStackRepository.SaveAsync([stack]);
                 }
             }
-            catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException)
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException or ArgumentException)
             {
                 return Results.BadRequest(new { message = ex.Message });
             }
@@ -852,6 +873,7 @@ internal static class ItemEndpoints
             quantity = stack.Quantity,
             canUseFromInventory = !treasureMapItemIds.Contains(item.Id.Value),
             effectType = item.EffectType.ToString(),
+            expMultiplier = item.ExpMultiplier,
             requiredLevel = item.RequiredLevel,
             changeJobTo = item.ChangeJobTo?.ToString(),
             statusBonus = item.StatusBonus is null

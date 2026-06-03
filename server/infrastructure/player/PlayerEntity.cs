@@ -24,4 +24,5 @@ public class PlayerEntity
     public int TrainingBattleCount { get; set; }
     public DateTimeOffset? TrainingCooldownUntil { get; set; }
     public DateTimeOffset? QuestCooldownUntil { get; set; }
+    public int ExpMultiplierFlags { get; set; }
 }
