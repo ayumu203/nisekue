@@ -24,6 +24,17 @@ classDiagram
             +IntervalHours = 6
         }
 
+        class QuestDataCleanupService {
+            <<Application Service>>
+            +DeleteOldDataAsync(cutoffDate: DateTimeOffset, cancellationToken: CancellationToken = default) QuestDataCleanupResult
+        }
+
+        class QuestDataCleanupBackgroundService {
+            <<Background Service>>
+            +ExecuteAsync(stoppingToken: CancellationToken) Task
+            +IntervalDays = 7
+        }
+
         class CleanupExpiredMarketListingsResult {
             <<Value Object>>
             +int DeletedListings
@@ -52,6 +63,20 @@ classDiagram
             +int DeletedQuestTurnCommands
             +int DeletedQuestFloorTraps
             +int DeletedQuestRewardSummaries
+        }
+
+        class QuestDataCleanupResult {
+            <<Value Object>>
+            +int DeletedQuestTurnCommands
+            +int DeletedQuestFloorTraps
+            +int DeletedQuestRunEnemies
+            +int DeletedQuestRunPartyMembers
+            +int DeletedQuestRunPartySnapshots
+            +int DeletedQuestRewardSummaries
+            +int DeletedQuestRuns
+            +int DeletedQuestRoomParticipants
+            +int DeletedQuestRoomAllowedPlayers
+            +int DeletedQuestRooms
         }
 
         class RankingAggregationResult {
@@ -127,3 +152,6 @@ classDiagram
     RankingMaintenanceEndpoint ..> RankingAggregationService : calls
     RankingMaintenanceEndpoint ..> MaintenanceConfiguration : validates token
     RankingRebuildBackgroundService ..> RankingAggregationService : calls
+    QuestDataCleanupService ..> AppDbContext : use
+    QuestDataCleanupService ..> QuestDataCleanupResult : returns
+    QuestDataCleanupBackgroundService ..> QuestDataCleanupService : calls
