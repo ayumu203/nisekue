@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using server.domain.chat;
 using server.domain.player;
@@ -15,6 +16,12 @@ namespace server.infrastructure;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.ConfigureWarnings(warnings =>
+            warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
+    }
+
     public DbSet<PlayerEntity> Players => Set<PlayerEntity>();
     public DbSet<PlayerMoveEntity> PlayerMoves => Set<PlayerMoveEntity>();
     public DbSet<PlayerMasterJobEntity> PlayerMasterJobs => Set<PlayerMasterJobEntity>();
