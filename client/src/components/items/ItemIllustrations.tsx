@@ -54,6 +54,23 @@ export function JobChangeIllustration(props: SvgIconProps) {
   )
 }
 
+export function ExpMultiplierIllustration(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="28" fill="#5b4e8c" />
+      <path
+        d="M60 20c20 0 36 16 36 36 0 18-14 39-36 48-22-9-36-30-36-48 0-20 16-36 36-36"
+        fill="none"
+        stroke="#e8d17a"
+        strokeWidth="8"
+      />
+      <text x="60" y="62" textAnchor="middle" fontSize="28" fontWeight="bold" fill="#fff5d9">
+        ×
+      </text>
+    </SvgIcon>
+  )
+}
+
 export function ItemArtwork({
   item,
   sellerImagePath,
@@ -86,6 +103,8 @@ export function ItemArtwork({
           )
         ) : item.effectType === 'StatBoost' ? (
           <StatBoostIllustration sx={{ fontSize: 72, color: '#a53636' }} />
+        ) : item.effectType === 'ExpMultiplier' ? (
+          <ExpMultiplierIllustration sx={{ fontSize: 72, color: '#5b4e8c' }} />
         ) : (
           <JobChangeIllustration sx={{ fontSize: 72, color: '#4f7148' }} />
         )

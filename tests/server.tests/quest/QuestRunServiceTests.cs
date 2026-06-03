@@ -144,7 +144,7 @@ public class QuestRunServiceTests
             job: Job.Warrior,
             imagePath: "/images/player.png",
             moveSet: new MoveSet());
-        player.SetExpMultiplierFlag(ExpMultiplierFlags.ToFlag(2.0m));
+        player.SetExpMultiplierFlag(ExpMultiplierFlag.ToFlag(2.0m));
         var playerRepository = new FakePlayerRepository(player);
         var roomRepository = new FakeQuestRoomRepository(room);
         var stage = CreateStage(run.StageId, floorRewardRule: new QuestFloorRewardRule(1.0m, 0));

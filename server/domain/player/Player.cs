@@ -146,12 +146,17 @@ public class Player(
 
     public void SetExpMultiplierFlag(int flag)
     {
+        if (!ExpMultiplierFlag.IsValidFlag(flag))
+        {
+            throw new ArgumentException("無効な経験値倍率フラグです。", nameof(flag));
+        }
+
         if (ExpMultiplierFlags != 0)
         {
             throw new InvalidOperationException("すでに経験値倍率が設定されています。");
         }
 
-        ExpMultiplierFlags |= flag;
+        ExpMultiplierFlags = flag;
     }
 
     public bool HasAnyExpMultiplierFlag()

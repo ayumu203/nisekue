@@ -179,7 +179,7 @@ internal static class ItemEndpoints
                                 return Results.BadRequest(new { message = "すでに経験値倍率が設定されています。効果が切れてから使用してください。" });
                             }
 
-                            var flag = ExpMultiplierFlags.ToFlag(item.ExpMultiplier.Value);
+                            var flag = ExpMultiplierFlag.ToFlag(item.ExpMultiplier.Value);
                             player.SetExpMultiplierFlag(flag);
                             break;
                         }
@@ -873,6 +873,7 @@ internal static class ItemEndpoints
             quantity = stack.Quantity,
             canUseFromInventory = !treasureMapItemIds.Contains(item.Id.Value),
             effectType = item.EffectType.ToString(),
+            expMultiplier = item.ExpMultiplier,
             requiredLevel = item.RequiredLevel,
             changeJobTo = item.ChangeJobTo?.ToString(),
             statusBonus = item.StatusBonus is null

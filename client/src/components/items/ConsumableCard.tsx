@@ -95,7 +95,8 @@ export function ConsumableCard({
               {locale.effectType} {getEffectTypeLabel(item.effectType)}
             </Typography>
             <Typography variant="body2">
-              {locale.effectAmount} {formatStatusBonus(item)}
+              {locale.effectAmount}{' '}
+              {item.effectType === 'ExpMultiplier' ? `${item.expMultiplier}倍` : formatStatusBonus(item)}
             </Typography>
             {item.requiredLevel !== null ? (
               <Typography variant="body2">

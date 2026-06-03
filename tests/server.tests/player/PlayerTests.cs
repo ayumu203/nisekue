@@ -311,62 +311,62 @@ public class PlayerTests
     [Fact]
     public void ExpMultiplierFlags_ToFlag_When1_1x_Returns0x8()
     {
-        ExpMultiplierFlags.ToFlag(1.1m).Should().Be(0x8);
+        ExpMultiplierFlag.ToFlag(1.1m).Should().Be(0x8);
     }
 
     [Fact]
     public void ExpMultiplierFlags_ToFlag_When1_5x_Returns0x4()
     {
-        ExpMultiplierFlags.ToFlag(1.5m).Should().Be(0x4);
+        ExpMultiplierFlag.ToFlag(1.5m).Should().Be(0x4);
     }
 
     [Fact]
     public void ExpMultiplierFlags_ToFlag_When2_0x_Returns0x2()
     {
-        ExpMultiplierFlags.ToFlag(2.0m).Should().Be(0x2);
+        ExpMultiplierFlag.ToFlag(2.0m).Should().Be(0x2);
     }
 
     [Fact]
     public void ExpMultiplierFlags_ToFlag_When3_0x_Returns0x1()
     {
-        ExpMultiplierFlags.ToFlag(3.0m).Should().Be(0x1);
+        ExpMultiplierFlag.ToFlag(3.0m).Should().Be(0x1);
     }
 
     [Fact]
     public void ExpMultiplierFlags_ToFlag_WhenUnknownMultiplier_Throws()
     {
-        var act = () => ExpMultiplierFlags.ToFlag(5.0m);
+        var act = () => ExpMultiplierFlag.ToFlag(5.0m);
         act.Should().Throw<ArgumentException>().WithMessage("*未対応の経験値倍率*");
     }
 
     [Fact]
     public void ExpMultiplierFlags_ToMultiplier_WhenFlagsAreZero_Returns1_0x()
     {
-        ExpMultiplierFlags.ToMultiplier(0).Should().Be(1.0m);
+        ExpMultiplierFlag.ToMultiplier(0).Should().Be(1.0m);
     }
 
     [Fact]
     public void ExpMultiplierFlags_ToMultiplier_When0x8_Returns1_1x()
     {
-        ExpMultiplierFlags.ToMultiplier(0x8).Should().Be(1.1m);
+        ExpMultiplierFlag.ToMultiplier(0x8).Should().Be(1.1m);
     }
 
     [Fact]
     public void ExpMultiplierFlags_ToMultiplier_When0x4_Returns1_5x()
     {
-        ExpMultiplierFlags.ToMultiplier(0x4).Should().Be(1.5m);
+        ExpMultiplierFlag.ToMultiplier(0x4).Should().Be(1.5m);
     }
 
     [Fact]
     public void ExpMultiplierFlags_ToMultiplier_When0x2_Returns2_0x()
     {
-        ExpMultiplierFlags.ToMultiplier(0x2).Should().Be(2.0m);
+        ExpMultiplierFlag.ToMultiplier(0x2).Should().Be(2.0m);
     }
 
     [Fact]
     public void ExpMultiplierFlags_ToMultiplier_When0x1_Returns3_0x()
     {
-        ExpMultiplierFlags.ToMultiplier(0x1).Should().Be(3.0m);
+        ExpMultiplierFlag.ToMultiplier(0x1).Should().Be(3.0m);
     }
 
     private static Player CreatePlayer(

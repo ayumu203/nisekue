@@ -1,6 +1,6 @@
 namespace server.domain.player;
 
-public static class ExpMultiplierFlags
+public static class ExpMultiplierFlag
 {
     private static readonly IReadOnlyDictionary<int, decimal> FlagToMultiplier = new Dictionary<int, decimal>
     {
@@ -30,14 +30,16 @@ public static class ExpMultiplierFlags
             return 1.0m;
         }
 
-        foreach (var (flag, multiplier) in FlagToMultiplier)
+        if (!FlagToMultiplier.TryGetValue(flags, out var multiplier))
         {
-            if ((flags & flag) != 0)
-            {
-                return multiplier;
-            }
+            throw new ArgumentException($"未対応の経験値倍率フラグです: 0x{flags:X}", nameof(flags));
         }
 
-        return 1.0m;
+        return multiplier;
+    }
+
+    public static bool IsValidFlag(int flag)
+    {
+        return FlagToMultiplier.ContainsKey(flag);
     }
 }

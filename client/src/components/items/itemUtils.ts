@@ -16,6 +16,8 @@ export function getEffectTypeLabel(effectType: ItemStackView['effectType']): str
       return locale.effectTypeStatBoost
     case 'ChangeJob':
       return locale.effectTypeChangeJob
+    case 'ExpMultiplier':
+      return locale.effectTypeExpMultiplier
   }
 }
 
