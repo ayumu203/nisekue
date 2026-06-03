@@ -22,6 +22,7 @@ erDiagram
         int training_battle_count "NOT NULL, DEFAULT 0"
         timestamptz training_cooldown_until "NULL"
         timestamptz quest_cooldown_until "NULL"
+        int exp_multiplier_flags "NOT NULL, DEFAULT 0"
     }
     CHAT_ROOMS {
         uuid owner_id PK, FK "internal.players.id"

@@ -222,6 +222,153 @@ public class PlayerTests
         player.MasteredJobs.Should().BeEquivalentTo(new[] { Job.Warrior, Job.Priest });
     }
 
+    [Fact]
+    public void SetExpMultiplierFlag_WhenFlagIsNotSet_SetsFlag()
+    {
+        var player = CreatePlayer(level: 1);
+
+        player.SetExpMultiplierFlag(0x8);
+
+        player.ExpMultiplierFlags.Should().Be(0x8);
+    }
+
+    [Fact]
+    public void SetExpMultiplierFlag_WhenSameFlagAlreadySet_Throws()
+    {
+        var player = CreatePlayer(level: 1);
+        player.SetExpMultiplierFlag(0x4);
+
+        var act = () => player.SetExpMultiplierFlag(0x4);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*すでに経験値倍率が設定されています*");
+    }
+
+    [Fact]
+    public void SetExpMultiplierFlag_WhenDifferentFlagAlreadySet_Throws()
+    {
+        var player = CreatePlayer(level: 1);
+        player.SetExpMultiplierFlag(0x4);
+
+        var act = () => player.SetExpMultiplierFlag(0x8);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*すでに経験値倍率が設定されています*");
+    }
+
+    [Fact]
+    public void HasAnyExpMultiplierFlag_WhenFlagIsSet_ReturnsTrue()
+    {
+        var player = CreatePlayer(level: 1);
+        player.SetExpMultiplierFlag(0x1);
+
+        player.HasAnyExpMultiplierFlag().Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasAnyExpMultiplierFlag_WhenFlagIsZero_ReturnsFalse()
+    {
+        var player = CreatePlayer(level: 1);
+
+        player.HasAnyExpMultiplierFlag().Should().BeFalse();
+    }
+
+    [Fact]
+    public void GainExp_WhenCalled_AddsExpDirectly()
+    {
+        var player = CreatePlayer(level: 1, exp: 0, jobExp: 0);
+
+        player.GainExp(100);
+
+        player.Exp.Should().Be(100);
+        player.JobExp.Should().Be(100);
+    }
+
+    [Fact]
+    public void GainExp_WhenFlagIsSet_DoesNotAffectExpAddition()
+    {
+        var player = CreatePlayer(level: 1, exp: 0, jobExp: 0);
+        player.SetExpMultiplierFlag(0x8);
+
+        player.GainExp(100);
+
+        player.Exp.Should().Be(100);
+        player.JobExp.Should().Be(100);
+    }
+
+    [Fact]
+    public void ClearExpMultiplierFlags_WhenCalled_ResetsFlagsToZero()
+    {
+        var player = CreatePlayer(level: 1);
+        player.SetExpMultiplierFlag(0x8);
+
+        player.ClearExpMultiplierFlags();
+
+        player.ExpMultiplierFlags.Should().Be(0);
+        player.HasAnyExpMultiplierFlag().Should().BeFalse();
+    }
+
+    [Fact]
+    public void ExpMultiplierFlags_ToFlag_When1_1x_Returns0x8()
+    {
+        ExpMultiplierFlags.ToFlag(1.1m).Should().Be(0x8);
+    }
+
+    [Fact]
+    public void ExpMultiplierFlags_ToFlag_When1_5x_Returns0x4()
+    {
+        ExpMultiplierFlags.ToFlag(1.5m).Should().Be(0x4);
+    }
+
+    [Fact]
+    public void ExpMultiplierFlags_ToFlag_When2_0x_Returns0x2()
+    {
+        ExpMultiplierFlags.ToFlag(2.0m).Should().Be(0x2);
+    }
+
+    [Fact]
+    public void ExpMultiplierFlags_ToFlag_When3_0x_Returns0x1()
+    {
+        ExpMultiplierFlags.ToFlag(3.0m).Should().Be(0x1);
+    }
+
+    [Fact]
+    public void ExpMultiplierFlags_ToFlag_WhenUnknownMultiplier_Throws()
+    {
+        var act = () => ExpMultiplierFlags.ToFlag(5.0m);
+        act.Should().Throw<ArgumentException>().WithMessage("*未対応の経験値倍率*");
+    }
+
+    [Fact]
+    public void ExpMultiplierFlags_ToMultiplier_WhenFlagsAreZero_Returns1_0x()
+    {
+        ExpMultiplierFlags.ToMultiplier(0).Should().Be(1.0m);
+    }
+
+    [Fact]
+    public void ExpMultiplierFlags_ToMultiplier_When0x8_Returns1_1x()
+    {
+        ExpMultiplierFlags.ToMultiplier(0x8).Should().Be(1.1m);
+    }
+
+    [Fact]
+    public void ExpMultiplierFlags_ToMultiplier_When0x4_Returns1_5x()
+    {
+        ExpMultiplierFlags.ToMultiplier(0x4).Should().Be(1.5m);
+    }
+
+    [Fact]
+    public void ExpMultiplierFlags_ToMultiplier_When0x2_Returns2_0x()
+    {
+        ExpMultiplierFlags.ToMultiplier(0x2).Should().Be(2.0m);
+    }
+
+    [Fact]
+    public void ExpMultiplierFlags_ToMultiplier_When0x1_Returns3_0x()
+    {
+        ExpMultiplierFlags.ToMultiplier(0x1).Should().Be(3.0m);
+    }
+
     private static Player CreatePlayer(
         int level,
         int exp = 0,

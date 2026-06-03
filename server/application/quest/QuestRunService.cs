@@ -277,7 +277,10 @@ public class QuestRunService(
 
             if (run.Rewards.Exp > 0)
             {
-                player.GainExp(run.Rewards.Exp);
+                var multiplier = ExpMultiplierFlags.ToMultiplier(player.ExpMultiplierFlags);
+                var multipliedExp = (int)Math.Floor(run.Rewards.Exp * multiplier);
+                player.ClearExpMultiplierFlags();
+                player.GainExp(multipliedExp);
                 var jobProfile = jobProfileRepository.GetByJob(player.Job);
                 var learningRule = jobMoveLearningRuleRepository.GetByJob(player.Job);
                 player.LevelUp(jobProfile, learningRule);

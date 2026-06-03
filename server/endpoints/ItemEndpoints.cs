@@ -162,6 +162,27 @@ internal static class ItemEndpoints
                             player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
                             break;
                         }
+                    case ItemEffectType.ExpMultiplier:
+                        {
+                            if (request.Quantity != 1)
+                            {
+                                return Results.BadRequest(new { message = "経験値倍率アイテムは1個ずつのみ使用できます。" });
+                            }
+
+                            if (item.ExpMultiplier is null)
+                            {
+                                return Results.BadRequest(new { message = "経験値倍率が定義されていません。" });
+                            }
+
+                            if (player.HasAnyExpMultiplierFlag())
+                            {
+                                return Results.BadRequest(new { message = "すでに経験値倍率が設定されています。効果が切れてから使用してください。" });
+                            }
+
+                            var flag = ExpMultiplierFlags.ToFlag(item.ExpMultiplier.Value);
+                            player.SetExpMultiplierFlag(flag);
+                            break;
+                        }
                     default:
                         return Results.BadRequest(new { message = "未対応のアイテム効果です。" });
                 }

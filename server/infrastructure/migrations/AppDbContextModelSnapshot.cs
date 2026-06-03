@@ -317,6 +317,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasColumnName("exp");
 
+                    b.Property<int>("ExpMultiplierFlags")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("exp_multiplier_flags");
+
                     b.Property<int>("Gold")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
