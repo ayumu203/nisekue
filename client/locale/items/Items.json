@@ -72,6 +72,7 @@
   "equipmentStatusBroken": "破損",
   "effectTypeStatBoost": "基礎ステータス上昇",
   "effectTypeChangeJob": "転職",
+  "effectTypeExpMultiplier": "経験値倍率",
   "actionFailed": "操作に失敗しました",
   "noSearchResults": "条件に一致する項目はありません"
 }

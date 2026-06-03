@@ -2,7 +2,7 @@ import { Box, Button, Paper, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { ItemArtwork } from './ItemIllustrations'
 import { ListingControls } from './ListingControls'
-import { formatStatusBonus, getEffectTypeLabel } from './itemUtils'
+import { formatEffectAmount, getEffectTypeLabel } from './itemUtils'
 import {
   accentBeige,
   accentBeigeBorder,
@@ -95,7 +95,7 @@ export function ConsumableCard({
               {locale.effectType} {getEffectTypeLabel(item.effectType)}
             </Typography>
             <Typography variant="body2">
-              {locale.effectAmount} {formatStatusBonus(item)}
+              {locale.effectAmount} {formatEffectAmount(item)}
             </Typography>
             {item.requiredLevel !== null ? (
               <Typography variant="body2">

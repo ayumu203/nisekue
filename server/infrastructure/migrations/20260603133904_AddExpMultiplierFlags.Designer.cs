@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using server.infrastructure;
@@ -11,9 +12,11 @@ using server.infrastructure;
 namespace server.infrastructure.migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260603133904_AddExpMultiplierFlags")]
+    partial class AddExpMultiplierFlags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -318,10 +321,7 @@ namespace server.infrastructure.migrations
                         .HasColumnName("exp");
 
                     b.Property<int>("ExpMultiplierFlags")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("exp_multiplier_flags");
+                        .HasColumnType("integer");
 
                     b.Property<int>("Gold")
                         .ValueGeneratedOnAdd()
