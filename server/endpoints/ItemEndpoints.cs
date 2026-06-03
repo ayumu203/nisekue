@@ -198,7 +198,7 @@ internal static class ItemEndpoints
                     await playerItemStackRepository.SaveAsync([stack]);
                 }
             }
-            catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException)
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException or ArgumentException)
             {
                 return Results.BadRequest(new { message = ex.Message });
             }

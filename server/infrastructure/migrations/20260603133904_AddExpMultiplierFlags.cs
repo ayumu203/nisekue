@@ -11,7 +11,7 @@ namespace server.infrastructure.migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
-                name: "ExpMultiplierFlags",
+                name: "exp_multiplier_flags",
                 schema: "internal",
                 table: "players",
                 type: "integer",
@@ -23,7 +23,7 @@ namespace server.infrastructure.migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ExpMultiplierFlags",
+                name: "exp_multiplier_flags",
                 schema: "internal",
                 table: "players");
         }
