@@ -126,6 +126,91 @@ public class QuestRunServiceTests
     }
 
     [Fact]
+    public async Task ResolveTurnAsync_WhenPlayerHasExpMultiplierFlag_AppliesMultiplierAndClearsFlag()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var playerId = room.Participants.Single().PlayerId!.Value;
+        var player = new Player(
+            playerId,
+            "Owner",
+            level: 1,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            gold: 100,
+            status: new Status(10, 10, 10, 10, 10, 10, 10),
+            job: Job.Warrior,
+            imagePath: "/images/player.png",
+            moveSet: new MoveSet());
+        player.SetExpMultiplierFlag(ExpMultiplierFlags.ToFlag(2.0m));
+        var playerRepository = new FakePlayerRepository(player);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var stage = CreateStage(run.StageId, floorRewardRule: new QuestFloorRewardRule(1.0m, 0));
+        var service = CreateRunService(repository, roomRepository, playerRepository, stage, []);
+        var target = run.BattleState.Enemies.Single().Position;
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: target));
+
+        var savedPlayer = await playerRepository.GetPlayerAsync(playerId);
+        savedPlayer.Should().NotBeNull();
+        savedPlayer!.Exp.Should().Be(2);
+        savedPlayer.JobExp.Should().Be(2);
+        savedPlayer.ExpMultiplierFlags.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenPlayerHasNoExpMultiplierFlag_GrantsBaseExp()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var playerId = room.Participants.Single().PlayerId!.Value;
+        var player = new Player(
+            playerId,
+            "Owner",
+            level: 1,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            gold: 100,
+            status: new Status(10, 10, 10, 10, 10, 10, 10),
+            job: Job.Warrior,
+            imagePath: "/images/player.png",
+            moveSet: new MoveSet());
+        var playerRepository = new FakePlayerRepository(player);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var stage = CreateStage(run.StageId, floorRewardRule: new QuestFloorRewardRule(1.0m, 0));
+        var service = CreateRunService(repository, roomRepository, playerRepository, stage, []);
+        var target = run.BattleState.Enemies.Single().Position;
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: target));
+
+        var savedPlayer = await playerRepository.GetPlayerAsync(playerId);
+        savedPlayer.Should().NotBeNull();
+        savedPlayer!.Exp.Should().Be(1);
+        savedPlayer.JobExp.Should().Be(1);
+        savedPlayer.ExpMultiplierFlags.Should().Be(0);
+    }
+
+    [Fact]
     public async Task EscapeAsync_WhenOwnerMatches_MarksRunFailedAndAppliesQuestCooldown()
     {
         var run = CreateRun();
@@ -1534,7 +1619,8 @@ public class QuestRunServiceTests
     private static QuestStageDefinition CreateStage(
         QuestStageId stageId,
         IReadOnlyList<QuestStageEquipmentRewardEntry>? equipmentRewards = null,
-        IReadOnlyList<QuestStageItemRewardEntry>? itemRewards = null)
+        IReadOnlyList<QuestStageItemRewardEntry>? itemRewards = null,
+        QuestFloorRewardRule? floorRewardRule = null)
     {
         return new QuestStageDefinition(
             stageId,
@@ -1555,7 +1641,7 @@ public class QuestRunServiceTests
                             new QuestEnemyDefinitionId(1),
                             new BattlePosition(BattleRow.Front, BattleColumn.Right))
                     ],
-                    new QuestFloorRewardRule(0, 0))
+                    floorRewardRule ?? new QuestFloorRewardRule(0, 0))
             ],
             equipmentRewards: equipmentRewards ?? [],
             itemRewards: itemRewards ?? [],
@@ -1670,6 +1756,11 @@ public class QuestRunServiceTests
                     job: Job.Warrior,
                     imagePath: "/images/player.png",
                     moveSet: new MoveSet()));
+        }
+
+        public FakePlayerRepository(params Player[] existingPlayers)
+        {
+            players = existingPlayers.ToDictionary(x => x.Id, x => x);
         }
 
         public Task<Player?> GetPlayerAsync(PlayerId id)
