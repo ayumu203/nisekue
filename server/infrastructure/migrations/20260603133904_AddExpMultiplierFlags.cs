@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -11,7 +11,7 @@ namespace server.infrastructure.migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
-                name: "exp_multiplier_flags",
+                name: "ExpMultiplierFlags",
                 schema: "internal",
                 table: "players",
                 type: "integer",
@@ -23,7 +23,7 @@ namespace server.infrastructure.migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "exp_multiplier_flags",
+                name: "ExpMultiplierFlags",
                 schema: "internal",
                 table: "players");
         }
