@@ -192,5 +192,6 @@ app.MapThreadEndpoints();
 app.MapTrainingEndpoints();
 app.MapTreasureMapEndpoints();
 app.MapRankingEndpoints();
+app.MapMaintenanceEndpoints();
 
 app.Run();

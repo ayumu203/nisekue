@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using server.domain.quest.enums;
 using server.infrastructure;
 
 namespace server.application.maintenance;
@@ -13,7 +14,7 @@ public sealed class QuestDataCleanupService(IDbContextFactory<AppDbContext> dbCo
             : null;
 
         var oldRoomIds = await dbContext.QuestRooms
-            .Where(x => x.CreatedAt <= cutoffDate)
+            .Where(x => x.Status == (int)QuestRoomStatus.Closed && x.ClosedAt != null && x.ClosedAt <= cutoffDate)
             .Select(x => x.Id)
             .ToListAsync(cancellationToken);
 
