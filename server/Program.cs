@@ -164,6 +164,7 @@ builder.Services.AddScoped<PlayerMoveSetSanitizer>();
 builder.Services.AddScoped<PlayerRebirthService>();
 builder.Services.AddScoped<MarketListingCleanupService>();
 builder.Services.AddScoped<DevelopmentDataCleanupService>();
+builder.Services.AddScoped<QuestDataCleanupService>();
 builder.Services.AddScoped<RankingAggregationService>();
 builder.Services.AddScoped<RankingReadService>();
 builder.Services.AddScoped<ChatService>();
@@ -173,6 +174,8 @@ if (rankingEnabled)
 {
     builder.Services.AddHostedService<RankingRebuildBackgroundService>();
 }
+
+builder.Services.AddHostedService<QuestDataCleanupBackgroundService>();
 
 var app = builder.Build();
 
