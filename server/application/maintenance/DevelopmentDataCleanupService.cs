@@ -44,16 +44,6 @@ public sealed class DevelopmentDataCleanupService(IDbContextFactory<AppDbContext
         result = result with { DeletedQuestRoomParticipants = await DeleteEntitiesAsync(dbContext, dbContext.QuestRoomParticipants) };
         result = result with { DeletedQuestRoomAllowedPlayers = await DeleteEntitiesAsync(dbContext, dbContext.QuestRoomAllowedPlayers) };
         result = result with { DeletedQuestRooms = await DeleteEntitiesAsync(dbContext, dbContext.QuestRooms) };
-        result = result with { DeletedChatMessages = await DeleteEntitiesAsync(dbContext, dbContext.ChatMessages) };
-        result = result with { DeletedChatRooms = await DeleteEntitiesAsync(dbContext, dbContext.ChatRooms) };
-        result = result with { DeletedMarketListings = await DeleteEntitiesAsync(dbContext, dbContext.MarketListings) };
-        result = result with { DeletedMarketTradeHistories = await DeleteEntitiesAsync(dbContext, dbContext.MarketTradeHistories) };
-        result = result with { DeletedItemDeletionLogs = await DeleteEntitiesAsync(dbContext, dbContext.ItemDeletionLogs) };
-        result = result with { DeletedPlayerItemStacks = await DeleteEntitiesAsync(dbContext, dbContext.PlayerItemStacks) };
-        result = result with { DeletedPlayerEquipments = await DeleteEntitiesAsync(dbContext, dbContext.PlayerEquipments) };
-        result = result with { DeletedPlayerMasterJobs = await DeleteEntitiesAsync(dbContext, dbContext.PlayerMasterJobs) };
-        result = result with { DeletedPlayerMoves = await DeleteEntitiesAsync(dbContext, dbContext.PlayerMoves) };
-        result = result with { DeletedPlayers = await DeleteEntitiesAsync(dbContext, dbContext.Players) };
 
         if (transaction is not null)
         {
