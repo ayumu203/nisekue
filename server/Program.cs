@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
 using System.Linq;
@@ -112,6 +113,8 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
     {
         npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "internal");
     });
+    options.ConfigureWarnings(warnings =>
+        warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
 });
 
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
@@ -192,5 +195,6 @@ app.MapThreadEndpoints();
 app.MapTrainingEndpoints();
 app.MapTreasureMapEndpoints();
 app.MapRankingEndpoints();
+app.MapMaintenanceEndpoints();
 
 app.Run();

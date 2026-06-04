@@ -7,6 +7,7 @@ using server.infrastructure;
 using server.infrastructure.player;
 using server.infrastructure.quest.room;
 using server.infrastructure.quest.run;
+using server.tests;
 using Xunit;
 
 namespace server.tests.maintenance;
@@ -54,7 +55,7 @@ public class QuestDataCleanupServiceTests
                 OwnerPlayerId = playerId,
                 StageId = 1,
                 Mode = 1,
-                Status = 1,
+                Status = 2,
                 Version = 1,
                 CreatedAt = now.AddDays(-14),
                 ClosedAt = now.AddDays(-13)
@@ -83,7 +84,7 @@ public class QuestDataCleanupServiceTests
                 Id = runId,
                 RoomId = roomId,
                 StageId = 1,
-                Status = 1,
+                Status = 2,
                 CurrentFloorNo = 1,
                 CurrentTurnNo = 1,
                 ActionDeadlineAt = now.AddDays(-13),
@@ -319,9 +320,10 @@ public class QuestDataCleanupServiceTests
                 OwnerPlayerId = oldPlayerId,
                 StageId = 1,
                 Mode = 1,
-                Status = 1,
+                Status = 2,
                 Version = 1,
-                CreatedAt = now.AddDays(-14)
+                CreatedAt = now.AddDays(-14),
+                ClosedAt = now.AddDays(-13)
             });
             seedContext.QuestRooms.Add(new QuestRoomEntity
             {
@@ -376,12 +378,13 @@ public class QuestDataCleanupServiceTests
                 Id = oldRunId,
                 RoomId = oldRoomId,
                 StageId = 1,
-                Status = 1,
+                Status = 2,
                 CurrentFloorNo = 1,
                 CurrentTurnNo = 1,
                 ActionDeadlineAt = now.AddDays(-13),
                 ChatMessagesJson = "[]",
-                StartedAt = now.AddDays(-14)
+                StartedAt = now.AddDays(-14),
+                EndedAt = now.AddDays(-13)
             });
             seedContext.QuestRunPartySnapshots.Add(new QuestRunPartySnapshotEntity
             {
@@ -518,9 +521,10 @@ public class QuestDataCleanupServiceTests
                 OwnerPlayerId = playerId,
                 StageId = 1,
                 Mode = 1,
-                Status = 1,
+                Status = 2,
                 Version = 1,
-                CreatedAt = now.AddDays(-14)
+                CreatedAt = now.AddDays(-14),
+                ClosedAt = now.AddDays(-13)
             });
             seedContext.QuestRoomAllowedPlayers.Add(new QuestRoomAllowedPlayerEntity
             {

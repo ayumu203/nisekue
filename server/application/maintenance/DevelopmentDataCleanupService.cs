@@ -24,6 +24,7 @@ public sealed class DevelopmentDataCleanupService(IDbContextFactory<AppDbContext
             DeletedMarketTradeHistories: 0,
             DeletedItemDeletionLogs: 0,
             DeletedQuestRooms: 0,
+            DeletedQuestRoomAllowedPlayers: 0,
             DeletedQuestRoomParticipants: 0,
             DeletedQuestRuns: 0,
             DeletedQuestRunPartySnapshots: 0,
@@ -41,6 +42,7 @@ public sealed class DevelopmentDataCleanupService(IDbContextFactory<AppDbContext
         result = result with { DeletedQuestRewardSummaries = await DeleteEntitiesAsync(dbContext, dbContext.QuestRewardSummaries) };
         result = result with { DeletedQuestRuns = await DeleteEntitiesAsync(dbContext, dbContext.QuestRuns) };
         result = result with { DeletedQuestRoomParticipants = await DeleteEntitiesAsync(dbContext, dbContext.QuestRoomParticipants) };
+        result = result with { DeletedQuestRoomAllowedPlayers = await DeleteEntitiesAsync(dbContext, dbContext.QuestRoomAllowedPlayers) };
         result = result with { DeletedQuestRooms = await DeleteEntitiesAsync(dbContext, dbContext.QuestRooms) };
         result = result with { DeletedChatMessages = await DeleteEntitiesAsync(dbContext, dbContext.ChatMessages) };
         result = result with { DeletedChatRooms = await DeleteEntitiesAsync(dbContext, dbContext.ChatRooms) };
@@ -87,6 +89,7 @@ public sealed record DevelopmentDataCleanupResult(
     int DeletedMarketTradeHistories,
     int DeletedItemDeletionLogs,
     int DeletedQuestRooms,
+    int DeletedQuestRoomAllowedPlayers,
     int DeletedQuestRoomParticipants,
     int DeletedQuestRuns,
     int DeletedQuestRunPartySnapshots,
