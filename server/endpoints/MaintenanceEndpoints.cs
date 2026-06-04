@@ -64,31 +64,40 @@ internal static class MaintenanceEndpoints
                 }
             }
 
-            var result = await developmentDataCleanupService.CleanupAsync();
-            return Results.Ok(new
+            try
             {
-                message = "開発用ゲームデータを削除しました。",
-                deletedPlayers = result.DeletedPlayers,
-                deletedChatRooms = result.DeletedChatRooms,
-                deletedChatMessages = result.DeletedChatMessages,
-                deletedPlayerMoves = result.DeletedPlayerMoves,
-                deletedPlayerMasterJobs = result.DeletedPlayerMasterJobs,
-                deletedPlayerEquipments = result.DeletedPlayerEquipments,
-                deletedPlayerItemStacks = result.DeletedPlayerItemStacks,
-                deletedMarketListings = result.DeletedMarketListings,
-                deletedMarketTradeHistories = result.DeletedMarketTradeHistories,
-                deletedItemDeletionLogs = result.DeletedItemDeletionLogs,
-                deletedQuestRooms = result.DeletedQuestRooms,
-                deletedQuestRoomAllowedPlayers = result.DeletedQuestRoomAllowedPlayers,
-                deletedQuestRoomParticipants = result.DeletedQuestRoomParticipants,
-                deletedQuestRuns = result.DeletedQuestRuns,
-                deletedQuestRunPartySnapshots = result.DeletedQuestRunPartySnapshots,
-                deletedQuestRunPartyMembers = result.DeletedQuestRunPartyMembers,
-                deletedQuestRunEnemies = result.DeletedQuestRunEnemies,
-                deletedQuestTurnCommands = result.DeletedQuestTurnCommands,
-                deletedQuestFloorTraps = result.DeletedQuestFloorTraps,
-                deletedQuestRewardSummaries = result.DeletedQuestRewardSummaries
-            });
+                var result = await developmentDataCleanupService.CleanupAsync();
+                return Results.Ok(new
+                {
+                    message = "開発用ゲームデータを削除しました。",
+                    deletedPlayers = result.DeletedPlayers,
+                    deletedChatRooms = result.DeletedChatRooms,
+                    deletedChatMessages = result.DeletedChatMessages,
+                    deletedPlayerMoves = result.DeletedPlayerMoves,
+                    deletedPlayerMasterJobs = result.DeletedPlayerMasterJobs,
+                    deletedPlayerEquipments = result.DeletedPlayerEquipments,
+                    deletedPlayerItemStacks = result.DeletedPlayerItemStacks,
+                    deletedMarketListings = result.DeletedMarketListings,
+                    deletedMarketTradeHistories = result.DeletedMarketTradeHistories,
+                    deletedItemDeletionLogs = result.DeletedItemDeletionLogs,
+                    deletedQuestRooms = result.DeletedQuestRooms,
+                    deletedQuestRoomAllowedPlayers = result.DeletedQuestRoomAllowedPlayers,
+                    deletedQuestRoomParticipants = result.DeletedQuestRoomParticipants,
+                    deletedQuestRuns = result.DeletedQuestRuns,
+                    deletedQuestRunPartySnapshots = result.DeletedQuestRunPartySnapshots,
+                    deletedQuestRunPartyMembers = result.DeletedQuestRunPartyMembers,
+                    deletedQuestRunEnemies = result.DeletedQuestRunEnemies,
+                    deletedQuestTurnCommands = result.DeletedQuestTurnCommands,
+                    deletedQuestFloorTraps = result.DeletedQuestFloorTraps,
+                    deletedQuestRewardSummaries = result.DeletedQuestRewardSummaries
+                });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(
+                    detail: $"ゲームデータの削除中にエラーが発生しました: {ex.Message}",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
         }).ExcludeFromDescription();
 
         app.MapPost("/internal/maintenance/cleanup-old-quest-data", async (
