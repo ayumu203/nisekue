@@ -1,4 +1,4 @@
-name: Cleanup Game Data - Development
+name: Cleanup Quest Data - Production
 
 on:
   workflow_dispatch:
@@ -9,10 +9,10 @@ permissions:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: prod
 
     steps:
-      - name: Trigger development data cleanup endpoint
+      - name: Trigger quest data cleanup endpoint
         env:
           API_BASE_URL: ${{ vars.VITE_API_BASE_URL || secrets.VITE_API_BASE_URL }}
           MARKET_CLEANUP_TOKEN: ${{ secrets.MARKET_CLEANUP_TOKEN }}
