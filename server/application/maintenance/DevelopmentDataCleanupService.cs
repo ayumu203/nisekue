@@ -65,6 +65,11 @@ public sealed class DevelopmentDataCleanupService(IDbContextFactory<AppDbContext
 
     private static async Task<int> DeleteEntitiesAsync<TEntity>(AppDbContext dbContext, DbSet<TEntity> dbSet) where TEntity : class
     {
+        if (dbContext.Database.IsRelational())
+        {
+            return await dbSet.ExecuteDeleteAsync();
+        }
+
         var entities = await dbSet.ToListAsync();
         if (entities.Count == 0)
         {

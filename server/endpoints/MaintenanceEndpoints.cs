@@ -64,8 +64,10 @@ internal static class MaintenanceEndpoints
                 }
             }
 
-            var result = await developmentDataCleanupService.CleanupAsync();
-            return Results.Ok(new
+            try
+            {
+                var result = await developmentDataCleanupService.CleanupAsync();
+                return Results.Ok(new
             {
                 message = "開発用ゲームデータを削除しました。",
                 deletedPlayers = result.DeletedPlayers,
@@ -89,6 +91,13 @@ internal static class MaintenanceEndpoints
                 deletedQuestFloorTraps = result.DeletedQuestFloorTraps,
                 deletedQuestRewardSummaries = result.DeletedQuestRewardSummaries
             });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(
+                    detail: $"ゲームデータの削除中にエラーが発生しました: {ex.Message}",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
         }).ExcludeFromDescription();
 
         app.MapPost("/internal/maintenance/cleanup-old-quest-data", async (
