@@ -69,17 +69,7 @@ internal static class MaintenanceEndpoints
                 var result = await developmentDataCleanupService.CleanupAsync();
                 return Results.Ok(new
                 {
-                    message = "開発用ゲームデータを削除しました。",
-                    deletedPlayers = result.DeletedPlayers,
-                    deletedChatRooms = result.DeletedChatRooms,
-                    deletedChatMessages = result.DeletedChatMessages,
-                    deletedPlayerMoves = result.DeletedPlayerMoves,
-                    deletedPlayerMasterJobs = result.DeletedPlayerMasterJobs,
-                    deletedPlayerEquipments = result.DeletedPlayerEquipments,
-                    deletedPlayerItemStacks = result.DeletedPlayerItemStacks,
-                    deletedMarketListings = result.DeletedMarketListings,
-                    deletedMarketTradeHistories = result.DeletedMarketTradeHistories,
-                    deletedItemDeletionLogs = result.DeletedItemDeletionLogs,
+                    message = "開発用クエストデータを削除しました。",
                     deletedQuestRooms = result.DeletedQuestRooms,
                     deletedQuestRoomAllowedPlayers = result.DeletedQuestRoomAllowedPlayers,
                     deletedQuestRoomParticipants = result.DeletedQuestRoomParticipants,

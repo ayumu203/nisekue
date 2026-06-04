@@ -13,16 +13,6 @@ public sealed class DevelopmentDataCleanupService(IDbContextFactory<AppDbContext
             : null;
 
         var result = new DevelopmentDataCleanupResult(
-            DeletedPlayers: 0,
-            DeletedChatRooms: 0,
-            DeletedChatMessages: 0,
-            DeletedPlayerMoves: 0,
-            DeletedPlayerMasterJobs: 0,
-            DeletedPlayerEquipments: 0,
-            DeletedPlayerItemStacks: 0,
-            DeletedMarketListings: 0,
-            DeletedMarketTradeHistories: 0,
-            DeletedItemDeletionLogs: 0,
             DeletedQuestRooms: 0,
             DeletedQuestRoomAllowedPlayers: 0,
             DeletedQuestRoomParticipants: 0,
@@ -73,16 +63,6 @@ public sealed class DevelopmentDataCleanupService(IDbContextFactory<AppDbContext
 }
 
 public sealed record DevelopmentDataCleanupResult(
-    int DeletedPlayers,
-    int DeletedChatRooms,
-    int DeletedChatMessages,
-    int DeletedPlayerMoves,
-    int DeletedPlayerMasterJobs,
-    int DeletedPlayerEquipments,
-    int DeletedPlayerItemStacks,
-    int DeletedMarketListings,
-    int DeletedMarketTradeHistories,
-    int DeletedItemDeletionLogs,
     int DeletedQuestRooms,
     int DeletedQuestRoomAllowedPlayers,
     int DeletedQuestRoomParticipants,
