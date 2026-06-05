@@ -77,6 +77,7 @@ public class DbPlayerEquipmentRepository(
                     EquipmentStatus = (int)playerEquipment.Status,
                     Durability = playerEquipment.Durability,
                     Mastery = playerEquipment.Mastery,
+                    PlusValue = playerEquipment.PlusValue,
                     AcquiredAt = playerEquipment.AcquiredAt,
                     UpdatedAt = playerEquipment.UpdatedAt
                 });
@@ -88,6 +89,7 @@ public class DbPlayerEquipmentRepository(
             existing.EquipmentStatus = (int)playerEquipment.Status;
             existing.Durability = playerEquipment.Durability;
             existing.Mastery = playerEquipment.Mastery;
+            existing.PlusValue = playerEquipment.PlusValue;
             existing.UpdatedAt = playerEquipment.UpdatedAt;
         }
 
@@ -124,6 +126,7 @@ public class DbPlayerEquipmentRepository(
             (EquipmentStatus)entity.EquipmentStatus,
             entity.Durability,
             entity.Mastery,
+            entity.PlusValue,
             entity.AcquiredAt,
             entity.UpdatedAt);
     }

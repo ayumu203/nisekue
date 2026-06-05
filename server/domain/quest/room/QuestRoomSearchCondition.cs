@@ -10,7 +10,8 @@ public class QuestRoomSearchCondition(
     PlayerId? ownerPlayerId = null,
     PlayerId? viewerPlayerId = null,
     int page = 1,
-    int pageSize = 20)
+    int pageSize = 20,
+    IReadOnlySet<QuestStageId>? visibleStageIds = null)
 {
     public QuestStageId? StageId { get; } = stageId;
     public QuestRoomMode? Mode { get; } = mode;
@@ -19,4 +20,5 @@ public class QuestRoomSearchCondition(
     public PlayerId? ViewerPlayerId { get; } = viewerPlayerId;
     public int Page { get; } = page < 1 ? 1 : page;
     public int PageSize { get; } = pageSize < 1 ? 20 : Math.Min(pageSize, 100);
+    public IReadOnlySet<QuestStageId>? VisibleStageIds { get; } = visibleStageIds;
 }

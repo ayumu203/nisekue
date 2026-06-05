@@ -219,6 +219,7 @@ public class TrainingServiceTests
             EquipmentStatus.Equipped,
             durability: 10,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var equipmentRepository = new FakeEquipmentRepository(equipment);
@@ -278,6 +279,7 @@ public class TrainingServiceTests
             EquipmentStatus.Inventory,
             durability: 10,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
@@ -335,6 +337,7 @@ public class TrainingServiceTests
             EquipmentStatus.Equipped,
             durability: 1,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
@@ -392,6 +395,7 @@ public class TrainingServiceTests
             EquipmentStatus.Equipped,
             durability: 10,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
@@ -448,6 +452,7 @@ public class TrainingServiceTests
             EquipmentStatus.Equipped,
             durability: 10,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
@@ -504,6 +509,7 @@ public class TrainingServiceTests
             EquipmentStatus.Equipped,
             durability: 10,
             mastery: 5,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);

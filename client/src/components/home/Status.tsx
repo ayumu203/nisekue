@@ -76,12 +76,11 @@ function formatStatusValue(
   return `${effectiveValue} (${diff > 0 ? '+' : ''}${diff})`
 }
 
-function formatEquippedItemWithDurability(
+function formatEquippedItemWithPlus(
   equipment:
     | {
         name: string
-        durability: number
-        maxDurability: number
+        plusValue: number
       }
     | undefined,
   fallback: string,
@@ -90,7 +89,9 @@ function formatEquippedItemWithDurability(
     return fallback
   }
 
-  return `${equipment.name} (${equipment.durability}/${equipment.maxDurability})`
+  return equipment.plusValue > 0
+    ? `${equipment.name} (+${equipment.plusValue})`
+    : equipment.name
 }
 
 function SettingGearIcon(props: SvgIconProps) {
@@ -348,13 +349,13 @@ export default function Status({
                   />
                   <StatusStatRow
                     label={locale.labels.weapon}
-                    value={formatEquippedItemWithDurability(equippedWeapon, locale.notSet)}
+                    value={formatEquippedItemWithPlus(equippedWeapon, locale.notSet)}
                     normalized={0}
                     hideGauge
                   />
                   <StatusStatRow
                     label={locale.labels.armor}
-                    value={formatEquippedItemWithDurability(equippedArmor, locale.notSet)}
+                    value={formatEquippedItemWithPlus(equippedArmor, locale.notSet)}
                     normalized={0}
                     hideGauge
                   />
@@ -411,13 +412,13 @@ export default function Status({
                     />
                     <StatusStatRow
                       label={locale.labels.weapon}
-                      value={formatEquippedItemWithDurability(equippedWeapon, locale.notSet)}
+                      value={formatEquippedItemWithPlus(equippedWeapon, locale.notSet)}
                       normalized={0}
                       hideGauge
                     />
                     <StatusStatRow
                       label={locale.labels.armor}
-                      value={formatEquippedItemWithDurability(equippedArmor, locale.notSet)}
+                      value={formatEquippedItemWithPlus(equippedArmor, locale.notSet)}
                       normalized={0}
                       hideGauge
                     />

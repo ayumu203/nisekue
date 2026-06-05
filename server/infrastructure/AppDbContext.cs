@@ -175,6 +175,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         playerEquipment.Property(x => x.EquipmentStatus).HasColumnName("equipment_status").IsRequired();
         playerEquipment.Property(x => x.Durability).HasColumnName("durability").IsRequired();
         playerEquipment.Property(x => x.Mastery).HasColumnName("mastery").HasDefaultValue(0).IsRequired();
+        playerEquipment.Property(x => x.PlusValue).HasColumnName("plus_value").HasDefaultValue(0).IsRequired();
         playerEquipment.Property(x => x.AcquiredAt).HasColumnName("acquired_at").IsRequired();
         playerEquipment.Property(x => x.UpdatedAt).HasColumnName("updated_at").IsRequired();
         playerEquipment.HasIndex(x => x.PlayerId);

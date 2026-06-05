@@ -49,7 +49,7 @@ public class CsvItemRepository : IItemRepository
             }
 
             var columns = line.Split(',', StringSplitOptions.TrimEntries);
-            if (columns.Length != 23)
+            if (columns.Length != 24)
             {
                 throw new InvalidOperationException($"item_master.csv の形式が不正です。行: {i + 1}");
             }
@@ -64,6 +64,13 @@ public class CsvItemRepository : IItemRepository
             var expMultiplier = effectType == ItemEffectType.ExpMultiplier
                 ? ParseDecimal(columns[22], "exp_multiplier", i + 1)
                 : (decimal?)null;
+            var mapUnlockFlag = effectType == ItemEffectType.UnlockMap
+                ? ParseInt(columns[23], "map_unlock_flag", i + 1)
+                : (int?)null;
+            if (mapUnlockFlag is not null && !MapUnlockFlag.IsValidFlag(mapUnlockFlag.Value))
+            {
+                throw new InvalidOperationException($"item_master.csv の map_unlock_flag が不正です。value: {mapUnlockFlag}, 行: {i + 1}");
+            }
             map[itemId] = new Item(
                 itemId,
                 columns[1],
@@ -93,7 +100,8 @@ public class CsvItemRepository : IItemRepository
                 changeJobTo: string.IsNullOrWhiteSpace(columns[5]) ? null : ParseEnum<Job>(columns[5], "change_job_to", i + 1),
                 requiredLevel: ParseNullableInt(columns[6], "required_level", i + 1),
                 requiredMasterJobs: ParseJobs(columns[14], i + 1),
-                expMultiplier: expMultiplier);
+                expMultiplier: expMultiplier,
+                mapUnlockFlag: mapUnlockFlag);
         }
 
         return map;

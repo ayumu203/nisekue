@@ -7,24 +7,73 @@ namespace server.tests;
 public class PlayerEquipmentTests
 {
     [Fact]
-    public void RepairDurability_WhenRecoveredValueWouldExceedMax_ClampsToMaxDurability()
+    public void Synthesize_WhenSameEquipment_IncreasesPlusValue()
     {
-        var equipment = CreateEquipment(status: EquipmentStatus.Equipped, durability: 8);
+        var target = CreateEquipment(equipmentId: 1001, plusValue: 0);
+        var source = CreateEquipment(equipmentId: 1001, plusValue: 0);
 
-        equipment.RepairDurability(10, maxDurability: 10, DateTimeOffset.UtcNow);
+        target.Synthesize(source, synthesisGoldCost: 10, DateTimeOffset.UtcNow);
 
-        equipment.Durability.Should().Be(10);
+        target.PlusValue.Should().Be(1);
     }
 
     [Fact]
-    public void RepairDurability_WhenEquipmentIsBroken_Throws()
+    public void Synthesize_WhenAtMaxPlusValue_Throws()
     {
-        var equipment = CreateEquipment(status: EquipmentStatus.Broken, durability: 0);
+        var target = CreateEquipment(equipmentId: 1001, plusValue: PlayerEquipment.MaxPlusValue);
+        var source = CreateEquipment(equipmentId: 1001, plusValue: 0);
 
-        var action = () => equipment.RepairDurability(1, maxDurability: 10, DateTimeOffset.UtcNow);
+        var action = () => target.Synthesize(source, synthesisGoldCost: 10, DateTimeOffset.UtcNow);
 
         action.Should().Throw<InvalidOperationException>()
-            .WithMessage("*破損した装備は修復対象にできません*");
+            .WithMessage("*プラス値が上限に達している*");
+    }
+
+    [Fact]
+    public void Synthesize_WhenDifferentEquipment_Throws()
+    {
+        var target = CreateEquipment(equipmentId: 1001, plusValue: 0);
+        var source = CreateEquipment(equipmentId: 1002, plusValue: 0);
+
+        var action = () => target.Synthesize(source, synthesisGoldCost: 10, DateTimeOffset.UtcNow);
+
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("*同一装備でしか合成はできません*");
+    }
+
+    [Fact]
+    public void Synthesize_WhenSameInstance_Throws()
+    {
+        var equipment = CreateEquipment(equipmentId: 1001, plusValue: 0);
+
+        var action = () => equipment.Synthesize(equipment, synthesisGoldCost: 10, DateTimeOffset.UtcNow);
+
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("*同じ装備個体は合成できません*");
+    }
+
+    [Fact]
+    public void Synthesize_WhenSourceIsBroken_Throws()
+    {
+        var target = CreateEquipment(equipmentId: 1001, plusValue: 0);
+        var source = CreateEquipment(equipmentId: 1001, plusValue: 0, status: EquipmentStatus.Broken, durability: 0);
+
+        var action = () => target.Synthesize(source, synthesisGoldCost: 10, DateTimeOffset.UtcNow);
+
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("*破損した装備は合成素材にできません*");
+    }
+
+    [Fact]
+    public void Synthesize_WhenTargetIsBroken_Throws()
+    {
+        var target = CreateEquipment(equipmentId: 1001, plusValue: 0, status: EquipmentStatus.Broken, durability: 0);
+        var source = CreateEquipment(equipmentId: 1001, plusValue: 0);
+
+        var action = () => target.Synthesize(source, synthesisGoldCost: 10, DateTimeOffset.UtcNow);
+
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("*破損した装備は合成対象にできません*");
     }
 
     [Fact]
@@ -51,16 +100,21 @@ public class PlayerEquipmentTests
         equipment.Status.Should().Be(EquipmentStatus.Broken);
     }
 
-    private static PlayerEquipment CreateEquipment(EquipmentStatus status, int durability)
+    private static PlayerEquipment CreateEquipment(
+        EquipmentStatus status = EquipmentStatus.Equipped,
+        int durability = 10,
+        int equipmentId = 1001,
+        int plusValue = 0)
     {
         return new PlayerEquipment(
             PlayerEquipmentId.New(),
             new PlayerId(Guid.NewGuid()),
-            new EquipmentId(1001),
+            new EquipmentId(equipmentId),
             EquipmentType.Weapon,
             status,
             durability,
             mastery: 0,
+            plusValue: plusValue,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
     }

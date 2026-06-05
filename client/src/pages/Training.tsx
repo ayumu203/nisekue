@@ -4,6 +4,7 @@ import {
   CircularProgress,
   Container,
   Paper,
+  Snackbar,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
@@ -57,6 +58,8 @@ function playerSummaryToDisplayEnemy(opponent: PlayerSummary): TrainingEnemy {
 
 const TRAINING_COOLDOWN_MS = 3000
 const AUTO_BATTLE_DURATION_MS = 3 * 60 * 1000
+
+const NEW_ENEMY_LEVEL_THRESHOLDS = [3, 15, 30, 50, 75, 100, 102, 150, 200, 250, 300, 400, 500, 750]
 
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
   return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
@@ -117,6 +120,7 @@ export default function Training() {
   const [plannedMoveIds, setPlannedMoveIds] = useState<Array<number | null> | null>(null)
   const [lastSubmittedMoveIds, setLastSubmittedMoveIds] = useState<Array<number | null> | null>(null)
   const [newEnemiesMessage, setNewEnemiesMessage] = useState<string | null>(null)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
   const prevLevelRef = useRef<number | undefined>(undefined)
   const prevTrainingResultRef = useRef(trainingResult)
   const isAutoBattleRequestInFlightRef = useRef(false)
@@ -272,9 +276,10 @@ export default function Training() {
     const prevLevel = prevLevelRef.current
     prevLevelRef.current = player.level
 
-    if (prevLevel !== undefined && prevLevel < 3 && player.level >= 3) {
+    if (prevLevel !== undefined && NEW_ENEMY_LEVEL_THRESHOLDS.some((t) => prevLevel < t && player.level >= t)) {
       void mutateCache([`training-enemies`, userId])
       setNewEnemiesMessage(locale.newEnemiesUnlocked)
+      setSnackbarOpen(true)
     }
   }, [player, mutateCache, userId])
 
@@ -798,6 +803,16 @@ export default function Training() {
           onDismiss={() => advanceTutorial('completed')}
         />
       )}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled" onClose={() => setSnackbarOpen(false)} sx={{ width: '100%' }}>
+          {newEnemiesMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   )
 }

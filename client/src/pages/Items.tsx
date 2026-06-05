@@ -1,11 +1,19 @@
 import {
   Alert,
   Box,
+  Button,
   Chip,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Pagination,
   Paper,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
   Stack,
   Tab,
   Tabs,
@@ -80,6 +88,8 @@ export default function Items() {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [busyKey, setBusyKey] = useState<string | null>(null)
   const [listingEditorKey, setListingEditorKey] = useState<string | null>(null)
+  const [synthesizeTarget, setSynthesizeTarget] = useState<ItemEquipmentView | null>(null)
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null)
   const [quantities, setQuantities] = useState<Record<string, string>>({})
   const [unitPrices, setUnitPrices] = useState<Record<string, string>>({})
   const errorAlertRef = useRef<HTMLDivElement | null>(null)
@@ -152,6 +162,16 @@ export default function Items() {
   const inventoryConsumables = useMemo(() => {
     return (items?.inventoryItems ?? []).filter((item): item is ItemStackView => item.kind === 'item')
   }, [items])
+
+  const synthesizeSources = useMemo(() => {
+    if (!synthesizeTarget) return []
+    return [...equippedItems, ...inventoryEquipments].filter(
+      (item) =>
+        item.equipmentId === synthesizeTarget.equipmentId &&
+        item.playerEquipmentId !== synthesizeTarget.playerEquipmentId &&
+        item.status !== 'Broken',
+    )
+  }, [synthesizeTarget, equippedItems, inventoryEquipments])
 
   const publicMarketListings = useMemo(
     () =>
@@ -257,11 +277,22 @@ export default function Items() {
   }
 
   async function handleSynthesize(item: ItemEquipmentView): Promise<void> {
-    if (!session?.access_token) return
+    setSynthesizeTarget(item)
+    setSelectedSourceId(null)
+  }
 
-    await runAction(`synthesize:${item.playerEquipmentId}`, () =>
-      synthesizeEquipment(item.playerEquipmentId, session.access_token),
+  async function handleSynthesizeConfirm(): Promise<void> {
+    if (!session?.access_token || !synthesizeTarget || !selectedSourceId) return
+
+    await runAction(`synthesize:${synthesizeTarget.playerEquipmentId}`, () =>
+      synthesizeEquipment(
+        synthesizeTarget.playerEquipmentId,
+        { sourcePlayerEquipmentId: selectedSourceId },
+        session.access_token,
+      ),
     )
+    setSynthesizeTarget(null)
+    setSelectedSourceId(null)
   }
 
   async function handleEquip(item: ItemEquipmentView): Promise<void> {
@@ -355,6 +386,43 @@ export default function Items() {
             {itemsError ? <Alert severity="warning">{itemsError.message}</Alert> : null}
             {marketError ? <Alert severity="warning">{marketError.message}</Alert> : null}
             {myListingsError ? <Alert severity="warning">{myListingsError.message}</Alert> : null}
+
+            <Dialog open={synthesizeTarget !== null} onClose={() => setSynthesizeTarget(null)} maxWidth="xs" fullWidth>
+              <DialogTitle>合成素材の選択</DialogTitle>
+              <DialogContent>
+                {synthesizeSources.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    合成素材として使用できる装備がありません。
+                  </Typography>
+                ) : (
+                  <RadioGroup
+                    value={selectedSourceId ?? ''}
+                    onChange={(event) => setSelectedSourceId(event.target.value)}
+                  >
+                    {synthesizeSources.map((source) => (
+                      <FormControlLabel
+                        key={source.playerEquipmentId}
+                        value={source.playerEquipmentId}
+                        control={<Radio />}
+                        label={`${source.name}${source.plusValue > 0 ? ` (+${source.plusValue})` : ''}`}
+                      />
+                    ))}
+                  </RadioGroup>
+                )}
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setSynthesizeTarget(null)} disabled={busyKey !== null}>
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={() => void handleSynthesizeConfirm()}
+                  disabled={busyKey !== null || selectedSourceId === null || synthesizeSources.length === 0}
+                  variant="contained"
+                >
+                  合成する
+                </Button>
+              </DialogActions>
+            </Dialog>
 
             <ControlFrame>
               <Stack spacing={2}>

@@ -354,6 +354,7 @@ public class QuestRoomServiceTests
             EquipmentStatus.Equipped,
             durability: equipment.MaxDurability,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
 
@@ -373,6 +374,32 @@ public class QuestRoomServiceTests
         run.PartySnapshots.Should().ContainSingle();
         run.PartySnapshots[0].WeaponEquipmentId.Should().Be(playerEquipment.Id);
         run.PartySnapshots[0].BaseStatus.Strength.Should().Be(owner.Status.Strength + equipment.BonusValues.Strength);
+    }
+
+    [Fact]
+    public async Task JoinRoomAsync_WhenStageRequiresMapUnlock_ParticipantCanJoinRegardlessOfOwnFlag()
+    {
+        // マップ解放は作成者のみ必要。参加者はフラグ不問で参加可能
+        var owner = CreatePlayer("Owner");
+        owner.SetMapUnlockFlag(MapUnlockFlag.Map1);
+        var guest = CreatePlayer("Guest");
+        var stage = CreateStage(minPartyMemberCount: 1, maxPartyMemberCount: 6, isActive: true, requiredMapUnlockFlag: MapUnlockFlag.Map1);
+        var roomRepository = new FakeQuestRoomRepository();
+        var room = new QuestRoom(QuestRoomId.New(), owner.Id, stage.Id, QuestRoomMode.Multi);
+        room.AddPlayer(owner.Id, owner.Name, owner.Level);
+        await roomRepository.SaveAsync(room);
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            roomRepository,
+            new FakeQuestRunRepository(),
+            new FakePlayerRepository(owner, guest),
+            new FakeQuestNpcTemplateRepository([]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()));
+
+        var updatedRoom = await service.JoinRoomAsync(room.Id, guest.Id);
+
+        updatedRoom.Participants.Should().Contain(x => x.PlayerId == guest.Id);
     }
 
     private static QuestRoomService CreateRoomService(
@@ -414,7 +441,7 @@ public class QuestRoomServiceTests
             moveSet: moveSet);
     }
 
-    private static QuestStageDefinition CreateStage(int minPartyMemberCount, int maxPartyMemberCount, bool isActive, int recommendedLevel = 1)
+    private static QuestStageDefinition CreateStage(int minPartyMemberCount, int maxPartyMemberCount, bool isActive, int recommendedLevel = 1, int? requiredMapUnlockFlag = null)
     {
         return new QuestStageDefinition(
             new QuestStageId(1),
@@ -439,7 +466,8 @@ public class QuestRoomServiceTests
             ],
             equipmentRewards: [],
             itemRewards: [],
-            isActive: isActive);
+            isActive: isActive,
+            requiredMapUnlockFlag: requiredMapUnlockFlag);
     }
 
     private static QuestEnemyDefinition CreateEnemyDefinition()

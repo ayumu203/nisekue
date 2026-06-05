@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using server.infrastructure;
@@ -11,9 +12,11 @@ using server.infrastructure;
 namespace server.infrastructure.migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260604051540_AddMapUnlockFlags")]
+    partial class AddMapUnlockFlags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -360,6 +363,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasColumnName("luck");
 
+                    b.Property<int>("MapUnlockFlags")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("map_unlock_flags");
+
                     b.Property<int>("MaxHp")
                         .HasColumnType("integer")
                         .HasColumnName("max_hp");
@@ -443,12 +452,6 @@ namespace server.infrastructure.migrations
                     b.Property<Guid>("PlayerId")
                         .HasColumnType("uuid")
                         .HasColumnName("player_id");
-
-                    b.Property<int>("PlusValue")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("plus_value");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")

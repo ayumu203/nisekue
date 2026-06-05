@@ -45,6 +45,45 @@ public class EquipmentStatusResolverTests
         actual.Defense.Should().Be(104);
     }
 
+    [Fact]
+    public void BuildEffectiveStatus_WhenWeaponHasPlusValue_AppliesPlusBeforeMastery()
+    {
+        var resolver = new EquipmentStatusResolver();
+        var baseStatus = new Status(20, 10, 5, 4, 3, 2, 1);
+        var weapon = CreateWeapon(strength: 100);
+        var playerWeapon = CreatePlayerEquipment(weapon.Id, EquipmentType.Weapon, mastery: 10, plusValue: 50);
+
+        var actual = resolver.BuildEffectiveStatus(baseStatus, Job.Apprentice, [playerWeapon], [weapon]);
+
+        actual.Strength.Should().Be(156);
+    }
+
+    [Fact]
+    public void BuildEffectiveStatus_WhenArmorHasPlusValue_AppliesPlus()
+    {
+        var resolver = new EquipmentStatusResolver();
+        var baseStatus = new Status(20, 10, 5, 4, 3, 2, 1);
+        var armor = CreateArmor(defense: 100);
+        var playerArmor = CreatePlayerEquipment(armor.Id, EquipmentType.Armor, mastery: 0, plusValue: 25);
+
+        var actual = resolver.BuildEffectiveStatus(baseStatus, Job.Apprentice, [playerArmor], [armor]);
+
+        actual.Defense.Should().Be(129);
+    }
+
+    [Fact]
+    public void BuildEffectiveStatus_WhenPlusValueIsZero_NoBonusApplied()
+    {
+        var resolver = new EquipmentStatusResolver();
+        var baseStatus = new Status(20, 10, 5, 4, 3, 2, 1);
+        var weapon = CreateWeapon(strength: 100);
+        var playerWeapon = CreatePlayerEquipment(weapon.Id, EquipmentType.Weapon, mastery: 0, plusValue: 0);
+
+        var actual = resolver.BuildEffectiveStatus(baseStatus, Job.Apprentice, [playerWeapon], [weapon]);
+
+        actual.Strength.Should().Be(105);
+    }
+
     private static Equipment CreateWeapon(int strength)
     {
         return new Equipment(
@@ -73,7 +112,7 @@ public class EquipmentStatusResolverTests
             new HashSet<Job> { Job.Apprentice });
     }
 
-    private static PlayerEquipment CreatePlayerEquipment(EquipmentId equipmentId, EquipmentType type, int mastery)
+    private static PlayerEquipment CreatePlayerEquipment(EquipmentId equipmentId, EquipmentType type, int mastery, int plusValue = 0)
     {
         return new PlayerEquipment(
             PlayerEquipmentId.New(),
@@ -83,6 +122,7 @@ public class EquipmentStatusResolverTests
             EquipmentStatus.Equipped,
             durability: 10,
             mastery: mastery,
+            plusValue: plusValue,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
     }

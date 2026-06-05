@@ -12,7 +12,8 @@ public class QuestStageDefinition(
     IEnumerable<QuestFloorDefinition> floors,
     IEnumerable<QuestStageEquipmentRewardEntry>? equipmentRewards,
     IEnumerable<QuestStageItemRewardEntry>? itemRewards,
-    bool isActive)
+    bool isActive,
+    int? requiredMapUnlockFlag = null)
 {
     private readonly QuestFloorDefinition[] floors = floors?.OrderBy(x => x.FloorNo).ToArray()
         ?? throw new ArgumentNullException(nameof(floors));
@@ -31,6 +32,7 @@ public class QuestStageDefinition(
     public IReadOnlyList<QuestStageEquipmentRewardEntry> EquipmentRewards => equipmentRewards;
     public IReadOnlyList<QuestStageItemRewardEntry> ItemRewards => itemRewards;
     public bool IsActive { get; } = isActive;
+    public int? RequiredMapUnlockFlag { get; } = requiredMapUnlockFlag;
 
     private static string ValidateText(string value, string paramName)
     {

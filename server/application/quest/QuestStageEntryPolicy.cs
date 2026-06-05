@@ -21,4 +21,12 @@ internal static class QuestStageEntryPolicy
         return stage.MinimumEntryLevel
             ?? Math.Max(1, (int)Math.Ceiling(stage.RecommendedLevel * MinimumRecommendedLevelRatio));
     }
+
+    internal static bool MeetsMapUnlockRequirement(Player player, QuestStageDefinition stage)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        ArgumentNullException.ThrowIfNull(stage);
+
+        return stage.RequiredMapUnlockFlag is null || player.HasMapUnlockFlag(stage.RequiredMapUnlockFlag.Value);
+    }
 }

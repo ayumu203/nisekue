@@ -39,13 +39,13 @@ public class EquipmentStatusResolver
                 ? ResolveMasteryRate(playerEquipment.Mastery)
                 : 0m;
 
-            bonusMaxHp += ApplyMasteryBonus(equipment.BonusValues.MaxHp, masteryRate);
-            bonusMaxMp += ApplyMasteryBonus(equipment.BonusValues.MaxMp, masteryRate);
-            bonusStrength += ApplyMasteryBonus(equipment.BonusValues.Strength, masteryRate);
-            bonusDefense += ApplyMasteryBonus(equipment.BonusValues.Defense, masteryRate);
-            bonusIntelligence += ApplyMasteryBonus(equipment.BonusValues.Intelligence, masteryRate);
-            bonusLuck += ApplyMasteryBonus(equipment.BonusValues.Luck, masteryRate);
-            bonusSpeed += ApplyMasteryBonus(equipment.BonusValues.Speed, masteryRate);
+            bonusMaxHp += ApplyBonuses(equipment.BonusValues.MaxHp, masteryRate, playerEquipment.PlusValue);
+            bonusMaxMp += ApplyBonuses(equipment.BonusValues.MaxMp, masteryRate, playerEquipment.PlusValue);
+            bonusStrength += ApplyBonuses(equipment.BonusValues.Strength, masteryRate, playerEquipment.PlusValue);
+            bonusDefense += ApplyBonuses(equipment.BonusValues.Defense, masteryRate, playerEquipment.PlusValue);
+            bonusIntelligence += ApplyBonuses(equipment.BonusValues.Intelligence, masteryRate, playerEquipment.PlusValue);
+            bonusLuck += ApplyBonuses(equipment.BonusValues.Luck, masteryRate, playerEquipment.PlusValue);
+            bonusSpeed += ApplyBonuses(equipment.BonusValues.Speed, masteryRate, playerEquipment.PlusValue);
         }
 
         return new Status(
@@ -62,14 +62,21 @@ public class EquipmentStatusResolver
             baseStatus.DamageReduction);
     }
 
-    private static int ApplyMasteryBonus(int baseBonus, decimal masteryRate)
+    private static int ApplyBonuses(int baseBonus, decimal masteryRate, int plusValue)
     {
-        if (baseBonus == 0 || masteryRate <= 0)
+        if (baseBonus == 0)
         {
-            return baseBonus;
+            return 0;
         }
 
-        return baseBonus + (int)Math.Floor(baseBonus * masteryRate);
+        var plusApplied = baseBonus * (100 + plusValue) / 100;
+
+        if (masteryRate <= 0)
+        {
+            return plusApplied;
+        }
+
+        return plusApplied + (int)Math.Floor(plusApplied * masteryRate);
     }
 
     private static decimal ResolveMasteryRate(int mastery)
