@@ -685,7 +685,7 @@ public class QuestRunServiceTests
     }
 
     [Fact]
-    public async Task ResolveTurnAsync_WhenRunEnds_ConsumesSnapshottedEquipmentDurability()
+    public async Task ResolveTurnAsync_WhenRunEnds_DoesNotConsumeEquipmentDurability()
     {
         var playerId = new PlayerId(Guid.NewGuid());
         var participantId = QuestParticipantId.New();
@@ -739,12 +739,12 @@ public class QuestRunServiceTests
 
         var stored = await playerEquipmentRepository.GetAsync(run.PartySnapshots[0].WeaponEquipmentId!.Value);
         stored.Should().NotBeNull();
-        stored!.Durability.Should().Be(1);
+        stored!.Durability.Should().Be(2);
         stored.Status.Should().Be(EquipmentStatus.Equipped);
     }
 
     [Fact]
-    public async Task ResolveTurnAsync_WhenRunEndsWithLastDurabilityEquipment_MarksBroken()
+    public async Task ResolveTurnAsync_WhenRunEndsWithLowDurabilityEquipment_DoesNotMarkBroken()
     {
         var playerId = new PlayerId(Guid.NewGuid());
         var participantId = QuestParticipantId.New();
@@ -798,8 +798,8 @@ public class QuestRunServiceTests
 
         var stored = await playerEquipmentRepository.GetAsync(run.PartySnapshots[0].WeaponEquipmentId!.Value);
         stored.Should().NotBeNull();
-        stored!.Durability.Should().Be(0);
-        stored.Status.Should().Be(EquipmentStatus.Broken);
+        stored!.Durability.Should().Be(1);
+        stored.Status.Should().Be(EquipmentStatus.Equipped);
     }
 
     [Fact]

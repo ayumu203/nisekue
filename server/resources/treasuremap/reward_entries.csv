@@ -58,3 +58,5 @@ id,pool_id,reward_type,item_id,equipment_id,weight,quantity_min,quantity_max,gol
 57,205,Item,3072,,5,1,1,,,false
 58,205,Item,3073,,18,1,1,,,false
 59,205,Item,3074,,22,1,1,,,false
+60,205,Item,3075,,3,1,1,,,false
+61,205,Item,3076,,2,1,1,,,false

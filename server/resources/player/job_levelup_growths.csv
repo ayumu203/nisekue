@@ -24,3 +24,6 @@ id,job_code,job_name,description,master_level,max_hp,max_mp,strength,defense,int
 23,Shogun,大将軍,万軍を率いる覇者の将。全能力が高く伸び、己を鼓舞してから放つ一閃で敵主力を討ち果たす。,50,9,4,6,6,3,3,3,GrandWarrior,GrandGuard,
 24,Archmage,大魔法使い,星々の理を編み替える究極の魔導師。MPと知力が極めて伸び、終末級魔法と超回復で戦局を塗り替える。,50,6,9,0,2,8,2,4,GrandCaster,GrandPriest,
 25,GreatThief,大盗賊,戦場と財宝の匂いを嗅ぎ分ける伝説の盗賊王。運と素早さが大きく伸び、首狩りと災厄の紫煙で獲物も報酬も逃がさない。,50,7,4,4,2,3,6,6,Warrior,WindMage,GrandRanger
+27,Bushin,武神,万武を統べ究極の剣を振るう武の到達点。HP・筋力・防御が極めて伸び、烈震剣技と戦神の構えで戦場を壊す。,60,11,3,9,7,1,3,3,GrandWarrior,,
+28,Seikaiou,星界王,星々の理を極めし大魔導の王。MPと知力が飛躍的に伸び、超広域魔法と魔力の根源で次元を変える。,60,6,11,1,3,10,2,5,GrandCaster,,
+29,Matouou,魔盗王,盗賊道の頂点にして闇の王。運と素早さが極限まで伸び、絶対回避と死の刻印で全てを奪う。,60,8,5,5,3,4,7,8,GreatThief,,

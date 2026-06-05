@@ -7,3 +7,5 @@ id,stage_code,name,battlefield_image_path,recommended_level,minimum_entry_level,
 6,rush-rush,ラッシュラッシュ,image/quest/hell-battlefield.svg,300,,4,6,true,
 7,last-sanctuary,終焉の祭壇,image/quest/hell-battlefield.svg,600,300,4,6,true,
 8,void-armory,虚鉄の兵装墓所,image/quest/moonlit-castle-battlefield.svg,2000,1000,4,6,true,
+9,tenkai-gakudan,天界の楽団,image/quest/moonlit-castle-battlefield.svg,100,,4,6,true,1
+10,ougon-no-sato,黄金の里,image/quest/hell-battlefield.svg,500,,4,6,true,2
