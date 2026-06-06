@@ -25,4 +25,5 @@ public class PlayerEntity
     public DateTimeOffset? TrainingCooldownUntil { get; set; }
     public DateTimeOffset? QuestCooldownUntil { get; set; }
     public int ExpMultiplierFlags { get; set; }
+    public int MapUnlockFlags { get; set; }
 }

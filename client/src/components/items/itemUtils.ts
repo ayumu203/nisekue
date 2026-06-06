@@ -18,6 +18,8 @@ export function getEffectTypeLabel(effectType: ItemStackView['effectType']): str
       return locale.effectTypeChangeJob
     case 'ExpMultiplier':
       return locale.effectTypeExpMultiplier
+    case 'UnlockMap':
+      return locale.effectTypeUnlockMap
     default:
       return effectType satisfies never
   }

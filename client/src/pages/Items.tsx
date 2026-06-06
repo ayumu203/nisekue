@@ -214,6 +214,7 @@ export default function Items() {
       mutateMarket(),
       mutateMyListings(),
       session?.user.id ? mutateCache([`player`, session.user.id]) : Promise.resolve(),
+      mutateCache([`quest-stages`]),
     ])
   }
 

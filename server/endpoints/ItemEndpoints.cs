@@ -178,6 +178,21 @@ internal static class ItemEndpoints
                             player.SetExpMultiplierFlag(flag);
                             break;
                         }
+                    case ItemEffectType.UnlockMap:
+                        {
+                            if (request.Quantity != 1)
+                            {
+                                return Results.BadRequest(new { message = "マップ解放アイテムは1個ずつのみ使用できます。" });
+                            }
+
+                            if (item.MapUnlockFlag is null)
+                            {
+                                return Results.BadRequest(new { message = "マップ解放フラグが定義されていません。" });
+                            }
+
+                            player.SetMapUnlockFlag(item.MapUnlockFlag.Value);
+                            break;
+                        }
                     default:
                         return Results.BadRequest(new { message = "未対応のアイテム効果です。" });
                 }

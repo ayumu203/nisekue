@@ -23,7 +23,7 @@ const statusBonusPercentSchema = z.object({
 
 export const itemEquipmentTypeSchema = z.enum(['Weapon', 'Armor'])
 export const itemEquipmentStatusSchema = z.enum(['Inventory', 'Equipped', 'Broken'])
-export const itemEffectTypeSchema = z.enum(['StatBoost', 'ChangeJob', 'ExpMultiplier'])
+export const itemEffectTypeSchema = z.enum(['StatBoost', 'ChangeJob', 'ExpMultiplier', 'UnlockMap'])
 export const marketListingCategorySchema = z.enum(['Weapon', 'Armor', 'Item', 'Map'])
 export const marketEquipmentDetailSchema = z.object({
   equipmentType: itemEquipmentTypeSchema,
