@@ -12,7 +12,7 @@ stage_id,item_id,weight,is_miss
 2,3041,3,false
 2,3049,3,false
 3,,5,true
-3,4003,20,false
+3,4002,20,false
 3,3026,9,false
 3,3030,7,false
 3,3034,7,false
@@ -56,7 +56,7 @@ stage_id,item_id,weight,is_miss
 4,3066,1,false
 4,3067,1,false
 5,,21,true
-5,4005,20,false
+5,4004,20,false
 5,3027,4,false
 5,3031,4,false
 5,3035,4,false
