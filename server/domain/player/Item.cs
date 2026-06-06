@@ -11,7 +11,8 @@ public class Item(
     Job? changeJobTo = null,
     int? requiredLevel = null,
     IReadOnlySet<Job>? requiredMasterJobs = null,
-    decimal? expMultiplier = null)
+    decimal? expMultiplier = null,
+    int? mapUnlockFlag = null)
 {
     private readonly HashSet<Job> _requiredMasterJobs = requiredMasterJobs is null
         ? []
@@ -28,6 +29,7 @@ public class Item(
     public int? RequiredLevel { get; } = requiredLevel;
     public IReadOnlySet<Job> RequiredMasterJobs => _requiredMasterJobs;
     public decimal? ExpMultiplier { get; } = expMultiplier;
+    public int? MapUnlockFlag { get; } = mapUnlockFlag;
 
     public bool CanUse(Player player)
     {

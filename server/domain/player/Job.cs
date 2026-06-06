@@ -26,5 +26,8 @@ public enum Job
     GrandRanger = 22,
     Shogun = 23,
     Archmage = 24,
-    GreatThief = 25
+    GreatThief = 25,
+    Bushin = 27,
+    Seikaiou = 28,
+    Matouou = 29
 }

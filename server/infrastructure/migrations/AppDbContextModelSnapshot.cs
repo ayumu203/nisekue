@@ -444,6 +444,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("uuid")
                         .HasColumnName("player_id");
 
+                    b.Property<int>("PlusValue")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("plus_value");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");

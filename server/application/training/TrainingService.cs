@@ -346,8 +346,6 @@ public class TrainingService(
             return 0;
         }
 
-        weapon.ConsumeDurability(1, now);
-
         if (!trainingWeaponMasteryPolicy.ShouldIncrease(player.Level, opponentLevel))
         {
             return 0;

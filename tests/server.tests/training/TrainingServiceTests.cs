@@ -180,7 +180,7 @@ public class TrainingServiceTests
     }
 
     [Fact]
-    public async Task ExecuteTraining_WithEquippedWeapon_AppliesEffectiveStatusAndConsumesDurability()
+    public async Task ExecuteTraining_WithEquippedWeapon_AppliesEffectiveStatus()
     {
         var playerId = new PlayerId(Guid.NewGuid());
         var player = new Player(
@@ -219,6 +219,7 @@ public class TrainingServiceTests
             EquipmentStatus.Equipped,
             durability: 10,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var equipmentRepository = new FakeEquipmentRepository(equipment);
@@ -235,11 +236,10 @@ public class TrainingServiceTests
         result.TrainingResult.Should().Be("Win");
         result.Turn.Should().Be(1);
         playerEquipmentRepository.StoredEquipments.Should().ContainSingle();
-        playerEquipmentRepository.StoredEquipments[0].Durability.Should().Be(9);
     }
 
     [Fact]
-    public async Task ExecuteTraining_WithInventoryEquipment_DoesNotConsumeDurability()
+    public async Task ExecuteTraining_WithInventoryEquipment_DoesNotAffectIt()
     {
         var playerId = new PlayerId(Guid.NewGuid());
         var player = new Player(
@@ -278,6 +278,7 @@ public class TrainingServiceTests
             EquipmentStatus.Inventory,
             durability: 10,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
@@ -296,7 +297,7 @@ public class TrainingServiceTests
     }
 
     [Fact]
-    public async Task ExecuteTraining_WithLastDurabilityEquipment_MarksBroken()
+    public async Task ExecuteTraining_WithLowDurabilityEquipment_DoesNotMarkBroken()
     {
         var playerId = new PlayerId(Guid.NewGuid());
         var player = new Player(
@@ -335,6 +336,7 @@ public class TrainingServiceTests
             EquipmentStatus.Equipped,
             durability: 1,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
@@ -348,8 +350,8 @@ public class TrainingServiceTests
         await service.ExecuteTraining(playerId, enemy.Id, [PhysicalAttackMoveId, PhysicalAttackMoveId, PhysicalAttackMoveId]);
 
         playerEquipmentRepository.StoredEquipments.Should().ContainSingle();
-        playerEquipmentRepository.StoredEquipments[0].Durability.Should().Be(0);
-        playerEquipmentRepository.StoredEquipments[0].Status.Should().Be(EquipmentStatus.Broken);
+        playerEquipmentRepository.StoredEquipments[0].Durability.Should().Be(1);
+        playerEquipmentRepository.StoredEquipments[0].Status.Should().Be(EquipmentStatus.Equipped);
     }
 
     [Fact]
@@ -392,6 +394,7 @@ public class TrainingServiceTests
             EquipmentStatus.Equipped,
             durability: 10,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
@@ -448,6 +451,7 @@ public class TrainingServiceTests
             EquipmentStatus.Equipped,
             durability: 10,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
@@ -504,6 +508,7 @@ public class TrainingServiceTests
             EquipmentStatus.Equipped,
             durability: 10,
             mastery: 5,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);

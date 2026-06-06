@@ -68,6 +68,7 @@ import {
   useItemRequestSchema,
   itemActionResponseSchema,
   synthesizeEquipmentResponseSchema,
+  synthesizeEquipmentRequestSchema,
   createMarketListingRequestSchema,
   createMarketListingResponseSchema,
   getMarketListingsResponseSchema,
@@ -449,8 +450,9 @@ export const endpoints = {
       responseSchema: itemActionResponseSchema,
     },
     synthesize: {
-      path: (playerEquipmentId: string) => `/items/equipments/${playerEquipmentId}/synthesize`,
+      path: (targetId: string) => `/items/equipments/${targetId}/synthesize`,
       method: 'POST',
+      requestSchema: synthesizeEquipmentRequestSchema,
       responseSchema: synthesizeEquipmentResponseSchema,
     },
     deleteEquipment: {

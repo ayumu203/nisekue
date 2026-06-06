@@ -34,11 +34,14 @@ export const playerJobCodeSchema = z.enum([
   'Shogun',
   'Archmage',
   'GreatThief',
+  'Bushin',
+  'Seikaiou',
+  'Matouou',
 ])
 
 export const playerJobSchema = z.object({
   code: playerJobCodeSchema,
-  value: z.number().int().min(1).max(25),
+  value: z.number().int().min(1).max(29),
   displayName: z.string().min(1, 'ジョブ名が空です'),
   description: z.string().min(1, 'ジョブ説明が空です'),
 })
@@ -197,8 +200,7 @@ const playerEquipmentSchema = z.object({
   name: z.string().trim().min(1, '装備名が空です'),
   equipmentType: playerEquipmentTypeSchema,
   status: playerEquipmentStatusSchema,
-  durability: z.number().int().min(0),
-  maxDurability: z.number().int().min(1),
+  plusValue: z.number().int().min(0),
   mastery: z.number().int().min(0),
   canEquipCurrentJob: z.boolean(),
   bonusValues: playerEquipmentBonusValuesSchema,
@@ -294,7 +296,7 @@ export const updatePlayerImageResponseSchema = z.object({
 })
 
 export const updatePlayerJobRequestSchema = z.object({
-  job: z.number().int().min(1).max(25),
+  job: z.number().int().min(1).max(29),
 })
 
 export const updatePlayerJobResponseSchema = z.object({

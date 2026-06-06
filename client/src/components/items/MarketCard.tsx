@@ -92,9 +92,11 @@ export function MarketCard({
             <Typography variant="body2">
               {locale.effectAmount} {formatStatusBonus(equipmentDetail)}
             </Typography>
-            <Typography variant="body2">
-              {locale.durability} {equipmentDetail.durability}/{equipmentDetail.maxDurability}
-            </Typography>
+            {equipmentDetail.plusValue > 0 ? (
+              <Typography variant="body2" fontWeight={700} color={deepGreen}>
+                +{equipmentDetail.plusValue}
+              </Typography>
+            ) : null}
             <Typography variant="body2">
               {locale.mastery} {equipmentDetail.mastery}/{equipmentDetail.masteryCap}
             </Typography>

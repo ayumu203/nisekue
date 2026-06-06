@@ -29,3 +29,4 @@ public record UseItemRequest(int Quantity);
 public record StartTreasureMapExpeditionRequest(int MapId);
 public record CreateMarketListingRequest(Guid? PlayerEquipmentId, Guid? ItemStackId, int Quantity, int UnitPrice);
 public record PurchaseMarketListingRequest(int Quantity);
+public record SynthesizeEquipmentRequest(Guid SourcePlayerEquipmentId);

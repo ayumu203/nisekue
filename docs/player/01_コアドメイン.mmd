@@ -105,12 +105,15 @@ classDiagram
             +EquipmentStatus Status
             +int Durability
             +int Mastery
+            +int PlusValue
             +bool IsBroken
             +Equip(equipment: Equipment, playerJob: Job, now: DateTimeOffset) void
             +Unequip(now: DateTimeOffset) void
-            +ConsumeDurability(value: int, now: DateTimeOffset) void
+            +Synthesize(source: PlayerEquipment, synthesisGoldCost: int, now: DateTimeOffset) void
+            -ConsumeDurability(value: int, now: DateTimeOffset) void-deprecated
+            -RepairDurability(value: int, maxDurability: int, now: DateTimeOffset) void-deprecated
             +IncreaseMastery(value: int, now: DateTimeOffset) void
-            +CanSynthesizeTarget(equipment: Equipment) bool
+            +TransferOwnership(playerId: PlayerId, now: DateTimeOffset) void
         }
 
         class ItemId {

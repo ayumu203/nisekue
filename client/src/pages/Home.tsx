@@ -27,6 +27,7 @@ import {
   ItemsIcon,
   JobChangeIcon,
   MoveSettingIcon,
+  OtherGroupIcon,
   QuestIcon,
   RebirthIcon,
   RankingIcon,
