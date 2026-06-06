@@ -119,7 +119,6 @@ export default function Training() {
   const [lastSubmittedMoveIds, setLastSubmittedMoveIds] = useState<Array<number | null> | null>(null)
   const [newEnemiesMessage, setNewEnemiesMessage] = useState<string | null>(null)
   const lastNewEnemiesMessageRef = useRef<string | null>(null)
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
   const prevLevelRef = useRef<number | undefined>(undefined)
   const knownEnemyIdsRef = useRef<Set<number>>(new Set())
   const prevTrainingResultRef = useRef(trainingResult)
@@ -296,8 +295,8 @@ export default function Training() {
 
     if (knownIds.size > 0 && hasNewEnemies) {
       setNewEnemiesMessage(locale.newEnemiesUnlocked)
-      setSnackbarOpen(true)
     }
+  }, [trainingEnemies])
 
   const isBattleLocked = isTrainingSubmitting || trainingLockRemainingSeconds > 0
   const isTrainingActionDisabled = isBattleLocked || isAutoBattling
