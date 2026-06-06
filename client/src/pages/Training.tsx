@@ -4,6 +4,7 @@ import {
   CircularProgress,
   Container,
   Paper,
+  Snackbar,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
@@ -117,7 +118,9 @@ export default function Training() {
   const [plannedMoveIds, setPlannedMoveIds] = useState<Array<number | null> | null>(null)
   const [lastSubmittedMoveIds, setLastSubmittedMoveIds] = useState<Array<number | null> | null>(null)
   const [newEnemiesMessage, setNewEnemiesMessage] = useState<string | null>(null)
+  const lastNewEnemiesMessageRef = useRef<string | null>(null)
   const prevLevelRef = useRef<number | undefined>(undefined)
+  const knownEnemyIdsRef = useRef<Set<number>>(new Set())
   const prevTrainingResultRef = useRef(trainingResult)
   const isAutoBattleRequestInFlightRef = useRef(false)
   const userId = session?.user.id ?? null
@@ -265,18 +268,35 @@ export default function Training() {
   }, [player, tutorialStep, userId])
 
   useEffect(() => {
-    if (!player || !userId) {
+    if (!player || !userId || !trainingEnemies) {
       return
     }
 
     const prevLevel = prevLevelRef.current
     prevLevelRef.current = player.level
 
-    if (prevLevel !== undefined && prevLevel < 3 && player.level >= 3) {
-      void mutateCache([`training-enemies`, userId])
+    if (prevLevel !== undefined && player.level > prevLevel) {
+      const currentMaxEnemyLevel = Math.max(...trainingEnemies.map((e) => e.level))
+      if (player.level >= currentMaxEnemyLevel) {
+        void mutateCache([`training-enemies`, userId])
+      }
+    }
+  }, [player, mutateCache, userId, trainingEnemies])
+
+  useEffect(() => {
+    if (!trainingEnemies || trainingEnemies.length === 0) {
+      return
+    }
+
+    const knownIds = knownEnemyIdsRef.current
+    const hasNewEnemies = trainingEnemies.some((e) => !knownIds.has(e.id))
+
+    knownEnemyIdsRef.current = new Set(trainingEnemies.map((e) => e.id))
+
+    if (knownIds.size > 0 && hasNewEnemies && tutorialStep !== 'training-to-lv5') {
       setNewEnemiesMessage(locale.newEnemiesUnlocked)
     }
-  }, [player, mutateCache, userId])
+  }, [trainingEnemies, tutorialStep])
 
   const isBattleLocked = isTrainingSubmitting || trainingLockRemainingSeconds > 0
   const isTrainingActionDisabled = isBattleLocked || isAutoBattling
@@ -798,6 +818,33 @@ export default function Training() {
           onDismiss={() => advanceTutorial('completed')}
         />
       )}
+      <Snackbar
+        open={newEnemiesMessage !== null && tutorialStep !== 'training-to-lv5'}
+        autoHideDuration={3000}
+        onClose={(_, reason) => {
+          if (reason === 'clickaway') return
+          lastNewEnemiesMessageRef.current = newEnemiesMessage
+          setNewEnemiesMessage(null)
+        }}
+        TransitionProps={{
+          onExited: () => {
+            lastNewEnemiesMessageRef.current = null
+          },
+        }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity="info"
+          variant="filled"
+          onClose={() => {
+            lastNewEnemiesMessageRef.current = newEnemiesMessage
+            setNewEnemiesMessage(null)
+          }}
+          sx={{ width: '100%', alignItems: 'center' }}
+        >
+          {newEnemiesMessage ?? lastNewEnemiesMessageRef.current ?? ''}
+        </Alert>
+      </Snackbar>
     </Container>
   )
 }

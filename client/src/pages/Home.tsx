@@ -30,6 +30,7 @@ import {
   QuestIcon,
   RebirthIcon,
   RankingIcon,
+  OthersGroupIcon,
   ReportIcon,
   SpecialThanksIcon,
   SurveyIcon,
@@ -60,6 +61,7 @@ function Home() {
   const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
   const isTrainingGroupOpen = tutorialStep === 'home-job-change' || isTrainingGroupOpenByUser
   const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
+  const [isOthersGroupOpen, setIsOthersGroupOpen] = useState(false)
   const handledChatIdsRef = useRef<Set<number>>(new Set())
   const handledReplyIdsRef = useRef<Set<string>>(new Set())
   const enqueueToast = useEffectEvent((message: string) => {
@@ -337,36 +339,48 @@ function Home() {
                 </Stack>
               </Collapse>
               <Button
-                component={Link}
-                to="/thanks"
                 variant="outlined"
-                startIcon={<SpecialThanksIcon />}
+                startIcon={<OthersGroupIcon />}
+                onClick={() => setIsOthersGroupOpen((prev) => !prev)}
                 sx={menuButtonSx}
               >
-                {locale.specialThanks}
+                {locale.others}
               </Button>
-              <Button
-                component="a"
-                href="https://docs.google.com/forms/d/e/1FAIpQLScQGhSmvuy99jOyKKvHIYtKcbZOGpYucamzrza5CRKezS054A/viewform?usp=dialog"
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="outlined"
-                startIcon={<SurveyIcon />}
-                sx={menuButtonSx}
-              >
-                {locale.survey}
-              </Button>
-              <Button
-                component="a"
-                href="https://docs.google.com/forms/d/e/1FAIpQLSduEn4lqqHBp4zuaXKehG3w4DQBXWmp2GdkMNU1tqO5_VAQUw/viewform?usp=publish-editor"
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="outlined"
-                startIcon={<ReportIcon />}
-                sx={menuButtonSx}
-              >
-                {locale.report}
-              </Button>
+              <Collapse in={isOthersGroupOpen}>
+                <Stack spacing={1} sx={{ pl: 1, pr: 1, pt: 1 }}>
+                  <Button
+                    component={Link}
+                    to="/thanks"
+                    variant="outlined"
+                    startIcon={<SpecialThanksIcon />}
+                    sx={menuButtonSx}
+                  >
+                    {locale.specialThanks}
+                  </Button>
+                  <Button
+                    component="a"
+                    href="https://docs.google.com/forms/d/e/1FAIpQLScQGhSmvuy99jOyKKvHIYtKcbZOGpYucamzrza5CRKezS054A/viewform?usp=dialog"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="outlined"
+                    startIcon={<SurveyIcon />}
+                    sx={menuButtonSx}
+                  >
+                    {locale.survey}
+                  </Button>
+                  <Button
+                    component="a"
+                    href="https://docs.google.com/forms/d/e/1FAIpQLSduEn4lqqHBp4zuaXKehG3w4DQBXWmp2GdkMNU1tqO5_VAQUw/viewform?usp=publish-editor"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="outlined"
+                    startIcon={<ReportIcon />}
+                    sx={menuButtonSx}
+                  >
+                    {locale.report}
+                  </Button>
+                </Stack>
+              </Collapse>
             </Stack>
 
             <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 }, mt: '48px' }}>

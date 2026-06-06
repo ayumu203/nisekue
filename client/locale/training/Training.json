@@ -45,7 +45,7 @@
   "opponentsLoading": "対戦相手を読み込み中...",
   "noOpponentsAvailable": "現在対戦可能なプレイヤーがいません",
   "anonymousPlayer": "名無しプレイヤー",
-  "newEnemiesUnlocked": "新たな相手と戦えるようになったよ。",
+  "newEnemiesUnlocked": "新たなあいてとくんれんできるようになった！",
   "autoBattle": "自動再戦",
   "autoBattleStop": "停止",
   "autoBattleRemaining": "残り {{minutes}}分{{seconds}}秒",
