@@ -293,7 +293,7 @@ export default function Training() {
 
     knownEnemyIdsRef.current = new Set(trainingEnemies.map((e) => e.id))
 
-    if (knownIds.size > 0 && hasNewEnemies && tutorialStep !== 'training-to-lv5') {
+    if (knownIds.size > 0 && hasNewEnemies) {
       setNewEnemiesMessage(locale.newEnemiesUnlocked)
     }
   }, [trainingEnemies, tutorialStep])
