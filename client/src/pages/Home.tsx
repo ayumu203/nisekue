@@ -27,10 +27,10 @@ import {
   ItemsIcon,
   JobChangeIcon,
   MoveSettingIcon,
-  OtherGroupIcon,
   QuestIcon,
   RebirthIcon,
   RankingIcon,
+  OthersGroupIcon,
   ReportIcon,
   SpecialThanksIcon,
   SurveyIcon,
@@ -61,7 +61,7 @@ function Home() {
   const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
   const isTrainingGroupOpen = tutorialStep === 'home-job-change' || isTrainingGroupOpenByUser
   const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
-  const [isOtherGroupOpen, setIsOtherGroupOpen] = useState(false)
+  const [isOthersGroupOpen, setIsOthersGroupOpen] = useState(false)
   const handledChatIdsRef = useRef<Set<number>>(new Set())
   const handledReplyIdsRef = useRef<Set<string>>(new Set())
   const enqueueToast = useEffectEvent((message: string) => {
@@ -340,13 +340,13 @@ function Home() {
               </Collapse>
               <Button
                 variant="outlined"
-                startIcon={<OtherGroupIcon />}
-                onClick={() => setIsOtherGroupOpen((prev) => !prev)}
+                startIcon={<OthersGroupIcon />}
+                onClick={() => setIsOthersGroupOpen((prev) => !prev)}
                 sx={menuButtonSx}
               >
-                {locale.otherGroup}
+                {locale.others}
               </Button>
-              <Collapse in={isOtherGroupOpen}>
+              <Collapse in={isOthersGroupOpen}>
                 <Stack spacing={1} sx={{ pl: 1, pr: 1, pt: 1 }}>
                   <Button
                     component={Link}

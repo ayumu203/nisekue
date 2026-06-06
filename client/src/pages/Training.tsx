@@ -59,8 +59,6 @@ function playerSummaryToDisplayEnemy(opponent: PlayerSummary): TrainingEnemy {
 const TRAINING_COOLDOWN_MS = 3000
 const AUTO_BATTLE_DURATION_MS = 3 * 60 * 1000
 
-const NEW_ENEMY_LEVEL_THRESHOLDS = [3, 15, 30, 50, 75, 100, 102, 150, 200, 250, 300, 400, 500, 750]
-
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
   return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
 }
@@ -120,8 +118,9 @@ export default function Training() {
   const [plannedMoveIds, setPlannedMoveIds] = useState<Array<number | null> | null>(null)
   const [lastSubmittedMoveIds, setLastSubmittedMoveIds] = useState<Array<number | null> | null>(null)
   const [newEnemiesMessage, setNewEnemiesMessage] = useState<string | null>(null)
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const lastNewEnemiesMessageRef = useRef<string | null>(null)
   const prevLevelRef = useRef<number | undefined>(undefined)
+  const knownEnemyIdsRef = useRef<Set<number>>(new Set())
   const prevTrainingResultRef = useRef(trainingResult)
   const isAutoBattleRequestInFlightRef = useRef(false)
   const userId = session?.user.id ?? null
@@ -269,19 +268,35 @@ export default function Training() {
   }, [player, tutorialStep, userId])
 
   useEffect(() => {
-    if (!player || !userId) {
+    if (!player || !userId || !trainingEnemies) {
       return
     }
 
     const prevLevel = prevLevelRef.current
     prevLevelRef.current = player.level
 
-    if (prevLevel !== undefined && NEW_ENEMY_LEVEL_THRESHOLDS.some((t) => prevLevel < t && player.level >= t)) {
-      void mutateCache([`training-enemies`, userId])
-      setNewEnemiesMessage(locale.newEnemiesUnlocked)
-      setSnackbarOpen(true)
+    if (prevLevel !== undefined && player.level > prevLevel) {
+      const currentMaxEnemyLevel = Math.max(...trainingEnemies.map((e) => e.level))
+      if (player.level >= currentMaxEnemyLevel) {
+        void mutateCache([`training-enemies`, userId])
+      }
     }
-  }, [player, mutateCache, userId])
+  }, [player, mutateCache, userId, trainingEnemies])
+
+  useEffect(() => {
+    if (!trainingEnemies || trainingEnemies.length === 0) {
+      return
+    }
+
+    const knownIds = knownEnemyIdsRef.current
+    const hasNewEnemies = trainingEnemies.some((e) => !knownIds.has(e.id))
+
+    knownEnemyIdsRef.current = new Set(trainingEnemies.map((e) => e.id))
+
+    if (knownIds.size > 0 && hasNewEnemies) {
+      setNewEnemiesMessage(locale.newEnemiesUnlocked)
+    }
+  }, [trainingEnemies])
 
   const isBattleLocked = isTrainingSubmitting || trainingLockRemainingSeconds > 0
   const isTrainingActionDisabled = isBattleLocked || isAutoBattling
@@ -804,13 +819,30 @@ export default function Training() {
         />
       )}
       <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
+        open={newEnemiesMessage !== null && tutorialStep !== 'training-to-lv5'}
+        autoHideDuration={3000}
+        onClose={(_, reason) => {
+          if (reason === 'clickaway') return
+          lastNewEnemiesMessageRef.current = newEnemiesMessage
+          setNewEnemiesMessage(null)
+        }}
+        TransitionProps={{
+          onExited: () => {
+            lastNewEnemiesMessageRef.current = null
+          },
+        }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity="success" variant="filled" onClose={() => setSnackbarOpen(false)} sx={{ width: '100%' }}>
-          {newEnemiesMessage}
+        <Alert
+          severity="info"
+          variant="filled"
+          onClose={() => {
+            lastNewEnemiesMessageRef.current = newEnemiesMessage
+            setNewEnemiesMessage(null)
+          }}
+          sx={{ width: '100%', alignItems: 'center' }}
+        >
+          {newEnemiesMessage ?? lastNewEnemiesMessageRef.current ?? ''}
         </Alert>
       </Snackbar>
     </Container>
