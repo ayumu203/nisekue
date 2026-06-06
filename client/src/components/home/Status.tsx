@@ -89,9 +89,7 @@ function formatEquippedItemWithPlus(
     return fallback
   }
 
-  return equipment.plusValue > 0
-    ? `${equipment.name} (+${equipment.plusValue})`
-    : equipment.name
+  return equipment.plusValue > 0 ? `${equipment.name} (+${equipment.plusValue})` : equipment.name
 }
 
 function SettingGearIcon(props: SvgIconProps) {
