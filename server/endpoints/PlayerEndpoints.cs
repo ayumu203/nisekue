@@ -796,8 +796,7 @@ internal static class PlayerEndpoints
                     flavorText = equipment.FlavorText,
                     equipmentType = equipment.Type.ToString(),
                     status = playerEquipment.Status.ToString(),
-                    durability = playerEquipment.Durability,
-                    maxDurability = equipment.MaxDurability,
+                    plusValue = playerEquipment.PlusValue,
                     mastery = playerEquipment.Mastery,
                     masteryCap = equipment.MasteryCap,
                     synthesisGoldCost = equipment.SynthesisGoldCost,
@@ -927,6 +926,7 @@ internal static class PlayerEndpoints
             (EquipmentStatus)entity.EquipmentStatus,
             entity.Durability,
             entity.Mastery,
+            entity.PlusValue,
             entity.AcquiredAt,
             entity.UpdatedAt);
     }
@@ -937,6 +937,7 @@ internal static class PlayerEndpoints
         entity.EquipmentStatus = (int)equipment.Status;
         entity.Durability = equipment.Durability;
         entity.Mastery = equipment.Mastery;
+        entity.PlusValue = equipment.PlusValue;
         entity.UpdatedAt = equipment.UpdatedAt;
     }
 
@@ -991,6 +992,7 @@ internal static class PlayerEndpoints
             EquipmentStatus.Inventory,
             durability: equipment.MaxDurability,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: now,
             updatedAt: now);
         playerEquipment.Equip(equipment, player.Job, now);

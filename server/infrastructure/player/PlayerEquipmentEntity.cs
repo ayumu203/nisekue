@@ -9,6 +9,7 @@ public class PlayerEquipmentEntity
     public int EquipmentStatus { get; set; }
     public int Durability { get; set; }
     public int Mastery { get; set; }
+    public int PlusValue { get; set; }
     public DateTimeOffset AcquiredAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }

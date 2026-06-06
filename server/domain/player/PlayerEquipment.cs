@@ -8,6 +8,7 @@ public class PlayerEquipment(
     EquipmentStatus status,
     int durability,
     int mastery,
+    int plusValue,
     DateTimeOffset acquiredAt,
     DateTimeOffset updatedAt)
 {
@@ -18,9 +19,11 @@ public class PlayerEquipment(
     public EquipmentStatus Status { get; private set; } = status;
     public int Durability { get; private set; } = ValidateNonNegative(durability, nameof(durability));
     public int Mastery { get; private set; } = ValidateNonNegative(mastery, nameof(mastery));
+    public int PlusValue { get; private set; } = ValidateNonNegative(plusValue, nameof(plusValue));
     public DateTimeOffset AcquiredAt { get; } = acquiredAt;
     public DateTimeOffset UpdatedAt { get; private set; } = updatedAt;
     public bool IsBroken => Status == EquipmentStatus.Broken || Durability <= 0;
+    public const int MaxPlusValue = 100;
 
     public void Equip(Equipment equipment, Job playerJob, DateTimeOffset now)
     {
@@ -61,6 +64,45 @@ public class PlayerEquipment(
         UpdatedAt = now;
     }
 
+    public void Synthesize(PlayerEquipment source, int synthesisGoldCost, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        if (source.EquipmentId != EquipmentId)
+        {
+            throw new InvalidOperationException("同一装備でしか合成はできません。");
+        }
+
+        if (source.Id == Id)
+        {
+            throw new InvalidOperationException("同じ装備個体は合成できません。");
+        }
+
+        if (source.IsBroken)
+        {
+            throw new InvalidOperationException("破損した装備は合成素材にできません。");
+        }
+
+        if (IsBroken)
+        {
+            throw new InvalidOperationException("破損した装備は合成対象にできません。");
+        }
+
+        if (PlusValue >= MaxPlusValue)
+        {
+            throw new InvalidOperationException("プラス値が上限に達しているため、これ以上合成できません。");
+        }
+
+        if (synthesisGoldCost < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(synthesisGoldCost), "合成必要Goldは0以上である必要があります。");
+        }
+
+        PlusValue += 1;
+        UpdatedAt = now;
+    }
+
+    [Obsolete("耐久値は使用しなくなったため、このメソッドは呼び出されません。")]
     public void ConsumeDurability(int value, DateTimeOffset now)
     {
         if (value < 0)
@@ -81,6 +123,7 @@ public class PlayerEquipment(
         }
     }
 
+    [Obsolete("耐久値は使用しなくなったため、このメソッドは呼び出されません。")]
     public void RepairDurability(int value, int maxDurability, DateTimeOffset now)
     {
         if (value < 0)

@@ -9,6 +9,7 @@ import type {
   ItemActionResponse,
   PurchaseMarketListingRequest,
   PurchaseMarketListingResponse,
+  SynthesizeEquipmentRequest,
   SynthesizeEquipmentResponse,
   UseItemRequest,
 } from '@/schema/item'
@@ -55,15 +56,19 @@ export async function useItem(
 }
 
 export async function synthesizeEquipment(
-  playerEquipmentId: string,
+  targetId: string,
+  input: SynthesizeEquipmentRequest,
   accessToken: string,
 ): Promise<SynthesizeEquipmentResponse> {
+  const payload = endpoints.items.synthesize.requestSchema.parse(input)
   const apiBaseUrl = resolveApiBaseUrl()
-  const response = await fetchSafely(`${apiBaseUrl}${endpoints.items.synthesize.path(playerEquipmentId)}`, {
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.items.synthesize.path(targetId)}`, {
     method: endpoints.items.synthesize.method,
     headers: {
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
+    body: JSON.stringify(payload),
   })
   const json: unknown = await response.json().catch(() => null)
 

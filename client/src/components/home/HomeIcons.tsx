@@ -119,3 +119,11 @@ export function SocialGroupIcon(props: SvgIconProps) {
     </SvgIcon>
   )
 }
+
+export function OtherGroupIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M6 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4m6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
+    </SvgIcon>
+  )
+}

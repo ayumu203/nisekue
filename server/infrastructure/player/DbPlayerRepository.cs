@@ -200,6 +200,7 @@ namespace server.infrastructure.player
                     Luck = player.Status.Luck,
                     Speed = player.Status.Speed,
                     ExpMultiplierFlags = player.ExpMultiplierFlags,
+                    MapUnlockFlags = player.MapUnlockFlags,
                 });
 
                 dbContext.PlayerMoves.Add(CreateMoveEntity(player.Id, player.MoveSet));
@@ -231,6 +232,7 @@ namespace server.infrastructure.player
                 existing.Luck = player.Status.Luck;
                 existing.Speed = player.Status.Speed;
                 existing.ExpMultiplierFlags = player.ExpMultiplierFlags;
+                existing.MapUnlockFlags = player.MapUnlockFlags;
 
                 if (existingMoves is null)
                 {
@@ -288,7 +290,8 @@ namespace server.infrastructure.player
                     speed: entity.Speed),
                 moveSet: MapToMoveSet(moveEntity),
                 masteredJobs: (masteredJobEntities ?? []).Select(x => x.Job).ToHashSet(),
-                expMultiplierFlags: entity.ExpMultiplierFlags);
+                expMultiplierFlags: entity.ExpMultiplierFlags,
+                mapUnlockFlags: entity.MapUnlockFlags);
 
         private static MoveSet MapToMoveSet(PlayerMoveEntity? moveEntity)
         {

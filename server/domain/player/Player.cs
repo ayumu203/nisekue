@@ -18,7 +18,8 @@ public class Player(
     MoveSet? moveSet = null,
     IReadOnlySet<Job>? masteredJobs = null,
     int rebirthCount = 0,
-    int expMultiplierFlags = 0)
+    int expMultiplierFlags = 0,
+    int mapUnlockFlags = 0)
 {
     private readonly HashSet<Job> masteredJobs = masteredJobs is null ? [] : new HashSet<Job>(masteredJobs);
 
@@ -37,6 +38,7 @@ public class Player(
     public MoveSet MoveSet { get; private set; } = moveSet ?? new MoveSet();
     public IReadOnlySet<Job> MasteredJobs => masteredJobs;
     public int ExpMultiplierFlags { get; private set; } = ValidateNonNegative(expMultiplierFlags, nameof(expMultiplierFlags));
+    public int MapUnlockFlags { get; private set; } = ValidateNonNegative(mapUnlockFlags, nameof(mapUnlockFlags));
 
     public void UpdateName(string name)
     {
@@ -167,6 +169,41 @@ public class Player(
     public void ClearExpMultiplierFlags()
     {
         ExpMultiplierFlags = 0;
+    }
+
+    public void SetMapUnlockFlag(int flag)
+    {
+        if (!MapUnlockFlag.IsValidFlag(flag))
+        {
+            throw new ArgumentException("無効なマップ解放フラグです。", nameof(flag));
+        }
+
+        if ((MapUnlockFlags & flag) != 0)
+        {
+            throw new InvalidOperationException("すでにこのマップは解放済みです。");
+        }
+
+        MapUnlockFlags |= flag;
+    }
+
+    public bool HasMapUnlockFlag(int flag)
+    {
+        if (!MapUnlockFlag.IsValidFlag(flag))
+        {
+            throw new ArgumentException("無効なマップ解放フラグです。", nameof(flag));
+        }
+
+        return (MapUnlockFlags & flag) != 0;
+    }
+
+    public void ClearMapUnlockFlag(int flag)
+    {
+        if (!MapUnlockFlag.IsValidFlag(flag))
+        {
+            throw new ArgumentException("無効なマップ解放フラグです。", nameof(flag));
+        }
+
+        MapUnlockFlags &= ~flag;
     }
 
     public void GainGold(int gold)

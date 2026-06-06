@@ -1,4 +1,4 @@
-import { Box, Button, Paper, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, Button, Paper, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { ItemArtwork } from './ItemIllustrations'
 import { ListingControls } from './ListingControls'
@@ -14,7 +14,6 @@ import {
 } from './ItemsConstants'
 import locale from '../../../locale/items/Items.json'
 import type { ItemEquipmentView } from '@/schema/item'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 
 export function EquipmentCard({
   item,
@@ -96,16 +95,11 @@ export function EquipmentCard({
             <Typography variant="body2">
               {locale.effectAmount} {formatStatusBonus(item)}
             </Typography>
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <Typography variant="body2">
-                {locale.durability} {item.durability}/{item.maxDurability}
+            {item.plusValue > 0 ? (
+              <Typography variant="body2" fontWeight={700} color={deepGreen}>
+                +{item.plusValue}
               </Typography>
-              {item.durability === 0 ? (
-                <Tooltip title="耐久値が0のアイテムはもう捨てるしかありません">
-                  <WarningAmberIcon sx={{ fontSize: 18, color: '#d84315' }} />
-                </Tooltip>
-              ) : null}
-            </Stack>
+            ) : null}
             <Typography variant="body2">
               {locale.mastery} {item.mastery}/{item.masteryCap}
             </Typography>

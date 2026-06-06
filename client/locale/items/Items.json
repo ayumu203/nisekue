@@ -24,7 +24,7 @@
   "sortLabel": "並び順",
   "sortItemsDefault": "標準",
   "sortItemsNameAsc": "名前順",
-  "sortItemsDurabilityDesc": "耐久が高い順",
+  "sortItemsPlusDesc": "強化値が高い順",
   "sortItemsMasteryDesc": "熟練度が高い順",
   "sortMarketDefault": "新着順",
   "sortMarketPriceAsc": "価格が安い順",
@@ -73,6 +73,7 @@
   "effectTypeStatBoost": "基礎ステータス上昇",
   "effectTypeChangeJob": "転職",
   "effectTypeExpMultiplier": "経験値倍率",
+  "effectTypeUnlockMap": "マップ解放",
   "actionFailed": "操作に失敗しました",
   "noSearchResults": "条件に一致する項目はありません"
 }

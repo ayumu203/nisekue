@@ -1,5 +1,6 @@
 using server.domain.quest;
 using server.domain.quest.enums;
+using server.domain.player;
 
 namespace server.infrastructure.quest;
 
@@ -67,7 +68,7 @@ public class CsvQuestStageRepository : IQuestStageRepository
             }
 
             var columns = CsvQuestParser.SplitColumns(line);
-            if (columns.Length != 9)
+            if (columns.Length != 10)
             {
                 throw new InvalidOperationException($"stages.csv の形式が不正です。行: {i + 1}");
             }
@@ -98,6 +99,14 @@ public class CsvQuestStageRepository : IQuestStageRepository
                 })
                 .ToArray();
 
+            var requiredMapUnlockFlag = string.IsNullOrWhiteSpace(columns[9])
+                ? (int?)null
+                : CsvQuestParser.ParseInt(columns[9], "required_map_unlock_flag", i + 1);
+            if (requiredMapUnlockFlag is not null && !MapUnlockFlag.IsValidFlag(requiredMapUnlockFlag.Value))
+            {
+                throw new InvalidOperationException($"stages.csv の required_map_unlock_flag が不正です。value: {requiredMapUnlockFlag}, 行: {i + 1}");
+            }
+
             map.Add(stageId, new QuestStageDefinition(
                 stageId,
                 columns[1],
@@ -110,7 +119,8 @@ public class CsvQuestStageRepository : IQuestStageRepository
                 floors,
                 rewardRows.OrderByDescending(x => x.Weight).Select(x => x.ToRewardEntry()).ToArray(),
                 itemRewardRows.OrderByDescending(x => x.Weight).Select(x => x.ToRewardEntry()).ToArray(),
-                CsvQuestParser.ParseBool(columns[8], "is_active", i + 1)));
+                CsvQuestParser.ParseBool(columns[8], "is_active", i + 1),
+                requiredMapUnlockFlag));
         }
 
         return map;

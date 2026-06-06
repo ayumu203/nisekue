@@ -23,12 +23,11 @@ const statusBonusPercentSchema = z.object({
 
 export const itemEquipmentTypeSchema = z.enum(['Weapon', 'Armor'])
 export const itemEquipmentStatusSchema = z.enum(['Inventory', 'Equipped', 'Broken'])
-export const itemEffectTypeSchema = z.enum(['StatBoost', 'ChangeJob', 'ExpMultiplier'])
+export const itemEffectTypeSchema = z.enum(['StatBoost', 'ChangeJob', 'ExpMultiplier', 'UnlockMap'])
 export const marketListingCategorySchema = z.enum(['Weapon', 'Armor', 'Item', 'Map'])
 export const marketEquipmentDetailSchema = z.object({
   equipmentType: itemEquipmentTypeSchema,
-  durability: z.number().int().min(0),
-  maxDurability: z.number().int().min(1),
+  plusValue: z.number().int().min(0),
   mastery: z.number().int().min(0),
   masteryCap: z.number().int().min(0),
   statusBonus: statusBonusSchema,
@@ -42,8 +41,7 @@ export const itemEquipmentViewSchema = z.object({
   flavorText: z.string(),
   equipmentType: itemEquipmentTypeSchema,
   status: itemEquipmentStatusSchema,
-  durability: z.number().int().min(0),
-  maxDurability: z.number().int().min(1),
+  plusValue: z.number().int().min(0),
   mastery: z.number().int().min(0),
   masteryCap: z.number().int().min(0),
   synthesisGoldCost: z.number().int().min(0),
@@ -83,11 +81,14 @@ export const itemActionResponseSchema = z.object({
   message: z.string().min(1),
 })
 
+export const synthesizeEquipmentRequestSchema = z.object({
+  sourcePlayerEquipmentId: z.string().uuid(),
+})
+
 export const synthesizeEquipmentResponseSchema = z.object({
   message: z.string().min(1),
   targetPlayerEquipmentId: z.string().uuid(),
-  durability: z.number().int().min(0),
-  maxDurability: z.number().int().min(1),
+  plusValue: z.number().int().min(0),
   gold: z.number().int().min(0),
 })
 
@@ -138,6 +139,7 @@ export type InventoryItemView = z.infer<typeof inventoryItemViewSchema>
 export type GetItemsResponse = z.infer<typeof getItemsResponseSchema>
 export type UseItemRequest = z.infer<typeof useItemRequestSchema>
 export type ItemActionResponse = z.infer<typeof itemActionResponseSchema>
+export type SynthesizeEquipmentRequest = z.infer<typeof synthesizeEquipmentRequestSchema>
 export type SynthesizeEquipmentResponse = z.infer<typeof synthesizeEquipmentResponseSchema>
 export type CreateMarketListingRequest = z.infer<typeof createMarketListingRequestSchema>
 export type CreateMarketListingResponse = z.infer<typeof createMarketListingResponseSchema>

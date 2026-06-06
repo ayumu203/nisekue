@@ -63,3 +63,14 @@ id,name,level,max_hp,max_mp,strength,defense,intelligence,luck,speed,image_path,
 62,冥機将グレイブコア,2050,176000,7600,10800,9800,14200,5600,8200,image/battle/Enemy116.png,Supportive
 63,機天后ラファエラ,2060,198000,9800,9200,11200,15800,6400,7800,image/battle/Enemy120.png,Supportive
 64,奈落断罪卿アビス,2100,288000,8400,18800,16400,9200,6200,7400,image/battle/Enemy117.png,Defensive
+66,天界の笛吹き,98,850,60,78,45,98,52,62,image/battle/character_daitenshi_01_02_silver.png,Supportive
+67,天界の竪琴手,100,920,55,84,48,102,55,68,image/battle/character_daitenshi_01_02_brown.png,Supportive
+68,天界の太鼓手,102,980,40,92,55,70,48,72,image/battle/character_daitenshi_01_02_gold.png,Aggressive
+69,天界の舞姫,104,1050,65,76,42,105,58,75,image/battle/character_daiakuma_01_02_silver.png,Supportive
+70,天界の指揮者,106,1200,50,88,52,110,60,55,image/battle/character_daiakuma_02_02_black.png,Defensive
+71,黄金の守護兵,495,8500,420,720,580,420,280,290,image/battle/character_hero_gold.png,Defensive
+72,黄金の弓兵,500,7800,480,580,450,680,310,380,image/battle/character_elf_man_01_01_gold.png,Aggressive
+73,黄金の僧兵,505,9200,520,520,480,740,340,330,image/battle/character_elf_woman_01_02_gold.png,Supportive
+74,黄金の魔導兵,510,8300,580,470,430,850,370,350,image/battle/character_megami_02_pink.png,Supportive
+75,黄金の将軍,520,12000,420,880,680,380,320,300,image/battle/character_megami_02_gold.png,Defensive
+76,黄金竜,530,15000,380,920,720,350,290,250,image/battle/character_monster_dragon_01_yellow.png,Aggressive
