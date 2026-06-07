@@ -170,12 +170,6 @@ export default function JobRoadmapNodeComponent({
 
         {node.requirements.length > 0 && (
           <Box sx={{ ml: 1.5 }}>
-            <Typography
-              variant="caption"
-              sx={{ color: '#8a7a5a', fontWeight: 700, display: 'block', mb: 0.5 }}
-            >
-              ▼ 解放条件
-            </Typography>
             {node.requirements.map((child, idx) => (
               <JobRoadmapNodeComponent
                 key={`${child.type}-${child.type === 'job' ? child.jobId : child.itemId}-${idx}`}
