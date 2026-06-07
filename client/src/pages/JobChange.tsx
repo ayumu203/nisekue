@@ -112,11 +112,45 @@ export default function JobChange() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Stack direction="row" justifyContent="flex-start">
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
             <HomeNavIconButton
               id={tutorialStep === 'training-to-lv7' ? 'tutorial-home-btn' : undefined}
               ariaLabel={locale.backToHome}
             />
+            <Box
+              sx={{
+                display: 'flex',
+                border: '2px solid #8f6b2f',
+                borderRadius: 1.5,
+                overflow: 'hidden',
+              }}
+            >
+              {[locale.title, locale.roadmapTab].map((label, i) => (
+                <Box
+                  key={i}
+                  onClick={() => setTabIndex(i)}
+                  sx={{
+                    px: { xs: 2, sm: 3 },
+                    py: 0.75,
+                    cursor: 'pointer',
+                    fontWeight: 900,
+                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                    userSelect: 'none',
+                    borderRight: i === 0 ? '2px solid #8f6b2f' : 'none',
+                    background: tabIndex === i
+                      ? 'linear-gradient(90deg, #e8c84a 0%, #f2d27a 100%)'
+                      : '#f5efd8',
+                    color: tabIndex === i ? '#4a2e0a' : '#8a7a5a',
+                    transition: 'background 0.1s, color 0.1s',
+                    '&:hover': tabIndex !== i
+                      ? { background: '#ede4c5', color: '#6a5a3a' }
+                      : {},
+                  }}
+                >
+                  {tabIndex === i ? `▶ ${label}` : label}
+                </Box>
+              ))}
+            </Box>
           </Stack>
 
           {isPlayerLoading ? (
@@ -146,42 +180,6 @@ export default function JobChange() {
                   </Stack>
                 </Paper>
               ) : null}
-
-              <Box
-                sx={{
-                  display: 'flex',
-                  border: '2px solid #8f6b2f',
-                  borderRadius: 1.5,
-                  overflow: 'hidden',
-                  width: 'fit-content',
-                }}
-              >
-                {[locale.title, locale.roadmapTab].map((label, i) => (
-                  <Box
-                    key={i}
-                    onClick={() => setTabIndex(i)}
-                    sx={{
-                      px: { xs: 2, sm: 3 },
-                      py: 0.75,
-                      cursor: 'pointer',
-                      fontWeight: 900,
-                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                      userSelect: 'none',
-                      borderRight: i === 0 ? '2px solid #8f6b2f' : 'none',
-                      background: tabIndex === i
-                        ? 'linear-gradient(90deg, #e8c84a 0%, #f2d27a 100%)'
-                        : '#f5efd8',
-                      color: tabIndex === i ? '#4a2e0a' : '#8a7a5a',
-                      transition: 'background 0.1s, color 0.1s',
-                      '&:hover': tabIndex !== i
-                        ? { background: '#ede4c5', color: '#6a5a3a' }
-                        : {},
-                    }}
-                  >
-                    {tabIndex === i ? `▶ ${label}` : label}
-                  </Box>
-                ))}
-              </Box>
 
               {tabIndex === 0 && (
                 <JobChangeTab
