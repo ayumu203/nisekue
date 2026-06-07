@@ -1,9 +1,10 @@
-import { Alert, Box, Snackbar, Typography } from '@mui/material'
+import { Alert, Box, Paper, Snackbar, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import useSWR from 'swr'
 import { getJobRoadmapList, getJobRoadmap, unlockJobRoadmap } from '@/api/player'
 import { useAuth } from '@/contexts/useAuth'
 import type { JobRoadmapListEntry } from '@/schema/player'
+import { innerSurfaceSx } from '@/constants/styles'
 import JobRoadmapList from './JobRoadmapList'
 import JobRoadmapTree from './JobRoadmapTree'
 import UnlockRoadmapDialog from './UnlockRoadmapDialog'
@@ -64,46 +65,106 @@ export default function JobRoadmapTab() {
   const targetGoldCost = selectedEntry?.goldCostToUnlock ?? 0
 
   return (
-    <Box sx={{ display: 'flex', height: '100%' }}>
-      <Box
-        sx={{
-          width: 280,
-          minWidth: 280,
-          borderRight: '1px solid',
-          borderColor: '#d2c08b',
-          overflowY: 'auto',
-          maxHeight: 'calc(100vh - 300px)',
-        }}
-      >
-        <JobRoadmapList
-          entries={roadmapList ?? []}
-          isLoading={isListLoading}
-          error={listError?.message ?? null}
-          selectedJobId={selectedJobId}
-          onSelect={setSelectedJobId}
-        />
-      </Box>
-      <Box sx={{ flex: 1, overflowY: 'auto', maxHeight: 'calc(100vh - 300px)' }}>
-        {submitError && (
-          <Alert severity="error" sx={{ mx: 2, mt: 2, borderRadius: 2 }}>
-            {submitError}
-          </Alert>
-        )}
-        {selectedEntry && !selectedEntry.isUnlocked ? (
-          <Alert severity="info" sx={{ mx: 2, mt: 2, borderRadius: 2 }}>
-            <Typography variant="body2">
+    <Box>
+      {submitError && (
+        <Alert severity="error" sx={{ mb: 1.5, borderRadius: 1.5 }}>
+          {submitError}
+        </Alert>
+      )}
+
+      {selectedEntry && !selectedEntry.isUnlocked && (
+        <Paper
+          variant="outlined"
+          sx={{
+            mb: 1.5,
+            px: 2,
+            py: 1,
+            borderColor: '#c8a84a',
+            bgcolor: '#fffbe6',
+            borderRadius: 1.5,
+          }}
+        >
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="caption" sx={{ color: '#6a4b1a', fontWeight: 900 }}>
+              💰
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#6a4b1a', fontWeight: 700 }}>
               {locale.roadmapUnlockButton.replace('{{gold}}', targetGoldCost.toLocaleString())}
             </Typography>
-          </Alert>
-        ) : null}
-        <JobRoadmapTree
-          roadmap={roadmapTree ?? null}
-          isLoading={isTreeLoading && !roadmapTree}
-          error={treeError?.message ?? null}
-          canUnlockTarget={selectedEntry?.canUnlock ?? false}
-          onUnlockTarget={handleUnlockClick}
-        />
+          </Stack>
+        </Paper>
+      )}
+
+      <Box
+        sx={{
+          display: 'flex',
+          border: '2px solid #d2c08b',
+          borderRadius: 2,
+          overflow: 'hidden',
+          ...innerSurfaceSx,
+        }}
+      >
+        <Box
+          sx={{
+            width: 260,
+            minWidth: 260,
+            borderRight: '2px solid #d2c08b',
+            overflowY: 'auto',
+            maxHeight: 'calc(100vh - 340px)',
+          }}
+        >
+          <Box
+            sx={{
+              px: 1.5,
+              py: 0.75,
+              borderBottom: '2px solid #d2c08b',
+              bgcolor: '#f5e8b0',
+            }}
+          >
+            <Typography variant="caption" fontWeight={900} color="#5a3a10">
+              ▶ 職業一覧
+            </Typography>
+          </Box>
+          <JobRoadmapList
+            entries={roadmapList ?? []}
+            isLoading={isListLoading}
+            error={listError?.message ?? null}
+            selectedJobId={selectedJobId}
+            onSelect={setSelectedJobId}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: 'auto',
+            maxHeight: 'calc(100vh - 340px)',
+          }}
+        >
+          {selectedJobId ? (
+            <Box
+              sx={{
+                px: 1.5,
+                py: 0.75,
+                borderBottom: '2px solid #d2c08b',
+                bgcolor: '#f5e8b0',
+              }}
+            >
+              <Typography variant="caption" fontWeight={900} color="#5a3a10">
+                ▶ 解放条件ツリー
+              </Typography>
+            </Box>
+          ) : null}
+          <JobRoadmapTree
+            roadmap={roadmapTree ?? null}
+            isLoading={isTreeLoading && !roadmapTree}
+            error={treeError?.message ?? null}
+            canUnlockTarget={selectedEntry?.canUnlock ?? false}
+            onUnlockTarget={handleUnlockClick}
+          />
+        </Box>
       </Box>
+
       <UnlockRoadmapDialog
         open={dialogOpen}
         jobName={selectedEntry?.jobName ?? ''}
