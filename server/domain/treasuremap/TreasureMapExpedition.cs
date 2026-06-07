@@ -82,7 +82,8 @@ public sealed class TreasureMapExpedition
             throw new ArgumentException("Advance duration must be positive.");
         }
 
-        EndsAt -= duration;
+        var proposed = EndsAt - duration;
+        EndsAt = proposed < StartedAt ? StartedAt : proposed;
     }
 
     private void EnsureInProgress()

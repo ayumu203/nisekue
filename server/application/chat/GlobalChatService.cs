@@ -34,12 +34,13 @@ public class GlobalChatService(IGlobalChatRoomRepository globalChatRoomRepositor
             .Distinct()
             .ToArray();
 
-        var senderProfileMap = new Dictionary<PlayerId, (string Name, string? ImagePath)>();
-        foreach (var senderId in senderIds)
-        {
-            var player = await playerRepository.GetPlayerAsync(senderId);
-            senderProfileMap[senderId] = (player?.Name ?? "Unknown", player?.ImagePath);
-        }
+        var fetchedPlayers = await playerRepository.GetPlayersAsync(senderIds);
+        var playerById = fetchedPlayers.ToDictionary(p => p.Id);
+        var senderProfileMap = senderIds.ToDictionary(
+            id => id,
+            id => playerById.TryGetValue(id, out var p)
+                ? (Name: p.Name, ImagePath: p.ImagePath)
+                : (Name: "Unknown", ImagePath: (string?)null));
 
         var messageViews = room.Messages
             .OrderBy(x => x.ChatId)

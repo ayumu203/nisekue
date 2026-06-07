@@ -44,6 +44,11 @@ internal static class ChatEndpoints
                 return EndpointHelpers.AnonymousPostingForbidden();
             }
 
+            if (request.Text.Length > ChatConstants.MessageMaxLength)
+            {
+                return Results.BadRequest(new { message = $"メッセージは{ChatConstants.MessageMaxLength}文字以内で入力してください。" });
+            }
+
             var ownerId = new PlayerId(request.OwnerId);
             var senderId = currentPlayerId.Value;
             var owner = await playerRepository.GetPlayerAsync(ownerId);

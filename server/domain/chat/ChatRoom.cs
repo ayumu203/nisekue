@@ -47,7 +47,7 @@ public class ChatRoom(PlayerId ownerId, int lastChatId = 0)
         EnforceMessageLimit();
     }
 
-    public void EnforceMessageLimit()
+    private void EnforceMessageLimit()
     {
         if (_messages.Count <= ChatConstants.MessageLimit) return;
 

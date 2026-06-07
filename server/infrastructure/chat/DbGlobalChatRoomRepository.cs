@@ -51,23 +51,24 @@ public class DbGlobalChatRoomRepository(IDbContextFactory<AppDbContext> dbContex
                     ?? throw new InvalidOperationException("全体チャットルーム行のロック取得に失敗しました。");
             }
 
-            var messagesToPersist = room.Messages
-                .Where(x => x.ChatId > dbLastChatId.Value)
+            var newMessages = room.Messages
+                .Where(x => x.ChatId > room.PersistedLastChatId)
                 .OrderBy(x => x.ChatId)
                 .ToList();
 
-            foreach (var message in messagesToPersist)
+            for (var i = 0; i < newMessages.Count; i++)
             {
+                var message = newMessages[i];
+                var assignedChatId = dbLastChatId.Value + 1 + i;
                 await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
                     INSERT INTO internal.global_chat_messages(chat_id, sender_type, sender_id, message)
-                    VALUES ({message.ChatId}, {(int)message.SenderType}, {(message.SenderId == null ? (Guid?)null : message.SenderId.Value.Value)}, {message.Body.Text})
+                    VALUES ({assignedChatId}, {(int)message.SenderType}, {(message.SenderId == null ? (Guid?)null : message.SenderId.Value.Value)}, {message.Body.Text})
                     ON CONFLICT (chat_id) DO NOTHING");
             }
 
-            var maxPersistedChatId = messagesToPersist.Count == 0
+            var persistedLastChatId = newMessages.Count == 0
                 ? dbLastChatId.Value
-                : messagesToPersist.Max(x => x.ChatId);
-            var persistedLastChatId = Math.Max(room.LastChatId, maxPersistedChatId);
+                : dbLastChatId.Value + newMessages.Count;
             await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
                 UPDATE internal.global_chat_rooms
                 SET last_chat_id = {persistedLastChatId}

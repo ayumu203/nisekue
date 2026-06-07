@@ -6,6 +6,7 @@ namespace server.domain.chat;
 public class GlobalChatRoom(int lastChatId = 0)
 {
     public int LastChatId { get; private set; } = ValidateLastChatId(lastChatId);
+    public int PersistedLastChatId { get; private set; } = ValidateLastChatId(lastChatId);
     private readonly List<ChatMessage> _messages = [];
     public IReadOnlyList<ChatMessage> Messages => _messages;
 
@@ -13,6 +14,7 @@ public class GlobalChatRoom(int lastChatId = 0)
         : this(lastChatId)
     {
         RestoreMessages(messages);
+        PersistedLastChatId = LastChatId;
     }
 
     public int GetNextMessageId()
@@ -45,7 +47,7 @@ public class GlobalChatRoom(int lastChatId = 0)
         EnforceMessageLimit();
     }
 
-    public void EnforceMessageLimit()
+    private void EnforceMessageLimit()
     {
         if (_messages.Count <= ChatConstants.MessageLimit) return;
 
