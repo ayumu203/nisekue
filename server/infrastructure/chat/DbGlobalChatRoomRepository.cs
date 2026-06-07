@@ -1,0 +1,112 @@
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using server.domain.chat;
+using server.domain.player;
+using server.shared.constants.chat;
+using System.Data;
+
+namespace server.infrastructure.chat;
+
+public class DbGlobalChatRoomRepository(IDbContextFactory<AppDbContext> dbContextFactory) : IGlobalChatRoomRepository
+{
+    public async Task<GlobalChatRoom> GetAsync()
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var roomEntity = await dbContext.GlobalChatRooms
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Id == ChatConstants.GlobalChatRoomId);
+
+        if (roomEntity is null)
+        {
+            return new GlobalChatRoom(lastChatId: 0);
+        }
+
+        var messageEntities = await dbContext.GlobalChatMessages
+            .AsNoTracking()
+            .OrderByDescending(x => x.ChatId)
+            .Take(ChatConstants.MessageLimit)
+            .OrderBy(x => x.ChatId)
+            .ToListAsync();
+
+        var messages = messageEntities.Select(MapToDomain);
+        return new GlobalChatRoom(roomEntity.LastChatId, messages);
+    }
+
+    public async Task SaveAsync(GlobalChatRoom room)
+    {
+        ArgumentNullException.ThrowIfNull(room);
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        await using var tx = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        try
+        {
+            var roomId = ChatConstants.GlobalChatRoomId;
+            var dbLastChatId = await LockRoomAndGetLastChatIdAsync(dbContext, roomId);
+            if (dbLastChatId is null)
+            {
+                await dbContext.Database.ExecuteSqlInterpolatedAsync(
+                    $"INSERT INTO internal.global_chat_rooms(id, last_chat_id) VALUES ({roomId}, 0) ON CONFLICT (id) DO NOTHING");
+
+                dbLastChatId = await LockRoomAndGetLastChatIdAsync(dbContext, roomId)
+                    ?? throw new InvalidOperationException("全体チャットルーム行のロック取得に失敗しました。");
+            }
+
+            var messagesToPersist = room.Messages
+                .Where(x => x.ChatId > dbLastChatId.Value)
+                .OrderBy(x => x.ChatId)
+                .ToList();
+
+            foreach (var message in messagesToPersist)
+            {
+                await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                    INSERT INTO internal.global_chat_messages(chat_id, sender_type, sender_id, message)
+                    VALUES ({message.ChatId}, {(int)message.SenderType}, {(message.SenderId == null ? (Guid?)null : message.SenderId.Value.Value)}, {message.Body.Text})
+                    ON CONFLICT (chat_id) DO NOTHING");
+            }
+
+            var maxPersistedChatId = messagesToPersist.Count == 0
+                ? dbLastChatId.Value
+                : messagesToPersist.Max(x => x.ChatId);
+            var persistedLastChatId = Math.Max(room.LastChatId, maxPersistedChatId);
+            await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE internal.global_chat_rooms
+                SET last_chat_id = {persistedLastChatId}
+                WHERE id = {roomId}");
+
+            await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                DELETE FROM internal.global_chat_messages
+                WHERE chat_id NOT IN (
+                    SELECT chat_id
+                    FROM internal.global_chat_messages
+                    ORDER BY chat_id DESC
+                    LIMIT {ChatConstants.MessageLimit}
+                )");
+
+            await tx.CommitAsync();
+        }
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.SerializationFailure)
+        {
+            throw new InvalidOperationException("全体チャット保存時に競合が発生しました。再試行してください。", ex);
+        }
+        catch (PostgresException ex)
+        {
+            throw new InvalidOperationException("全体チャットルーム情報の保存に失敗しました。", ex);
+        }
+        catch (DbUpdateException ex)
+        {
+            throw new InvalidOperationException("全体チャットルーム情報の保存に失敗しました。", ex);
+        }
+    }
+
+    private static async Task<int?> LockRoomAndGetLastChatIdAsync(AppDbContext dbContext, Guid roomId)
+    {
+        var rows = await dbContext.Database
+            .SqlQueryRaw<int>("SELECT last_chat_id FROM internal.global_chat_rooms WHERE id = {0} FOR UPDATE", roomId)
+            .ToListAsync();
+
+        return rows.Count == 0 ? null : rows[0];
+    }
+
+    private static ChatMessage MapToDomain(GlobalChatMessageEntity entity) =>
+        new(entity.SenderType, entity.SenderId, entity.ChatId, new ChatText(entity.Message), entity.CreatedAt, isAlerted: false);
+}

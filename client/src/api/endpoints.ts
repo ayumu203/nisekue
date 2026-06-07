@@ -28,6 +28,9 @@ import {
   markChatMessagesAlertedResponseSchema,
   postChatMessageRequestSchema,
   postChatMessageResponseSchema,
+  getGlobalChatRoomResponseSchema,
+  postGlobalChatMessageRequestSchema,
+  postGlobalChatMessageResponseSchema,
 } from '@/schema/chat'
 import {
   createThreadReplyRequestSchema,
@@ -290,6 +293,19 @@ export const endpoints = {
       method: 'POST',
       requestSchema: markChatMessagesAlertedRequestSchema,
       responseSchema: markChatMessagesAlertedResponseSchema,
+    },
+  },
+  globalChatRoom: {
+    get: {
+      path: '/chat/global',
+      method: 'GET',
+      responseSchema: getGlobalChatRoomResponseSchema,
+    },
+    postMessage: {
+      path: '/chat/global/messages',
+      method: 'POST',
+      requestSchema: postGlobalChatMessageRequestSchema,
+      responseSchema: postGlobalChatMessageResponseSchema,
     },
   },
   thread: {

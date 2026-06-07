@@ -1,0 +1,81 @@
+using FluentAssertions;
+using server.application.chat;
+using server.domain.chat;
+using server.domain.player;
+using Xunit;
+
+namespace server.tests;
+
+public class GlobalChatServiceTests
+{
+    [Fact]
+    public async Task GetAsync_EmptyRoom_ReturnsEmptyMessages()
+    {
+        var repository = new FakeGlobalChatRoomRepository(new GlobalChatRoom());
+        var playerRepository = new FakePlayerRepository();
+        var service = new GlobalChatService(repository, playerRepository);
+
+        var view = await service.GetAsync();
+
+        view.Messages.Should().BeEmpty();
+        view.LastChatId.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task PostMessageAsync_ValidSender_AppendsMessage()
+    {
+        var senderId = new PlayerId(Guid.NewGuid());
+        var sender = new Player(
+            senderId, "テストユーザー", 1, 0, 1, 0, 100,
+            new Status(10, 0, 1, 1, 1, 1, 1));
+        var repository = new FakeGlobalChatRoomRepository(new GlobalChatRoom());
+        var playerRepository = new FakePlayerRepository(sender);
+        var service = new GlobalChatService(repository, playerRepository);
+
+        var view = await service.PostMessageAsync(senderId, "こんにちは全体");
+
+        view.Messages.Should().ContainSingle();
+        view.Messages[0].Message.Should().Be("こんにちは全体");
+        view.Messages[0].SenderName.Should().Be("テストユーザー");
+        view.Messages[0].SenderType.Should().Be(ChatMessageSenderType.Player.ToString());
+    }
+
+    [Fact]
+    public async Task PostMessageAsync_SenderNotFound_ThrowsInvalidOperationException()
+    {
+        var senderId = new PlayerId(Guid.NewGuid());
+        var repository = new FakeGlobalChatRoomRepository(new GlobalChatRoom());
+        var playerRepository = new FakePlayerRepository();
+        var service = new GlobalChatService(repository, playerRepository);
+
+        var act = () => service.PostMessageAsync(senderId, "メッセージ");
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*投稿者のプレイヤーが見つかりません*");
+    }
+
+    private sealed class FakeGlobalChatRoomRepository(GlobalChatRoom room) : IGlobalChatRoomRepository
+    {
+        private GlobalChatRoom storedRoom = room;
+
+        public Task<GlobalChatRoom> GetAsync() => Task.FromResult(storedRoom);
+
+        public Task SaveAsync(GlobalChatRoom room)
+        {
+            storedRoom = room;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakePlayerRepository(Player? player = null) : IPlayerRepository
+    {
+        public Task<Player?> GetPlayerAsync(PlayerId id) => Task.FromResult(player);
+        public Task<Player?> GetPlayerWithinLevelCapAsync(PlayerId id, int maxLevel) => Task.FromResult<Player?>(null);
+        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel) => Task.FromResult<IReadOnlyList<Player>>([]);
+        public Task<IReadOnlyList<Player>> GetAllAsync() => Task.FromResult<IReadOnlyList<Player>>([]);
+        public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids) => Task.FromResult<IReadOnlyList<Player>>([]);
+        public Task<bool> UpdateNameAsync(PlayerId id, string name) => Task.FromResult(false);
+        public Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown) => Task.FromResult<DateTimeOffset?>(null);
+        public Task SaveAsync(Player player) => Task.CompletedTask;
+    }
+}

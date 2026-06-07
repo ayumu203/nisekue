@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using server.domain.chat;
 using server.domain.player;
+using server.shared.constants.chat;
 using System.Data;
 
 namespace server.infrastructure.chat
@@ -24,7 +25,7 @@ namespace server.infrastructure.chat
                 .AsNoTracking()
                 .Where(x => x.OwnerId == ownerId)
                 .OrderByDescending(x => x.ChatId)
-                .Take(50)
+                .Take(ChatConstants.MessageLimit)
                 .OrderBy(x => x.ChatId)
                 .ToListAsync();
 
@@ -81,7 +82,7 @@ namespace server.infrastructure.chat
                         FROM internal.chat_messages
                         WHERE owner_id = {ownerId}
                         ORDER BY chat_id DESC
-                        LIMIT 50
+                        LIMIT {ChatConstants.MessageLimit}
                     )");
 
                 await tx.CommitAsync();
