@@ -75,6 +75,7 @@ public sealed class DbTreasureMapExpeditionRepository(IDbContextFactory<AppDbCon
             existing.RewardSummaryJson = rewardSummaryJson;
             existing.RewardClaimed = expedition.RewardClaimed;
             existing.CompletedAt = expedition.CompletedAt;
+            existing.EndsAt = expedition.EndsAt;
             existing.UpdatedAt = DateTimeOffset.UtcNow;
         }
 

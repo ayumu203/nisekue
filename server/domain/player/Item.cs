@@ -10,11 +10,13 @@ public class Item(
     StatusBonusPercent? statusBonusPercent = null,
     Job? changeJobTo = null,
     int? requiredLevel = null,
-    IReadOnlySet<Job>? requiredMasterJobs = null)
+    IReadOnlySet<Job>? requiredMasterJobs = null,
+    decimal? expMultiplier = null,
+    int? mapUnlockFlag = null)
 {
     private readonly HashSet<Job> _requiredMasterJobs = requiredMasterJobs is null
         ? []
-        : new HashSet<Job>(requiredMasterJobs);
+        : [.. requiredMasterJobs];
 
     public ItemId Id { get; } = id;
     public string Name { get; } = string.IsNullOrWhiteSpace(name) ? throw new ArgumentException("アイテム名は必須です。", nameof(name)) : name.Trim();
@@ -26,6 +28,8 @@ public class Item(
     public Job? ChangeJobTo { get; } = changeJobTo;
     public int? RequiredLevel { get; } = requiredLevel;
     public IReadOnlySet<Job> RequiredMasterJobs => _requiredMasterJobs;
+    public decimal? ExpMultiplier { get; } = expMultiplier;
+    public int? MapUnlockFlag { get; } = mapUnlockFlag;
 
     public bool CanUse(Player player)
     {

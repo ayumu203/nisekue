@@ -8,13 +8,21 @@ import {
   Paper,
   Snackbar,
   Stack,
+  Tab,
+  Tabs,
   Typography,
 } from '@mui/material'
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
-import { getChatRoom, markChatMessagesAlerted, postChatMessage } from '@/api/chat'
+import {
+  getChatRoom,
+  getGlobalChatRoom,
+  markChatMessagesAlerted,
+  postChatMessage,
+  postGlobalChatMessage,
+} from '@/api/chat'
 import { getThreadAlerts, markThreadRepliesAlerted } from '@/api/thread'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
@@ -30,6 +38,7 @@ import {
   QuestIcon,
   RebirthIcon,
   RankingIcon,
+  OthersGroupIcon,
   ReportIcon,
   SpecialThanksIcon,
   SurveyIcon,
@@ -57,9 +66,11 @@ function Home() {
   const [toastQueue, setToastQueue] = useState<string[]>([])
   const userId = session?.user.id ?? null
   const tutorialStep = userId ? getTutorialStep(userId) : null
+  const [chatTab, setChatTab] = useState<'personal' | 'global'>('personal')
   const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
   const isTrainingGroupOpen = tutorialStep === 'home-job-change' || isTrainingGroupOpenByUser
   const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
+  const [isOthersGroupOpen, setIsOthersGroupOpen] = useState(false)
   const handledChatIdsRef = useRef<Set<number>>(new Set())
   const handledReplyIdsRef = useRef<Set<string>>(new Set())
   const enqueueToast = useEffectEvent((message: string) => {
@@ -106,6 +117,25 @@ function Home() {
     },
     { revalidateOnFocus: true },
   )
+  const globalChatSWRKey = session?.access_token ? (['global-chat-room'] as const) : null
+  const {
+    data: globalChatRoom,
+    error: globalChatError,
+    isLoading: isGlobalChatLoading,
+    isValidating: isGlobalChatValidating,
+    mutate: mutateGlobalChatRoom,
+  } = useSWR(
+    globalChatSWRKey,
+    async () => {
+      if (!session?.access_token) {
+        throw new Error(locale.sessionInfoMissing)
+      }
+
+      return getGlobalChatRoom(session.access_token)
+    },
+    { revalidateOnFocus: true },
+  )
+
   const threadAlertsSWRKey =
     session?.access_token && player?.userId ? (['thread-alerts', player.userId] as const) : null
   const { data: threadAlerts } = useSWR(
@@ -337,71 +367,118 @@ function Home() {
                 </Stack>
               </Collapse>
               <Button
-                component={Link}
-                to="/thanks"
                 variant="outlined"
-                startIcon={<SpecialThanksIcon />}
+                startIcon={<OthersGroupIcon />}
+                onClick={() => setIsOthersGroupOpen((prev) => !prev)}
                 sx={menuButtonSx}
               >
-                {locale.specialThanks}
+                {locale.others}
               </Button>
-              <Button
-                component="a"
-                href="https://docs.google.com/forms/d/e/1FAIpQLScQGhSmvuy99jOyKKvHIYtKcbZOGpYucamzrza5CRKezS054A/viewform?usp=dialog"
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="outlined"
-                startIcon={<SurveyIcon />}
-                sx={menuButtonSx}
-              >
-                {locale.survey}
-              </Button>
-              <Button
-                component="a"
-                href="https://docs.google.com/forms/d/e/1FAIpQLSduEn4lqqHBp4zuaXKehG3w4DQBXWmp2GdkMNU1tqO5_VAQUw/viewform?usp=publish-editor"
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="outlined"
-                startIcon={<ReportIcon />}
-                sx={menuButtonSx}
-              >
-                {locale.report}
-              </Button>
+              <Collapse in={isOthersGroupOpen}>
+                <Stack spacing={1} sx={{ pl: 1, pr: 1, pt: 1 }}>
+                  <Button
+                    component={Link}
+                    to="/thanks"
+                    variant="outlined"
+                    startIcon={<SpecialThanksIcon />}
+                    sx={menuButtonSx}
+                  >
+                    {locale.specialThanks}
+                  </Button>
+                  <Button
+                    component="a"
+                    href="https://docs.google.com/forms/d/e/1FAIpQLScQGhSmvuy99jOyKKvHIYtKcbZOGpYucamzrza5CRKezS054A/viewform?usp=dialog"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="outlined"
+                    startIcon={<SurveyIcon />}
+                    sx={menuButtonSx}
+                  >
+                    {locale.survey}
+                  </Button>
+                  <Button
+                    component="a"
+                    href="https://docs.google.com/forms/d/e/1FAIpQLSduEn4lqqHBp4zuaXKehG3w4DQBXWmp2GdkMNU1tqO5_VAQUw/viewform?usp=publish-editor"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="outlined"
+                    startIcon={<ReportIcon />}
+                    sx={menuButtonSx}
+                  >
+                    {locale.report}
+                  </Button>
+                </Stack>
+              </Collapse>
             </Stack>
 
             <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 }, mt: '48px' }}>
               <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                {isChatLoading ? (
+                <Tabs
+                  value={chatTab}
+                  onChange={(_, value: 'personal' | 'global') => setChatTab(value)}
+                  variant="fullWidth"
+                  sx={{ borderBottom: 1, borderColor: 'divider' }}
+                >
+                  <Tab label={locale.chatTabPersonal} value="personal" />
+                  <Tab label={locale.chatTabGlobal} value="global" />
+                </Tabs>
+                {chatTab === 'personal' ? (
+                  isChatLoading ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CircularProgress size={16} />
+                      <Typography variant="body2">{locale.chatLoading}</Typography>
+                    </Stack>
+                  ) : chatError ? (
+                    <Alert severity="warning">{chatError.message}</Alert>
+                  ) : !player ? (
+                    <Alert severity="warning">{locale.chatFetchInfoMissing}</Alert>
+                  ) : (
+                    <Stack spacing={2}>
+                      <ChatForm
+                        isSubmitting={isChatValidating}
+                        disabled={isAnonymous}
+                        disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
+                        onSubmit={async (text) => {
+                          if (!session?.access_token || !player?.userId) {
+                            throw new Error(locale.sessionInfoMissing)
+                          }
+
+                          const updated = await postChatMessage(
+                            {
+                              ownerId: player.userId,
+                              text,
+                            },
+                            session.access_token,
+                          )
+                          await mutateChatRoom(updated, { revalidate: false })
+                        }}
+                      />
+                      <ChatMessages messages={chatRoom?.messages ?? []} currentPlayerId={player?.userId ?? ''} />
+                    </Stack>
+                  )
+                ) : isGlobalChatLoading ? (
                   <Stack direction="row" spacing={1} alignItems="center">
                     <CircularProgress size={16} />
-                    <Typography variant="body2">{locale.chatLoading}</Typography>
+                    <Typography variant="body2">{locale.globalChatLoading}</Typography>
                   </Stack>
-                ) : chatError ? (
-                  <Alert severity="warning">{chatError.message}</Alert>
-                ) : !player ? (
-                  <Alert severity="warning">{locale.chatFetchInfoMissing}</Alert>
+                ) : globalChatError ? (
+                  <Alert severity="warning">{globalChatError.message}</Alert>
                 ) : (
                   <Stack spacing={2}>
                     <ChatForm
-                      isSubmitting={isChatValidating}
+                      isSubmitting={isGlobalChatValidating}
                       disabled={isAnonymous}
                       disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
                       onSubmit={async (text) => {
-                        if (!session?.access_token || !player?.userId) {
+                        if (!session?.access_token) {
                           throw new Error(locale.sessionInfoMissing)
                         }
 
-                        const updated = await postChatMessage(
-                          {
-                            ownerId: player.userId,
-                            text,
-                          },
-                          session.access_token,
-                        )
-                        await mutateChatRoom(updated, { revalidate: false })
+                        const updated = await postGlobalChatMessage({ text }, session.access_token)
+                        await mutateGlobalChatRoom(updated, { revalidate: false })
                       }}
                     />
-                    <ChatMessages messages={chatRoom?.messages ?? []} currentPlayerId={player.userId} />
+                    <ChatMessages messages={globalChatRoom?.messages ?? []} currentPlayerId={player?.userId ?? ''} />
                   </Stack>
                 )}
               </Stack>

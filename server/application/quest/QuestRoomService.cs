@@ -1,3 +1,4 @@
+using System.Linq;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
@@ -129,6 +130,42 @@ public class QuestRoomService(
     }
 
     public Task<bool> ViewerHasActiveRunAsync(PlayerId playerId) => questRunRepository.ExistsActiveRunByPlayerAsync(playerId);
+
+    public async Task<IReadOnlySet<QuestStageId>> GetVisibleStageIdsAsync(PlayerId playerId)
+    {
+        var player = await playerRepository.GetPlayerAsync(playerId)
+            ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
+        return await GetVisibleStageIdsAsync(player);
+    }
+
+    public async Task<IReadOnlySet<QuestStageId>> GetVisibleStageIdsAsync(Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        var stages = await GetVisibleStagesAsync(player);
+        return stages.Select(x => x.Id).ToHashSet();
+    }
+
+    public async Task<IReadOnlyList<QuestStageDefinition>> GetVisibleStagesAsync(PlayerId? playerId)
+    {
+        if (playerId is null)
+        {
+            var allStages = await questStageRepository.GetAllAsync();
+            return allStages.Where(x => x.IsActive).ToArray();
+        }
+
+        var player = await playerRepository.GetPlayerAsync(playerId.Value)
+            ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
+        return await GetVisibleStagesAsync(player);
+    }
+
+    public async Task<IReadOnlyList<QuestStageDefinition>> GetVisibleStagesAsync(Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        var stages = await questStageRepository.GetAllAsync();
+        return stages
+            .Where(x => x.IsActive && QuestStageEntryPolicy.MeetsMapUnlockRequirement(player, x))
+            .ToArray();
+    }
 
     private async Task EnsureActiveParticipantsMatchJoinPolicyAsync(
         QuestRoom room,

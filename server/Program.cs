@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
 using System.Linq;
@@ -112,6 +113,8 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
     {
         npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "internal");
     });
+    options.ConfigureWarnings(warnings =>
+        warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
 });
 
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
@@ -127,10 +130,12 @@ builder.Services.AddScoped<IMarketListingRepository, DbMarketListingRepository>(
 builder.Services.AddScoped<IMarketTradeHistoryRepository, DbMarketTradeHistoryRepository>();
 builder.Services.AddScoped<IItemDeletionLogRepository, DbItemDeletionLogRepository>();
 builder.Services.AddSingleton<IJobProfileRepository, CsvJobProfileRepository>();
+builder.Services.AddSingleton<IJobRoadmapRankRepository, CsvJobRoadmapRankRepository>();
 builder.Services.AddSingleton<IStatusRankThresholdRepository, CsvStatusRankThresholdRepository>();
 builder.Services.AddSingleton<ICombatIndexWeightRepository, CsvCombatIndexWeightRepository>();
 builder.Services.AddSingleton<ICombatIndexRankThresholdRepository, CsvCombatIndexRankThresholdRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
+builder.Services.AddScoped<IGlobalChatRoomRepository, DbGlobalChatRoomRepository>();
 builder.Services.AddScoped<IThreadRepository, DbThreadRepository>();
 builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
 builder.Services.AddSingleton<IMoveRepository, CsvMoveRepository>();
@@ -159,20 +164,25 @@ builder.Services.AddSingleton<CombatIndexCalculator>();
 builder.Services.AddSingleton<CombatIndexRankEvaluator>();
 builder.Services.AddScoped<ItemStatBoostService>();
 builder.Services.AddScoped<PlayerJobService>();
+builder.Services.AddScoped<JobRoadmapService>();
 builder.Services.AddScoped<PlayerMoveSetService>();
 builder.Services.AddScoped<PlayerMoveSetSanitizer>();
 builder.Services.AddScoped<PlayerRebirthService>();
 builder.Services.AddScoped<MarketListingCleanupService>();
 builder.Services.AddScoped<DevelopmentDataCleanupService>();
+builder.Services.AddScoped<QuestDataCleanupService>();
 builder.Services.AddScoped<RankingAggregationService>();
 builder.Services.AddScoped<RankingReadService>();
 builder.Services.AddScoped<ChatService>();
+builder.Services.AddScoped<GlobalChatService>();
 builder.Services.AddScoped<ThreadService>();
 builder.Services.AddScoped<TrainingService>();
 if (rankingEnabled)
 {
     builder.Services.AddHostedService<RankingRebuildBackgroundService>();
 }
+
+builder.Services.AddHostedService<QuestDataCleanupBackgroundService>();
 
 var app = builder.Build();
 
@@ -189,5 +199,6 @@ app.MapThreadEndpoints();
 app.MapTrainingEndpoints();
 app.MapTreasureMapEndpoints();
 app.MapRankingEndpoints();
+app.MapMaintenanceEndpoints();
 
 app.Run();

@@ -3,5 +3,7 @@ namespace server.domain.player;
 public enum ItemEffectType
 {
     StatBoost = 1,
-    ChangeJob = 2
+    ChangeJob = 2,
+    ExpMultiplier = 3,
+    UnlockMap = 4
 }

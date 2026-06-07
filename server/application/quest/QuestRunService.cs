@@ -6,6 +6,8 @@ using server.domain.move.enums;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
+using server.domain.treasuremap;
+using server.domain.treasuremap.enums;
 
 namespace server.application.quest;
 
@@ -23,12 +25,14 @@ public class QuestRunService(
     IItemRepository itemRepository,
     IJobProfileRepository jobProfileRepository,
     IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
+    ITreasureMapExpeditionRepository treasureMapExpeditionRepository,
     BattleService battleService,
     QuestBattleFactory questBattleFactory,
     Func<int, int>? rewardRollProvider = null)
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
+    private static readonly TimeSpan QuestCompletionTreasureMapAdvance = TimeSpan.FromMinutes(5);
     private const int ItemCapacity = 20;
     private readonly Func<int, int> _rewardRollProvider = rewardRollProvider ?? (maxInclusive => Random.Shared.Next(1, maxInclusive + 1));
 
@@ -277,10 +281,22 @@ public class QuestRunService(
 
             if (run.Rewards.Exp > 0)
             {
-                player.GainExp(run.Rewards.Exp);
+                var multiplier = ExpMultiplierFlag.ToMultiplier(player.ExpMultiplierFlags);
+                var multipliedExp = (int)Math.Floor(run.Rewards.Exp * multiplier);
+                player.ClearExpMultiplierFlags();
+                player.GainExp(multipliedExp);
                 var jobProfile = jobProfileRepository.GetByJob(player.Job);
                 var learningRule = jobMoveLearningRuleRepository.GetByJob(player.Job);
                 player.LevelUp(jobProfile, learningRule);
+            }
+            else
+            {
+                player.ClearExpMultiplierFlags();
+            }
+
+            if (stage.RequiredMapUnlockFlag is not null && playerId == room.OwnerId)
+            {
+                player.ClearMapUnlockFlag(stage.RequiredMapUnlockFlag.Value);
             }
 
             if (run.Rewards.Gold > 0)
@@ -290,6 +306,16 @@ public class QuestRunService(
 
             player.SetQuestCooldownUntil((run.EndedAt ?? DateTimeOffset.UtcNow).Add(QuestCooldown));
             await playerRepository.SaveAsync(player);
+
+            if (run.Status == QuestRunStatus.Succeeded)
+            {
+                var expedition = await treasureMapExpeditionRepository.GetCurrentByPlayerAsync(playerId);
+                if (expedition is not null && expedition.Status == TreasureMapExpeditionStatus.InProgress)
+                {
+                    expedition.AdvanceTime(QuestCompletionTreasureMapAdvance);
+                    await treasureMapExpeditionRepository.SaveAsync(expedition);
+                }
+            }
 
             if (run.Status == QuestRunStatus.Succeeded && (rewardEquipmentId is not null || rewardItemId is not null))
             {
@@ -321,6 +347,7 @@ public class QuestRunService(
                             rewardMaster.Type,
                             EquipmentStatus.Inventory,
                             rewardMaster.MaxDurability,
+                            0,
                             0,
                             rewardGrantedAt,
                             rewardGrantedAt));
@@ -358,26 +385,6 @@ public class QuestRunService(
         }
 
         run.Rewards.SetSkippedRewardPlayerIds(skippedRewardPlayerIds);
-
-        var now = run.EndedAt ?? DateTimeOffset.UtcNow;
-        foreach (var participant in room.Participants.Where(x => x.PlayerId is not null && x.Type == ParticipantType.Player))
-        {
-            var snapshot = run.PartySnapshots.FirstOrDefault(x => x.ParticipantId == participant.Id);
-            if (snapshot is null)
-            {
-                continue;
-            }
-
-            var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(participant.PlayerId!.Value)).ToList();
-            var consumed = false;
-            consumed |= ConsumeEquipmentDurability(playerEquipments, snapshot.WeaponEquipmentId, now);
-            consumed |= ConsumeEquipmentDurability(playerEquipments, snapshot.ArmorEquipmentId, now);
-
-            if (consumed)
-            {
-                await playerEquipmentRepository.SaveAsync(playerEquipments);
-            }
-        }
     }
 
     private EquipmentId? DrawEquipmentReward(QuestStageDefinition stage, bool hasGreatThiefBonus)
@@ -454,26 +461,6 @@ public class QuestRunService(
         }
 
         return null;
-    }
-
-    private static bool ConsumeEquipmentDurability(
-        IReadOnlyList<PlayerEquipment> playerEquipments,
-        PlayerEquipmentId? playerEquipmentId,
-        DateTimeOffset now)
-    {
-        if (playerEquipmentId is null)
-        {
-            return false;
-        }
-
-        var equipment = playerEquipments.FirstOrDefault(x => x.Id == playerEquipmentId.Value);
-        if (equipment is null)
-        {
-            return false;
-        }
-
-        equipment.ConsumeDurability(1, now);
-        return true;
     }
 
     private async Task<QuestEnemyState[]> CreateEnemyStatesAsync(QuestFloorDefinition floor)

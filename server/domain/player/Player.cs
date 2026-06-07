@@ -17,7 +17,10 @@ public class Player(
     DateTimeOffset? questCooldownUntil = null,
     MoveSet? moveSet = null,
     IReadOnlySet<Job>? masteredJobs = null,
-    int rebirthCount = 0)
+    int rebirthCount = 0,
+    int expMultiplierFlags = 0,
+    int mapUnlockFlags = 0,
+    long roadmapUnlockFlags = 1)
 {
     private readonly HashSet<Job> masteredJobs = masteredJobs is null ? [] : new HashSet<Job>(masteredJobs);
 
@@ -35,6 +38,9 @@ public class Player(
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
     public MoveSet MoveSet { get; private set; } = moveSet ?? new MoveSet();
     public IReadOnlySet<Job> MasteredJobs => masteredJobs;
+    public int ExpMultiplierFlags { get; private set; } = ValidateNonNegative(expMultiplierFlags, nameof(expMultiplierFlags));
+    public int MapUnlockFlags { get; private set; } = ValidateNonNegative(mapUnlockFlags, nameof(mapUnlockFlags));
+    public long RoadmapUnlockFlags { get; private set; } = ValidateNonNegativeLong(roadmapUnlockFlags, nameof(roadmapUnlockFlags));
 
     public void UpdateName(string name)
     {
@@ -140,6 +146,86 @@ public class Player(
         if (exp < 0) exp = 0;
         Exp = ClampedAdd(Exp, exp);
         JobExp = ClampedAdd(JobExp, exp);
+    }
+
+    public void SetExpMultiplierFlag(int flag)
+    {
+        if (!ExpMultiplierFlag.IsValidFlag(flag))
+        {
+            throw new ArgumentException("無効な経験値倍率フラグです。", nameof(flag));
+        }
+
+        if (ExpMultiplierFlags != 0)
+        {
+            throw new InvalidOperationException("すでに経験値倍率が設定されています。");
+        }
+
+        ExpMultiplierFlags = flag;
+    }
+
+    public bool HasAnyExpMultiplierFlag()
+    {
+        return ExpMultiplierFlags != 0;
+    }
+
+    public void ClearExpMultiplierFlags()
+    {
+        ExpMultiplierFlags = 0;
+    }
+
+    public void SetMapUnlockFlag(int flag)
+    {
+        if (!MapUnlockFlag.IsValidFlag(flag))
+        {
+            throw new ArgumentException("無効なマップ解放フラグです。", nameof(flag));
+        }
+
+        if ((MapUnlockFlags & flag) != 0)
+        {
+            throw new InvalidOperationException("すでにこのマップは解放済みです。");
+        }
+
+        MapUnlockFlags |= flag;
+    }
+
+    public bool HasMapUnlockFlag(int flag)
+    {
+        if (!MapUnlockFlag.IsValidFlag(flag))
+        {
+            throw new ArgumentException("無効なマップ解放フラグです。", nameof(flag));
+        }
+
+        return (MapUnlockFlags & flag) != 0;
+    }
+
+    public void ClearMapUnlockFlag(int flag)
+    {
+        if (!MapUnlockFlag.IsValidFlag(flag))
+        {
+            throw new ArgumentException("無効なマップ解放フラグです。", nameof(flag));
+        }
+
+        MapUnlockFlags &= ~flag;
+    }
+
+    public bool IsRoadmapUnlocked(Job job)
+    {
+        return (RoadmapUnlockFlags & (1L << ((int)job - 1))) != 0;
+    }
+
+    public void UnlockRoadmap(Job job)
+    {
+        RoadmapUnlockFlags |= (1L << ((int)job - 1));
+    }
+
+    private static long ValidateNonNegativeLong(long value, string paramName)
+    {
+        if (value < 0)
+        {
+            throw new ArgumentOutOfRangeException(paramName, "0以上である必要があります。");
+        }
+
+        return value;
     }
 
     public void GainGold(int gold)

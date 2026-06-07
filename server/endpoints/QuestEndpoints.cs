@@ -15,10 +15,11 @@ internal static class QuestEndpoints
     {
         var questGroup = app.MapGroup("/quest").RequireAuthorization();
 
-        questGroup.MapGet("/stages", async (IQuestStageRepository questStageRepository, QuestResponseMapper responseMapper) =>
+        questGroup.MapGet("/stages", async (ClaimsPrincipal user, QuestRoomService questRoomService, QuestResponseMapper responseMapper) =>
         {
-            var stages = await questStageRepository.GetAllAsync();
-            var payload = await responseMapper.MapQuestStageSummariesAsync(stages.Where(x => x.IsActive));
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            var stages = await questRoomService.GetVisibleStagesAsync(playerId);
+            var payload = await responseMapper.MapQuestStageSummariesAsync(stages);
             return Results.Ok(payload);
         });
 
@@ -73,6 +74,17 @@ internal static class QuestEndpoints
                 return Results.Unauthorized();
             }
 
+            Player viewer;
+            try
+            {
+                viewer = await questRoomService.GetViewerAsync(viewerPlayerId.Value);
+            }
+            catch (KeyNotFoundException)
+            {
+                return Results.Unauthorized();
+            }
+
+            var visibleStageIds = await questRoomService.GetVisibleStageIdsAsync(viewer);
             var rooms = await questRoomRepository.SearchAsync(new QuestRoomSearchCondition(
                 stageId is null ? null : new QuestStageId(stageId.Value),
                 mode,
@@ -80,8 +92,8 @@ internal static class QuestEndpoints
                 ownerPlayerId is null ? null : new PlayerId(ownerPlayerId.Value),
                 viewerPlayerId.Value,
                 page ?? 1,
-                pageSize ?? 20));
-            var viewer = await questRoomService.GetViewerAsync(viewerPlayerId.Value);
+                pageSize ?? 20,
+                visibleStageIds: visibleStageIds));
             var viewerHasActiveRun = await questRoomService.ViewerHasActiveRunAsync(viewerPlayerId.Value);
 
             var payload = new List<object>(rooms.Count);

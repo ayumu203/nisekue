@@ -8,6 +8,9 @@ import type {
   MarkChatMessagesAlertedResponse,
   PostChatMessageRequest,
   PostChatMessageResponse,
+  GetGlobalChatRoomResponse,
+  PostGlobalChatMessageRequest,
+  PostGlobalChatMessageResponse,
 } from '@/schema/chat'
 
 export async function getChatRoom(input: GetChatRoomRequest, accessToken: string): Promise<GetChatRoomResponse> {
@@ -55,6 +58,50 @@ export async function postChatMessage(
   }
 
   return endpoints.chatRoom.postMessage.responseSchema.parse(json)
+}
+
+export async function getGlobalChatRoom(accessToken: string): Promise<GetGlobalChatRoomResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.globalChatRoom.get.path}`, {
+    method: endpoints.globalChatRoom.get.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '全体チャットルームの取得に失敗しました'))
+  }
+
+  return endpoints.globalChatRoom.get.responseSchema.parse(json)
+}
+
+export async function postGlobalChatMessage(
+  input: PostGlobalChatMessageRequest,
+  accessToken: string,
+): Promise<PostGlobalChatMessageResponse> {
+  const payload = endpoints.globalChatRoom.postMessage.requestSchema.parse(input)
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.globalChatRoom.postMessage.path}`, {
+    method: endpoints.globalChatRoom.postMessage.method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '全体チャットへのメッセージ送信に失敗しました'))
+  }
+
+  return endpoints.globalChatRoom.postMessage.responseSchema.parse(json)
 }
 
 export async function markChatMessagesAlerted(

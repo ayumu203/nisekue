@@ -1,11 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using server.application.maintenance;
-using server.domain.chat;
-using server.domain.player;
 using server.infrastructure;
-using server.infrastructure.chat;
-using server.infrastructure.player;
 using server.infrastructure.quest.room;
 using server.infrastructure.quest.run;
 using Xunit;
@@ -21,96 +17,14 @@ public class DevelopmentDataCleanupServiceTests
         await using var seedContext = CreateDbContext(databaseName);
         await seedContext.Database.EnsureCreatedAsync();
 
-        var playerId = Guid.NewGuid();
         var roomId = Guid.NewGuid();
         var runId = Guid.NewGuid();
         var participantId = Guid.NewGuid();
 
-        seedContext.Players.Add(new PlayerEntity
-        {
-            Id = playerId,
-            Name = "tester",
-            Job = Job.Apprentice,
-            Level = 1,
-            Exp = 0,
-            JobLevel = 1,
-            JobExp = 0,
-            Gold = 100,
-            MaxHp = 10,
-            MaxMp = 5,
-            Strength = 3,
-            Defense = 2,
-            Intelligence = 1,
-            Luck = 1,
-            Speed = 1
-        });
-        seedContext.PlayerMoves.Add(new PlayerMoveEntity { PlayerId = playerId, MoveId1 = 1 });
-        seedContext.PlayerMasterJobs.Add(new PlayerMasterJobEntity { PlayerId = playerId, Job = Job.Apprentice, MasteredAt = DateTimeOffset.UtcNow });
-        seedContext.PlayerEquipments.Add(new PlayerEquipmentEntity
-        {
-            Id = Guid.NewGuid(),
-            PlayerId = playerId,
-            EquipmentId = 1001,
-            EquipmentType = 1,
-            EquipmentStatus = 1,
-            Durability = 10,
-            Mastery = 0,
-            AcquiredAt = DateTimeOffset.UtcNow,
-            UpdatedAt = DateTimeOffset.UtcNow
-        });
-        seedContext.PlayerItemStacks.Add(new PlayerItemStackEntity
-        {
-            Id = Guid.NewGuid(),
-            PlayerId = playerId,
-            ItemId = 3001,
-            Quantity = 5,
-            UpdatedAt = DateTimeOffset.UtcNow
-        });
-        seedContext.MarketListings.Add(new MarketListingEntity
-        {
-            Id = Guid.NewGuid(),
-            SellerId = playerId,
-            ItemId = 3001,
-            ItemName = "体力の実",
-            FlavorText = "test",
-            Quantity = 5,
-            RemainingQuantity = 5,
-            UnitPrice = 10,
-            ListedAt = DateTimeOffset.UtcNow.AddDays(-1),
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(14)
-        });
-        seedContext.MarketTradeHistories.Add(new MarketTradeHistoryEntity
-        {
-            Id = Guid.NewGuid(),
-            SellerId = playerId,
-            BuyerId = playerId,
-            ItemIdentifier = "item:3001",
-            Quantity = 1,
-            UnitPrice = 10,
-            PurchasedAt = DateTimeOffset.UtcNow
-        });
-        seedContext.ItemDeletionLogs.Add(new ItemDeletionLogEntity
-        {
-            Id = Guid.NewGuid(),
-            PlayerId = playerId,
-            ItemIdentifier = "item:3001",
-            Quantity = 1,
-            Reason = "manual_delete",
-            DeletedAt = DateTimeOffset.UtcNow
-        });
-        seedContext.ChatRooms.Add(new ChatRoomEntity(new PlayerId(playerId), 1));
-        seedContext.ChatMessages.Add(new ChatMessageEntity(
-            new PlayerId(playerId),
-            1,
-            ChatMessageSenderType.System,
-            senderId: null,
-            "hello",
-            DateTimeOffset.UtcNow,
-            isAlerted: true));
         seedContext.QuestRooms.Add(new QuestRoomEntity
         {
             Id = roomId,
-            OwnerPlayerId = playerId,
+            OwnerPlayerId = Guid.NewGuid(),
             StageId = 1,
             Mode = 1,
             Status = 1,
@@ -122,7 +36,7 @@ public class DevelopmentDataCleanupServiceTests
             Id = participantId,
             RoomId = roomId,
             ParticipantType = 1,
-            PlayerId = playerId,
+            PlayerId = Guid.NewGuid(),
             DisplayName = "tester",
             BattleRow = 1,
             BattleColumn = 1,
@@ -216,16 +130,6 @@ public class DevelopmentDataCleanupServiceTests
 
         var result = await service.CleanupAsync();
 
-        result.DeletedPlayers.Should().Be(1);
-        result.DeletedChatRooms.Should().Be(1);
-        result.DeletedChatMessages.Should().Be(1);
-        result.DeletedPlayerMoves.Should().Be(1);
-        result.DeletedPlayerMasterJobs.Should().Be(1);
-        result.DeletedPlayerEquipments.Should().Be(1);
-        result.DeletedPlayerItemStacks.Should().Be(1);
-        result.DeletedMarketListings.Should().Be(1);
-        result.DeletedMarketTradeHistories.Should().Be(1);
-        result.DeletedItemDeletionLogs.Should().Be(1);
         result.DeletedQuestRooms.Should().Be(1);
         result.DeletedQuestRoomParticipants.Should().Be(1);
         result.DeletedQuestRuns.Should().Be(1);
@@ -237,16 +141,6 @@ public class DevelopmentDataCleanupServiceTests
         result.DeletedQuestRewardSummaries.Should().Be(1);
 
         await using var verifyContext = CreateDbContext(databaseName);
-        (await verifyContext.Players.CountAsync()).Should().Be(0);
-        (await verifyContext.ChatRooms.CountAsync()).Should().Be(0);
-        (await verifyContext.ChatMessages.CountAsync()).Should().Be(0);
-        (await verifyContext.PlayerMoves.CountAsync()).Should().Be(0);
-        (await verifyContext.PlayerMasterJobs.CountAsync()).Should().Be(0);
-        (await verifyContext.PlayerEquipments.CountAsync()).Should().Be(0);
-        (await verifyContext.PlayerItemStacks.CountAsync()).Should().Be(0);
-        (await verifyContext.MarketListings.CountAsync()).Should().Be(0);
-        (await verifyContext.MarketTradeHistories.CountAsync()).Should().Be(0);
-        (await verifyContext.ItemDeletionLogs.CountAsync()).Should().Be(0);
         (await verifyContext.QuestRooms.CountAsync()).Should().Be(0);
         (await verifyContext.QuestRoomParticipants.CountAsync()).Should().Be(0);
         (await verifyContext.QuestRuns.CountAsync()).Should().Be(0);

@@ -1,11 +1,7 @@
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using server.application.chat;
-using server.application.maintenance;
 using server.application.player;
 using server.domain.move;
 using server.domain.player;
@@ -18,7 +14,6 @@ namespace server.endpoints;
 internal static class ItemEndpoints
 {
     private const int ItemCapacity = 20;
-    private const string MaintenanceTokenHeaderName = "X-Maintenance-Token";
 
     internal static WebApplication MapItemEndpoints(this WebApplication app)
     {
@@ -162,6 +157,42 @@ internal static class ItemEndpoints
                             player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
                             break;
                         }
+                    case ItemEffectType.ExpMultiplier:
+                        {
+                            if (request.Quantity != 1)
+                            {
+                                return Results.BadRequest(new { message = "経験値倍率アイテムは1個ずつのみ使用できます。" });
+                            }
+
+                            if (item.ExpMultiplier is null)
+                            {
+                                return Results.BadRequest(new { message = "経験値倍率が定義されていません。" });
+                            }
+
+                            if (player.HasAnyExpMultiplierFlag())
+                            {
+                                return Results.BadRequest(new { message = "すでに経験値倍率が設定されています。効果が切れてから使用してください。" });
+                            }
+
+                            var flag = ExpMultiplierFlag.ToFlag(item.ExpMultiplier.Value);
+                            player.SetExpMultiplierFlag(flag);
+                            break;
+                        }
+                    case ItemEffectType.UnlockMap:
+                        {
+                            if (request.Quantity != 1)
+                            {
+                                return Results.BadRequest(new { message = "マップ解放アイテムは1個ずつのみ使用できます。" });
+                            }
+
+                            if (item.MapUnlockFlag is null)
+                            {
+                                return Results.BadRequest(new { message = "マップ解放フラグが定義されていません。" });
+                            }
+
+                            player.SetMapUnlockFlag(item.MapUnlockFlag.Value);
+                            break;
+                        }
                     default:
                         return Results.BadRequest(new { message = "未対応のアイテム効果です。" });
                 }
@@ -177,7 +208,7 @@ internal static class ItemEndpoints
                     await playerItemStackRepository.SaveAsync([stack]);
                 }
             }
-            catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException)
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException or ArgumentException)
             {
                 return Results.BadRequest(new { message = ex.Message });
             }
@@ -185,9 +216,10 @@ internal static class ItemEndpoints
             return Results.Ok(new { message = "アイテムを使用しました。" });
         }).RequireAuthorization();
 
-        app.MapPost("/items/equipments/{playerEquipmentId:guid}/synthesize", async (
+        app.MapPost("/items/equipments/{targetId:guid}/synthesize", async (
             ClaimsPrincipal user,
-            Guid playerEquipmentId,
+            Guid targetId,
+            SynthesizeEquipmentRequest request,
             IPlayerRepository playerRepository,
             IPlayerEquipmentRepository playerEquipmentRepository,
             IEquipmentRepository equipmentRepository) =>
@@ -205,40 +237,36 @@ internal static class ItemEndpoints
             }
 
             var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(player.Id)).ToList();
-            var source = playerEquipments.FirstOrDefault(x => x.Id == new PlayerEquipmentId(playerEquipmentId));
-            if (source is null || source.Status != EquipmentStatus.Inventory || source.IsBroken)
+            var target = playerEquipments.FirstOrDefault(x => x.Id == new PlayerEquipmentId(targetId));
+            if (target is null)
+            {
+                return Results.BadRequest(new { message = "合成対象の装備が見つかりません。" });
+            }
+
+            var source = playerEquipments.FirstOrDefault(x => x.Id == new PlayerEquipmentId(request.SourcePlayerEquipmentId));
+            if (source is null)
             {
                 return Results.BadRequest(new { message = "合成素材として使える装備が見つかりません。" });
             }
 
             var equipmentMasters = await equipmentRepository.GetAllAsync();
             var equipmentById = equipmentMasters.ToDictionary(x => x.Id);
-            if (!equipmentById.TryGetValue(source.EquipmentId, out var master))
+            if (!equipmentById.TryGetValue(target.EquipmentId, out var master))
             {
                 return Results.BadRequest(new { message = "装備マスタが見つかりません。" });
             }
 
-            var target = playerEquipments.FirstOrDefault(x =>
-                x.Status == EquipmentStatus.Equipped &&
-                x.EquipmentId == source.EquipmentId &&
-                !x.IsBroken);
-            if (target is null)
-            {
-                return Results.BadRequest(new { message = "同一装備中の回復先が見つかりません。" });
-            }
-
             try
             {
-                player.SpendGold(master.SynthesisGoldCost);
-                var recovered = (int)Math.Ceiling(source.Durability / 3m);
-                target.RepairDurability(recovered, master.MaxDurability, DateTimeOffset.UtcNow);
+                var goldCost = master.SynthesisGoldCost * (target.PlusValue + 1);
+                player.SpendGold(goldCost);
+                target.Synthesize(source, goldCost, DateTimeOffset.UtcNow);
             }
             catch (InvalidOperationException ex)
             {
                 return Results.BadRequest(new { message = ex.Message });
             }
 
-            var nowUtc = DateTimeOffset.UtcNow;
             await playerRepository.SaveAsync(player);
             await playerEquipmentRepository.SaveAsync(playerEquipments.Where(x => x.Id != source.Id).ToArray());
             await playerEquipmentRepository.DeleteAsync(source.Id);
@@ -247,8 +275,7 @@ internal static class ItemEndpoints
             {
                 message = "合成しました。",
                 targetPlayerEquipmentId = target.Id.Value,
-                durability = target.Durability,
-                maxDurability = master.MaxDurability,
+                plusValue = target.PlusValue,
                 gold = player.Gold
             });
         }).RequireAuthorization();
@@ -367,7 +394,7 @@ internal static class ItemEndpoints
                     return Results.NotFound(new { message = "出品対象の装備が見つかりません。" });
                 }
 
-                if ((EquipmentStatus)equipmentEntity.EquipmentStatus == EquipmentStatus.Equipped || equipmentEntity.Durability <= 0)
+                if ((EquipmentStatus)equipmentEntity.EquipmentStatus == EquipmentStatus.Equipped || (EquipmentStatus)equipmentEntity.EquipmentStatus == EquipmentStatus.Broken)
                 {
                     return Results.BadRequest(new { message = "この装備は出品できません。" });
                 }
@@ -716,85 +743,6 @@ internal static class ItemEndpoints
             return Results.Ok(new { message = "購入しました。", gold = buyer.Gold });
         }).RequireAuthorization();
 
-        app.MapPost("/internal/market/listings/cleanup-expired", async (
-            HttpRequest request,
-            IConfiguration configuration,
-            MarketListingCleanupService marketListingCleanupService) =>
-        {
-            var expectedToken = configuration["Maintenance:MarketCleanupToken"];
-            if (string.IsNullOrWhiteSpace(expectedToken))
-            {
-                return Results.Problem(
-                    detail: "Maintenance:MarketCleanupToken が設定されていません。",
-                    statusCode: StatusCodes.Status503ServiceUnavailable);
-            }
-
-            var providedToken = request.Headers[MaintenanceTokenHeaderName].ToString();
-            if (!SecureEquals(providedToken, expectedToken))
-            {
-                return Results.Unauthorized();
-            }
-
-            var result = await marketListingCleanupService.DeleteExpiredAsync(DateTimeOffset.UtcNow);
-            return Results.Ok(new
-            {
-                message = "期限切れ出品を削除しました。",
-                deletedListings = result.DeletedListings,
-                deletedEquipments = result.DeletedEquipments,
-                deletedItemQuantity = result.DeletedItemQuantity
-            });
-        }).ExcludeFromDescription();
-
-        app.MapPost("/internal/development/cleanup-game-data", async (
-            HttpRequest request,
-            IConfiguration configuration,
-            IWebHostEnvironment environment,
-            DevelopmentDataCleanupService developmentDataCleanupService) =>
-        {
-
-            if (!IsLocalDevelopmentRequest(request))
-            {
-                var expectedToken = configuration["Maintenance:MarketCleanupToken"];
-                if (string.IsNullOrWhiteSpace(expectedToken))
-                {
-                    return Results.Problem(
-                        detail: "Maintenance:MarketCleanupToken が設定されていません。",
-                        statusCode: StatusCodes.Status503ServiceUnavailable);
-                }
-
-                var providedToken = request.Headers[MaintenanceTokenHeaderName].ToString();
-                if (!SecureEquals(providedToken, expectedToken))
-                {
-                    return Results.Unauthorized();
-                }
-            }
-
-            var result = await developmentDataCleanupService.CleanupAsync();
-            return Results.Ok(new
-            {
-                message = "開発用ゲームデータを削除しました。",
-                deletedPlayers = result.DeletedPlayers,
-                deletedChatRooms = result.DeletedChatRooms,
-                deletedChatMessages = result.DeletedChatMessages,
-                deletedPlayerMoves = result.DeletedPlayerMoves,
-                deletedPlayerMasterJobs = result.DeletedPlayerMasterJobs,
-                deletedPlayerEquipments = result.DeletedPlayerEquipments,
-                deletedPlayerItemStacks = result.DeletedPlayerItemStacks,
-                deletedMarketListings = result.DeletedMarketListings,
-                deletedMarketTradeHistories = result.DeletedMarketTradeHistories,
-                deletedItemDeletionLogs = result.DeletedItemDeletionLogs,
-                deletedQuestRooms = result.DeletedQuestRooms,
-                deletedQuestRoomParticipants = result.DeletedQuestRoomParticipants,
-                deletedQuestRuns = result.DeletedQuestRuns,
-                deletedQuestRunPartySnapshots = result.DeletedQuestRunPartySnapshots,
-                deletedQuestRunPartyMembers = result.DeletedQuestRunPartyMembers,
-                deletedQuestRunEnemies = result.DeletedQuestRunEnemies,
-                deletedQuestTurnCommands = result.DeletedQuestTurnCommands,
-                deletedQuestFloorTraps = result.DeletedQuestFloorTraps,
-                deletedQuestRewardSummaries = result.DeletedQuestRewardSummaries
-            });
-        }).ExcludeFromDescription();
-
         return app;
     }
 
@@ -823,8 +771,7 @@ internal static class ItemEndpoints
             flavorText = equipment.FlavorText,
             equipmentType = equipment.Type.ToString(),
             status = playerEquipment.Status.ToString(),
-            durability = playerEquipment.Durability,
-            maxDurability = equipment.MaxDurability,
+            plusValue = playerEquipment.PlusValue,
             mastery = playerEquipment.Mastery,
             masteryCap = equipment.MasteryCap,
             synthesisGoldCost = equipment.SynthesisGoldCost,
@@ -852,6 +799,7 @@ internal static class ItemEndpoints
             quantity = stack.Quantity,
             canUseFromInventory = !treasureMapItemIds.Contains(item.Id.Value),
             effectType = item.EffectType.ToString(),
+            expMultiplier = item.ExpMultiplier,
             requiredLevel = item.RequiredLevel,
             changeJobTo = item.ChangeJobTo?.ToString(),
             statusBonus = item.StatusBonus is null
@@ -932,7 +880,8 @@ internal static class ItemEndpoints
                     x.EquipmentId,
                     (EquipmentType)x.EquipmentType,
                     x.Durability,
-                    x.Mastery));
+                    x.Mastery,
+                    x.PlusValue));
     }
 
     private static async Task<IReadOnlyDictionary<Guid, string>> BuildListingCategoryMapAsync(
@@ -994,8 +943,7 @@ internal static class ItemEndpoints
 
             details[listing.Id.Value] = new EquipmentMarketDetailView(
                 equipment.Type.ToString(),
-                playerEquipmentSnapshot.Durability,
-                equipment.MaxDurability,
+                playerEquipmentSnapshot.PlusValue,
                 playerEquipmentSnapshot.Mastery,
                 equipment.MasteryCap,
                 ToStatusBonusView(equipment.BonusValues));
@@ -1020,12 +968,12 @@ internal static class ItemEndpoints
         int EquipmentId,
         EquipmentType EquipmentType,
         int Durability,
-        int Mastery);
+        int Mastery,
+        int PlusValue);
 
     private sealed record EquipmentMarketDetailView(
         string EquipmentType,
-        int Durability,
-        int MaxDurability,
+        int PlusValue,
         int Mastery,
         int MasteryCap,
         StatusBonusView StatusBonus);
@@ -1038,32 +986,4 @@ internal static class ItemEndpoints
         int Intelligence,
         int Luck,
         int Speed);
-
-    private static bool SecureEquals(string actual, string expected)
-    {
-        if (string.IsNullOrEmpty(actual) || string.IsNullOrEmpty(expected))
-        {
-            return false;
-        }
-
-        var actualBytes = Encoding.UTF8.GetBytes(actual);
-        var expectedBytes = Encoding.UTF8.GetBytes(expected);
-        if (actualBytes.Length != expectedBytes.Length)
-        {
-            return false;
-        }
-
-        return CryptographicOperations.FixedTimeEquals(actualBytes, expectedBytes);
-    }
-
-    private static bool IsLocalDevelopmentRequest(HttpRequest request)
-    {
-        var remoteIp = request.HttpContext.Connection.RemoteIpAddress;
-        if (remoteIp is null)
-        {
-            return false;
-        }
-
-        return IPAddress.IsLoopback(remoteIp);
-    }
 }

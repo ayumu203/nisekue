@@ -16,6 +16,10 @@ import {
   sendPlayerGiftRequestSchema,
   sendPlayerGiftResponseSchema,
   rebirthPlayerResponseSchema,
+  unlockJobRoadmapRequestSchema,
+  unlockJobRoadmapResponseSchema,
+  jobRoadmapListResponseSchema,
+  jobRoadmapResponseSchema,
 } from '@/schema/player'
 import {
   getChatRoomRequestSchema,
@@ -24,6 +28,9 @@ import {
   markChatMessagesAlertedResponseSchema,
   postChatMessageRequestSchema,
   postChatMessageResponseSchema,
+  getGlobalChatRoomResponseSchema,
+  postGlobalChatMessageRequestSchema,
+  postGlobalChatMessageResponseSchema,
 } from '@/schema/chat'
 import {
   createThreadReplyRequestSchema,
@@ -68,6 +75,7 @@ import {
   useItemRequestSchema,
   itemActionResponseSchema,
   synthesizeEquipmentResponseSchema,
+  synthesizeEquipmentRequestSchema,
   createMarketListingRequestSchema,
   createMarketListingResponseSchema,
   getMarketListingsResponseSchema,
@@ -103,6 +111,12 @@ export type {
   SendPlayerGiftRequest,
   SendPlayerGiftResponse,
   RebirthPlayerResponse,
+  UnlockJobRoadmapRequest,
+  UnlockJobRoadmapResponse,
+  JobRoadmapListEntry,
+  JobRoadmapListResponse,
+  JobRoadmapResponse,
+  JobRoadmapNode,
 } from '@/schema/player'
 export type {
   GetChatRoomRequest,
@@ -244,6 +258,22 @@ export const endpoints = {
       method: 'POST',
       responseSchema: rebirthPlayerResponseSchema,
     },
+    jobRoadmapList: {
+      path: '/player/job-roadmap/list',
+      method: 'GET',
+      responseSchema: jobRoadmapListResponseSchema,
+    },
+    jobRoadmap: {
+      path: (jobId: number) => `/player/job-roadmap?job=${jobId}`,
+      method: 'GET',
+      responseSchema: jobRoadmapResponseSchema,
+    },
+    unlockJobRoadmap: {
+      path: '/player/job-roadmap/unlock',
+      method: 'PUT',
+      requestSchema: unlockJobRoadmapRequestSchema,
+      responseSchema: unlockJobRoadmapResponseSchema,
+    },
   },
   chatRoom: {
     get: {
@@ -263,6 +293,19 @@ export const endpoints = {
       method: 'POST',
       requestSchema: markChatMessagesAlertedRequestSchema,
       responseSchema: markChatMessagesAlertedResponseSchema,
+    },
+  },
+  globalChatRoom: {
+    get: {
+      path: '/chat/global',
+      method: 'GET',
+      responseSchema: getGlobalChatRoomResponseSchema,
+    },
+    postMessage: {
+      path: '/chat/global/messages',
+      method: 'POST',
+      requestSchema: postGlobalChatMessageRequestSchema,
+      responseSchema: postGlobalChatMessageResponseSchema,
     },
   },
   thread: {
@@ -449,8 +492,9 @@ export const endpoints = {
       responseSchema: itemActionResponseSchema,
     },
     synthesize: {
-      path: (playerEquipmentId: string) => `/items/equipments/${playerEquipmentId}/synthesize`,
+      path: (targetId: string) => `/items/equipments/${targetId}/synthesize`,
       method: 'POST',
+      requestSchema: synthesizeEquipmentRequestSchema,
       responseSchema: synthesizeEquipmentResponseSchema,
     },
     deleteEquipment: {

@@ -49,7 +49,7 @@ public class CsvItemRepository : IItemRepository
             }
 
             var columns = line.Split(',', StringSplitOptions.TrimEntries);
-            if (columns.Length != 22)
+            if (columns.Length != 24)
             {
                 throw new InvalidOperationException($"item_master.csv の形式が不正です。行: {i + 1}");
             }
@@ -61,6 +61,16 @@ public class CsvItemRepository : IItemRepository
             }
 
             var effectType = ParseEnum<ItemEffectType>(columns[3], "effect_type", i + 1);
+            var expMultiplier = effectType == ItemEffectType.ExpMultiplier
+                ? ParseDecimal(columns[22], "exp_multiplier", i + 1)
+                : (decimal?)null;
+            var mapUnlockFlag = effectType == ItemEffectType.UnlockMap
+                ? ParseInt(columns[23], "map_unlock_flag", i + 1)
+                : (int?)null;
+            if (mapUnlockFlag is not null && !MapUnlockFlag.IsValidFlag(mapUnlockFlag.Value))
+            {
+                throw new InvalidOperationException($"item_master.csv の map_unlock_flag が不正です。value: {mapUnlockFlag}, 行: {i + 1}");
+            }
             map[itemId] = new Item(
                 itemId,
                 columns[1],
@@ -89,7 +99,9 @@ public class CsvItemRepository : IItemRepository
                     : null,
                 changeJobTo: string.IsNullOrWhiteSpace(columns[5]) ? null : ParseEnum<Job>(columns[5], "change_job_to", i + 1),
                 requiredLevel: ParseNullableInt(columns[6], "required_level", i + 1),
-                requiredMasterJobs: ParseJobs(columns[14], i + 1));
+                requiredMasterJobs: ParseJobs(columns[14], i + 1),
+                expMultiplier: expMultiplier,
+                mapUnlockFlag: mapUnlockFlag);
         }
 
         return map;
@@ -142,6 +154,16 @@ public class CsvItemRepository : IItemRepository
         if (!Enum.TryParse<TEnum>(value, false, out var parsed))
         {
             throw new InvalidOperationException($"CSVの列値が不正です。column: {columnName}, value: {value}, 行: {lineNumber}");
+        }
+
+        return parsed;
+    }
+
+    private static decimal ParseDecimal(string value, string columnName, int lineNumber)
+    {
+        if (!decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed))
+        {
+            throw new InvalidOperationException($"CSVの数値変換に失敗しました。column: {columnName}, 行: {lineNumber}");
         }
 
         return parsed;

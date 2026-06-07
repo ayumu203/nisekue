@@ -712,6 +712,95 @@ internal static class PlayerEndpoints
             }
         }).RequireAuthorization();
 
+        app.MapGet("/player/job-roadmap/list", async (
+            ClaimsPrincipal user,
+            JobRoadmapService jobRoadmapService) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                var list = await jobRoadmapService.GetListAsync(playerId.Value);
+                return Results.Ok(list);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message, userId = playerId.Value.Value });
+            }
+        }).RequireAuthorization();
+
+        app.MapGet("/player/job-roadmap", async (
+            ClaimsPrincipal user,
+            int job,
+            JobRoadmapService jobRoadmapService) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (!Enum.IsDefined(typeof(Job), job))
+            {
+                return Results.BadRequest(new { message = "jobの値が不正です。" });
+            }
+
+            try
+            {
+                var roadmap = await jobRoadmapService.GetRoadmapAsync(playerId.Value, (Job)job);
+                return Results.Ok(roadmap);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message, userId = playerId.Value.Value });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
+        }).RequireAuthorization();
+
+        app.MapPut("/player/job-roadmap/unlock", async (
+            ClaimsPrincipal user,
+            UnlockJobRoadmapRequest request,
+            JobRoadmapService jobRoadmapService) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (!Enum.IsDefined(typeof(Job), request.JobId))
+            {
+                return Results.BadRequest(new { message = "jobIdの値が不正です。" });
+            }
+
+            try
+            {
+                var result = await jobRoadmapService.UnlockAsync(playerId.Value, (Job)request.JobId);
+                return Results.Ok(new
+                {
+                    jobId = result.JobId,
+                    jobName = result.JobName,
+                    paidGold = result.PaidGold,
+                    remainingGold = result.RemainingGold
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message, userId = playerId.Value.Value });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
+        }).RequireAuthorization();
+
         return app;
     }
 
@@ -796,8 +885,7 @@ internal static class PlayerEndpoints
                     flavorText = equipment.FlavorText,
                     equipmentType = equipment.Type.ToString(),
                     status = playerEquipment.Status.ToString(),
-                    durability = playerEquipment.Durability,
-                    maxDurability = equipment.MaxDurability,
+                    plusValue = playerEquipment.PlusValue,
                     mastery = playerEquipment.Mastery,
                     masteryCap = equipment.MasteryCap,
                     synthesisGoldCost = equipment.SynthesisGoldCost,
@@ -927,6 +1015,7 @@ internal static class PlayerEndpoints
             (EquipmentStatus)entity.EquipmentStatus,
             entity.Durability,
             entity.Mastery,
+            entity.PlusValue,
             entity.AcquiredAt,
             entity.UpdatedAt);
     }
@@ -937,6 +1026,7 @@ internal static class PlayerEndpoints
         entity.EquipmentStatus = (int)equipment.Status;
         entity.Durability = equipment.Durability;
         entity.Mastery = equipment.Mastery;
+        entity.PlusValue = equipment.PlusValue;
         entity.UpdatedAt = equipment.UpdatedAt;
     }
 
@@ -991,6 +1081,7 @@ internal static class PlayerEndpoints
             EquipmentStatus.Inventory,
             durability: equipment.MaxDurability,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: now,
             updatedAt: now);
         playerEquipment.Equip(equipment, player.Job, now);

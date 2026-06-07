@@ -1,4 +1,5 @@
 using server.domain.player;
+using server.shared.constants.chat;
 
 namespace server.domain.chat;
 
@@ -46,11 +47,11 @@ public class ChatRoom(PlayerId ownerId, int lastChatId = 0)
         EnforceMessageLimit();
     }
 
-    public void EnforceMessageLimit()
+    private void EnforceMessageLimit()
     {
-        if (_messages.Count <= 50) return;
+        if (_messages.Count <= ChatConstants.MessageLimit) return;
 
-        _messages.RemoveRange(0, _messages.Count - 50);
+        _messages.RemoveRange(0, _messages.Count - ChatConstants.MessageLimit);
     }
 
     public void RestoreMessages(IEnumerable<ChatMessage> messages)

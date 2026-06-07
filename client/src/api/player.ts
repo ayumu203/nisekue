@@ -19,6 +19,10 @@ import type {
   SendPlayerGiftRequest,
   SendPlayerGiftResponse,
   RebirthPlayerResponse,
+  UnlockJobRoadmapRequest,
+  UnlockJobRoadmapResponse,
+  JobRoadmapListResponse,
+  JobRoadmapResponse,
 } from '@/schema/player'
 
 export async function getPlayer(accessToken: string): Promise<GetPlayerResponse> {
@@ -288,4 +292,71 @@ export async function rebirthPlayer(accessToken: string): Promise<RebirthPlayerR
   }
 
   return endpoints.player.rebirth.responseSchema.parse(json)
+}
+
+export async function getJobRoadmapList(accessToken: string): Promise<JobRoadmapListResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.jobRoadmapList.path}`, {
+    method: endpoints.player.jobRoadmapList.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'ロードマップ一覧の取得に失敗しました'))
+  }
+
+  return endpoints.player.jobRoadmapList.responseSchema.parse(json)
+}
+
+export async function getJobRoadmap(jobId: number, accessToken: string): Promise<JobRoadmapResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.jobRoadmap.path(jobId)}`, {
+    method: endpoints.player.jobRoadmap.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'ロードマップの取得に失敗しました'))
+  }
+
+  return endpoints.player.jobRoadmap.responseSchema.parse(json)
+}
+
+export async function unlockJobRoadmap(
+  input: UnlockJobRoadmapRequest,
+  accessToken: string,
+): Promise<UnlockJobRoadmapResponse> {
+  const parsedPayload = endpoints.player.unlockJobRoadmap.requestSchema.safeParse(input)
+  if (!parsedPayload.success) {
+    throw new Error(parsedPayload.error.issues[0]?.message ?? '入力内容が不正です')
+  }
+  const payload = parsedPayload.data
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.unlockJobRoadmap.path}`, {
+    method: endpoints.player.unlockJobRoadmap.method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'ロードマップの解放に失敗しました'))
+  }
+
+  return endpoints.player.unlockJobRoadmap.responseSchema.parse(json)
 }

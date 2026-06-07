@@ -9,6 +9,7 @@ using server.domain.move.enums;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
+using server.domain.treasuremap;
 using Xunit;
 
 namespace server.tests.quest;
@@ -123,6 +124,91 @@ public class QuestRunServiceTests
         var player = await playerRepository.GetPlayerAsync(room.Participants.Single().PlayerId!.Value);
         player.Should().NotBeNull();
         player!.QuestCooldownUntil.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenPlayerHasExpMultiplierFlag_AppliesMultiplierAndClearsFlag()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var playerId = room.Participants.Single().PlayerId!.Value;
+        var player = new Player(
+            playerId,
+            "Owner",
+            level: 1,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            gold: 100,
+            status: new Status(10, 10, 10, 10, 10, 10, 10),
+            job: Job.Warrior,
+            imagePath: "/images/player.png",
+            moveSet: new MoveSet());
+        player.SetExpMultiplierFlag(ExpMultiplierFlag.ToFlag(2.0m));
+        var playerRepository = new FakePlayerRepository(player);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var stage = CreateStage(run.StageId, floorRewardRule: new QuestFloorRewardRule(1.0m, 0));
+        var service = CreateRunService(repository, roomRepository, playerRepository, stage, []);
+        var target = run.BattleState.Enemies.Single().Position;
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: target));
+
+        var savedPlayer = await playerRepository.GetPlayerAsync(playerId);
+        savedPlayer.Should().NotBeNull();
+        savedPlayer!.Exp.Should().Be(2);
+        savedPlayer.JobExp.Should().Be(2);
+        savedPlayer.ExpMultiplierFlags.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenPlayerHasNoExpMultiplierFlag_GrantsBaseExp()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var playerId = room.Participants.Single().PlayerId!.Value;
+        var player = new Player(
+            playerId,
+            "Owner",
+            level: 1,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            gold: 100,
+            status: new Status(10, 10, 10, 10, 10, 10, 10),
+            job: Job.Warrior,
+            imagePath: "/images/player.png",
+            moveSet: new MoveSet());
+        var playerRepository = new FakePlayerRepository(player);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var stage = CreateStage(run.StageId, floorRewardRule: new QuestFloorRewardRule(1.0m, 0));
+        var service = CreateRunService(repository, roomRepository, playerRepository, stage, []);
+        var target = run.BattleState.Enemies.Single().Position;
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: target));
+
+        var savedPlayer = await playerRepository.GetPlayerAsync(playerId);
+        savedPlayer.Should().NotBeNull();
+        savedPlayer!.Exp.Should().Be(1);
+        savedPlayer.JobExp.Should().Be(1);
+        savedPlayer.ExpMultiplierFlags.Should().Be(0);
     }
 
     [Fact]
@@ -600,7 +686,7 @@ public class QuestRunServiceTests
     }
 
     [Fact]
-    public async Task ResolveTurnAsync_WhenRunEnds_ConsumesSnapshottedEquipmentDurability()
+    public async Task ResolveTurnAsync_WhenRunEnds_DoesNotConsumeEquipmentDurability()
     {
         var playerId = new PlayerId(Guid.NewGuid());
         var participantId = QuestParticipantId.New();
@@ -621,6 +707,7 @@ public class QuestRunServiceTests
             EquipmentStatus.Equipped,
             durability: 2,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
@@ -638,6 +725,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -653,12 +741,12 @@ public class QuestRunServiceTests
 
         var stored = await playerEquipmentRepository.GetAsync(run.PartySnapshots[0].WeaponEquipmentId!.Value);
         stored.Should().NotBeNull();
-        stored!.Durability.Should().Be(1);
+        stored!.Durability.Should().Be(2);
         stored.Status.Should().Be(EquipmentStatus.Equipped);
     }
 
     [Fact]
-    public async Task ResolveTurnAsync_WhenRunEndsWithLastDurabilityEquipment_MarksBroken()
+    public async Task ResolveTurnAsync_WhenRunEndsWithLowDurabilityEquipment_DoesNotMarkBroken()
     {
         var playerId = new PlayerId(Guid.NewGuid());
         var participantId = QuestParticipantId.New();
@@ -679,6 +767,7 @@ public class QuestRunServiceTests
             EquipmentStatus.Equipped,
             durability: 1,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var playerEquipmentRepository = new FakePlayerEquipmentRepository(playerEquipment);
@@ -696,6 +785,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -711,8 +801,8 @@ public class QuestRunServiceTests
 
         var stored = await playerEquipmentRepository.GetAsync(run.PartySnapshots[0].WeaponEquipmentId!.Value);
         stored.Should().NotBeNull();
-        stored!.Durability.Should().Be(0);
-        stored.Status.Should().Be(EquipmentStatus.Broken);
+        stored!.Durability.Should().Be(1);
+        stored.Status.Should().Be(EquipmentStatus.Equipped);
     }
 
     [Fact]
@@ -756,6 +846,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -813,6 +904,7 @@ public class QuestRunServiceTests
                 EquipmentStatus.Inventory,
                 durability: 10,
                 mastery: 0,
+                plusValue: 0,
                 acquiredAt: DateTimeOffset.UtcNow,
                 updatedAt: DateTimeOffset.UtcNow))
             .ToArray();
@@ -831,6 +923,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -881,6 +974,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -938,6 +1032,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(rewardItem),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -997,6 +1092,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(rewardItem),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1061,6 +1157,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1125,6 +1222,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory(),
             _ => rolls.Dequeue());
@@ -1178,6 +1276,7 @@ public class QuestRunServiceTests
             EquipmentStatus.Inventory,
             durability: 10,
             mastery: 0,
+            plusValue: 0,
             acquiredAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var otherEquipments = Enumerable.Range(1, 19)
@@ -1189,6 +1288,7 @@ public class QuestRunServiceTests
                 EquipmentStatus.Inventory,
                 durability: 10,
                 mastery: 0,
+                plusValue: 0,
                 acquiredAt: DateTimeOffset.UtcNow,
                 updatedAt: DateTimeOffset.UtcNow))
             .ToArray();
@@ -1219,6 +1319,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1304,6 +1405,251 @@ public class QuestRunServiceTests
             x.Logs.Contains("Slimeは行動前に倒れた"));
     }
 
+    [Fact]
+    public async Task ClearMapUnlockFlag_WhenQuestSucceeds_ClearsOwnerFlag()
+    {
+        var ownerPlayerId = new PlayerId(Guid.NewGuid());
+        var owner = new Player(
+            ownerPlayerId,
+            "Owner",
+            level: 1,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            gold: 100,
+            new Status(50, 10, 50, 5, 1, 1, 50),
+            job: Job.Warrior);
+        owner.SetMapUnlockFlag(MapUnlockFlag.Map1);
+        var run = CreateRun();
+        var room = CreateRoom(run, ownerPlayerId);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var stage = CreateStage(run.StageId, requiredMapUnlockFlag: MapUnlockFlag.Map1);
+        var playerRepository = new FakePlayerRepository(owner);
+        var service = CreateRunService(repository, roomRepository, playerRepository, stage, []);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow));
+
+        owner.HasMapUnlockFlag(MapUnlockFlag.Map1).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ClearMapUnlockFlag_WhenQuestFails_ClearsOwnerFlag()
+    {
+        var ownerPlayerId = new PlayerId(Guid.NewGuid());
+        var owner = new Player(
+            ownerPlayerId,
+            "Owner",
+            level: 1,
+            exp: 0,
+            jobLevel: 1,
+            jobExp: 0,
+            gold: 100,
+            new Status(50, 10, 50, 5, 1, 1, 50),
+            job: Job.Warrior);
+        owner.SetMapUnlockFlag(MapUnlockFlag.Map1);
+        var run = CreateRun();
+        var room = CreateRoom(run, ownerPlayerId);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var stage = CreateStage(run.StageId, requiredMapUnlockFlag: MapUnlockFlag.Map1);
+        var playerRepository = new FakePlayerRepository(owner);
+        var service = CreateRunService(repository, roomRepository, playerRepository, stage, []);
+
+        await service.EscapeAsync(run.Id, ownerPlayerId);
+
+        owner.HasMapUnlockFlag(MapUnlockFlag.Map1).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ClearMapUnlockFlag_WhenQuestSucceeds_DoesNotClearNonOwnerParticipantFlag()
+    {
+        var ownerPlayerId = new PlayerId(Guid.NewGuid());
+        var participantPlayerId = new PlayerId(Guid.NewGuid());
+
+        var playerParticipantId = QuestParticipantId.New();
+        var guestParticipantId = QuestParticipantId.New();
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(playerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(50, 10, 50, 5, 1, 1, 50), new MoveSet(), 50, 10),
+                new PartyMemberSeed(guestParticipantId, ParticipantType.Player, "Guest", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Right), ActionMode.AutoAttackOnly, new Status(50, 10, 50, 5, 1, 1, 50), new MoveSet(), 50, 10)
+            ],
+            [new BattlePosition(BattleRow.Front, BattleColumn.Right)],
+            enemyHp: 1);
+        var room = CreateRoom(run, ownerPlayerId);
+        room = ReplaceSecondPlayer(room, participantPlayerId);
+
+        var owner = new Player(ownerPlayerId, "Owner", level: 1, exp: 0, jobLevel: 1, jobExp: 0, gold: 100, new Status(50, 10, 50, 5, 1, 1, 50), job: Job.Warrior);
+        owner.SetMapUnlockFlag(MapUnlockFlag.Map1);
+        var participant = new Player(participantPlayerId, "Guest", level: 1, exp: 0, jobLevel: 1, jobExp: 0, gold: 100, new Status(50, 10, 50, 5, 1, 1, 50), job: Job.Warrior);
+        participant.SetMapUnlockFlag(MapUnlockFlag.Map1);
+
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var stage = CreateStage(run.StageId, requiredMapUnlockFlag: MapUnlockFlag.Map1);
+        var playerRepository = new FakePlayerRepository(owner, participant);
+        var service = CreateRunService(repository, roomRepository, playerRepository, stage, []);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow));
+
+        owner.HasMapUnlockFlag(MapUnlockFlag.Map1).Should().BeFalse();
+        participant.HasMapUnlockFlag(MapUnlockFlag.Map1).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenQuestSucceeds_WithInProgressExpedition_AdvancesExpeditionByFiveMinutes()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerRepository = new FakePlayerRepository(room.Participants.Single().PlayerId!.Value);
+        var stage = CreateStage(run.StageId);
+
+        var now = DateTimeOffset.UtcNow;
+        var endsAt = now.AddHours(1);
+        var expedition = new TreasureMapExpedition(
+            TreasureMapExpeditionId.New(),
+            new TreasureMapId(1),
+            room.Participants.Single().PlayerId!.Value,
+            startedAt: now,
+            endsAt: endsAt);
+        var expeditionRepository = new FakeTreasureMapExpeditionRepository(expedition);
+
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            new FakePlayerEquipmentRepository(),
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
+            new FakeItemRepository(),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            expeditionRepository,
+            new BattleService(),
+            new QuestBattleFactory());
+
+        var target = run.BattleState.Enemies.Single().Position;
+        await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: target));
+
+        expeditionRepository.StoredExpedition!.EndsAt.Should().Be(endsAt.AddMinutes(-5));
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenQuestSucceeds_WithNoExpedition_DoesNotAdvance()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerRepository = new FakePlayerRepository(room.Participants.Single().PlayerId!.Value);
+        var stage = CreateStage(run.StageId);
+        var expeditionRepository = new FakeTreasureMapExpeditionRepository(expedition: null);
+
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            new FakePlayerEquipmentRepository(),
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
+            new FakeItemRepository(),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            expeditionRepository,
+            new BattleService(),
+            new QuestBattleFactory());
+
+        var target = run.BattleState.Enemies.Single().Position;
+        var act = async () => await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: target));
+
+        await act.Should().NotThrowAsync();
+        expeditionRepository.SaveCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenQuestFails_WithInProgressExpedition_DoesNotAdvanceExpedition()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerRepository = new FakePlayerRepository(room.Participants.Single().PlayerId!.Value);
+        var stage = CreateStage(run.StageId);
+
+        var now = DateTimeOffset.UtcNow;
+        var endsAt = now.AddHours(1);
+        var expedition = new TreasureMapExpedition(
+            TreasureMapExpeditionId.New(),
+            new TreasureMapId(1),
+            room.Participants.Single().PlayerId!.Value,
+            startedAt: now,
+            endsAt: endsAt);
+        var expeditionRepository = new FakeTreasureMapExpeditionRepository(expedition);
+
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            new FakePlayerEquipmentRepository(),
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
+            new FakeItemRepository(),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            expeditionRepository,
+            new BattleService(),
+            new QuestBattleFactory());
+
+        await service.EscapeAsync(run.Id, room.OwnerId);
+
+        expeditionRepository.SaveCount.Should().Be(0);
+        expeditionRepository.StoredExpedition!.EndsAt.Should().Be(endsAt);
+    }
+
     private static QuestRunService CreateRunService(
         FakeQuestRunRepository runRepository,
         FakeQuestRoomRepository roomRepository,
@@ -1325,6 +1671,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
     }
@@ -1534,7 +1881,9 @@ public class QuestRunServiceTests
     private static QuestStageDefinition CreateStage(
         QuestStageId stageId,
         IReadOnlyList<QuestStageEquipmentRewardEntry>? equipmentRewards = null,
-        IReadOnlyList<QuestStageItemRewardEntry>? itemRewards = null)
+        IReadOnlyList<QuestStageItemRewardEntry>? itemRewards = null,
+        QuestFloorRewardRule? floorRewardRule = null,
+        int? requiredMapUnlockFlag = null)
     {
         return new QuestStageDefinition(
             stageId,
@@ -1555,11 +1904,12 @@ public class QuestRunServiceTests
                             new QuestEnemyDefinitionId(1),
                             new BattlePosition(BattleRow.Front, BattleColumn.Right))
                     ],
-                    new QuestFloorRewardRule(0, 0))
+                    floorRewardRule ?? new QuestFloorRewardRule(0, 0))
             ],
             equipmentRewards: equipmentRewards ?? [],
             itemRewards: itemRewards ?? [],
-            isActive: true);
+            isActive: true,
+            requiredMapUnlockFlag: requiredMapUnlockFlag);
     }
 
     private sealed class FakeQuestRunRepository(QuestRun run) : IQuestRunRepository
@@ -1670,6 +2020,11 @@ public class QuestRunServiceTests
                     job: Job.Warrior,
                     imagePath: "/images/player.png",
                     moveSet: new MoveSet()));
+        }
+
+        public FakePlayerRepository(params Player[] existingPlayers)
+        {
+            players = existingPlayers.ToDictionary(x => x.Id, x => x);
         }
 
         public Task<Player?> GetPlayerAsync(PlayerId id)
@@ -1789,6 +2144,36 @@ public class QuestRunServiceTests
         public Task DeleteAsync(MarketListingId id)
         {
             listingsById.Remove(id);
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeTreasureMapExpeditionRepository : ITreasureMapExpeditionRepository
+    {
+        private TreasureMapExpedition? _expedition;
+
+        public FakeTreasureMapExpeditionRepository(TreasureMapExpedition? expedition = null)
+        {
+            _expedition = expedition;
+        }
+
+        public TreasureMapExpedition? StoredExpedition => _expedition;
+        public int SaveCount { get; private set; }
+
+        public Task<TreasureMapExpedition?> GetAsync(TreasureMapExpeditionId id)
+            => Task.FromResult(_expedition?.Id == id ? _expedition : null);
+
+        public Task<TreasureMapExpedition?> GetCurrentByPlayerAsync(PlayerId playerId)
+            => Task.FromResult(_expedition);
+
+        public Task<IReadOnlyList<TreasureMapExpedition>> ListByPlayerAsync(PlayerId playerId)
+            => Task.FromResult<IReadOnlyList<TreasureMapExpedition>>(
+                _expedition is not null ? [_expedition] : []);
+
+        public Task SaveAsync(TreasureMapExpedition expedition)
+        {
+            _expedition = expedition;
+            SaveCount++;
             return Task.CompletedTask;
         }
     }

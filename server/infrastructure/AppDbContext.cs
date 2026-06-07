@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using server.domain.chat;
 using server.domain.player;
@@ -15,6 +16,12 @@ namespace server.infrastructure;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.ConfigureWarnings(warnings =>
+            warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
+    }
+
     public DbSet<PlayerEntity> Players => Set<PlayerEntity>();
     public DbSet<PlayerMoveEntity> PlayerMoves => Set<PlayerMoveEntity>();
     public DbSet<PlayerMasterJobEntity> PlayerMasterJobs => Set<PlayerMasterJobEntity>();
@@ -25,6 +32,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ItemDeletionLogEntity> ItemDeletionLogs => Set<ItemDeletionLogEntity>();
     public DbSet<ChatRoomEntity> ChatRooms => Set<ChatRoomEntity>();
     public DbSet<ChatMessageEntity> ChatMessages => Set<ChatMessageEntity>();
+    public DbSet<GlobalChatRoomEntity> GlobalChatRooms => Set<GlobalChatRoomEntity>();
+    public DbSet<GlobalChatMessageEntity> GlobalChatMessages => Set<GlobalChatMessageEntity>();
     public DbSet<ThreadEntity> Threads => Set<ThreadEntity>();
     public DbSet<ThreadReplyEntity> ThreadReplies => Set<ThreadReplyEntity>();
     public DbSet<QuestRoomEntity> QuestRooms => Set<QuestRoomEntity>();
@@ -109,6 +118,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("training_cooldown_until");
         player.Property(x => x.QuestCooldownUntil)
             .HasColumnName("quest_cooldown_until");
+        player.Property(x => x.ExpMultiplierFlags)
+            .HasColumnName("exp_multiplier_flags")
+            .HasDefaultValue(0)
+            .IsRequired();
+        player.Property(x => x.MapUnlockFlags)
+            .HasColumnName("map_unlock_flags")
+            .HasDefaultValue(0)
+            .IsRequired();
+        player.Property(x => x.RoadmapUnlockFlags)
+            .HasColumnName("roadmap_unlock_flags")
+            .HasDefaultValue(1L)
+            .IsRequired();
 
         var playerMoves = modelBuilder.Entity<PlayerMoveEntity>();
         playerMoves.ToTable("player_moves", "internal");
@@ -164,6 +185,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         playerEquipment.Property(x => x.EquipmentStatus).HasColumnName("equipment_status").IsRequired();
         playerEquipment.Property(x => x.Durability).HasColumnName("durability").IsRequired();
         playerEquipment.Property(x => x.Mastery).HasColumnName("mastery").HasDefaultValue(0).IsRequired();
+        playerEquipment.Property(x => x.PlusValue).HasColumnName("plus_value").HasDefaultValue(0).IsRequired();
         playerEquipment.Property(x => x.AcquiredAt).HasColumnName("acquired_at").IsRequired();
         playerEquipment.Property(x => x.UpdatedAt).HasColumnName("updated_at").IsRequired();
         playerEquipment.HasIndex(x => x.PlayerId);
@@ -274,6 +296,43 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         chatMessage.Property(x => x.IsAlerted)
             .HasColumnName("is_alerted")
             .HasDefaultValue(false)
+            .IsRequired();
+
+        var globalChatRoom = modelBuilder.Entity<GlobalChatRoomEntity>();
+        globalChatRoom.ToTable("global_chat_rooms", "internal");
+        globalChatRoom.HasKey(x => x.Id);
+        globalChatRoom.Property(x => x.Id)
+            .HasColumnName("id")
+            .HasColumnType("uuid")
+            .IsRequired();
+        globalChatRoom.Property(x => x.LastChatId)
+            .HasColumnName("last_chat_id")
+            .IsRequired();
+
+        var globalChatMessage = modelBuilder.Entity<GlobalChatMessageEntity>();
+        globalChatMessage.ToTable("global_chat_messages", "internal");
+        globalChatMessage.HasKey(x => x.ChatId);
+        globalChatMessage.Property(x => x.ChatId)
+            .HasColumnName("chat_id")
+            .ValueGeneratedNever()
+            .IsRequired();
+        globalChatMessage.Property(x => x.SenderType)
+            .HasColumnName("sender_type")
+            .HasConversion<int>()
+            .IsRequired();
+        globalChatMessage.Property(x => x.SenderId)
+            .HasColumnName("sender_id")
+            .HasColumnType("uuid")
+            .HasConversion(new ValueConverter<PlayerId?, Guid?>(
+                x => x == null ? null : x.Value.Value,
+                value => value == null ? null : new PlayerId(value.Value)));
+        globalChatMessage.Property(x => x.Message)
+            .HasColumnName("message")
+            .HasMaxLength(ChatConstants.MessageMaxLength)
+            .IsRequired();
+        globalChatMessage.Property(x => x.CreatedAt)
+            .HasColumnName("created_at")
+            .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .IsRequired();
 
         var thread = modelBuilder.Entity<ThreadEntity>();

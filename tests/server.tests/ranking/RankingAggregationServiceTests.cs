@@ -160,24 +160,7 @@ public class RankingAggregationServiceTests
         return new AppDbContext(options);
     }
 
-    private static AppDbContext CreateSqliteDbContext(SqliteConnection connection)
-    {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite(connection)
-            .Options;
-        return new SqliteTestAppDbContext(options);
-    }
-
-    // DateTimeOffset は SQLite が ORDER BY 不可のため long (Ticks) に変換するサブクラス。
-    private sealed class SqliteTestAppDbContext(DbContextOptions<AppDbContext> options) : AppDbContext(options)
-    {
-        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
-        {
-            base.ConfigureConventions(configurationBuilder);
-            configurationBuilder.Properties<DateTimeOffset>().HaveConversion<long>();
-            configurationBuilder.Properties<DateTimeOffset?>().HaveConversion<long?>();
-        }
-    }
+    private static AppDbContext CreateSqliteDbContext(SqliteConnection connection) => TestHelpers.CreateSqliteDbContext(connection);
 
     private sealed class TestDbContextFactory(string databaseName) : IDbContextFactory<AppDbContext>
     {
@@ -187,13 +170,7 @@ public class RankingAggregationServiceTests
             => Task.FromResult(RankingAggregationServiceTests.CreateDbContext(databaseName));
     }
 
-    private sealed class SqliteDbContextFactory(SqliteConnection connection) : IDbContextFactory<AppDbContext>
-    {
-        public AppDbContext CreateDbContext() => RankingAggregationServiceTests.CreateSqliteDbContext(connection);
-
-        public Task<AppDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult(RankingAggregationServiceTests.CreateSqliteDbContext(connection));
-    }
+    private sealed class SqliteDbContextFactory(SqliteConnection connection) : TestHelpers.SqliteDbContextFactory(connection);
 
     private sealed class StaticCombatIndexWeightRepository : ICombatIndexWeightRepository
     {

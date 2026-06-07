@@ -63,6 +63,17 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
             query = query.Where(x => x.Status == (int)condition.Status.Value);
         }
 
+        if (condition.VisibleStageIds is not null)
+        {
+            if (condition.VisibleStageIds.Count == 0)
+            {
+                return [];
+            }
+
+            var visibleIds = condition.VisibleStageIds.Select(x => x.Value).ToHashSet();
+            query = query.Where(x => visibleIds.Contains(x.StageId));
+        }
+
         if (condition.OwnerPlayerId is not null)
         {
             query = query.Where(x => x.OwnerPlayerId == condition.OwnerPlayerId.Value.Value);

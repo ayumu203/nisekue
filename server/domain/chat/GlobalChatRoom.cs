@@ -1,0 +1,81 @@
+using server.domain.player;
+using server.shared.constants.chat;
+
+namespace server.domain.chat;
+
+public class GlobalChatRoom(int lastChatId = 0)
+{
+    public int LastChatId { get; private set; } = ValidateLastChatId(lastChatId);
+    public int PersistedLastChatId { get; private set; } = ValidateLastChatId(lastChatId);
+    private readonly List<ChatMessage> _messages = [];
+    public IReadOnlyList<ChatMessage> Messages => _messages;
+
+    public GlobalChatRoom(int lastChatId, IEnumerable<ChatMessage> messages)
+        : this(lastChatId)
+    {
+        RestoreMessages(messages);
+        PersistedLastChatId = LastChatId;
+    }
+
+    public int GetNextMessageId()
+    {
+        checked
+        {
+            return LastChatId + 1;
+        }
+    }
+
+    public void PostMessage(PlayerId senderId, string text)
+    {
+        var chatId = GetNextMessageId();
+        ChatText body = new(text);
+        var now = DateTimeOffset.UtcNow;
+        ChatMessage chatMessage = new(ChatMessageSenderType.Player, senderId, chatId, body, now, isAlerted: false);
+        _messages.Add(chatMessage);
+        LastChatId = chatId;
+        EnforceMessageLimit();
+    }
+
+    public void PostSystemMessage(string text)
+    {
+        var chatId = GetNextMessageId();
+        ChatText body = new(text);
+        var now = DateTimeOffset.UtcNow;
+        ChatMessage chatMessage = new(ChatMessageSenderType.System, senderId: null, chatId, body, now, isAlerted: false);
+        _messages.Add(chatMessage);
+        LastChatId = chatId;
+        EnforceMessageLimit();
+    }
+
+    private void EnforceMessageLimit()
+    {
+        if (_messages.Count <= ChatConstants.MessageLimit) return;
+
+        _messages.RemoveRange(0, _messages.Count - ChatConstants.MessageLimit);
+    }
+
+    public void RestoreMessages(IEnumerable<ChatMessage> messages)
+    {
+        if (messages is null)
+        {
+            throw new ArgumentNullException(nameof(messages));
+        }
+
+        _messages.Clear();
+        _messages.AddRange(messages.OrderBy(x => x.ChatId));
+        EnforceMessageLimit();
+
+        var maxChatId = _messages.Count == 0 ? 0 : _messages[^1].ChatId;
+        LastChatId = Math.Max(LastChatId, maxChatId);
+    }
+
+    private static int ValidateLastChatId(int value)
+    {
+        if (value < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), "lastChatIdに負数は設定できません。");
+        }
+
+        return value;
+    }
+}

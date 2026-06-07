@@ -22,6 +22,7 @@ erDiagram
         int training_battle_count "NOT NULL, DEFAULT 0"
         timestamptz training_cooldown_until "NULL"
         timestamptz quest_cooldown_until "NULL"
+        int exp_multiplier_flags "NOT NULL, DEFAULT 0"
     }
     CHAT_ROOMS {
         uuid owner_id PK, FK "internal.players.id"
@@ -79,6 +80,7 @@ erDiagram
         int equipment_status "NOT NULL (Inventory/Equipped/Broken)"
         int durability "NOT NULL"
         int mastery "NOT NULL, DEFAULT 0"
+        int plus_value "NOT NULL, DEFAULT 0"
         timestamptz acquired_at "NOT NULL"
         timestamptz updated_at "NOT NULL"
     }
@@ -278,8 +280,21 @@ erDiagram
         timestamptz created_at "NOT NULL"
     }
 
+    GLOBAL_CHAT_ROOMS {
+        uuid id PK "internal.global_chat_rooms.id, 固定UUID（シングルロー）"
+        int last_chat_id "NOT NULL, DEFAULT 0"
+    }
+    GLOBAL_CHAT_MESSAGES {
+        int chat_id PK "internal.global_chat_messages.chat_id"
+        int sender_type "NOT NULL (Player/System)"
+        uuid sender_id FK "internal.players.id, NULL when system"
+        varchar(200) message "NOT NULL"
+        timestamptz created_at "NOT NULL, DEFAULT CURRENT_TIMESTAMP"
+    }
+
     PLAYERS ||--|| CHAT_ROOMS : owns
     CHAT_ROOMS ||--o{ CHAT_MESSAGES : has
+    GLOBAL_CHAT_ROOMS ||--o{ GLOBAL_CHAT_MESSAGES : has
     PLAYERS ||--o{ THREADS : authors
     THREADS ||--o{ THREAD_REPLIES : has
     PLAYERS ||--o{ THREAD_REPLIES : authors

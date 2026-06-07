@@ -334,6 +334,7 @@ internal static class TreasureMapEndpoints
                     EquipmentStatus = (int)EquipmentStatus.Inventory,
                     Durability = equipmentMaster.MaxDurability,
                     Mastery = 0,
+                    PlusValue = 0,
                     AcquiredAt = now,
                     UpdatedAt = now
                 });

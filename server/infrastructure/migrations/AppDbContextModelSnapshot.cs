@@ -78,6 +78,53 @@ namespace server.infrastructure.migrations
                     b.ToTable("chat_rooms", "internal");
                 });
 
+            modelBuilder.Entity("server.infrastructure.chat.GlobalChatMessageEntity", b =>
+                {
+                    b.Property<int>("ChatId")
+                        .HasColumnType("integer")
+                        .HasColumnName("chat_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("message");
+
+                    b.Property<Guid?>("SenderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sender_id");
+
+                    b.Property<int>("SenderType")
+                        .HasColumnType("integer")
+                        .HasColumnName("sender_type");
+
+                    b.HasKey("ChatId");
+
+                    b.ToTable("global_chat_messages", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.chat.GlobalChatRoomEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("LastChatId")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_chat_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("global_chat_rooms", "internal");
+                });
+
             modelBuilder.Entity("server.infrastructure.chat.ThreadEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -317,6 +364,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasColumnName("exp");
 
+                    b.Property<int>("ExpMultiplierFlags")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("exp_multiplier_flags");
+
                     b.Property<int>("Gold")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -354,6 +407,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasColumnName("luck");
 
+                    b.Property<int>("MapUnlockFlags")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("map_unlock_flags");
+
                     b.Property<int>("MaxHp")
                         .HasColumnType("integer")
                         .HasColumnName("max_hp");
@@ -377,6 +436,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0)
                         .HasColumnName("rebirth_count");
+
+                    b.Property<long>("RoadmapUnlockFlags")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(1L)
+                        .HasColumnName("roadmap_unlock_flags");
 
                     b.Property<int>("Speed")
                         .HasColumnType("integer")
@@ -437,6 +502,12 @@ namespace server.infrastructure.migrations
                     b.Property<Guid>("PlayerId")
                         .HasColumnType("uuid")
                         .HasColumnName("player_id");
+
+                    b.Property<int>("PlusValue")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("plus_value");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
