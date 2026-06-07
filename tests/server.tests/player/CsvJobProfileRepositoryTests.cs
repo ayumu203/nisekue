@@ -30,6 +30,6 @@ public class CsvJobProfileRepositoryTests
         profile.Job.Should().Be(Job.GreatThief);
         profile.MasterLevel.Should().Be(50);
         profile.RequiredMasterJobs.Should().BeEquivalentTo([Job.Warrior, Job.WindMage, Job.GrandRanger]);
-        profile.GrowthValue.Luck.Should().Be(6);
+        profile.GrowthValue.Luck.Should().Be(8);
     }
 }
