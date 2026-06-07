@@ -130,6 +130,7 @@ public class JobRoadmapServiceTests
     public async Task GetRoadmapAsync_WhenAdvancedJob_HasPrerequisiteRequirements()
     {
         var player = CreatePlayer(level: 1, gold: 100);
+        player.UnlockRoadmap(Job.OniWarrior);
         var playerRepository = new FakePlayerRepository(player);
         var service = new JobRoadmapService(
             playerRepository,
@@ -149,6 +150,7 @@ public class JobRoadmapServiceTests
     public async Task GetRoadmapAsync_WhenJobHasChangeItem_IncludesItemNode()
     {
         var player = CreatePlayer(level: 1, gold: 100);
+        player.UnlockRoadmap(Job.OniWarrior);
         var playerRepository = new FakePlayerRepository(player);
         var items = new List<Item>
         {

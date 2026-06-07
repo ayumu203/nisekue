@@ -149,19 +149,21 @@ public class JobRoadmapService(
         var rank = roadmapRankRepository.GetRank(job);
         var isUnlocked = player.IsRoadmapUnlocked(job);
         var goldCost = rank is not null ? GoldCostForRank(rank.Value) : (int?)null;
-
-        var profile = jobProfileRepository.GetByJob(job);
         var requirements = new List<JobRoadmapNode>();
 
-        foreach (var prerequisiteJob in profile.RequiredMasterJobs)
+        if (isUnlocked)
         {
-            requirements.Add(BuildJobNode(player, prerequisiteJob, visited));
-        }
+            var profile = jobProfileRepository.GetByJob(job);
+            foreach (var prerequisiteJob in profile.RequiredMasterJobs)
+            {
+                requirements.Add(BuildJobNode(player, prerequisiteJob, visited));
+            }
 
-        var items = GetChangeJobItemsFor(job);
-        foreach (var item in items)
-        {
-            requirements.Add(BuildItemNode(player, item, visited));
+            var items = GetChangeJobItemsFor(job);
+            foreach (var item in items)
+            {
+                requirements.Add(BuildItemNode(item));
+            }
         }
 
         visited.Remove(job);
@@ -181,7 +183,7 @@ public class JobRoadmapService(
             Requirements: requirements);
     }
 
-    private JobRoadmapNode BuildItemNode(Player player, Item item, HashSet<Job> visited)
+    private JobRoadmapNode BuildItemNode(Item item)
     {
         var stageRefs = GetStagesForItem(item.Id);
 
@@ -191,12 +193,6 @@ public class JobRoadmapService(
                 job.ToString(),
                 JobDisplayNames.GetDisplayName(job)))
             .ToArray();
-
-        var requirements = new List<JobRoadmapNode>();
-        foreach (var job in item.RequiredMasterJobs)
-        {
-            requirements.Add(BuildJobNode(player, job, visited));
-        }
 
         return new JobRoadmapNode(
             Type: "item",
@@ -210,7 +206,7 @@ public class JobRoadmapService(
             GoldCostToUnlock: null,
             Stages: stageRefs.Any() ? stageRefs : null,
             RequiredMasterJobs: requiredMasterJobRefs.Any() ? requiredMasterJobRefs : null,
-            Requirements: requirements);
+            Requirements: []);
     }
 
     private IReadOnlyList<Item> GetChangeJobItemsFor(Job targetJob)
