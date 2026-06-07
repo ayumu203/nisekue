@@ -120,25 +120,17 @@ export default function JobRoadmapNodeComponent({
                     disabled={!canUnlockTarget}
                     onClick={onUnlockTarget}
                     sx={{
-                      ...softGoldButtonSx['&&'],
+                      ...softGoldButtonSx,
                       fontSize: '0.7rem',
                       px: 1.5,
                       py: 0.5,
                       minWidth: 0,
                       whiteSpace: 'nowrap',
                       borderRadius: 1,
-                      border: '2px solid',
                       fontWeight: 900,
-                      ...(canUnlockTarget
-                        ? {}
-                        : {
-                            backgroundColor: '#ead9a7',
-                            borderColor: '#b59a69',
-                            color: '#927b56',
-                          }),
                     }}
                   >
-                    {locale.roadmapUnlockButton.replace('{{gold}}', node.goldCostToUnlock.toLocaleString())}
+                    {locale.roadmapUnlockButton}
                   </Button>
                 )}
               </Stack>

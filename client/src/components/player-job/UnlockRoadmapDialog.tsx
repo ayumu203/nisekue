@@ -1,11 +1,4 @@
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogContent,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Box, Button, Dialog, DialogContent, Stack, Typography } from '@mui/material'
 import { resolveJobAssetPath } from '@/lib/assets'
 import type { PlayerJobCode } from '@/schema/player'
 import locale from '../../../locale/player-job/JobChange.json'
@@ -77,23 +70,14 @@ export default function UnlockRoadmapDialog({
             <Typography sx={{ fontSize: '0.65rem', color: '#888', letterSpacing: '0.1em' }}>
               {locale.roadmapUnlockDialogJob}
             </Typography>
-            <Typography
-              fontWeight={900}
-              color="#fff"
-              lineHeight={1.2}
-              sx={{ fontSize: '1.1rem', mt: 0.25 }}
-            >
+            <Typography fontWeight={900} color="#fff" lineHeight={1.2} sx={{ fontSize: '1.1rem', mt: 0.25 }}>
               {jobName}
             </Typography>
           </Box>
 
           {/* 質問テキスト */}
           <Box sx={{ px: 3, py: 2.5, textAlign: 'center' }}>
-            <Typography
-              color="#fff"
-              fontWeight={700}
-              sx={{ fontSize: '0.95rem', lineHeight: 1.7 }}
-            >
+            <Typography color="#fff" fontWeight={700} sx={{ fontSize: '0.95rem', lineHeight: 1.7 }}>
               {locale.roadmapUnlockDialogTitle}
             </Typography>
             <Stack direction="row" alignItems="baseline" spacing={1} justifyContent="center" sx={{ mt: 1.5 }}>

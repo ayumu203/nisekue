@@ -1,13 +1,4 @@
-import {
-  Alert,
-  Box,
-  Chip,
-  CircularProgress,
-  Container,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Alert, Box, Chip, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayerJob } from '@/api/player'
@@ -118,6 +109,7 @@ export default function JobChange() {
               ariaLabel={locale.backToHome}
             />
             <Box
+              role="tablist"
               sx={{
                 display: 'flex',
                 border: '2px solid #8f6b2f',
@@ -128,7 +120,11 @@ export default function JobChange() {
               {[locale.title, locale.roadmapTab].map((label, i) => (
                 <Box
                   key={i}
+                  role="tab"
+                  aria-selected={tabIndex === i}
+                  tabIndex={0}
                   onClick={() => setTabIndex(i)}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setTabIndex(i)}
                   sx={{
                     px: { xs: 2, sm: 3 },
                     py: 0.75,
@@ -137,14 +133,10 @@ export default function JobChange() {
                     fontSize: { xs: '0.8rem', sm: '0.9rem' },
                     userSelect: 'none',
                     borderRight: i === 0 ? '2px solid #8f6b2f' : 'none',
-                    background: tabIndex === i
-                      ? 'linear-gradient(90deg, #e8c84a 0%, #f2d27a 100%)'
-                      : '#f5efd8',
+                    background: tabIndex === i ? 'linear-gradient(90deg, #e8c84a 0%, #f2d27a 100%)' : '#f5efd8',
                     color: tabIndex === i ? '#4a2e0a' : '#8a7a5a',
                     transition: 'background 0.1s, color 0.1s',
-                    '&:hover': tabIndex !== i
-                      ? { background: '#ede4c5', color: '#6a5a3a' }
-                      : {},
+                    '&:hover': tabIndex !== i ? { background: '#ede4c5', color: '#6a5a3a' } : {},
                   }}
                 >
                   {tabIndex === i ? `▶ ${label}` : label}

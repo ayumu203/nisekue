@@ -22,7 +22,9 @@ export default function JobRoadmapTree({
     return (
       <Stack direction="row" spacing={1} alignItems="center" sx={{ p: 3 }}>
         <CircularProgress size={16} sx={{ color: '#8f6b2f' }} />
-        <Typography variant="body2" color="#6a4b35">{locale.loadingPlayer}</Typography>
+        <Typography variant="body2" color="#6a4b35">
+          {locale.loadingPlayer}
+        </Typography>
       </Stack>
     )
   }
@@ -71,11 +73,7 @@ export default function JobRoadmapTree({
 
   return (
     <Box sx={{ p: 2 }}>
-      <JobRoadmapNodeComponent
-        node={roadmap}
-        canUnlockTarget={canUnlockTarget}
-        onUnlockTarget={onUnlockTarget}
-      />
+      <JobRoadmapNodeComponent node={roadmap} canUnlockTarget={canUnlockTarget} onUnlockTarget={onUnlockTarget} />
     </Box>
   )
 }

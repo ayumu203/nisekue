@@ -1,19 +1,14 @@
-import {
-  Box,
-  Button,
-  Chip,
-  LinearProgress,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from '@mui/material'
 import type { GetPlayerResponse, PlayerJobCode } from '@/schema/player'
 import { resolveJobAssetPath } from '@/lib/assets'
 import locale from '../../../locale/player-job/JobChange.json'
 
 const baseJobCodes = new Set<PlayerJobCode>(['Warrior', 'Guardian', 'Mage', 'Priest', 'Ranger'])
 
-function formatExpProgress(currentExp: number, requiredExp: number): { current: number; required: number; ratio: number } {
+function formatExpProgress(
+  currentExp: number,
+  requiredExp: number,
+): { current: number; required: number; ratio: number } {
   const required = Math.max(1, requiredExp)
   const current = Math.max(0, currentExp)
   return {
@@ -194,11 +189,7 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
             const isDisabled = isLocked || isCurrent
             const isSubmitting = isSubmittingJobValue === job.value
             const jobImageSrc = resolveJobAssetPath(job.code)
-            const statusLabel = isCurrent
-              ? locale.currentBadge
-              : isLocked
-                ? locale.jobLocked
-                : locale.jobAvailable
+            const statusLabel = isCurrent ? locale.currentBadge : isLocked ? locale.jobLocked : locale.jobAvailable
 
             return (
               <Paper

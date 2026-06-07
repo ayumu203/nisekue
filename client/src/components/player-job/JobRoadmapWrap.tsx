@@ -19,10 +19,7 @@ export default function JobRoadmapWrap({ children }: JobRoadmapWrapProps) {
     >
       <Stack spacing={2}>
         <Stack spacing={0.25}>
-          <Typography
-            variant="overline"
-            sx={{ letterSpacing: '0.16em', color: 'rgba(243, 238, 220, 0.72)' }}
-          >
+          <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(243, 238, 220, 0.72)' }}>
             ROADMAP
           </Typography>
           <Typography variant="h4" fontWeight={900} lineHeight={1.1} color="#fff8ea">
