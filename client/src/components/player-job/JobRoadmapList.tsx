@@ -89,20 +89,29 @@ export default function JobRoadmapList({ entries, isLoading, error, selectedJobI
                 },
               }}
             >
-              <Stack direction="row" spacing={1} alignItems="center">
+              <Stack direction="row" spacing={1} alignItems="center" minWidth={0}>
                 <Typography
                   variant="subtitle2"
                   fontWeight={900}
-                  sx={{ color: '#4a2e0a', letterSpacing: '0.05em' }}
+                  noWrap
+                  sx={{ color: '#4a2e0a', letterSpacing: '0.05em', fontSize: { xs: '0.72rem', md: '0.875rem' } }}
                 >
                   ★ Rank {rank}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#6a4b1a', fontWeight: 700 }}>
+                <Typography
+                  variant="caption"
+                  noWrap
+                  sx={{ color: '#6a4b1a', fontWeight: 700, fontSize: { xs: '0.62rem', md: '0.75rem' } }}
+                >
                   {unlockedCount}/{jobs.length}
                 </Typography>
               </Stack>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="caption" sx={{ color: '#6a4b1a', fontWeight: 700 }}>
+              <Stack direction="row" spacing={0.5} alignItems="center" flexShrink={0}>
+                <Typography
+                  variant="caption"
+                  noWrap
+                  sx={{ color: '#6a4b1a', fontWeight: 700, fontSize: { xs: '0.62rem', md: '0.75rem' } }}
+                >
                   {locale.roadmapRankCostHeader.replace('{{gold}}', goldCost.toLocaleString())}
                 </Typography>
                 <Typography sx={{ color: '#6a4b1a', fontSize: '0.7rem', fontWeight: 900 }}>
@@ -168,9 +177,12 @@ export default function JobRoadmapList({ entries, isLoading, error, selectedJobI
                         <Typography
                           variant="body2"
                           fontWeight={700}
+                          noWrap
                           sx={{
                             flex: 1,
+                            minWidth: 0,
                             color: job.isUnlocked ? '#2a4a2e' : '#7a6a50',
+                            fontSize: { xs: '0.75rem', md: '0.875rem' },
                           }}
                         >
                           {job.jobName}

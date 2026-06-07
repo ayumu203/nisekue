@@ -103,11 +103,18 @@ export default function JobRoadmapNodeComponent({
               <Typography
                 variant={isTarget ? 'body1' : 'body2'}
                 fontWeight={700}
+                noWrap
                 color={node.isUnlocked ? '#2a4a2e' : '#6a5a3a'}
+                sx={{ fontSize: { xs: isTarget ? '0.8rem' : '0.75rem', md: isTarget ? '1rem' : '0.875rem' } }}
               >
                 {node.jobName}
               </Typography>
-              <Typography variant="caption" color="#8a7a5a">
+              <Typography
+                variant="caption"
+                color="#8a7a5a"
+                noWrap
+                sx={{ fontSize: { xs: '0.62rem', md: '0.75rem' } }}
+              >
                 {locale.roadmapRankLabel.replace('{{rank}}', String(node.rank))}
               </Typography>
             </Stack>
@@ -150,7 +157,12 @@ export default function JobRoadmapNodeComponent({
           </Stack>
 
           {!node.isUnlocked && !canUnlockTarget && isTarget && (
-            <Typography variant="caption" color="#b0a070" sx={{ display: 'block', mt: 0.5, pl: 0.5 }}>
+            <Typography
+              variant="caption"
+              color="#b0a070"
+              noWrap
+              sx={{ display: 'block', mt: 0.5, pl: 0.5, fontSize: { xs: '0.62rem', md: '0.75rem' } }}
+            >
               {locale.roadmapPrerequisiteLocked}
             </Typography>
           )}
@@ -234,12 +246,23 @@ export default function JobRoadmapNodeComponent({
             </Typography>
           </Box>
           <Stack spacing={0.5} minWidth={0} flex={1}>
-            <Typography variant="body2" fontWeight={700} color="#5a4a28">
+            <Typography
+              variant="body2"
+              fontWeight={700}
+              color="#5a4a28"
+              noWrap
+              sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}
+            >
               {node.itemName}
             </Typography>
             {node.stages && node.stages.length > 0 && (
               <Stack spacing={0.25}>
-                <Typography variant="caption" color="#8a7a5a" fontWeight={700}>
+                <Typography
+                  variant="caption"
+                  color="#8a7a5a"
+                  fontWeight={700}
+                  sx={{ fontSize: { xs: '0.62rem', md: '0.75rem' } }}
+                >
                   {locale.roadmapItemStage}
                 </Typography>
                 <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
@@ -263,7 +286,12 @@ export default function JobRoadmapNodeComponent({
             )}
             {node.requiredMasterJobs && node.requiredMasterJobs.length > 0 && (
               <Stack spacing={0.25}>
-                <Typography variant="caption" color="#8a7a5a" fontWeight={700}>
+                <Typography
+                  variant="caption"
+                  color="#8a7a5a"
+                  fontWeight={700}
+                  sx={{ fontSize: { xs: '0.62rem', md: '0.75rem' } }}
+                >
                   {locale.roadmapItemRequiredJobs}
                 </Typography>
                 <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
