@@ -116,42 +116,18 @@ export default function JobRoadmapTab() {
           }}
         >
           {mobileView === 'list' ? (
-            <>
-              <Box
-                sx={{
-                  px: 1.5,
-                  py: 0.75,
-                  borderBottom: '2px solid #d2c08b',
-                  bgcolor: '#f5e8b0',
-                }}
-              >
-                <Typography variant="caption" fontWeight={900} color="#5a3a10">
-                  ▶ 職業一覧
-                </Typography>
-              </Box>
-              <Box sx={{ overflowY: 'auto', maxHeight: 'calc(100vh - 300px)' }}>
-                <JobRoadmapList
-                  entries={roadmapList ?? []}
-                  isLoading={isListLoading}
-                  error={listError?.message ?? null}
-                  selectedJobId={selectedJobId}
-                  onSelect={handleSelect}
-                />
-              </Box>
-            </>
+            <Box sx={{ overflowY: 'auto', maxHeight: 'calc(100vh - 300px)' }}>
+              <JobRoadmapList
+                entries={roadmapList ?? []}
+                isLoading={isListLoading}
+                error={listError?.message ?? null}
+                selectedJobId={selectedJobId}
+                onSelect={handleSelect}
+              />
+            </Box>
           ) : (
             <>
-              <Box
-                sx={{
-                  px: 1.5,
-                  py: 0.75,
-                  borderBottom: '2px solid #d2c08b',
-                  bgcolor: '#f5e8b0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                }}
-              >
+              <Box sx={{ px: 1, pt: 0.75, pb: 0 }}>
                 <Button
                   size="small"
                   startIcon={<ArrowBackIcon />}
@@ -170,9 +146,6 @@ export default function JobRoadmapTab() {
                 >
                   {locale.roadmapBackToList}
                 </Button>
-                <Typography variant="caption" fontWeight={900} color="#5a3a10">
-                  ▶ 解放条件ツリー
-                </Typography>
               </Box>
               <Box sx={{ overflowY: 'auto', maxHeight: 'calc(100vh - 300px)' }}>
                 <JobRoadmapTree
@@ -205,18 +178,6 @@ export default function JobRoadmapTab() {
               maxHeight: 'calc(100vh - 340px)',
             }}
           >
-            <Box
-              sx={{
-                px: 1.5,
-                py: 0.75,
-                borderBottom: '2px solid #d2c08b',
-                bgcolor: '#f5e8b0',
-              }}
-            >
-              <Typography variant="caption" fontWeight={900} color="#5a3a10">
-                ▶ 職業一覧
-              </Typography>
-            </Box>
             <JobRoadmapList
               entries={roadmapList ?? []}
               isLoading={isListLoading}
@@ -233,20 +194,6 @@ export default function JobRoadmapTab() {
               maxHeight: 'calc(100vh - 340px)',
             }}
           >
-            {selectedJobId ? (
-              <Box
-                sx={{
-                  px: 1.5,
-                  py: 0.75,
-                  borderBottom: '2px solid #d2c08b',
-                  bgcolor: '#f5e8b0',
-                }}
-              >
-                <Typography variant="caption" fontWeight={900} color="#5a3a10">
-                  ▶ 解放条件ツリー
-                </Typography>
-              </Box>
-            ) : null}
             <JobRoadmapTree
               roadmap={roadmapTree ?? null}
               isLoading={isTreeLoading && !roadmapTree}
