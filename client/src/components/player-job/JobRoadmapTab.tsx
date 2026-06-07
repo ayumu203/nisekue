@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Paper, Snackbar, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { Alert, Box, Button, Snackbar, useMediaQuery, useTheme } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import { useState } from 'react'
 import useSWR from 'swr'
@@ -83,30 +83,7 @@ export default function JobRoadmapTab() {
         </Alert>
       )}
 
-      {selectedEntry && !selectedEntry.isUnlocked && (
-        <Paper
-          variant="outlined"
-          sx={{
-            mb: 1.5,
-            px: 2,
-            py: 1,
-            borderColor: '#c8a84a',
-            bgcolor: '#fffbe6',
-            borderRadius: 1.5,
-          }}
-        >
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="caption" sx={{ color: '#6a4b1a', fontWeight: 900 }}>
-              💰
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#6a4b1a', fontWeight: 700 }}>
-              {locale.roadmapUnlockButton.replace('{{gold}}', targetGoldCost.toLocaleString())}
-            </Typography>
-          </Stack>
-        </Paper>
-      )}
-
-      {isMobile ? (
+{isMobile ? (
         <Box
           sx={{
             border: '2px solid #d2c08b',
