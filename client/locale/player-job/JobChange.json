@@ -50,6 +50,5 @@
   "roadmapAlreadyUnlocked": "既に開放済みです",
   "roadmapGoldShort": "Gold が不足しています",
   "roadmapRankLabel": "ランク {{rank}}",
-  "roadmapRankCostHeader": "コスト: {{gold}} Gold",
   "roadmapBackToList": "一覧に戻る"
 }

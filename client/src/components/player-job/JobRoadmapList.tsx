@@ -65,7 +65,6 @@ export default function JobRoadmapList({ entries, isLoading, error, selectedJobI
     <Stack spacing={0.5} sx={{ p: 1 }}>
       {sortedRanks.map((rank) => {
         const jobs = groupedByRank.get(rank)!
-        const goldCost = jobs[0]?.goldCostToUnlock ?? 0
         const isExpanded = !expandedRanks.has(rank)
         const unlockedCount = jobs.filter((j) => j.isUnlocked).length
 
@@ -96,7 +95,7 @@ export default function JobRoadmapList({ entries, isLoading, error, selectedJobI
                   noWrap
                   sx={{ color: '#4a2e0a', letterSpacing: '0.05em', fontSize: { xs: '0.72rem', md: '0.875rem' } }}
                 >
-                  ★ Rank {rank}
+                  ★ {rank}次職
                 </Typography>
                 <Typography
                   variant="caption"
@@ -107,13 +106,6 @@ export default function JobRoadmapList({ entries, isLoading, error, selectedJobI
                 </Typography>
               </Stack>
               <Stack direction="row" spacing={0.5} alignItems="center" flexShrink={0}>
-                <Typography
-                  variant="caption"
-                  noWrap
-                  sx={{ color: '#6a4b1a', fontWeight: 700, fontSize: { xs: '0.62rem', md: '0.75rem' } }}
-                >
-                  {locale.roadmapRankCostHeader.replace('{{gold}}', goldCost.toLocaleString())}
-                </Typography>
                 <Typography sx={{ color: '#6a4b1a', fontSize: '0.7rem', fontWeight: 900 }}>
                   {isExpanded ? '▲' : '▼'}
                 </Typography>
