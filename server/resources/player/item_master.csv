@@ -1,8 +1,6 @@
 item_id,name,flavor_text,effect_type,max_stack,change_job_to,required_level,bonus_max_hp,bonus_max_mp,bonus_strength,bonus_defense,bonus_intelligence,bonus_luck,bonus_speed,required_master_jobs,bonus_percent_max_hp,bonus_percent_max_mp,bonus_percent_strength,bonus_percent_defense,bonus_percent_intelligence,bonus_percent_luck,bonus_percent_speed,exp_multiplier,map_unlock_flag
 3001,命脈の種,命のぬくもりを宿す小さな種。最大HPが1上がる,StatBoost,99,,1,1,0,0,0,0,0,0,,0,0,0,0,0,0,0,,
-3002,戦士の証,戦士への道を開く転職用の証,ChangeJob,99,Warrior,1,0,0,0,0,0,0,0,,0,0,0,0,0,0,0,,
 3003,命脈の若実,命脈樹に実る若い果実。最大HPが2上がる,StatBoost,99,,1,2,0,0,0,0,0,0,,0,0,0,0,0,0,0,,
-3004,魔道士の証,魔法使いへの道を開く転職用の証,ChangeJob,99,Mage,1,0,0,0,0,0,0,0,,0,0,0,0,0,0,0,,
 3005,生命樹の雫,生命の気配を宿した雫。最大HPが1%上がる,StatBoost,99,,1,0,0,0,0,0,0,0,,1,0,0,0,0,0,0,,
 3006,生命樹の若枝,生命樹の若枝を煎じた秘薬。最大HPが2%上がる,StatBoost,99,,1,0,0,0,0,0,0,0,,2,0,0,0,0,0,0,,
 3007,生命樹の聖果,生命樹が稀に結ぶ神秘の果実。最大HPが5%上がる,StatBoost,99,,1,0,0,0,0,0,0,0,,5,0,0,0,0,0,0,,

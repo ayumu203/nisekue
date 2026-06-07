@@ -10,7 +10,7 @@ public class ItemTests
     public void CanUse_WhenPlayerLevelIsBelowRequiredLevel_ReturnsFalse()
     {
         var item = new Item(
-            new ItemId(3002),
+            new ItemId(9999),
             "戦士の証",
             "戦士へ転職する証。",
             maxStack: 99,
@@ -26,7 +26,7 @@ public class ItemTests
     public void CanUse_WhenRequiredMasterJobsAreNotSatisfied_ReturnsFalse()
     {
         var item = new Item(
-            new ItemId(3002),
+            new ItemId(9999),
             "上級職の証",
             "熟練者のみが扱える証。",
             maxStack: 99,
@@ -42,7 +42,7 @@ public class ItemTests
     public void CanUse_WhenConditionsAreSatisfied_ReturnsTrue()
     {
         var item = new Item(
-            new ItemId(3002),
+            new ItemId(9999),
             "上級職の証",
             "熟練者のみが扱える証。",
             maxStack: 99,
