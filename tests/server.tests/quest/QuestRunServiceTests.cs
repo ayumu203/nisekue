@@ -9,6 +9,7 @@ using server.domain.move.enums;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
+using server.domain.treasuremap;
 using Xunit;
 
 namespace server.tests.quest;
@@ -724,6 +725,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -783,6 +785,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -843,6 +846,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -919,6 +923,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -969,6 +974,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1026,6 +1032,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(rewardItem),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1085,6 +1092,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(rewardItem),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1149,6 +1157,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1213,6 +1222,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory(),
             _ => rolls.Dequeue());
@@ -1309,6 +1319,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1499,6 +1510,146 @@ public class QuestRunServiceTests
         participant.HasMapUnlockFlag(MapUnlockFlag.Map1).Should().BeTrue();
     }
 
+    [Fact]
+    public async Task ResolveTurnAsync_WhenQuestSucceeds_WithInProgressExpedition_AdvancesExpeditionByFiveMinutes()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerRepository = new FakePlayerRepository(room.Participants.Single().PlayerId!.Value);
+        var stage = CreateStage(run.StageId);
+
+        var now = DateTimeOffset.UtcNow;
+        var endsAt = now.AddHours(1);
+        var expedition = new TreasureMapExpedition(
+            TreasureMapExpeditionId.New(),
+            new TreasureMapId(1),
+            room.Participants.Single().PlayerId!.Value,
+            startedAt: now,
+            endsAt: endsAt);
+        var expeditionRepository = new FakeTreasureMapExpeditionRepository(expedition);
+
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            new FakePlayerEquipmentRepository(),
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
+            new FakeItemRepository(),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            expeditionRepository,
+            new BattleService(),
+            new QuestBattleFactory());
+
+        var target = run.BattleState.Enemies.Single().Position;
+        await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: target));
+
+        expeditionRepository.StoredExpedition!.EndsAt.Should().Be(endsAt.AddMinutes(-5));
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenQuestSucceeds_WithNoExpedition_DoesNotAdvance()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerRepository = new FakePlayerRepository(room.Participants.Single().PlayerId!.Value);
+        var stage = CreateStage(run.StageId);
+        var expeditionRepository = new FakeTreasureMapExpeditionRepository(expedition: null);
+
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            new FakePlayerEquipmentRepository(),
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
+            new FakeItemRepository(),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            expeditionRepository,
+            new BattleService(),
+            new QuestBattleFactory());
+
+        var target = run.BattleState.Enemies.Single().Position;
+        var act = async () => await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: target));
+
+        await act.Should().NotThrowAsync();
+        expeditionRepository.SaveCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ResolveTurnAsync_WhenQuestFails_WithInProgressExpedition_DoesNotAdvanceExpedition()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerRepository = new FakePlayerRepository(room.Participants.Single().PlayerId!.Value);
+        var stage = CreateStage(run.StageId);
+
+        var now = DateTimeOffset.UtcNow;
+        var endsAt = now.AddHours(1);
+        var expedition = new TreasureMapExpedition(
+            TreasureMapExpeditionId.New(),
+            new TreasureMapId(1),
+            room.Participants.Single().PlayerId!.Value,
+            startedAt: now,
+            endsAt: endsAt);
+        var expeditionRepository = new FakeTreasureMapExpeditionRepository(expedition);
+
+        var service = new QuestRunService(
+            repository,
+            roomRepository,
+            new FakeQuestStageRepository(stage),
+            new FakeQuestEnemyDefinitionRepository(),
+            new FakeMoveRepository([]),
+            playerRepository,
+            new FakePlayerEquipmentRepository(),
+            new FakePlayerItemStackRepository(),
+            new FakeMarketListingRepository(),
+            new FakeEquipmentRepository(),
+            new FakeItemRepository(),
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            expeditionRepository,
+            new BattleService(),
+            new QuestBattleFactory());
+
+        await service.EscapeAsync(run.Id, room.OwnerId);
+
+        expeditionRepository.SaveCount.Should().Be(0);
+        expeditionRepository.StoredExpedition!.EndsAt.Should().Be(endsAt);
+    }
+
     private static QuestRunService CreateRunService(
         FakeQuestRunRepository runRepository,
         FakeQuestRoomRepository roomRepository,
@@ -1520,6 +1671,7 @@ public class QuestRunServiceTests
             new FakeItemRepository(),
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
+            new FakeTreasureMapExpeditionRepository(),
             new BattleService(),
             new QuestBattleFactory());
     }
@@ -1992,6 +2144,36 @@ public class QuestRunServiceTests
         public Task DeleteAsync(MarketListingId id)
         {
             listingsById.Remove(id);
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeTreasureMapExpeditionRepository : ITreasureMapExpeditionRepository
+    {
+        private TreasureMapExpedition? _expedition;
+
+        public FakeTreasureMapExpeditionRepository(TreasureMapExpedition? expedition = null)
+        {
+            _expedition = expedition;
+        }
+
+        public TreasureMapExpedition? StoredExpedition => _expedition;
+        public int SaveCount { get; private set; }
+
+        public Task<TreasureMapExpedition?> GetAsync(TreasureMapExpeditionId id)
+            => Task.FromResult(_expedition?.Id == id ? _expedition : null);
+
+        public Task<TreasureMapExpedition?> GetCurrentByPlayerAsync(PlayerId playerId)
+            => Task.FromResult(_expedition);
+
+        public Task<IReadOnlyList<TreasureMapExpedition>> ListByPlayerAsync(PlayerId playerId)
+            => Task.FromResult<IReadOnlyList<TreasureMapExpedition>>(
+                _expedition is not null ? [_expedition] : []);
+
+        public Task SaveAsync(TreasureMapExpedition expedition)
+        {
+            _expedition = expedition;
+            SaveCount++;
             return Task.CompletedTask;
         }
     }

@@ -3,17 +3,18 @@ using server.shared.constants.chat;
 
 namespace server.domain.chat;
 
-public class ChatRoom(PlayerId ownerId, int lastChatId = 0)
+public class GlobalChatRoom(int lastChatId = 0)
 {
-    public PlayerId OwnerId { get; } = ownerId;
     public int LastChatId { get; private set; } = ValidateLastChatId(lastChatId);
+    public int PersistedLastChatId { get; private set; } = ValidateLastChatId(lastChatId);
     private readonly List<ChatMessage> _messages = [];
     public IReadOnlyList<ChatMessage> Messages => _messages;
 
-    public ChatRoom(PlayerId ownerId, int lastChatId, IEnumerable<ChatMessage> messages)
-        : this(ownerId, lastChatId)
+    public GlobalChatRoom(int lastChatId, IEnumerable<ChatMessage> messages)
+        : this(lastChatId)
     {
         RestoreMessages(messages);
+        PersistedLastChatId = LastChatId;
     }
 
     public int GetNextMessageId()
@@ -29,8 +30,7 @@ public class ChatRoom(PlayerId ownerId, int lastChatId = 0)
         var chatId = GetNextMessageId();
         ChatText body = new(text);
         var now = DateTimeOffset.UtcNow;
-        var isAlerted = senderId == OwnerId;
-        ChatMessage chatMessage = new(ChatMessageSenderType.Player, senderId, chatId, body, now, isAlerted);
+        ChatMessage chatMessage = new(ChatMessageSenderType.Player, senderId, chatId, body, now, isAlerted: false);
         _messages.Add(chatMessage);
         LastChatId = chatId;
         EnforceMessageLimit();

@@ -45,6 +45,10 @@ classDiagram
         +TreasureMapRewardResult RewardResult
         +bool RewardClaimed
         +TreasureMap Map
+        +MarkCompleted(TreasureMapRewardResult rewardResult, DateTimeOffset completedAt)
+        +MarkFailed(DateTimeOffset completedAt)
+        +ClaimReward()
+        +AdvanceTime(TimeSpan duration)
     }
 
     class TreasureMapClaimHistory {

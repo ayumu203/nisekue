@@ -44,11 +44,11 @@ stage_id,floor_no,floor_type,exp_rate,gold_rate
 8,8,Normal,255.0,190.0
 8,9,Normal,274.0,205.0
 8,10,Boss,296.0,222.0
-9,1,Normal,28.0,22.0
-9,2,Normal,31.0,24.0
-9,3,Normal,34.0,26.0
-9,4,Normal,37.0,28.0
-9,5,Boss,42.0,32.0
+9,1,Normal,42.0,22.0
+9,2,Normal,46.5,24.0
+9,3,Normal,51.0,26.0
+9,4,Normal,55.5,28.0
+9,5,Boss,63.0,32.0
 10,1,Normal,40.0,30.0
 10,2,Normal,44.0,33.0
 10,3,Normal,48.0,36.0

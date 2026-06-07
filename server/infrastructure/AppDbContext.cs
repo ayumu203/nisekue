@@ -32,6 +32,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ItemDeletionLogEntity> ItemDeletionLogs => Set<ItemDeletionLogEntity>();
     public DbSet<ChatRoomEntity> ChatRooms => Set<ChatRoomEntity>();
     public DbSet<ChatMessageEntity> ChatMessages => Set<ChatMessageEntity>();
+    public DbSet<GlobalChatRoomEntity> GlobalChatRooms => Set<GlobalChatRoomEntity>();
+    public DbSet<GlobalChatMessageEntity> GlobalChatMessages => Set<GlobalChatMessageEntity>();
     public DbSet<ThreadEntity> Threads => Set<ThreadEntity>();
     public DbSet<ThreadReplyEntity> ThreadReplies => Set<ThreadReplyEntity>();
     public DbSet<QuestRoomEntity> QuestRooms => Set<QuestRoomEntity>();
@@ -294,6 +296,43 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         chatMessage.Property(x => x.IsAlerted)
             .HasColumnName("is_alerted")
             .HasDefaultValue(false)
+            .IsRequired();
+
+        var globalChatRoom = modelBuilder.Entity<GlobalChatRoomEntity>();
+        globalChatRoom.ToTable("global_chat_rooms", "internal");
+        globalChatRoom.HasKey(x => x.Id);
+        globalChatRoom.Property(x => x.Id)
+            .HasColumnName("id")
+            .HasColumnType("uuid")
+            .IsRequired();
+        globalChatRoom.Property(x => x.LastChatId)
+            .HasColumnName("last_chat_id")
+            .IsRequired();
+
+        var globalChatMessage = modelBuilder.Entity<GlobalChatMessageEntity>();
+        globalChatMessage.ToTable("global_chat_messages", "internal");
+        globalChatMessage.HasKey(x => x.ChatId);
+        globalChatMessage.Property(x => x.ChatId)
+            .HasColumnName("chat_id")
+            .ValueGeneratedNever()
+            .IsRequired();
+        globalChatMessage.Property(x => x.SenderType)
+            .HasColumnName("sender_type")
+            .HasConversion<int>()
+            .IsRequired();
+        globalChatMessage.Property(x => x.SenderId)
+            .HasColumnName("sender_id")
+            .HasColumnType("uuid")
+            .HasConversion(new ValueConverter<PlayerId?, Guid?>(
+                x => x == null ? null : x.Value.Value,
+                value => value == null ? null : new PlayerId(value.Value)));
+        globalChatMessage.Property(x => x.Message)
+            .HasColumnName("message")
+            .HasMaxLength(ChatConstants.MessageMaxLength)
+            .IsRequired();
+        globalChatMessage.Property(x => x.CreatedAt)
+            .HasColumnName("created_at")
+            .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .IsRequired();
 
         var thread = modelBuilder.Entity<ThreadEntity>();

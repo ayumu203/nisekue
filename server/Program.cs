@@ -135,6 +135,7 @@ builder.Services.AddSingleton<IStatusRankThresholdRepository, CsvStatusRankThres
 builder.Services.AddSingleton<ICombatIndexWeightRepository, CsvCombatIndexWeightRepository>();
 builder.Services.AddSingleton<ICombatIndexRankThresholdRepository, CsvCombatIndexRankThresholdRepository>();
 builder.Services.AddScoped<IChatRoomRepository, DbChatRoomRepository>();
+builder.Services.AddScoped<IGlobalChatRoomRepository, DbGlobalChatRoomRepository>();
 builder.Services.AddScoped<IThreadRepository, DbThreadRepository>();
 builder.Services.AddSingleton<ITrainingEnemyRepository, CsvTrainingEnemyRepository>();
 builder.Services.AddSingleton<IMoveRepository, CsvMoveRepository>();
@@ -173,6 +174,7 @@ builder.Services.AddScoped<QuestDataCleanupService>();
 builder.Services.AddScoped<RankingAggregationService>();
 builder.Services.AddScoped<RankingReadService>();
 builder.Services.AddScoped<ChatService>();
+builder.Services.AddScoped<GlobalChatService>();
 builder.Services.AddScoped<ThreadService>();
 builder.Services.AddScoped<TrainingService>();
 if (rankingEnabled)

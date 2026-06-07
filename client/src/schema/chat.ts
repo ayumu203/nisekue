@@ -9,7 +9,7 @@ export const chatMessageSchema = z.object({
   imagePath: z.string().min(1).nullable().optional(),
   text: z.string().trim().min(1, 'メッセージを入力してください').max(200, 'メッセージは200文字以内で入力してください'),
   createdAt: z.string().datetime({ offset: true, message: '日時の形式が不正です' }),
-  isAlerted: z.boolean(),
+  isAlerted: z.boolean().optional(),
 })
 
 export const getChatRoomRequestSchema = z.object({
@@ -38,9 +38,33 @@ export const markChatMessagesAlertedResponseSchema = z.object({
   updatedCount: z.number().int().min(0),
 })
 
+export const globalChatMessageSchema = z.object({
+  chatId: z.number().int().min(1, 'chatIdは1以上である必要があります'),
+  senderType: z.enum(['Player', 'System']).default('Player'),
+  senderId: playerIdSchema.nullable(),
+  senderName: z.string().trim().min(1, '投稿者名が不正です'),
+  imagePath: z.string().min(1).nullable().optional(),
+  text: z.string().trim().min(1, 'メッセージを入力してください').max(200, 'メッセージは200文字以内で入力してください'),
+  createdAt: z.string().datetime({ offset: true, message: '日時の形式が不正です' }),
+})
+
+export const getGlobalChatRoomResponseSchema = z.object({
+  lastChatId: z.number().int().min(0, 'lastChatIdは0以上である必要があります'),
+  messages: z.array(globalChatMessageSchema),
+})
+
+export const postGlobalChatMessageRequestSchema = z.object({
+  text: z.string().trim().min(1, 'メッセージを入力してください').max(200, 'メッセージは200文字以内で入力してください'),
+})
+
+export const postGlobalChatMessageResponseSchema = getGlobalChatRoomResponseSchema
+
 export type GetChatRoomRequest = z.infer<typeof getChatRoomRequestSchema>
 export type GetChatRoomResponse = z.infer<typeof getChatRoomResponseSchema>
 export type PostChatMessageRequest = z.infer<typeof postChatMessageRequestSchema>
 export type PostChatMessageResponse = z.infer<typeof postChatMessageResponseSchema>
 export type MarkChatMessagesAlertedRequest = z.infer<typeof markChatMessagesAlertedRequestSchema>
 export type MarkChatMessagesAlertedResponse = z.infer<typeof markChatMessagesAlertedResponseSchema>
+export type GetGlobalChatRoomResponse = z.infer<typeof getGlobalChatRoomResponseSchema>
+export type PostGlobalChatMessageRequest = z.infer<typeof postGlobalChatMessageRequestSchema>
+export type PostGlobalChatMessageResponse = z.infer<typeof postGlobalChatMessageResponseSchema>

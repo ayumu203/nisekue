@@ -67,6 +67,50 @@ classDiagram
 
         note for ChatService "匿名ログイン中のユーザーは ChatRoom への投稿不可。\n閲覧のみ許可し、投稿要求はエンドポイントで拒否する。"
 
+        %% 全体チャット機能
+        class GlobalChatRoom {
+            <<Aggregate Root>>
+            +int LastChatId
+            -List~ChatMessage~ _messages
+            +IReadOnlyList~ChatMessage~ Messages
+            +GlobalChatRoom(lastChatId: int, messages: IEnumerable~ChatMessage~)
+            +GetNextMessageId() : int
+            +PostMessage(senderId : PlayerId, text : string) : void
+            +PostSystemMessage(text : string) : void
+            +RestoreMessages(messages: IEnumerable~ChatMessage~) : void
+            +EnforceMessageLimit() : void
+        }
+
+        class IGlobalChatRoomRepository {
+            +Task~GlobalChatRoom~ GetAsync()
+            +Task SaveAsync(room: GlobalChatRoom)
+        }
+
+        class GlobalChatRoomView {
+            <<Read Model>>
+            +int LastChatId
+            +IReadOnlyList~GlobalChatMessageView~ Messages
+        }
+
+        class GlobalChatMessageView {
+            <<Read Model>>
+            +int ChatId
+            +string SenderType
+            +PlayerId? SenderId
+            +string SenderName
+            +string? ImagePath
+            +string Message
+            +DateTimeOffset CreatedAt
+        }
+
+        class GlobalChatService {
+            <<Application Service>>
+            +Task~GlobalChatRoomView~ GetAsync()
+            +Task~GlobalChatRoomView~ PostMessageAsync(senderId: PlayerId, text: string)
+        }
+
+        note for GlobalChatService "匿名ログイン中のユーザーは投稿不可。\n通知（is_alerted）機能はなし。"
+
         %% スレッド機能
         class Thread {
             <<Aggregate Root>>
@@ -199,7 +243,13 @@ classDiagram
         note for ThreadService "通知の検知はホーム画面の初回取得時のみ行う。\n未通知のメッセージ/返信を検知したらトースト表示し、その直後に alert 済みに更新する。"
     }
 
-    ChatRoom *-- ChatMessage : 0..50
+    GlobalChatRoom *-- ChatMessage : 0..100
+    GlobalChatRoom ..> IGlobalChatRoomRepository : stored_by
+    IGlobalChatRoomRepository ..> GlobalChatRoom : stores/loads
+    GlobalChatService ..> GlobalChatMessageView : builds
+    GlobalChatService ..> GlobalChatRoomView : builds
+    GlobalChatService ..> IGlobalChatRoomRepository : use
+    ChatRoom *-- ChatMessage : 0..100
     ChatMessage *-- ChatText : has
     ChatMessage ..> ChatMessageSenderType : has
     IChatRoomRepository ..> ChatRoom : stores/loads

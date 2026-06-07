@@ -26,17 +26,18 @@ dotnet build server/server.csproj
 dotnet run --project ./server/server.csproj          # http://localhost:5068
 dotnet watch --project ./server/server.csproj run     # hot reload
 dotnet test tests/server.tests/server.tests.csproj    # xUnit tests
+dotnet test tests/server.tests/server.tests.csproj --filter "FullyQualifiedName~Namespace.TestClass.MethodName"  # single test
 dotnet format server/server.csproj whitespace --verify-no-changes
 dotnet format server/server.csproj analyzers --verify-no-changes
 ```
 
 ### Frontend (run from `client/`)
 ```bash
-pnpm dev          # http://localhost:5173, proxies /api to :5068
-pnpm build
+pnpm dev          # http://localhost:5173, proxies /api to :5068 (/api prefix stripped)
+pnpm build        # tsc -b (type check) then vite build
 pnpm lint
 pnpm format
-pnpm format:check
+pnpm format:check  # Prettier: singleQuote, no semi, trailingComma all, printWidth 120
 ```
 
 ### Supabase (local)
@@ -45,6 +46,8 @@ pnpx supabase start   # start local instance (PostgreSQL on :54322)
 pnpx supabase status
 pnpx supabase stop
 ```
+
+Local connection string: `Host=127.0.0.1;Port=54322;Database=postgres;Username=postgres;Password=postgres`
 
 ### EF Core Migrations
 ```bash
@@ -70,6 +73,15 @@ Install tool if missing: `dotnet tool install --global dotnet-ef --version 10.0.
 - **`contexts/`**: Auth context (`AuthProvider.tsx`).
 - **`hooks/`**: Custom hooks including `useQuestRunHub.ts` for SignalR.
 - **`schema/`**: Zod validation schemas.
+- **`lib/`**: Pure utility functions (auth helpers, storage, formatters).
+- **`client/locale/<domain>/*.json`**: UI strings imported directly by components (not a runtime i18n system).
+
+### Adding a new frontend API endpoint
+Update these four locations in order:
+1. `client/src/schema/*` — Zod request/response schemas
+2. `client/src/api/endpoints.ts` — contract definition (path, method, schemas)
+3. `client/src/api/*.ts` — fetch + error handling function
+4. `client/src/pages/*` or `components/*` — `useSWR` call or mutation
 
 ## Design-First Rule
 
@@ -89,11 +101,12 @@ Before implementing changes to `server/domain/` or `server/infrastructure/`, upd
 
 ## Coding Conventions
 
-- **C#**: PascalCase for types/methods/properties, camelCase for locals/args. 4-space indent.
+- **C#**: PascalCase for types/methods/properties, camelCase for locals/args. 4-space indent. Namespaces use lowercase dot-separated form: `server.domain.battle`, `server.tests`.
 - **TypeScript**: camelCase for variables/functions, PascalCase for components/types.
 - Domain logic in `server/domain/`, framework-dependent code in `server/infrastructure/`.
 - Endpoint handlers in `Program.cs` stay small; complex logic goes to domain/infrastructure.
 - Frontend state fetching uses `useSWR`.
+- Master data (CSV) repositories are registered as `Singleton`; DB repositories are `Scoped`.
 
 ## Commit & PR
 
