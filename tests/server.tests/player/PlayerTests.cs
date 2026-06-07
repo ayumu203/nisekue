@@ -432,4 +432,43 @@ public class PlayerTests
     {
         return new JobMoveLearningRule(job, moveIds.Select(x => new MoveId(x)).ToArray());
     }
+
+    [Fact]
+    public void IsRoadmapUnlocked_WhenDefaultConstructed_ApprenticeIsUnlocked()
+    {
+        var player = CreatePlayer(level: 1);
+
+        player.IsRoadmapUnlocked(Job.Apprentice).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsRoadmapUnlocked_WhenDefaultConstructed_WarriorIsNotUnlocked()
+    {
+        var player = CreatePlayer(level: 1);
+
+        player.IsRoadmapUnlocked(Job.Warrior).Should().BeFalse();
+    }
+
+    [Fact]
+    public void UnlockRoadmap_WhenCalled_IsRoadmapUnlockedReturnsTrue()
+    {
+        var player = CreatePlayer(level: 1);
+
+        player.UnlockRoadmap(Job.Warrior);
+
+        player.IsRoadmapUnlocked(Job.Warrior).Should().BeTrue();
+    }
+
+    [Fact]
+    public void RoadmapUnlockFlags_WhenMultipleUnlocked_DoesNotAffectEachOther()
+    {
+        var player = CreatePlayer(level: 1);
+
+        player.UnlockRoadmap(Job.Warrior);
+        player.UnlockRoadmap(Job.Mage);
+
+        player.IsRoadmapUnlocked(Job.Warrior).Should().BeTrue();
+        player.IsRoadmapUnlocked(Job.Mage).Should().BeTrue();
+        player.IsRoadmapUnlocked(Job.Guardian).Should().BeFalse();
+    }
 }

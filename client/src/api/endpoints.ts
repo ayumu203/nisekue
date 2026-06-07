@@ -16,6 +16,10 @@ import {
   sendPlayerGiftRequestSchema,
   sendPlayerGiftResponseSchema,
   rebirthPlayerResponseSchema,
+  unlockJobRoadmapRequestSchema,
+  unlockJobRoadmapResponseSchema,
+  jobRoadmapListResponseSchema,
+  jobRoadmapResponseSchema,
 } from '@/schema/player'
 import {
   getChatRoomRequestSchema,
@@ -104,6 +108,12 @@ export type {
   SendPlayerGiftRequest,
   SendPlayerGiftResponse,
   RebirthPlayerResponse,
+  UnlockJobRoadmapRequest,
+  UnlockJobRoadmapResponse,
+  JobRoadmapListEntry,
+  JobRoadmapListResponse,
+  JobRoadmapResponse,
+  JobRoadmapNode,
 } from '@/schema/player'
 export type {
   GetChatRoomRequest,
@@ -244,6 +254,22 @@ export const endpoints = {
       path: '/player/rebirth',
       method: 'POST',
       responseSchema: rebirthPlayerResponseSchema,
+    },
+    jobRoadmapList: {
+      path: '/player/job-roadmap/list',
+      method: 'GET',
+      responseSchema: jobRoadmapListResponseSchema,
+    },
+    jobRoadmap: {
+      path: (jobId: number) => `/player/job-roadmap?job=${jobId}`,
+      method: 'GET',
+      responseSchema: jobRoadmapResponseSchema,
+    },
+    unlockJobRoadmap: {
+      path: '/player/job-roadmap/unlock',
+      method: 'PUT',
+      requestSchema: unlockJobRoadmapRequestSchema,
+      responseSchema: unlockJobRoadmapResponseSchema,
     },
   },
   chatRoom: {

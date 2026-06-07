@@ -26,4 +26,5 @@ public class PlayerEntity
     public DateTimeOffset? QuestCooldownUntil { get; set; }
     public int ExpMultiplierFlags { get; set; }
     public int MapUnlockFlags { get; set; }
+    public long RoadmapUnlockFlags { get; set; }
 }
