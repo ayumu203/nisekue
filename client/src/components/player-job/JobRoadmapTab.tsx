@@ -8,6 +8,7 @@ import type { JobRoadmapListEntry } from '@/schema/player'
 import { innerSurfaceSx } from '@/constants/styles'
 import JobRoadmapList from './JobRoadmapList'
 import JobRoadmapTree from './JobRoadmapTree'
+import JobRoadmapWrap from './JobRoadmapWrap'
 import UnlockRoadmapDialog from './UnlockRoadmapDialog'
 import locale from '../../../locale/player-job/JobChange.json'
 
@@ -75,8 +76,9 @@ export default function JobRoadmapTab() {
 
   return (
     <Box>
+      <JobRoadmapWrap>
       {submitError && (
-        <Alert severity="error" sx={{ mb: 1.5, borderRadius: 1.5 }}>
+        <Alert severity="error" sx={{ borderRadius: 1.5 }}>
           {submitError}
         </Alert>
       )}
@@ -255,6 +257,7 @@ export default function JobRoadmapTab() {
           </Box>
         </Box>
       )}
+      </JobRoadmapWrap>
 
       <UnlockRoadmapDialog
         open={dialogOpen}
