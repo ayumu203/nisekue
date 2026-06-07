@@ -1,10 +1,4 @@
-import {
-  Box,
-  CircularProgress,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Box, CircularProgress, Paper, Stack, Typography } from '@mui/material'
 import LockIcon from '@mui/icons-material/Lock'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import { useState } from 'react'
@@ -27,7 +21,9 @@ export default function JobRoadmapList({ entries, isLoading, error, selectedJobI
     return (
       <Stack direction="row" spacing={1} alignItems="center" sx={{ p: 2 }}>
         <CircularProgress size={16} sx={{ color: '#8f6b2f' }} />
-        <Typography variant="body2" color="#6a4b35">{locale.loadingPlayer}</Typography>
+        <Typography variant="body2" color="#6a4b35">
+          {locale.loadingPlayer}
+        </Typography>
       </Stack>
     )
   }
@@ -141,8 +137,8 @@ export default function JobRoadmapList({ entries, isLoading, error, selectedJobI
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Box
                           sx={{
-                            width: 32,
-                            height: 32,
+                            width: 48,
+                            height: 48,
                             borderRadius: 1,
                             border: '2px solid',
                             borderColor: job.isUnlocked ? '#4a6c51' : '#b0a581',
@@ -158,7 +154,7 @@ export default function JobRoadmapList({ entries, isLoading, error, selectedJobI
                               component="img"
                               src={imageSrc}
                               alt={job.jobName}
-                              sx={{ width: 24, height: 24, objectFit: 'contain' }}
+                              sx={{ width: 36, height: 36, objectFit: 'contain' }}
                             />
                           ) : (
                             <Typography variant="caption" fontWeight={700} color="#4f4638">

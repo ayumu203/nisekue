@@ -1,9 +1,4 @@
-import {
-  Box,
-  Chip,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Box, Chip, Stack, Typography } from '@mui/material'
 import LockIcon from '@mui/icons-material/Lock'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import type { JobRoadmapNode } from '@/schema/player'
@@ -59,22 +54,18 @@ export default function JobRoadmapNodeComponent({
         <Box
           sx={{
             border: '2px solid',
-            borderColor: isTarget
-              ? (node.isUnlocked ? '#4a6c51' : '#8f6b2f')
-              : (node.isUnlocked ? '#a0c4a3' : '#c8b888'),
+            borderColor: isTarget ? (node.isUnlocked ? '#4a6c51' : '#8f6b2f') : node.isUnlocked ? '#a0c4a3' : '#c8b888',
             borderRadius: 1.5,
             p: 1,
-            bgcolor: isTarget
-              ? (node.isUnlocked ? '#eaf5eb' : '#fffbe6')
-              : (node.isUnlocked ? '#f0f8f1' : '#faf6e8'),
+            bgcolor: isTarget ? (node.isUnlocked ? '#eaf5eb' : '#fffbe6') : node.isUnlocked ? '#f0f8f1' : '#faf6e8',
             mb: 0.5,
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Box
               sx={{
-                width: isTarget ? 44 : 36,
-                height: isTarget ? 44 : 36,
+                width: isTarget ? 110 : 90,
+                height: isTarget ? 110 : 90,
                 borderRadius: 1.5,
                 border: '2px solid',
                 borderColor: node.isUnlocked ? '#4a6c51' : '#b0a070',
@@ -90,7 +81,7 @@ export default function JobRoadmapNodeComponent({
                   component="img"
                   src={imageSrc}
                   alt={node.jobName}
-                  sx={{ width: isTarget ? 34 : 28, height: isTarget ? 34 : 28, objectFit: 'contain' }}
+                  sx={{ width: isTarget ? 85 : 70, height: isTarget ? 85 : 70, objectFit: 'contain' }}
                 />
               ) : (
                 <Typography variant="caption" fontWeight={700} color="#4f4638">
@@ -109,12 +100,7 @@ export default function JobRoadmapNodeComponent({
               >
                 {node.jobName}
               </Typography>
-              <Typography
-                variant="caption"
-                color="#8a7a5a"
-                noWrap
-                sx={{ fontSize: { xs: '0.62rem', md: '0.75rem' } }}
-              >
+              <Typography variant="caption" color="#8a7a5a" noWrap sx={{ fontSize: { xs: '0.62rem', md: '0.75rem' } }}>
                 {locale.roadmapRankLabel.replace('{{rank}}', String(node.rank))}
               </Typography>
             </Stack>
@@ -142,11 +128,13 @@ export default function JobRoadmapNodeComponent({
                       borderRadius: 1,
                       border: '2px solid',
                       fontWeight: 900,
-                      ...(canUnlockTarget ? {} : {
-                        backgroundColor: '#ead9a7',
-                        borderColor: '#b59a69',
-                        color: '#927b56',
-                      }),
+                      ...(canUnlockTarget
+                        ? {}
+                        : {
+                            backgroundColor: '#ead9a7',
+                            borderColor: '#b59a69',
+                            color: '#927b56',
+                          }),
                     }}
                   >
                     {locale.roadmapUnlockButton.replace('{{gold}}', node.goldCostToUnlock.toLocaleString())}
