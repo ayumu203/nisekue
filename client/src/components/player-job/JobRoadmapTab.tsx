@@ -186,8 +186,8 @@ export default function JobRoadmapTab() {
       <UnlockRoadmapDialog
         open={dialogOpen}
         jobName={selectedEntry?.jobName ?? ''}
+        jobCode={selectedEntry?.jobCode}
         goldCost={targetGoldCost}
-        remainingGold={0}
         onClose={() => setDialogOpen(false)}
         onConfirm={handleUnlockConfirm}
       />
