@@ -6,6 +6,8 @@ using server.domain.move.enums;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
+using server.domain.treasuremap;
+using server.domain.treasuremap.enums;
 
 namespace server.application.quest;
 
@@ -23,12 +25,14 @@ public class QuestRunService(
     IItemRepository itemRepository,
     IJobProfileRepository jobProfileRepository,
     IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
+    ITreasureMapExpeditionRepository treasureMapExpeditionRepository,
     BattleService battleService,
     QuestBattleFactory questBattleFactory,
     Func<int, int>? rewardRollProvider = null)
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
+    private static readonly TimeSpan QuestCompletionTreasureMapAdvance = TimeSpan.FromMinutes(5);
     private const int ItemCapacity = 20;
     private readonly Func<int, int> _rewardRollProvider = rewardRollProvider ?? (maxInclusive => Random.Shared.Next(1, maxInclusive + 1));
 
@@ -302,6 +306,16 @@ public class QuestRunService(
 
             player.SetQuestCooldownUntil((run.EndedAt ?? DateTimeOffset.UtcNow).Add(QuestCooldown));
             await playerRepository.SaveAsync(player);
+
+            if (run.Status == QuestRunStatus.Succeeded)
+            {
+                var expedition = await treasureMapExpeditionRepository.GetCurrentByPlayerAsync(playerId);
+                if (expedition is not null && expedition.Status == TreasureMapExpeditionStatus.InProgress)
+                {
+                    expedition.AdvanceTime(QuestCompletionTreasureMapAdvance);
+                    await treasureMapExpeditionRepository.SaveAsync(expedition);
+                }
+            }
 
             if (run.Status == QuestRunStatus.Succeeded && (rewardEquipmentId is not null || rewardItemId is not null))
             {

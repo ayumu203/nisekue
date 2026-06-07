@@ -37,7 +37,7 @@ public sealed class TreasureMapExpedition
     public TreasureMapId MapId { get; }
     public PlayerId PlayerId { get; }
     public DateTimeOffset StartedAt { get; }
-    public DateTimeOffset EndsAt { get; }
+    public DateTimeOffset EndsAt { get; private set; }
     public TreasureMapExpeditionStatus Status { get; private set; }
     public TreasureMapRewardResult? RewardResult { get; private set; }
     public bool RewardClaimed { get; private set; }
@@ -72,6 +72,17 @@ public sealed class TreasureMapExpedition
 
         RewardClaimed = true;
         Status = TreasureMapExpeditionStatus.Claimed;
+    }
+
+    public void AdvanceTime(TimeSpan duration)
+    {
+        EnsureInProgress();
+        if (duration <= TimeSpan.Zero)
+        {
+            throw new ArgumentException("Advance duration must be positive.");
+        }
+
+        EndsAt -= duration;
     }
 
     private void EnsureInProgress()
