@@ -35,7 +35,7 @@
   "roadmapSelectHint": "左の一覧からジョブを選択してください",
   "roadmapUnlocked": "開放済み",
   "roadmapLocked": "未開放",
-  "roadmapUnlockButton": "{{gold}} Gold で開放",
+  "roadmapUnlockButton": "開放",
   "roadmapPrerequisiteLocked": "前提ジョブのロードマップを先に開放してください",
   "roadmapUnlockDialogTitle": "ロードマップを開放しますか？",
   "roadmapUnlockDialogJob": "ジョブ: {{jobName}}",
