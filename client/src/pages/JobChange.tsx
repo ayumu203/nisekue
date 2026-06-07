@@ -6,8 +6,6 @@ import {
   Container,
   Paper,
   Stack,
-  Tab,
-  Tabs,
   Typography,
 } from '@mui/material'
 import { useEffect, useState } from 'react'
@@ -149,18 +147,41 @@ export default function JobChange() {
                 </Paper>
               ) : null}
 
-              <Tabs
-                value={tabIndex}
-                onChange={(_, newValue) => setTabIndex(newValue)}
+              <Box
                 sx={{
-                  borderBottom: 1,
-                  borderColor: 'divider',
-                  '& .MuiTab-root': { fontWeight: 700 },
+                  display: 'flex',
+                  border: '2px solid #8f6b2f',
+                  borderRadius: 1.5,
+                  overflow: 'hidden',
+                  width: 'fit-content',
                 }}
               >
-                <Tab label={locale.title} />
-                <Tab label={locale.roadmapTab} />
-              </Tabs>
+                {[locale.title, locale.roadmapTab].map((label, i) => (
+                  <Box
+                    key={i}
+                    onClick={() => setTabIndex(i)}
+                    sx={{
+                      px: { xs: 2, sm: 3 },
+                      py: 0.75,
+                      cursor: 'pointer',
+                      fontWeight: 900,
+                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                      userSelect: 'none',
+                      borderRight: i === 0 ? '2px solid #8f6b2f' : 'none',
+                      background: tabIndex === i
+                        ? 'linear-gradient(90deg, #e8c84a 0%, #f2d27a 100%)'
+                        : '#f5efd8',
+                      color: tabIndex === i ? '#4a2e0a' : '#8a7a5a',
+                      transition: 'background 0.1s, color 0.1s',
+                      '&:hover': tabIndex !== i
+                        ? { background: '#ede4c5', color: '#6a5a3a' }
+                        : {},
+                    }}
+                  >
+                    {tabIndex === i ? `▶ ${label}` : label}
+                  </Box>
+                ))}
+              </Box>
 
               {tabIndex === 0 && (
                 <JobChangeTab
