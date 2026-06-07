@@ -23,5 +23,7 @@ public class Equipment(
     public EquipmentStatusBonus BonusValues { get; } = bonusValues ?? throw new ArgumentNullException(nameof(bonusValues));
     public IReadOnlySet<Job> EquippableJobs => _equippableJobs;
 
-    public bool CanEquip(Job job) => _equippableJobs.Contains(job);
+    public bool CanEquip(Job job) =>
+        _equippableJobs.Contains(job) ||
+        JobHierarchy.GetAncestors(job).Any(ancestor => _equippableJobs.Contains(ancestor));
 }
