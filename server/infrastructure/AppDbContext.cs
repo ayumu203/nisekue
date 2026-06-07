@@ -314,11 +314,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("is_alerted")
             .HasDefaultValue(false)
             .IsRequired();
-        chatMessageAlert
-            .HasOne<ChatMessageEntity>()
-            .WithOne()
-            .HasForeignKey<ChatMessageAlertEntity>(x => new { x.OwnerId, x.ChatId })
-            .OnDelete(DeleteBehavior.Cascade);
 
         var globalChatRoom = modelBuilder.Entity<GlobalChatRoomEntity>();
         globalChatRoom.ToTable("global_chat_rooms", "internal");

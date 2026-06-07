@@ -96,6 +96,17 @@ namespace server.infrastructure.chat
                         LIMIT {ChatConstants.MessageLimit}
                     )");
 
+                await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                    DELETE FROM internal.chat_message_alerts AS a
+                    WHERE a.owner_id = {ownerId}
+                      AND a.chat_id NOT IN (
+                        SELECT chat_id
+                        FROM internal.chat_message_alerts
+                        WHERE owner_id = {ownerId}
+                        ORDER BY chat_id DESC
+                        LIMIT {ChatConstants.MessageLimit}
+                    )");
+
                 await tx.CommitAsync();
             }
             catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.SerializationFailure)
