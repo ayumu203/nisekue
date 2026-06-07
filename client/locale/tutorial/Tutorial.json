@@ -7,20 +7,20 @@
       "message": "敵を選んで「戦う」を押してみよう！"
     },
     "trainingConfirm": {
-      "message": "技を選んで特訓を開始しよう！"
+      "message": "特訓を開始しよう！"
     },
     "trainingToLv5": {
-      "message": "レベル5まで敵と戦ってみよう！"
+      "message": "レベル5まで敵と戦ってみよう！\n技を使うともらえる経験値が増えるかも？"
     },
     "homeJobChange": {
-      "message": "転職してみましょう！\nレベルが上がると新しい技を覚えます"
+      "message": "次は転職してみましょう！\n"
     },
     "jobChangeInfo": {
-      "message": "おすすめは盾兵（ガーディアン）と魔法使いです。\n転職するとジョブ固有の技を覚えます",
+      "message": "おすすめは盾兵と魔法使いです。\n転職をすることでジョブ固有の技を覚えることができます！",
       "dismissLabel": "OK!"
     },
     "backToTraining": {
-      "message": "訓練場に戻りましょう！"
+      "message": "転職をしたら訓練場へ戻りましょう！"
     },
     "trainingToLv7": {
       "message": "次はレベル7を目指しましょう！"

@@ -185,7 +185,7 @@ export default function JobChange() {
           )}
         </Stack>
       </Paper>
-      {tutorialStep === 'training-to-lv7' && (
+      {tutorialStep === 'training-to-lv7' && successMessage && (
         <SpotlightTutorial targetId="tutorial-home-btn" message={tutorialLocale.steps.backToTraining.message} />
       )}
       {tutorialStep === 'job-change-info' && (
