@@ -11,11 +11,11 @@ public class ItemTests
     {
         var item = new Item(
             new ItemId(9999),
-            "戦士の証",
-            "戦士へ転職する証。",
+            "鬼武者の証",
+            "鬼武者へ転職する証。",
             maxStack: 99,
             effectType: ItemEffectType.ChangeJob,
-            changeJobTo: Job.Warrior,
+            changeJobTo: Job.OniWarrior,
             requiredLevel: 10);
         var player = CreatePlayer(level: 9);
 

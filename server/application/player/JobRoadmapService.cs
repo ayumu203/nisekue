@@ -134,10 +134,16 @@ public class JobRoadmapService(
         return true;
     }
 
-    private static int GoldCostForRank(int rank)
+    private static int GoldCostForRank(int rank) => rank switch
     {
-        return (int)Math.Pow(100, rank);
-    }
+        0 => 1,
+        1 => 1000,
+        2 => 10000,
+        3 => 50000,
+        4 => 100000,
+        5 => 500000,
+        _ => throw new ArgumentOutOfRangeException(nameof(rank)),
+    };
 
     private JobRoadmapNode BuildJobNode(Player player, Job job, HashSet<Job> visited)
     {

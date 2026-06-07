@@ -32,7 +32,7 @@ public class JobRoadmapServiceTests
     [Fact]
     public async Task UnlockAsync_WhenPrerequisiteUnlocked_SucceedsAndSpendsGold()
     {
-        var player = CreatePlayer(level: 1, gold: 1000);
+        var player = CreatePlayer(level: 1, gold: 2000);
         player.UnlockRoadmap(Job.Apprentice);
         var playerRepository = new FakePlayerRepository(player);
         var service = new JobRoadmapService(
@@ -44,8 +44,8 @@ public class JobRoadmapServiceTests
 
         var result = await service.UnlockAsync(player.Id, Job.Warrior);
 
-        result.PaidGold.Should().Be(100);
-        result.RemainingGold.Should().Be(900);
+        result.PaidGold.Should().Be(1000);
+        result.RemainingGold.Should().Be(1000);
         player.IsRoadmapUnlocked(Job.Warrior).Should().BeTrue();
     }
 

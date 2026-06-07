@@ -5,6 +5,7 @@ import type { JobRoadmapNode } from '@/schema/player'
 import { resolveJobAssetPath } from '@/lib/assets'
 import { softGoldButtonSx } from '@/constants/styles'
 import { Button } from '@mui/material'
+import { JobChangeIllustration } from '@/components/items/ItemIllustrations'
 import locale from '../../../locale/player-job/JobChange.json'
 
 interface JobRoadmapNodeComponentProps {
@@ -223,9 +224,7 @@ export default function JobRoadmapNodeComponent({
               mt: 0.25,
             }}
           >
-            <Typography variant="caption" fontWeight={900} color="#8a6a3a">
-              ア
-            </Typography>
+            <JobChangeIllustration sx={{ fontSize: 24, color: '#4f7148' }} />
           </Box>
           <Stack spacing={0.5} minWidth={0} flex={1}>
             <Typography
