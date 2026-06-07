@@ -373,3 +373,84 @@ export type UpdatePlayerMoveSetResponse = z.infer<typeof updatePlayerMoveSetResp
 export type SendPlayerGiftRequest = z.infer<typeof sendPlayerGiftRequestSchema>
 export type SendPlayerGiftResponse = z.infer<typeof sendPlayerGiftResponseSchema>
 export type RebirthPlayerResponse = z.infer<typeof rebirthPlayerResponseSchema>
+
+export const questStageReferenceSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+})
+
+export const jobRoadmapRequirementSchema = z.object({
+  id: z.number().int(),
+  code: playerJobCodeSchema,
+  name: z.string(),
+})
+
+export const unlockJobRoadmapRequestSchema = z.object({
+  jobId: z.number().int().min(1).max(29),
+})
+
+export const unlockJobRoadmapResponseSchema = z.object({
+  jobId: z.number().int(),
+  jobName: z.string(),
+  paidGold: z.number().int(),
+  remainingGold: z.number().int(),
+})
+
+export const jobRoadmapListEntrySchema = z.object({
+  jobId: z.number().int(),
+  jobCode: playerJobCodeSchema,
+  jobName: z.string(),
+  rank: z.number().int(),
+  isUnlocked: z.boolean(),
+  canUnlock: z.boolean(),
+  goldCostToUnlock: z.number().int(),
+})
+
+export const jobRoadmapListResponseSchema = z.array(jobRoadmapListEntrySchema)
+
+export type JobRoadmapNode = {
+  type: 'job' | 'item'
+  jobId?: number
+  jobCode?: PlayerJobCode
+  jobName?: string
+  rank?: number
+  itemId?: number
+  itemName?: string
+  isUnlocked: boolean
+  goldCostToUnlock?: number | null
+  stages?: { id: number; name: string }[] | null
+  requiredMasterJobs?: { id: number; code: PlayerJobCode; name: string }[] | null
+  requirements: JobRoadmapNode[]
+}
+
+const jobRoadmapNodeSchema: z.ZodType<JobRoadmapNode> = z.lazy(() =>
+  z.discriminatedUnion('type', [
+    z.object({
+      type: z.literal('job'),
+      jobId: z.number().int(),
+      jobCode: playerJobCodeSchema,
+      jobName: z.string(),
+      rank: z.number().int(),
+      isUnlocked: z.boolean(),
+      goldCostToUnlock: z.number().int().nullable(),
+      requirements: z.array(jobRoadmapNodeSchema),
+    }),
+    z.object({
+      type: z.literal('item'),
+      itemId: z.number().int(),
+      itemName: z.string(),
+      isUnlocked: z.boolean(),
+      stages: z.array(questStageReferenceSchema).nullable(),
+      requiredMasterJobs: z.array(jobRoadmapRequirementSchema).nullable(),
+      requirements: z.array(jobRoadmapNodeSchema),
+    }),
+  ]),
+)
+
+export const jobRoadmapResponseSchema = jobRoadmapNodeSchema
+
+export type UnlockJobRoadmapRequest = z.infer<typeof unlockJobRoadmapRequestSchema>
+export type UnlockJobRoadmapResponse = z.infer<typeof unlockJobRoadmapResponseSchema>
+export type JobRoadmapListEntry = z.infer<typeof jobRoadmapListEntrySchema>
+export type JobRoadmapListResponse = z.infer<typeof jobRoadmapListResponseSchema>
+export type JobRoadmapResponse = z.infer<typeof jobRoadmapResponseSchema>

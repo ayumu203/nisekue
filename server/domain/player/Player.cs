@@ -19,7 +19,8 @@ public class Player(
     IReadOnlySet<Job>? masteredJobs = null,
     int rebirthCount = 0,
     int expMultiplierFlags = 0,
-    int mapUnlockFlags = 0)
+    int mapUnlockFlags = 0,
+    long roadmapUnlockFlags = 1)
 {
     private readonly HashSet<Job> masteredJobs = masteredJobs is null ? [] : new HashSet<Job>(masteredJobs);
 
@@ -39,6 +40,7 @@ public class Player(
     public IReadOnlySet<Job> MasteredJobs => masteredJobs;
     public int ExpMultiplierFlags { get; private set; } = ValidateNonNegative(expMultiplierFlags, nameof(expMultiplierFlags));
     public int MapUnlockFlags { get; private set; } = ValidateNonNegative(mapUnlockFlags, nameof(mapUnlockFlags));
+    public long RoadmapUnlockFlags { get; private set; } = ValidateNonNegativeLong(roadmapUnlockFlags, nameof(roadmapUnlockFlags));
 
     public void UpdateName(string name)
     {
@@ -204,6 +206,26 @@ public class Player(
         }
 
         MapUnlockFlags &= ~flag;
+    }
+
+    public bool IsRoadmapUnlocked(Job job)
+    {
+        return (RoadmapUnlockFlags & (1L << ((int)job - 1))) != 0;
+    }
+
+    public void UnlockRoadmap(Job job)
+    {
+        RoadmapUnlockFlags |= (1L << ((int)job - 1));
+    }
+
+    private static long ValidateNonNegativeLong(long value, string paramName)
+    {
+        if (value < 0)
+        {
+            throw new ArgumentOutOfRangeException(paramName, "0以上である必要があります。");
+        }
+
+        return value;
     }
 
     public void GainGold(int gold)

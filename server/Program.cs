@@ -130,6 +130,7 @@ builder.Services.AddScoped<IMarketListingRepository, DbMarketListingRepository>(
 builder.Services.AddScoped<IMarketTradeHistoryRepository, DbMarketTradeHistoryRepository>();
 builder.Services.AddScoped<IItemDeletionLogRepository, DbItemDeletionLogRepository>();
 builder.Services.AddSingleton<IJobProfileRepository, CsvJobProfileRepository>();
+builder.Services.AddSingleton<IJobRoadmapRankRepository, CsvJobRoadmapRankRepository>();
 builder.Services.AddSingleton<IStatusRankThresholdRepository, CsvStatusRankThresholdRepository>();
 builder.Services.AddSingleton<ICombatIndexWeightRepository, CsvCombatIndexWeightRepository>();
 builder.Services.AddSingleton<ICombatIndexRankThresholdRepository, CsvCombatIndexRankThresholdRepository>();
@@ -162,6 +163,7 @@ builder.Services.AddSingleton<CombatIndexCalculator>();
 builder.Services.AddSingleton<CombatIndexRankEvaluator>();
 builder.Services.AddScoped<ItemStatBoostService>();
 builder.Services.AddScoped<PlayerJobService>();
+builder.Services.AddScoped<JobRoadmapService>();
 builder.Services.AddScoped<PlayerMoveSetService>();
 builder.Services.AddScoped<PlayerMoveSetSanitizer>();
 builder.Services.AddScoped<PlayerRebirthService>();

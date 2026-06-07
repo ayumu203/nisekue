@@ -124,6 +124,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("map_unlock_flags")
             .HasDefaultValue(0)
             .IsRequired();
+        player.Property(x => x.RoadmapUnlockFlags)
+            .HasColumnName("roadmap_unlock_flags")
+            .HasDefaultValue(1L)
+            .IsRequired();
 
         var playerMoves = modelBuilder.Entity<PlayerMoveEntity>();
         playerMoves.ToTable("player_moves", "internal");
