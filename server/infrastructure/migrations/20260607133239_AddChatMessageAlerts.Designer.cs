@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using server.infrastructure;
@@ -11,9 +12,11 @@ using server.infrastructure;
 namespace server.infrastructure.migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260607133239_AddChatMessageAlerts")]
+    partial class AddChatMessageAlerts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1319,6 +1322,15 @@ namespace server.infrastructure.migrations
                     b.HasIndex("PlayerId", "Status");
 
                     b.ToTable("treasure_map_expeditions", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.chat.ChatMessageAlertEntity", b =>
+                {
+                    b.HasOne("server.infrastructure.chat.ChatMessageEntity", null)
+                        .WithOne()
+                        .HasForeignKey("server.infrastructure.chat.ChatMessageAlertEntity", "OwnerId", "ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("server.infrastructure.chat.ThreadEntity", b =>

@@ -32,6 +32,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ItemDeletionLogEntity> ItemDeletionLogs => Set<ItemDeletionLogEntity>();
     public DbSet<ChatRoomEntity> ChatRooms => Set<ChatRoomEntity>();
     public DbSet<ChatMessageEntity> ChatMessages => Set<ChatMessageEntity>();
+    public DbSet<ChatMessageAlertEntity> ChatMessageAlerts => Set<ChatMessageAlertEntity>();
     public DbSet<GlobalChatRoomEntity> GlobalChatRooms => Set<GlobalChatRoomEntity>();
     public DbSet<GlobalChatMessageEntity> GlobalChatMessages => Set<GlobalChatMessageEntity>();
     public DbSet<ThreadEntity> Threads => Set<ThreadEntity>();
@@ -294,6 +295,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .IsRequired();
         chatMessage.Property(x => x.IsAlerted)
+            .HasColumnName("is_alerted")
+            .HasDefaultValue(false)
+            .IsRequired();
+
+        var chatMessageAlert = modelBuilder.Entity<ChatMessageAlertEntity>();
+        chatMessageAlert.ToTable("chat_message_alerts", "internal");
+        chatMessageAlert.HasKey(x => new { x.OwnerId, x.ChatId });
+        chatMessageAlert.Property(x => x.OwnerId)
+            .HasColumnName("owner_id")
+            .HasColumnType("uuid")
+            .HasConversion(x => x.Value, value => new PlayerId(value))
+            .IsRequired();
+        chatMessageAlert.Property(x => x.ChatId)
+            .HasColumnName("chat_id")
+            .IsRequired();
+        chatMessageAlert.Property(x => x.IsAlerted)
             .HasColumnName("is_alerted")
             .HasDefaultValue(false)
             .IsRequired();

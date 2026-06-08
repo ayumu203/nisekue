@@ -29,7 +29,13 @@ namespace server.infrastructure.chat
                 .OrderBy(x => x.ChatId)
                 .ToListAsync();
 
-            var messages = messageEntities.Select(MapToDomain);
+            var chatIds = messageEntities.Select(x => x.ChatId).ToList();
+            var alertEntities = await dbContext.ChatMessageAlerts
+                .AsNoTracking()
+                .Where(x => x.OwnerId == ownerId && chatIds.Contains(x.ChatId))
+                .ToDictionaryAsync(x => x.ChatId, x => x.IsAlerted);
+
+            var messages = messageEntities.Select(e => MapToDomain(e, alertEntities));
             return new ChatRoom(ownerId, roomEntity.LastChatId, messages);
         }
 
@@ -63,6 +69,11 @@ namespace server.infrastructure.chat
                         INSERT INTO internal.chat_messages(owner_id, chat_id, sender_type, sender_id, message, is_alerted)
                         VALUES ({ownerId}, {message.ChatId}, {(int)message.SenderType}, {(message.SenderId == null ? (Guid?)null : message.SenderId.Value.Value)}, {message.Body.Text}, {message.IsAlerted})
                         ON CONFLICT (owner_id, chat_id) DO NOTHING");
+
+                    await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                        INSERT INTO internal.chat_message_alerts(owner_id, chat_id, is_alerted)
+                        VALUES ({ownerId}, {message.ChatId}, {message.IsAlerted})
+                        ON CONFLICT (owner_id, chat_id) DO NOTHING");
                 }
 
                 var maxPersistedChatId = messagesToPersist.Count == 0
@@ -80,6 +91,17 @@ namespace server.infrastructure.chat
                       AND m.chat_id NOT IN (
                         SELECT chat_id
                         FROM internal.chat_messages
+                        WHERE owner_id = {ownerId}
+                        ORDER BY chat_id DESC
+                        LIMIT {ChatConstants.MessageLimit}
+                    )");
+
+                await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                    DELETE FROM internal.chat_message_alerts AS a
+                    WHERE a.owner_id = {ownerId}
+                      AND a.chat_id NOT IN (
+                        SELECT chat_id
+                        FROM internal.chat_message_alerts
                         WHERE owner_id = {ownerId}
                         ORDER BY chat_id DESC
                         LIMIT {ChatConstants.MessageLimit}
@@ -112,7 +134,7 @@ namespace server.infrastructure.chat
 
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             var distinctIds = chatIds.Distinct().ToArray();
-            return await dbContext.ChatMessages
+            return await dbContext.ChatMessageAlerts
                 .Where(x => x.OwnerId == ownerId && distinctIds.Contains(x.ChatId) && !x.IsAlerted)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsAlerted, true));
         }
@@ -126,7 +148,10 @@ namespace server.infrastructure.chat
             return rows.Count == 0 ? null : rows[0];
         }
 
-        private static ChatMessage MapToDomain(ChatMessageEntity entity) =>
-            new(entity.SenderType, entity.SenderId, entity.ChatId, new ChatText(entity.Message), entity.CreatedAt, entity.IsAlerted);
+        private static ChatMessage MapToDomain(ChatMessageEntity entity, Dictionary<int, bool> alertLookup)
+        {
+            var isAlerted = alertLookup.TryGetValue(entity.ChatId, out var alerted) && alerted;
+            return new(entity.SenderType, entity.SenderId, entity.ChatId, new ChatText(entity.Message), entity.CreatedAt, isAlerted);
+        }
     }
 }
