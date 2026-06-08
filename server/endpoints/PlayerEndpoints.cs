@@ -50,7 +50,8 @@ internal static class PlayerEndpoints
             EquipmentStatusResolver equipmentStatusResolver,
             StatusRankEvaluator statusRankEvaluator,
             CombatIndexCalculator combatIndexCalculator,
-            CombatIndexRankEvaluator combatIndexRankEvaluator) =>
+            CombatIndexRankEvaluator combatIndexRankEvaluator,
+            AppDbContext db) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -73,6 +74,12 @@ internal static class PlayerEndpoints
             {
                 await playerRepository.SaveAsync(player);
             }
+
+            var now = DateTimeOffset.UtcNow;
+            await db.Players
+                .Where(p => p.Id == playerId.Value.Value)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.LastActiveAt, now));
+
             var playerEquipments = await playerEquipmentRepository.GetByPlayerAsync(player.Id);
             var equipments = await equipmentRepository.GetAllAsync();
             return Results.Ok(ToPlayerResponse(

@@ -131,6 +131,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("roadmap_unlock_flags")
             .HasDefaultValue(1L)
             .IsRequired();
+        player.Property(x => x.LastActiveAt)
+            .HasColumnName("last_active_at");
 
         var playerMoves = modelBuilder.Entity<PlayerMoveEntity>();
         playerMoves.ToTable("player_moves", "internal");
