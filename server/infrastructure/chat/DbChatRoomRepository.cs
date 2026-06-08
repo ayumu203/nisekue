@@ -133,10 +133,16 @@ namespace server.infrastructure.chat
             }
 
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var ownerIdValue = ownerId.Value;
             var distinctIds = chatIds.Distinct().ToArray();
-            return await dbContext.ChatMessageAlerts
-                .Where(x => x.OwnerId == ownerId && distinctIds.Contains(x.ChatId) && !x.IsAlerted)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsAlerted, true));
+
+            // 行が存在しない場合でも正しく既読化できるよう UPSERT を使う
+            return await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                INSERT INTO internal.chat_message_alerts (owner_id, chat_id, is_alerted)
+                SELECT {ownerIdValue}, unnest({distinctIds}::int[]), true
+                ON CONFLICT (owner_id, chat_id) DO UPDATE
+                    SET is_alerted = true
+                    WHERE chat_message_alerts.is_alerted = false");
         }
 
         private static async Task<int?> LockRoomAndGetLastChatIdAsync(AppDbContext dbContext, Guid ownerId)
