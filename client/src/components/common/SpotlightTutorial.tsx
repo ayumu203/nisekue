@@ -78,7 +78,7 @@ export default function SpotlightTutorial({
 
   function getMessageTop(): number {
     if (!targetRect) {
-      return isMobile ? viewportHeight * 0.6 : viewportHeight - 160
+      return viewportHeight - 160
     }
 
     if (messagePosition === 'top') {
@@ -129,10 +129,13 @@ export default function SpotlightTutorial({
         elevation={8}
         sx={{
           position: 'absolute',
-          top: getMessageTop(),
           ...(isMobile
-            ? { left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)' }
-            : { left: hasSpotlight ? getMessageLeft() : 16, right: hasSpotlight ? 'auto' : 16 }),
+            ? { bottom: 16, left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)' }
+            : {
+                top: getMessageTop(),
+                left: hasSpotlight ? getMessageLeft() : 16,
+                right: hasSpotlight ? 'auto' : 16,
+              }),
           maxWidth: 300,
           p: 2,
           borderRadius: 3,
