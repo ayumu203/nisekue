@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using server.infrastructure;
@@ -11,9 +12,11 @@ using server.infrastructure;
 namespace server.infrastructure.migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260608163225_BackfillChatMessageAlerts")]
+    partial class BackfillChatMessageAlerts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -419,10 +422,6 @@ namespace server.infrastructure.migrations
                     b.Property<int>("JobLevel")
                         .HasColumnType("integer")
                         .HasColumnName("job_level");
-
-                    b.Property<DateTimeOffset?>("LastActiveAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_active_at");
 
                     b.Property<int>("Level")
                         .HasColumnType("integer")
