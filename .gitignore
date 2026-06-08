@@ -5,3 +5,5 @@ publish/
 node_modules/
 supabase/.temp/
 supabase/.branches/
+tools/active-reporter/active-reporter
+tools/active-reporter-test/active-reporter-test
