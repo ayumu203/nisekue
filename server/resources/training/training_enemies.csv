@@ -8,7 +8,7 @@ id,name,image_path,level,max_hp,max_mp,strength,defense,intelligence,luck,speed
 5,たいちょう,/image/training/01_heishi.png,150,1527,236,906,380,8,228,380
 14,せいてんのまどう,/image/training/14_angle.png,200,1435,1584,12,357,1925,354,530
 6,だいけんじゃ,/image/training/05_magic.png,250,1960,2196,12,444,2538,441,968
-15,かがやきのけんごう,/image/training/13_blood.png,102,948,164,471,310,8,156,166
+15,かがやきのけんごう,/image/training/13_blood.png,1500,23400,8700,15700,13000,5700,6500,8100
 7,ねこえりーと,/image/training/03_heishi.png,300,3008,1236,1934,707,707,1927,2277
 8,だいまどうし,/image/training/06_magic.png,400,3535,4384,12,882,4550,878,2105
 9,アンポ将軍,/image/training/08_anpo.png,500,7206,2112,4907,3155,1059,1578,2630
