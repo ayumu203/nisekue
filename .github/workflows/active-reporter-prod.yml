@@ -1,0 +1,36 @@
+name: Active Player Reporter - Production
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    environment: prod
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: tools/active-reporter/go.sum
+
+      - name: Build
+        run: go build -o active-reporter .
+        working-directory: tools/active-reporter
+
+      - name: Run
+        env:
+          SUPABASE_DB_CONNECTION_STRING: ${{ secrets.SUPABASE_DB_CONNECTION_STRING }}
+          REPORT_ENDPOINT_URL: ${{ secrets.REPORT_ENDPOINT_URL }}
+          PORTAL_API_KEY: ${{ secrets.PORTAL_API_KEY }}
+        run: ./active-reporter
+        working-directory: tools/active-reporter
