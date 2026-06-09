@@ -1,4 +1,4 @@
-name = "nisekue-active-reporter"
+name = "nisekue-active-player"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 
