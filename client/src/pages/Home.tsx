@@ -66,7 +66,7 @@ function Home() {
   const [toastQueue, setToastQueue] = useState<string[]>([])
   const userId = session?.user.id ?? null
   const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
-  const [showRebirthTutorial, setShowRebirthTutorial] = useState(false)
+  const [isRebirthTutorialDismissed, setIsRebirthTutorialDismissed] = useState(false)
 
   function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
     if (!userId) {
@@ -78,12 +78,6 @@ function Home() {
   }
   const [chatTab, setChatTab] = useState<'personal' | 'global'>('personal')
   const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
-  const isTrainingGroupOpen =
-    tutorialStep === 'home-job-change' ||
-    tutorialStep === 'home-move-setting' ||
-    tutorialStep === 'home-treasure-map' ||
-    showRebirthTutorial ||
-    isTrainingGroupOpenByUser
   const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
   const [isOthersGroupOpen, setIsOthersGroupOpen] = useState(false)
   const handledChatIdsRef = useRef<Set<number>>(new Set())
@@ -114,15 +108,14 @@ function Home() {
       return getPlayer(session.access_token)
     }
   })
-  useEffect(() => {
-    if (!userId || !player) {
-      return
-    }
-
-    if (player.level >= 100 && !isRebirthTutorialShown(userId)) {
-      setShowRebirthTutorial(true)
-    }
-  }, [userId, player])
+  const showRebirthTutorial =
+    !isRebirthTutorialDismissed && !!userId && !!player && player.level >= 100 && !isRebirthTutorialShown(userId)
+  const isTrainingGroupOpen =
+    tutorialStep === 'home-job-change' ||
+    tutorialStep === 'home-move-setting' ||
+    tutorialStep === 'home-treasure-map' ||
+    showRebirthTutorial ||
+    isTrainingGroupOpenByUser
 
   const chatSWRKey = session?.access_token && player?.userId ? (['chat-room', player.userId] as const) : null
   const {
@@ -572,7 +565,7 @@ function Home() {
             if (userId) {
               setRebirthTutorialShown(userId)
             }
-            setShowRebirthTutorial(false)
+            setIsRebirthTutorialDismissed(true)
           }}
         />
       )}

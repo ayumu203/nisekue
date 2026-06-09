@@ -1,5 +1,5 @@
 import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import BeginnerGuide from '@/components/common/BeginnerGuide'
@@ -18,14 +18,12 @@ export default function MoveSetting() {
   const { session, isLoading } = useAuth()
   const userId = session?.user.id ?? null
   const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
+  const [prevUserId, setPrevUserId] = useState(userId)
 
-  useEffect(() => {
-    if (!userId) {
-      return
-    }
-
-    setTutorialStepState(getTutorialStep(userId))
-  }, [userId])
+  if (userId !== prevUserId) {
+    setPrevUserId(userId)
+    setTutorialStepState(userId ? getTutorialStep(userId) : null)
+  }
 
   function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
     if (!userId) {
