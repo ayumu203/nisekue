@@ -57,7 +57,7 @@ import {
   twoColumnContentGridSx,
 } from '@/constants/styles'
 import { beginnerGuides } from '@/lib/beginnerGuides'
-import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import { getTutorialStep, isRebirthTutorialShown, setRebirthTutorialShown, setTutorialStep } from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 
@@ -65,10 +65,19 @@ function Home() {
   const { session, isLoading, isAnonymous } = useAuth()
   const [toastQueue, setToastQueue] = useState<string[]>([])
   const userId = session?.user.id ?? null
-  const tutorialStep = userId ? getTutorialStep(userId) : null
+  const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
+  const [isRebirthTutorialDismissed, setIsRebirthTutorialDismissed] = useState(false)
+
+  function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
+    if (!userId) {
+      return
+    }
+
+    setTutorialStep(userId, next)
+    setTutorialStepState(next)
+  }
   const [chatTab, setChatTab] = useState<'personal' | 'global'>('personal')
   const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
-  const isTrainingGroupOpen = tutorialStep === 'home-job-change' || isTrainingGroupOpenByUser
   const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
   const [isOthersGroupOpen, setIsOthersGroupOpen] = useState(false)
   const handledChatIdsRef = useRef<Set<number>>(new Set())
@@ -99,6 +108,15 @@ function Home() {
       return getPlayer(session.access_token)
     }
   })
+  const showRebirthTutorial =
+    !isRebirthTutorialDismissed && !!userId && !!player && player.level >= 100 && !isRebirthTutorialShown(userId)
+  const isTrainingGroupOpen =
+    tutorialStep === 'home-job-change' ||
+    tutorialStep === 'home-move-setting' ||
+    tutorialStep === 'home-treasure-map' ||
+    showRebirthTutorial ||
+    isTrainingGroupOpenByUser
+
   const chatSWRKey = session?.access_token && player?.userId ? (['chat-room', player.userId] as const) : null
   const {
     data: chatRoom,
@@ -227,6 +245,12 @@ function Home() {
                 <Status
                   player={player}
                   actionAlign="start"
+                  gearIconId={tutorialStep === 'home-player-setting' ? 'tutorial-gear-btn' : undefined}
+                  onGearClick={() => {
+                    if (userId && tutorialStep === 'home-player-setting') {
+                      setTutorialStep(userId, 'player-setting-random')
+                    }
+                  }}
                   topAction={
                     <BeginnerGuide
                       userId={session?.user.id}
@@ -265,11 +289,17 @@ function Home() {
                 {locale.training}
               </Button>
               <Button
+                id={tutorialStep === 'home-treasure-map' ? 'tutorial-treasure-map-btn' : undefined}
                 component={Link}
                 to="/treasure-map"
                 variant="contained"
                 startIcon={<TreasureMapIcon />}
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                onClick={() => {
+                  if (userId && tutorialStep === 'home-treasure-map') {
+                    setTutorialStep(userId, 'treasure-map-info')
+                  }
+                }}
               >
                 {locale.treasureMap}
               </Button>
@@ -293,11 +323,17 @@ function Home() {
               <Collapse in={isTrainingGroupOpen}>
                 <Stack spacing={1} sx={{ pl: 1, pr: 1, pt: 1 }}>
                   <Button
+                    id={tutorialStep === 'home-move-setting' ? 'tutorial-move-setting-btn' : undefined}
                     component={Link}
                     to="/move-setting"
                     variant="contained"
                     startIcon={<MoveSettingIcon />}
                     sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                    onClick={() => {
+                      if (userId && tutorialStep === 'home-move-setting') {
+                        setTutorialStep(userId, 'move-setting-info')
+                      }
+                    }}
                   >
                     {locale.moveSetting}
                   </Button>
@@ -317,6 +353,7 @@ function Home() {
                     {locale.jobChange}
                   </Button>
                   <Button
+                    id={showRebirthTutorial ? 'tutorial-rebirth-btn' : undefined}
                     component={Link}
                     to="/rebirth"
                     variant="contained"
@@ -486,6 +523,9 @@ function Home() {
           </Box>
         </Stack>
       </Paper>
+      {tutorialStep === 'home-player-setting' && (
+        <SpotlightTutorial targetId="tutorial-gear-btn" message={tutorialLocale.steps.homePlayerSetting.message} />
+      )}
       {tutorialStep === 'home-training' && (
         <SpotlightTutorial targetId="tutorial-training-btn" message={tutorialLocale.steps.homeTraining.message} />
       )}
@@ -494,6 +534,40 @@ function Home() {
       )}
       {tutorialStep === 'training-to-lv7' && (
         <SpotlightTutorial targetId="tutorial-training-btn" message={tutorialLocale.steps.backToTraining.message} />
+      )}
+      {tutorialStep === 'home-move-setting' && (
+        <SpotlightTutorial
+          targetId="tutorial-move-setting-btn"
+          message={tutorialLocale.steps.homeMoveSetting.message}
+        />
+      )}
+      {tutorialStep === 'home-treasure-map' && (
+        <SpotlightTutorial
+          targetId="tutorial-treasure-map-btn"
+          message={tutorialLocale.steps.homeTreasureMap.message}
+        />
+      )}
+      {tutorialStep === 'treasure-map-to-home' && (
+        <SpotlightTutorial
+          message={tutorialLocale.steps.tutorialComplete.message}
+          showDismiss
+          dismissLabel={tutorialLocale.steps.tutorialComplete.dismissLabel}
+          onDismiss={() => advanceTutorial('completed')}
+        />
+      )}
+      {showRebirthTutorial && (
+        <SpotlightTutorial
+          targetId="tutorial-rebirth-btn"
+          message={tutorialLocale.steps.rebirthGuide.message}
+          showDismiss
+          dismissLabel={tutorialLocale.steps.rebirthGuide.dismissLabel}
+          onDismiss={() => {
+            if (userId) {
+              setRebirthTutorialShown(userId)
+            }
+            setIsRebirthTutorialDismissed(true)
+          }}
+        />
       )}
       <Snackbar
         open={toastQueue.length > 0}

@@ -37,6 +37,8 @@ type StatusProps = {
   showDesktopActions?: boolean
   topAction?: ReactNode
   actionAlign?: 'start' | 'end'
+  gearIconId?: string
+  onGearClick?: () => void
 }
 
 function toNormalized(value: number | undefined, maxValue: number): number {
@@ -114,6 +116,8 @@ export default function Status({
   showDesktopActions = true,
   topAction,
   actionAlign = 'end',
+  gearIconId,
+  onGearClick,
 }: StatusProps) {
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(true)
@@ -433,9 +437,11 @@ export default function Status({
   const statusActionButtons = (
     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
       <IconButton
+        id={gearIconId}
         component={Link}
         to="/player-setting"
         aria-label="プレイヤー設定へ移動"
+        onClick={onGearClick}
         sx={{
           display: showDesktopActions ? 'inline-flex' : 'none',
           ...topNavigationIconButtonSx,

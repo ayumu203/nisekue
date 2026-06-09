@@ -1,17 +1,38 @@
 import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import { useState } from 'react'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import MoveItemBox from '@/components/moveSetting/MoveItemBox'
+import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import { outerPagePaperSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
+import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import locale from '../../locale/player-setting/PlayerSetting.json'
 
 export default function MoveSetting() {
   const { session, isLoading } = useAuth()
+  const userId = session?.user.id ?? null
+  const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
+  const [prevUserId, setPrevUserId] = useState(userId)
+
+  if (userId !== prevUserId) {
+    setPrevUserId(userId)
+    setTutorialStepState(userId ? getTutorialStep(userId) : null)
+  }
+
+  function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
+    if (!userId) {
+      return
+    }
+
+    setTutorialStep(userId, next)
+    setTutorialStepState(next)
+  }
 
   const playerSWRKey = session?.user.id ? (['move-setting', session.user.id] as const) : null
   const {
@@ -53,7 +74,15 @@ export default function MoveSetting() {
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
-            <HomeNavIconButton ariaLabel={locale.backToHome} />
+            <HomeNavIconButton
+              id={tutorialStep === 'home-treasure-map' ? 'tutorial-home-btn-move' : undefined}
+              ariaLabel={locale.backToHome}
+              onClick={() => {
+                if (userId && tutorialStep === 'home-treasure-map') {
+                  setTutorialStep(userId, 'home-treasure-map')
+                }
+              }}
+            />
             <BeginnerGuide
               userId={session?.user.id}
               guide={beginnerGuides.moveSetting}
@@ -76,16 +105,30 @@ export default function MoveSetting() {
           ) : !player ? (
             <Alert severity="warning">{locale.loadingPlayer}</Alert>
           ) : (
-            <MoveItemBox
-              player={player}
-              accessToken={session?.access_token ?? ''}
-              onSaved={async () => {
-                await mutatePlayer()
-              }}
-            />
+            <Box id={tutorialStep === 'move-setting-info' ? 'tutorial-move-item-box' : undefined}>
+              <MoveItemBox
+                player={player}
+                accessToken={session?.access_token ?? ''}
+                onSaved={async () => {
+                  await mutatePlayer()
+                }}
+              />
+            </Box>
           )}
         </Stack>
       </Paper>
+      {tutorialStep === 'move-setting-info' && (
+        <SpotlightTutorial
+          targetId="tutorial-move-item-box"
+          message={tutorialLocale.steps.moveSettingInfo.message}
+          showDismiss
+          dismissLabel={tutorialLocale.steps.moveSettingInfo.dismissLabel}
+          onDismiss={() => advanceTutorial('home-treasure-map')}
+        />
+      )}
+      {tutorialStep === 'home-treasure-map' && (
+        <SpotlightTutorial targetId="tutorial-home-btn-move" message={tutorialLocale.steps.moveSettingToHome.message} />
+      )}
     </Container>
   )
 }
