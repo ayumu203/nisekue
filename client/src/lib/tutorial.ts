@@ -6,6 +6,7 @@ export type TutorialStep =
   | 'player-setting-to-home'
   | 'home-training'
   | 'training-fight'
+  | 'training-move-select'
   | 'training-confirm'
   | 'training-to-lv5'
   | 'home-job-change'
@@ -31,6 +32,7 @@ const TUTORIAL_STEPS: readonly TutorialStep[] = [
   'player-setting-to-home',
   'home-training',
   'training-fight',
+  'training-move-select',
   'training-confirm',
   'training-to-lv5',
   'home-job-change',

@@ -10,7 +10,7 @@
       "message": "気に入ったら「保存する」を押して確定しよう！"
     },
     "playerSettingAccount": {
-      "message": "アカウントを設定しておくと、データが消えるリスクを減らせます。\nメールアドレス・パスワードの設定やGoogle連携がここからできます。",
+      "message": "メールアドレス・パスワードの設定やGoogle連携がここからできます。\nアカウントを設定しておくと、データを保存することができます。",
       "dismissLabel": "わかった！"
     },
     "playerSettingToHome": {
@@ -22,11 +22,14 @@
     "trainingFight": {
       "message": "敵を選んで「戦う」を押してみよう！"
     },
+    "trainingMoveSelect": {
+      "message": "技を選んで戦おう！\n技を使うと経験値ボーナスがもらえるかも？"
+    },
     "trainingConfirm": {
       "message": "特訓を開始しよう！"
     },
     "trainingToLv5": {
-      "message": "レベル5まで敵と戦ってみよう！\n技を使うともらえる経験値が増えるかも？"
+      "message": "レベル5まで敵と戦ってみよう！"
     },
     "homeJobChange": {
       "message": "次は転職してみましょう！\n"
