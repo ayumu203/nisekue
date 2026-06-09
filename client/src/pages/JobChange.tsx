@@ -37,6 +37,15 @@ export default function JobChange() {
     }
   }, [userId])
 
+  function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
+    if (!userId) {
+      return
+    }
+
+    setTutorialStep(userId, next)
+    setTutorialStepState(next)
+  }
+
   const playerSWRKey = session?.user.id ? (['job-change', session.user.id] as const) : null
   const {
     data: player,
@@ -120,10 +129,16 @@ export default function JobChange() {
               {[locale.title, locale.roadmapTab].map((label, i) => (
                 <Box
                   key={i}
+                  id={i === 1 && tutorialStep === 'job-change-roadmap' ? 'tutorial-roadmap-tab' : undefined}
                   role="tab"
                   aria-selected={tabIndex === i}
                   tabIndex={0}
-                  onClick={() => setTabIndex(i)}
+                  onClick={() => {
+                    setTabIndex(i)
+                    if (i === 1 && tutorialStep === 'job-change-roadmap') {
+                      advanceTutorial('training-to-lv7')
+                    }
+                  }}
                   onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setTabIndex(i)}
                   sx={{
                     px: { xs: 2, sm: 3 },
@@ -193,14 +208,13 @@ export default function JobChange() {
           message={tutorialLocale.steps.jobChangeInfo.message}
           showDismiss
           dismissLabel={tutorialLocale.steps.jobChangeInfo.dismissLabel}
-          onDismiss={() => {
-            if (!userId) {
-              return
-            }
-
-            setTutorialStep(userId, 'training-to-lv7')
-            setTutorialStepState('training-to-lv7')
-          }}
+          onDismiss={() => advanceTutorial('job-change-roadmap')}
+        />
+      )}
+      {tutorialStep === 'job-change-roadmap' && (
+        <SpotlightTutorial
+          targetId="tutorial-roadmap-tab"
+          message={tutorialLocale.steps.jobChangeRoadmap.message}
         />
       )}
     </Container>

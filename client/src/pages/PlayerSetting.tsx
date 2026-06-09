@@ -6,6 +6,9 @@ import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayer, updatePlayerImage } from '@/api/player'
 import GoogleColorIcon from '@/components/common/GoogleColorIcon'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
+import SpotlightTutorial from '@/components/common/SpotlightTutorial'
+import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import {
   googleButtonSx,
   greenOutlinedInputSx,
@@ -24,6 +27,8 @@ import locale from '../../locale/player-setting/PlayerSetting.json'
 
 export default function PlayerSetting() {
   const { session, isLoading } = useAuth()
+  const userId = session?.user.id ?? null
+  const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
   const [accountEmail, setAccountEmail] = useState<string | null>(session?.user.email ?? null)
   const [accountIsAnonymous, setAccountIsAnonymous] = useState(hasAnonymousIdentity(session?.user ?? null))
   const [userName, setUserName] = useState('')
@@ -69,6 +74,24 @@ export default function PlayerSetting() {
       return getPlayer(session.access_token)
     }
   })
+
+  useEffect(() => {
+    if (!userId) {
+      return
+    }
+
+    const step = getTutorialStep(userId)
+    setTutorialStepState(step)
+  }, [userId])
+
+  function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
+    if (!userId) {
+      return
+    }
+
+    setTutorialStep(userId, next)
+    setTutorialStepState(next)
+  }
 
   useEffect(() => {
     setUserName(player?.userName ?? '')
@@ -161,6 +184,9 @@ export default function PlayerSetting() {
 
       if (errors.length === 0) {
         setSuccessMessage(locale.saved)
+        if (tutorialStep === 'player-setting-save') {
+          advanceTutorial('player-setting-account')
+        }
       } else if (anySuccess) {
         setSubmitError(`${locale.partialSaveFailed} ${errors.join(' ')}`)
       } else {
@@ -273,7 +299,15 @@ export default function PlayerSetting() {
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Stack direction="row" justifyContent="flex-start">
-            <HomeNavIconButton ariaLabel={locale.backToHome} />
+            <HomeNavIconButton
+              id={tutorialStep === 'player-setting-to-home' ? 'tutorial-home-btn-setting' : undefined}
+              ariaLabel={locale.backToHome}
+              onClick={() => {
+                if (userId && tutorialStep === 'player-setting-to-home') {
+                  setTutorialStep(userId, 'home-training')
+                }
+              }}
+            />
           </Stack>
 
           {isPlayerLoading ? (
@@ -390,12 +424,16 @@ export default function PlayerSetting() {
                       </Stack>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                         <Button
+                          id={tutorialStep === 'player-setting-random' ? 'tutorial-random-btn' : undefined}
                           type="button"
                           variant="contained"
                           sx={mutedGreenButtonSx}
                           onClick={() => {
                             const randomImageNo = Math.floor(Math.random() * PLAYER_IMAGE_COUNT) + 1
                             setImageNoInput(String(randomImageNo))
+                            if (tutorialStep === 'player-setting-random') {
+                              advanceTutorial('player-setting-save')
+                            }
                           }}
                         >
                           {locale.randomSelect}
@@ -407,7 +445,13 @@ export default function PlayerSetting() {
                     </Stack>
                     {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
                     {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
-                    <Button type="submit" variant="contained" disabled={isSubmitting} sx={softGreenButtonSx}>
+                    <Button
+                      id={tutorialStep === 'player-setting-save' ? 'tutorial-save-btn' : undefined}
+                      type="submit"
+                      variant="contained"
+                      disabled={isSubmitting}
+                      sx={softGreenButtonSx}
+                    >
                       {isSubmitting ? locale.saving : locale.submitButton}
                     </Button>
                   </Stack>
@@ -415,6 +459,7 @@ export default function PlayerSetting() {
               </Paper>
 
               <Paper
+                id="tutorial-account-section"
                 variant="outlined"
                 sx={{
                   ...innerSurfaceSx,
@@ -509,6 +554,30 @@ export default function PlayerSetting() {
           )}
         </Stack>
       </Paper>
+      {tutorialStep === 'player-setting-random' && (
+        <SpotlightTutorial
+          targetId="tutorial-random-btn"
+          message={tutorialLocale.steps.playerSettingRandom.message}
+        />
+      )}
+      {tutorialStep === 'player-setting-save' && (
+        <SpotlightTutorial targetId="tutorial-save-btn" message={tutorialLocale.steps.playerSettingSave.message} />
+      )}
+      {tutorialStep === 'player-setting-account' && (
+        <SpotlightTutorial
+          targetId="tutorial-account-section"
+          message={tutorialLocale.steps.playerSettingAccount.message}
+          showDismiss
+          dismissLabel={tutorialLocale.steps.playerSettingAccount.dismissLabel}
+          onDismiss={() => advanceTutorial('player-setting-to-home')}
+        />
+      )}
+      {tutorialStep === 'player-setting-to-home' && (
+        <SpotlightTutorial
+          targetId="tutorial-home-btn-setting"
+          message={tutorialLocale.steps.playerSettingToHome.message}
+        />
+      )}
     </Container>
   )
 }

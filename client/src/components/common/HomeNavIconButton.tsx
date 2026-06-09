@@ -5,6 +5,7 @@ import { topNavigationIconButtonSx } from '@/constants/styles'
 type HomeNavIconButtonProps = {
   ariaLabel: string
   id?: string
+  onClick?: () => void
 }
 
 function HomeIcon(props: SvgIconProps) {
@@ -15,9 +16,9 @@ function HomeIcon(props: SvgIconProps) {
   )
 }
 
-export default function HomeNavIconButton({ ariaLabel, id }: HomeNavIconButtonProps) {
+export default function HomeNavIconButton({ ariaLabel, id, onClick }: HomeNavIconButtonProps) {
   return (
-    <IconButton id={id} component={Link} to="/" aria-label={ariaLabel} sx={topNavigationIconButtonSx}>
+    <IconButton id={id} component={Link} to="/" aria-label={ariaLabel} onClick={onClick} sx={topNavigationIconButtonSx}>
       <HomeIcon />
     </IconButton>
   )
