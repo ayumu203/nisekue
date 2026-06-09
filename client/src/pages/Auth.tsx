@@ -13,7 +13,13 @@ import {
   Typography,
 } from '@mui/material'
 import { Navigate } from 'react-router-dom'
-import { greenOutlinedInputSx, innerSurfaceSx, outerPagePaperSx, softGoldButtonSx, softGreenButtonSx } from '@/constants/styles'
+import {
+  greenOutlinedInputSx,
+  innerSurfaceSx,
+  outerPagePaperSx,
+  softGoldButtonSx,
+  softGreenButtonSx,
+} from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { supabase } from '@/lib/supabase'
 import locale from '../../locale/auth/Auth.json'
