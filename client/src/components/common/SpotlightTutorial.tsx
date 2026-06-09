@@ -13,7 +13,6 @@ type SpotlightTutorialProps = {
   targetId?: string
   message: string
   subMessage?: string
-  messagePosition?: 'top' | 'bottom'
   showDismiss?: boolean
   dismissLabel?: string
   onDismiss?: () => void
@@ -63,7 +62,6 @@ export default function SpotlightTutorial({
   targetId,
   message,
   subMessage,
-  messagePosition = 'bottom',
   showDismiss = false,
   dismissLabel = 'わかった！',
   onDismiss,
@@ -74,32 +72,6 @@ export default function SpotlightTutorial({
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const hasSpotlight = targetId != null && targetRect != null
-  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800
-
-  function getMessageTop(): number {
-    if (!targetRect) {
-      return viewportHeight - 160
-    }
-
-    if (messagePosition === 'top') {
-      return Math.max(8, targetRect.top - 120)
-    }
-
-    const below = targetRect.top + targetRect.height + 12
-    if (below + 120 > viewportHeight) {
-      return Math.max(8, targetRect.top - 120)
-    }
-
-    return below
-  }
-
-  function getMessageLeft(): number {
-    if (!targetRect) {
-      return 16
-    }
-
-    return Math.max(8, Math.min(targetRect.left, (typeof window !== 'undefined' ? window.innerWidth : 400) - 308))
-  }
 
   return (
     <Box
@@ -131,11 +103,7 @@ export default function SpotlightTutorial({
           position: 'absolute',
           ...(isMobile
             ? { bottom: 16, left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)' }
-            : {
-                top: getMessageTop(),
-                left: hasSpotlight ? getMessageLeft() : 16,
-                right: hasSpotlight ? 'auto' : 16,
-              }),
+            : { top: 16, right: 16 }),
           maxWidth: 300,
           p: 2,
           borderRadius: 3,
