@@ -804,10 +804,7 @@ export default function Training() {
         />
       )}
       {tutorialStep === 'training-to-lv5' && (
-        <SpotlightTutorial
-          message={tutorialLocale.steps.trainingToLv5.message}
-          subMessage={newEnemiesMessage ?? undefined}
-        />
+        <SpotlightTutorial message={tutorialLocale.steps.trainingToLv5.message} />
       )}
       {tutorialStep === 'training-to-lv7' && <SpotlightTutorial message={tutorialLocale.steps.trainingToLv7.message} />}
       {tutorialStep === 'training-quest-guide' && (
@@ -819,7 +816,7 @@ export default function Training() {
         />
       )}
       <Snackbar
-        open={newEnemiesMessage !== null && tutorialStep !== 'training-to-lv5'}
+        open={newEnemiesMessage !== null}
         autoHideDuration={3000}
         onClose={(_, reason) => {
           if (reason === 'clickaway') return
