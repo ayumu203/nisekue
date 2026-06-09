@@ -1,0 +1,72 @@
+classDiagram
+    %% Enum 定義は docs/common/01_Enum.mmd を参照
+    %% クエスト戦闘への統合（捕獲・呼出のターン解決）は docs/quest/04_クエストドメイン.mmd を参照
+
+    namespace PetContext {
+        class PlayerPet {
+            <<Aggregate Root>>
+            +PlayerPetId Id
+            +PlayerId PlayerId
+            +QuestEnemyDefinitionId EnemyDefinitionId
+            +PetBonusStatus BonusStatus
+            +bool IsActive
+            +DateTimeOffset CapturedAt
+            +Train(playerBaseStatus: Status) void
+            +Activate() void
+            +Deactivate() void
+        }
+
+        class PlayerPetId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class PetBonusStatus {
+            <<Value Object>>
+            +int MaxHp
+            +int MaxMp
+            +int Strength
+            +int Defense
+            +int Intelligence
+            +int Luck
+            +int Speed
+            +Add(other: PetBonusStatus) PetBonusStatus
+        }
+
+        class PetCaptureRateCalculator {
+            <<Domain Service>>
+            %% 成功率 = clamp(基礎率(敵Lv帯) + (プレイヤーLv - 敵Lv) * 5, 5, 95)
+            %% 基礎率: 敵Lv 1-19→50 / 20-39→40 / 40-59→30 / 60+→20
+            +Calculate(playerLevel: int, enemyLevel: int) int
+        }
+
+        class PetStatusResolver {
+            <<Domain Service>>
+            %% 敵マスタの基本ステータス + 育成加算分を合算した実効ステータスを返す
+            +Resolve(pet: PlayerPet, enemyDefinition: QuestEnemyDefinition) Status
+        }
+
+        class PetConstants {
+            <<Constants>>
+            +int MaxPetCount = 3
+            +int TrainingCostGold = 100000
+            +int TrainingRatePercent = 1
+            +int MaxSummonsPerQuestRun = 3
+        }
+
+        class IPlayerPetRepository {
+            <<Repository IF>>
+            +Task~IReadOnlyList~PlayerPet~~ GetByPlayerIdAsync(playerId: PlayerId)
+            +Task~PlayerPet?~ GetByIdAsync(id: PlayerPetId)
+            +Task~PlayerPet?~ GetActiveByPlayerIdAsync(playerId: PlayerId)
+            +Task AddAsync(pet: PlayerPet)
+            +Task UpdateAsync(pet: PlayerPet)
+            +Task DeleteAsync(id: PlayerPetId)
+        }
+    }
+
+    PlayerPet *-- PlayerPetId
+    PlayerPet *-- PetBonusStatus
+    PlayerPet ..> PetConstants : 育成計算で参照
+    PetStatusResolver ..> PlayerPet : resolve
+    IPlayerPetRepository ..> PlayerPet : persists
