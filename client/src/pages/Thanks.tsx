@@ -29,6 +29,11 @@ const creditEntries = [
     category: 'キャラクター素材',
     url: 'https://ranuking.ko-me.com/',
   },
+  {
+    name: 'DOT ILLUST',
+    category: 'モンスター素材',
+    url: 'https://dot-illust.net/',
+  },
 ] as const
 
 export default function Thanks() {
