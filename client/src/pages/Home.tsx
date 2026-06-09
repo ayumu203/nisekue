@@ -65,8 +65,17 @@ function Home() {
   const { session, isLoading, isAnonymous } = useAuth()
   const [toastQueue, setToastQueue] = useState<string[]>([])
   const userId = session?.user.id ?? null
-  const tutorialStep = userId ? getTutorialStep(userId) : null
+  const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
   const [showRebirthTutorial, setShowRebirthTutorial] = useState(false)
+
+  function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
+    if (!userId) {
+      return
+    }
+
+    setTutorialStep(userId, next)
+    setTutorialStepState(next)
+  }
   const [chatTab, setChatTab] = useState<'personal' | 'global'>('personal')
   const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
   const isTrainingGroupOpen =
@@ -550,11 +559,7 @@ function Home() {
           message={tutorialLocale.steps.tutorialComplete.message}
           showDismiss
           dismissLabel={tutorialLocale.steps.tutorialComplete.dismissLabel}
-          onDismiss={() => {
-            if (userId) {
-              setTutorialStep(userId, 'completed')
-            }
-          }}
+          onDismiss={() => advanceTutorial('completed')}
         />
       )}
       {showRebirthTutorial && (
