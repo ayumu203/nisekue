@@ -15,7 +15,9 @@ Web game (inspired by チビクエ3) with a monorepo structure: React frontend +
 - **Database**: PostgreSQL via Supabase
 - **Auth**: Supabase Auth (JWT), validated in `server/Program.cs`
 - **Real-time**: SignalR (quest runs only, at `/quest-hubs/runs`)
-- **Deploy**: GitHub Pages (frontend), Azure App Service (backend)
+- **Deploy**: Cloudflare Pages (frontend prod), GitHub Pages (frontend dev, via `deploy-frontend-dev.yml`), Azure App Service (backend)
+- **Workers**: `workers/active-reporter/` — Cloudflare Worker (cron every 5 min) reporting active player count to the game portal
+- **Simulation**: `simulation/` — Python scripts generating job status CSV master data
 
 ## Build & Dev Commands
 
@@ -121,3 +123,5 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on PRs and pushes to main:
 - Frontend: format check -> lint -> build
 
 Migrations auto-deploy via `db-migrate-dev.yml` / `db-migrate-prod.yml`. Use Session Pooler connection strings for Supabase.
+
+Scheduled maintenance workflows (dev/prod pairs): `cleanup-quest-data-*.yml`, `cleanup-expired-market-listings-*.yml`, `ranking-rebuild-*.yml`.
