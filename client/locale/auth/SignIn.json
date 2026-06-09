@@ -7,6 +7,8 @@
   "toastFailed": "ログインに失敗しました",
   "toastSuccess": "ログインしました",
   "defaultError": "ログインに失敗しました。入力内容を確認してください。",
+  "googleSubmit": "Googleでログイン",
+  "googleSubmitting": "ログイン中...",
   "switchLink": "新規登録はこちら",
   "errorMessages": {
     "invalid login credentials": "メールアドレスまたはパスワードが正しくありません。",
