@@ -33,7 +33,7 @@ export default function PlayerSetting() {
   const [accountPasswordInput, setAccountPasswordInput] = useState('')
   const [accountError, setAccountError] = useState<string | null>(null)
   const [accountSuccess, setAccountSuccess] = useState<string | null>(null)
-  const [accountAction, setAccountAction] = useState<'account' | null>(null)
+  const [accountAction, setAccountAction] = useState<'account' | 'google' | null>(null)
   const settingInputSx = {
     ...greenOutlinedInputSx,
     '& .MuiInputLabel-root.Mui-focused': {
@@ -87,6 +87,16 @@ export default function PlayerSetting() {
       setAccountEmailInput(session.user.email)
     }
   }, [session?.user.email])
+
+  useEffect(() => {
+    if (sessionStorage.getItem('googleLinkPending') !== 'true') return
+    sessionStorage.removeItem('googleLinkPending')
+
+    if (!hasAnonymousIdentity(session?.user ?? null)) {
+      setAccountIsAnonymous(false)
+      setAccountSuccess(locale.googleLinkSuccess)
+    }
+  }, [session?.user])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
@@ -225,6 +235,24 @@ export default function PlayerSetting() {
         : locale.setAccountEmailPendingSuccess,
     )
     setAccountAction(null)
+  }
+
+  async function handleGoogleLink(): Promise<void> {
+    setAccountAction('google')
+    setAccountError(null)
+    setAccountSuccess(null)
+
+    const redirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
+    sessionStorage.setItem('googleLinkPending', 'true')
+    const { error } = await supabase.auth.linkIdentity({
+      provider: 'google',
+      options: { redirectTo },
+    })
+
+    if (error) {
+      setAccountError(locale.googleLinkDefaultError)
+      setAccountAction(null)
+    }
   }
 
   if (isLoading) {
@@ -409,6 +437,18 @@ export default function PlayerSetting() {
                       </Typography>
                     ) : null}
                   </Stack>
+
+                  {anonymousIdentity ? (
+                    <Button
+                      type="button"
+                      variant="contained"
+                      disabled={accountAction !== null}
+                      onClick={handleGoogleLink}
+                      sx={softGreenButtonSx}
+                    >
+                      {accountAction === 'google' ? locale.googleLinkSubmitting : locale.googleLinkSubmit}
+                    </Button>
+                  ) : null}
 
                   <Box component="form" onSubmit={handleAccountSubmit} noValidate>
                     <Stack spacing={2}>
