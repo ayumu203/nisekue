@@ -431,7 +431,8 @@ export default function Training() {
     setTrainingError(null)
 
     if (tutorialStep === 'training-fight') {
-      advanceTutorial('training-confirm')
+      const hasMovesSelected = lastSubmittedMoveIds?.some((id) => id !== null) ?? false
+      advanceTutorial(hasMovesSelected ? 'training-confirm' : 'training-move-select')
     }
 
     if (!player) {
@@ -460,6 +461,10 @@ export default function Training() {
       next[turnIndex] = moveId
       return next
     })
+
+    if (tutorialStep === 'training-move-select' && moveId !== null) {
+      advanceTutorial('training-confirm')
+    }
   }
 
   const runTrainingRef = useRef(runTraining)
@@ -725,7 +730,10 @@ export default function Training() {
                       ) : null}
 
                       {displayEnemy && player && plannedMoveIds && !trainingResult ? (
-                        <Box ref={trainingMovePlanRef}>
+                        <Box
+                          ref={trainingMovePlanRef}
+                          id={tutorialStep === 'training-move-select' ? 'tutorial-move-plan-form' : undefined}
+                        >
                           <TrainingMovePlanForm
                             enemy={displayEnemy}
                             player={player}
@@ -797,29 +805,30 @@ export default function Training() {
       {tutorialStep === 'training-fight' && (
         <SpotlightTutorial targetId="tutorial-fight-btn" message={tutorialLocale.steps.trainingFight.message} />
       )}
+      {tutorialStep === 'training-move-select' && (
+        <SpotlightTutorial
+          targetId="tutorial-move-plan-form"
+          message={tutorialLocale.steps.trainingMoveSelect.message}
+        />
+      )}
       {tutorialStep === 'training-confirm' && (
         <SpotlightTutorial
           targetId="tutorial-start-training-btn"
           message={tutorialLocale.steps.trainingConfirm.message}
         />
       )}
-      {tutorialStep === 'training-to-lv5' && (
-        <SpotlightTutorial
-          message={tutorialLocale.steps.trainingToLv5.message}
-          subMessage={newEnemiesMessage ?? undefined}
-        />
-      )}
+      {tutorialStep === 'training-to-lv5' && <SpotlightTutorial message={tutorialLocale.steps.trainingToLv5.message} />}
       {tutorialStep === 'training-to-lv7' && <SpotlightTutorial message={tutorialLocale.steps.trainingToLv7.message} />}
       {tutorialStep === 'training-quest-guide' && (
         <SpotlightTutorial
           message={tutorialLocale.steps.trainingQuestGuide.message}
           showDismiss
           dismissLabel={tutorialLocale.steps.trainingQuestGuide.dismissLabel}
-          onDismiss={() => advanceTutorial('completed')}
+          onDismiss={() => advanceTutorial('home-move-setting')}
         />
       )}
       <Snackbar
-        open={newEnemiesMessage !== null && tutorialStep !== 'training-to-lv5'}
+        open={newEnemiesMessage !== null}
         autoHideDuration={3000}
         onClose={(_, reason) => {
           if (reason === 'clickaway') return

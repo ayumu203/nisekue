@@ -20,9 +20,12 @@ import {
 } from '@/api/treasureMap'
 import { getPlayer } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
+import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import { mutedGreenButtonSx, outerPagePaperSx, softGreenButtonSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
+import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import locale from '../../locale/treasure-map/TreasureMap.json'
 import type { TreasureMapExpedition, TreasureMapSummary } from '@/schema/treasureMap'
 
@@ -214,11 +217,30 @@ function buildLootStory(
 
 export default function TreasureMap() {
   const { session, isLoading } = useAuth()
+  const userId = session?.user.id ?? null
+  const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionMapId, setActionMapId] = useState<number | null>(null)
   const [isClaiming, setIsClaiming] = useState(false)
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [claimedHistory, setClaimedHistory] = useState<TreasureMapExpedition[]>([])
+
+  useEffect(() => {
+    if (!userId) {
+      return
+    }
+
+    setTutorialStepState(getTutorialStep(userId))
+  }, [userId])
+
+  function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
+    if (!userId) {
+      return
+    }
+
+    setTutorialStep(userId, next)
+    setTutorialStepState(next)
+  }
 
   const mapsSWRKey = session?.user.id ? ([`treasure-map-maps`, session.user.id] as const) : null
   const {
@@ -403,7 +425,10 @@ export default function TreasureMap() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 6 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack direction="row" justifyContent="flex-start" sx={{ mb: 1.5 }}>
-          <HomeNavIconButton ariaLabel={locale.backToHome} />
+          <HomeNavIconButton
+            id={tutorialStep === 'treasure-map-to-home' ? 'tutorial-home-btn-treasure' : undefined}
+            ariaLabel={locale.backToHome}
+          />
         </Stack>
         <Box
           sx={{
@@ -956,6 +981,20 @@ export default function TreasureMap() {
           </Stack>
         </Box>
       </Paper>
+      {tutorialStep === 'treasure-map-info' && (
+        <SpotlightTutorial
+          message={tutorialLocale.steps.treasureMapInfo.message}
+          showDismiss
+          dismissLabel={tutorialLocale.steps.treasureMapInfo.dismissLabel}
+          onDismiss={() => advanceTutorial('treasure-map-to-home')}
+        />
+      )}
+      {tutorialStep === 'treasure-map-to-home' && (
+        <SpotlightTutorial
+          targetId="tutorial-home-btn-treasure"
+          message={tutorialLocale.steps.treasureMapToHome.message}
+        />
+      )}
     </Container>
   )
 }

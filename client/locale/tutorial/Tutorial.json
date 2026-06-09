@@ -1,23 +1,45 @@
 {
   "steps": {
+    "homePlayerSetting": {
+      "message": "まずはキャラクターを設定しましょう！\n歯車アイコンから設定ページへ移動できます。"
+    },
+    "playerSettingRandom": {
+      "message": "「ランダムで選ぶ」を押してキャラクター画像を変えてみよう！"
+    },
+    "playerSettingSave": {
+      "message": "気に入ったら「保存する」を押して確定しよう！"
+    },
+    "playerSettingAccount": {
+      "message": "メールアドレス・パスワードの設定やGoogle連携がここからできます。\nアカウントを設定しておくと、データを保存することができます。",
+      "dismissLabel": "わかった！"
+    },
+    "playerSettingToHome": {
+      "message": "設定完了！ホームに戻りましょう。"
+    },
     "homeTraining": {
       "message": "まずは訓練場で戦ってみましょう！"
     },
     "trainingFight": {
       "message": "敵を選んで「戦う」を押してみよう！"
     },
+    "trainingMoveSelect": {
+      "message": "技を選んで戦おう！"
+    },
     "trainingConfirm": {
       "message": "特訓を開始しよう！"
     },
     "trainingToLv5": {
-      "message": "レベル5まで敵と戦ってみよう！\n技を使うともらえる経験値が増えるかも？"
+      "message": "レベル5まで敵と戦ってみよう！"
     },
     "homeJobChange": {
       "message": "次は転職してみましょう！\n"
     },
     "jobChangeInfo": {
-      "message": "おすすめは盾兵と魔法使いです。\n転職をすることでジョブ固有の技を覚えることができます！",
+      "message": "転職をすることでジョブ固有の技を覚えることができます！\nおすすめは盾兵と魔法使いです。",
       "dismissLabel": "OK!"
+    },
+    "jobChangeRoadmap": {
+      "message": "「ロードマップ」タブで転職条件を確認できます！"
     },
     "backToTraining": {
       "message": "転職をしたら訓練場へ戻りましょう！"
@@ -26,8 +48,36 @@
       "message": "次はレベル7を目指しましょう！"
     },
     "trainingQuestGuide": {
-      "message": "クエストに挑戦できるようになりました。\nホームへ戻ってクエストを選んでみましょう",
+      "message": "クエストに挑戦できるようになりました。\nまた他の機能についても紹介していきます！",
       "dismissLabel": "OK!"
+    },
+    "homeMoveSetting": {
+      "message": "技の並び替えができる「技の設定」を見てみましょう！"
+    },
+    "moveSettingInfo": {
+      "message": "ここで技の順番を並び替えられます。\n戦闘で使いたい技を好きな順に並べましょう！",
+      "dismissLabel": "わかった！"
+    },
+    "moveSettingToHome": {
+      "message": "ホームに戻りましょう！"
+    },
+    "homeTreasureMap": {
+      "message": "次は「宝の地図」を見てみましょう！"
+    },
+    "treasureMapInfo": {
+      "message": "地図を選んで探索を開始すると、時間経過で報酬がもらえます。\nレア度が高い地図ほど豪華な報酬が手に入ります！",
+      "dismissLabel": "わかった！"
+    },
+    "treasureMapToHome": {
+      "message": "ホームに戻りましょう！"
+    },
+    "tutorialComplete": {
+      "message": "チュートリアル完了です。\nみなさんの良いポチゲーライフを応援しています！！！\nゲーム運営者より",
+      "dismissLabel": "ありがとう!"
+    },
+    "rebirthGuide": {
+      "message": "レベル100に到達しました！\n「転生」が解放されました。転生するとレベルがリセットされますが、ステータスが引き継がれてより強くなれます！",
+      "dismissLabel": "わかった！"
     }
   }
 }
