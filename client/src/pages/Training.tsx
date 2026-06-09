@@ -817,9 +817,7 @@ export default function Training() {
           message={tutorialLocale.steps.trainingConfirm.message}
         />
       )}
-      {tutorialStep === 'training-to-lv5' && (
-        <SpotlightTutorial message={tutorialLocale.steps.trainingToLv5.message} />
-      )}
+      {tutorialStep === 'training-to-lv5' && <SpotlightTutorial message={tutorialLocale.steps.trainingToLv5.message} />}
       {tutorialStep === 'training-to-lv7' && <SpotlightTutorial message={tutorialLocale.steps.trainingToLv7.message} />}
       {tutorialStep === 'training-quest-guide' && (
         <SpotlightTutorial

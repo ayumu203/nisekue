@@ -129,10 +129,7 @@ export default function MoveSetting() {
         />
       )}
       {tutorialStep === 'home-treasure-map' && (
-        <SpotlightTutorial
-          targetId="tutorial-home-btn-move"
-          message={tutorialLocale.steps.moveSettingToHome.message}
-        />
+        <SpotlightTutorial targetId="tutorial-home-btn-move" message={tutorialLocale.steps.moveSettingToHome.message} />
       )}
     </Container>
   )

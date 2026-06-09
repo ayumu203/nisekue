@@ -212,10 +212,7 @@ export default function JobChange() {
         />
       )}
       {tutorialStep === 'job-change-roadmap' && (
-        <SpotlightTutorial
-          targetId="tutorial-roadmap-tab"
-          message={tutorialLocale.steps.jobChangeRoadmap.message}
-        />
+        <SpotlightTutorial targetId="tutorial-roadmap-tab" message={tutorialLocale.steps.jobChangeRoadmap.message} />
       )}
     </Container>
   )

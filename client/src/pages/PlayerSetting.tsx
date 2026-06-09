@@ -555,10 +555,7 @@ export default function PlayerSetting() {
         </Stack>
       </Paper>
       {tutorialStep === 'player-setting-random' && (
-        <SpotlightTutorial
-          targetId="tutorial-random-btn"
-          message={tutorialLocale.steps.playerSettingRandom.message}
-        />
+        <SpotlightTutorial targetId="tutorial-random-btn" message={tutorialLocale.steps.playerSettingRandom.message} />
       )}
       {tutorialStep === 'player-setting-save' && (
         <SpotlightTutorial targetId="tutorial-save-btn" message={tutorialLocale.steps.playerSettingSave.message} />
