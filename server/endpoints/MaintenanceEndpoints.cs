@@ -1,8 +1,10 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 using server.application.maintenance;
 using server.application.player;
+using server.infrastructure;
 
 namespace server.endpoints;
 
@@ -12,6 +14,33 @@ internal static class MaintenanceEndpoints
 
     internal static WebApplication MapMaintenanceEndpoints(this WebApplication app)
     {
+        app.MapGet("/internal/active-player/count", async (
+            HttpRequest request,
+            IConfiguration configuration,
+            IDbContextFactory<AppDbContext> dbContextFactory) =>
+        {
+            var expectedToken = configuration["Maintenance:MarketCleanupToken"];
+            if (string.IsNullOrWhiteSpace(expectedToken))
+            {
+                return Results.Problem(
+                    detail: "Maintenance:MarketCleanupToken が設定されていません。",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            var providedToken = request.Headers[MaintenanceTokenHeaderName].ToString();
+            if (!SecureEquals(providedToken, expectedToken))
+            {
+                return Results.Unauthorized();
+            }
+
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var threshold = DateTimeOffset.UtcNow.AddMinutes(-5);
+            var count = await dbContext.Players
+                .CountAsync(p => p.LastActiveAt != null && p.LastActiveAt >= threshold);
+
+            return Results.Ok(new { count });
+        }).ExcludeFromDescription();
+
         app.MapPost("/internal/market/listings/cleanup-expired", async (
             HttpRequest request,
             IConfiguration configuration,
