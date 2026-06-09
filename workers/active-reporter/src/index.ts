@@ -8,6 +8,10 @@ export interface Env {
 }
 
 export default {
+  async fetch(): Promise<Response> {
+    return new Response(null, { status: 404 })
+  },
+
   async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
     const countUrl = `${env.BACKEND_URL}/internal/active-player/count`
     const countResponse = await fetch(countUrl, {
