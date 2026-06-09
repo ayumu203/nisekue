@@ -14,6 +14,7 @@ import {
 } from '@mui/material'
 import { Navigate } from 'react-router-dom'
 import {
+  googleButtonSx,
   greenOutlinedInputSx,
   innerSurfaceSx,
   outerPagePaperSx,
@@ -22,6 +23,7 @@ import {
 } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { supabase } from '@/lib/supabase'
+import GoogleColorIcon from '@/components/common/GoogleColorIcon'
 import locale from '../../locale/auth/Auth.json'
 
 type SubmitMode = 'google' | 'signIn' | 'signUp' | 'anonymous' | null
@@ -147,7 +149,8 @@ function Auth() {
                 variant="contained"
                 disabled={isAnySubmitting}
                 onClick={handleGoogleSignIn}
-                sx={softGreenButtonSx}
+                sx={googleButtonSx}
+                startIcon={<GoogleColorIcon />}
               >
                 {submitMode === 'google' ? locale.googleSignInSubmitting : locale.googleSignIn}
               </Button>
