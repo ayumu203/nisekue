@@ -72,6 +72,29 @@ export const softGoldButtonSx = {
   },
 } as const
 
+export const googleButtonSx = {
+  '&&': {
+    backgroundColor: '#ffffff',
+    backgroundImage: 'none',
+    borderColor: '#dadce0',
+    color: '#3c4043',
+    boxShadow: 'none',
+  },
+  '&&:hover': {
+    backgroundColor: '#f8f9fa',
+    backgroundImage: 'none',
+    borderColor: '#c0c3c7',
+    boxShadow: 'none',
+  },
+  '&&.Mui-disabled': {
+    backgroundColor: '#f1f3f4',
+    backgroundImage: 'none',
+    borderColor: '#e0e0e0',
+    color: '#a8aab0',
+    boxShadow: 'none',
+  },
+} as const
+
 export const mutedRedButtonSx = {
   '&&': {
     backgroundColor: '#fff1ef',
