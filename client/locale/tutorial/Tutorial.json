@@ -23,7 +23,7 @@
       "message": "敵を選んで「戦う」を押してみよう！"
     },
     "trainingMoveSelect": {
-      "message": "技を選んで戦おう！\n技を使うと経験値ボーナスがもらえるかも？"
+      "message": "技を選んで戦おう！"
     },
     "trainingConfirm": {
       "message": "特訓を開始しよう！"
@@ -35,7 +35,7 @@
       "message": "次は転職してみましょう！\n"
     },
     "jobChangeInfo": {
-      "message": "おすすめは盾兵と魔法使いです。\n転職をすることでジョブ固有の技を覚えることができます！",
+      "message": "転職をすることでジョブ固有の技を覚えることができます！\nおすすめは盾兵と魔法使いです。",
       "dismissLabel": "OK!"
     },
     "jobChangeRoadmap": {
@@ -48,7 +48,7 @@
       "message": "次はレベル7を目指しましょう！"
     },
     "trainingQuestGuide": {
-      "message": "クエストに挑戦できるようになりました。\nホームへ戻ってクエストを選んでみましょう",
+      "message": "クエストに挑戦できるようになりました。\nまた他の機能についても紹介していきます！",
       "dismissLabel": "OK!"
     },
     "homeMoveSetting": {
@@ -72,8 +72,8 @@
       "message": "ホームに戻りましょう！"
     },
     "tutorialComplete": {
-      "message": "チュートリアル完了！\nあとは自由に冒険しよう！",
-      "dismissLabel": "はじめよう！"
+      "message": "チュートリアル完了です。\nみなさんの良いポチゲーライフを応援しています！！！\nゲーム運営者より",
+      "dismissLabel": "ありがとう!"
     },
     "rebirthGuide": {
       "message": "レベル100に到達しました！\n「転生」が解放されました。転生するとレベルがリセットされますが、ステータスが引き継がれてより強くなれます！",
