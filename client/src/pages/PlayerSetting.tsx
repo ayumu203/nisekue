@@ -4,8 +4,10 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayer, updatePlayerImage } from '@/api/player'
+import GoogleColorIcon from '@/components/common/GoogleColorIcon'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import {
+  googleButtonSx,
   greenOutlinedInputSx,
   innerSurfaceSx,
   mutedGreenButtonSx,
@@ -444,7 +446,8 @@ export default function PlayerSetting() {
                       variant="contained"
                       disabled={accountAction !== null}
                       onClick={handleGoogleLink}
-                      sx={softGreenButtonSx}
+                      sx={googleButtonSx}
+                      startIcon={<GoogleColorIcon />}
                     >
                       {accountAction === 'google' ? locale.googleLinkSubmitting : locale.googleLinkSubmit}
                     </Button>
