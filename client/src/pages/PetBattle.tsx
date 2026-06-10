@@ -17,7 +17,7 @@ import {
 import PetBattleLobbySection from '@/components/petbattle/PetBattleLobbySection'
 import PetBattleResultPanel from '@/components/petbattle/PetBattleResultPanel'
 import PetBattleRunSection from '@/components/petbattle/PetBattleRunSection'
-import { cyberButtonSx, cyberColors, cyberOutlinedButtonSx, cyberPanelSx } from '@/components/petbattle/petBattleStyles'
+import { cyberButtonSx, cyberColors, cyberDangerButtonSx, cyberPanelSx } from '@/components/petbattle/petBattleStyles'
 import {
   getReachableOpponents,
   getTargetCandidates,
@@ -366,6 +366,7 @@ export default function PetBattle() {
   const showLobby = !showLoading && currentRoom != null && currentRun == null
   const showRun = !showLoading && currentRun != null && currentRun.status === 'InProgress'
   const showResult = !showLoading && currentRun != null && currentRun.status !== 'InProgress'
+  const showStatsChips = !showRun
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'var(--app-bg-color)' }}>
@@ -403,42 +404,50 @@ export default function PetBattle() {
                       {locale.title}
                     </Typography>
                   </Stack>
-                  <Button onClick={() => navigate('/pets')} sx={cyberOutlinedButtonSx}>
-                    {locale.backToPets}
-                  </Button>
+                  {showRun ? (
+                    <Button
+                      onClick={() => void handleAbort()}
+                      disabled={isAborting || isSubmitting}
+                      sx={cyberDangerButtonSx}
+                    >
+                      {locale.surrender}
+                    </Button>
+                  ) : null}
                 </Stack>
 
-                <Box sx={{ mt: '24px' }}>
-                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                    <Chip
-                      label={`RATING ${displayStats.rating}`}
-                      sx={{
-                        color: cyberColors.text,
-                        backgroundColor: 'rgba(137, 185, 164, 0.22)',
-                        fontWeight: 900,
-                        border: `1px solid ${cyberColors.accentDim}`,
-                      }}
-                    />
-                    <Chip
-                      label={`TOTAL ${displayStats.totalBattles}`}
-                      sx={{
-                        color: cyberColors.text,
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        fontWeight: 800,
-                        border: `1px solid ${cyberColors.panelBorder}`,
-                      }}
-                    />
-                    <Chip
-                      label={`WIN RATE ${winRateLabel}`}
-                      sx={{
-                        color: cyberColors.text,
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        fontWeight: 700,
-                        border: `1px solid ${cyberColors.panelBorder}`,
-                      }}
-                    />
-                  </Stack>
-                </Box>
+                {showStatsChips ? (
+                  <Box sx={{ mt: '24px' }}>
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                      <Chip
+                        label={`RATING ${displayStats.rating}`}
+                        sx={{
+                          color: cyberColors.text,
+                          backgroundColor: 'rgba(137, 185, 164, 0.22)',
+                          fontWeight: 900,
+                          border: `1px solid ${cyberColors.accentDim}`,
+                        }}
+                      />
+                      <Chip
+                        label={`TOTAL ${displayStats.totalBattles}`}
+                        sx={{
+                          color: cyberColors.text,
+                          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                          fontWeight: 800,
+                          border: `1px solid ${cyberColors.panelBorder}`,
+                        }}
+                      />
+                      <Chip
+                        label={`WIN RATE ${winRateLabel}`}
+                        sx={{
+                          color: cyberColors.text,
+                          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                          fontWeight: 700,
+                          border: `1px solid ${cyberColors.panelBorder}`,
+                        }}
+                      />
+                    </Stack>
+                  </Box>
+                ) : null}
               </Stack>
             </Paper>
 
@@ -488,10 +497,8 @@ export default function PetBattle() {
                 run={currentRun}
                 drafts={drafts}
                 isSubmitting={isSubmitting}
-                isAborting={isAborting}
                 onDraftChange={handleDraftChange}
                 onConfirmCommands={handleConfirmCommands}
-                onAbort={handleAbort}
               />
             ) : null}
 

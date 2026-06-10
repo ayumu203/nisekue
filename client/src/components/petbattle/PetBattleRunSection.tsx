@@ -13,13 +13,7 @@ import {
 import { useEffect, useState } from 'react'
 import PetBattleMemberCard from '@/components/petbattle/PetBattleMemberCard'
 import PetBattleTurnLog from '@/components/petbattle/PetBattleTurnLog'
-import {
-  cyberButtonSx,
-  cyberColors,
-  cyberDangerButtonSx,
-  cyberPanelSx,
-  cyberSelectSx,
-} from '@/components/petbattle/petBattleStyles'
+import { cyberButtonSx, cyberColors, cyberPanelSx, cyberSelectSx } from '@/components/petbattle/petBattleStyles'
 import {
   getTargetCandidates,
   needsTargetSelection,
@@ -33,10 +27,8 @@ type PetBattleRunSectionProps = {
   run: PetBattleRun
   drafts: Record<string, PetBattleCommandDraft>
   isSubmitting: boolean
-  isAborting: boolean
   onDraftChange: (participantId: string, draft: PetBattleCommandDraft) => void
   onConfirmCommands: () => void | Promise<void>
-  onAbort: () => void | Promise<void>
 }
 
 const ownerRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
@@ -89,7 +81,7 @@ function FieldGrid({
                   <Box
                     sx={{
                       height: '100%',
-                      minHeight: 56,
+                      minHeight: { xs: 118, sm: 136 },
                       borderRadius: 2,
                       border: `1px dashed ${cyberColors.accentFaint}`,
                     }}
@@ -108,10 +100,8 @@ export default function PetBattleRunSection({
   run,
   drafts,
   isSubmitting,
-  isAborting,
   onDraftChange,
   onConfirmCommands,
-  onAbort,
 }: PetBattleRunSectionProps) {
   const [nowMs, setNowMs] = useState(() => Date.now())
 
@@ -150,75 +140,59 @@ export default function PetBattleRunSection({
 
   return (
     <Stack spacing={2}>
-      <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.25, sm: 1.5 } }}>
-        <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-          <Chip
-            label={`${locale.turnLabel} ${run.currentTurnNo}`}
-            sx={{ color: cyberColors.accent, backgroundColor: cyberColors.accentFaint, fontWeight: 800 }}
-          />
-          <Chip
-            label={
-              remainingSeconds > 0
-                ? `${locale.deadlineLabel} ${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, '0')}`
-                : locale.deadlineExpired
-            }
-            sx={{
-              color: remainingSeconds <= 10 ? cyberColors.danger : cyberColors.warn,
-              backgroundColor: remainingSeconds <= 10 ? 'rgba(255, 56, 96, 0.12)' : 'rgba(255, 209, 102, 0.12)',
-              fontWeight: 700,
-            }}
-          />
-          <Box sx={{ flex: 1 }} />
-          <Button onClick={() => void onAbort()} disabled={isAborting || isSubmitting} sx={cyberDangerButtonSx}>
-            {locale.surrender}
-          </Button>
-        </Stack>
-      </Paper>
-
       <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.25, sm: 2 } }}>
         <Stack spacing={1.25}>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="caption" sx={{ color: cyberColors.danger, fontWeight: 800, letterSpacing: '0.12em' }}>
-              {locale.opponentSideLabel}
+          <Stack direction="row" spacing={2} alignItems="center" useFlexGap flexWrap="wrap">
+            <Typography variant="body2" sx={{ color: cyberColors.text, fontWeight: 800, letterSpacing: '0.06em' }}>
+              {`TURN ${run.currentTurnNo}`}
             </Typography>
-            <Typography variant="caption" sx={{ color: cyberColors.textDim }}>
-              {run.opponentPlayerName ?? locale.unknownPlayer}
+            <Typography variant="body2" sx={{ color: cyberColors.text, fontWeight: 800, letterSpacing: '0.06em' }}>
+              {remainingSeconds > 0
+                ? `TIME LEFT ${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, '0')}`
+                : 'RESOLVING...'}
             </Typography>
           </Stack>
 
-          <FieldGrid
-            members={run.opponentMembers}
-            rowOrderForSide={opponentRowOrder}
-            targetedKeys={targetedOpponentKeys}
-            submittedIds={new Set()}
-          />
+          <Box
+            sx={{
+              border: `1px solid ${cyberColors.danger}`,
+              borderRadius: 2,
+              p: 0.75,
+              backgroundColor: 'rgba(255, 56, 96, 0.04)',
+            }}
+          >
+            <FieldGrid
+              members={run.opponentMembers}
+              rowOrderForSide={opponentRowOrder}
+              targetedKeys={targetedOpponentKeys}
+              submittedIds={new Set()}
+            />
+          </Box>
 
           <Box
             sx={{
-              height: 2,
-              borderRadius: 999,
-              background: `linear-gradient(90deg, transparent 0%, ${cyberColors.accent} 50%, transparent 100%)`,
-              opacity: 0.6,
-              my: 0.5,
+              border: `1px solid ${cyberColors.mp}`,
+              borderRadius: 2,
+              p: 0.75,
+              backgroundColor: 'rgba(62, 197, 255, 0.05)',
             }}
-          />
-
-          <Typography variant="caption" sx={{ color: cyberColors.accent, fontWeight: 800, letterSpacing: '0.12em' }}>
-            {locale.mySideLabel}
-          </Typography>
-
-          <FieldGrid
-            members={run.ownerMembers}
-            rowOrderForSide={ownerRowOrder}
-            targetedKeys={targetedOwnerKeys}
-            submittedIds={submittedIds}
-          />
+          >
+            <FieldGrid
+              members={run.ownerMembers}
+              rowOrderForSide={ownerRowOrder}
+              targetedKeys={targetedOwnerKeys}
+              submittedIds={submittedIds}
+            />
+          </Box>
         </Stack>
       </Paper>
 
       <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.25, sm: 2 } }}>
         <Stack spacing={1.5}>
-          <Typography variant="subtitle2" sx={{ color: cyberColors.accent, fontWeight: 800 }}>
+          <Typography
+            variant="h6"
+            sx={{ color: cyberColors.accent, fontWeight: 900, letterSpacing: '0.06em', lineHeight: 1.15 }}
+          >
             {locale.commandTitle}
           </Typography>
 
