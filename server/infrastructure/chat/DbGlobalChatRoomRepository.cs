@@ -9,7 +9,7 @@ namespace server.infrastructure.chat;
 
 public class DbGlobalChatRoomRepository(IDbContextFactory<AppDbContext> dbContextFactory) : IGlobalChatRoomRepository
 {
-    public async Task<GlobalChatRoom> GetAsync()
+    public async Task<GlobalChatRoom> GetAsync(int page = 1)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var roomEntity = await dbContext.GlobalChatRooms
@@ -21,15 +21,23 @@ public class DbGlobalChatRoomRepository(IDbContextFactory<AppDbContext> dbContex
             return new GlobalChatRoom(lastChatId: 0);
         }
 
+        var skip = (page - 1) * ChatConstants.PageSize;
         var messageEntities = await dbContext.GlobalChatMessages
             .AsNoTracking()
             .OrderByDescending(x => x.ChatId)
-            .Take(ChatConstants.MessageLimit)
+            .Skip(skip)
+            .Take(ChatConstants.PageSize)
             .OrderBy(x => x.ChatId)
             .ToListAsync();
 
         var messages = messageEntities.Select(MapToDomain);
         return new GlobalChatRoom(roomEntity.LastChatId, messages);
+    }
+
+    public async Task<int> GetTotalCountAsync()
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        return await dbContext.GlobalChatMessages.AsNoTracking().CountAsync();
     }
 
     public async Task SaveAsync(GlobalChatRoom room)
@@ -73,15 +81,6 @@ public class DbGlobalChatRoomRepository(IDbContextFactory<AppDbContext> dbContex
                 UPDATE internal.global_chat_rooms
                 SET last_chat_id = {persistedLastChatId}
                 WHERE id = {roomId}");
-
-            await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
-                DELETE FROM internal.global_chat_messages
-                WHERE chat_id NOT IN (
-                    SELECT chat_id
-                    FROM internal.global_chat_messages
-                    ORDER BY chat_id DESC
-                    LIMIT {ChatConstants.MessageLimit}
-                )");
 
             await tx.CommitAsync();
         }

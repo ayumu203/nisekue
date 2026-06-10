@@ -48,8 +48,13 @@ export const globalChatMessageSchema = z.object({
   createdAt: z.string().datetime({ offset: true, message: '日時の形式が不正です' }),
 })
 
+export const getGlobalChatRoomRequestSchema = z.object({
+  page: z.number().int().min(1).optional(),
+})
+
 export const getGlobalChatRoomResponseSchema = z.object({
   lastChatId: z.number().int().min(0, 'lastChatIdは0以上である必要があります'),
+  totalCount: z.number().int().min(0),
   messages: z.array(globalChatMessageSchema),
 })
 
@@ -65,6 +70,7 @@ export type PostChatMessageRequest = z.infer<typeof postChatMessageRequestSchema
 export type PostChatMessageResponse = z.infer<typeof postChatMessageResponseSchema>
 export type MarkChatMessagesAlertedRequest = z.infer<typeof markChatMessagesAlertedRequestSchema>
 export type MarkChatMessagesAlertedResponse = z.infer<typeof markChatMessagesAlertedResponseSchema>
+export type GetGlobalChatRoomRequest = z.infer<typeof getGlobalChatRoomRequestSchema>
 export type GetGlobalChatRoomResponse = z.infer<typeof getGlobalChatRoomResponseSchema>
 export type PostGlobalChatMessageRequest = z.infer<typeof postGlobalChatMessageRequestSchema>
 export type PostGlobalChatMessageResponse = z.infer<typeof postGlobalChatMessageResponseSchema>

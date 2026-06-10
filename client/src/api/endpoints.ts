@@ -28,6 +28,7 @@ import {
   markChatMessagesAlertedResponseSchema,
   postChatMessageRequestSchema,
   postChatMessageResponseSchema,
+  getGlobalChatRoomRequestSchema,
   getGlobalChatRoomResponseSchema,
   postGlobalChatMessageRequestSchema,
   postGlobalChatMessageResponseSchema,
@@ -299,6 +300,7 @@ export const endpoints = {
     get: {
       path: '/chat/global',
       method: 'GET',
+      requestSchema: getGlobalChatRoomRequestSchema,
       responseSchema: getGlobalChatRoomResponseSchema,
     },
     postMessage: {

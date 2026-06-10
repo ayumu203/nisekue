@@ -58,7 +58,9 @@ public class GlobalChatServiceTests
     {
         private GlobalChatRoom storedRoom = room;
 
-        public Task<GlobalChatRoom> GetAsync() => Task.FromResult(storedRoom);
+        public Task<GlobalChatRoom> GetAsync(int page = 1) => Task.FromResult(storedRoom);
+
+        public Task<int> GetTotalCountAsync() => Task.FromResult(storedRoom.Messages.Count);
 
         public Task SaveAsync(GlobalChatRoom room)
         {

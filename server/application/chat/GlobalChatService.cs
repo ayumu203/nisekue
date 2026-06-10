@@ -5,10 +5,11 @@ namespace server.application.chat;
 
 public class GlobalChatService(IGlobalChatRoomRepository globalChatRoomRepository, IPlayerRepository playerRepository)
 {
-    public async Task<GlobalChatRoomView> GetAsync()
+    public async Task<GlobalChatRoomView> GetAsync(int page = 1)
     {
-        var room = await globalChatRoomRepository.GetAsync();
-        return await BuildViewAsync(room);
+        var room = await globalChatRoomRepository.GetAsync(page);
+        var totalCount = await globalChatRoomRepository.GetTotalCountAsync();
+        return await BuildViewAsync(room, totalCount);
     }
 
     public async Task<GlobalChatRoomView> PostMessageAsync(PlayerId senderId, string text)
@@ -26,7 +27,7 @@ public class GlobalChatService(IGlobalChatRoomRepository globalChatRoomRepositor
         return await GetAsync();
     }
 
-    private async Task<GlobalChatRoomView> BuildViewAsync(GlobalChatRoom room)
+    private async Task<GlobalChatRoomView> BuildViewAsync(GlobalChatRoom room, int totalCount)
     {
         var senderIds = room.Messages
             .Select(x => x.SenderId)
@@ -63,6 +64,7 @@ public class GlobalChatService(IGlobalChatRoomRepository globalChatRoomRepositor
 
         return new GlobalChatRoomView(
             LastChatId: room.LastChatId,
+            TotalCount: totalCount,
             Messages: messageViews);
     }
 }

@@ -265,13 +265,13 @@ internal static class TreasureMapEndpoints
 
         if (reward.ExperiencePoints > 0)
         {
-            player.Exp += reward.ExperiencePoints;
-            player.JobExp += reward.ExperiencePoints;
+            player.Exp = (int)Math.Min((long)player.Exp + reward.ExperiencePoints, int.MaxValue);
+            player.JobExp = (int)Math.Min((long)player.JobExp + reward.ExperiencePoints, int.MaxValue);
         }
 
         if (reward.Gold > 0)
         {
-            player.Gold += reward.Gold;
+            player.Gold = (int)Math.Min((long)player.Gold + reward.Gold, int.MaxValue);
         }
 
         var stacks = await lockDbContext.PlayerItemStacks
