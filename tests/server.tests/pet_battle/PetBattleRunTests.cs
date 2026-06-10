@@ -114,7 +114,7 @@ public class PetBattleRunTests
     }
 
     [Fact]
-    public void SwitchToAutoActionForTimeout_WhenDeadlinePassed_SwitchesUnsubmittedMembers()
+    public void SwitchToAutoActionForTimeout_WhenDeadlinePassed_SwitchesManualMembers()
     {
         var run = CreateRun();
 
@@ -123,12 +123,110 @@ public class PetBattleRunTests
         run.OwnerMemberStates.Should().OnlyContain(m => m.ActionMode == ActionMode.AutoAttackOnly);
     }
 
+    [Fact]
+    public void SubmitCommand_WhenExactlyAtDeadline_IsAccepted()
+    {
+        var run = CreateRun();
+        var member = run.OwnerMemberStates[0];
+        var command = MakeCommand(member.ParticipantId, 1);
+
+        var act = () => run.SubmitCommand(member.ParticipantId, command, Deadline);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void SubmitCommand_WhenOpponentParticipantId_ThrowsKeyNotFoundException()
+    {
+        var run = CreateRun();
+        var opponentMember = run.OpponentMemberStates[0];
+        var command = MakeCommand(opponentMember.ParticipantId, 1);
+
+        var act = () => run.SubmitCommand(opponentMember.ParticipantId, command, Now);
+
+        act.Should().Throw<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public void SubmitCommand_WhenPetIsDead_ThrowsInvalidOperationException()
+    {
+        var run = CreateRun(ownerCount: 2);
+        var deadMember = run.OwnerMemberStates[0];
+        var deadCommand = MakeCommand(deadMember.ParticipantId, 1);
+        // 死亡状態のメンバーを持つ run を直接生成
+        var deadRun = CreateRunWithDeadOwner();
+        var dm = deadRun.OwnerMemberStates[0];
+        var cmd = MakeCommand(dm.ParticipantId, 1);
+
+        var act = () => deadRun.SubmitCommand(dm.ParticipantId, cmd, Now);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void SubmitCommand_WhenPetIsAutoAttackOnly_ThrowsInvalidOperationException()
+    {
+        var run = CreateRun();
+        run.SwitchToAutoActionForTimeout(Deadline.AddSeconds(1));
+        var member = run.OwnerMemberStates[0];
+        var command = MakeCommand(member.ParticipantId, 1);
+
+        var act = () => run.SubmitCommand(member.ParticipantId, command, Now);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    // --- AllOwnerCommandsSubmitted (multi-pet) ---
+
+    [Fact]
+    public void AllOwnerCommandsSubmitted_WhenOneOfTwoMembersNotSubmitted_ReturnsFalse()
+    {
+        var run = CreateRun(ownerCount: 2);
+        var first = run.OwnerMemberStates[0];
+        run.SubmitCommand(first.ParticipantId, MakeCommand(first.ParticipantId, 1), Now);
+
+        run.AllOwnerCommandsSubmitted().Should().BeFalse();
+    }
+
+    [Fact]
+    public void AllOwnerCommandsSubmitted_WhenDeadMemberAndRemainingSubmitted_ReturnsTrue()
+    {
+        var run = CreateRunWithOneDeadOwner();
+        var aliveMember = run.OwnerMemberStates.Single(m => !m.IsDead);
+        run.SubmitCommand(aliveMember.ParticipantId, MakeCommand(aliveMember.ParticipantId, 1), Now);
+
+        run.AllOwnerCommandsSubmitted().Should().BeTrue();
+    }
+
+    [Fact]
+    public void AllOwnerCommandsSubmitted_WhenAutoAttackOnlyMemberAndRemainingSubmitted_ReturnsTrue()
+    {
+        var run = CreateRun(ownerCount: 2);
+        // 1体だけタイムアウトで AutoAttackOnly に切り替わる前に Submit、残り1体は AutoAttackOnly
+        run.SwitchToAutoActionForTimeout(Deadline.AddSeconds(1));
+        // AutoAttackOnly メンバーは CanAcceptManualCommand=false なので提出不要
+        run.AllOwnerCommandsSubmitted().Should().BeTrue();
+    }
+
+    // --- SwitchToAutoActionForTimeout (boundary) ---
+
+    [Fact]
+    public void SwitchToAutoActionForTimeout_WhenExactlyAtDeadline_DoesNotSwitch()
+    {
+        var run = CreateRun();
+
+        run.SwitchToAutoActionForTimeout(Deadline);
+
+        run.OwnerMemberStates.Should().OnlyContain(m => m.ActionMode == ActionMode.Manual);
+    }
+
     // --- ApplyBattleResolution ---
 
     [Fact]
     public void ApplyBattleResolution_WhenOpponentAllDead_SetsOwnerWon()
     {
         var run = CreateRun();
+        var lastTurnResults = MakeLastTurnResults();
         var opponentStates = run.OpponentMemberStates
             .ToDictionary(m => m.ParticipantId,
                 m => new BattleActorState(new BattleActorId(m.ParticipantId.Value), 0, 0));
@@ -136,17 +234,19 @@ public class PetBattleRunTests
             .ToDictionary(m => m.ParticipantId,
                 m => new BattleActorState(new BattleActorId(m.ParticipantId.Value), 100, 50));
 
-        run.ApplyBattleResolution(ownerStates, opponentStates, MakeLastTurnResults(), Now.AddSeconds(60));
+        run.ApplyBattleResolution(ownerStates, opponentStates, lastTurnResults, Now.AddSeconds(60));
 
         run.Status.Should().Be(PetBattleRunStatus.OwnerWon);
         run.WinnerPlayerId.Should().Be(OwnerId);
         run.IsFinished.Should().BeTrue();
+        run.EndedAt.Should().Be(lastTurnResults.ResolvedAt);
     }
 
     [Fact]
     public void ApplyBattleResolution_WhenOwnerAllDead_SetsOpponentWon()
     {
         var run = CreateRun();
+        var lastTurnResults = MakeLastTurnResults();
         var ownerStates = run.OwnerMemberStates
             .ToDictionary(m => m.ParticipantId,
                 m => new BattleActorState(new BattleActorId(m.ParticipantId.Value), 0, 0));
@@ -154,10 +254,50 @@ public class PetBattleRunTests
             .ToDictionary(m => m.ParticipantId,
                 m => new BattleActorState(new BattleActorId(m.ParticipantId.Value), 100, 50));
 
-        run.ApplyBattleResolution(ownerStates, opponentStates, MakeLastTurnResults(), Now.AddSeconds(60));
+        run.ApplyBattleResolution(ownerStates, opponentStates, lastTurnResults, Now.AddSeconds(60));
 
         run.Status.Should().Be(PetBattleRunStatus.OpponentWon);
         run.WinnerPlayerId.Should().Be(OpponentId);
+        run.EndedAt.Should().Be(lastTurnResults.ResolvedAt);
+    }
+
+    [Fact]
+    public void ApplyBattleResolution_WhenOneOfTwoOpponentsAlive_ContinuesBattle()
+    {
+        var run = CreateRun(ownerCount: 1, opponentCount: 2);
+        var ownerStates = run.OwnerMemberStates
+            .ToDictionary(m => m.ParticipantId,
+                m => new BattleActorState(new BattleActorId(m.ParticipantId.Value), 100, 50));
+        var opponentStates = run.OpponentMemberStates
+            .Select((m, i) => (m, hp: i == 0 ? 0 : 100))
+            .ToDictionary(x => x.m.ParticipantId,
+                x => new BattleActorState(new BattleActorId(x.m.ParticipantId.Value), x.hp, 50));
+
+        run.ApplyBattleResolution(ownerStates, opponentStates, MakeLastTurnResults(), Now.AddSeconds(60));
+
+        run.Status.Should().Be(PetBattleRunStatus.InProgress);
+        run.IsFinished.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ApplyBattleResolution_WhenBattleContinues_DeadOwnerMemberNotRestoredToManual()
+    {
+        var run = CreateRun(ownerCount: 2);
+        run.SwitchToAutoActionForTimeout(Deadline.AddSeconds(1));
+        var firstMember = run.OwnerMemberStates[0];
+        var ownerStates = run.OwnerMemberStates
+            .Select((m, i) => (m, hp: i == 0 ? 0 : 100))
+            .ToDictionary(x => x.m.ParticipantId,
+                x => new BattleActorState(new BattleActorId(x.m.ParticipantId.Value), x.hp, 50));
+        var opponentStates = run.OpponentMemberStates
+            .ToDictionary(m => m.ParticipantId,
+                m => new BattleActorState(new BattleActorId(m.ParticipantId.Value), 100, 50));
+
+        run.ApplyBattleResolution(ownerStates, opponentStates, MakeLastTurnResults(), Now.AddSeconds(60));
+
+        var deadMember = run.OwnerMemberStates.Single(m => m.ParticipantId == firstMember.ParticipantId);
+        deadMember.IsDead.Should().BeTrue();
+        deadMember.ActionMode.Should().Be(ActionMode.AutoAttackOnly);
     }
 
     [Fact]
@@ -254,6 +394,36 @@ public class PetBattleRunTests
     }
 
     // --- helpers ---
+
+    private static PetBattleRun CreateRunWithDeadOwner()
+    {
+        var snapshot = MakeSnapshot(BattleRow.Front, BattleColumn.Left);
+        var opponentSnapshot = MakeSnapshot(BattleRow.Front, BattleColumn.Left);
+        var deadOwnerMember = new PetBattlePartyMemberState(snapshot.ParticipantId, 0, 0, isDead: true, 1, ActionMode.Manual);
+        var opponentMember = new PetBattlePartyMemberState(opponentSnapshot.ParticipantId, 200, 100, false, 1, ActionMode.AutoAttackOnly);
+        return new PetBattleRun(
+            PetBattleRunId.NewId(), PetBattleRoomId.NewId(), OwnerId, OpponentId,
+            [snapshot], [opponentSnapshot],
+            new PetBattleTurnState(1, Deadline),
+            [deadOwnerMember], [opponentMember],
+            lastTurnResults: null, startedAt: Now);
+    }
+
+    private static PetBattleRun CreateRunWithOneDeadOwner()
+    {
+        var snap1 = MakeSnapshot(BattleRow.Front, BattleColumn.Left);
+        var snap2 = MakeSnapshot(BattleRow.Front, BattleColumn.Right);
+        var opponentSnapshot = MakeSnapshot(BattleRow.Front, BattleColumn.Left);
+        var deadMember = new PetBattlePartyMemberState(snap1.ParticipantId, 0, 0, isDead: true, 1, ActionMode.Manual);
+        var aliveMember = new PetBattlePartyMemberState(snap2.ParticipantId, 200, 100, false, 1, ActionMode.Manual);
+        var opponentMember = new PetBattlePartyMemberState(opponentSnapshot.ParticipantId, 200, 100, false, 1, ActionMode.AutoAttackOnly);
+        return new PetBattleRun(
+            PetBattleRunId.NewId(), PetBattleRoomId.NewId(), OwnerId, OpponentId,
+            [snap1, snap2], [opponentSnapshot],
+            new PetBattleTurnState(1, Deadline),
+            [deadMember, aliveMember], [opponentMember],
+            lastTurnResults: null, startedAt: Now);
+    }
 
     private static PetBattleRun CreateRun(int ownerCount = 1, int opponentCount = 1)
     {

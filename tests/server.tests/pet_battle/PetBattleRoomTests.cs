@@ -144,6 +144,51 @@ public class PetBattleRoomTests
         act.Should().Throw<InvalidOperationException>();
     }
 
+    [Fact]
+    public void RemoveSlot_WhenRoomClosed_ThrowsInvalidOperationException()
+    {
+        var room = CreateRoom();
+        var petId = new PlayerPetId(Guid.NewGuid());
+        room.AssignSlot(petId, BattleRow.Front, BattleColumn.Left);
+        room.Cancel(DateTimeOffset.UtcNow);
+
+        var act = () => room.RemoveSlot(petId);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void CanStart_WhenStatusClosedWithSlots_ReturnsFalse()
+    {
+        var room = CreateRoom();
+        room.AssignSlot(new PlayerPetId(Guid.NewGuid()), BattleRow.Front, BattleColumn.Left);
+        room.CloseForStart(DateTimeOffset.UtcNow);
+
+        room.CanStart().Should().BeFalse();
+    }
+
+    [Fact]
+    public void CloseForStart_WhenAlreadyClosed_ThrowsInvalidOperationException()
+    {
+        var room = CreateRoom();
+        room.Cancel(DateTimeOffset.UtcNow);
+
+        var act = () => room.CloseForStart(DateTimeOffset.UtcNow);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Cancel_WhenAlreadyClosed_ThrowsInvalidOperationException()
+    {
+        var room = CreateRoom();
+        room.Cancel(DateTimeOffset.UtcNow);
+
+        var act = () => room.Cancel(DateTimeOffset.UtcNow);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     private static PetBattleRoom CreateRoom() =>
         PetBattleRoom.Create(OwnerId, OpponentId, DateTimeOffset.UtcNow);
 }

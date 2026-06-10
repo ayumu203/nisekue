@@ -59,6 +59,19 @@ public class PlayerPetBattleStatsTests
         stats.Rating.Should().Be(PetBattleConstants.RatingFloor);
     }
 
+    [Theory]
+    [InlineData(4, 0)]   // 4 - 5 = -1 → クランプして 0
+    [InlineData(5, 0)]   // 5 - 5 = 0  → ちょうど下限
+    [InlineData(6, 1)]   // 6 - 5 = 1  → クランプ非発動
+    public void ApplyLoss_ClampsBoundary_ToExpectedRating(int initialRating, int expectedRating)
+    {
+        var stats = new PlayerPetBattleStats(PlayerId, initialRating, 0, 0, 0, Now);
+
+        stats.ApplyLoss(Now);
+
+        stats.Rating.Should().Be(expectedRating);
+    }
+
     [Fact]
     public void ApplyWin_ThenApplyLoss_ResultsInNetPositiveRating()
     {
