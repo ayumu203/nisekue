@@ -135,7 +135,7 @@ public class QuestRunTests
     }
 
     [Fact]
-    public void SubmitCommand_SummonPetWithoutActivePet_ThrowsInvalidOperationException()
+    public void SubmitCommand_SummonPetWithoutStandbyPet_ThrowsInvalidOperationException()
     {
         var run = CreateRun();
         var command = new QuestSubmittedCommand(
@@ -146,11 +146,11 @@ public class QuestRunTests
 
         var act = () => run.SubmitCommand(run.PartySnapshots[0].ParticipantId, command, DateTimeOffset.UtcNow);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("*アクティブなペット*");
+        act.Should().Throw<InvalidOperationException>().WithMessage("*スタンバイのペット*");
     }
 
     [Fact]
-    public void SubmitCommand_SummonPetWithActivePet_AcceptsCommand()
+    public void SubmitCommand_SummonPetWithStandbyPet_AcceptsCommand()
     {
         var run = CreateRun(pet: CreatePetSnapshot());
         var command = new QuestSubmittedCommand(

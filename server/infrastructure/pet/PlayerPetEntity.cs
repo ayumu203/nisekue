@@ -12,7 +12,7 @@ public class PlayerPetEntity
     public int BonusIntelligence { get; set; }
     public int BonusLuck { get; set; }
     public int BonusSpeed { get; set; }
-    public bool IsActive { get; set; }
+    public bool IsStandby { get; set; }
     public DateTimeOffset CapturedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }

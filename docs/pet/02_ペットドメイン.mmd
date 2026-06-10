@@ -9,11 +9,11 @@ classDiagram
             +PlayerId PlayerId
             +QuestEnemyDefinitionId EnemyDefinitionId
             +PetBonusStatus BonusStatus
-            +bool IsActive
+            +bool IsStandby
             +DateTimeOffset CapturedAt
             +Train(playerBaseStatus: Status) void
-            +Activate() void
-            +Deactivate() void
+            +Standby() void
+            +ClearStandby() void
         }
 
         class PlayerPetId {
@@ -65,7 +65,7 @@ classDiagram
             <<Repository IF>>
             +Task~IReadOnlyList~PlayerPet~~ GetByPlayerIdAsync(playerId: PlayerId)
             +Task~PlayerPet?~ GetByIdAsync(id: PlayerPetId)
-            +Task~PlayerPet?~ GetActiveByPlayerIdAsync(playerId: PlayerId)
+            +Task~PlayerPet?~ GetStandbyByPlayerIdAsync(playerId: PlayerId)
             +Task AddAsync(pet: PlayerPet)
             +Task UpdateAsync(pet: PlayerPet)
             +Task DeleteAsync(id: PlayerPetId)

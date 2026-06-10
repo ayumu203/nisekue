@@ -9,7 +9,7 @@ namespace server.tests.pet;
 public class PlayerPetTests
 {
     [Fact]
-    public void Capture_CreatesInactivePetWithZeroBonus()
+    public void Capture_CreatesNonStandbyPetWithZeroBonus()
     {
         var playerId = new PlayerId(Guid.NewGuid());
         var now = DateTimeOffset.UtcNow;
@@ -18,7 +18,7 @@ public class PlayerPetTests
 
         pet.PlayerId.Should().Be(playerId);
         pet.EnemyDefinitionId.Should().Be(new QuestEnemyDefinitionId(7));
-        pet.IsActive.Should().BeFalse();
+        pet.IsStandby.Should().BeFalse();
         pet.BonusStatus.MaxHp.Should().Be(0);
         pet.BonusStatus.Speed.Should().Be(0);
         pet.CapturedAt.Should().Be(now);
@@ -79,26 +79,26 @@ public class PlayerPetTests
     }
 
     [Fact]
-    public void Activate_SetsIsActive()
+    public void Standby_SetsIsStandby()
     {
         var pet = CreatePet();
-        var activatedAt = DateTimeOffset.UtcNow.AddMinutes(1);
+        var standbiedAt = DateTimeOffset.UtcNow.AddMinutes(1);
 
-        pet.Activate(activatedAt);
+        pet.Standby(standbiedAt);
 
-        pet.IsActive.Should().BeTrue();
-        pet.UpdatedAt.Should().Be(activatedAt);
+        pet.IsStandby.Should().BeTrue();
+        pet.UpdatedAt.Should().Be(standbiedAt);
     }
 
     [Fact]
-    public void Deactivate_ClearsIsActive()
+    public void ClearStandby_ClearsIsStandby()
     {
         var pet = CreatePet();
-        pet.Activate(DateTimeOffset.UtcNow);
+        pet.Standby(DateTimeOffset.UtcNow);
 
-        pet.Deactivate(DateTimeOffset.UtcNow.AddMinutes(1));
+        pet.ClearStandby(DateTimeOffset.UtcNow.AddMinutes(1));
 
-        pet.IsActive.Should().BeFalse();
+        pet.IsStandby.Should().BeFalse();
     }
 
     private static PlayerPet CreatePet()

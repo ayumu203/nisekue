@@ -491,13 +491,13 @@ export const endpoints = {
       method: 'POST',
       responseSchema: trainPetResponseSchema,
     },
-    activate: {
-      path: (petId: string) => `/pets/${petId}/activate`,
+    standby: {
+      path: (petId: string) => `/pets/${petId}/standby`,
       method: 'POST',
       responseSchema: getPetsResponseSchema,
     },
-    deactivate: {
-      path: (petId: string) => `/pets/${petId}/deactivate`,
+    clearStandby: {
+      path: (petId: string) => `/pets/${petId}/clear-standby`,
       method: 'POST',
       responseSchema: getPetsResponseSchema,
     },

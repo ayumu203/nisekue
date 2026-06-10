@@ -30,12 +30,12 @@ public class DbPlayerPetRepository(IDbContextFactory<AppDbContext> dbContextFact
         return entity is null ? null : MapToDomain(entity);
     }
 
-    public async Task<PlayerPet?> GetActiveByPlayerAsync(PlayerId playerId)
+    public async Task<PlayerPet?> GetStandbyByPlayerAsync(PlayerId playerId)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var entity = await dbContext.PlayerPets
             .AsNoTracking()
-            .Where(x => x.PlayerId == playerId.Value && x.IsActive)
+            .Where(x => x.PlayerId == playerId.Value && x.IsStandby)
             .OrderBy(x => x.CapturedAt)
             .FirstOrDefaultAsync();
 
@@ -80,7 +80,7 @@ public class DbPlayerPetRepository(IDbContextFactory<AppDbContext> dbContextFact
             existing.BonusIntelligence = pet.BonusStatus.Intelligence;
             existing.BonusLuck = pet.BonusStatus.Luck;
             existing.BonusSpeed = pet.BonusStatus.Speed;
-            existing.IsActive = pet.IsActive;
+            existing.IsStandby = pet.IsStandby;
             existing.UpdatedAt = pet.UpdatedAt;
         }
 
@@ -114,7 +114,7 @@ public class DbPlayerPetRepository(IDbContextFactory<AppDbContext> dbContextFact
                 intelligence: entity.BonusIntelligence,
                 luck: entity.BonusLuck,
                 speed: entity.BonusSpeed),
-            entity.IsActive,
+            entity.IsStandby,
             entity.CapturedAt,
             entity.UpdatedAt);
     }
@@ -133,7 +133,7 @@ public class DbPlayerPetRepository(IDbContextFactory<AppDbContext> dbContextFact
             BonusIntelligence = pet.BonusStatus.Intelligence,
             BonusLuck = pet.BonusStatus.Luck,
             BonusSpeed = pet.BonusStatus.Speed,
-            IsActive = pet.IsActive,
+            IsStandby = pet.IsStandby,
             CapturedAt = pet.CapturedAt,
             UpdatedAt = pet.UpdatedAt
         };

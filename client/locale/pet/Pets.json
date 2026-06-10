@@ -5,8 +5,8 @@
   "capacityLabel": "所持数",
   "goldLabel": "所持ゴールド",
   "emptyMessage": "ペットがいません。クエストで敵を捕獲してみましょう。",
-  "activeChip": "アクティブ",
-  "inactiveChip": "待機中",
+  "activeChip": "スタンバイ",
+  "inactiveChip": "未設定",
   "levelLabel": "Lv",
   "statusTitle": "ステータス",
   "bonusLabel": "育成",
@@ -23,13 +23,13 @@
   "training": "育成中…",
   "trainCostSuffix": "G",
   "trainSucceeded": "育成しました！",
-  "activate": "アクティブにする",
-  "deactivate": "アクティブ解除",
+  "activate": "スタンバイにする",
+  "deactivate": "スタンバイ解除",
   "release": "逃がす",
   "releaseConfirm": "を逃がします。育成した分も失われますが、よろしいですか？",
   "releaseSucceeded": "ペットを逃がしました。",
   "loadFailed": "ペット一覧の取得に失敗しました",
   "actionFailed": "操作に失敗しました",
   "sessionInfoMissing": "セッション情報が見つかりません。再ログインしてください。",
-  "summonNote": "アクティブに設定した1体を、クエスト中に「呼出」で呼び出せます（1クエストにつき3回まで）。"
+  "summonNote": "スタンバイに設定した1体を、クエスト中に「呼出」で呼び出せます（1クエストにつき3回まで）。"
 }

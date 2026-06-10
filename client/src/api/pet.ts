@@ -41,11 +41,11 @@ export async function trainPet(petId: string, accessToken: string): Promise<Play
   return endpoints.pets.train.responseSchema.parse(json)
 }
 
-export async function activatePet(petId: string, accessToken: string): Promise<GetPetsResponse> {
+export async function standbyPet(petId: string, accessToken: string): Promise<GetPetsResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
 
-  const response = await fetchSafely(`${apiBaseUrl}${endpoints.pets.activate.path(petId)}`, {
-    method: endpoints.pets.activate.method,
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.pets.standby.path(petId)}`, {
+    method: endpoints.pets.standby.method,
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -54,17 +54,17 @@ export async function activatePet(petId: string, accessToken: string): Promise<G
   const json: unknown = await response.json().catch(() => null)
 
   if (!response.ok) {
-    throw new Error(extractErrorMessage(json, 'ペットのアクティブ設定に失敗しました'))
+    throw new Error(extractErrorMessage(json, 'ペットのスタンバイ設定に失敗しました'))
   }
 
-  return endpoints.pets.activate.responseSchema.parse(json)
+  return endpoints.pets.standby.responseSchema.parse(json)
 }
 
-export async function deactivatePet(petId: string, accessToken: string): Promise<GetPetsResponse> {
+export async function clearStandbyPet(petId: string, accessToken: string): Promise<GetPetsResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
 
-  const response = await fetchSafely(`${apiBaseUrl}${endpoints.pets.deactivate.path(petId)}`, {
-    method: endpoints.pets.deactivate.method,
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.pets.clearStandby.path(petId)}`, {
+    method: endpoints.pets.clearStandby.method,
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -73,10 +73,10 @@ export async function deactivatePet(petId: string, accessToken: string): Promise
   const json: unknown = await response.json().catch(() => null)
 
   if (!response.ok) {
-    throw new Error(extractErrorMessage(json, 'ペットのアクティブ解除に失敗しました'))
+    throw new Error(extractErrorMessage(json, 'ペットのスタンバイ解除に失敗しました'))
   }
 
-  return endpoints.pets.deactivate.responseSchema.parse(json)
+  return endpoints.pets.clearStandby.responseSchema.parse(json)
 }
 
 export async function releasePet(petId: string, accessToken: string): Promise<void> {

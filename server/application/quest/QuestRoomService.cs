@@ -270,7 +270,7 @@ public class QuestRoomService(
         var activePetsByPlayerId = new Dictionary<PlayerId, PlayerPet>();
         foreach (var player in players)
         {
-            var activePet = await playerPetRepository.GetActiveByPlayerAsync(player.Id);
+            var activePet = await playerPetRepository.GetStandbyByPlayerAsync(player.Id);
             if (activePet is not null)
             {
                 activePetsByPlayerId[player.Id] = activePet;

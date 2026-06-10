@@ -18,7 +18,7 @@ public class PetStatusResolverTests
             new PlayerId(Guid.NewGuid()),
             definition.Id,
             new PetBonusStatus(maxHp: 10, maxMp: 9, strength: 8, defense: 7, intelligence: 6, luck: 5, speed: 4),
-            isActive: false,
+            isStandby: false,
             capturedAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
 

@@ -22,7 +22,7 @@ public class PetServiceTests
             playerId,
             SlimeId,
             new PetBonusStatus(maxHp: 10, strength: 5),
-            isActive: true,
+            isStandby: true,
             capturedAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var service = CreateService(pet);
@@ -32,7 +32,7 @@ public class PetServiceTests
         views.Should().HaveCount(1);
         views[0].Name.Should().Be("Slime");
         views[0].Level.Should().Be(5);
-        views[0].IsActive.Should().BeTrue();
+        views[0].IsStandby.Should().BeTrue();
         views[0].TotalStatus.MaxHp.Should().Be(110);
         views[0].TotalStatus.Strength.Should().Be(25);
         views[0].BonusStatus.MaxHp.Should().Be(10);
@@ -50,53 +50,53 @@ public class PetServiceTests
     }
 
     [Fact]
-    public async Task ActivateAsync_SetsTargetActiveAndDeactivatesOthers()
+    public async Task StandbyAsync_SetsTargetStandbyAndClearsOthers()
     {
         var playerId = new PlayerId(Guid.NewGuid());
         var first = PlayerPet.Capture(playerId, SlimeId, DateTimeOffset.UtcNow);
-        first.Activate(DateTimeOffset.UtcNow);
+        first.Standby(DateTimeOffset.UtcNow);
         var second = PlayerPet.Capture(playerId, SlimeId, DateTimeOffset.UtcNow);
         var service = CreateService(first, second);
 
-        var views = await service.ActivateAsync(playerId, second.Id);
+        var views = await service.StandbyAsync(playerId, second.Id);
 
-        views.Single(x => x.PetId == second.Id.Value).IsActive.Should().BeTrue();
-        views.Single(x => x.PetId == first.Id.Value).IsActive.Should().BeFalse();
+        views.Single(x => x.PetId == second.Id.Value).IsStandby.Should().BeTrue();
+        views.Single(x => x.PetId == first.Id.Value).IsStandby.Should().BeFalse();
     }
 
     [Fact]
-    public async Task ActivateAsync_WithUnknownPetId_ThrowsKeyNotFoundException()
+    public async Task StandbyAsync_WithUnknownPetId_ThrowsKeyNotFoundException()
     {
         var playerId = new PlayerId(Guid.NewGuid());
         var service = CreateService(PlayerPet.Capture(playerId, SlimeId, DateTimeOffset.UtcNow));
 
-        var act = () => service.ActivateAsync(playerId, PlayerPetId.New());
+        var act = () => service.StandbyAsync(playerId, PlayerPetId.New());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
 
     [Fact]
-    public async Task ActivateAsync_WithOtherPlayersPet_ThrowsKeyNotFoundException()
+    public async Task StandbyAsync_WithOtherPlayersPet_ThrowsKeyNotFoundException()
     {
         var otherPlayersPet = PlayerPet.Capture(new PlayerId(Guid.NewGuid()), SlimeId, DateTimeOffset.UtcNow);
         var service = CreateService(otherPlayersPet);
 
-        var act = () => service.ActivateAsync(new PlayerId(Guid.NewGuid()), otherPlayersPet.Id);
+        var act = () => service.StandbyAsync(new PlayerId(Guid.NewGuid()), otherPlayersPet.Id);
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
 
     [Fact]
-    public async Task DeactivateAsync_ClearsActiveFlag()
+    public async Task ClearStandbyAsync_ClearsStandbyFlag()
     {
         var playerId = new PlayerId(Guid.NewGuid());
         var pet = PlayerPet.Capture(playerId, SlimeId, DateTimeOffset.UtcNow);
-        pet.Activate(DateTimeOffset.UtcNow);
+        pet.Standby(DateTimeOffset.UtcNow);
         var service = CreateService(pet);
 
-        var views = await service.DeactivateAsync(playerId, pet.Id);
+        var views = await service.ClearStandbyAsync(playerId, pet.Id);
 
-        views.Single().IsActive.Should().BeFalse();
+        views.Single().IsStandby.Should().BeFalse();
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public class PetServiceTests
             playerId,
             SlimeId,
             new PetBonusStatus(maxHp: 3),
-            isActive: false,
+            isStandby: false,
             capturedAt: DateTimeOffset.UtcNow,
             updatedAt: DateTimeOffset.UtcNow);
         var executor = new FakePetTrainingExecutor(trainedPet);

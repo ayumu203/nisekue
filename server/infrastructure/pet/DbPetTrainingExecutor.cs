@@ -50,7 +50,7 @@ public class DbPetTrainingExecutor(
                 intelligence: petEntity.BonusIntelligence,
                 luck: petEntity.BonusLuck,
                 speed: petEntity.BonusSpeed),
-            petEntity.IsActive,
+            petEntity.IsStandby,
             petEntity.CapturedAt,
             petEntity.UpdatedAt);
         var playerBaseStatus = new Status(

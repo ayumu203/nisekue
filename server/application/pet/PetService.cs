@@ -12,7 +12,7 @@ public record PlayerPetView(
     int Level,
     PetBonusStatus BonusStatus,
     Status TotalStatus,
-    bool IsActive,
+    bool IsStandby,
     DateTimeOffset CapturedAt);
 
 public class PetService(
@@ -44,7 +44,7 @@ public class PetService(
         await playerPetRepository.DeleteAsync(pet.Id);
     }
 
-    public async Task<IReadOnlyList<PlayerPetView>> ActivateAsync(PlayerId playerId, PlayerPetId petId)
+    public async Task<IReadOnlyList<PlayerPetView>> StandbyAsync(PlayerId playerId, PlayerPetId petId)
     {
         var pets = await playerPetRepository.GetByPlayerAsync(playerId);
         if (pets.All(x => x.Id != petId))
@@ -56,14 +56,14 @@ public class PetService(
         var changed = new List<PlayerPet>();
         foreach (var pet in pets)
         {
-            if (pet.Id == petId && !pet.IsActive)
+            if (pet.Id == petId && !pet.IsStandby)
             {
-                pet.Activate(now);
+                pet.Standby(now);
                 changed.Add(pet);
             }
-            else if (pet.Id != petId && pet.IsActive)
+            else if (pet.Id != petId && pet.IsStandby)
             {
-                pet.Deactivate(now);
+                pet.ClearStandby(now);
                 changed.Add(pet);
             }
         }
@@ -82,12 +82,12 @@ public class PetService(
         return views;
     }
 
-    public async Task<IReadOnlyList<PlayerPetView>> DeactivateAsync(PlayerId playerId, PlayerPetId petId)
+    public async Task<IReadOnlyList<PlayerPetView>> ClearStandbyAsync(PlayerId playerId, PlayerPetId petId)
     {
         var pet = await GetOwnedPetAsync(playerId, petId);
-        if (pet.IsActive)
+        if (pet.IsStandby)
         {
-            pet.Deactivate(DateTimeOffset.UtcNow);
+            pet.ClearStandby(DateTimeOffset.UtcNow);
             await playerPetRepository.SaveAsync([pet]);
         }
 
@@ -127,7 +127,7 @@ public class PetService(
             definition?.Level ?? 1,
             pet.BonusStatus,
             totalStatus,
-            pet.IsActive,
+            pet.IsStandby,
             pet.CapturedAt);
     }
 }

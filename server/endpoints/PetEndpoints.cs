@@ -45,7 +45,7 @@ internal static class PetEndpoints
             }
         });
 
-        petGroup.MapPost("/{petId:guid}/activate", async (Guid petId, ClaimsPrincipal user, PetService petService) =>
+        petGroup.MapPost("/{petId:guid}/standby", async (Guid petId, ClaimsPrincipal user, PetService petService) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -55,7 +55,7 @@ internal static class PetEndpoints
 
             try
             {
-                var pets = await petService.ActivateAsync(playerId.Value, new PlayerPetId(petId));
+                var pets = await petService.StandbyAsync(playerId.Value, new PlayerPetId(petId));
                 return Results.Ok(MapPets(pets));
             }
             catch (KeyNotFoundException ex)
@@ -64,7 +64,7 @@ internal static class PetEndpoints
             }
         });
 
-        petGroup.MapPost("/{petId:guid}/deactivate", async (Guid petId, ClaimsPrincipal user, PetService petService) =>
+        petGroup.MapPost("/{petId:guid}/clear-standby", async (Guid petId, ClaimsPrincipal user, PetService petService) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -74,7 +74,7 @@ internal static class PetEndpoints
 
             try
             {
-                var pets = await petService.DeactivateAsync(playerId.Value, new PlayerPetId(petId));
+                var pets = await petService.ClearStandbyAsync(playerId.Value, new PlayerPetId(petId));
                 return Results.Ok(MapPets(pets));
             }
             catch (KeyNotFoundException ex)
@@ -124,7 +124,7 @@ internal static class PetEndpoints
             name = pet.Name,
             imagePath = pet.ImagePath,
             level = pet.Level,
-            isActive = pet.IsActive,
+            isStandby = pet.IsStandby,
             capturedAt = pet.CapturedAt,
             bonusStatus = new
             {

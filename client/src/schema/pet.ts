@@ -16,7 +16,7 @@ export const playerPetViewSchema = z.object({
   name: z.string().min(1),
   imagePath: z.string().min(1).nullable().optional(),
   level: z.number().int().positive(),
-  isActive: z.boolean(),
+  isStandby: z.boolean(),
   capturedAt: z.string().datetime({ offset: true }),
   bonusStatus: petStatusSchema,
   totalStatus: petStatusSchema,

@@ -223,7 +223,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         playerPet.Property(x => x.BonusIntelligence).HasColumnName("bonus_intelligence").HasDefaultValue(0).IsRequired();
         playerPet.Property(x => x.BonusLuck).HasColumnName("bonus_luck").HasDefaultValue(0).IsRequired();
         playerPet.Property(x => x.BonusSpeed).HasColumnName("bonus_speed").HasDefaultValue(0).IsRequired();
-        playerPet.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(false).IsRequired();
+        playerPet.Property(x => x.IsStandby).HasColumnName("is_standby").HasDefaultValue(false).IsRequired();
         playerPet.Property(x => x.CapturedAt).HasColumnName("captured_at").IsRequired();
         playerPet.Property(x => x.UpdatedAt).HasColumnName("updated_at").IsRequired();
         playerPet.HasIndex(x => x.PlayerId);

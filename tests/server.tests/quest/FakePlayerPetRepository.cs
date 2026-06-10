@@ -20,8 +20,8 @@ internal sealed class FakePlayerPetRepository : IPlayerPetRepository
     public Task<PlayerPet?> GetAsync(PlayerPetId id)
         => Task.FromResult(pets.FirstOrDefault(x => x.Id == id));
 
-    public Task<PlayerPet?> GetActiveByPlayerAsync(PlayerId playerId)
-        => Task.FromResult(pets.FirstOrDefault(x => x.PlayerId == playerId && x.IsActive));
+    public Task<PlayerPet?> GetStandbyByPlayerAsync(PlayerId playerId)
+        => Task.FromResult(pets.FirstOrDefault(x => x.PlayerId == playerId && x.IsStandby));
 
     public Task<int> CountByPlayerAsync(PlayerId playerId)
         => Task.FromResult(pets.Count(x => x.PlayerId == playerId));

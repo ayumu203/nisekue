@@ -8,7 +8,7 @@ public class PlayerPet(
     PlayerId playerId,
     QuestEnemyDefinitionId enemyDefinitionId,
     PetBonusStatus bonusStatus,
-    bool isActive,
+    bool isStandby,
     DateTimeOffset capturedAt,
     DateTimeOffset updatedAt)
 {
@@ -16,7 +16,7 @@ public class PlayerPet(
     public PlayerId PlayerId { get; } = playerId;
     public QuestEnemyDefinitionId EnemyDefinitionId { get; } = enemyDefinitionId;
     public PetBonusStatus BonusStatus { get; private set; } = bonusStatus ?? throw new ArgumentNullException(nameof(bonusStatus));
-    public bool IsActive { get; private set; } = isActive;
+    public bool IsStandby { get; private set; } = isStandby;
     public DateTimeOffset CapturedAt { get; } = capturedAt;
     public DateTimeOffset UpdatedAt { get; private set; } = updatedAt;
 
@@ -27,7 +27,7 @@ public class PlayerPet(
             playerId,
             enemyDefinitionId,
             new PetBonusStatus(),
-            isActive: false,
+            isStandby: false,
             capturedAt: now,
             updatedAt: now);
     }
@@ -47,15 +47,15 @@ public class PlayerPet(
         UpdatedAt = now;
     }
 
-    public void Activate(DateTimeOffset now)
+    public void Standby(DateTimeOffset now)
     {
-        IsActive = true;
+        IsStandby = true;
         UpdatedAt = now;
     }
 
-    public void Deactivate(DateTimeOffset now)
+    public void ClearStandby(DateTimeOffset now)
     {
-        IsActive = false;
+        IsStandby = false;
         UpdatedAt = now;
     }
 

@@ -79,7 +79,7 @@ public class QuestRun(
                 ?? throw new KeyNotFoundException("参加者スナップショットが見つかりません。");
             if (snapshot.Pet is null)
             {
-                throw new InvalidOperationException("アクティブなペットがいないため呼出できません。");
+                throw new InvalidOperationException("スタンバイのペットがいないため呼出できません。");
             }
 
             if (!partyMember.HasRemainingPetSummons)
