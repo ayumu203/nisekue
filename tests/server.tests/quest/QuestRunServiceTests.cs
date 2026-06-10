@@ -6,6 +6,7 @@ using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.move;
 using server.domain.move.enums;
+using server.domain.pet;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
@@ -1676,12 +1677,199 @@ public class QuestRunServiceTests
         expeditionRepository.StoredExpedition!.EndsAt.Should().Be(endsAt);
     }
 
+    [Fact]
+    public async Task SubmitCommandAsync_CaptureSucceeds_MarksEnemyCapturedAndExcludesReward()
+    {
+        var run = CreateRun();
+        var participantId = run.PartySnapshots[0].ParticipantId;
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var petRepository = new FakePlayerPetRepository();
+        var service = CreateRunService(
+            repository,
+            roomRepository,
+            new FakePlayerRepository(roomRepository.PlayerIds.ToArray()),
+            CreateStage(run.StageId, floorRewardRule: new QuestFloorRewardRule(1.0m, 1.0m)),
+            [],
+            petRepository,
+            petRollProvider: _ => 1);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Capture,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        var enemy = run.BattleState.Enemies.Single();
+        enemy.IsCaptured.Should().BeTrue();
+        enemy.IsDead.Should().BeTrue();
+        petRepository.StoredPets.Should().ContainSingle()
+            .Which.EnemyDefinitionId.Should().Be(new QuestEnemyDefinitionId(1));
+        run.LastTurnResults!.Actions.Should()
+            .Contain(x => x.ActionKind == nameof(ActionKind.Capture) && x.Succeeded);
+        run.Rewards.Exp.Should().Be(0, "捕獲した敵のレベル分は階層報酬から控除される");
+        run.Rewards.Gold.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_CaptureFails_ConsumesActionAndKeepsEnemyAlive()
+    {
+        var run = CreateRun();
+        var participantId = run.PartySnapshots[0].ParticipantId;
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var petRepository = new FakePlayerPetRepository();
+        var service = CreateRunService(
+            repository,
+            roomRepository,
+            new FakePlayerRepository(roomRepository.PlayerIds.ToArray()),
+            CreateStage(run.StageId),
+            [],
+            petRepository,
+            petRollProvider: _ => 51);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Capture,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        var enemy = run.BattleState.Enemies.Single();
+        enemy.IsCaptured.Should().BeFalse();
+        enemy.IsAlive.Should().BeTrue();
+        petRepository.StoredPets.Should().BeEmpty();
+        run.LastTurnResults!.Actions.Should()
+            .Contain(x => x.ActionKind == nameof(ActionKind.Capture) && !x.Succeeded);
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_CaptureWhenPetLimitReached_FailsWithoutRoll()
+    {
+        var run = CreateRun();
+        var participantId = run.PartySnapshots[0].ParticipantId;
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerId = room.Participants.First(x => x.PlayerId is not null).PlayerId!.Value;
+        var petRepository = new FakePlayerPetRepository(
+            PlayerPet.Capture(playerId, new QuestEnemyDefinitionId(1), DateTimeOffset.UtcNow),
+            PlayerPet.Capture(playerId, new QuestEnemyDefinitionId(1), DateTimeOffset.UtcNow),
+            PlayerPet.Capture(playerId, new QuestEnemyDefinitionId(1), DateTimeOffset.UtcNow));
+        var service = CreateRunService(
+            repository,
+            roomRepository,
+            new FakePlayerRepository(roomRepository.PlayerIds.ToArray()),
+            CreateStage(run.StageId),
+            [],
+            petRepository,
+            petRollProvider: _ => 1);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Capture,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        run.BattleState.Enemies.Single().IsCaptured.Should().BeFalse();
+        petRepository.StoredPets.Should().HaveCount(3);
+        run.LastTurnResults!.Actions.Should()
+            .Contain(x => x.ActionKind == nameof(ActionKind.Capture) && !x.Succeeded);
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_TwoPlayersCaptureSameEnemy_OnlyFirstSucceeds()
+    {
+        var ownerParticipantId = QuestParticipantId.New();
+        var guestParticipantId = QuestParticipantId.New();
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(ownerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(50, 10, 10, 5, 1, 1, 50), new MoveSet(), 50, 10),
+                new PartyMemberSeed(guestParticipantId, ParticipantType.Player, "Guest", Job.Warrior, new BattlePosition(BattleRow.Middle, BattleColumn.Left), ActionMode.Manual, new Status(50, 10, 10, 5, 1, 1, 40), new MoveSet(), 50, 10)
+            ],
+            enemyHp: 100);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var petRepository = new FakePlayerPetRepository();
+        var service = CreateRunService(
+            repository,
+            roomRepository,
+            new FakePlayerRepository(roomRepository.PlayerIds.ToArray()),
+            CreateStage(run.StageId),
+            [],
+            petRepository,
+            petRollProvider: _ => 1);
+        var targetPosition = new BattlePosition(BattleRow.Front, BattleColumn.Right);
+        var firstSubmittedAt = DateTimeOffset.UtcNow;
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            ownerParticipantId,
+            new QuestSubmittedCommand(ownerParticipantId, run.TurnState.CurrentTurnNo, ActionKind.Capture, firstSubmittedAt, selectedTargetPosition: targetPosition));
+        await service.SubmitCommandAsync(
+            run.Id,
+            guestParticipantId,
+            new QuestSubmittedCommand(guestParticipantId, run.TurnState.CurrentTurnNo, ActionKind.Capture, firstSubmittedAt.AddMilliseconds(10), selectedTargetPosition: targetPosition));
+
+        run.BattleState.Enemies.Single().IsCaptured.Should().BeTrue();
+        petRepository.StoredPets.Should().HaveCount(1, "同じ敵は1体しか捕獲できない");
+        run.LastTurnResults!.Actions.Count(x => x.ActionKind == nameof(ActionKind.Capture) && x.Succeeded).Should().Be(1);
+        run.LastTurnResults!.Actions.Count(x => x.ActionKind == nameof(ActionKind.Capture) && !x.Succeeded).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_SummonPet_ConsumesSummonAndPetAttacksEnemies()
+    {
+        var participantId = QuestParticipantId.New();
+        var petSnapshot = new QuestPetSnapshot(
+            new QuestEnemyDefinitionId(1),
+            new Status(maxHp: 100, maxMp: 10, strength: 30, defense: 5, intelligence: 1, luck: 1, speed: 99));
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(50, 10, 10, 5, 1, 1, 50), new MoveSet(), 50, 10)
+            ],
+            enemyHp: 100,
+            pet: petSnapshot);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var service = CreateRunService(
+            repository,
+            roomRepository,
+            new FakePlayerRepository(roomRepository.PlayerIds.ToArray()),
+            CreateStage(run.StageId),
+            [],
+            petRollProvider: _ => 1);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(participantId, run.TurnState.CurrentTurnNo, ActionKind.SummonPet, DateTimeOffset.UtcNow));
+
+        run.BattleState.FindPartyMember(participantId).PetSummonsUsed.Should().Be(1);
+        run.BattleState.Enemies.Single().CurrentHp.Should().BeLessThan(100, "ペットの全体攻撃でダメージを受ける");
+        run.LastTurnResults!.Actions.Should()
+            .Contain(x => x.ActorDisplayName == "OwnerのSlime" && x.ActionKind == nameof(ActionKind.NormalAttack));
+    }
+
     private static QuestRunService CreateRunService(
         FakeQuestRunRepository runRepository,
         FakeQuestRoomRepository roomRepository,
         FakePlayerRepository playerRepository,
         QuestStageDefinition stage,
-        IReadOnlyList<Move> moves)
+        IReadOnlyList<Move> moves,
+        FakePlayerPetRepository? petRepository = null,
+        Func<int, int>? petRollProvider = null)
     {
         return new QuestRunService(
             runRepository,
@@ -1698,10 +1886,12 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
-            new FakePlayerPetRepository(),
+            petRepository ?? new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            rewardRollProvider: null,
+            petRollProvider: petRollProvider);
     }
 
     private static QuestRunService CreateRunService(
@@ -1784,7 +1974,8 @@ public class QuestRunServiceTests
         PlayerEquipmentId? weaponEquipmentId = null,
         PlayerEquipmentId? armorEquipmentId = null,
         IReadOnlyList<BattleAilmentState>? enemyAilments = null,
-        IReadOnlyList<BattleBuffState>? enemyBuffs = null)
+        IReadOnlyList<BattleBuffState>? enemyBuffs = null,
+        QuestPetSnapshot? pet = null)
     {
         enemyPositions ??= [new BattlePosition(BattleRow.Front, BattleColumn.Right)];
 
@@ -1799,7 +1990,8 @@ public class QuestRunServiceTests
             armorEquipmentId: armorEquipmentId,
             member.MoveSet,
             member.Position,
-            member.ActionMode)).ToArray();
+            member.ActionMode,
+            member.Type == ParticipantType.Player ? pet : null)).ToArray();
 
         var partyStates = partyMembers.Select(member => new QuestRunPartyMemberState(
             member.ParticipantId,

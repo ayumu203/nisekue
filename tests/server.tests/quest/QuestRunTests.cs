@@ -103,7 +103,90 @@ public class QuestRunTests
         run.EndedAt.Should().NotBeNull();
     }
 
-    private static QuestRun CreateRun()
+    [Fact]
+    public void SubmitCommand_CaptureWithoutTarget_ThrowsArgumentException()
+    {
+        var run = CreateRun();
+        var command = new QuestSubmittedCommand(
+            run.PartySnapshots[0].ParticipantId,
+            1,
+            ActionKind.Capture,
+            DateTimeOffset.UtcNow);
+
+        var act = () => run.SubmitCommand(run.PartySnapshots[0].ParticipantId, command, DateTimeOffset.UtcNow);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void SubmitCommand_CaptureWithTarget_AcceptsCommand()
+    {
+        var run = CreateRun();
+        var command = new QuestSubmittedCommand(
+            run.PartySnapshots[0].ParticipantId,
+            1,
+            ActionKind.Capture,
+            DateTimeOffset.UtcNow,
+            selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right));
+
+        run.SubmitCommand(run.PartySnapshots[0].ParticipantId, command, DateTimeOffset.UtcNow);
+
+        run.TurnState.PendingCommands.Should().ContainSingle().Which.ActionKind.Should().Be(ActionKind.Capture);
+    }
+
+    [Fact]
+    public void SubmitCommand_SummonPetWithoutActivePet_ThrowsInvalidOperationException()
+    {
+        var run = CreateRun();
+        var command = new QuestSubmittedCommand(
+            run.PartySnapshots[0].ParticipantId,
+            1,
+            ActionKind.SummonPet,
+            DateTimeOffset.UtcNow);
+
+        var act = () => run.SubmitCommand(run.PartySnapshots[0].ParticipantId, command, DateTimeOffset.UtcNow);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*アクティブなペット*");
+    }
+
+    [Fact]
+    public void SubmitCommand_SummonPetWithActivePet_AcceptsCommand()
+    {
+        var run = CreateRun(pet: CreatePetSnapshot());
+        var command = new QuestSubmittedCommand(
+            run.PartySnapshots[0].ParticipantId,
+            1,
+            ActionKind.SummonPet,
+            DateTimeOffset.UtcNow);
+
+        run.SubmitCommand(run.PartySnapshots[0].ParticipantId, command, DateTimeOffset.UtcNow);
+
+        run.TurnState.PendingCommands.Should().ContainSingle().Which.ActionKind.Should().Be(ActionKind.SummonPet);
+    }
+
+    [Fact]
+    public void SubmitCommand_SummonPetWhenLimitReached_ThrowsInvalidOperationException()
+    {
+        var run = CreateRun(pet: CreatePetSnapshot(), petSummonsUsed: 3);
+        var command = new QuestSubmittedCommand(
+            run.PartySnapshots[0].ParticipantId,
+            1,
+            ActionKind.SummonPet,
+            DateTimeOffset.UtcNow);
+
+        var act = () => run.SubmitCommand(run.PartySnapshots[0].ParticipantId, command, DateTimeOffset.UtcNow);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*上限*");
+    }
+
+    private static QuestPetSnapshot CreatePetSnapshot()
+    {
+        return new QuestPetSnapshot(
+            new QuestEnemyDefinitionId(1),
+            new Status(maxHp: 30, maxMp: 10, strength: 5, defense: 3, intelligence: 1, luck: 1, speed: 4));
+    }
+
+    private static QuestRun CreateRun(QuestPetSnapshot? pet = null, int petSummonsUsed = 0)
     {
         var participantId = QuestParticipantId.New();
         var snapshot = new QuestRunPartyMemberSnapshot(
@@ -117,7 +200,8 @@ public class QuestRunTests
             armorEquipmentId: null,
             new MoveSet(),
             new BattlePosition(BattleRow.Front, BattleColumn.Left),
-            ActionMode.Manual);
+            ActionMode.Manual,
+            pet);
 
         var enemyId = QuestEnemyInstanceId.New();
         return new QuestRun(
@@ -128,7 +212,7 @@ public class QuestRunTests
             new QuestFloorState(1, false, []),
             new QuestBattleState(
                 [
-                    new QuestRunPartyMemberState(participantId, 20, 5, false, 1, ActionMode.Manual)
+                    new QuestRunPartyMemberState(participantId, 20, 5, false, 1, ActionMode.Manual, petSummonsUsed: petSummonsUsed)
                 ],
                 [
                     new QuestEnemyState(
