@@ -8,6 +8,7 @@ import type {
   MarkChatMessagesAlertedResponse,
   PostChatMessageRequest,
   PostChatMessageResponse,
+  GetGlobalChatRoomRequest,
   GetGlobalChatRoomResponse,
   PostGlobalChatMessageRequest,
   PostGlobalChatMessageResponse,
@@ -60,10 +61,18 @@ export async function postChatMessage(
   return endpoints.chatRoom.postMessage.responseSchema.parse(json)
 }
 
-export async function getGlobalChatRoom(accessToken: string): Promise<GetGlobalChatRoomResponse> {
+export async function getGlobalChatRoom(
+  input: GetGlobalChatRoomRequest,
+  accessToken: string,
+): Promise<GetGlobalChatRoomResponse> {
+  const payload = endpoints.globalChatRoom.get.requestSchema.parse(input)
   const apiBaseUrl = resolveApiBaseUrl()
+  const url = new URL(`${apiBaseUrl}${endpoints.globalChatRoom.get.path}`, window.location.origin)
+  if (payload.page !== undefined) {
+    url.searchParams.set('page', String(payload.page))
+  }
 
-  const response = await fetchSafely(`${apiBaseUrl}${endpoints.globalChatRoom.get.path}`, {
+  const response = await fetchSafely(url.toString(), {
     method: endpoints.globalChatRoom.get.method,
     headers: {
       Authorization: `Bearer ${accessToken}`,

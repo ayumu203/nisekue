@@ -5,6 +5,7 @@ import {
   CircularProgress,
   Collapse,
   Container,
+  Pagination,
   Paper,
   Snackbar,
   Stack,
@@ -77,6 +78,7 @@ function Home() {
     setTutorialStepState(next)
   }
   const [chatTab, setChatTab] = useState<'personal' | 'global'>('personal')
+  const [globalChatPage, setGlobalChatPage] = useState(1)
   const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
   const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
   const [isOthersGroupOpen, setIsOthersGroupOpen] = useState(false)
@@ -135,7 +137,7 @@ function Home() {
     },
     { revalidateOnFocus: true },
   )
-  const globalChatSWRKey = session?.access_token ? (['global-chat-room'] as const) : null
+  const globalChatSWRKey = session?.access_token ? (['global-chat-room', globalChatPage] as const) : null
   const {
     data: globalChatRoom,
     error: globalChatError,
@@ -149,7 +151,7 @@ function Home() {
         throw new Error(locale.sessionInfoMissing)
       }
 
-      return getGlobalChatRoom(session.access_token)
+      return getGlobalChatRoom({ page: globalChatPage }, session.access_token)
     },
     { revalidateOnFocus: true },
   )
@@ -502,20 +504,31 @@ function Home() {
                   <Alert severity="warning">{globalChatError.message}</Alert>
                 ) : (
                   <Stack spacing={2}>
-                    <ChatForm
-                      isSubmitting={isGlobalChatValidating}
-                      disabled={isAnonymous}
-                      disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
-                      onSubmit={async (text) => {
-                        if (!session?.access_token) {
-                          throw new Error(locale.sessionInfoMissing)
-                        }
+                    {globalChatPage === 1 && (
+                      <ChatForm
+                        isSubmitting={isGlobalChatValidating}
+                        disabled={isAnonymous}
+                        disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
+                        onSubmit={async (text) => {
+                          if (!session?.access_token) {
+                            throw new Error(locale.sessionInfoMissing)
+                          }
 
-                        const updated = await postGlobalChatMessage({ text }, session.access_token)
-                        await mutateGlobalChatRoom(updated, { revalidate: false })
-                      }}
-                    />
+                          const updated = await postGlobalChatMessage({ text }, session.access_token)
+                          await mutateGlobalChatRoom(updated, { revalidate: false })
+                        }}
+                      />
+                    )}
                     <ChatMessages messages={globalChatRoom?.messages ?? []} currentPlayerId={player?.userId ?? ''} />
+                    {(globalChatRoom?.totalCount ?? 0) > 100 && (
+                      <Pagination
+                        count={Math.ceil((globalChatRoom?.totalCount ?? 0) / 100)}
+                        page={globalChatPage}
+                        onChange={(_, page) => setGlobalChatPage(page)}
+                        size="small"
+                        sx={{ alignSelf: 'center' }}
+                      />
+                    )}
                   </Stack>
                 )}
               </Stack>
