@@ -15,7 +15,8 @@ public class DbPetTrainingExecutor(
     public async Task<PlayerPet> TrainAsync(PlayerId playerId, PlayerPetId petId)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        await using var tx = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        // ReadCommitted + FOR UPDATE: 並行リクエストは行ロックで待機後、最新のゴールド残高で再判定される
+        await using var tx = await dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
 
         // 同一プレイヤーの並行育成を直列化するための行ロック
         var lockedRows = await dbContext.Database
