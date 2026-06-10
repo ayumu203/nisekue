@@ -22,6 +22,7 @@ erDiagram
         int training_battle_count "NOT NULL, DEFAULT 0"
         timestamptz training_cooldown_until "NULL"
         timestamptz quest_cooldown_until "NULL"
+        timestamptz pet_battle_cooldown_until "NULL"
         int exp_multiplier_flags "NOT NULL, DEFAULT 0"
     }
     CHAT_ROOMS {
@@ -347,3 +348,100 @@ erDiagram
     TREASURE_MAP_EXPEDITIONS ||--o{ TREASURE_MAP_CLAIM_HISTORIES : claimed_by
     RANKING_SNAPSHOTS ||--o{ RANKING_ENTRIES : has
     PLAYERS ||--o{ RANKING_ENTRIES : ranked_in
+
+    PLAYER_PET_BATTLE_STATS {
+        uuid player_id PK, FK "internal.players.id"
+        int rating "NOT NULL, DEFAULT 1000, ペットバトルレートポイント"
+        int wins "NOT NULL, DEFAULT 0"
+        int losses "NOT NULL, DEFAULT 0"
+        int total_battles "NOT NULL, DEFAULT 0"
+        timestamptz updated_at "NOT NULL"
+    }
+
+    PET_BATTLE_ROOMS {
+        uuid id PK "internal.pet_battle_rooms.id"
+        uuid owner_player_id FK "internal.players.id"
+        uuid opponent_player_id FK "internal.players.id"
+        int status "NOT NULL (WaitingForStart/Closed)"
+        int version "NOT NULL, optimistic concurrency token"
+        int close_reason "NULL (Started/Cancelled)"
+        timestamptz created_at "NOT NULL"
+        timestamptz closed_at "NULL"
+    }
+
+    PET_BATTLE_ROOM_SLOTS {
+        uuid room_id PK, FK "internal.pet_battle_rooms.id"
+        uuid pet_id PK, FK "internal.player_pets.id"
+        int battle_row "NOT NULL"
+        int battle_column "NOT NULL"
+    }
+
+    PET_BATTLE_RUNS {
+        uuid id PK "internal.pet_battle_runs.id"
+        uuid room_id FK "UNIQUE, internal.pet_battle_rooms.id"
+        uuid owner_player_id FK "internal.players.id"
+        uuid opponent_player_id FK "internal.players.id"
+        int status "NOT NULL (InProgress/Succeeded/Failed/Aborted)"
+        int current_turn_no "NOT NULL"
+        timestamptz action_deadline_at "NOT NULL"
+        int last_resolved_turn_no "NULL"
+        jsonb last_turn_results_json "NULL, only latest turn result"
+        uuid winner_player_id FK "NULL, internal.players.id"
+        timestamptz started_at "NOT NULL"
+        timestamptz ended_at "NULL"
+    }
+
+    PET_BATTLE_RUN_SNAPSHOTS {
+        uuid run_id PK, FK "internal.pet_battle_runs.id"
+        uuid participant_id PK "generated per slot"
+        int side "NOT NULL (Owner/Opponent)"
+        uuid pet_id FK "NULL, internal.player_pets.id"
+        int enemy_definition_id "NOT NULL, references CSV enemy definition id logically"
+        varchar(100) display_name "NOT NULL"
+        varchar(255) image_path "NULL"
+        int start_row "NOT NULL"
+        int start_column "NOT NULL"
+        int max_hp "NOT NULL"
+        int max_mp "NOT NULL"
+        int strength "NOT NULL"
+        int defense "NOT NULL"
+        int intelligence "NOT NULL"
+        int luck "NOT NULL"
+        int speed "NOT NULL"
+        jsonb move_set_json "NOT NULL"
+    }
+
+    PET_BATTLE_RUN_PARTY_MEMBERS {
+        uuid run_id PK, FK "internal.pet_battle_runs.id"
+        uuid participant_id PK, FK "internal.pet_battle_run_snapshots.participant_id"
+        int current_hp "NOT NULL"
+        int current_mp "NOT NULL"
+        boolean is_dead "NOT NULL"
+        int can_act_from_turn "NOT NULL"
+        int action_mode "NOT NULL (Manual/AutoAttackOnly)"
+        jsonb active_effects_json "NOT NULL"
+        jsonb derived_parameters_json "NOT NULL"
+        timestamptz updated_at "NOT NULL"
+    }
+
+    PET_BATTLE_TURN_COMMANDS {
+        uuid run_id PK, FK "internal.pet_battle_runs.id"
+        int turn_no PK "NOT NULL"
+        uuid participant_id PK "NOT NULL"
+        int action_kind "NOT NULL"
+        int move_id "NULL"
+        int target_row "NULL"
+        int target_column "NULL"
+        timestamptz submitted_at "NOT NULL"
+        boolean is_auto_submitted "NOT NULL"
+    }
+
+    PLAYERS ||--o| PLAYER_PET_BATTLE_STATS : has
+    PLAYERS ||--o{ PET_BATTLE_ROOMS : owns_as_owner
+    PLAYERS ||--o{ PET_BATTLE_ROOMS : participates_as_opponent
+    PET_BATTLE_ROOMS ||--o{ PET_BATTLE_ROOM_SLOTS : has
+    PLAYER_PETS ||--o{ PET_BATTLE_ROOM_SLOTS : placed_in
+    PET_BATTLE_ROOMS ||--o| PET_BATTLE_RUNS : generates
+    PET_BATTLE_RUNS ||--o{ PET_BATTLE_RUN_SNAPSHOTS : snapshots
+    PET_BATTLE_RUNS ||--o{ PET_BATTLE_RUN_PARTY_MEMBERS : tracks
+    PET_BATTLE_RUNS ||--o{ PET_BATTLE_TURN_COMMANDS : receives
