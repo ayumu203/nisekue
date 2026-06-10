@@ -36,7 +36,7 @@ classDiagram
         class PetCaptureRateCalculator {
             <<Domain Service>>
             %% 成功率 = clamp(基礎率(敵Lv帯) + (プレイヤーLv - 敵Lv) * 5, 5, 95)
-            %% 基礎率: 敵Lv 1-19→50 / 20-39→40 / 40-59→30 / 60+→20
+            %% 基礎率: 敵Lv 1-9→75 / 10-19→60 / 20-39→50 / 40-59→40 / 60-99→30 / 100-199→20 / 200-399→15 / 400-699→10 / 700+→5
             +Calculate(playerLevel: int, enemyLevel: int) int
         }
 

@@ -26,10 +26,15 @@ public static class PetCaptureRateCalculator
     {
         return enemyLevel switch
         {
-            < 20 => 50,
-            < 40 => 40,
-            < 60 => 30,
-            _ => 20
+            < 10 => 75,
+            < 20 => 60,
+            < 40 => 50,
+            < 60 => 40,
+            < 100 => 30,
+            < 200 => 20,
+            < 400 => 15,
+            < 700 => 10,
+            _ => 5
         };
     }
 }

@@ -51,10 +51,32 @@ public class QuestRunService(
     {
         var run = await GetDetailAsync(runId);
 
+        if (command.ActionKind == ActionKind.Capture)
+        {
+            await EnsurePetCapacityAsync(run, participantId);
+        }
+
         run.SubmitCommand(participantId, command, DateTimeOffset.UtcNow);
         var resolved = await TryResolveIfReadyAsync(run);
         await questRunRepository.SaveAsync(run);
         return new QuestCommandSubmissionResult(run, resolved);
+    }
+
+    private async Task EnsurePetCapacityAsync(QuestRun run, QuestParticipantId participantId)
+    {
+        var room = await questRoomRepository.GetAsync(run.RoomId)
+            ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
+        var playerId = room.Participants.FirstOrDefault(x => x.Id == participantId)?.PlayerId;
+        if (playerId is null)
+        {
+            return;
+        }
+
+        var petCount = await playerPetRepository.CountByPlayerAsync(playerId.Value);
+        if (petCount >= PetConstants.MaxPetCount)
+        {
+            throw new InvalidOperationException("これ以上ペットを所持できません。");
+        }
     }
 
     public async Task<QuestRun> RequestManualControlAsync(QuestRunId runId, QuestParticipantId participantId)

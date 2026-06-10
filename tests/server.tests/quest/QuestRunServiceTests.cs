@@ -1730,7 +1730,7 @@ public class QuestRunServiceTests
             CreateStage(run.StageId),
             [],
             petRepository,
-            petRollProvider: _ => 51);
+            petRollProvider: _ => 76);
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -1751,7 +1751,7 @@ public class QuestRunServiceTests
     }
 
     [Fact]
-    public async Task SubmitCommandAsync_CaptureWhenPetLimitReached_FailsWithoutRoll()
+    public async Task SubmitCommandAsync_CaptureWhenPetLimitReached_ThrowsInvalidOperationException()
     {
         var run = CreateRun();
         var participantId = run.PartySnapshots[0].ParticipantId;
@@ -1772,7 +1772,7 @@ public class QuestRunServiceTests
             petRepository,
             petRollProvider: _ => 1);
 
-        await service.SubmitCommandAsync(
+        var act = () => service.SubmitCommandAsync(
             run.Id,
             participantId,
             new QuestSubmittedCommand(
@@ -1781,6 +1781,50 @@ public class QuestRunServiceTests
                 ActionKind.Capture,
                 DateTimeOffset.UtcNow,
                 selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*これ以上ペット*");
+        run.BattleState.Enemies.Single().IsAlive.Should().BeTrue();
+        run.TurnState.PendingCommands.Should().BeEmpty("提出自体が拒否されターンを消費しない");
+        petRepository.StoredPets.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_CaptureWhenLimitReachedBeforeResolution_FailsAtResolutionWithLog()
+    {
+        // 提出時は2体所持でチェックを通過し、解決までに3体目を取得した場合は解決時の最終チェックで失敗する
+        var ownerParticipantId = QuestParticipantId.New();
+        var guestParticipantId = QuestParticipantId.New();
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(ownerParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(50, 10, 10, 5, 1, 1, 50), new MoveSet(), 50, 10),
+                new PartyMemberSeed(guestParticipantId, ParticipantType.Player, "Guest", Job.Warrior, new BattlePosition(BattleRow.Middle, BattleColumn.Left), ActionMode.Manual, new Status(50, 10, 10, 5, 1, 1, 40), new MoveSet(), 50, 10)
+            ],
+            enemyHp: 100);
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var ownerPlayerId = room.Participants.First(x => x.Id == ownerParticipantId).PlayerId!.Value;
+        var petRepository = new FakePlayerPetRepository(
+            PlayerPet.Capture(ownerPlayerId, new QuestEnemyDefinitionId(1), DateTimeOffset.UtcNow),
+            PlayerPet.Capture(ownerPlayerId, new QuestEnemyDefinitionId(1), DateTimeOffset.UtcNow));
+        var service = CreateRunService(
+            repository,
+            roomRepository,
+            new FakePlayerRepository(roomRepository.PlayerIds.ToArray()),
+            CreateStage(run.StageId),
+            [],
+            petRepository,
+            petRollProvider: _ => 1);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            ownerParticipantId,
+            new QuestSubmittedCommand(ownerParticipantId, run.TurnState.CurrentTurnNo, ActionKind.Capture, DateTimeOffset.UtcNow, selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+        await petRepository.AddAsync(PlayerPet.Capture(ownerPlayerId, new QuestEnemyDefinitionId(1), DateTimeOffset.UtcNow));
+        await service.SubmitCommandAsync(
+            run.Id,
+            guestParticipantId,
+            new QuestSubmittedCommand(guestParticipantId, run.TurnState.CurrentTurnNo, ActionKind.Guard, DateTimeOffset.UtcNow));
 
         run.BattleState.Enemies.Single().IsCaptured.Should().BeFalse();
         petRepository.StoredPets.Should().HaveCount(3);
