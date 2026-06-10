@@ -86,7 +86,9 @@
     "Guard": "防御",
     "Wait": "待機",
     "LeaveQuest": "離脱",
-    "Escape": "逃走"
+    "Escape": "逃走",
+    "Capture": "捕獲",
+    "SummonPet": "呼出"
   },
   "rows": {
     "Front": "前列",

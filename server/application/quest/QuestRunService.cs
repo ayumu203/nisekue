@@ -3,6 +3,7 @@ using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.move;
 using server.domain.move.enums;
+using server.domain.pet;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
@@ -26,15 +27,19 @@ public class QuestRunService(
     IJobProfileRepository jobProfileRepository,
     IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
     ITreasureMapExpeditionRepository treasureMapExpeditionRepository,
+    IPlayerPetRepository playerPetRepository,
+    QuestPetActionService questPetActionService,
     BattleService battleService,
     QuestBattleFactory questBattleFactory,
-    Func<int, int>? rewardRollProvider = null)
+    Func<int, int>? rewardRollProvider = null,
+    Func<int, int>? petRollProvider = null)
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
     private static readonly TimeSpan QuestCompletionTreasureMapAdvance = TimeSpan.FromMinutes(5);
     private const int ItemCapacity = 20;
     private readonly Func<int, int> _rewardRollProvider = rewardRollProvider ?? (maxInclusive => Random.Shared.Next(1, maxInclusive + 1));
+    private readonly Func<int, int> _petRollProvider = petRollProvider ?? (maxInclusive => Random.Shared.Next(1, maxInclusive + 1));
 
     public async Task<QuestRun> GetDetailAsync(QuestRunId runId)
     {
@@ -46,10 +51,32 @@ public class QuestRunService(
     {
         var run = await GetDetailAsync(runId);
 
+        if (command.ActionKind == ActionKind.Capture)
+        {
+            await EnsurePetCapacityAsync(run, participantId);
+        }
+
         run.SubmitCommand(participantId, command, DateTimeOffset.UtcNow);
-        var resolved = await TryResolveIfReadyAsync(run);
-        await questRunRepository.SaveAsync(run);
-        return new QuestCommandSubmissionResult(run, resolved);
+        var resolution = await TryResolveIfReadyAsync(run);
+        await questRunRepository.SaveAsync(run, resolution.CapturedPets);
+        return new QuestCommandSubmissionResult(run, resolution.ResolvedInThisRequest);
+    }
+
+    private async Task EnsurePetCapacityAsync(QuestRun run, QuestParticipantId participantId)
+    {
+        var room = await questRoomRepository.GetAsync(run.RoomId)
+            ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
+        var playerId = room.Participants.FirstOrDefault(x => x.Id == participantId)?.PlayerId;
+        if (playerId is null)
+        {
+            return;
+        }
+
+        var petCount = await playerPetRepository.CountByPlayerAsync(playerId.Value);
+        if (petCount >= PetConstants.MaxPetCount)
+        {
+            throw new InvalidOperationException("これ以上ペットを所持できません。");
+        }
     }
 
     public async Task<QuestRun> RequestManualControlAsync(QuestRunId runId, QuestParticipantId participantId)
@@ -96,10 +123,10 @@ public class QuestRunService(
         foreach (var run in expiredRuns)
         {
             run.SwitchToAutoActionForTimeout(now);
-            var changed = await TryResolveIfReadyAsync(run);
-            if (changed)
+            var resolution = await TryResolveIfReadyAsync(run);
+            if (resolution.ResolvedInThisRequest)
             {
-                await questRunRepository.SaveAsync(run);
+                await questRunRepository.SaveAsync(run, resolution.CapturedPets);
                 updatedRuns.Add(run);
             }
         }
@@ -115,17 +142,17 @@ public class QuestRunService(
         return run;
     }
 
-    private async Task<bool> TryResolveIfReadyAsync(QuestRun run)
+    private async Task<QuestRunResolutionResult> TryResolveIfReadyAsync(QuestRun run)
     {
         if (run.Status != QuestRunStatus.InProgress)
         {
-            return false;
+            return QuestRunResolutionResult.None;
         }
 
         var waitingParticipantIds = GetWaitingParticipantIds(run);
         if (waitingParticipantIds.Count > 0)
         {
-            return false;
+            return QuestRunResolutionResult.None;
         }
 
         var stage = await questStageRepository.GetAsync(run.StageId)
@@ -136,9 +163,20 @@ public class QuestRunService(
         var previousFloorNo = run.FloorState.CurrentFloorNo;
         var previousStatus = run.Status.ToString();
 
+        var captureResult = await ProcessCaptureCommandsAsync(run, enemyDefinitions);
+
         var fieldContext = questBattleFactory.CreateBattleFieldContext(run);
         var actors = questBattleFactory.CreateActorInputs(run, enemyDefinitions);
         var (actions, moves) = await questBattleFactory.CreateTurnInputsAsync(run, moveRepository, enemyDefinitions);
+
+        var petSummons = await CreatePetSummonInputsAsync(run, enemyDefinitions);
+        if (petSummons.Actors.Length > 0)
+        {
+            actors = [.. actors, .. petSummons.Actors];
+            actions = [.. actions, .. petSummons.Actions];
+            moves = MergeMoves(moves, petSummons.Moves);
+        }
+
         var resolution = battleService.ResolveTurn(new BattleTurnRequest(actors, actions, moves, fieldContext));
         var resolvedMoves = await LoadMissingAilmentSourceMovesAsync(moves, resolution, moveRepository);
 
@@ -173,6 +211,8 @@ public class QuestRunService(
             enemyDefinitions,
             partyActorMap,
             enemyActorMap,
+            petSummons.ActorNames,
+            captureResult.Actions,
             previousFloorNo,
             previousStatus,
             nextFloor?.FloorNo,
@@ -181,8 +221,9 @@ public class QuestRunService(
 
         if (summary.IsFloorCleared)
         {
-            run.Rewards.AddExp(CalculateFloorExp(currentFloor, enemyDefinitions));
-            run.Rewards.AddGold(CalculateFloorGold(currentFloor, enemyDefinitions));
+            var capturedEnemies = run.BattleState.Enemies.Where(x => x.IsCaptured).ToArray();
+            run.Rewards.AddExp(CalculateFloorExp(currentFloor, enemyDefinitions, capturedEnemies));
+            run.Rewards.AddGold(CalculateFloorGold(currentFloor, enemyDefinitions, capturedEnemies));
         }
 
         if (nextFloor is not null && nextEnemyStates is not null)
@@ -199,12 +240,13 @@ public class QuestRunService(
             await ApplyQuestCompletionEffectsAsync(run);
         }
 
-        return true;
+        return new QuestRunResolutionResult(true, captureResult.CapturedPets);
     }
 
     private static int CalculateFloorExp(
         QuestFloorDefinition floor,
-        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions,
+        IReadOnlyList<QuestEnemyState>? capturedEnemies = null)
     {
         ArgumentNullException.ThrowIfNull(floor);
         ArgumentNullException.ThrowIfNull(enemyDefinitions);
@@ -213,13 +255,15 @@ public class QuestRunService(
             enemyDefinitions.TryGetValue(placement.EnemyDefinitionId, out var definition)
                 ? definition.Level
                 : 0);
+        baseExp = Math.Max(0, baseExp - SumCapturedEnemyLevels(enemyDefinitions, capturedEnemies));
 
         return (int)Math.Floor(baseExp * floor.RewardRule.ExpRate);
     }
 
     private static int CalculateFloorGold(
         QuestFloorDefinition floor,
-        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions,
+        IReadOnlyList<QuestEnemyState>? capturedEnemies = null)
     {
         ArgumentNullException.ThrowIfNull(floor);
         ArgumentNullException.ThrowIfNull(enemyDefinitions);
@@ -228,8 +272,223 @@ public class QuestRunService(
             enemyDefinitions.TryGetValue(placement.EnemyDefinitionId, out var definition)
                 ? definition.Level
                 : 0);
+        baseGold = Math.Max(0, baseGold - SumCapturedEnemyLevels(enemyDefinitions, capturedEnemies));
 
         return (int)Math.Floor(baseGold * floor.RewardRule.GoldRate);
+    }
+
+    private static int SumCapturedEnemyLevels(
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions,
+        IReadOnlyList<QuestEnemyState>? capturedEnemies)
+    {
+        if (capturedEnemies is null || capturedEnemies.Count == 0)
+        {
+            return 0;
+        }
+
+        return capturedEnemies.Sum(enemy =>
+            enemyDefinitions.TryGetValue(enemy.EnemyDefinitionId, out var definition)
+                ? definition.Level
+                : 0);
+    }
+
+    private async Task<QuestCaptureProcessingResult> ProcessCaptureCommandsAsync(
+        QuestRun run,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+    {
+        var captureCommands = run.TurnState.PendingCommands
+            .Where(x => x.ActionKind == ActionKind.Capture)
+            .OrderBy(x => x.SubmittedAt)
+            .ToArray();
+        if (captureCommands.Length == 0)
+        {
+            return QuestCaptureProcessingResult.Empty;
+        }
+
+        var room = await questRoomRepository.GetAsync(run.RoomId)
+            ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
+        var snapshotById = run.PartySnapshots.ToDictionary(x => x.ParticipantId);
+        var logActions = new List<QuestResolvedAction>();
+        var capturedPets = new List<PlayerPet>();
+
+        foreach (var command in captureCommands)
+        {
+            var member = run.BattleState.FindPartyMember(command.ParticipantId);
+            if (member.IsDead || member.HasLeftQuest)
+            {
+                continue;
+            }
+
+            var actorName = snapshotById.TryGetValue(command.ParticipantId, out var snapshot)
+                ? snapshot.DisplayName
+                : command.ParticipantId.Value.ToString();
+
+            var target = command.SelectedTargetPosition is null
+                ? null
+                : run.BattleState.Enemies.FirstOrDefault(x => x.IsAlive && x.Position == command.SelectedTargetPosition.Value);
+            if (target is null)
+            {
+                logActions.Add(CreateCaptureLogAction(
+                    command.ParticipantId,
+                    actorName,
+                    succeeded: false,
+                    CreateLogEntry((actorName, LogTone.Default), ("は捕獲しようとしたが、対象がいなかった", LogTone.Default))));
+                continue;
+            }
+
+            enemyDefinitions.TryGetValue(target.EnemyDefinitionId, out var definition);
+            var targetName = definition?.Name ?? target.EnemyDefinitionId.ToString();
+
+            var playerId = room.Participants.FirstOrDefault(x => x.Id == command.ParticipantId)?.PlayerId;
+            if (playerId is null || definition is null)
+            {
+                logActions.Add(CreateCaptureLogAction(
+                    command.ParticipantId,
+                    actorName,
+                    succeeded: false,
+                    CreateLogEntry((actorName, LogTone.Default), ("は", LogTone.Default), (targetName, LogTone.Default), ("を捕獲できなかった", LogTone.Default))));
+                continue;
+            }
+
+            var petCount = await playerPetRepository.CountByPlayerAsync(playerId.Value);
+            if (petCount >= PetConstants.MaxPetCount)
+            {
+                logActions.Add(CreateCaptureLogAction(
+                    command.ParticipantId,
+                    actorName,
+                    succeeded: false,
+                    CreateLogEntry((actorName, LogTone.Default), ("はこれ以上ペットを所持できない", LogTone.Default))));
+                continue;
+            }
+
+            var player = await playerRepository.GetPlayerAsync(playerId.Value)
+                ?? throw new KeyNotFoundException($"プレイヤーが見つかりません。 playerId={playerId.Value.Value}");
+            var rate = PetCaptureRateCalculator.Calculate(player.Level, definition.Level);
+            if (_petRollProvider(100) <= rate)
+            {
+                target.MarkCaptured();
+                capturedPets.Add(PlayerPet.Capture(playerId.Value, definition.Id, DateTimeOffset.UtcNow));
+                logActions.Add(CreateCaptureLogAction(
+                    command.ParticipantId,
+                    actorName,
+                    succeeded: true,
+                    CreateLogEntry((actorName, LogTone.Default), ("は", LogTone.Default), (targetName, LogTone.Buff), ("を捕まえた！", LogTone.Buff))));
+            }
+            else
+            {
+                logActions.Add(CreateCaptureLogAction(
+                    command.ParticipantId,
+                    actorName,
+                    succeeded: false,
+                    CreateLogEntry((actorName, LogTone.Default), ("は", LogTone.Default), (targetName, LogTone.Default), ("の捕獲に失敗した", LogTone.Default))));
+            }
+        }
+
+        return new QuestCaptureProcessingResult(logActions, capturedPets);
+    }
+
+    private sealed record QuestRunResolutionResult(bool ResolvedInThisRequest, IReadOnlyList<PlayerPet> CapturedPets)
+    {
+        public static QuestRunResolutionResult None { get; } = new(false, []);
+    }
+
+    private sealed record QuestCaptureProcessingResult(
+        IReadOnlyList<QuestResolvedAction> Actions,
+        IReadOnlyList<PlayerPet> CapturedPets)
+    {
+        public static QuestCaptureProcessingResult Empty { get; } = new([], []);
+    }
+
+    private static QuestResolvedAction CreateCaptureLogAction(
+        QuestParticipantId participantId,
+        string actorDisplayName,
+        bool succeeded,
+        QuestBattleLogEntry entry)
+    {
+        return new QuestResolvedAction(
+            participantId.Value,
+            actorEnemyInstanceId: null,
+            actorDisplayName,
+            nameof(ActionKind.Capture),
+            moveId: null,
+            moveName: null,
+            succeeded,
+            logs: [entry.Text],
+            logEntries: [entry]);
+    }
+
+    private async Task<(BattleActorInput[] Actors, BattleActionInput[] Actions, Move[] Moves, IReadOnlyDictionary<BattleActorId, string> ActorNames)> CreatePetSummonInputsAsync(
+        QuestRun run,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+    {
+        var summonCommands = run.TurnState.PendingCommands
+            .Where(x => x.ActionKind == ActionKind.SummonPet)
+            .ToArray();
+        if (summonCommands.Length == 0)
+        {
+            return ([], [], [], new Dictionary<BattleActorId, string>());
+        }
+
+        var snapshotById = run.PartySnapshots.ToDictionary(x => x.ParticipantId);
+        var actors = new List<BattleActorInput>();
+        var actions = new List<BattleActionInput>();
+        var movesById = new Dictionary<int, Move>();
+        var actorNames = new Dictionary<BattleActorId, string>();
+
+        foreach (var command in summonCommands)
+        {
+            var member = run.BattleState.FindPartyMember(command.ParticipantId);
+            if (member.IsDead || member.HasLeftQuest || !member.HasRemainingPetSummons)
+            {
+                continue;
+            }
+
+            if (!snapshotById.TryGetValue(command.ParticipantId, out var snapshot) || snapshot.Pet is null)
+            {
+                continue;
+            }
+
+            member.ConsumePetSummon();
+
+            enemyDefinitions.TryGetValue(snapshot.Pet.EnemyDefinitionId, out var definition);
+            var petMoves = new List<Move>();
+            foreach (var moveId in definition?.MoveIds ?? [])
+            {
+                var move = await moveRepository.GetMoveAsync(moveId);
+                if (move is not null)
+                {
+                    petMoves.Add(move);
+                    movesById[move.Id.Id] = move;
+                }
+            }
+
+            var petName = definition?.Name ?? "ペット";
+            var displayName = $"{snapshot.DisplayName}の{petName}";
+            var (actor, action, _) = questPetActionService.CreateSummonInputs(
+                Guid.NewGuid(),
+                displayName,
+                snapshot.Pet,
+                petMoves,
+                _petRollProvider);
+            actors.Add(actor);
+            actions.Add(action);
+            actorNames[new BattleActorId(actor.ActorId)] = displayName;
+        }
+
+        return (actors.ToArray(), actions.ToArray(), movesById.Values.ToArray(), actorNames);
+    }
+
+    private static Move[] MergeMoves(IReadOnlyList<Move> baseMoves, IReadOnlyList<Move> additionalMoves)
+    {
+        var movesById = baseMoves
+            .GroupBy(x => x.Id.Id)
+            .ToDictionary(x => x.Key, x => x.First());
+        foreach (var move in additionalMoves)
+        {
+            movesById[move.Id.Id] = move;
+        }
+
+        return movesById.Values.ToArray();
     }
 
     private async Task ApplyQuestCompletionEffectsAsync(QuestRun run)
@@ -505,6 +764,8 @@ public class QuestRunService(
         IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions,
         IReadOnlyDictionary<BattleActorId, QuestParticipantId> partyActorMap,
         IReadOnlyDictionary<BattleActorId, QuestEnemyInstanceId> enemyActorMap,
+        IReadOnlyDictionary<BattleActorId, string> petActorNames,
+        IReadOnlyList<QuestResolvedAction> captureActions,
         int previousFloorNo,
         string previousStatus,
         int? nextFloorNo,
@@ -539,6 +800,10 @@ public class QuestRunService(
                     ? enemyDefinition.Name
                     : enemy.EnemyDefinitionId.ToString();
             }
+            else if (petActorNames.TryGetValue(actionResult.ActorId, out var petActorName))
+            {
+                actorDisplayName = petActorName;
+            }
             else
             {
                 actorDisplayName = actionResult.ActorId.Value.ToString();
@@ -567,6 +832,10 @@ public class QuestRunService(
                     targetDisplayName = enemyDefinitions.TryGetValue(enemy.EnemyDefinitionId, out var enemyDefinition)
                         ? enemyDefinition.Name
                         : enemy.EnemyDefinitionId.ToString();
+                }
+                else if (petActorNames.TryGetValue(targetResult.TargetActorId, out var petTargetName))
+                {
+                    targetDisplayName = petTargetName;
                 }
                 else
                 {
@@ -626,7 +895,7 @@ public class QuestRunService(
             enemyById,
             enemyDefinitions);
 
-        actions = [.. actions, .. ailmentLogActions];
+        actions = [.. captureActions, .. actions, .. ailmentLogActions];
 
         var floorTransition = summary.IsFloorCleared
             ? new QuestFloorTransition(

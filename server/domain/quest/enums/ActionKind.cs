@@ -8,5 +8,7 @@ public enum ActionKind
     Wait = 4,
     LeaveQuest = 5,
     Escape = 6,
-    Prayer = 7
+    Prayer = 7,
+    Capture = 8,
+    SummonPet = 9
 }

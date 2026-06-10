@@ -260,6 +260,19 @@ public class QuestResponseMapper(
                     canActFromTurn = state.CanActFromTurn,
                     actionMode = state.ActionMode.ToString(),
                     manualControlRequestStatus = state.IsManualControlRequested ? "Pending" : "None",
+                    petSummonsUsed = state.PetSummonsUsed,
+                    pet = snapshot.Pet is null
+                        ? null
+                        : new
+                        {
+                            enemyDefinitionId = snapshot.Pet.EnemyDefinitionId.Value,
+                            name = enemyDefinitions.TryGetValue(snapshot.Pet.EnemyDefinitionId, out var petDefinition)
+                                ? petDefinition.Name
+                                : "ペット",
+                            imagePath = enemyDefinitions.TryGetValue(snapshot.Pet.EnemyDefinitionId, out var petImageDefinition)
+                                ? petImageDefinition.ImagePath
+                                : null
+                        },
                     activeEffects = state.Ailments.Select(x => new
                     {
                         effectType = x.Type.ToString(),

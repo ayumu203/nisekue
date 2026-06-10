@@ -228,6 +228,318 @@ namespace server.infrastructure.migrations
                     b.ToTable("thread_replies", "internal");
                 });
 
+            modelBuilder.Entity("server.infrastructure.pet.PlayerPetEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("BonusDefense")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("bonus_defense");
+
+                    b.Property<int>("BonusIntelligence")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("bonus_intelligence");
+
+                    b.Property<int>("BonusLuck")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("bonus_luck");
+
+                    b.Property<int>("BonusMaxHp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("bonus_max_hp");
+
+                    b.Property<int>("BonusMaxMp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("bonus_max_mp");
+
+                    b.Property<int>("BonusSpeed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("bonus_speed");
+
+                    b.Property<int>("BonusStrength")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("bonus_strength");
+
+                    b.Property<DateTimeOffset>("CapturedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("captured_at");
+
+                    b.Property<int>("EnemyDefinitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("enemy_definition_id");
+
+                    b.Property<bool>("IsStandby")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_standby");
+
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_player_pets_standby_player")
+                        .HasFilter("is_standby = TRUE");
+
+                    b.ToTable("player_pets", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.pet_battle.PetBattleRoomEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("CloseReason")
+                        .HasColumnType("integer")
+                        .HasColumnName("close_reason");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("OpponentPlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opponent_player_id");
+
+                    b.Property<Guid>("OwnerPlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_player_id");
+
+                    b.Property<string>("SlotsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("slots_json");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerPlayerId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_pet_battle_rooms_waiting_owner")
+                        .HasFilter("status = 1");
+
+                    b.HasIndex("OwnerPlayerId", "Status")
+                        .HasDatabaseName("ix_pet_battle_rooms_owner_status");
+
+                    b.ToTable("pet_battle_rooms", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.pet_battle.PetBattleRunEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("ActionDeadlineAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("action_deadline_at");
+
+                    b.Property<int>("CurrentTurnNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_turn_no");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ended_at");
+
+                    b.Property<int?>("LastResolvedTurnNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_resolved_turn_no");
+
+                    b.Property<string>("LastTurnResultsJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("last_turn_results_json");
+
+                    b.Property<string>("OpponentMembersJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("opponent_members_json");
+
+                    b.Property<Guid>("OpponentPlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opponent_player_id");
+
+                    b.Property<string>("OpponentSnapshotsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("opponent_snapshots_json");
+
+                    b.Property<string>("OwnerMembersJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("owner_members_json");
+
+                    b.Property<Guid>("OwnerPlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_player_id");
+
+                    b.Property<string>("OwnerSnapshotsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("owner_snapshots_json");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("room_id");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.Property<Guid?>("WinnerPlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("winner_player_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerPlayerId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_pet_battle_runs_in_progress_owner")
+                        .HasFilter("status = 1");
+
+                    b.HasIndex("RoomId")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerPlayerId", "Status")
+                        .HasDatabaseName("ix_pet_battle_runs_owner_status");
+
+                    b.HasIndex("Status", "ActionDeadlineAt")
+                        .HasDatabaseName("ix_pet_battle_runs_status_deadline");
+
+                    b.ToTable("pet_battle_runs", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.pet_battle.PetBattleTurnCommandEntity", b =>
+                {
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<int>("TurnNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("turn_no");
+
+                    b.Property<Guid>("ParticipantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("participant_id");
+
+                    b.Property<int>("ActionKind")
+                        .HasColumnType("integer")
+                        .HasColumnName("action_kind");
+
+                    b.Property<bool>("IsAutoSubmitted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_auto_submitted");
+
+                    b.Property<int?>("MoveId")
+                        .HasColumnType("integer")
+                        .HasColumnName("move_id");
+
+                    b.Property<DateTimeOffset>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<int?>("TargetColumn")
+                        .HasColumnType("integer")
+                        .HasColumnName("target_column");
+
+                    b.Property<int?>("TargetRow")
+                        .HasColumnType("integer")
+                        .HasColumnName("target_row");
+
+                    b.HasKey("RunId", "TurnNo", "ParticipantId");
+
+                    b.ToTable("pet_battle_turn_commands", "internal");
+                });
+
+            modelBuilder.Entity("server.infrastructure.pet_battle.PlayerPetBattleStatsEntity", b =>
+                {
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_id");
+
+                    b.Property<int>("Losses")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("losses");
+
+                    b.Property<int>("Rating")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1000)
+                        .HasColumnName("rating");
+
+                    b.Property<int>("TotalBattles")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("total_battles");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("Wins")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("wins");
+
+                    b.HasKey("PlayerId");
+
+                    b.ToTable("player_pet_battle_stats", "internal");
+                });
+
             modelBuilder.Entity("server.infrastructure.player.ItemDeletionLogEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -451,6 +763,10 @@ namespace server.infrastructure.migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("name");
+
+                    b.Property<DateTimeOffset?>("PetBattleCooldownUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("pet_battle_cooldown_until");
 
                     b.Property<DateTimeOffset?>("QuestCooldownUntil")
                         .HasColumnType("timestamp with time zone")
@@ -895,6 +1211,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasColumnName("floor_no");
 
+                    b.Property<bool>("IsCaptured")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_captured");
+
                     b.Property<bool>("IsDead")
                         .HasColumnType("boolean")
                         .HasColumnName("is_dead");
@@ -1012,6 +1334,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_manual_control_requested");
 
+                    b.Property<int>("PetSummonsUsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("pet_summons_used");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -1082,6 +1410,38 @@ namespace server.infrastructure.migrations
                     b.Property<int>("ParticipantType")
                         .HasColumnType("integer")
                         .HasColumnName("participant_type");
+
+                    b.Property<int?>("PetDefense")
+                        .HasColumnType("integer")
+                        .HasColumnName("pet_defense");
+
+                    b.Property<int?>("PetEnemyDefinitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("pet_enemy_definition_id");
+
+                    b.Property<int?>("PetIntelligence")
+                        .HasColumnType("integer")
+                        .HasColumnName("pet_intelligence");
+
+                    b.Property<int?>("PetLuck")
+                        .HasColumnType("integer")
+                        .HasColumnName("pet_luck");
+
+                    b.Property<int?>("PetMaxHp")
+                        .HasColumnType("integer")
+                        .HasColumnName("pet_max_hp");
+
+                    b.Property<int?>("PetMaxMp")
+                        .HasColumnType("integer")
+                        .HasColumnName("pet_max_mp");
+
+                    b.Property<int?>("PetSpeed")
+                        .HasColumnType("integer")
+                        .HasColumnName("pet_speed");
+
+                    b.Property<int?>("PetStrength")
+                        .HasColumnType("integer")
+                        .HasColumnName("pet_strength");
 
                     b.Property<int>("Speed")
                         .HasColumnType("integer")
@@ -1345,6 +1705,24 @@ namespace server.infrastructure.migrations
                     b.HasOne("server.infrastructure.chat.ThreadEntity", null)
                         .WithMany()
                         .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("server.infrastructure.pet_battle.PetBattleTurnCommandEntity", b =>
+                {
+                    b.HasOne("server.infrastructure.pet_battle.PetBattleRunEntity", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("server.infrastructure.pet_battle.PlayerPetBattleStatsEntity", b =>
+                {
+                    b.HasOne("server.infrastructure.player.PlayerEntity", null)
+                        .WithOne()
+                        .HasForeignKey("server.infrastructure.pet_battle.PlayerPetBattleStatsEntity", "PlayerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

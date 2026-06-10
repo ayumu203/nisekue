@@ -3,6 +3,7 @@ using server.application.quest;
 using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.move;
+using server.domain.pet;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
@@ -419,6 +420,8 @@ public class QuestRoomServiceTests
             playerRepository,
             playerEquipmentRepository ?? new FakePlayerEquipmentRepository(),
             equipmentRepository ?? new FakeEquipmentRepository(),
+            enemyDefinitionRepository,
+            new FakePlayerPetRepository(),
             new QuestNpcAssignmentService(npcTemplateRepository),
             new QuestSnapshotFactory(new EquipmentStatusResolver()),
             new QuestRunFactory(enemyDefinitionRepository));
@@ -567,7 +570,7 @@ public class QuestRoomServiceTests
         public Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
             => Task.FromResult<IReadOnlyList<QuestRun>>([]);
 
-        public Task SaveAsync(QuestRun run)
+        public Task SaveAsync(QuestRun run, IReadOnlyList<PlayerPet>? capturedPets = null)
         {
             runs[run.Id.Value] = run;
             SavedRuns.Add(run);

@@ -1,0 +1,170 @@
+classDiagram
+    %% Enum 定義は docs/common/01_Enum.mmd を参照
+    %% 戦闘解決は既存 BattleService / QuestEnemyActionPolicy を流用
+
+    namespace PetBattleContext {
+        class PetBattleRoom {
+            <<Aggregate Root>>
+            +PetBattleRoomId Id
+            +PlayerId OwnerPlayerId
+            +PlayerId OpponentPlayerId
+            +PetBattleRoomStatus Status
+            +int Version
+            +IReadOnlyList~PetBattleRoomSlot~ Slots
+            +DateTimeOffset CreatedAt
+            +DateTimeOffset? ClosedAt
+            +int? CloseReason
+            %% 配置変更ごとに Version を進め、永続化時は optimistic concurrency で競合を検出する
+            +AssignSlot(petId: PlayerPetId, row: BattleRow, col: BattleColumn) void
+            +RemoveSlot(petId: PlayerPetId) void
+            +CloseRecruitment(reason: PetBattleRoomCloseReason) void
+            +CanStart() bool
+        }
+
+        class PetBattleRoomId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class PetBattleRoomSlot {
+            <<Value Object>>
+            %% オーナー側の配置情報（1体1スロット）
+            +PlayerPetId PetId
+            +BattleRow Row
+            +BattleColumn Column
+        }
+
+        class PetBattleRun {
+            <<Aggregate Root>>
+            +PetBattleRunId Id
+            +PetBattleRoomId RoomId
+            +PlayerId OwnerPlayerId
+            +PlayerId OpponentPlayerId
+            +PetBattleRunStatus Status
+            +int CurrentTurnNo
+            +DateTimeOffset ActionDeadlineAt
+            +int? LastResolvedTurnNo
+            +IReadOnlyList~PetBattlePartyMemberSnapshot~ OwnerSnapshots
+            +IReadOnlyList~PetBattlePartyMemberSnapshot~ OpponentSnapshots
+            +IReadOnlyList~PetBattlePartyMemberState~ OwnerMemberStates
+            +IReadOnlyList~PetBattlePartyMemberState~ OpponentMemberStates
+            +PetBattleLastTurnResults? LastTurnResults
+            +DateTimeOffset StartedAt
+            +DateTimeOffset? EndedAt
+            +PlayerId? WinnerPlayerId
+            %% コマンド投入ごとに Version を進め、同一オーナー操作はプレイヤー行ロックで直列化する
+            +SubmitCommand(participantId: PetBattleParticipantId, command: PetBattleSubmittedCommand) void
+            +ApplyBattleResolution(resolution: BattleResolution) void
+        }
+
+        class PetBattleRunId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class PetBattleParticipantId {
+            <<Value Object>>
+            +Guid Id
+        }
+
+        class PetBattlePartyMemberSnapshot {
+            <<Value Object>>
+            %% 開始時点のペット情報を固定（敵マスタ+育成加算の合算値）
+            +PetBattleParticipantId ParticipantId
+            +PlayerPetId? PetId
+            +int EnemyDefinitionId
+            +string DisplayName
+            +string? ImagePath
+            +BattleRow StartRow
+            +BattleColumn StartColumn
+            +Status BaseStatus
+            +IReadOnlyList~int~ MoveIds
+        }
+
+        class PetBattlePartyMemberState {
+            <<Value Object>>
+            +PetBattleParticipantId ParticipantId
+            +int CurrentHp
+            +int CurrentMp
+            +bool IsDead
+            +int CanActFromTurn
+            +ActionMode ActionMode
+            +IReadOnlyList~ActiveEffect~ ActiveEffects
+            +DerivedParameters DerivedParameters
+        }
+
+        class PlayerPetBattleStats {
+            <<Aggregate Root>>
+            +PlayerId PlayerId
+            +int Rating
+            +int Wins
+            +int Losses
+            +int TotalBattles
+            +DateTimeOffset UpdatedAt
+            %% 初期値: Rating=1000, Wins=0, Losses=0, TotalBattles=0
+            +static PlayerPetBattleStats CreateInitial(playerId: PlayerId) PlayerPetBattleStats
+            +ApplyResult(outcome: PetBattleOutcome) void
+            %% 勝利: Rating = max(0, Rating+10), Wins++, TotalBattles++
+            %% 敗北: Rating = max(0, Rating-5), Losses++, TotalBattles++
+        }
+
+        class PetBattleMatchingService {
+            <<Domain Service>>
+            %% レート近似プレイヤーを段階的に選出する
+            %% 優先: ±200以内 → ±500以内 → 全体（ペット1体以上所持のみ対象）
+            %% 自分自身・クールダウン中のプレイヤーは除外しない（相手はクールダウン対象外）
+            +SelectOpponent(ownerId: PlayerId, ownerRating: int, candidates: IReadOnlyList~MatchingCandidate~) PlayerId?
+        }
+
+        class PetBattleConstants {
+            <<Constants>>
+            +int InitialRating = 1000
+            +int RatingFloor = 0
+            +int WinPoints = 10
+            +int LossPoints = 5
+            +int CooldownMinutes = 1
+            +int MatchingRangeNarrow = 200
+            +int MatchingRangeWide = 500
+        }
+
+        class IPetBattleRoomRepository {
+            <<Repository IF>>
+            +Task~PetBattleRoom?~ GetAsync(id: PetBattleRoomId)
+            %% WaitingForStart は owner 単位で部分一意
+            +Task SaveAsync(room: PetBattleRoom)
+        }
+
+        class IPetBattleRunRepository {
+            <<Repository IF>>
+            +Task~PetBattleRun?~ GetAsync(id: PetBattleRunId)
+            +Task~PetBattleRun?~ GetByRoomIdAsync(roomId: PetBattleRoomId)
+            %% current turn のコマンドは差分同期し、解決済み turn の行は削除する
+            +Task SaveAsync(run: PetBattleRun)
+        }
+
+        class IPlayerPetBattleStatsRepository {
+            <<Repository IF>>
+            +Task~PlayerPetBattleStats?~ GetByPlayerIdAsync(playerId: PlayerId)
+            +Task UpsertAsync(stats: PlayerPetBattleStats)
+        }
+
+        class IMatchingCandidateRepository {
+            <<Repository IF>>
+            %% マッチング用に player_pet_battle_stats + player_pets を結合して候補一覧を返す
+            +Task~IReadOnlyList~MatchingCandidate~~ GetCandidatesAsync(excludePlayerId: PlayerId)
+        }
+    }
+
+    PetBattleRoom *-- PetBattleRoomId
+    PetBattleRoom *-- PetBattleRoomSlot
+    PetBattleRun *-- PetBattleRunId
+    PetBattleRun *-- PetBattlePartyMemberSnapshot
+    PetBattleRun *-- PetBattlePartyMemberState
+    PetBattleRun *-- PetBattleParticipantId
+    PetBattlePartyMemberSnapshot *-- PetBattleParticipantId
+    PetBattlePartyMemberState *-- PetBattleParticipantId
+    PetBattleMatchingService ..> PetBattleConstants : 参照
+    PlayerPetBattleStats ..> PetBattleConstants : 参照
+    IPetBattleRoomRepository ..> PetBattleRoom : persists
+    IPetBattleRunRepository ..> PetBattleRun : persists
+    IPlayerPetBattleStatsRepository ..> PlayerPetBattleStats : persists

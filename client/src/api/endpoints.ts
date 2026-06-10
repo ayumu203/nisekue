@@ -91,6 +91,7 @@ import {
   treasureMapExpeditionSchema,
 } from '@/schema/treasureMap'
 import { getRankingsResponseSchema } from '@/schema/ranking'
+import { getPetsResponseSchema, trainPetResponseSchema } from '@/schema/pet'
 
 export type {
   GetPlayerResponse,
@@ -194,6 +195,27 @@ export type {
   TreasureMapSummary,
 } from '@/schema/treasureMap'
 export type { GetRankingsResponse, RankingRow } from '@/schema/ranking'
+import {
+  assignPetBattleSlotRequestSchema,
+  getPetBattleStatsResponseSchema,
+  getPetBattleStatusResponseSchema,
+  petBattleRoomSchema,
+  petBattleRunSchema,
+  submitPetBattleCommandRequestSchema,
+  submitPetBattleCommandResponseSchema,
+} from '@/schema/petBattle'
+export type {
+  PetBattleStats,
+  PetBattleRoom,
+  PetBattleRun,
+  PetBattleMember,
+  PetBattleMemberMove,
+  PetBattleActionKind,
+  GetPetBattleStatusResponse,
+  AssignPetBattleSlotRequest,
+  SubmitPetBattleCommandRequest,
+  SubmitPetBattleCommandResponse,
+} from '@/schema/petBattle'
 
 export const endpoints = {
   player: {
@@ -479,6 +501,86 @@ export const endpoints = {
       errorEventSchema: questRunHubErrorEventSchema,
       subscribeMethod: 'SubscribeRun',
       unsubscribeMethod: 'UnsubscribeRun',
+    },
+  },
+  pets: {
+    get: {
+      path: '/pets',
+      method: 'GET',
+      responseSchema: getPetsResponseSchema,
+    },
+    train: {
+      path: (petId: string) => `/pets/${petId}/train`,
+      method: 'POST',
+      responseSchema: trainPetResponseSchema,
+    },
+    standby: {
+      path: (petId: string) => `/pets/${petId}/standby`,
+      method: 'POST',
+      responseSchema: getPetsResponseSchema,
+    },
+    clearStandby: {
+      path: (petId: string) => `/pets/${petId}/clear-standby`,
+      method: 'POST',
+      responseSchema: getPetsResponseSchema,
+    },
+    release: {
+      path: (petId: string) => `/pets/${petId}`,
+      method: 'DELETE',
+    },
+  },
+  petBattles: {
+    match: {
+      path: '/pet-battles/match',
+      method: 'POST',
+      responseSchema: petBattleRoomSchema,
+    },
+    status: {
+      path: '/pet-battles/status',
+      method: 'GET',
+      responseSchema: getPetBattleStatusResponseSchema,
+    },
+    stats: {
+      path: '/pet-battles/stats',
+      method: 'GET',
+      responseSchema: getPetBattleStatsResponseSchema,
+    },
+    getRoom: {
+      path: (roomId: string) => `/pet-battles/rooms/${roomId}`,
+      method: 'GET',
+      responseSchema: petBattleRoomSchema,
+    },
+    assignSlot: {
+      path: (roomId: string) => `/pet-battles/rooms/${roomId}/slots`,
+      method: 'PUT',
+      requestSchema: assignPetBattleSlotRequestSchema,
+      responseSchema: petBattleRoomSchema,
+    },
+    removeSlot: {
+      path: (roomId: string, petId: string) => `/pet-battles/rooms/${roomId}/slots/${petId}`,
+      method: 'DELETE',
+      responseSchema: petBattleRoomSchema,
+    },
+    start: {
+      path: (roomId: string) => `/pet-battles/rooms/${roomId}/start`,
+      method: 'POST',
+      responseSchema: petBattleRunSchema,
+    },
+    getRun: {
+      path: (runId: string) => `/pet-battles/runs/${runId}`,
+      method: 'GET',
+      responseSchema: petBattleRunSchema,
+    },
+    submitCommand: {
+      path: (runId: string) => `/pet-battles/runs/${runId}/commands`,
+      method: 'POST',
+      requestSchema: submitPetBattleCommandRequestSchema,
+      responseSchema: submitPetBattleCommandResponseSchema,
+    },
+    abort: {
+      path: (runId: string) => `/pet-battles/runs/${runId}/abort`,
+      method: 'POST',
+      responseSchema: petBattleRunSchema,
     },
   },
   items: {

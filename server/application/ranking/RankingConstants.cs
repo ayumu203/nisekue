@@ -11,6 +11,7 @@ public static class RankingConstants
     public const string StatusLuckTop = "statusLuckTop";
     public const string StatusSpeedTop = "statusSpeedTop";
     public const string RebirthCountTop = "rebirthCountTop";
+    public const string PetBattleRatingTop = "petBattleRatingTop";
     public const string QuestClearByCombatRank = "questClearByCombatRank";
     public const string TrainingBattleByCombatRank = "trainingBattleByCombatRank";
     public const string TreasureMapUsageByCombatRank = "treasureMapUsageByCombatRank";

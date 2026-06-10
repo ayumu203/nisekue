@@ -22,6 +22,7 @@ erDiagram
         int training_battle_count "NOT NULL, DEFAULT 0"
         timestamptz training_cooldown_until "NULL"
         timestamptz quest_cooldown_until "NULL"
+        timestamptz pet_battle_cooldown_until "NULL"
         int exp_multiplier_flags "NOT NULL, DEFAULT 0"
     }
     CHAT_ROOMS {
@@ -89,6 +90,21 @@ erDiagram
         uuid player_id FK "internal.players.id"
         int item_id "NOT NULL, references CSV item_id logically (normal item and treasure map shared id space)"
         int quantity "NOT NULL"
+        timestamptz updated_at "NOT NULL"
+    }
+    PLAYER_PETS {
+        uuid id PK "internal.player_pets.id"
+        uuid player_id FK "internal.players.id, 1プレイヤー上限3体（アプリ層で制御）"
+        int enemy_definition_id "NOT NULL, references CSV enemy definition id logically"
+        int bonus_max_hp "NOT NULL, DEFAULT 0, 育成加算分"
+        int bonus_max_mp "NOT NULL, DEFAULT 0"
+        int bonus_strength "NOT NULL, DEFAULT 0"
+        int bonus_defense "NOT NULL, DEFAULT 0"
+        int bonus_intelligence "NOT NULL, DEFAULT 0"
+        int bonus_luck "NOT NULL, DEFAULT 0"
+        int bonus_speed "NOT NULL, DEFAULT 0"
+        boolean is_standby "NOT NULL, DEFAULT FALSE, 呼出対象は1プレイヤー1体のみTRUE（部分一意制約で保証）"
+        timestamptz captured_at "NOT NULL"
         timestamptz updated_at "NOT NULL"
     }
     MARKET_LISTINGS {
@@ -187,6 +203,14 @@ erDiagram
         int speed "NOT NULL"
         jsonb move_set_json "NOT NULL"
         int initial_action_mode "NOT NULL"
+        int pet_enemy_definition_id "NULL, クエスト参加時点のスタンバイペット, references CSV enemy definition id logically"
+        int pet_max_hp "NULL, 敵マスタ+育成加算の合算値"
+        int pet_max_mp "NULL"
+        int pet_strength "NULL"
+        int pet_defense "NULL"
+        int pet_intelligence "NULL"
+        int pet_luck "NULL"
+        int pet_speed "NULL"
     }
     QUEST_RUN_PARTY_MEMBERS {
         uuid run_id PK, FK "internal.quest_runs.id"
@@ -196,6 +220,7 @@ erDiagram
         boolean is_dead "NOT NULL"
         int can_act_from_turn "NOT NULL"
         int action_mode "NOT NULL (Manual/AutoAttackOnly)"
+        int pet_summons_used "NOT NULL, DEFAULT 0, 上限3"
         jsonb active_effects_json "NOT NULL, ailments and buffs"
         jsonb derived_parameters_json "NOT NULL, temporary modifiers"
         timestamptz updated_at "NOT NULL"
@@ -210,6 +235,7 @@ erDiagram
         int current_hp "NOT NULL"
         int current_mp "NOT NULL"
         boolean is_dead "NOT NULL"
+        boolean is_captured "NOT NULL, DEFAULT FALSE, 捕獲された敵は報酬対象外"
         jsonb active_effects_json "NOT NULL, ailments and buffs"
         jsonb derived_parameters_json "NOT NULL, temporary modifiers"
     }
@@ -302,6 +328,7 @@ erDiagram
     PLAYERS ||--o{ PLAYER_MASTER_JOBS : has_mastered
     PLAYERS ||--o{ PLAYER_EQUIPMENTS : owns
     PLAYERS ||--o{ PLAYER_ITEM_STACKS : owns
+    PLAYERS ||--o{ PLAYER_PETS : owns
     PLAYERS ||--o{ MARKET_LISTINGS : sells
     PLAYERS ||--o{ MARKET_TRADE_HISTORIES : sells_or_buys
     PLAYERS ||--o{ ITEM_DELETE_LOGS : deletes
@@ -321,3 +348,100 @@ erDiagram
     TREASURE_MAP_EXPEDITIONS ||--o{ TREASURE_MAP_CLAIM_HISTORIES : claimed_by
     RANKING_SNAPSHOTS ||--o{ RANKING_ENTRIES : has
     PLAYERS ||--o{ RANKING_ENTRIES : ranked_in
+
+    PLAYER_PET_BATTLE_STATS {
+        uuid player_id PK, FK "internal.players.id"
+        int rating "NOT NULL, DEFAULT 1000, ペットバトルレートポイント"
+        int wins "NOT NULL, DEFAULT 0"
+        int losses "NOT NULL, DEFAULT 0"
+        int total_battles "NOT NULL, DEFAULT 0"
+        timestamptz updated_at "NOT NULL"
+    }
+
+    PET_BATTLE_ROOMS {
+        uuid id PK "internal.pet_battle_rooms.id"
+        uuid owner_player_id FK "internal.players.id"
+        uuid opponent_player_id FK "internal.players.id"
+        int status "NOT NULL (WaitingForStart/Closed), owner_player_id は WaitingForStart 中のみ UNIQUE"
+        int version "NOT NULL, optimistic concurrency token"
+        int close_reason "NULL (Started/Cancelled)"
+        timestamptz created_at "NOT NULL"
+        timestamptz closed_at "NULL"
+    }
+
+    PET_BATTLE_ROOM_SLOTS {
+        uuid room_id PK, FK "internal.pet_battle_rooms.id"
+        uuid pet_id PK, FK "internal.player_pets.id"
+        int battle_row "NOT NULL"
+        int battle_column "NOT NULL"
+    }
+
+    PET_BATTLE_RUNS {
+        uuid id PK "internal.pet_battle_runs.id"
+        uuid room_id FK "UNIQUE, internal.pet_battle_rooms.id"
+        uuid owner_player_id FK "internal.players.id"
+        uuid opponent_player_id FK "internal.players.id"
+        int status "NOT NULL (InProgress/Succeeded/Failed/Aborted), owner_player_id は InProgress 中のみ UNIQUE"
+        int current_turn_no "NOT NULL"
+        timestamptz action_deadline_at "NOT NULL"
+        int last_resolved_turn_no "NULL"
+        jsonb last_turn_results_json "NULL, only latest turn result"
+        uuid winner_player_id FK "NULL, internal.players.id"
+        timestamptz started_at "NOT NULL"
+        timestamptz ended_at "NULL"
+    }
+
+    PET_BATTLE_RUN_SNAPSHOTS {
+        uuid run_id PK, FK "internal.pet_battle_runs.id"
+        uuid participant_id PK "generated per slot"
+        int side "NOT NULL (Owner/Opponent)"
+        uuid pet_id FK "NULL, internal.player_pets.id"
+        int enemy_definition_id "NOT NULL, references CSV enemy definition id logically"
+        varchar(100) display_name "NOT NULL"
+        varchar(255) image_path "NULL"
+        int start_row "NOT NULL"
+        int start_column "NOT NULL"
+        int max_hp "NOT NULL"
+        int max_mp "NOT NULL"
+        int strength "NOT NULL"
+        int defense "NOT NULL"
+        int intelligence "NOT NULL"
+        int luck "NOT NULL"
+        int speed "NOT NULL"
+        jsonb move_set_json "NOT NULL"
+    }
+
+    PET_BATTLE_RUN_PARTY_MEMBERS {
+        uuid run_id PK, FK "internal.pet_battle_runs.id"
+        uuid participant_id PK, FK "internal.pet_battle_run_snapshots.participant_id"
+        int current_hp "NOT NULL"
+        int current_mp "NOT NULL"
+        boolean is_dead "NOT NULL"
+        int can_act_from_turn "NOT NULL"
+        int action_mode "NOT NULL (Manual/AutoAttackOnly)"
+        jsonb active_effects_json "NOT NULL"
+        jsonb derived_parameters_json "NOT NULL"
+        timestamptz updated_at "NOT NULL"
+    }
+
+    PET_BATTLE_TURN_COMMANDS {
+        uuid run_id PK, FK "internal.pet_battle_runs.id"
+        int turn_no PK "NOT NULL"
+        uuid participant_id PK "NOT NULL"
+        int action_kind "NOT NULL"
+        int move_id "NULL"
+        int target_row "NULL"
+        int target_column "NULL"
+        timestamptz submitted_at "NOT NULL"
+        boolean is_auto_submitted "NOT NULL"
+    }
+
+    PLAYERS ||--o| PLAYER_PET_BATTLE_STATS : has
+    PLAYERS ||--o{ PET_BATTLE_ROOMS : owns_as_owner
+    PLAYERS ||--o{ PET_BATTLE_ROOMS : participates_as_opponent
+    PET_BATTLE_ROOMS ||--o{ PET_BATTLE_ROOM_SLOTS : has
+    PLAYER_PETS ||--o{ PET_BATTLE_ROOM_SLOTS : placed_in
+    PET_BATTLE_ROOMS ||--o| PET_BATTLE_RUNS : generates
+    PET_BATTLE_RUNS ||--o{ PET_BATTLE_RUN_SNAPSHOTS : snapshots
+    PET_BATTLE_RUNS ||--o{ PET_BATTLE_RUN_PARTY_MEMBERS : tracks
+    PET_BATTLE_RUNS ||--o{ PET_BATTLE_TURN_COMMANDS : receives

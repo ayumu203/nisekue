@@ -27,6 +27,8 @@ type QuestRunSectionProps = {
     actionKind: QuestActionKind
     submittedAt: string
   } | null
+  canCapture: boolean
+  petSummon: { name: string; remaining: number } | null
   chatMessage: string
   canSubmitCurrentTurn: boolean
   isCommandSubmitting: boolean
@@ -52,6 +54,8 @@ export default function QuestRunSection({
   selectedTargetRow,
   selectedTargetColumn,
   currentPendingCommand,
+  canCapture,
+  petSummon,
   chatMessage,
   canSubmitCurrentTurn,
   isCommandSubmitting,
@@ -83,6 +87,8 @@ export default function QuestRunSection({
           selectedTargetRow={selectedTargetRow}
           selectedTargetColumn={selectedTargetColumn}
           currentPendingCommand={currentPendingCommand}
+          canCapture={canCapture}
+          petSummon={petSummon}
           canSubmitCurrentTurn={canSubmitCurrentTurn}
           isCommandSubmitting={isCommandSubmitting}
           onActionKindChange={onActionKindChange}

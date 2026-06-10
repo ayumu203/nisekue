@@ -21,4 +21,12 @@ public class QuestRunPartySnapshotEntity
     public int Speed { get; set; }
     public string MoveSetJson { get; set; } = "[]";
     public int InitialActionMode { get; set; }
+    public int? PetEnemyDefinitionId { get; set; }
+    public int? PetMaxHp { get; set; }
+    public int? PetMaxMp { get; set; }
+    public int? PetStrength { get; set; }
+    public int? PetDefense { get; set; }
+    public int? PetIntelligence { get; set; }
+    public int? PetLuck { get; set; }
+    public int? PetSpeed { get; set; }
 }

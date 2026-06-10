@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using server.application.ranking;
 using server.domain.player;
 using server.infrastructure;
+using server.infrastructure.pet_battle;
 using server.infrastructure.player;
 using server.infrastructure.ranking;
 using Xunit;
@@ -116,6 +117,63 @@ public class RankingAggregationServiceTests
         snapshots.Should().HaveCount(11);
         snapshots.Should().NotContain(x => x.Id == oldestSnapshotId);
         orphanedEntries.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RebuildAsync_WhenPetBattleStatsExist_CreatesTotalPetBattleRatingTopEntries()
+    {
+        var databaseName = $"ranking-aggregation-{Guid.NewGuid()}";
+        var now = DateTimeOffset.UtcNow;
+
+        var alice = CreatePlayer("Alice", maxHp: 80, maxMp: 20, strength: 30, defense: 20, intelligence: 10, luck: 10, speed: 20, trainingBattleCount: 12);
+        var bob = CreatePlayer("Bob", maxHp: 40, maxMp: 10, strength: 10, defense: 8, intelligence: 5, luck: 5, speed: 8, trainingBattleCount: 5);
+        var carol = CreatePlayer("Carol", maxHp: 60, maxMp: 15, strength: 20, defense: 15, intelligence: 8, luck: 7, speed: 12, trainingBattleCount: 3);
+
+        await using (var seedContext = CreateDbContext(databaseName))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+            seedContext.Players.AddRange(alice, bob, carol);
+            seedContext.PlayerPetBattleStats.AddRange(
+                new PlayerPetBattleStatsEntity
+                {
+                    PlayerId = alice.Id,
+                    Rating = 1210,
+                    Wins = 10,
+                    Losses = 2,
+                    TotalBattles = 12,
+                    UpdatedAt = now
+                },
+                new PlayerPetBattleStatsEntity
+                {
+                    PlayerId = bob.Id,
+                    Rating = 1080,
+                    Wins = 4,
+                    Losses = 4,
+                    TotalBattles = 8,
+                    UpdatedAt = now
+                });
+            await seedContext.SaveChangesAsync();
+        }
+
+        var service = new RankingAggregationService(
+            new TestDbContextFactory(databaseName),
+            new CombatIndexCalculator(new StaticCombatIndexWeightRepository()),
+            new CombatIndexRankEvaluator(new StaticCombatIndexRankThresholdRepository()));
+
+        await service.RebuildAsync(now);
+
+        await using var verifyContext = CreateDbContext(databaseName);
+        var petBattleRows = await verifyContext.RankingEntries
+            .AsNoTracking()
+            .Where(x => x.RankingType == RankingConstants.PetBattleRatingTop)
+            .OrderBy(x => x.RankPosition)
+            .ToListAsync();
+
+        petBattleRows.Should().HaveCount(2);
+        petBattleRows.Should().OnlyContain(x => x.PeriodKind == "Total");
+        petBattleRows.Should().OnlyContain(x => x.CombatIndexRank == null);
+        petBattleRows.Select(x => x.PlayerId).Should().Equal(alice.Id, bob.Id);
+        petBattleRows.Select(x => x.Score).Should().Equal(1210, 1080);
     }
 
     private static PlayerEntity CreatePlayer(

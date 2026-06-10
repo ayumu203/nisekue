@@ -12,9 +12,6 @@ namespace server.infrastructure.player
         IDbContextFactory<AppDbContext> dbContextFactory,
         IMemoryCache cache) : IPlayerRepository
     {
-        private static string PlayerKey(Guid id) => $"player:{id}";
-        private const string AllPlayersKey = "players:all";
-
         private record PlayerSnapshot(
             PlayerEntity Entity,
             PlayerMoveEntity? MoveEntity,
@@ -185,6 +182,7 @@ namespace server.infrastructure.player
                     Name = player.Name,
                     ImagePath = player.ImagePath,
                     QuestCooldownUntil = player.QuestCooldownUntil,
+                    PetBattleCooldownUntil = player.PetBattleCooldownUntil,
                     Job = player.Job,
                     RebirthCount = player.RebirthCount,
                     Level = player.Level,
@@ -219,6 +217,7 @@ namespace server.infrastructure.player
                 existing.Job = player.Job;
                 existing.ImagePath = player.ImagePath;
                 existing.QuestCooldownUntil = player.QuestCooldownUntil;
+                existing.PetBattleCooldownUntil = player.PetBattleCooldownUntil;
                 existing.RebirthCount = player.RebirthCount;
                 existing.Level = player.Level;
                 existing.Exp = player.Exp;
@@ -276,6 +275,7 @@ namespace server.infrastructure.player
                 rebirthCount: entity.RebirthCount,
                 imagePath: entity.ImagePath,
                 questCooldownUntil: entity.QuestCooldownUntil,
+                petBattleCooldownUntil: entity.PetBattleCooldownUntil,
                 job: entity.Job,
                 level: entity.Level,
                 exp: entity.Exp,
