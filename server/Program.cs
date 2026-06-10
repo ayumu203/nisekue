@@ -149,6 +149,7 @@ builder.Services.AddSingleton<IQuestNpcTemplateRepository, CsvQuestNpcTemplateRe
 builder.Services.AddScoped<IQuestRoomRepository, DbQuestRoomRepository>();
 builder.Services.AddScoped<IQuestRunRepository, DbQuestRunRepository>();
 builder.Services.AddScoped<IPlayerPetRepository, DbPlayerPetRepository>();
+builder.Services.AddScoped<IPetTrainingExecutor, DbPetTrainingExecutor>();
 builder.Services.AddScoped<BattleService>();
 builder.Services.AddScoped<QuestSnapshotFactory>();
 builder.Services.AddScoped<QuestBattleFactory>();

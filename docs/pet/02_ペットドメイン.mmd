@@ -54,6 +54,13 @@ classDiagram
             +int MaxSummonsPerQuestRun = 3
         }
 
+        class IPetTrainingExecutor {
+            <<Domain Service IF>>
+            %% 育成（ゴールド消費＋ペット加算）を単一トランザクション＋プレイヤー行ロックで原子的に実行する
+            %% 実装はインフラ層 DbPetTrainingExecutor（FOR UPDATE で並行育成を直列化）
+            +TrainAsync(playerId: PlayerId, petId: PlayerPetId) Task~PlayerPet~
+        }
+
         class IPlayerPetRepository {
             <<Repository IF>>
             +Task~IReadOnlyList~PlayerPet~~ GetByPlayerIdAsync(playerId: PlayerId)

@@ -12,9 +12,6 @@ namespace server.infrastructure.player
         IDbContextFactory<AppDbContext> dbContextFactory,
         IMemoryCache cache) : IPlayerRepository
     {
-        private static string PlayerKey(Guid id) => $"player:{id}";
-        private const string AllPlayersKey = "players:all";
-
         private record PlayerSnapshot(
             PlayerEntity Entity,
             PlayerMoveEntity? MoveEntity,

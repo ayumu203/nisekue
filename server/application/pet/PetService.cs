@@ -17,7 +17,7 @@ public record PlayerPetView(
 
 public class PetService(
     IPlayerPetRepository playerPetRepository,
-    IPlayerRepository playerRepository,
+    IPetTrainingExecutor petTrainingExecutor,
     IQuestEnemyDefinitionRepository questEnemyDefinitionRepository)
 {
     public async Task<IReadOnlyList<PlayerPetView>> GetPetsAsync(PlayerId playerId)
@@ -34,15 +34,7 @@ public class PetService(
 
     public async Task<PlayerPetView> TrainAsync(PlayerId playerId, PlayerPetId petId)
     {
-        var pet = await GetOwnedPetAsync(playerId, petId);
-        var player = await playerRepository.GetPlayerAsync(playerId)
-            ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
-
-        player.SpendGold(PetConstants.TrainingCostGold);
-        pet.Train(player.Status, DateTimeOffset.UtcNow);
-
-        await playerRepository.SaveAsync(player);
-        await playerPetRepository.SaveAsync([pet]);
+        var pet = await petTrainingExecutor.TrainAsync(playerId, petId);
         return await MapToViewAsync(pet);
     }
 
