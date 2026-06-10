@@ -113,13 +113,15 @@ internal static class ChatEndpoints
             return Results.Ok(new { updatedCount });
         }).RequireAuthorization();
 
-        app.MapGet("/chat/global", async (GlobalChatService globalChatService) =>
+        app.MapGet("/chat/global", async (int? page, GlobalChatService globalChatService) =>
         {
-            var room = await globalChatService.GetAsync();
+            var currentPage = Math.Max(1, page ?? 1);
+            var room = await globalChatService.GetAsync(currentPage);
 
             return Results.Ok(new
             {
                 lastChatId = room.LastChatId,
+                totalCount = room.TotalCount,
                 messages = room.Messages.Select(x => new
                 {
                     chatId = x.ChatId,
@@ -157,6 +159,7 @@ internal static class ChatEndpoints
                 return Results.Ok(new
                 {
                     lastChatId = room.LastChatId,
+                    totalCount = room.TotalCount,
                     messages = room.Messages.Select(x => new
                     {
                         chatId = x.ChatId,
