@@ -268,10 +268,7 @@ export default function Pets() {
                           PET CONTROL
                         </Typography>
                         <Typography variant="h4" fontWeight={900} color="#ffffff">
-                          <ruby>
-                            {locale.title}
-                            <rt style={{ fontWeight: 400, fontSize: '0.45em', letterSpacing: '0.08em' }}>ぺっと</rt>
-                          </ruby>
+                          {locale.title}
                         </Typography>
                       </Box>
                       <Stack spacing={1} alignItems={{ xs: 'flex-start', sm: 'flex-end' }}>
