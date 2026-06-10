@@ -153,13 +153,12 @@ export default function PetBattle() {
         }
 
         const firstTarget = getReachableOpponents(member, currentRun.opponentMembers)[0] ?? null
-        const baseDraft: PetBattleCommandDraft =
-          currentDrafts[member.participantId] ?? {
-            actionKind: 'NormalAttack',
-            moveId: '',
-            targetRow: firstTarget?.startRow ?? '',
-            targetColumn: firstTarget?.startColumn ?? '',
-          }
+        const baseDraft: PetBattleCommandDraft = currentDrafts[member.participantId] ?? {
+          actionKind: 'NormalAttack',
+          moveId: '',
+          targetRow: firstTarget?.startRow ?? '',
+          targetColumn: firstTarget?.startColumn ?? '',
+        }
 
         const selectedMove =
           baseDraft.moveId === '' ? null : (member.moves.find((move) => move.moveId === baseDraft.moveId) ?? null)
@@ -179,7 +178,12 @@ export default function PetBattle() {
           continue
         }
 
-        const candidates = getTargetCandidates(member, sanitizedDraft, currentRun.ownerMembers, currentRun.opponentMembers)
+        const candidates = getTargetCandidates(
+          member,
+          sanitizedDraft,
+          currentRun.ownerMembers,
+          currentRun.opponentMembers,
+        )
         const hasCurrentTarget = candidates.some(
           (candidate) =>
             candidate.startRow === sanitizedDraft.targetRow && candidate.startColumn === sanitizedDraft.targetColumn,
