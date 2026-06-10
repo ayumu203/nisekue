@@ -11,6 +11,7 @@ public class QuestRunPartyMemberEntity
     public int ActionMode { get; set; }
     public bool HasLeftQuest { get; set; }
     public bool IsManualControlRequested { get; set; }
+    public int PetSummonsUsed { get; set; }
     public string ActiveEffectsJson { get; set; } = "{}";
     public string DerivedParametersJson { get; set; } = "{}";
     public DateTimeOffset UpdatedAt { get; set; }

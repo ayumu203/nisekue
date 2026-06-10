@@ -1,4 +1,5 @@
 using server.domain.battle;
+using server.domain.pet;
 using server.domain.quest.enums;
 
 namespace server.domain.quest;
@@ -13,7 +14,8 @@ public class QuestRunPartyMemberState(
     bool hasLeftQuest = false,
     bool isManualControlRequested = false,
     IEnumerable<BattleAilmentState>? ailments = null,
-    IEnumerable<BattleBuffState>? buffs = null)
+    IEnumerable<BattleBuffState>? buffs = null,
+    int petSummonsUsed = 0)
 {
     private BattleAilmentState[] ailments = ailments?.ToArray() ?? [];
     private BattleBuffState[] buffs = buffs?.ToArray() ?? [];
@@ -26,8 +28,21 @@ public class QuestRunPartyMemberState(
     public ActionMode ActionMode { get; private set; } = actionMode;
     public bool HasLeftQuest { get; private set; } = hasLeftQuest;
     public bool IsManualControlRequested { get; private set; } = isManualControlRequested;
+    public int PetSummonsUsed { get; private set; } = ValidateNonNegative(petSummonsUsed, nameof(petSummonsUsed));
     public IReadOnlyList<BattleAilmentState> Ailments => ailments;
     public IReadOnlyList<BattleBuffState> Buffs => buffs;
+
+    public bool HasRemainingPetSummons => PetSummonsUsed < PetConstants.MaxSummonsPerQuestRun;
+
+    public void ConsumePetSummon()
+    {
+        if (!HasRemainingPetSummons)
+        {
+            throw new InvalidOperationException("このクエストでの呼出回数の上限に達しています。");
+        }
+
+        PetSummonsUsed++;
+    }
 
     public void SwitchToAutoAttackOnly()
     {

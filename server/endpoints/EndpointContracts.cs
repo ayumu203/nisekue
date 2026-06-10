@@ -32,3 +32,5 @@ public record CreateMarketListingRequest(Guid? PlayerEquipmentId, Guid? ItemStac
 public record PurchaseMarketListingRequest(int Quantity);
 public record SynthesizeEquipmentRequest(Guid SourcePlayerEquipmentId);
 public record UnlockJobRoadmapRequest(int JobId);
+public record AssignPetBattleSlotRequest(Guid PetId, BattleRow Row, BattleColumn Column);
+public record SubmitPetBattleCommandRequest(Guid ParticipantId, int TurnNo, ActionKind ActionKind, int? MoveId, BattleRow? TargetRow, BattleColumn? TargetColumn);

@@ -1,3 +1,4 @@
+using server.domain.pet;
 using server.domain.player;
 
 namespace server.domain.quest;
@@ -9,5 +10,5 @@ public interface IQuestRunRepository
     Task<QuestRun?> GetActiveByPlayerAsync(PlayerId playerId);
     Task<bool> ExistsActiveRunByPlayerAsync(PlayerId playerId);
     Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now);
-    Task SaveAsync(QuestRun run);
+    Task SaveAsync(QuestRun run, IReadOnlyList<PlayerPet>? capturedPets = null);
 }

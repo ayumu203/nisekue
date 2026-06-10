@@ -47,11 +47,44 @@ public class QuestRunPartyMemberStateTests
         state.CanAcceptManualCommand(currentTurnNo: 2).Should().BeFalse();
     }
 
+    [Fact]
+    public void ConsumePetSummon_IncrementsPetSummonsUsed()
+    {
+        var state = CreateState();
+
+        state.ConsumePetSummon();
+
+        state.PetSummonsUsed.Should().Be(1);
+        state.HasRemainingPetSummons.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ConsumePetSummon_WhenLimitReached_ThrowsInvalidOperationException()
+    {
+        var state = CreateState(petSummonsUsed: 3);
+
+        var act = () => state.ConsumePetSummon();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(2, true)]
+    [InlineData(3, false)]
+    public void HasRemainingPetSummons_ReturnsExpectedValue(int petSummonsUsed, bool expected)
+    {
+        var state = CreateState(petSummonsUsed: petSummonsUsed);
+
+        state.HasRemainingPetSummons.Should().Be(expected);
+    }
+
     private static QuestRunPartyMemberState CreateState(
         bool isDead = false,
         ActionMode actionMode = ActionMode.Manual,
         int canActFromTurn = 1,
-        bool hasLeftQuest = false)
+        bool hasLeftQuest = false,
+        int petSummonsUsed = 0)
     {
         return new QuestRunPartyMemberState(
             QuestParticipantId.New(),
@@ -60,6 +93,7 @@ public class QuestRunPartyMemberStateTests
             isDead: isDead,
             canActFromTurn: canActFromTurn,
             actionMode: actionMode,
-            hasLeftQuest: hasLeftQuest);
+            hasLeftQuest: hasLeftQuest,
+            petSummonsUsed: petSummonsUsed);
     }
 }

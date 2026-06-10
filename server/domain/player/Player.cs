@@ -15,6 +15,7 @@ public class Player(
     Job job = Job.Apprentice,
     string? imagePath = null,
     DateTimeOffset? questCooldownUntil = null,
+    DateTimeOffset? petBattleCooldownUntil = null,
     MoveSet? moveSet = null,
     IReadOnlySet<Job>? masteredJobs = null,
     int rebirthCount = 0,
@@ -28,6 +29,7 @@ public class Player(
     public string Name { get; private set; } = ValidateName(name);
     public string? ImagePath { get; private set; } = ValidateImagePath(imagePath);
     public DateTimeOffset? QuestCooldownUntil { get; private set; } = questCooldownUntil;
+    public DateTimeOffset? PetBattleCooldownUntil { get; private set; } = petBattleCooldownUntil;
     public Job Job { get; private set; } = job;
     public int RebirthCount { get; private set; } = ValidateNonNegative(rebirthCount, nameof(rebirthCount));
     public int Level { get; private set; } = ValidateLevel(level);
@@ -102,6 +104,11 @@ public class Player(
     public void SetQuestCooldownUntil(DateTimeOffset? until)
     {
         QuestCooldownUntil = until;
+    }
+
+    public void SetPetBattleCooldownUntil(DateTimeOffset? until)
+    {
+        PetBattleCooldownUntil = until;
     }
 
     private static string ValidateName(string name)

@@ -281,6 +281,14 @@ classDiagram
             +MoveSet MoveSet
             +BattlePosition StartPosition
             +ActionMode InitialActionMode
+            +QuestPetSnapshot? Pet
+        }
+
+        class QuestPetSnapshot {
+            <<Value Object>>
+            %% クエスト参加時点のスタンバイペット（敵マスタ + 育成加算の合算ステータス）
+            +QuestEnemyDefinitionId EnemyDefinitionId
+            +Status Status
         }
 
         class QuestRunParticipantIdentity {
@@ -348,6 +356,8 @@ classDiagram
             +int CanActFromTurn
             +ActionMode ActionMode
             +ManualControlRequestStatus ManualControlRequestStatus
+            +int PetSummonsUsed
+            +ConsumePetSummon() void
         }
 
         class QuestEnemyState {
@@ -436,7 +446,8 @@ classDiagram
             +Task~QuestRun?~ GetAsync(id: QuestRunId)
             +Task~QuestRun?~ GetByRoomIdAsync(roomId: QuestRoomId)
             +Task~bool~ ExistsActiveRunByPlayerAsync(playerId: PlayerId)
-            +Task SaveAsync(run: QuestRun)
+            %% 捕獲成功ペットの player_pets 追加を QuestRun 保存と同一トランザクションで確定する
+            +Task SaveAsync(run: QuestRun, capturedPets: IReadOnlyList~PlayerPet~)
         }
     }
 
@@ -514,6 +525,15 @@ classDiagram
             <<Domain Service>>
             +Draw(stage: QuestStageDefinition) EquipmentId?
         }
+
+        class QuestPetActionService {
+            <<Domain Service>>
+            %% 捕獲判定は PetCaptureRateCalculator（docs/pet/02_ペットドメイン.mmd）を使用
+            %% 捕獲成功した敵は報酬対象外として戦闘から除外する
+            %% 呼出は 50% で敵全体への通常攻撃、50% で元の敵マスタの技からランダム1つ（MP消費なし）
+            +ResolveCapture(playerLevel: int, enemyDefinition: QuestEnemyDefinition) bool
+            +ResolveSummonAction(pet: QuestPetSnapshot, enemyDefinition: QuestEnemyDefinition, availableMoves: IReadOnlyList~Move~) BattleActionInput
+        }
     }
 
     QuestStageDefinition *-- QuestStageId : has
@@ -573,6 +593,8 @@ classDiagram
     QuestRewardAccumulator ..> QuestStageEquipmentRewardEntry : common reward roll; doubled when any party member is GreatThief
     QuestRewardAccumulator ..> QuestStageItemRewardEntry : common reward roll; doubled when any party member is GreatThief
     QuestSnapshotFactory ..> QuestRunPartyMemberSnapshot : builds
+    QuestRunPartyMemberSnapshot *-- QuestPetSnapshot : 0..1
+    QuestPetActionService ..> QuestPetSnapshot : use
     QuestSnapshotFactory ..> EquipmentStatusResolver : use
     QuestSnapshotFactory ..> PlayerEquipment : use
     QuestSnapshotFactory ..> Equipment : use

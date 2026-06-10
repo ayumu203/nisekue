@@ -1,3 +1,4 @@
+using server.domain.pet;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
@@ -11,7 +12,9 @@ public class QuestSnapshotFactory(EquipmentStatusResolver equipmentStatusResolve
         IEnumerable<Player> players,
         IEnumerable<QuestNpcTemplate> npcTemplates,
         IEnumerable<PlayerEquipment> playerEquipments,
-        IEnumerable<Equipment> equipments)
+        IEnumerable<Equipment> equipments,
+        IReadOnlyDictionary<PlayerId, PlayerPet>? activePetsByPlayerId = null,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? enemyDefinitions = null)
     {
         ArgumentNullException.ThrowIfNull(participants);
         ArgumentNullException.ThrowIfNull(players);
@@ -39,6 +42,15 @@ public class QuestSnapshotFactory(EquipmentStatusResolver equipmentStatusResolve
                     var weaponEquipmentId = ownedEquipments.FirstOrDefault(x => x.Status == EquipmentStatus.Equipped && x.Type == EquipmentType.Weapon)?.Id;
                     var armorEquipmentId = ownedEquipments.FirstOrDefault(x => x.Status == EquipmentStatus.Equipped && x.Type == EquipmentType.Armor)?.Id;
 
+                    QuestPetSnapshot? petSnapshot = null;
+                    if (activePetsByPlayerId is not null &&
+                        enemyDefinitions is not null &&
+                        activePetsByPlayerId.TryGetValue(player.Id, out var activePet) &&
+                        enemyDefinitions.TryGetValue(activePet.EnemyDefinitionId, out var petDefinition))
+                    {
+                        petSnapshot = new QuestPetSnapshot(activePet.EnemyDefinitionId, PetStatusResolver.Resolve(activePet, petDefinition));
+                    }
+
                     return new QuestRunPartyMemberSnapshot(
                         participant.Id,
                         participant.Type,
@@ -50,7 +62,8 @@ public class QuestSnapshotFactory(EquipmentStatusResolver equipmentStatusResolve
                         armorEquipmentId,
                         player.MoveSet,
                         participant.Position,
-                        ActionMode.Manual);
+                        ActionMode.Manual,
+                        petSnapshot);
                 }
 
                 var npcTemplate = participant.NpcTemplateId is not null && npcById.TryGetValue(participant.NpcTemplateId.Value, out var foundTemplate)

@@ -15,7 +15,8 @@ public class QuestRunPartyMemberSnapshot(
     PlayerEquipmentId? armorEquipmentId,
     MoveSet moveSet,
     BattlePosition startPosition,
-    ActionMode initialActionMode)
+    ActionMode initialActionMode,
+    QuestPetSnapshot? pet = null)
 {
     public QuestParticipantId ParticipantId { get; } = participantId;
     public ParticipantType Type { get; } = type;
@@ -30,4 +31,5 @@ public class QuestRunPartyMemberSnapshot(
     public MoveSet MoveSet { get; } = moveSet ?? throw new ArgumentNullException(nameof(moveSet));
     public BattlePosition StartPosition { get; } = startPosition;
     public ActionMode InitialActionMode { get; } = initialActionMode;
+    public QuestPetSnapshot? Pet { get; } = pet;
 }

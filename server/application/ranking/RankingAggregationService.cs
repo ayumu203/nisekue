@@ -63,6 +63,7 @@ public sealed class RankingAggregationService(
         var treasureMapUsageTotal = await BuildTreasureMapUsageCountAsync(dbContext, null);
         var treasureMapUsageWeekly = await BuildTreasureMapUsageCountAsync(dbContext, weeklyFrom);
         var treasureMapUsageDaily = await BuildTreasureMapUsageCountAsync(dbContext, dailyFrom);
+        var petBattleRatings = await BuildPetBattleRatingsAsync(dbContext);
 
         var playerRows = players.Select(x =>
         {
@@ -86,6 +87,7 @@ public sealed class RankingAggregationService(
                 combatRank,
                 x.TrainingBattleCount,
                 x.RebirthCount,
+                petBattleRatings.GetValueOrDefault(x.Id, 0),
                 questClearTotal.GetValueOrDefault(x.Id, 0),
                 questClearWeekly.GetValueOrDefault(x.Id, 0),
                 questClearDaily.GetValueOrDefault(x.Id, 0),
@@ -113,6 +115,7 @@ public sealed class RankingAggregationService(
         AddTop(entries, snapshotId, now, RankingConstants.StatusLuckTop, RankingPeriodKind.Total, null, playerRows, x => x.Status.Luck, 10);
         AddTop(entries, snapshotId, now, RankingConstants.StatusSpeedTop, RankingPeriodKind.Total, null, playerRows, x => x.Status.Speed, 10);
         AddTop(entries, snapshotId, now, RankingConstants.RebirthCountTop, RankingPeriodKind.Total, null, playerRows, x => x.RebirthCount, 10);
+        AddTop(entries, snapshotId, now, RankingConstants.PetBattleRatingTop, RankingPeriodKind.Total, null, playerRows, x => x.PetBattleRating, 10);
 
         AddTop(entries, snapshotId, now, RankingConstants.QuestClearByCombatRank, RankingPeriodKind.Total, null, playerRows, x => x.QuestClearTotal, 5);
         AddTop(entries, snapshotId, now, RankingConstants.QuestClearByCombatRank, RankingPeriodKind.Weekly, null, playerRows, x => x.QuestClearWeekly, 5);
@@ -229,6 +232,13 @@ public sealed class RankingAggregationService(
             .ToDictionaryAsync(x => x.Key, x => x.Count);
     }
 
+    private static async Task<Dictionary<Guid, int>> BuildPetBattleRatingsAsync(AppDbContext dbContext)
+    {
+        return await dbContext.PlayerPetBattleStats
+            .AsNoTracking()
+            .ToDictionaryAsync(x => x.PlayerId, x => x.Rating);
+    }
+
     private sealed record PlayerRankingRow(
         Guid PlayerId,
         string Name,
@@ -238,6 +248,7 @@ public sealed class RankingAggregationService(
         StatusRank CombatIndexRank,
         int TrainingBattleCount,
         int RebirthCount,
+        int PetBattleRating,
         int QuestClearTotal,
         int QuestClearWeekly,
         int QuestClearDaily,
