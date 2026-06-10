@@ -131,7 +131,7 @@ export default function PetBattle() {
     return getPets(session.access_token)
   })
 
-  // ターンが進んだら待機中ペットのコマンドドラフトを初期化する
+  // ターン更新時は待機中ペットのドラフトを引き継ぎつつ、無効なターゲットだけ補正する
   useEffect(() => {
     if (currentRun == null || currentRun.status !== 'InProgress') {
       return
@@ -144,22 +144,58 @@ export default function PetBattle() {
 
     lastDraftKeyRef.current = draftKey
 
-    const defaults: Record<string, PetBattleCommandDraft> = {}
-    for (const member of currentRun.ownerMembers) {
-      if (!currentRun.waitingParticipantIds.includes(member.participantId)) {
-        continue
+    setDrafts((currentDrafts) => {
+      const nextDrafts: Record<string, PetBattleCommandDraft> = {}
+
+      for (const member of currentRun.ownerMembers) {
+        if (!currentRun.waitingParticipantIds.includes(member.participantId)) {
+          continue
+        }
+
+        const firstTarget = getReachableOpponents(member, currentRun.opponentMembers)[0] ?? null
+        const baseDraft: PetBattleCommandDraft =
+          currentDrafts[member.participantId] ?? {
+            actionKind: 'NormalAttack',
+            moveId: '',
+            targetRow: firstTarget?.startRow ?? '',
+            targetColumn: firstTarget?.startColumn ?? '',
+          }
+
+        const selectedMove =
+          baseDraft.moveId === '' ? null : (member.moves.find((move) => move.moveId === baseDraft.moveId) ?? null)
+        const sanitizedDraft: PetBattleCommandDraft =
+          baseDraft.actionKind === 'UseMove' && (selectedMove == null || selectedMove.mpCost > member.currentMp)
+            ? {
+                ...baseDraft,
+                moveId: '',
+                targetRow: '',
+                targetColumn: '',
+              }
+            : baseDraft
+        const sanitizedMove = sanitizedDraft.moveId === '' ? null : selectedMove
+
+        if (!needsTargetSelection(sanitizedDraft, sanitizedMove)) {
+          nextDrafts[member.participantId] = sanitizedDraft
+          continue
+        }
+
+        const candidates = getTargetCandidates(member, sanitizedDraft, currentRun.ownerMembers, currentRun.opponentMembers)
+        const hasCurrentTarget = candidates.some(
+          (candidate) =>
+            candidate.startRow === sanitizedDraft.targetRow && candidate.startColumn === sanitizedDraft.targetColumn,
+        )
+
+        nextDrafts[member.participantId] = hasCurrentTarget
+          ? sanitizedDraft
+          : {
+              ...sanitizedDraft,
+              targetRow: candidates[0]?.startRow ?? '',
+              targetColumn: candidates[0]?.startColumn ?? '',
+            }
       }
 
-      const firstTarget = getReachableOpponents(member, currentRun.opponentMembers)[0] ?? null
-      defaults[member.participantId] = {
-        actionKind: 'NormalAttack',
-        moveId: '',
-        targetRow: firstTarget?.startRow ?? '',
-        targetColumn: firstTarget?.startColumn ?? '',
-      }
-    }
-
-    setDrafts(defaults)
+      return nextDrafts
+    })
   }, [currentRun])
 
   const isRunFinished = currentRun != null && currentRun.status !== 'InProgress'
@@ -296,6 +332,11 @@ export default function PetBattle() {
 
       const move = draft.moveId === '' ? null : (member.moves.find((m) => m.moveId === draft.moveId) ?? null)
       if (draft.actionKind === 'UseMove' && move == null) {
+        setError(locale.commandIncomplete)
+        return
+      }
+
+      if (draft.actionKind === 'UseMove' && move != null && move.mpCost > member.currentMp) {
         setError(locale.commandIncomplete)
         return
       }
