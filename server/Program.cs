@@ -160,6 +160,7 @@ builder.Services.AddScoped<IMatchingCandidateRepository, DbMatchingCandidateRepo
 builder.Services.AddScoped<PetBattleSnapshotFactory>();
 builder.Services.AddScoped<PetBattleRunFactory>();
 builder.Services.AddScoped<PetBattleService>();
+builder.Services.AddScoped<PetBattleResponseMapper>();
 builder.Services.AddHostedService<PetBattleRunTimeoutBackgroundService>();
 builder.Services.AddScoped<BattleService>();
 builder.Services.AddScoped<QuestSnapshotFactory>();

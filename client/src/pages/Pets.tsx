@@ -1,7 +1,9 @@
 import { Alert, Box, Button, Chip, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import useSWR from 'swr'
 import { clearStandbyPet, getPets, releasePet, standbyPet, trainPet } from '@/api/pet'
+import { getPetBattleStats } from '@/api/petBattle'
 import { getPlayer } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { ControlFrame } from '@/components/items/ItemsLayout'
@@ -72,6 +74,7 @@ function PetStatusTable({ pet }: { pet: PlayerPetView }) {
 
 export default function Pets() {
   const { session, isLoading } = useAuth()
+  const navigate = useNavigate()
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [busyPetId, setBusyPetId] = useState<string | null>(null)
@@ -99,6 +102,15 @@ export default function Pets() {
     return getPlayer(session.access_token)
   })
 
+  const battleStatsSWRKey = session?.user.id ? (['pets-battle-stats', session.user.id] as const) : null
+  const { data: battleStats } = useSWR(battleStatsSWRKey, async () => {
+    if (!session?.access_token) {
+      return null
+    }
+
+    return getPetBattleStats(session.access_token)
+  })
+
   async function runPetAction(petId: string, action: () => Promise<void>): Promise<void> {
     if (!session?.access_token) {
       setActionError(locale.sessionInfoMissing)
@@ -111,9 +123,16 @@ export default function Pets() {
 
     try {
       await action()
-      await mutatePets()
     } catch (error) {
       setActionError(error instanceof Error ? error.message : locale.actionFailed)
+      setBusyPetId(null)
+      return
+    }
+
+    try {
+      await mutatePets()
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : locale.loadFailed)
     } finally {
       setBusyPetId(null)
     }
@@ -173,73 +192,124 @@ export default function Pets() {
                   borderRadius: 2,
                 }}
               >
-              <ControlFrame>
-                <Stack spacing={1.5}>
-                  <Box
-                    sx={{
-                      '& .MuiIconButton-root': {
-                        backgroundColor: 'rgba(255,255,255,0.12)',
-                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.22)' },
-                      },
-                    }}
-                  >
-                    <HomeNavIconButton ariaLabel={locale.backToHome} />
-                  </Box>
-                  <Box
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', sm: 'auto 1fr' },
-                      gap: { xs: 1.5, sm: 2 },
-                      alignItems: 'start',
-                      px: { xs: 1, sm: 2 },
-                    }}
-                  >
-                    <Box sx={{ minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
-                      <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}>
-                        PET CONTROL
-                      </Typography>
-                      <Typography variant="h4" fontWeight={900} color="#ffffff">
-                        <ruby>
-                          {locale.title}
-                          <rt style={{ fontWeight: 400, fontSize: '0.45em', letterSpacing: '0.08em' }}>ぺっと</rt>
-                        </ruby>
-                      </Typography>
+                <ControlFrame>
+                  <Stack spacing={1.5}>
+                    <Box
+                      sx={{
+                        '& .MuiIconButton-root': {
+                          backgroundColor: 'rgba(255,255,255,0.12)',
+                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.22)' },
+                        },
+                      }}
+                    >
+                      <HomeNavIconButton ariaLabel={locale.backToHome} />
                     </Box>
-                    <Stack spacing={1} alignItems={{ xs: 'flex-start', sm: 'flex-end' }}>
-                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}>
-                        <Chip
-                          label={`${locale.capacityLabel}: ${petsResponse?.pets.length ?? 0} / ${petsResponse?.maxPetCount ?? 3}`}
-                          sx={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#ffffff', fontWeight: 700 }}
-                        />
-                        {player != null ? (
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: 'auto 1fr' },
+                        gap: { xs: 1.5, sm: 2 },
+                        alignItems: 'start',
+                        px: { xs: 1, sm: 2 },
+                      }}
+                    >
+                      <Box sx={{ minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
+                        <Typography
+                          variant="overline"
+                          sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}
+                        >
+                          PET CONTROL
+                        </Typography>
+                        <Typography variant="h4" fontWeight={900} color="#ffffff">
+                          <ruby>
+                            {locale.title}
+                            <rt style={{ fontWeight: 400, fontSize: '0.45em', letterSpacing: '0.08em' }}>ぺっと</rt>
+                          </ruby>
+                        </Typography>
+                      </Box>
+                      <Stack spacing={1} alignItems={{ xs: 'flex-start', sm: 'flex-end' }}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          useFlexGap
+                          flexWrap="wrap"
+                          justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
+                        >
                           <Chip
-                            label={`${locale.goldLabel}: ${player.gold.toLocaleString()}G`}
+                            label={`${locale.capacityLabel}: ${petsResponse?.pets.length ?? 0} / ${petsResponse?.maxPetCount ?? 3}`}
                             sx={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#ffffff', fontWeight: 700 }}
                           />
-                        ) : null}
+                          {player != null ? (
+                            <Chip
+                              label={`${locale.goldLabel}: ${player.gold.toLocaleString()}G`}
+                              sx={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#ffffff', fontWeight: 700 }}
+                            />
+                          ) : null}
+                        </Stack>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: 'rgba(255,255,255,0.82)', textAlign: { xs: 'left', sm: 'right' } }}
+                        >
+                          {locale.description}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: 'rgba(255,255,255,0.7)', textAlign: { xs: 'left', sm: 'right' } }}
+                        >
+                          {locale.summonNote}
+                        </Typography>
                       </Stack>
-                      <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.82)', textAlign: { xs: 'left', sm: 'right' } }}>
-                        {locale.description}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', textAlign: { xs: 'left', sm: 'right' } }}>
-                        {locale.summonNote}
-                      </Typography>
-                    </Stack>
-                  </Box>
-                </Stack>
-              </ControlFrame>
+                    </Box>
+                  </Stack>
+                </ControlFrame>
               </Box>
 
               {actionError ? <Alert severity="error">{actionError}</Alert> : null}
               {actionMessage ? <Alert severity="success">{actionMessage}</Alert> : null}
               {petsError ? <Alert severity="error">{locale.loadFailed}</Alert> : null}
 
+              <Paper variant="outlined" sx={{ ...petCardSx, p: { xs: 1.5, sm: 2 }, borderRadius: 3 }}>
+                <Stack spacing={1}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#3f2f16' }}>
+                    {locale.battleTitle}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#5b4523' }}>
+                    {locale.battleDescription}
+                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+                    <Chip
+                      size="small"
+                      label={`${locale.battleRatingLabel}: ${battleStats?.rating ?? 1000}`}
+                      sx={{ backgroundColor: pokeRed, color: '#ffffff', fontWeight: 700 }}
+                    />
+                    <Chip
+                      size="small"
+                      label={`${battleStats?.wins ?? 0}${locale.battleWinsSuffix} ${battleStats?.losses ?? 0}${locale.battleLossesSuffix}`}
+                    />
+                    <Chip size="small" label={`${locale.battleTotalLabel}: ${battleStats?.totalBattles ?? 0}`} />
+                  </Stack>
+                  <Button
+                    variant="contained"
+                    disabled={petsResponse == null || petsResponse.pets.length === 0}
+                    onClick={() => navigate('/pet-battle')}
+                    sx={petTrainButtonSx}
+                  >
+                    {locale.battleButton}
+                  </Button>
+                  {petsResponse != null && petsResponse.pets.length === 0 ? (
+                    <Typography variant="caption" sx={{ color: '#5b4523' }}>
+                      {locale.battleNeedsPet}
+                    </Typography>
+                  ) : null}
+                </Stack>
+              </Paper>
+
               <Box sx={{ px: { xs: 0.25, sm: 0.5 }, py: 0.25 }}>
                 {isLoading || isPetsLoading ? (
                   <Stack direction="row" spacing={1} alignItems="center">
                     <CircularProgress size={16} sx={{ color: 'rgba(255,255,255,0.7)' }} />
                     <Typography variant="body2" color="rgba(255,255,255,0.8)">
-                      {locale.loadFailed}
+                      {locale.loading}
                     </Typography>
                   </Stack>
                 ) : petsResponse == null || petsResponse.pets.length === 0 ? (

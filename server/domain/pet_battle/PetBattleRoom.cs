@@ -24,6 +24,7 @@ public class PetBattleRoom(
     public PlayerId OpponentPlayerId { get; } = opponentPlayerId;
     public PetBattleRoomStatus Status { get; private set; } = status;
     public int Version { get; private set; } = version;
+    public int PersistedVersion { get; private set; } = version;
     public IReadOnlyList<PetBattleRoomSlot> Slots => slots;
     public PetBattleRoomCloseReason? CloseReason { get; private set; } = closeReason;
     public DateTimeOffset? ClosedAt { get; private set; } = closedAt;
@@ -46,6 +47,11 @@ public class PetBattleRoom(
         EnsureWaitingForStart();
 
         var existing = slots.FirstOrDefault(s => s.PetId == petId);
+        if (existing is not null && existing.Row == row && existing.Column == column)
+        {
+            return;
+        }
+
         if (existing is not null)
         {
             slots.Remove(existing);
@@ -58,6 +64,7 @@ public class PetBattleRoom(
         }
 
         slots.Add(new PetBattleRoomSlot(petId, row, column));
+        Version++;
     }
 
     public void RemoveSlot(PlayerPetId petId)
@@ -67,6 +74,7 @@ public class PetBattleRoom(
         if (slot is not null)
         {
             slots.Remove(slot);
+            Version++;
         }
     }
 
@@ -88,6 +96,12 @@ public class PetBattleRoom(
         CloseReason = PetBattleRoomCloseReason.Cancelled;
         ClosedAt = now;
         Version++;
+    }
+
+    public void SyncVersion(int version)
+    {
+        Version = version;
+        PersistedVersion = version;
     }
 
     private void EnsureWaitingForStart()

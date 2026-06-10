@@ -57,9 +57,9 @@ public class QuestRunService(
         }
 
         run.SubmitCommand(participantId, command, DateTimeOffset.UtcNow);
-        var resolved = await TryResolveIfReadyAsync(run);
-        await questRunRepository.SaveAsync(run);
-        return new QuestCommandSubmissionResult(run, resolved);
+        var resolution = await TryResolveIfReadyAsync(run);
+        await questRunRepository.SaveAsync(run, resolution.CapturedPets);
+        return new QuestCommandSubmissionResult(run, resolution.ResolvedInThisRequest);
     }
 
     private async Task EnsurePetCapacityAsync(QuestRun run, QuestParticipantId participantId)
@@ -123,10 +123,10 @@ public class QuestRunService(
         foreach (var run in expiredRuns)
         {
             run.SwitchToAutoActionForTimeout(now);
-            var changed = await TryResolveIfReadyAsync(run);
-            if (changed)
+            var resolution = await TryResolveIfReadyAsync(run);
+            if (resolution.ResolvedInThisRequest)
             {
-                await questRunRepository.SaveAsync(run);
+                await questRunRepository.SaveAsync(run, resolution.CapturedPets);
                 updatedRuns.Add(run);
             }
         }
@@ -142,17 +142,17 @@ public class QuestRunService(
         return run;
     }
 
-    private async Task<bool> TryResolveIfReadyAsync(QuestRun run)
+    private async Task<QuestRunResolutionResult> TryResolveIfReadyAsync(QuestRun run)
     {
         if (run.Status != QuestRunStatus.InProgress)
         {
-            return false;
+            return QuestRunResolutionResult.None;
         }
 
         var waitingParticipantIds = GetWaitingParticipantIds(run);
         if (waitingParticipantIds.Count > 0)
         {
-            return false;
+            return QuestRunResolutionResult.None;
         }
 
         var stage = await questStageRepository.GetAsync(run.StageId)
@@ -163,7 +163,7 @@ public class QuestRunService(
         var previousFloorNo = run.FloorState.CurrentFloorNo;
         var previousStatus = run.Status.ToString();
 
-        var captureActions = await ProcessCaptureCommandsAsync(run, enemyDefinitions);
+        var captureResult = await ProcessCaptureCommandsAsync(run, enemyDefinitions);
 
         var fieldContext = questBattleFactory.CreateBattleFieldContext(run);
         var actors = questBattleFactory.CreateActorInputs(run, enemyDefinitions);
@@ -212,7 +212,7 @@ public class QuestRunService(
             partyActorMap,
             enemyActorMap,
             petSummons.ActorNames,
-            captureActions,
+            captureResult.Actions,
             previousFloorNo,
             previousStatus,
             nextFloor?.FloorNo,
@@ -240,7 +240,7 @@ public class QuestRunService(
             await ApplyQuestCompletionEffectsAsync(run);
         }
 
-        return true;
+        return new QuestRunResolutionResult(true, captureResult.CapturedPets);
     }
 
     private static int CalculateFloorExp(
@@ -292,7 +292,7 @@ public class QuestRunService(
                 : 0);
     }
 
-    private async Task<IReadOnlyList<QuestResolvedAction>> ProcessCaptureCommandsAsync(
+    private async Task<QuestCaptureProcessingResult> ProcessCaptureCommandsAsync(
         QuestRun run,
         IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
     {
@@ -302,13 +302,14 @@ public class QuestRunService(
             .ToArray();
         if (captureCommands.Length == 0)
         {
-            return [];
+            return QuestCaptureProcessingResult.Empty;
         }
 
         var room = await questRoomRepository.GetAsync(run.RoomId)
             ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
         var snapshotById = run.PartySnapshots.ToDictionary(x => x.ParticipantId);
         var logActions = new List<QuestResolvedAction>();
+        var capturedPets = new List<PlayerPet>();
 
         foreach (var command in captureCommands)
         {
@@ -366,7 +367,7 @@ public class QuestRunService(
             if (_petRollProvider(100) <= rate)
             {
                 target.MarkCaptured();
-                await playerPetRepository.AddAsync(PlayerPet.Capture(playerId.Value, definition.Id, DateTimeOffset.UtcNow));
+                capturedPets.Add(PlayerPet.Capture(playerId.Value, definition.Id, DateTimeOffset.UtcNow));
                 logActions.Add(CreateCaptureLogAction(
                     command.ParticipantId,
                     actorName,
@@ -383,7 +384,19 @@ public class QuestRunService(
             }
         }
 
-        return logActions;
+        return new QuestCaptureProcessingResult(logActions, capturedPets);
+    }
+
+    private sealed record QuestRunResolutionResult(bool ResolvedInThisRequest, IReadOnlyList<PlayerPet> CapturedPets)
+    {
+        public static QuestRunResolutionResult None { get; } = new(false, []);
+    }
+
+    private sealed record QuestCaptureProcessingResult(
+        IReadOnlyList<QuestResolvedAction> Actions,
+        IReadOnlyList<PlayerPet> CapturedPets)
+    {
+        public static QuestCaptureProcessingResult Empty { get; } = new([], []);
     }
 
     private static QuestResolvedAction CreateCaptureLogAction(

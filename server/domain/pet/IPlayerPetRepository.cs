@@ -9,6 +9,7 @@ public interface IPlayerPetRepository
     Task<PlayerPet?> GetStandbyByPlayerAsync(PlayerId playerId);
     Task<int> CountByPlayerAsync(PlayerId playerId);
     Task AddAsync(PlayerPet pet);
+    Task<bool> SetStandbyAsync(PlayerId playerId, PlayerPetId? standbyPetId, DateTimeOffset updatedAt);
     Task SaveAsync(IEnumerable<PlayerPet> pets);
     Task DeleteAsync(PlayerPetId id);
 }

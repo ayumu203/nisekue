@@ -32,6 +32,28 @@ internal sealed class FakePlayerPetRepository : IPlayerPetRepository
         return Task.CompletedTask;
     }
 
+    public Task<bool> SetStandbyAsync(PlayerId playerId, PlayerPetId? standbyPetId, DateTimeOffset updatedAt)
+    {
+        if (standbyPetId is not null && pets.All(x => x.PlayerId != playerId || x.Id != standbyPetId.Value))
+        {
+            return Task.FromResult(false);
+        }
+
+        foreach (var pet in pets.Where(x => x.PlayerId == playerId))
+        {
+            if (standbyPetId is not null && pet.Id == standbyPetId.Value)
+            {
+                pet.Standby(updatedAt);
+            }
+            else if (pet.IsStandby)
+            {
+                pet.ClearStandby(updatedAt);
+            }
+        }
+
+        return Task.FromResult(true);
+    }
+
     public Task SaveAsync(IEnumerable<PlayerPet> updatedPets)
     {
         foreach (var pet in updatedPets)

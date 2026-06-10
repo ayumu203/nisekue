@@ -1707,7 +1707,7 @@ public class QuestRunServiceTests
         var enemy = run.BattleState.Enemies.Single();
         enemy.IsCaptured.Should().BeTrue();
         enemy.IsDead.Should().BeTrue();
-        petRepository.StoredPets.Should().ContainSingle()
+        repository.LastCapturedPets.Should().ContainSingle()
             .Which.EnemyDefinitionId.Should().Be(new QuestEnemyDefinitionId(1));
         run.LastTurnResults!.Actions.Should()
             .Contain(x => x.ActionKind == nameof(ActionKind.Capture) && x.Succeeded);
@@ -1745,7 +1745,7 @@ public class QuestRunServiceTests
         var enemy = run.BattleState.Enemies.Single();
         enemy.IsCaptured.Should().BeFalse();
         enemy.IsAlive.Should().BeTrue();
-        petRepository.StoredPets.Should().BeEmpty();
+        repository.LastCapturedPets.Should().BeEmpty();
         run.LastTurnResults!.Actions.Should()
             .Contain(x => x.ActionKind == nameof(ActionKind.Capture) && !x.Succeeded);
     }
@@ -1867,7 +1867,7 @@ public class QuestRunServiceTests
             new QuestSubmittedCommand(guestParticipantId, run.TurnState.CurrentTurnNo, ActionKind.Capture, firstSubmittedAt.AddMilliseconds(10), selectedTargetPosition: targetPosition));
 
         run.BattleState.Enemies.Single().IsCaptured.Should().BeTrue();
-        petRepository.StoredPets.Should().HaveCount(1, "同じ敵は1体しか捕獲できない");
+        repository.LastCapturedPets.Should().HaveCount(1, "同じ敵は1体しか捕獲できない");
         run.LastTurnResults!.Actions.Count(x => x.ActionKind == nameof(ActionKind.Capture) && x.Succeeded).Should().Be(1);
         run.LastTurnResults!.Actions.Count(x => x.ActionKind == nameof(ActionKind.Capture) && !x.Succeeded).Should().Be(1);
     }
@@ -2196,10 +2196,13 @@ public class QuestRunServiceTests
         public Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
             => Task.FromResult<IReadOnlyList<QuestRun>>(StoredRun is not null && StoredRun.TurnState.ActionDeadlineAt <= now ? [StoredRun] : []);
 
-        public Task SaveAsync(QuestRun run)
+        public IReadOnlyList<PlayerPet> LastCapturedPets { get; private set; } = [];
+
+        public Task SaveAsync(QuestRun run, IReadOnlyList<PlayerPet>? capturedPets = null)
         {
             StoredRun = run;
             SaveCount++;
+            LastCapturedPets = capturedPets ?? [];
             return Task.CompletedTask;
         }
     }

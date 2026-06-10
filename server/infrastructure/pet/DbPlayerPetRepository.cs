@@ -59,6 +59,36 @@ public class DbPlayerPetRepository(IDbContextFactory<AppDbContext> dbContextFact
         await dbContext.SaveChangesAsync();
     }
 
+    public async Task<bool> SetStandbyAsync(PlayerId playerId, PlayerPetId? standbyPetId, DateTimeOffset updatedAt)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        if (standbyPetId is not null)
+        {
+            var exists = await dbContext.PlayerPets
+                .AsNoTracking()
+                .AnyAsync(x => x.PlayerId == playerId.Value && x.Id == standbyPetId.Value.Value);
+            if (!exists)
+            {
+                return false;
+            }
+        }
+
+        var standbyPetValue = standbyPetId?.Value;
+        await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE internal.player_pets
+            SET
+                is_standby = CASE
+                    WHEN {standbyPetValue} IS NOT NULL AND id = {standbyPetValue} THEN TRUE
+                    ELSE FALSE
+                END,
+                updated_at = {updatedAt}
+            WHERE player_id = {playerId.Value}
+            """);
+
+        return true;
+    }
+
     public async Task SaveAsync(IEnumerable<PlayerPet> pets)
     {
         ArgumentNullException.ThrowIfNull(pets);

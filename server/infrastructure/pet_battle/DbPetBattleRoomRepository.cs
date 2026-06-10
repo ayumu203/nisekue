@@ -32,9 +32,11 @@ public class DbPetBattleRoomRepository(IDbContextFactory<AppDbContext> dbContext
     public async Task SaveAsync(PetBattleRoom room)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var existing = await dbContext.PetBattleRooms.SingleOrDefaultAsync(x => x.Id == room.Id.Value);
+        var exists = await dbContext.PetBattleRooms
+            .AsNoTracking()
+            .AnyAsync(x => x.Id == room.Id.Value);
 
-        if (existing is null)
+        if (!exists)
         {
             dbContext.PetBattleRooms.Add(new PetBattleRoomEntity
             {
@@ -51,14 +53,31 @@ public class DbPetBattleRoomRepository(IDbContextFactory<AppDbContext> dbContext
         }
         else
         {
-            existing.Status = (int)room.Status;
-            existing.Version = room.Version;
-            existing.CloseReason = (int?)room.CloseReason;
-            existing.SlotsJson = PetBattleJsonSerializer.SerializeSlots(room.Slots);
-            existing.ClosedAt = room.ClosedAt;
+            var entity = new PetBattleRoomEntity
+            {
+                Id = room.Id.Value,
+                OwnerPlayerId = room.OwnerPlayerId.Value,
+                OpponentPlayerId = room.OpponentPlayerId.Value,
+                Status = (int)room.Status,
+                Version = room.Version,
+                CloseReason = (int?)room.CloseReason,
+                SlotsJson = PetBattleJsonSerializer.SerializeSlots(room.Slots),
+                CreatedAt = room.CreatedAt,
+                ClosedAt = room.ClosedAt,
+            };
+
+            dbContext.PetBattleRooms.Attach(entity);
+            var entry = dbContext.Entry(entity);
+            entry.Property(x => x.Version).OriginalValue = room.PersistedVersion;
+            entry.Property(x => x.Status).IsModified = true;
+            entry.Property(x => x.Version).IsModified = true;
+            entry.Property(x => x.CloseReason).IsModified = true;
+            entry.Property(x => x.SlotsJson).IsModified = true;
+            entry.Property(x => x.ClosedAt).IsModified = true;
         }
 
         await dbContext.SaveChangesAsync();
+        room.SyncVersion(room.Version);
     }
 
     private static PetBattleRoom MapToDomain(PetBattleRoomEntity entity)

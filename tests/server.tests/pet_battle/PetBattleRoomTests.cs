@@ -117,7 +117,7 @@ public class PetBattleRoomTests
         room.Status.Should().Be(PetBattleRoomStatus.Closed);
         room.CloseReason.Should().Be(PetBattleRoomCloseReason.Started);
         room.ClosedAt.Should().Be(now);
-        room.Version.Should().Be(2);
+        room.Version.Should().Be(3);
     }
 
     [Fact]

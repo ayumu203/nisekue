@@ -4,9 +4,11 @@ using System.Text.Json;
 using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.move;
+using server.domain.pet;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
+using server.infrastructure.pet;
 
 namespace server.infrastructure.quest.run;
 
@@ -77,7 +79,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         return runs;
     }
 
-    public async Task SaveAsync(QuestRun run)
+    public async Task SaveAsync(QuestRun run, IReadOnlyList<PlayerPet>? capturedPets = null)
     {
         ArgumentNullException.ThrowIfNull(run);
 
@@ -115,8 +117,30 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         }
 
         await ReplaceChildrenAsync(dbContext, run);
+        if (capturedPets is not null && capturedPets.Count > 0)
+        {
+            dbContext.PlayerPets.AddRange(capturedPets.Select(MapCapturedPet));
+        }
+
         await dbContext.SaveChangesAsync();
     }
+
+    private static PlayerPetEntity MapCapturedPet(PlayerPet pet) => new()
+    {
+        Id = pet.Id.Value,
+        PlayerId = pet.PlayerId.Value,
+        EnemyDefinitionId = pet.EnemyDefinitionId.Value,
+        BonusMaxHp = pet.BonusStatus.MaxHp,
+        BonusMaxMp = pet.BonusStatus.MaxMp,
+        BonusStrength = pet.BonusStatus.Strength,
+        BonusDefense = pet.BonusStatus.Defense,
+        BonusIntelligence = pet.BonusStatus.Intelligence,
+        BonusLuck = pet.BonusStatus.Luck,
+        BonusSpeed = pet.BonusStatus.Speed,
+        IsStandby = pet.IsStandby,
+        CapturedAt = pet.CapturedAt,
+        UpdatedAt = pet.UpdatedAt,
+    };
 
     private async Task<QuestRun?> LoadAsync(Expression<Func<QuestRunEntity, bool>> predicate)
     {

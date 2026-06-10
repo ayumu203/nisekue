@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Npgsql;
 using server.application.battle;
 using server.domain.battle;
 using server.domain.battle.enums;
@@ -9,10 +12,13 @@ using server.domain.pet_battle.enums;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
+using server.infrastructure;
+using System.Data;
 
 namespace server.application.pet_battle;
 
 public class PetBattleService(
+    IDbContextFactory<AppDbContext> dbContextFactory,
     IPetBattleRoomRepository roomRepository,
     IPetBattleRunRepository runRepository,
     IPlayerPetBattleStatsRepository statsRepository,
@@ -32,6 +38,7 @@ public class PetBattleService(
 
     public async Task<PetBattleRoom> MatchAsync(PlayerId ownerId)
     {
+        await using var lockScope = await AcquireOwnerLockAsync(ownerId);
         var now = DateTimeOffset.UtcNow;
 
         var owner = await playerRepository.GetPlayerAsync(ownerId)
@@ -69,8 +76,28 @@ public class PetBattleService(
             ?? throw new InvalidOperationException("対戦相手が見つかりません。ペットを所持している他のプレイヤーが必要です。");
 
         var room = PetBattleRoom.Create(ownerId, opponentId, now);
-        await roomRepository.SaveAsync(room);
-        return room;
+
+        try
+        {
+            await roomRepository.SaveAsync(room);
+            return room;
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            existingRun = await runRepository.GetActiveByOwnerAsync(ownerId);
+            if (existingRun is not null)
+            {
+                throw new InvalidOperationException("すでに対戦中です。", ex);
+            }
+
+            existingRoom = await roomRepository.GetActiveByOwnerAsync(ownerId);
+            if (existingRoom is not null)
+            {
+                return existingRoom;
+            }
+
+            throw;
+        }
     }
 
     public async Task<PetBattleRoom> GetRoomAsync(PetBattleRoomId roomId)
@@ -86,6 +113,7 @@ public class PetBattleService(
         BattleColumn column,
         PlayerId ownerId)
     {
+        await using var lockScope = await AcquireOwnerLockAsync(ownerId);
         var room = await GetRoomAsync(roomId);
         EnsureOwner(room, ownerId);
         room.AssignSlot(petId, row, column);
@@ -95,6 +123,7 @@ public class PetBattleService(
 
     public async Task<PetBattleRoom> RemoveSlotAsync(PetBattleRoomId roomId, PlayerPetId petId, PlayerId ownerId)
     {
+        await using var lockScope = await AcquireOwnerLockAsync(ownerId);
         var room = await GetRoomAsync(roomId);
         EnsureOwner(room, ownerId);
         room.RemoveSlot(petId);
@@ -104,12 +133,31 @@ public class PetBattleService(
 
     public async Task<PetBattleRun> StartBattleAsync(PetBattleRoomId roomId, PlayerId ownerId)
     {
+        await using var lockScope = await AcquireOwnerLockAsync(ownerId);
         var now = DateTimeOffset.UtcNow;
         var room = await GetRoomAsync(roomId);
         EnsureOwner(room, ownerId);
 
+        var existingRun = await runRepository.GetActiveByOwnerAsync(ownerId);
+        if (existingRun is not null)
+        {
+            var currentRoomRun = await runRepository.GetByRoomIdAsync(roomId);
+            if (currentRoomRun is not null)
+            {
+                return currentRoomRun;
+            }
+
+            throw new InvalidOperationException("すでに対戦中です。");
+        }
+
         if (!room.CanStart())
         {
+            if (room.Status == PetBattleRoomStatus.Closed && room.CloseReason == PetBattleRoomCloseReason.Started)
+            {
+                return await runRepository.GetByRoomIdAsync(roomId)
+                    ?? throw new InvalidOperationException("対戦はすでに開始されています。最新状態を再取得してください。");
+            }
+
             throw new InvalidOperationException("対戦を開始するにはペットを最低1体配置してください。");
         }
 
@@ -137,8 +185,27 @@ public class PetBattleService(
         room.CloseForStart(now);
         var run = runFactory.Create(room, ownerSnapshots, opponentSnapshots, now);
 
-        await roomRepository.SaveAsync(room);
-        await runRepository.SaveAsync(run);
+        try
+        {
+            await roomRepository.SaveAsync(room);
+            await runRepository.SaveAsync(run);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            var currentRoomRun = await runRepository.GetByRoomIdAsync(roomId);
+            if (currentRoomRun is not null)
+            {
+                return currentRoomRun;
+            }
+
+            existingRun = await runRepository.GetActiveByOwnerAsync(ownerId);
+            if (existingRun is not null)
+            {
+                throw new InvalidOperationException("すでに対戦中です。", ex);
+            }
+
+            throw;
+        }
 
         return run;
     }
@@ -172,6 +239,7 @@ public class PetBattleService(
         PetBattleSubmittedCommand command,
         PlayerId ownerId)
     {
+        await using var lockScope = await AcquireOwnerLockAsync(ownerId);
         var run = await GetRunAsync(runId);
 
         if (run.OwnerPlayerId != ownerId)
@@ -199,6 +267,7 @@ public class PetBattleService(
 
     public async Task<PetBattleRun> AbortAsync(PetBattleRunId runId, PlayerId ownerId)
     {
+        await using var lockScope = await AcquireOwnerLockAsync(ownerId);
         var now = DateTimeOffset.UtcNow;
         var run = await GetRunAsync(runId);
 
@@ -496,6 +565,37 @@ public class PetBattleService(
         if (room.OwnerPlayerId != playerId)
         {
             throw new UnauthorizedAccessException("このルームのオーナーではありません。");
+        }
+    }
+
+    private async Task<OwnerOperationLock> AcquireOwnerLockAsync(PlayerId ownerId)
+    {
+        var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+        try
+        {
+            await dbContext.Database.ExecuteSqlRawAsync(
+                "SELECT 1 FROM internal.players WHERE id = {0} FOR UPDATE",
+                ownerId.Value);
+            return new OwnerOperationLock(dbContext, transaction);
+        }
+        catch
+        {
+            await transaction.DisposeAsync();
+            await dbContext.DisposeAsync();
+            throw;
+        }
+    }
+
+    private static bool IsUniqueViolation(DbUpdateException ex)
+        => ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation };
+
+    private sealed class OwnerOperationLock(AppDbContext dbContext, IDbContextTransaction transaction) : IAsyncDisposable
+    {
+        public async ValueTask DisposeAsync()
+        {
+            await transaction.DisposeAsync();
+            await dbContext.DisposeAsync();
         }
     }
 }

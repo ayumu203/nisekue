@@ -15,7 +15,10 @@ internal static class PetBattleEndpoints
     {
         var group = app.MapGroup("/pet-battles").RequireAuthorization();
 
-        group.MapPost("/match", async (ClaimsPrincipal user, PetBattleService petBattleService) =>
+        group.MapPost("/match", async (
+            ClaimsPrincipal user,
+            PetBattleService petBattleService,
+            PetBattleResponseMapper responseMapper) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null) return Results.Unauthorized();
@@ -23,7 +26,7 @@ internal static class PetBattleEndpoints
             try
             {
                 var room = await petBattleService.MatchAsync(playerId.Value);
-                return Results.Ok(MapRoom(room));
+                return Results.Ok(await responseMapper.MapRoomAsync(room));
             }
             catch (KeyNotFoundException ex)
             {
@@ -35,7 +38,10 @@ internal static class PetBattleEndpoints
             }
         });
 
-        group.MapGet("/status", async (ClaimsPrincipal user, PetBattleService petBattleService) =>
+        group.MapGet("/status", async (
+            ClaimsPrincipal user,
+            PetBattleService petBattleService,
+            PetBattleResponseMapper responseMapper) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null) return Results.Unauthorized();
@@ -43,8 +49,8 @@ internal static class PetBattleEndpoints
             var (room, run) = await petBattleService.GetStatusAsync(playerId.Value);
             return Results.Ok(new
             {
-                room = room is null ? null : MapRoom(room),
-                run = run is null ? null : MapRun(run)
+                room = room is null ? null : await responseMapper.MapRoomAsync(room),
+                run = run is null ? null : await responseMapper.MapRunAsync(run)
             });
         });
 
@@ -57,7 +63,11 @@ internal static class PetBattleEndpoints
             return Results.Ok(stats is null ? null : MapStats(stats));
         });
 
-        group.MapGet("/rooms/{roomId:guid}", async (Guid roomId, ClaimsPrincipal user, PetBattleService petBattleService) =>
+        group.MapGet("/rooms/{roomId:guid}", async (
+            Guid roomId,
+            ClaimsPrincipal user,
+            PetBattleService petBattleService,
+            PetBattleResponseMapper responseMapper) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null) return Results.Unauthorized();
@@ -70,7 +80,7 @@ internal static class PetBattleEndpoints
                     return Results.Forbid();
                 }
 
-                return Results.Ok(MapRoom(room));
+                return Results.Ok(await responseMapper.MapRoomAsync(room));
             }
             catch (KeyNotFoundException ex)
             {
@@ -82,7 +92,8 @@ internal static class PetBattleEndpoints
             Guid roomId,
             AssignPetBattleSlotRequest request,
             ClaimsPrincipal user,
-            PetBattleService petBattleService) =>
+            PetBattleService petBattleService,
+            PetBattleResponseMapper responseMapper) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null) return Results.Unauthorized();
@@ -95,7 +106,7 @@ internal static class PetBattleEndpoints
                     request.Row,
                     request.Column,
                     playerId.Value);
-                return Results.Ok(MapRoom(room));
+                return Results.Ok(await responseMapper.MapRoomAsync(room));
             }
             catch (KeyNotFoundException ex)
             {
@@ -115,7 +126,8 @@ internal static class PetBattleEndpoints
             Guid roomId,
             Guid petId,
             ClaimsPrincipal user,
-            PetBattleService petBattleService) =>
+            PetBattleService petBattleService,
+            PetBattleResponseMapper responseMapper) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null) return Results.Unauthorized();
@@ -126,7 +138,7 @@ internal static class PetBattleEndpoints
                     new PetBattleRoomId(roomId),
                     new PlayerPetId(petId),
                     playerId.Value);
-                return Results.Ok(MapRoom(room));
+                return Results.Ok(await responseMapper.MapRoomAsync(room));
             }
             catch (KeyNotFoundException ex)
             {
@@ -145,7 +157,8 @@ internal static class PetBattleEndpoints
         group.MapPost("/rooms/{roomId:guid}/start", async (
             Guid roomId,
             ClaimsPrincipal user,
-            PetBattleService petBattleService) =>
+            PetBattleService petBattleService,
+            PetBattleResponseMapper responseMapper) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null) return Results.Unauthorized();
@@ -153,7 +166,7 @@ internal static class PetBattleEndpoints
             try
             {
                 var run = await petBattleService.StartBattleAsync(new PetBattleRoomId(roomId), playerId.Value);
-                return Results.Ok(MapRun(run));
+                return Results.Ok(await responseMapper.MapRunAsync(run));
             }
             catch (KeyNotFoundException ex)
             {
@@ -169,7 +182,11 @@ internal static class PetBattleEndpoints
             }
         });
 
-        group.MapGet("/runs/{runId:guid}", async (Guid runId, ClaimsPrincipal user, PetBattleService petBattleService) =>
+        group.MapGet("/runs/{runId:guid}", async (
+            Guid runId,
+            ClaimsPrincipal user,
+            PetBattleService petBattleService,
+            PetBattleResponseMapper responseMapper) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null) return Results.Unauthorized();
@@ -182,7 +199,7 @@ internal static class PetBattleEndpoints
                     return Results.Forbid();
                 }
 
-                return Results.Ok(MapRun(run));
+                return Results.Ok(await responseMapper.MapRunAsync(run));
             }
             catch (KeyNotFoundException ex)
             {
@@ -194,7 +211,8 @@ internal static class PetBattleEndpoints
             Guid runId,
             SubmitPetBattleCommandRequest request,
             ClaimsPrincipal user,
-            PetBattleService petBattleService) =>
+            PetBattleService petBattleService,
+            PetBattleResponseMapper responseMapper) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null) return Results.Unauthorized();
@@ -222,7 +240,7 @@ internal static class PetBattleEndpoints
                 {
                     accepted = true,
                     resolvedInThisRequest = result.ResolvedInThisRequest,
-                    run = MapRun(result.Run)
+                    run = await responseMapper.MapRunAsync(result.Run)
                 });
             }
             catch (KeyNotFoundException ex)
@@ -246,7 +264,8 @@ internal static class PetBattleEndpoints
         group.MapPost("/runs/{runId:guid}/abort", async (
             Guid runId,
             ClaimsPrincipal user,
-            PetBattleService petBattleService) =>
+            PetBattleService petBattleService,
+            PetBattleResponseMapper responseMapper) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null) return Results.Unauthorized();
@@ -254,7 +273,7 @@ internal static class PetBattleEndpoints
             try
             {
                 var run = await petBattleService.AbortAsync(new PetBattleRunId(runId), playerId.Value);
-                return Results.Ok(MapRun(run));
+                return Results.Ok(await responseMapper.MapRunAsync(run));
             }
             catch (KeyNotFoundException ex)
             {
@@ -272,86 +291,6 @@ internal static class PetBattleEndpoints
 
         return app;
     }
-
-    private static object MapRoom(PetBattleRoom room) => new
-    {
-        roomId = room.Id.Value,
-        status = room.Status.ToString(),
-        ownerPlayerId = room.OwnerPlayerId.Value,
-        opponentPlayerId = room.OpponentPlayerId.Value,
-        slots = room.Slots.Select(s => new
-        {
-            petId = s.PetId.Value,
-            row = s.Row.ToString(),
-            column = s.Column.ToString()
-        }).ToArray(),
-        createdAt = room.CreatedAt
-    };
-
-    private static object MapRun(PetBattleRun run) => new
-    {
-        runId = run.Id.Value,
-        roomId = run.RoomId.Value,
-        status = run.Status.ToString(),
-        ownerPlayerId = run.OwnerPlayerId.Value,
-        opponentPlayerId = run.OpponentPlayerId.Value,
-        winnerPlayerId = run.WinnerPlayerId?.Value,
-        currentTurnNo = run.TurnState.CurrentTurnNo,
-        actionDeadlineAt = run.TurnState.ActionDeadlineAt,
-        startedAt = run.StartedAt,
-        endedAt = run.EndedAt,
-        submittedParticipantIds = run.TurnState.PendingCommands.Select(c => c.ParticipantId.Value).ToArray(),
-        ownerMembers = run.OwnerSnapshots.Select(s => MapMember(s, run.OwnerMemberStates)).ToArray(),
-        opponentMembers = run.OpponentSnapshots.Select(s => MapMember(s, run.OpponentMemberStates)).ToArray(),
-        lastTurnResults = run.LastTurnResults is null ? null : MapLastTurnResults(run.LastTurnResults)
-    };
-
-    private static object MapMember(
-        PetBattlePartyMemberSnapshot snapshot,
-        IReadOnlyList<PetBattlePartyMemberState> memberStates)
-    {
-        var state = memberStates.FirstOrDefault(m => m.ParticipantId == snapshot.ParticipantId);
-        return new
-        {
-            participantId = snapshot.ParticipantId.Value,
-            enemyDefinitionId = snapshot.EnemyDefinitionId,
-            displayName = snapshot.DisplayName,
-            imagePath = snapshot.ImagePath,
-            maxHp = snapshot.BaseStatus.MaxHp,
-            maxMp = snapshot.BaseStatus.MaxMp,
-            currentHp = state?.CurrentHp ?? snapshot.BaseStatus.MaxHp,
-            currentMp = state?.CurrentMp ?? snapshot.BaseStatus.MaxMp,
-            isDead = state?.IsDead ?? false,
-            moveIds = snapshot.MoveIds,
-            startRow = snapshot.StartRow.ToString(),
-            startColumn = snapshot.StartColumn.ToString()
-        };
-    }
-
-    private static object MapLastTurnResults(PetBattleLastTurnResults results) => new
-    {
-        turnNo = results.TurnNo,
-        resolvedAt = results.ResolvedAt,
-        actions = results.Actions.Select(a => new
-        {
-            actorParticipantId = a.ActorParticipantId,
-            actorDisplayName = a.ActorDisplayName,
-            actionKind = a.ActionKind,
-            moveId = a.MoveId,
-            moveName = a.MoveName,
-            succeeded = a.Succeeded,
-            targetSummaries = a.TargetSummaries.Select(t => new
-            {
-                targetParticipantId = t.TargetParticipantId,
-                targetDisplayName = t.TargetDisplayName,
-                resultType = t.ResultType,
-                hpChange = t.HpChange,
-                mpChange = t.MpChange,
-                appliedEffects = t.AppliedEffects,
-                isDeadAfterAction = t.IsDeadAfterAction
-            }).ToArray()
-        }).ToArray()
-    };
 
     private static object MapStats(PlayerPetBattleStats stats) => new
     {

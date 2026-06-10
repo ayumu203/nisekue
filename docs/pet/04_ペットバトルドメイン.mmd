@@ -14,6 +14,7 @@ classDiagram
             +DateTimeOffset CreatedAt
             +DateTimeOffset? ClosedAt
             +int? CloseReason
+            %% 配置変更ごとに Version を進め、永続化時は optimistic concurrency で競合を検出する
             +AssignSlot(petId: PlayerPetId, row: BattleRow, col: BattleColumn) void
             +RemoveSlot(petId: PlayerPetId) void
             +CloseRecruitment(reason: PetBattleRoomCloseReason) void
@@ -51,6 +52,7 @@ classDiagram
             +DateTimeOffset StartedAt
             +DateTimeOffset? EndedAt
             +PlayerId? WinnerPlayerId
+            %% コマンド投入ごとに Version を進め、同一オーナー操作はプレイヤー行ロックで直列化する
             +SubmitCommand(participantId: PetBattleParticipantId, command: PetBattleSubmittedCommand) void
             +ApplyBattleResolution(resolution: BattleResolution) void
         }
@@ -128,6 +130,7 @@ classDiagram
         class IPetBattleRoomRepository {
             <<Repository IF>>
             +Task~PetBattleRoom?~ GetAsync(id: PetBattleRoomId)
+            %% WaitingForStart は owner 単位で部分一意
             +Task SaveAsync(room: PetBattleRoom)
         }
 
@@ -135,6 +138,7 @@ classDiagram
             <<Repository IF>>
             +Task~PetBattleRun?~ GetAsync(id: PetBattleRunId)
             +Task~PetBattleRun?~ GetByRoomIdAsync(roomId: PetBattleRoomId)
+            %% current turn のコマンドは差分同期し、解決済み turn の行は削除する
             +Task SaveAsync(run: PetBattleRun)
         }
 

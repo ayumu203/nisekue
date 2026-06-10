@@ -446,7 +446,8 @@ classDiagram
             +Task~QuestRun?~ GetAsync(id: QuestRunId)
             +Task~QuestRun?~ GetByRoomIdAsync(roomId: QuestRoomId)
             +Task~bool~ ExistsActiveRunByPlayerAsync(playerId: PlayerId)
-            +Task SaveAsync(run: QuestRun)
+            %% 捕獲成功ペットの player_pets 追加を QuestRun 保存と同一トランザクションで確定する
+            +Task SaveAsync(run: QuestRun, capturedPets: IReadOnlyList~PlayerPet~)
         }
     }
 

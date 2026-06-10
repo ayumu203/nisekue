@@ -67,6 +67,8 @@ classDiagram
             +Task~PlayerPet?~ GetByIdAsync(id: PlayerPetId)
             +Task~PlayerPet?~ GetStandbyByPlayerIdAsync(playerId: PlayerId)
             +Task AddAsync(pet: PlayerPet)
+            %% スタンバイ切替は単一 UPDATE で全ペットを同期し、DB の部分一意制約で 1 体のみを保証する
+            +Task~bool~ SetStandbyAsync(playerId: PlayerId, standbyPetId: PlayerPetId?, updatedAt: DateTimeOffset)
             +Task UpdateAsync(pet: PlayerPet)
             +Task DeleteAsync(id: PlayerPetId)
         }

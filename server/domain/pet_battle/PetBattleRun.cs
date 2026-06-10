@@ -34,6 +34,7 @@ public class PetBattleRun(
     public PetBattleRunId Id { get; } = id;
     public PetBattleRoomId RoomId { get; } = roomId;
     public int Version { get; private set; } = version;
+    public int PersistedVersion { get; private set; } = version;
     public PlayerId OwnerPlayerId { get; } = ownerPlayerId;
     public PlayerId OpponentPlayerId { get; } = opponentPlayerId;
     public IReadOnlyList<PetBattlePartyMemberSnapshot> OwnerSnapshots => ownerSnapshots;
@@ -69,6 +70,7 @@ public class PetBattleRun(
         }
 
         TurnState.Submit(command);
+        Version++;
     }
 
     public bool AllOwnerCommandsSubmitted()
@@ -158,9 +160,16 @@ public class PetBattleRun(
         EnsureInProgress();
         Status = PetBattleRunStatus.Aborted;
         EndedAt = now;
+        Version++;
     }
 
     public bool IsFinished => Status != PetBattleRunStatus.InProgress;
+
+    public void SyncVersion(int version)
+    {
+        Version = version;
+        PersistedVersion = version;
+    }
 
     private PetBattlePartyMemberState FindOwnerMember(PetBattleParticipantId participantId) =>
         ownerMemberStates.FirstOrDefault(m => m.ParticipantId == participantId)

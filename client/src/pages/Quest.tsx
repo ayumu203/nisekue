@@ -190,7 +190,10 @@ export default function Quest() {
     ])
   }, [mutateCache, mutatePlayer, session?.user.id])
 
-  const petsSWRKey = session?.user.id ? ([`quest-pets`, session.user.id] as const) : null
+  const petsSWRKey =
+    session?.user.id && (startedRun != null || createdRoom?.closeReason === 'Started')
+      ? ([`quest-pets`, session.user.id] as const)
+      : null
   const { data: petsResponse, mutate: mutatePets } = useSWR(petsSWRKey, async () => {
     if (!session?.access_token) {
       return null
@@ -662,12 +665,14 @@ export default function Quest() {
   }, [selectedActionKind, canCapture, petSummon])
 
   const lastTurnResultsTurnNo = currentRun?.lastTurnResults?.turnNo ?? null
+  const capturedInLastTurn =
+    currentRun?.lastTurnResults?.actions.some((action) => action.actionKind === 'Capture' && action.succeeded) ?? false
   useEffect(() => {
     // ターン解決後に所持ペット数（捕獲結果）を取り直す
-    if (lastTurnResultsTurnNo != null) {
+    if (lastTurnResultsTurnNo != null && capturedInLastTurn) {
       void mutatePets()
     }
-  }, [lastTurnResultsTurnNo, mutatePets])
+  }, [capturedInLastTurn, lastTurnResultsTurnNo, mutatePets])
 
   useEffect(() => {
     if (!session?.user.id) {

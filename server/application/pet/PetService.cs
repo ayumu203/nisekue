@@ -46,33 +46,13 @@ public class PetService(
 
     public async Task<IReadOnlyList<PlayerPetView>> StandbyAsync(PlayerId playerId, PlayerPetId petId)
     {
-        var pets = await playerPetRepository.GetByPlayerAsync(playerId);
-        if (pets.All(x => x.Id != petId))
+        var updated = await playerPetRepository.SetStandbyAsync(playerId, petId, DateTimeOffset.UtcNow);
+        if (!updated)
         {
             throw new KeyNotFoundException("ペットが見つかりません。");
         }
 
-        var now = DateTimeOffset.UtcNow;
-        var changed = new List<PlayerPet>();
-        foreach (var pet in pets)
-        {
-            if (pet.Id == petId && !pet.IsStandby)
-            {
-                pet.Standby(now);
-                changed.Add(pet);
-            }
-            else if (pet.Id != petId && pet.IsStandby)
-            {
-                pet.ClearStandby(now);
-                changed.Add(pet);
-            }
-        }
-
-        if (changed.Count > 0)
-        {
-            await playerPetRepository.SaveAsync(changed);
-        }
-
+        var pets = await playerPetRepository.GetByPlayerAsync(playerId);
         var views = new List<PlayerPetView>(pets.Count);
         foreach (var pet in pets)
         {
@@ -87,8 +67,7 @@ public class PetService(
         var pet = await GetOwnedPetAsync(playerId, petId);
         if (pet.IsStandby)
         {
-            pet.ClearStandby(DateTimeOffset.UtcNow);
-            await playerPetRepository.SaveAsync([pet]);
+            await playerPetRepository.SetStandbyAsync(playerId, standbyPetId: null, updatedAt: DateTimeOffset.UtcNow);
         }
 
         return await GetPetsAsync(playerId);
