@@ -1,6 +1,6 @@
-import { Box, Button, Chip, Paper, Stack, Typography } from '@mui/material'
+import { Box, Button, Paper, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
-import { cyberButtonSx, cyberColors, cyberDangerButtonSx, cyberPanelSx } from '@/components/petbattle/petBattleStyles'
+import { cyberButtonSx, cyberColors, cyberPanelSx } from '@/components/petbattle/petBattleStyles'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import locale from '../../../locale/pet/PetBattle.json'
 import type { PlayerPetView } from '@/schema/pet'
@@ -38,30 +38,16 @@ export default function PetBattleLobbySection({
   return (
     <Stack spacing={2}>
       <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.5, sm: 2 } }}>
-        <Stack spacing={1}>
-          <Typography variant="overline" sx={{ color: cyberColors.accentDim, letterSpacing: '0.18em' }}>
+        <Stack spacing={1.5}>
+          <Typography
+            variant="h6"
+            sx={{ color: cyberColors.accent, fontWeight: 900, letterSpacing: '0.08em', lineHeight: 1.15 }}
+          >
             {locale.lobbyTitle}
           </Typography>
-          <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-            <Typography variant="body2" sx={{ color: cyberColors.textDim }}>
-              {locale.opponentLabel}:
-            </Typography>
-            <Typography variant="subtitle1" sx={{ color: cyberColors.accent, fontWeight: 800 }}>
-              {room.opponentPlayerName ?? locale.unknownPlayer}
-            </Typography>
-          </Stack>
           <Typography variant="body2" sx={{ color: cyberColors.textDim }}>
             {locale.lobbyDescription}
           </Typography>
-        </Stack>
-      </Paper>
-
-      <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.5, sm: 2 } }}>
-        <Stack spacing={1.5}>
-          <Typography variant="subtitle2" sx={{ color: cyberColors.text, fontWeight: 800 }}>
-            {locale.myPetsTitle}
-          </Typography>
-
           {pets.length === 0 ? (
             <Typography variant="body2" sx={{ color: cyberColors.textDim }}>
               {locale.noPets}
@@ -106,24 +92,6 @@ export default function PetBattleLobbySection({
                       >
                         {pet.name} Lv{pet.level}
                       </Typography>
-                      {isSelected ? (
-                        <Chip
-                          size="small"
-                          label={locale.selectedChip}
-                          sx={{ height: 18, fontSize: '0.6rem', color: '#031007', backgroundColor: cyberColors.accent }}
-                        />
-                      ) : isPlaced ? (
-                        <Chip
-                          size="small"
-                          label={locale.placedChip}
-                          sx={{
-                            height: 18,
-                            fontSize: '0.6rem',
-                            color: cyberColors.accent,
-                            backgroundColor: cyberColors.accentFaint,
-                          }}
-                        />
-                      ) : null}
                     </Stack>
                   </Paper>
                 )
@@ -165,6 +133,11 @@ export default function PetBattleLobbySection({
                         return
                       }
 
+                      if (slot != null) {
+                        void onRemoveSlot(slot.petId)
+                        return
+                      }
+
                       if (selectedPetId != null) {
                         void onAssignSlot(selectedPetId, row, column)
                         setSelectedPetId(null)
@@ -173,19 +146,19 @@ export default function PetBattleLobbySection({
                     sx={{
                       flex: 1,
                       minWidth: 0,
-                      minHeight: 84,
+                      height: 108,
                       p: 0.75,
                       borderRadius: 2,
                       borderStyle: slot ? 'solid' : 'dashed',
                       borderColor: selectedPetId != null ? cyberColors.accent : cyberColors.panelBorder,
                       backgroundColor: slot ? cyberColors.panelLight : 'transparent',
-                      cursor: selectedPetId != null && !isAssigning ? 'pointer' : 'default',
+                      cursor: !isAssigning && (slot != null || selectedPetId != null) ? 'pointer' : 'default',
                       display: 'grid',
                       placeItems: 'center',
                     }}
                   >
                     {slot != null ? (
-                      <Stack spacing={0.4} alignItems="center">
+                      <Stack spacing={0.5} alignItems="center" justifyContent="center" sx={{ height: '100%' }}>
                         {slotPet?.imagePath ? (
                           <Box
                             component="img"
@@ -201,20 +174,6 @@ export default function PetBattleLobbySection({
                         >
                           {slotPet?.name ?? slot.petId}
                         </Typography>
-                        <Button
-                          size="small"
-                          disabled={isAssigning}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            void onRemoveSlot(slot.petId)
-                          }}
-                          sx={{
-                            ...cyberDangerButtonSx,
-                            '&&': { ...cyberDangerButtonSx['&&'], minHeight: 24, px: 1, fontSize: '0.62rem' },
-                          }}
-                        >
-                          {locale.removeSlot}
-                        </Button>
                       </Stack>
                     ) : (
                       <Typography variant="caption" sx={{ color: cyberColors.textDim }}>
@@ -227,7 +186,24 @@ export default function PetBattleLobbySection({
             </Stack>
           ))}
 
-          <Button onClick={() => void onStartBattle()} disabled={!canStart} sx={cyberButtonSx}>
+          <Button
+            onClick={() => void onStartBattle()}
+            disabled={!canStart}
+            sx={[
+              cyberButtonSx,
+              {
+                '&&': {
+                  ...cyberButtonSx['&&'],
+                  color: '#ffffff',
+                },
+                '&&.Mui-disabled': {
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  color: 'rgba(255, 255, 255, 0.56)',
+                  boxShadow: 'none',
+                },
+              },
+            ]}
+          >
             {isStarting ? locale.starting : locale.startBattle}
           </Button>
         </Stack>

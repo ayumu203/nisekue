@@ -1,13 +1,13 @@
 export const cyberColors = {
-  bg: '#050b07',
-  panel: '#0a1410',
-  panelLight: '#102018',
-  panelBorder: 'rgba(0, 255, 136, 0.28)',
-  accent: '#00ff88',
-  accentDim: 'rgba(0, 255, 136, 0.55)',
-  accentFaint: 'rgba(0, 255, 136, 0.1)',
-  text: '#d6ffe9',
-  textDim: 'rgba(214, 255, 233, 0.62)',
+  bg: '#050505',
+  panel: '#101111',
+  panelLight: '#171919',
+  panelBorder: 'rgba(138, 174, 158, 0.32)',
+  accent: '#89b9a4',
+  accentDim: 'rgba(137, 185, 164, 0.56)',
+  accentFaint: 'rgba(137, 185, 164, 0.14)',
+  text: '#e3ece7',
+  textDim: 'rgba(227, 236, 231, 0.82)',
   danger: '#ff3860',
   warn: '#ffd166',
   mp: '#3ec5ff',
@@ -17,7 +17,7 @@ export const cyberPanelSx = {
   backgroundColor: cyberColors.panel,
   border: `1px solid ${cyberColors.panelBorder}`,
   borderRadius: 2.5,
-  boxShadow: '0 0 18px rgba(0, 255, 136, 0.08)',
+  boxShadow: '0 0 20px rgba(0, 0, 0, 0.35)',
 } as const
 
 export const cyberButtonSx = {
@@ -27,12 +27,12 @@ export const cyberButtonSx = {
     px: 2.5,
     fontWeight: 800,
     letterSpacing: '0.08em',
-    color: '#031007',
+    color: '#0a0d0c',
     background: cyberColors.accent,
-    boxShadow: '0 0 14px rgba(0, 255, 136, 0.45)',
+    boxShadow: '0 0 12px rgba(137, 185, 164, 0.3)',
   },
-  '&&:hover': { background: '#33ffa1', boxShadow: '0 0 18px rgba(0, 255, 136, 0.6)' },
-  '&&.Mui-disabled': { background: 'rgba(0, 255, 136, 0.16)', color: 'rgba(214, 255, 233, 0.38)', boxShadow: 'none' },
+  '&&:hover': { background: '#9fcab7', boxShadow: '0 0 16px rgba(137, 185, 164, 0.4)' },
+  '&&.Mui-disabled': { background: 'rgba(137, 185, 164, 0.2)', color: 'rgba(227, 236, 231, 0.38)', boxShadow: 'none' },
 } as const
 
 export const cyberOutlinedButtonSx = {
@@ -47,7 +47,7 @@ export const cyberOutlinedButtonSx = {
     boxShadow: 'none',
   },
   '&&:hover': { background: cyberColors.accentFaint, border: `1px solid ${cyberColors.accent}` },
-  '&&.Mui-disabled': { color: 'rgba(214, 255, 233, 0.3)', border: '1px solid rgba(0, 255, 136, 0.16)' },
+  '&&.Mui-disabled': { color: 'rgba(227, 236, 231, 0.3)', border: '1px solid rgba(137, 185, 164, 0.2)' },
 } as const
 
 export const cyberDangerButtonSx = {

@@ -1,7 +1,7 @@
 {
-  "title": "ペットバトル",
-  "subtitle": "PET BATTLE ARENA",
-  "backToPets": "ペット一覧へ戻る",
+  "title": "にせもんバトル",
+  "subtitle": "NISEMON BATTLE ARENA",
+  "backToPets": "戻る",
   "sessionInfoMissing": "セッション情報が見つかりません。再ログインしてください。",
   "authLoading": "認証情報を確認中…",
   "statusLoading": "対戦状況を確認中…",

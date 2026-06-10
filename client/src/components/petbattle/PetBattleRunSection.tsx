@@ -91,7 +91,7 @@ function FieldGrid({
                       height: '100%',
                       minHeight: 56,
                       borderRadius: 2,
-                      border: `1px dashed rgba(0, 255, 136, 0.12)`,
+                      border: `1px dashed ${cyberColors.accentFaint}`,
                     }}
                   />
                 )}
@@ -296,7 +296,7 @@ export default function PetBattleRunSection({
                             fontWeight: 700,
                           },
                           '& .MuiToggleButton-root.Mui-selected': {
-                            color: '#031007',
+                            color: '#0a0d0c',
                             backgroundColor: cyberColors.accent,
                             '&:hover': { backgroundColor: cyberColors.accent },
                           },

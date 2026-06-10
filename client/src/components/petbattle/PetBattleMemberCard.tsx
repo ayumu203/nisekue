@@ -107,7 +107,7 @@ export default function PetBattleMemberCard({
               sx={{
                 height: { xs: 40, sm: 56 },
                 objectFit: 'contain',
-                filter: member.isDead ? 'grayscale(1)' : 'drop-shadow(0 0 6px rgba(0, 255, 136, 0.25))',
+                filter: member.isDead ? 'grayscale(1)' : `drop-shadow(0 0 6px ${cyberColors.accentDim})`,
               }}
             />
           ) : null}

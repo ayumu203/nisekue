@@ -359,6 +359,8 @@ export default function PetBattle() {
   }
 
   const displayStats = stats ?? defaultStats
+  const decidedBattles = displayStats.wins + displayStats.losses
+  const winRateLabel = decidedBattles > 0 ? `${((displayStats.wins / decidedBattles) * 100).toFixed(1)}%` : '--'
   const showLoading = isLoading || (session != null && !hasRecovered)
   const showEntry = !showLoading && currentRoom == null && currentRun == null
   const showLobby = !showLoading && currentRoom != null && currentRun == null
@@ -366,115 +368,145 @@ export default function PetBattle() {
   const showResult = !showLoading && currentRun != null && currentRun.status !== 'InProgress'
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: cyberColors.bg }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: 'var(--app-bg-color)' }}>
       <Container maxWidth="md" sx={{ px: { xs: 1, sm: 3 }, py: { xs: 1.5, sm: 4 } }}>
-        <Stack spacing={2}>
-          <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.5, sm: 2 } }}>
-            <Stack spacing={1}>
-              <Stack direction="row" spacing={1} alignItems="flex-start" justifyContent="space-between">
-                <Stack spacing={0.25}>
-                  <Typography
-                    variant="overline"
-                    sx={{ color: cyberColors.accentDim, letterSpacing: '0.22em', lineHeight: 1.2 }}
-                  >
-                    {locale.subtitle}
-                  </Typography>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      color: cyberColors.accent,
-                      fontWeight: 900,
-                      letterSpacing: '0.08em',
-                      textShadow: `0 0 14px ${cyberColors.accentDim}`,
-                    }}
-                  >
-                    {locale.title}
-                  </Typography>
+        <Box
+          sx={{
+            backgroundColor: cyberColors.bg,
+            borderRadius: 3,
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            px: { xs: 1, sm: 2 },
+            py: { xs: 1.5, sm: 2 },
+          }}
+        >
+          <Stack spacing={2}>
+            <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.5, sm: 2 } }}>
+              <Stack spacing={0}>
+                <Stack direction="row" spacing={1} alignItems="flex-start" justifyContent="space-between">
+                  <Stack spacing={0.25}>
+                    <Typography
+                      variant="overline"
+                      sx={{ color: cyberColors.accentDim, letterSpacing: '0.22em', lineHeight: 1.2 }}
+                    >
+                      {locale.subtitle}
+                    </Typography>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        color: cyberColors.accent,
+                        fontWeight: 900,
+                        letterSpacing: '0.06em',
+                        textShadow: `0 0 14px ${cyberColors.accentDim}`,
+                        fontSize: { xs: '1.65rem', sm: '2rem' },
+                      }}
+                    >
+                      {locale.title}
+                    </Typography>
+                  </Stack>
+                  <Button onClick={() => navigate('/pets')} sx={cyberOutlinedButtonSx}>
+                    {locale.backToPets}
+                  </Button>
                 </Stack>
-                <Button onClick={() => navigate('/pets')} sx={cyberOutlinedButtonSx}>
-                  {locale.backToPets}
-                </Button>
-              </Stack>
 
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip
-                  label={`${locale.ratingLabel}: ${displayStats.rating}`}
-                  sx={{ color: cyberColors.accent, backgroundColor: cyberColors.accentFaint, fontWeight: 800 }}
-                />
-                <Chip
-                  label={`${displayStats.wins}${locale.winsLabel} ${displayStats.losses}${locale.lossesLabel}`}
-                  sx={{ color: cyberColors.text, backgroundColor: 'rgba(255, 255, 255, 0.06)', fontWeight: 700 }}
-                />
-                <Chip
-                  label={`${locale.totalBattlesLabel}: ${displayStats.totalBattles}`}
-                  sx={{ color: cyberColors.textDim, backgroundColor: 'rgba(255, 255, 255, 0.06)' }}
-                />
-              </Stack>
-            </Stack>
-          </Paper>
-
-          {error ? (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          ) : null}
-          {runError instanceof Error ? <Alert severity="warning">{runError.message}</Alert> : null}
-
-          {showLoading ? (
-            <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ py: 6 }}>
-              <CircularProgress size={20} sx={{ color: cyberColors.accent }} />
-              <Typography sx={{ color: cyberColors.textDim }}>
-                {isLoading ? locale.authLoading : locale.statusLoading}
-              </Typography>
-            </Stack>
-          ) : null}
-
-          {showEntry ? (
-            <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 2, sm: 3 } }}>
-              <Stack spacing={2} alignItems="center">
-                <Typography variant="body2" sx={{ color: cyberColors.textDim, textAlign: 'center' }}>
-                  {locale.entryDescription}
-                </Typography>
-                <Button onClick={() => void handleMatch()} disabled={isMatching} sx={cyberButtonSx}>
-                  {isMatching ? locale.finding : locale.findOpponent}
-                </Button>
+                <Box sx={{ mt: '24px' }}>
+                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                    <Chip
+                      label={`RATING ${displayStats.rating}`}
+                      sx={{
+                        color: cyberColors.text,
+                        backgroundColor: 'rgba(137, 185, 164, 0.22)',
+                        fontWeight: 900,
+                        border: `1px solid ${cyberColors.accentDim}`,
+                      }}
+                    />
+                    <Chip
+                      label={`TOTAL ${displayStats.totalBattles}`}
+                      sx={{
+                        color: cyberColors.text,
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        fontWeight: 800,
+                        border: `1px solid ${cyberColors.panelBorder}`,
+                      }}
+                    />
+                    <Chip
+                      label={`WIN RATE ${winRateLabel}`}
+                      sx={{
+                        color: cyberColors.text,
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        fontWeight: 700,
+                        border: `1px solid ${cyberColors.panelBorder}`,
+                      }}
+                    />
+                  </Stack>
+                </Box>
               </Stack>
             </Paper>
-          ) : null}
 
-          {showLobby && currentRoom != null ? (
-            <PetBattleLobbySection
-              room={currentRoom}
-              pets={petsResponse?.pets ?? []}
-              isAssigning={isAssigning}
-              isStarting={isStarting}
-              onAssignSlot={handleAssignSlot}
-              onRemoveSlot={handleRemoveSlot}
-              onStartBattle={handleStartBattle}
-            />
-          ) : null}
+            {error ? (
+              <Alert severity="error" onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            ) : null}
+            {runError instanceof Error ? <Alert severity="warning">{runError.message}</Alert> : null}
 
-          {showRun && currentRun != null ? (
-            <PetBattleRunSection
-              run={currentRun}
-              drafts={drafts}
-              isSubmitting={isSubmitting}
-              isAborting={isAborting}
-              onDraftChange={handleDraftChange}
-              onConfirmCommands={handleConfirmCommands}
-              onAbort={handleAbort}
-            />
-          ) : null}
+            {showLoading ? (
+              <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ py: 6 }}>
+                <CircularProgress size={20} sx={{ color: cyberColors.accent }} />
+                <Typography sx={{ color: cyberColors.text }}>
+                  {isLoading ? locale.authLoading : locale.statusLoading}
+                </Typography>
+              </Stack>
+            ) : null}
 
-          {showResult && currentRun != null ? (
-            <PetBattleResultPanel
-              run={currentRun}
-              stats={stats ?? null}
-              ratingChange={stats != null && startRatingRef.current != null ? stats.rating - startRatingRef.current : null}
-              onBackToPets={() => navigate('/pets')}
-            />
-          ) : null}
-        </Stack>
+            {showEntry ? (
+              <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 2, sm: 3 } }}>
+                <Stack spacing={2} alignItems="center">
+                  <Typography variant="body2" sx={{ color: cyberColors.text, textAlign: 'center' }}>
+                    {locale.entryDescription}
+                  </Typography>
+                  <Button onClick={() => void handleMatch()} disabled={isMatching} sx={cyberButtonSx}>
+                    {isMatching ? locale.finding : locale.findOpponent}
+                  </Button>
+                </Stack>
+              </Paper>
+            ) : null}
+
+            {showLobby && currentRoom != null ? (
+              <PetBattleLobbySection
+                room={currentRoom}
+                pets={petsResponse?.pets ?? []}
+                isAssigning={isAssigning}
+                isStarting={isStarting}
+                onAssignSlot={handleAssignSlot}
+                onRemoveSlot={handleRemoveSlot}
+                onStartBattle={handleStartBattle}
+              />
+            ) : null}
+
+            {showRun && currentRun != null ? (
+              <PetBattleRunSection
+                run={currentRun}
+                drafts={drafts}
+                isSubmitting={isSubmitting}
+                isAborting={isAborting}
+                onDraftChange={handleDraftChange}
+                onConfirmCommands={handleConfirmCommands}
+                onAbort={handleAbort}
+              />
+            ) : null}
+
+            {showResult && currentRun != null ? (
+              <PetBattleResultPanel
+                run={currentRun}
+                stats={stats ?? null}
+                ratingChange={
+                  stats != null && startRatingRef.current != null ? stats.rating - startRatingRef.current : null
+                }
+                onBackToPets={() => navigate('/pets')}
+              />
+            ) : null}
+          </Stack>
+        </Box>
       </Container>
     </Box>
   )
