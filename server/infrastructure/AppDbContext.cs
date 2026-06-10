@@ -11,6 +11,7 @@ using server.infrastructure.player;
 using server.infrastructure.quest.room;
 using server.infrastructure.quest.run;
 using server.infrastructure.ranking;
+using server.infrastructure.pet_battle;
 using server.infrastructure.treasuremap;
 
 namespace server.infrastructure;
@@ -49,6 +50,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<QuestTurnCommandEntity> QuestTurnCommands => Set<QuestTurnCommandEntity>();
     public DbSet<QuestFloorTrapEntity> QuestFloorTraps => Set<QuestFloorTrapEntity>();
     public DbSet<QuestRewardSummaryEntity> QuestRewardSummaries => Set<QuestRewardSummaryEntity>();
+    public DbSet<PlayerPetBattleStatsEntity> PlayerPetBattleStats => Set<PlayerPetBattleStatsEntity>();
+    public DbSet<PetBattleRoomEntity> PetBattleRooms => Set<PetBattleRoomEntity>();
+    public DbSet<PetBattleRunEntity> PetBattleRuns => Set<PetBattleRunEntity>();
+    public DbSet<PetBattleTurnCommandEntity> PetBattleTurnCommands => Set<PetBattleTurnCommandEntity>();
     public DbSet<TreasureMapExpeditionEntity> TreasureMapExpeditions => Set<TreasureMapExpeditionEntity>();
     public DbSet<TreasureMapClaimHistoryEntity> TreasureMapClaimHistories => Set<TreasureMapClaimHistoryEntity>();
     public DbSet<RankingSnapshotEntity> RankingSnapshots => Set<RankingSnapshotEntity>();
@@ -121,6 +126,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("training_cooldown_until");
         player.Property(x => x.QuestCooldownUntil)
             .HasColumnName("quest_cooldown_until");
+        player.Property(x => x.PetBattleCooldownUntil)
+            .HasColumnName("pet_battle_cooldown_until");
         player.Property(x => x.ExpMultiplierFlags)
             .HasColumnName("exp_multiplier_flags")
             .HasDefaultValue(0)
@@ -674,6 +681,71 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         rankingEntry.HasOne<PlayerEntity>()
             .WithMany()
             .HasForeignKey(x => x.PlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        var petBattleStats = modelBuilder.Entity<PlayerPetBattleStatsEntity>();
+        petBattleStats.ToTable("player_pet_battle_stats", "internal");
+        petBattleStats.HasKey(x => x.PlayerId);
+        petBattleStats.Property(x => x.PlayerId).HasColumnName("player_id").HasColumnType("uuid").IsRequired();
+        petBattleStats.Property(x => x.Rating).HasColumnName("rating").HasDefaultValue(1000).IsRequired();
+        petBattleStats.Property(x => x.Wins).HasColumnName("wins").HasDefaultValue(0).IsRequired();
+        petBattleStats.Property(x => x.Losses).HasColumnName("losses").HasDefaultValue(0).IsRequired();
+        petBattleStats.Property(x => x.TotalBattles).HasColumnName("total_battles").HasDefaultValue(0).IsRequired();
+        petBattleStats.Property(x => x.UpdatedAt).HasColumnName("updated_at").IsRequired();
+        petBattleStats.HasOne<PlayerEntity>()
+            .WithOne()
+            .HasForeignKey<PlayerPetBattleStatsEntity>(x => x.PlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        var petBattleRoom = modelBuilder.Entity<PetBattleRoomEntity>();
+        petBattleRoom.ToTable("pet_battle_rooms", "internal");
+        petBattleRoom.HasKey(x => x.Id);
+        petBattleRoom.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        petBattleRoom.Property(x => x.OwnerPlayerId).HasColumnName("owner_player_id").HasColumnType("uuid").IsRequired();
+        petBattleRoom.Property(x => x.OpponentPlayerId).HasColumnName("opponent_player_id").HasColumnType("uuid").IsRequired();
+        petBattleRoom.Property(x => x.Status).HasColumnName("status").IsRequired();
+        petBattleRoom.Property(x => x.Version).HasColumnName("version").IsRequired();
+        petBattleRoom.Property(x => x.CloseReason).HasColumnName("close_reason");
+        petBattleRoom.Property(x => x.SlotsJson).HasColumnName("slots_json").HasColumnType("jsonb").IsRequired();
+        petBattleRoom.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
+        petBattleRoom.Property(x => x.ClosedAt).HasColumnName("closed_at");
+
+        var petBattleRun = modelBuilder.Entity<PetBattleRunEntity>();
+        petBattleRun.ToTable("pet_battle_runs", "internal");
+        petBattleRun.HasKey(x => x.Id);
+        petBattleRun.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        petBattleRun.Property(x => x.RoomId).HasColumnName("room_id").HasColumnType("uuid").IsRequired();
+        petBattleRun.HasIndex(x => x.RoomId).IsUnique();
+        petBattleRun.Property(x => x.OwnerPlayerId).HasColumnName("owner_player_id").HasColumnType("uuid").IsRequired();
+        petBattleRun.Property(x => x.OpponentPlayerId).HasColumnName("opponent_player_id").HasColumnType("uuid").IsRequired();
+        petBattleRun.Property(x => x.Status).HasColumnName("status").IsRequired();
+        petBattleRun.Property(x => x.CurrentTurnNo).HasColumnName("current_turn_no").IsRequired();
+        petBattleRun.Property(x => x.ActionDeadlineAt).HasColumnName("action_deadline_at").IsRequired();
+        petBattleRun.Property(x => x.LastResolvedTurnNo).HasColumnName("last_resolved_turn_no");
+        petBattleRun.Property(x => x.OwnerSnapshotsJson).HasColumnName("owner_snapshots_json").HasColumnType("jsonb").IsRequired();
+        petBattleRun.Property(x => x.OpponentSnapshotsJson).HasColumnName("opponent_snapshots_json").HasColumnType("jsonb").IsRequired();
+        petBattleRun.Property(x => x.OwnerMembersJson).HasColumnName("owner_members_json").HasColumnType("jsonb").IsRequired();
+        petBattleRun.Property(x => x.OpponentMembersJson).HasColumnName("opponent_members_json").HasColumnType("jsonb").IsRequired();
+        petBattleRun.Property(x => x.LastTurnResultsJson).HasColumnName("last_turn_results_json").HasColumnType("jsonb");
+        petBattleRun.Property(x => x.WinnerPlayerId).HasColumnName("winner_player_id").HasColumnType("uuid");
+        petBattleRun.Property(x => x.StartedAt).HasColumnName("started_at").IsRequired();
+        petBattleRun.Property(x => x.EndedAt).HasColumnName("ended_at");
+
+        var petBattleTurnCommand = modelBuilder.Entity<PetBattleTurnCommandEntity>();
+        petBattleTurnCommand.ToTable("pet_battle_turn_commands", "internal");
+        petBattleTurnCommand.HasKey(x => new { x.RunId, x.TurnNo, x.ParticipantId });
+        petBattleTurnCommand.Property(x => x.RunId).HasColumnName("run_id").HasColumnType("uuid").IsRequired();
+        petBattleTurnCommand.Property(x => x.TurnNo).HasColumnName("turn_no").IsRequired();
+        petBattleTurnCommand.Property(x => x.ParticipantId).HasColumnName("participant_id").HasColumnType("uuid").IsRequired();
+        petBattleTurnCommand.Property(x => x.ActionKind).HasColumnName("action_kind").IsRequired();
+        petBattleTurnCommand.Property(x => x.MoveId).HasColumnName("move_id");
+        petBattleTurnCommand.Property(x => x.TargetRow).HasColumnName("target_row");
+        petBattleTurnCommand.Property(x => x.TargetColumn).HasColumnName("target_column");
+        petBattleTurnCommand.Property(x => x.SubmittedAt).HasColumnName("submitted_at").IsRequired();
+        petBattleTurnCommand.Property(x => x.IsAutoSubmitted).HasColumnName("is_auto_submitted").IsRequired();
+        petBattleTurnCommand.HasOne<PetBattleRunEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.RunId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
