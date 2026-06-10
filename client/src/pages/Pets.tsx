@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useSWR from 'swr'
 import { clearStandbyPet, getPets, releasePet, standbyPet, trainPet } from '@/api/pet'
-import { getPetBattleStats } from '@/api/petBattle'
+import { getPetBattleStats, matchPetBattle } from '@/api/petBattle'
 import { getPlayer } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { ControlFrame } from '@/components/items/ItemsLayout'
@@ -26,20 +26,45 @@ const petFrameSx = {
 } as const
 
 const petTrainButtonSx = {
-  '&&': { borderRadius: 2, minHeight: 38, background: '#a02838', color: '#ffffff', boxShadow: 'none' },
-  '&&:hover': { background: '#882030', boxShadow: 'none' },
+  '&&': {
+    borderRadius: 2,
+    minHeight: 38,
+    background: '#a02838',
+    color: '#ffffff',
+    boxShadow: 'none',
+    transition: 'none',
+  },
+  '&&:hover': { background: '#a02838', boxShadow: 'none' },
 } as const
 
 const petStandbyButtonSx = {
   '&&': {
     borderRadius: 2,
     minHeight: 38,
-    background: 'rgba(255,255,255,0.12)',
-    color: '#ffffff',
-    border: '1px solid rgba(255,255,255,0.28)',
+    background: '#f3d9de',
+    color: '#5c1320',
+    border: '1px solid #f9ebee',
+    fontWeight: 800,
     boxShadow: 'none',
   },
-  '&&:hover': { background: 'rgba(255,255,255,0.2)', boxShadow: 'none' },
+  '&&:hover': { background: '#fae9ed', boxShadow: 'none' },
+} as const
+
+const petReleaseButtonSx = {
+  '&&': {
+    borderRadius: 2,
+    minHeight: 34,
+    color: '#ffffff',
+    borderColor: '#9a1f30',
+    backgroundColor: '#b83040',
+    boxShadow: 'none',
+    transition: 'none',
+  },
+  '&&:hover': {
+    borderColor: '#9a1f30',
+    backgroundColor: '#b83040',
+    boxShadow: 'none',
+  },
 } as const
 
 const petCardSx = {
@@ -78,6 +103,7 @@ export default function Pets() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [busyPetId, setBusyPetId] = useState<string | null>(null)
+  const [isEnteringBattle, setIsEnteringBattle] = useState(false)
 
   const petsSWRKey = session?.user.id ? (['pets', session.user.id] as const) : null
   const {
@@ -167,8 +193,29 @@ export default function Pets() {
     })
   }
 
+  async function handleEnterPetBattle(): Promise<void> {
+    if (!session?.access_token) {
+      setActionError(locale.sessionInfoMissing)
+      return
+    }
+
+    setActionError(null)
+    setIsEnteringBattle(true)
+
+    try {
+      await matchPetBattle(session.access_token)
+      navigate('/pet-battle')
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : locale.actionFailed)
+    } finally {
+      setIsEnteringBattle(false)
+    }
+  }
+
   const trainingCostGold = petsResponse?.trainingCostGold ?? 100000
   const canAffordTraining = player != null && player.gold >= trainingCostGold
+  const decidedBattles = (battleStats?.wins ?? 0) + (battleStats?.losses ?? 0)
+  const winRateLabel = decidedBattles > 0 ? `${(((battleStats?.wins ?? 0) / decidedBattles) * 100).toFixed(1)}%` : '--'
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 6 } }}>
@@ -279,22 +326,19 @@ export default function Pets() {
                   <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
                     <Chip
                       size="small"
-                      label={`${locale.battleRatingLabel}: ${battleStats?.rating ?? 1000}`}
+                      label={`RATING ${battleStats?.rating ?? 1000}`}
                       sx={{ backgroundColor: pokeRed, color: '#ffffff', fontWeight: 700 }}
                     />
-                    <Chip
-                      size="small"
-                      label={`${battleStats?.wins ?? 0}${locale.battleWinsSuffix} ${battleStats?.losses ?? 0}${locale.battleLossesSuffix}`}
-                    />
-                    <Chip size="small" label={`${locale.battleTotalLabel}: ${battleStats?.totalBattles ?? 0}`} />
+                    <Chip size="small" label={`TOTAL ${battleStats?.totalBattles ?? 0}`} />
+                    <Chip size="small" label={`WIN RATE ${winRateLabel}`} />
                   </Stack>
                   <Button
                     variant="contained"
-                    disabled={petsResponse == null || petsResponse.pets.length === 0}
-                    onClick={() => navigate('/pet-battle')}
+                    disabled={petsResponse == null || petsResponse.pets.length === 0 || isEnteringBattle}
+                    onClick={() => void handleEnterPetBattle()}
                     sx={petTrainButtonSx}
                   >
-                    {locale.battleButton}
+                    {isEnteringBattle ? locale.battleMatching : locale.battleButton}
                   </Button>
                   {petsResponse != null && petsResponse.pets.length === 0 ? (
                     <Typography variant="caption" sx={{ color: '#5b4523' }}>
@@ -395,6 +439,7 @@ export default function Pets() {
                                   variant="outlined"
                                   disabled={isBusy}
                                   onClick={() => void handleRelease(pet)}
+                                  sx={petReleaseButtonSx}
                                 >
                                   {locale.release}
                                 </Button>

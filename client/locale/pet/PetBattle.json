@@ -63,7 +63,7 @@
     "defeatedText": "を倒した！",
     "effectSuffix": "を受けた"
   },
-  "resultTitle": { "OwnerWon": "勝利！", "OpponentWon": "敗北…", "Aborted": "降参（敗北扱い）" },
+  "resultTitle": { "OwnerWon": "You win!", "OpponentWon": "You lose...", "Aborted": "降参（敗北扱い）" },
   "ratingChangeLabel": "レート変動",
   "ratingChange": { "OwnerWon": "+10", "OpponentWon": "-5", "Aborted": "-5" },
   "resultRatingLabel": "現在のレート"

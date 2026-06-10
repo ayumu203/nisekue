@@ -1,8 +1,9 @@
-import { Alert, Box, Button, Chip, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useSWR from 'swr'
 import { getPets } from '@/api/pet'
+import { getPlayer } from '@/api/player'
 import {
   abortPetBattle,
   assignPetBattleSlot,
@@ -17,7 +18,7 @@ import {
 import PetBattleLobbySection from '@/components/petbattle/PetBattleLobbySection'
 import PetBattleResultPanel from '@/components/petbattle/PetBattleResultPanel'
 import PetBattleRunSection from '@/components/petbattle/PetBattleRunSection'
-import { cyberButtonSx, cyberColors, cyberDangerButtonSx, cyberPanelSx } from '@/components/petbattle/petBattleStyles'
+import { cyberColors, cyberDangerButtonSx, cyberPanelSx } from '@/components/petbattle/petBattleStyles'
 import {
   getReachableOpponents,
   getTargetCandidates,
@@ -28,8 +29,6 @@ import {
 import { useAuth } from '@/contexts/useAuth'
 import locale from '../../locale/pet/PetBattle.json'
 import type { BattleColumn, BattleRow, PetBattleRoom, PetBattleRun } from '@/schema/petBattle'
-
-const defaultStats = { rating: 1000, wins: 0, losses: 0, totalBattles: 0 }
 
 export default function PetBattle() {
   const { session, isLoading } = useAuth()
@@ -87,6 +86,15 @@ export default function PetBattle() {
     }
 
     return getPetBattleStats(session.access_token)
+  })
+
+  const playerSWRKey = session?.user.id ? (['pet-battle-player', session.user.id] as const) : null
+  const { data: player } = useSWR(playerSWRKey, async () => {
+    if (!session?.access_token) {
+      return null
+    }
+
+    return getPlayer(session.access_token)
   })
 
   const runSWRKey = session?.access_token && startedRun?.runId ? (['pet-battle-run', startedRun.runId] as const) : null
@@ -358,15 +366,19 @@ export default function PetBattle() {
     }
   }
 
-  const displayStats = stats ?? defaultStats
-  const decidedBattles = displayStats.wins + displayStats.losses
-  const winRateLabel = decidedBattles > 0 ? `${((displayStats.wins / decidedBattles) * 100).toFixed(1)}%` : '--'
   const showLoading = isLoading || (session != null && !hasRecovered)
   const showEntry = !showLoading && currentRoom == null && currentRun == null
   const showLobby = !showLoading && currentRoom != null && currentRun == null
   const showRun = !showLoading && currentRun != null && currentRun.status === 'InProgress'
   const showResult = !showLoading && currentRun != null && currentRun.status !== 'InProgress'
-  const showStatsChips = !showRun
+
+  useEffect(() => {
+    if (!showEntry || isMatching || error != null || !session?.access_token) {
+      return
+    }
+
+    void handleMatch()
+  }, [showEntry, isMatching, error, session?.access_token])
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'var(--app-bg-color)' }}>
@@ -414,40 +426,6 @@ export default function PetBattle() {
                     </Button>
                   ) : null}
                 </Stack>
-
-                {showStatsChips ? (
-                  <Box sx={{ mt: '24px' }}>
-                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                      <Chip
-                        label={`RATING ${displayStats.rating}`}
-                        sx={{
-                          color: cyberColors.text,
-                          backgroundColor: 'rgba(137, 185, 164, 0.22)',
-                          fontWeight: 900,
-                          border: `1px solid ${cyberColors.accentDim}`,
-                        }}
-                      />
-                      <Chip
-                        label={`TOTAL ${displayStats.totalBattles}`}
-                        sx={{
-                          color: cyberColors.text,
-                          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                          fontWeight: 800,
-                          border: `1px solid ${cyberColors.panelBorder}`,
-                        }}
-                      />
-                      <Chip
-                        label={`WIN RATE ${winRateLabel}`}
-                        sx={{
-                          color: cyberColors.text,
-                          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                          fontWeight: 700,
-                          border: `1px solid ${cyberColors.panelBorder}`,
-                        }}
-                      />
-                    </Stack>
-                  </Box>
-                ) : null}
               </Stack>
             </Paper>
 
@@ -468,16 +446,10 @@ export default function PetBattle() {
             ) : null}
 
             {showEntry ? (
-              <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 2, sm: 3 } }}>
-                <Stack spacing={2} alignItems="center">
-                  <Typography variant="body2" sx={{ color: cyberColors.text, textAlign: 'center' }}>
-                    {locale.entryDescription}
-                  </Typography>
-                  <Button onClick={() => void handleMatch()} disabled={isMatching} sx={cyberButtonSx}>
-                    {isMatching ? locale.finding : locale.findOpponent}
-                  </Button>
-                </Stack>
-              </Paper>
+              <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ py: 6 }}>
+                <CircularProgress size={20} sx={{ color: cyberColors.accent }} />
+                <Typography sx={{ color: cyberColors.text }}>{locale.finding}</Typography>
+              </Stack>
             ) : null}
 
             {showLobby && currentRoom != null ? (
@@ -505,6 +477,8 @@ export default function PetBattle() {
             {showResult && currentRun != null ? (
               <PetBattleResultPanel
                 run={currentRun}
+                ownerImagePath={player?.imagePath ?? null}
+                ownerName={player?.userName ?? null}
                 stats={stats ?? null}
                 ratingChange={
                   stats != null && startRatingRef.current != null ? stats.rating - startRatingRef.current : null
