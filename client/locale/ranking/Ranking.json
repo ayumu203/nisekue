@@ -27,6 +27,7 @@
     "statusLuckTop": "運 Top10",
     "statusSpeedTop": "素早さ Top10",
     "rebirthCountTop": "転生回数 Top10",
+    "petBattleRatingTop": "ペットバトルレート Top10",
     "questClearByCombatRank": "戦闘指数別 クエストクリア Top5",
     "trainingBattleByCombatRank": "戦闘指数別 討伐数 Top5",
     "treasureMapUsageByCombatRank": "戦闘指数別 宝の地図使用回数 Top5"
