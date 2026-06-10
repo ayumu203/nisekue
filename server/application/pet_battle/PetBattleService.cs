@@ -23,7 +23,8 @@ public class PetBattleService(
     IMoveRepository moveRepository,
     PetBattleSnapshotFactory snapshotFactory,
     PetBattleRunFactory runFactory,
-    BattleService battleService)
+    BattleService battleService,
+    ILogger<PetBattleService> logger)
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(PetBattleConstants.TurnDeadlineSeconds);
     private static readonly TimeSpan Cooldown = TimeSpan.FromMinutes(PetBattleConstants.CooldownMinutes);
@@ -209,9 +210,7 @@ public class PetBattleService(
         run.Abort(now);
         await runRepository.SaveAsync(run);
 
-        var ownerStats = await GetOrCreateStatsAsync(run.OwnerPlayerId, now);
-        ownerStats.ApplyLoss(now);
-        await statsRepository.UpsertAsync(ownerStats);
+        await statsRepository.ApplyOutcomeAsync(run.OwnerPlayerId, isWin: false, now);
 
         var owner = await playerRepository.GetPlayerAsync(run.OwnerPlayerId);
         if (owner is not null)
@@ -234,17 +233,24 @@ public class PetBattleService(
         var updatedRuns = new List<PetBattleRun>();
         foreach (var run in expiredRuns)
         {
-            run.SwitchToAutoActionForTimeout(now);
-            var resolved = await TryResolveTurnAsync(run);
-            if (resolved)
+            try
             {
-                await runRepository.SaveAsync(run);
-                if (run.IsFinished)
+                run.SwitchToAutoActionForTimeout(now);
+                var resolved = await TryResolveTurnAsync(run);
+                if (resolved)
                 {
-                    await UpdateStatsAsync(run);
-                }
+                    await runRepository.SaveAsync(run);
+                    if (run.IsFinished)
+                    {
+                        await UpdateStatsAsync(run);
+                    }
 
-                updatedRuns.Add(run);
+                    updatedRuns.Add(run);
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogError(ex, "Failed to process expired pet battle run. runId={RunId}", run.Id.Value);
             }
         }
 
@@ -352,7 +358,7 @@ public class PetBattleService(
                 availableMoves.Add(await GetOrLoadMoveAsync(moveId, movesById));
             }
 
-            actions.Add(_enemyPolicy.SelectAction(snapshot, run.OwnerMemberStates, run.OwnerSnapshots, availableMoves));
+            actions.Add(_enemyPolicy.SelectAction(snapshot, member, run.OwnerMemberStates, availableMoves));
         }
 
         return (actions.ToArray(), movesById.Values.ToArray());
@@ -466,22 +472,16 @@ public class PetBattleService(
     {
         var now = DateTimeOffset.UtcNow;
 
-        var ownerStats = await GetOrCreateStatsAsync(run.OwnerPlayerId, now);
-        var opponentStats = await GetOrCreateStatsAsync(run.OpponentPlayerId, now);
-
         if (run.WinnerPlayerId == run.OwnerPlayerId)
         {
-            ownerStats.ApplyWin(now);
-            opponentStats.ApplyLoss(now);
+            await statsRepository.ApplyOutcomeAsync(run.OwnerPlayerId, isWin: true, now);
+            await statsRepository.ApplyOutcomeAsync(run.OpponentPlayerId, isWin: false, now);
         }
         else if (run.WinnerPlayerId == run.OpponentPlayerId)
         {
-            ownerStats.ApplyLoss(now);
-            opponentStats.ApplyWin(now);
+            await statsRepository.ApplyOutcomeAsync(run.OwnerPlayerId, isWin: false, now);
+            await statsRepository.ApplyOutcomeAsync(run.OpponentPlayerId, isWin: true, now);
         }
-
-        await statsRepository.UpsertAsync(ownerStats);
-        await statsRepository.UpsertAsync(opponentStats);
 
         var owner = await playerRepository.GetPlayerAsync(run.OwnerPlayerId);
         if (owner is not null)
@@ -489,12 +489,6 @@ public class PetBattleService(
             owner.SetPetBattleCooldownUntil(now.Add(Cooldown));
             await playerRepository.SaveAsync(owner);
         }
-    }
-
-    private async Task<PlayerPetBattleStats> GetOrCreateStatsAsync(PlayerId playerId, DateTimeOffset now)
-    {
-        return await statsRepository.GetByPlayerIdAsync(playerId)
-            ?? PlayerPetBattleStats.CreateInitial(playerId, now);
     }
 
     private static void EnsureOwner(PetBattleRoom room, PlayerId playerId)

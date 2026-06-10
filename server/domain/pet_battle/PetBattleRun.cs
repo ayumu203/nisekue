@@ -19,7 +19,8 @@ public class PetBattleRun(
     DateTimeOffset startedAt,
     PetBattleRunStatus status = PetBattleRunStatus.InProgress,
     DateTimeOffset? endedAt = null,
-    PlayerId? winnerPlayerId = null)
+    PlayerId? winnerPlayerId = null,
+    int version = 1)
 {
     private readonly PetBattlePartyMemberSnapshot[] ownerSnapshots = ownerSnapshots?.ToArray()
         ?? throw new ArgumentNullException(nameof(ownerSnapshots));
@@ -32,6 +33,7 @@ public class PetBattleRun(
 
     public PetBattleRunId Id { get; } = id;
     public PetBattleRoomId RoomId { get; } = roomId;
+    public int Version { get; private set; } = version;
     public PlayerId OwnerPlayerId { get; } = ownerPlayerId;
     public PlayerId OpponentPlayerId { get; } = opponentPlayerId;
     public IReadOnlyList<PetBattlePartyMemberSnapshot> OwnerSnapshots => ownerSnapshots;
@@ -115,8 +117,15 @@ public class PetBattleRun(
             }
         }
 
+        // タイムアウトで AutoAttackOnly になった手動ペットを次ターン用に Manual に戻す
+        foreach (var member in ownerMemberStates.Where(m => !m.IsDead))
+        {
+            member.RestoreManualMode();
+        }
+
         LastTurnResults = lastTurnResults;
         TurnState.Advance(nextDeadlineAt);
+        Version++;
 
         var ownerAllDead = ownerMemberStates.All(m => m.IsDead);
         var opponentAllDead = opponentMemberStates.All(m => m.IsDead);

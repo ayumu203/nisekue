@@ -33,6 +33,11 @@ public class PetBattlePartyMemberState(
         ActionMode = ActionMode.AutoAttackOnly;
     }
 
+    public void RestoreManualMode()
+    {
+        ActionMode = ActionMode.Manual;
+    }
+
     public void ApplyBattleState(BattleActorState state, int currentTurnNo)
     {
         ArgumentNullException.ThrowIfNull(state);

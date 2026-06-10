@@ -60,20 +60,33 @@ public class DbPetBattleRunRepository(IDbContextFactory<AppDbContext> dbContextF
     public async Task<IReadOnlyList<PetBattleRun>> ListExpiredAsync(DateTimeOffset now)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var runIds = await dbContext.PetBattleRuns
+
+        var entities = await dbContext.PetBattleRuns
             .AsNoTracking()
             .Where(x => x.Status == (int)PetBattleRunStatus.InProgress && x.ActionDeadlineAt <= now)
-            .Select(x => x.Id)
             .ToListAsync();
 
-        var runs = new List<PetBattleRun>(runIds.Count);
-        foreach (var runId in runIds)
+        if (entities.Count == 0)
         {
-            var run = await GetAsync(new PetBattleRunId(runId));
-            if (run is not null) runs.Add(run);
+            return [];
         }
 
-        return runs;
+        var runIds = entities.Select(x => x.Id).ToList();
+        var commandsByRunId = await dbContext.PetBattleTurnCommands
+            .AsNoTracking()
+            .Where(x => runIds.Contains(x.RunId))
+            .GroupBy(x => x.RunId)
+            .ToDictionaryAsync(g => g.Key, g => g.ToList());
+
+        return entities
+            .Select(entity =>
+            {
+                var commands = commandsByRunId.TryGetValue(entity.Id, out var cmds)
+                    ? cmds.Where(c => c.TurnNo == entity.CurrentTurnNo).ToList()
+                    : [];
+                return MapToDomain(entity, commands);
+            })
+            .ToArray();
     }
 
     public async Task SaveAsync(PetBattleRun run)
@@ -96,6 +109,7 @@ public class DbPetBattleRunRepository(IDbContextFactory<AppDbContext> dbContextF
             existing.LastTurnResultsJson = PetBattleJsonSerializer.SerializeLastTurnResults(run.LastTurnResults);
             existing.WinnerPlayerId = run.WinnerPlayerId?.Value;
             existing.EndedAt = run.EndedAt;
+            existing.Version = run.Version;
         }
 
         // Replace current-turn commands
@@ -138,6 +152,7 @@ public class DbPetBattleRunRepository(IDbContextFactory<AppDbContext> dbContextF
         WinnerPlayerId = run.WinnerPlayerId?.Value,
         StartedAt = run.StartedAt,
         EndedAt = run.EndedAt,
+        Version = run.Version,
     };
 
     private static PetBattleRun MapToDomain(PetBattleRunEntity entity, IEnumerable<PetBattleTurnCommandEntity> commandEntities)
@@ -170,6 +185,7 @@ public class DbPetBattleRunRepository(IDbContextFactory<AppDbContext> dbContextF
             entity.StartedAt,
             (PetBattleRunStatus)entity.Status,
             entity.EndedAt,
-            entity.WinnerPlayerId is null ? null : new PlayerId(entity.WinnerPlayerId.Value));
+            entity.WinnerPlayerId is null ? null : new PlayerId(entity.WinnerPlayerId.Value),
+            entity.Version);
     }
 }

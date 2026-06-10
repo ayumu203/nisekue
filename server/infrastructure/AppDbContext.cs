@@ -704,7 +704,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         petBattleRoom.Property(x => x.OwnerPlayerId).HasColumnName("owner_player_id").HasColumnType("uuid").IsRequired();
         petBattleRoom.Property(x => x.OpponentPlayerId).HasColumnName("opponent_player_id").HasColumnType("uuid").IsRequired();
         petBattleRoom.Property(x => x.Status).HasColumnName("status").IsRequired();
-        petBattleRoom.Property(x => x.Version).HasColumnName("version").IsRequired();
+        petBattleRoom.Property(x => x.Version).HasColumnName("version").IsRequired().IsConcurrencyToken();
+        petBattleRoom.HasIndex(x => new { x.OwnerPlayerId, x.Status }).HasDatabaseName("ix_pet_battle_rooms_owner_status");
         petBattleRoom.Property(x => x.CloseReason).HasColumnName("close_reason");
         petBattleRoom.Property(x => x.SlotsJson).HasColumnName("slots_json").HasColumnType("jsonb").IsRequired();
         petBattleRoom.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
@@ -730,6 +731,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         petBattleRun.Property(x => x.WinnerPlayerId).HasColumnName("winner_player_id").HasColumnType("uuid");
         petBattleRun.Property(x => x.StartedAt).HasColumnName("started_at").IsRequired();
         petBattleRun.Property(x => x.EndedAt).HasColumnName("ended_at");
+        petBattleRun.Property(x => x.Version).HasColumnName("version").IsRequired().IsConcurrencyToken();
+        petBattleRun.HasIndex(x => new { x.Status, x.ActionDeadlineAt }).HasDatabaseName("ix_pet_battle_runs_status_deadline");
+        petBattleRun.HasIndex(x => new { x.OwnerPlayerId, x.Status }).HasDatabaseName("ix_pet_battle_runs_owner_status");
 
         var petBattleTurnCommand = modelBuilder.Entity<PetBattleTurnCommandEntity>();
         petBattleTurnCommand.ToTable("pet_battle_turn_commands", "internal");

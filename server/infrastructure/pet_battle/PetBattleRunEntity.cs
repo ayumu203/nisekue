@@ -18,4 +18,5 @@ public class PetBattleRunEntity
     public Guid? WinnerPlayerId { get; set; }
     public DateTimeOffset StartedAt { get; set; }
     public DateTimeOffset? EndedAt { get; set; }
+    public int Version { get; set; } = 1;
 }

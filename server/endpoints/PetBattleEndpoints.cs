@@ -65,6 +65,11 @@ internal static class PetBattleEndpoints
             try
             {
                 var room = await petBattleService.GetRoomAsync(new PetBattleRoomId(roomId));
+                if (room.OwnerPlayerId != playerId.Value && room.OpponentPlayerId != playerId.Value)
+                {
+                    return Results.Forbid();
+                }
+
                 return Results.Ok(MapRoom(room));
             }
             catch (KeyNotFoundException ex)
@@ -172,6 +177,11 @@ internal static class PetBattleEndpoints
             try
             {
                 var run = await petBattleService.GetRunAsync(new PetBattleRunId(runId));
+                if (run.OwnerPlayerId != playerId.Value && run.OpponentPlayerId != playerId.Value)
+                {
+                    return Results.Forbid();
+                }
+
                 return Results.Ok(MapRun(run));
             }
             catch (KeyNotFoundException ex)

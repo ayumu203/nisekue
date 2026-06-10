@@ -10,13 +10,11 @@ public class PetBattleEnemyActionPolicy
 {
     public BattleActionInput SelectAction(
         PetBattlePartyMemberSnapshot opponentSnapshot,
+        PetBattlePartyMemberState opponentMemberState,
         IReadOnlyList<PetBattlePartyMemberState> ownerMemberStates,
-        IReadOnlyList<PetBattlePartyMemberSnapshot> ownerSnapshots,
         IReadOnlyList<Move> availableMoves)
     {
         var actorId = opponentSnapshot.ParticipantId.Value;
-
-        var usableMoves = availableMoves.ToArray();
 
         var livingOwnerIds = ownerMemberStates
             .Where(m => !m.IsDead)
@@ -25,24 +23,35 @@ public class PetBattleEnemyActionPolicy
 
         if (livingOwnerIds.Length == 0)
         {
-            return NormalAttack(actorId, AttackRange.All, TargetType.Enemy);
+            return NormalAttack(actorId);
         }
 
-        if (usableMoves.Length > 0)
+        // MP が足りてダメージを与えられる攻撃系スキルのみ選択
+        var offensiveMoves = availableMoves
+            .Where(m => m.MpCost <= opponentMemberState.CurrentMp
+                && m.Effects.Any(e =>
+                    e.EffectType == MoveEffectType.Damage
+                    || e.EffectType == MoveEffectType.Knockout
+                    || e.EffectType == MoveEffectType.HalveSelfHp))
+            .ToArray();
+
+        if (offensiveMoves.Length > 0)
         {
-            var move = usableMoves[Random.Shared.Next(usableMoves.Length)];
+            var move = offensiveMoves[Random.Shared.Next(offensiveMoves.Length)];
             return new BattleActionInput(
                 actorId,
                 BattleActionKind.UseMove,
                 move.Id.Id,
                 move.TargetType,
                 move.AttackRange,
-                livingOwnerIds.Length > 0 ? [livingOwnerIds[Random.Shared.Next(livingOwnerIds.Length)]] : null);
+                move.TargetType == TargetType.Enemy
+                    ? [livingOwnerIds[Random.Shared.Next(livingOwnerIds.Length)]]
+                    : null);
         }
 
-        return NormalAttack(actorId, AttackRange.All, TargetType.Enemy);
+        return NormalAttack(actorId);
     }
 
-    private static BattleActionInput NormalAttack(Guid actorId, AttackRange range, TargetType targetType) =>
-        new(actorId, BattleActionKind.NormalAttack, null, targetType, range);
+    private static BattleActionInput NormalAttack(Guid actorId) =>
+        new(actorId, BattleActionKind.NormalAttack, null, TargetType.Enemy, AttackRange.Single);
 }
