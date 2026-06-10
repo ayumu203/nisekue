@@ -234,6 +234,7 @@ erDiagram
         int current_hp "NOT NULL"
         int current_mp "NOT NULL"
         boolean is_dead "NOT NULL"
+        boolean is_captured "NOT NULL, DEFAULT FALSE, 捕獲された敵は報酬対象外"
         jsonb active_effects_json "NOT NULL, ailments and buffs"
         jsonb derived_parameters_json "NOT NULL, temporary modifiers"
     }

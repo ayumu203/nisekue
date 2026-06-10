@@ -235,7 +235,15 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             Luck = x.BaseStatus.Luck,
             Speed = x.BaseStatus.Speed,
             MoveSetJson = QuestJsonSerializer.SerializeMoveSet(x.MoveSet),
-            InitialActionMode = (int)x.InitialActionMode
+            InitialActionMode = (int)x.InitialActionMode,
+            PetEnemyDefinitionId = x.Pet?.EnemyDefinitionId.Value,
+            PetMaxHp = x.Pet?.Status.MaxHp,
+            PetMaxMp = x.Pet?.Status.MaxMp,
+            PetStrength = x.Pet?.Status.Strength,
+            PetDefense = x.Pet?.Status.Defense,
+            PetIntelligence = x.Pet?.Status.Intelligence,
+            PetLuck = x.Pet?.Status.Luck,
+            PetSpeed = x.Pet?.Status.Speed
         }));
 
         dbContext.QuestRunPartyMembers.AddRange(run.BattleState.PartyMembers.Select(x =>
@@ -252,6 +260,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                 ActionMode = (int)x.ActionMode,
                 HasLeftQuest = x.HasLeftQuest,
                 IsManualControlRequested = x.IsManualControlRequested,
+                PetSummonsUsed = x.PetSummonsUsed,
                 ActiveEffectsJson = effectsJson,
                 DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder(),
                 UpdatedAt = DateTimeOffset.UtcNow
@@ -272,6 +281,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                 CurrentHp = x.CurrentHp,
                 CurrentMp = x.CurrentMp,
                 IsDead = x.IsDead,
+                IsCaptured = x.IsCaptured,
                 ActiveEffectsJson = effectsJson,
                 DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder()
             };
@@ -314,11 +324,27 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             entity.HasLeftQuest,
             entity.IsManualControlRequested,
             ailments,
-            buffs);
+            buffs,
+            entity.PetSummonsUsed);
     }
 
     private static QuestRunPartyMemberSnapshot MapSnapshot(QuestRunPartySnapshotEntity entity)
     {
+        QuestPetSnapshot? pet = null;
+        if (entity.PetEnemyDefinitionId is not null && entity.PetMaxHp is not null)
+        {
+            pet = new QuestPetSnapshot(
+                new QuestEnemyDefinitionId(entity.PetEnemyDefinitionId.Value),
+                new Status(
+                    entity.PetMaxHp.Value,
+                    entity.PetMaxMp ?? 0,
+                    entity.PetStrength ?? 0,
+                    entity.PetDefense ?? 0,
+                    entity.PetIntelligence ?? 0,
+                    entity.PetLuck ?? 0,
+                    entity.PetSpeed ?? 0));
+        }
+
         return new QuestRunPartyMemberSnapshot(
             new QuestParticipantId(entity.ParticipantId),
             (ParticipantType)entity.ParticipantType,
@@ -337,7 +363,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             entity.ArmorPlayerEquipmentId is null ? null : new PlayerEquipmentId(entity.ArmorPlayerEquipmentId.Value),
             QuestJsonSerializer.DeserializeMoveSet(entity.MoveSetJson),
             new BattlePosition((BattleRow)entity.StartRow, (BattleColumn)entity.StartColumn),
-            (ActionMode)entity.InitialActionMode);
+            (ActionMode)entity.InitialActionMode,
+            pet);
     }
 
     private static QuestEnemyState MapEnemy(QuestRunEnemyEntity entity)
@@ -351,7 +378,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             entity.CurrentMp,
             entity.IsDead,
             ailments,
-            buffs);
+            buffs,
+            entity.IsCaptured);
     }
 
     private static QuestSubmittedCommand MapTurnCommand(QuestTurnCommandEntity entity)

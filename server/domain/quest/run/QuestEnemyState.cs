@@ -10,7 +10,8 @@ public class QuestEnemyState(
     int currentMp,
     bool isDead,
     IEnumerable<BattleAilmentState>? ailments = null,
-    IEnumerable<BattleBuffState>? buffs = null)
+    IEnumerable<BattleBuffState>? buffs = null,
+    bool isCaptured = false)
 {
     private BattleAilmentState[] ailments = ailments?.ToArray() ?? [];
     private BattleBuffState[] buffs = buffs?.ToArray() ?? [];
@@ -21,6 +22,7 @@ public class QuestEnemyState(
     public int CurrentHp { get; private set; } = ValidateNonNegative(currentHp, nameof(currentHp));
     public int CurrentMp { get; private set; } = ValidateNonNegative(currentMp, nameof(currentMp));
     public bool IsDead { get; private set; } = isDead;
+    public bool IsCaptured { get; private set; } = isCaptured;
     public IReadOnlyList<BattleAilmentState> Ailments => ailments;
     public IReadOnlyList<BattleBuffState> Buffs => buffs;
 
@@ -30,6 +32,17 @@ public class QuestEnemyState(
     {
         IsDead = true;
         CurrentHp = 0;
+    }
+
+    public void MarkCaptured()
+    {
+        if (IsDead)
+        {
+            throw new InvalidOperationException("倒れた敵は捕獲できません。");
+        }
+
+        IsCaptured = true;
+        MarkDead();
     }
 
     public void ApplyBattleState(BattleActorState state)

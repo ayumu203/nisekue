@@ -726,6 +726,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -786,6 +788,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -847,6 +851,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -924,6 +930,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -975,6 +983,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1033,6 +1043,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1093,6 +1105,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1158,6 +1172,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1223,6 +1239,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory(),
             _ => rolls.Dequeue());
@@ -1320,6 +1338,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1545,6 +1565,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             expeditionRepository,
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1588,6 +1610,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             expeditionRepository,
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1641,6 +1665,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             expeditionRepository,
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
 
@@ -1672,6 +1698,8 @@ public class QuestRunServiceTests
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
             new FakeTreasureMapExpeditionRepository(),
+            new FakePlayerPetRepository(),
+            new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory());
     }

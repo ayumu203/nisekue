@@ -419,6 +419,8 @@ public class QuestRoomServiceTests
             playerRepository,
             playerEquipmentRepository ?? new FakePlayerEquipmentRepository(),
             equipmentRepository ?? new FakeEquipmentRepository(),
+            enemyDefinitionRepository,
+            new FakePlayerPetRepository(),
             new QuestNpcAssignmentService(npcTemplateRepository),
             new QuestSnapshotFactory(new EquipmentStatusResolver()),
             new QuestRunFactory(enemyDefinitionRepository));

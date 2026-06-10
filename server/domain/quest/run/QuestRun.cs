@@ -68,6 +68,26 @@ public class QuestRun(
             throw new InvalidOperationException("手動入力できない行動モードです。");
         }
 
+        if (command.ActionKind == ActionKind.Capture && command.SelectedTargetPosition is null)
+        {
+            throw new ArgumentException("捕獲には対象の敵の指定が必要です。", nameof(command));
+        }
+
+        if (command.ActionKind == ActionKind.SummonPet)
+        {
+            var snapshot = partySnapshots.FirstOrDefault(x => x.ParticipantId == participantId)
+                ?? throw new KeyNotFoundException("参加者スナップショットが見つかりません。");
+            if (snapshot.Pet is null)
+            {
+                throw new InvalidOperationException("アクティブなペットがいないため呼出できません。");
+            }
+
+            if (!partyMember.HasRemainingPetSummons)
+            {
+                throw new InvalidOperationException("このクエストでの呼出回数の上限に達しています。");
+            }
+        }
+
         TurnState.Submit(command);
     }
 

@@ -1,4 +1,5 @@
 using System.Linq;
+using server.domain.pet;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
@@ -12,6 +13,8 @@ public class QuestRoomService(
     IPlayerRepository playerRepository,
     IPlayerEquipmentRepository playerEquipmentRepository,
     IEquipmentRepository equipmentRepository,
+    IQuestEnemyDefinitionRepository questEnemyDefinitionRepository,
+    IPlayerPetRepository playerPetRepository,
     QuestNpcAssignmentService questNpcAssignmentService,
     QuestSnapshotFactory questSnapshotFactory,
     QuestRunFactory questRunFactory)
@@ -263,7 +266,19 @@ public class QuestRoomService(
             .ToList();
 
         var equipments = await equipmentRepository.GetAllAsync();
-        var snapshots = questSnapshotFactory.Create(activeParticipants, players, snapshotNpcs, playerEquipments, equipments);
+
+        var activePetsByPlayerId = new Dictionary<PlayerId, PlayerPet>();
+        foreach (var player in players)
+        {
+            var activePet = await playerPetRepository.GetActiveByPlayerAsync(player.Id);
+            if (activePet is not null)
+            {
+                activePetsByPlayerId[player.Id] = activePet;
+            }
+        }
+
+        var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync()).ToDictionary(x => x.Id);
+        var snapshots = questSnapshotFactory.Create(activeParticipants, players, snapshotNpcs, playerEquipments, equipments, activePetsByPlayerId, enemyDefinitions);
         var run = await questRunFactory.Create(room, stage, snapshots, DateTimeOffset.UtcNow);
 
         await questRoomRepository.SaveAsync(room);
