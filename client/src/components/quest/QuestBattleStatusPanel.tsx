@@ -45,6 +45,8 @@ type QuestBattleStatusPanelProps = {
     actionKind: QuestActionKind
     submittedAt: string
   } | null
+  canCapture: boolean
+  petSummon: { name: string; remaining: number } | null
   canSubmitCurrentTurn: boolean
   isCommandSubmitting: boolean
   onActionKindChange: (actionKind: QuestActionKind) => void
@@ -62,7 +64,10 @@ type QuestBattleStatusPanelProps = {
     labels: {
       none: string
     }
-    actionKinds: Record<'NormalAttack' | 'UseMove' | 'Prayer' | 'Guard' | 'Wait' | 'LeaveQuest' | 'Escape', string>
+    actionKinds: Record<
+      'NormalAttack' | 'UseMove' | 'Prayer' | 'Guard' | 'Wait' | 'LeaveQuest' | 'Escape' | 'Capture' | 'SummonPet',
+      string
+    >
   }
 }
 
@@ -425,6 +430,8 @@ export default function QuestBattleStatusPanel({
   selectedTargetRow,
   selectedTargetColumn,
   currentPendingCommand,
+  canCapture,
+  petSummon,
   canSubmitCurrentTurn,
   isCommandSubmitting,
   onActionKindChange,
@@ -439,7 +446,10 @@ export default function QuestBattleStatusPanel({
     { value: 'UseMove', label: locale.actionKinds.UseMove },
     { value: 'NormalAttack', label: locale.actionKinds.NormalAttack },
     { value: 'Guard', label: locale.actionKinds.Guard },
-    { value: 'Wait', label: locale.actionKinds.Wait },
+    ...(canCapture ? [{ value: 'Capture' as const, label: locale.actionKinds.Capture }] : []),
+    ...(petSummon != null && petSummon.remaining > 0
+      ? [{ value: 'SummonPet' as const, label: `${locale.actionKinds.SummonPet}(${petSummon.remaining})` }]
+      : []),
     { value: 'Escape', label: locale.actionKinds.Escape },
   ]
 
@@ -485,9 +495,11 @@ export default function QuestBattleStatusPanel({
         null)
   const anchorEnemy = selectedAnchorEnemy ?? reachableEnemies[0] ?? null
   const isEnemyTargetingAction =
-    selectedActionKind === 'NormalAttack' || (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
+    selectedActionKind === 'NormalAttack' ||
+    selectedActionKind === 'Capture' ||
+    (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
   const effectiveAttackRange =
-    selectedActionKind === 'NormalAttack'
+    selectedActionKind === 'NormalAttack' || selectedActionKind === 'Capture'
       ? 'Single'
       : selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy'
         ? (selectedMove.attackRange ?? 'Single')

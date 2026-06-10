@@ -90,6 +90,7 @@ import {
   treasureMapExpeditionSchema,
 } from '@/schema/treasureMap'
 import { getRankingsResponseSchema } from '@/schema/ranking'
+import { getPetsResponseSchema, trainPetResponseSchema } from '@/schema/pet'
 
 export type {
   GetPlayerResponse,
@@ -477,6 +478,32 @@ export const endpoints = {
       errorEventSchema: questRunHubErrorEventSchema,
       subscribeMethod: 'SubscribeRun',
       unsubscribeMethod: 'UnsubscribeRun',
+    },
+  },
+  pets: {
+    get: {
+      path: '/pets',
+      method: 'GET',
+      responseSchema: getPetsResponseSchema,
+    },
+    train: {
+      path: (petId: string) => `/pets/${petId}/train`,
+      method: 'POST',
+      responseSchema: trainPetResponseSchema,
+    },
+    activate: {
+      path: (petId: string) => `/pets/${petId}/activate`,
+      method: 'POST',
+      responseSchema: getPetsResponseSchema,
+    },
+    deactivate: {
+      path: (petId: string) => `/pets/${petId}/deactivate`,
+      method: 'POST',
+      responseSchema: getPetsResponseSchema,
+    },
+    release: {
+      path: (petId: string) => `/pets/${petId}`,
+      method: 'DELETE',
     },
   },
   items: {

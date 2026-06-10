@@ -26,6 +26,8 @@ export const questActionKindSchema = z.enum([
   'Wait',
   'LeaveQuest',
   'Escape',
+  'Capture',
+  'SummonPet',
 ])
 export const questManualControlRequestStatusSchema = z.enum(['None', 'Pending'])
 export const questTargetResultTypeSchema = z.enum([
@@ -201,6 +203,15 @@ export const questPartyMemberViewSchema = z.object({
   canActFromTurn: z.number().int().positive(),
   actionMode: questActionModeSchema,
   manualControlRequestStatus: questManualControlRequestStatusSchema,
+  petSummonsUsed: z.number().int().nonnegative().optional().default(0),
+  pet: z
+    .object({
+      enemyDefinitionId: z.number().int().positive(),
+      name: z.string().min(1),
+      imagePath: z.string().min(1).nullable().optional(),
+    })
+    .nullable()
+    .optional(),
   activeEffects: z.array(questActiveEffectSchema),
 })
 

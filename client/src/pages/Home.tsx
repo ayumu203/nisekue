@@ -35,6 +35,7 @@ import {
   ItemsIcon,
   JobChangeIcon,
   MoveSettingIcon,
+  PetsIcon,
   QuestIcon,
   RebirthIcon,
   RankingIcon,
@@ -311,6 +312,15 @@ function Home() {
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
               >
                 {locale.items}
+              </Button>
+              <Button
+                component={Link}
+                to="/pets"
+                variant="contained"
+                startIcon={<PetsIcon />}
+                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+              >
+                {locale.pets}
               </Button>
               <Button
                 variant="contained"

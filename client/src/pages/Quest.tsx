@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import { useQuestRunHub } from '@/hooks/useQuestRunHub'
 import { createPlayer, getPlayer, listPlayers } from '@/api/player'
+import { getPets } from '@/api/pet'
 import {
   cancelQuestRoom,
   createQuestRoom,
@@ -55,6 +56,7 @@ import type { PlayerSummary } from '@/schema/player'
 
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
+const maxPetSummonsPerQuest = 3
 const questSessionStorageKeyPrefix = 'nisekue:quest-session'
 
 type PersistedQuestSession = {
@@ -187,6 +189,15 @@ export default function Quest() {
       mutateCache([`training-player`, session.user.id]),
     ])
   }, [mutateCache, mutatePlayer, session?.user.id])
+
+  const petsSWRKey = session?.user.id ? ([`quest-pets`, session.user.id] as const) : null
+  const { data: petsResponse, mutate: mutatePets } = useSWR(petsSWRKey, async () => {
+    if (!session?.access_token) {
+      return null
+    }
+
+    return getPets(session.access_token)
+  })
 
   const stagesSWRKey = session?.access_token ? ([`quest-stages`] as const) : null
   const {
@@ -616,7 +627,9 @@ export default function Quest() {
     return aliveEnemies.filter((enemy) => reachableRows.has(enemy.position.row)).map((enemy) => enemy.position)
   }, [currentRun, selfParticipantId])
   const isEnemyTargetingAction =
-    selectedActionKind === 'NormalAttack' || (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
+    selectedActionKind === 'NormalAttack' ||
+    selectedActionKind === 'Capture' ||
+    (selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Enemy')
   const isAllyTargetingAction = selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Ally'
   const isSelfTargetingAction = selectedActionKind === 'UseMove' && selectedMove?.targetType === 'Self'
   const selfPartyMember = useMemo(
@@ -626,6 +639,35 @@ export default function Quest() {
         : null,
     [currentRun, selfParticipantId],
   )
+  const canCapture =
+    petsResponse != null && petsResponse.pets != null && petsResponse.pets.length < petsResponse.maxPetCount
+  const petSummon = useMemo(() => {
+    if (selfPartyMember?.pet == null) {
+      return null
+    }
+
+    return {
+      name: selfPartyMember.pet.name,
+      remaining: Math.max(0, maxPetSummonsPerQuest - selfPartyMember.petSummonsUsed),
+    }
+  }, [selfPartyMember])
+
+  useEffect(() => {
+    if (
+      (selectedActionKind === 'Capture' && !canCapture) ||
+      (selectedActionKind === 'SummonPet' && (petSummon == null || petSummon.remaining <= 0))
+    ) {
+      setSelectedActionKind('NormalAttack')
+    }
+  }, [selectedActionKind, canCapture, petSummon])
+
+  const lastTurnResultsTurnNo = currentRun?.lastTurnResults?.turnNo ?? null
+  useEffect(() => {
+    // ターン解決後に所持ペット数（捕獲結果）を取り直す
+    if (lastTurnResultsTurnNo != null) {
+      void mutatePets()
+    }
+  }, [lastTurnResultsTurnNo, mutatePets])
 
   useEffect(() => {
     if (!session?.user.id) {
@@ -1223,6 +1265,8 @@ export default function Quest() {
                       selectedTargetRow={selectedTargetRow}
                       selectedTargetColumn={selectedTargetColumn}
                       currentPendingCommand={currentPendingCommand}
+                      canCapture={canCapture}
+                      petSummon={petSummon}
                       chatMessage={chatMessage}
                       canSubmitCurrentTurn={canSubmitCurrentTurn}
                       isCommandSubmitting={isCommandSubmitting}
