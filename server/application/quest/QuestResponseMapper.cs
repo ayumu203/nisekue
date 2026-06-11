@@ -12,18 +12,18 @@ public class QuestResponseMapper(
     IEquipmentRepository equipmentRepository,
     IItemRepository itemRepository)
 {
+    private IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? cachedEnemyDefinitionMap;
+
     public async Task<object> MapQuestStageSummaryAsync(QuestStageDefinition stage)
     {
-        var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync())
-            .ToDictionary(x => x.Id);
+        var enemyDefinitions = await GetEnemyDefinitionMapAsync();
 
         return MapQuestStageSummary(stage, enemyDefinitions);
     }
 
     public async Task<IReadOnlyList<object>> MapQuestStageSummariesAsync(IEnumerable<QuestStageDefinition> stages)
     {
-        var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync())
-            .ToDictionary(x => x.Id);
+        var enemyDefinitions = await GetEnemyDefinitionMapAsync();
 
         return stages
             .Select(stage => MapQuestStageSummary(stage, enemyDefinitions))
@@ -205,8 +205,7 @@ public class QuestResponseMapper(
 
     public async Task<object> MapQuestRunDetailAsync(QuestRun run)
     {
-        var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync())
-            .ToDictionary(x => x.Id);
+        var enemyDefinitions = await GetEnemyDefinitionMapAsync();
         var rewardEquipment = run.Rewards.EquipmentRewardId is not null
             ? await equipmentRepository.GetAsync(run.Rewards.EquipmentRewardId.Value)
             : null;
@@ -456,5 +455,17 @@ public class QuestResponseMapper(
                 enemyCount = floor.Placements.Count
             })
         };
+    }
+
+    private async Task<IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>> GetEnemyDefinitionMapAsync()
+    {
+        if (cachedEnemyDefinitionMap is not null)
+        {
+            return cachedEnemyDefinitionMap;
+        }
+
+        cachedEnemyDefinitionMap = (await questEnemyDefinitionRepository.GetAllAsync())
+            .ToDictionary(x => x.Id);
+        return cachedEnemyDefinitionMap;
     }
 }

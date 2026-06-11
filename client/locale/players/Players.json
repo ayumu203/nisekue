@@ -4,6 +4,9 @@
   "visit": "訪問",
   "backToHome": "ホームへ戻る",
   "empty": "訪問できるプレイヤーがまだいません。",
+  "previousPage": "前へ",
+  "nextPage": "次へ",
+  "pageLabel": "{{page}}ページ",
   "sessionInfoMissing": "セッション情報が不足しています",
   "playerNotFoundMessage": "プレイヤーが見つかりません。"
 }

@@ -3,16 +3,16 @@ using server.shared.constants.player;
 
 namespace server.application.player;
 
-public class PlayerRebirthService(IPlayerRepository playerRepository)
+public class PlayerRebirthService(
+    IPlayerMutationService playerMutationService)
 {
     public async Task<Player> RebirthAsync(PlayerId playerId)
     {
-        var player = await playerRepository.GetPlayerAsync(playerId)
-            ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
-
-        player.Rebirth(BuildInheritedStatus(player.Status));
-        await playerRepository.SaveAsync(player);
-        return player;
+        return await playerMutationService.MutateAsync(playerId, player =>
+        {
+            player.Rebirth(BuildInheritedStatus(player.Status));
+            return Task.FromResult(player);
+        });
     }
 
     private static Status BuildInheritedStatus(Status currentStatus)

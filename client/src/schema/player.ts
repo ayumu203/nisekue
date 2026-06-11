@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { pagedResponseSchema } from '@/schema/pagination'
 
 export const playerIdSchema = z.string().uuid('ユーザーIDの形式が不正です')
 
@@ -259,7 +260,7 @@ export const playerSummarySchema = z.object({
   combatIndexRank: playerStatusRankSchema,
 })
 
-export const listPlayersResponseSchema = z.array(playerSummarySchema)
+export const listPlayersResponseSchema = pagedResponseSchema(playerSummarySchema)
 
 export const createPlayerRequestSchema = z.object({
   userName: playerUserNameSchema,

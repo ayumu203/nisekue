@@ -58,6 +58,8 @@ function playerSummaryToDisplayEnemy(opponent: PlayerSummary): TrainingEnemy {
 
 const TRAINING_COOLDOWN_MS = 3000
 const AUTO_BATTLE_DURATION_MS = 3 * 60 * 1000
+const PVP_OPPONENTS_PAGE_SIZE = 24
+const PVP_OPPONENTS_PAGE_SIZE_MOBILE = 5
 
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
   return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
@@ -129,6 +131,7 @@ export default function Training() {
   const [autoBattleEndTimeMs, setAutoBattleEndTimeMs] = useState(0)
   const [autoBattleRemainingSeconds, setAutoBattleRemainingSeconds] = useState(0)
   const [autoBattleCount, setAutoBattleCount] = useState(0)
+  const [opponentsPage, setOpponentsPage] = useState(1)
 
   function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
     if (!userId) {
@@ -222,23 +225,49 @@ export default function Training() {
     { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
   )
 
-  const playerListSWRKey =
-    session?.access_token && player && mode === 'player' ? ([`training-opponents`, session.user.id] as const) : null
+  const opponentsPageSize = isMobile ? PVP_OPPONENTS_PAGE_SIZE_MOBILE : PVP_OPPONENTS_PAGE_SIZE
+  const opponentsSWRKey =
+    session?.access_token && player && mode === 'player'
+      ? ([`training-opponents`, session.user.id, opponentsPage, opponentsPageSize] as const)
+      : null
   const {
-    data: playerList,
+    data: playerListPage,
     error: playerListError,
     isLoading: isPlayerListLoading,
   } = useSWR(
-    playerListSWRKey,
+    opponentsSWRKey,
     async () => {
       if (!session?.access_token) {
         throw new Error(locale.sessionInfoMissing)
       }
 
-      return getPvpOpponents(session.access_token)
+      return getPvpOpponents(session.access_token, {
+        page: opponentsPage,
+        pageSize: opponentsPageSize,
+      })
     },
     { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
   )
+  const opponentsPageCount = playerListPage
+    ? Math.max(1, Math.ceil(playerListPage.totalCount / playerListPage.pageSize))
+    : 1
+
+  useEffect(() => {
+    if (mode !== 'player') {
+      return
+    }
+
+    setOpponentsPage(1)
+  }, [mode, opponentsPageSize])
+
+  useEffect(() => {
+    if (!playerListPage) {
+      return
+    }
+
+    const pageCount = Math.max(1, Math.ceil(playerListPage.totalCount / playerListPage.pageSize))
+    setOpponentsPage((current) => Math.min(current, pageCount))
+  }, [playerListPage])
 
   async function refreshPlayerStatus(): Promise<void> {
     if (!session?.user.id) {
@@ -784,11 +813,14 @@ export default function Training() {
                   <Alert severity="warning">{playerListError.message}</Alert>
                 ) : (
                   <TrainingOpponentSelect
-                    opponents={(playerList ?? [])
+                    opponents={(playerListPage?.items ?? [])
                       .filter((p) => p.userId !== session?.user.id)
                       .sort((a, b) => a.level - b.level)}
                     isActionDisabled={isTrainingActionDisabled}
                     lockRemainingSeconds={trainingLockRemainingSeconds}
+                    page={opponentsPage}
+                    pageCount={opponentsPageCount}
+                    onPageChange={setOpponentsPage}
                     onFight={handleSelectOpponent}
                   />
                 )}

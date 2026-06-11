@@ -14,4 +14,5 @@ public class QuestRunEntity
     public string ChatMessagesJson { get; set; } = "[]";
     public DateTimeOffset StartedAt { get; set; }
     public DateTimeOffset? EndedAt { get; set; }
+    public int Version { get; set; }
 }

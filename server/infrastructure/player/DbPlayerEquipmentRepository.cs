@@ -9,7 +9,7 @@ public class DbPlayerEquipmentRepository(
     IDbContextFactory<AppDbContext> dbContextFactory,
     IMemoryCache cache) : IPlayerEquipmentRepository
 {
-    private static string EquippedKey(Guid playerId) => $"player:equipped:{playerId}";
+    internal static string EquippedCacheKey(Guid playerId) => $"player:equipped:{playerId}";
 
     public async Task<IReadOnlyList<PlayerEquipment>> GetByPlayerAsync(PlayerId playerId)
     {
@@ -22,15 +22,15 @@ public class DbPlayerEquipmentRepository(
             .ThenBy(x => x.Id)
             .ToListAsync();
 
-        return entities.Select(MapToDomain).ToArray();
+        return entities.Select(PlayerEquipmentEntityMapper.MapToDomain).ToArray();
     }
 
     public async Task<IReadOnlyList<PlayerEquipment>> GetEquippedByPlayerAsync(PlayerId playerId)
     {
-        var key = EquippedKey(playerId.Value);
+        var key = EquippedCacheKey(playerId.Value);
         if (cache.TryGetValue(key, out IReadOnlyList<PlayerEquipmentEntity>? cachedEntities))
         {
-            return cachedEntities!.Select(MapToDomain).ToArray();
+            return cachedEntities!.Select(PlayerEquipmentEntityMapper.MapToDomain).ToArray();
         }
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -43,7 +43,7 @@ public class DbPlayerEquipmentRepository(
             .ToListAsync();
 
         cache.Set(key, (IReadOnlyList<PlayerEquipmentEntity>)entities, CacheTtl);
-        return entities.Select(MapToDomain).ToArray();
+        return entities.Select(PlayerEquipmentEntityMapper.MapToDomain).ToArray();
     }
 
     public async Task<PlayerEquipment?> GetAsync(PlayerEquipmentId playerEquipmentId)
@@ -53,7 +53,7 @@ public class DbPlayerEquipmentRepository(
             .AsNoTracking()
             .SingleOrDefaultAsync(x => x.Id == playerEquipmentId.Value);
 
-        return entity is null ? null : MapToDomain(entity);
+        return entity is null ? null : PlayerEquipmentEntityMapper.MapToDomain(entity);
     }
 
     public async Task SaveAsync(IReadOnlyList<PlayerEquipment> playerEquipments)
@@ -85,19 +85,14 @@ public class DbPlayerEquipmentRepository(
                 continue;
             }
 
-            existing.PlayerId = playerEquipment.PlayerId.Value;
-            existing.EquipmentStatus = (int)playerEquipment.Status;
-            existing.Durability = playerEquipment.Durability;
-            existing.Mastery = playerEquipment.Mastery;
-            existing.PlusValue = playerEquipment.PlusValue;
-            existing.UpdatedAt = playerEquipment.UpdatedAt;
+            PlayerEquipmentEntityMapper.ApplyEntity(existing, playerEquipment);
         }
 
         await dbContext.SaveChangesAsync();
 
         foreach (var playerId in playerEquipments.Select(x => x.PlayerId.Value).Distinct())
         {
-            cache.Remove(EquippedKey(playerId));
+            cache.Remove(EquippedCacheKey(playerId));
         }
     }
 
@@ -113,21 +108,6 @@ public class DbPlayerEquipmentRepository(
         dbContext.PlayerEquipments.Remove(existing);
         await dbContext.SaveChangesAsync();
 
-        cache.Remove(EquippedKey(existing.PlayerId));
-    }
-
-    private static PlayerEquipment MapToDomain(PlayerEquipmentEntity entity)
-    {
-        return new PlayerEquipment(
-            new PlayerEquipmentId(entity.Id),
-            new PlayerId(entity.PlayerId),
-            new EquipmentId(entity.EquipmentId),
-            (EquipmentType)entity.EquipmentType,
-            (EquipmentStatus)entity.EquipmentStatus,
-            entity.Durability,
-            entity.Mastery,
-            entity.PlusValue,
-            entity.AcquiredAt,
-            entity.UpdatedAt);
+        cache.Remove(EquippedCacheKey(existing.PlayerId));
     }
 }
