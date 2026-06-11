@@ -11,6 +11,7 @@ using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
 using server.domain.treasuremap;
+using server.tests;
 using Xunit;
 
 namespace server.tests.quest;
@@ -730,7 +731,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -792,7 +794,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -855,7 +858,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -934,7 +938,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -987,7 +992,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -1047,7 +1053,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -1109,7 +1116,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -1176,7 +1184,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -1244,6 +1253,7 @@ public class QuestRunServiceTests
             new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository),
             _ => rolls.Dequeue());
 
         await service.SubmitCommandAsync(
@@ -1342,7 +1352,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -1569,7 +1580,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         var target = run.BattleState.Enemies.Single().Position;
         await service.SubmitCommandAsync(
@@ -1614,7 +1626,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         var target = run.BattleState.Enemies.Single().Position;
         var act = async () => await service.SubmitCommandAsync(
@@ -1669,7 +1682,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.EscapeAsync(run.Id, room.OwnerId);
 
@@ -1987,6 +2001,7 @@ public class QuestRunServiceTests
             new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository),
             rewardRollProvider: null,
             petRollProvider: petRollProvider);
     }

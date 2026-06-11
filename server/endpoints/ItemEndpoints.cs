@@ -206,6 +206,10 @@ internal static class ItemEndpoints
                     await playerItemStackRepository.SaveAsync([stack]);
                 }
             }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message });
+            }
             catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException or ArgumentException)
             {
                 return Results.BadRequest(new { message = ex.Message });
@@ -252,6 +256,10 @@ internal static class ItemEndpoints
             try
             {
                 target.Synthesize(source, goldCost, DateTimeOffset.UtcNow);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message });
             }
             catch (InvalidOperationException ex)
             {
@@ -752,11 +760,15 @@ internal static class ItemEndpoints
                 request.Quantity,
                 listing.UnitPrice,
                 DateTimeOffset.UtcNow));
+            await tx.CommitAsync();
+
             cache.Remove(server.shared.constants.player.PlayerCacheConstants.PlayerKey(buyer.Id));
             cache.Remove(server.shared.constants.player.PlayerCacheConstants.PlayerKey(seller.Id));
             cache.Remove(server.shared.constants.player.PlayerCacheConstants.AllPlayersKey);
-            await chatService.PostSystemMessageAsync(new PlayerId(seller.Id), $"{listing.ItemName} x{request.Quantity} が {price} Gold で売れました。");
-            await tx.CommitAsync();
+            await chatService.TryPostSystemMessageAsync(
+                new PlayerId(seller.Id),
+                $"{listing.ItemName} x{request.Quantity} が {price} Gold で売れました。",
+                "マーケット購入");
 
             return Results.Ok(new { message = "購入しました。", gold = buyer.Gold });
         }).RequireAuthorization();

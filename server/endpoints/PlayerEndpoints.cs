@@ -656,7 +656,10 @@ internal static class PlayerEndpoints
 
             await dbContext.SaveChangesAsync();
             await tx.CommitAsync();
-            await chatService.PostSystemMessageAsync(new PlayerId(recipient.Id), $"{sender.Name} から {giftItemName} x{giftQuantity} を受け取りました。");
+            await chatService.TryPostSystemMessageAsync(
+                new PlayerId(recipient.Id),
+                $"{sender.Name} から {giftItemName} x{giftQuantity} を受け取りました。",
+                "プレゼント送信");
 
             return Results.Ok(new
             {

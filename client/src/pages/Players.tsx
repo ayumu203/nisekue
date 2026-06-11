@@ -8,8 +8,8 @@ import { PLAYER_DEDUPING_INTERVAL } from '@/constants/swr'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import PaginationControls from '@/components/common/PaginationControls'
 import { useAuth } from '@/contexts/useAuth'
+import { usePagedList } from '@/hooks/usePagedList'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
-import { resolveHasNextPage } from '@/lib/pagination'
 import { resolveRankColor } from '@/lib/playerRank'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../locale/players/Players.json'
@@ -44,44 +44,29 @@ function Players() {
     }
   })
 
-  const playersSWRKey = session?.access_token ? ([`players`, page] as const) : null
   const {
     data: players,
     error: playersError,
     isLoading: isPlayersLoading,
-  } = useSWR(
-    playersSWRKey,
-    async () => {
+    hasNextPage,
+  } = usePagedList({
+    enabled: Boolean(session?.access_token),
+    keyPrefix: ['players'],
+    page,
+    fetchPage: async (targetPage) => {
       if (!session?.access_token) {
         throw new Error(locale.sessionInfoMissing)
       }
 
       return listPlayers(session.access_token, {
-        page,
+        page: targetPage,
         pageSize: PAGE_SIZE,
       })
     },
-    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
-  )
-
-  const nextPlayersSWRKey = session?.access_token ? ([`players`, page + 1] as const) : null
-  const { data: nextPlayers } = useSWR(
-    nextPlayersSWRKey,
-    async () => {
-      if (!session?.access_token) {
-        throw new Error(locale.sessionInfoMissing)
-      }
-
-      return listPlayers(session.access_token, {
-        page: page + 1,
-        pageSize: PAGE_SIZE,
-      })
-    },
-    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
-  )
+    dedupingInterval: PLAYER_DEDUPING_INTERVAL,
+  })
 
   const visitTargets = players?.filter((player) => player.userId !== currentPlayer?.userId) ?? []
-  const hasNextPage = resolveHasNextPage(players?.length ?? 0, nextPlayers?.length ?? 0)
 
   if (isLoading) {
     return (

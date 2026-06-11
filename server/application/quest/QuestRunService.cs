@@ -32,9 +32,9 @@ public class QuestRunService(
     QuestPetActionService questPetActionService,
     BattleService battleService,
     QuestBattleFactory questBattleFactory,
+    IPlayerMutationService playerMutationService,
     Func<int, int>? rewardRollProvider = null,
-    Func<int, int>? petRollProvider = null,
-    IPlayerMutationService? playerMutationService = null)
+    Func<int, int>? petRollProvider = null)
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
@@ -42,7 +42,7 @@ public class QuestRunService(
     private const int ItemCapacity = 20;
     private readonly Func<int, int> _rewardRollProvider = rewardRollProvider ?? (maxInclusive => Random.Shared.Next(1, maxInclusive + 1));
     private readonly Func<int, int> _petRollProvider = petRollProvider ?? (maxInclusive => Random.Shared.Next(1, maxInclusive + 1));
-    private readonly IPlayerMutationService _playerMutationService = playerMutationService ?? new RepositoryBackedPlayerMutationService(playerRepository);
+    private readonly IPlayerMutationService _playerMutationService = playerMutationService;
 
     public async Task<QuestRun> GetDetailAsync(QuestRunId runId)
     {
@@ -61,7 +61,7 @@ public class QuestRunService(
 
         run.SubmitCommand(participantId, command, DateTimeOffset.UtcNow);
         var resolution = await TryResolveIfReadyAsync(run);
-        await questRunRepository.SaveAsync(run);
+        await SaveRunAsync(run, resolution.CapturedPets);
         return new QuestCommandSubmissionResult(run, resolution.ResolvedInThisRequest);
     }
 
@@ -110,8 +110,8 @@ public class QuestRunService(
         }
 
         run.EscapeByOwner();
-        await ApplyQuestCompletionEffectsAsync(run);
-        await questRunRepository.SaveAsync(run);
+        var capturedPets = await ApplyQuestCompletionEffectsAsync(run);
+        await SaveRunAsync(run, capturedPets);
         return run;
     }
 
@@ -130,7 +130,7 @@ public class QuestRunService(
             var resolution = await TryResolveIfReadyAsync(run);
             if (resolution.ResolvedInThisRequest)
             {
-                await questRunRepository.SaveAsync(run);
+                await SaveRunAsync(run, resolution.CapturedPets);
                 updatedRuns.Add(run);
             }
         }
@@ -241,10 +241,21 @@ public class QuestRunService(
 
         if (run.Status != QuestRunStatus.InProgress)
         {
-            await ApplyQuestCompletionEffectsAsync(run);
+            var capturedPets = await ApplyQuestCompletionEffectsAsync(run);
+            return new QuestRunResolutionResult(true, capturedPets);
         }
 
-        return new QuestRunResolutionResult(true);
+        return new QuestRunResolutionResult(true, []);
+    }
+
+    private async Task SaveRunAsync(QuestRun run, IReadOnlyList<PlayerPet>? capturedPets = null)
+    {
+        if (capturedPets is not null && capturedPets.Count > 0)
+        {
+            await playerPetRepository.SaveAsync(capturedPets);
+        }
+
+        await questRunRepository.SaveAsync(run);
     }
 
     private static int CalculateFloorExp(
@@ -392,9 +403,9 @@ public class QuestRunService(
         return new QuestCaptureProcessingResult(logActions);
     }
 
-    private sealed record QuestRunResolutionResult(bool ResolvedInThisRequest)
+    private sealed record QuestRunResolutionResult(bool ResolvedInThisRequest, IReadOnlyList<PlayerPet> CapturedPets)
     {
-        public static QuestRunResolutionResult None { get; } = new(false);
+        public static QuestRunResolutionResult None { get; } = new(false, []);
     }
 
     private sealed record QuestCaptureProcessingResult(IReadOnlyList<QuestResolvedAction> Actions)
@@ -494,7 +505,7 @@ public class QuestRunService(
         return movesById.Values.ToArray();
     }
 
-    private async Task ApplyQuestCompletionEffectsAsync(QuestRun run)
+    private async Task<IReadOnlyList<PlayerPet>> ApplyQuestCompletionEffectsAsync(QuestRun run)
     {
         var room = await questRoomRepository.GetAsync(run.RoomId)
             ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
@@ -535,13 +546,11 @@ public class QuestRunService(
         run.Rewards.SetEquipmentReward(rewardEquipmentId);
         run.Rewards.SetItemReward(rewardItemId);
 
-        if (run.Status == QuestRunStatus.Succeeded)
-        {
-            foreach (var capturedPet in run.Rewards.CapturedPetRewards)
-            {
-                await playerPetRepository.AddAsync(PlayerPet.Capture(capturedPet.PlayerId, capturedPet.EnemyDefinitionId, capturedPet.CapturedAt));
-            }
-        }
+        var capturedPets = run.Status == QuestRunStatus.Succeeded
+            ? run.Rewards.CapturedPetRewards
+                .Select(capturedPet => PlayerPet.Capture(capturedPet.PlayerId, capturedPet.EnemyDefinitionId, capturedPet.CapturedAt))
+                .ToArray()
+            : [];
 
         run.Rewards.ClearCapturedPetRewards();
 
@@ -633,6 +642,7 @@ public class QuestRunService(
         }
 
         run.Rewards.SetSkippedRewardPlayerIds(skippedRewardPlayerIds);
+        return capturedPets;
     }
 
     private void ApplyQuestCompletionRewardToPlayer(Player player, QuestRun run, QuestStageDefinition stage, PlayerId ownerId)
@@ -701,20 +711,6 @@ public class QuestRunService(
         }
 
         return null;
-    }
-
-    private sealed class RepositoryBackedPlayerMutationService(IPlayerRepository playerRepository) : IPlayerMutationService
-    {
-        public async Task<TResult> MutateAsync<TResult>(PlayerId playerId, Func<Player, Task<TResult>> mutation)
-        {
-            ArgumentNullException.ThrowIfNull(mutation);
-
-            var player = await playerRepository.GetPlayerAsync(playerId)
-                ?? throw new KeyNotFoundException($"プレイヤーが見つかりません。 playerId={playerId.Value}");
-            var result = await mutation(player);
-            await playerRepository.SaveAsync(player);
-            return result;
-        }
     }
 
     private ItemId? DrawItemReward(QuestStageDefinition stage, bool hasGreatThiefBonus)

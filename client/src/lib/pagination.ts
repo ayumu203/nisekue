@@ -21,7 +21,3 @@ export function applyPaginationSearchParams(url: URL, options?: PaginationOption
     url.searchParams.set('limit', String(options.limit))
   }
 }
-
-export function resolveHasNextPage(currentPageItems: number, nextPageItems: number): boolean {
-  return currentPageItems > 0 && nextPageItems > 0
-}

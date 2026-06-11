@@ -35,8 +35,8 @@ import { normalizeCharacterPath } from '@/lib/assets'
 import { useAuth } from '@/contexts/useAuth'
 import { innerSurfaceSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
+import { usePagedList } from '@/hooks/usePagedList'
 import { beginnerGuides } from '@/lib/beginnerGuides'
-import { resolveHasNextPage } from '@/lib/pagination'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
@@ -226,47 +226,27 @@ export default function Training() {
     { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
   )
 
-  const playerListSWRKey =
-    session?.access_token && player && mode === 'player'
-      ? ([`training-opponents`, session.user.id, opponentsPage] as const)
-      : null
   const {
     data: playerList,
     error: playerListError,
     isLoading: isPlayerListLoading,
-  } = useSWR(
-    playerListSWRKey,
-    async () => {
+    hasNextPage: hasNextOpponentsPage,
+  } = usePagedList({
+    enabled: Boolean(session?.access_token && player && mode === 'player'),
+    keyPrefix: ['training-opponents', session?.user.id ?? 'anonymous'],
+    page: opponentsPage,
+    fetchPage: async (targetPage) => {
       if (!session?.access_token) {
         throw new Error(locale.sessionInfoMissing)
       }
 
       return getPvpOpponents(session.access_token, {
-        page: opponentsPage,
+        page: targetPage,
         pageSize: PVP_OPPONENTS_PAGE_SIZE,
       })
     },
-    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
-  )
-  const nextPlayerListSWRKey =
-    session?.access_token && player && mode === 'player'
-      ? ([`training-opponents`, session.user.id, opponentsPage + 1] as const)
-      : null
-  const { data: nextPlayerList } = useSWR(
-    nextPlayerListSWRKey,
-    async () => {
-      if (!session?.access_token) {
-        throw new Error(locale.sessionInfoMissing)
-      }
-
-      return getPvpOpponents(session.access_token, {
-        page: opponentsPage + 1,
-        pageSize: PVP_OPPONENTS_PAGE_SIZE,
-      })
-    },
-    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
-  )
-  const hasNextOpponentsPage = resolveHasNextPage(playerList?.length ?? 0, nextPlayerList?.length ?? 0)
+    dedupingInterval: PLAYER_DEDUPING_INTERVAL,
+  })
 
   useEffect(() => {
     if (mode !== 'player') {
