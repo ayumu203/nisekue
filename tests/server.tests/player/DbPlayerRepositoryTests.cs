@@ -59,6 +59,30 @@ public class DbPlayerRepositoryTests
         count.Should().Be(2);
     }
 
+    [Fact]
+    public async Task GetPvpOpponentsAsync_WhenOwnerIsLevelOne_IncludesLevelOneOpponents()
+    {
+        var databaseName = $"db-player-repository-{Guid.NewGuid()}";
+        var ownerId = Guid.NewGuid();
+        var levelOneOpponentId = Guid.NewGuid();
+        var levelTwoOpponentId = Guid.NewGuid();
+
+        await SeedPlayersAsync(
+            databaseName,
+            CreatePlayerEntity(ownerId, "Owner", level: 1),
+            CreatePlayerEntity(levelOneOpponentId, "Lv1", level: 1),
+            CreatePlayerEntity(levelTwoOpponentId, "Lv2", level: 2));
+
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var repository = new SupabasePlayerRepository(new TestDbContextFactory(databaseName), cache);
+
+        var opponents = await repository.GetPvpOpponentsAsync(new PlayerId(ownerId), maxLevel: 1);
+        var count = await repository.CountPvpOpponentsAsync(new PlayerId(ownerId), maxLevel: 1);
+
+        opponents.Select(x => x.Id.Value).Should().BeEquivalentTo([levelOneOpponentId]);
+        count.Should().Be(1);
+    }
+
     private static async Task SeedPlayersAsync(string databaseName, params PlayerEntity[] players)
     {
         await using var dbContext = CreateDbContext(databaseName);

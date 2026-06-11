@@ -59,17 +59,10 @@ namespace server.infrastructure.player
             return PlayerEntityMapper.MapToDomain(entity, moveEntity: null);
         }
 
-    public async Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel, int? offset = null, int? limit = null)
-    {
+        public async Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel, int? offset = null, int? limit = null)
+        {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            var query = dbContext.Players
-                .AsNoTracking()
-                .Where(x => x.Id != excludeId.Value
-                            && x.Level >= TrainingConstants.Battle.MinPvpOpponentLevel
-                            && x.Level <= maxLevel)
-                .OrderBy(x => x.Name)
-                .ThenBy(x => x.Id)
-                .AsQueryable();
+            var query = BuildPvpOpponentsQuery(dbContext, excludeId, maxLevel);
 
             if (offset is > 0)
             {
@@ -83,19 +76,41 @@ namespace server.infrastructure.player
 
             var entities = await query.ToListAsync();
 
-        return entities.Select(e => PlayerEntityMapper.MapToDomain(e, moveEntity: null)).ToArray();
-    }
+            return entities.Select(e => PlayerEntityMapper.MapToDomain(e, moveEntity: null)).ToArray();
+        }
 
-    public async Task<int> CountPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
-    {
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        return await dbContext.Players
-            .AsNoTracking()
-            .Where(x => x.Id != excludeId.Value
-                        && x.Level >= TrainingConstants.Battle.MinPvpOpponentLevel
-                        && x.Level <= maxLevel)
-            .CountAsync();
-    }
+        public async Task<(IReadOnlyList<Player> Opponents, int TotalCount)> GetPvpOpponentsPageAsync(
+            PlayerId excludeId,
+            int maxLevel,
+            int? offset = null,
+            int? limit = null)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var baseQuery = BuildPvpOpponentsQuery(dbContext, excludeId, maxLevel);
+            var totalCount = await baseQuery.CountAsync();
+
+            var pagedQuery = baseQuery;
+            if (offset is > 0)
+            {
+                pagedQuery = pagedQuery.Skip(offset.Value);
+            }
+
+            if (limit is > 0)
+            {
+                pagedQuery = pagedQuery.Take(limit.Value);
+            }
+
+            var entities = await pagedQuery.ToListAsync();
+            var opponents = entities.Select(e => PlayerEntityMapper.MapToDomain(e, moveEntity: null)).ToArray();
+            return (opponents, totalCount);
+        }
+
+        public async Task<int> CountPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var query = BuildPvpOpponentsQuery(dbContext, excludeId, maxLevel);
+            return await query.CountAsync();
+        }
 
         public async Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
         {
@@ -150,6 +165,14 @@ namespace server.infrastructure.player
             return playerEntities
                 .Select(entity => PlayerEntityMapper.MapToDomain(entity, moveEntity: null))
                 .ToArray();
+        }
+
+        public async Task<int> CountAllAsync()
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            return await dbContext.Players
+                .AsNoTracking()
+                .CountAsync();
         }
 
         public async Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown)
@@ -209,6 +232,19 @@ namespace server.infrastructure.player
             }
 
             return affectedRows > 0;
+        }
+
+        private static IQueryable<PlayerEntity> BuildPvpOpponentsQuery(AppDbContext dbContext, PlayerId excludeId, int maxLevel)
+        {
+            var minOpponentLevel = Math.Min(TrainingConstants.Battle.MinPvpOpponentLevel, maxLevel);
+            return dbContext.Players
+                .AsNoTracking()
+                .Where(x => x.Id != excludeId.Value
+                            && x.Level >= minOpponentLevel
+                            && x.Level <= maxLevel)
+                .OrderBy(x => x.Name)
+                .ThenBy(x => x.Id)
+                .AsQueryable();
         }
 
         public async Task SaveAsync(Player player)

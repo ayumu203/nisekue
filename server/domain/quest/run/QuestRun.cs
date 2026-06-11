@@ -216,7 +216,7 @@ public class QuestRun(
             isFloorCleared: isFloorCleared,
             isQuestCompleted: isQuestCompleted,
             isQuestFailed: isQuestFailed);
-        
+
     }
 
     public QuestRunResolutionSummary ApplyBattleResolution(

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { pagedResponseSchema } from '@/schema/pagination'
 
 const threadIdSchema = z.string().uuid('threadIdの形式が不正です')
 const replyIdSchema = z.string().uuid('replyIdの形式が不正です')
@@ -41,13 +42,7 @@ export const getThreadsRequestSchema = z.object({
   page: z.number().int().positive().optional(),
 })
 
-export const getThreadsResponseSchema = z.object({
-  items: z.array(threadSummarySchema),
-  page: z.number().int().positive(),
-  pageSize: z.number().int().positive(),
-  totalCount: z.number().int().min(0),
-  hasNextPage: z.boolean(),
-})
+export const getThreadsResponseSchema = pagedResponseSchema(threadSummarySchema)
 
 export const createThreadRequestSchema = z.object({
   title: z.string().trim().min(1, 'タイトルを入力してください').max(50, 'タイトルは50文字以内で入力してください'),

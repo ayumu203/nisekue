@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Mvc;
 using server.application.chat;
 using server.application.player;
+using server.domain;
 using server.domain.move;
 using server.domain.player;
 using server.domain.treasuremap;
@@ -127,69 +128,76 @@ internal static class ItemEndpoints
             {
                 if (!item.CanUse(player))
                 {
-                    throw new InvalidOperationException("このアイテムを使用する条件を満たしていません。");
+                    throw new DomainException("このアイテムを使用する条件を満たしていません。");
                 }
 
-                switch (item.EffectType)
+                try
                 {
-                    case ItemEffectType.StatBoost:
-                        player.UpdateStatus(itemStatBoostService.Apply(player.Status, item, request.Quantity));
-                        break;
-                    case ItemEffectType.ChangeJob:
+                    switch (item.EffectType)
                     {
-                        if (request.Quantity != 1)
-                        {
-                            throw new InvalidOperationException("転職アイテムは1個ずつのみ使用できます。");
-                        }
+                        case ItemEffectType.StatBoost:
+                            player.UpdateStatus(itemStatBoostService.Apply(player.Status, item, request.Quantity));
+                            break;
+                        case ItemEffectType.ChangeJob:
+                            {
+                                if (request.Quantity != 1)
+                                {
+                                    throw new DomainException("転職アイテムは1個ずつのみ使用できます。");
+                                }
 
-                        if (item.ChangeJobTo is null)
-                        {
-                            throw new InvalidOperationException("転職先ジョブが定義されていません。");
-                        }
+                                if (item.ChangeJobTo is null)
+                                {
+                                    throw new DomainException("転職先ジョブが定義されていません。");
+                                }
 
-                        var jobProfile = jobProfileRepository.GetByJob(item.ChangeJobTo.Value);
-                        var learningRule = jobMoveLearningRuleRepository.GetByJob(item.ChangeJobTo.Value);
-                        player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
-                        break;
+                                var jobProfile = jobProfileRepository.GetByJob(item.ChangeJobTo.Value);
+                                var learningRule = jobMoveLearningRuleRepository.GetByJob(item.ChangeJobTo.Value);
+                                player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
+                                break;
+                            }
+                        case ItemEffectType.ExpMultiplier:
+                            {
+                                if (request.Quantity != 1)
+                                {
+                                    throw new DomainException("経験値倍率アイテムは1個ずつのみ使用できます。");
+                                }
+
+                                if (item.ExpMultiplier is null)
+                                {
+                                    throw new DomainException("経験値倍率が定義されていません。");
+                                }
+
+                                if (player.HasAnyExpMultiplierFlag())
+                                {
+                                    throw new DomainException("すでに経験値倍率が設定されています。効果が切れてから使用してください。");
+                                }
+
+                                var flag = ExpMultiplierFlag.ToFlag(item.ExpMultiplier.Value);
+                                player.SetExpMultiplierFlag(flag);
+                                break;
+                            }
+                        case ItemEffectType.UnlockMap:
+                            {
+                                if (request.Quantity != 1)
+                                {
+                                    throw new DomainException("マップ解放アイテムは1個ずつのみ使用できます。");
+                                }
+
+                                if (item.MapUnlockFlag is null)
+                                {
+                                    throw new DomainException("マップ解放フラグが定義されていません。");
+                                }
+
+                                player.SetMapUnlockFlag(item.MapUnlockFlag.Value);
+                                break;
+                            }
+                        default:
+                            throw new DomainException("未対応のアイテム効果です。");
                     }
-                    case ItemEffectType.ExpMultiplier:
-                    {
-                        if (request.Quantity != 1)
-                        {
-                            throw new InvalidOperationException("経験値倍率アイテムは1個ずつのみ使用できます。");
-                        }
-
-                        if (item.ExpMultiplier is null)
-                        {
-                            throw new InvalidOperationException("経験値倍率が定義されていません。");
-                        }
-
-                        if (player.HasAnyExpMultiplierFlag())
-                        {
-                            throw new InvalidOperationException("すでに経験値倍率が設定されています。効果が切れてから使用してください。");
-                        }
-
-                        var flag = ExpMultiplierFlag.ToFlag(item.ExpMultiplier.Value);
-                        player.SetExpMultiplierFlag(flag);
-                        break;
-                    }
-                    case ItemEffectType.UnlockMap:
-                    {
-                        if (request.Quantity != 1)
-                        {
-                            throw new InvalidOperationException("マップ解放アイテムは1個ずつのみ使用できます。");
-                        }
-
-                        if (item.MapUnlockFlag is null)
-                        {
-                            throw new InvalidOperationException("マップ解放フラグが定義されていません。");
-                        }
-
-                        player.SetMapUnlockFlag(item.MapUnlockFlag.Value);
-                        break;
-                    }
-                    default:
-                        throw new InvalidOperationException("未対応のアイテム効果です。");
+                }
+                catch (InvalidOperationException ex)
+                {
+                    throw new DomainException(ex.Message, ex);
                 }
 
                 return 0;
@@ -255,9 +263,17 @@ internal static class ItemEndpoints
 
             var goldCost = master.SynthesisGoldCost * (target.PlusValue + 1);
             var playerEntity = lockedPlayers[playerId.Value.Value];
-            target.Synthesize(source, goldCost, DateTimeOffset.UtcNow);
             var player = PlayerEntityMapper.MapToDomain(playerEntity, moveEntity: null);
-            player.SpendGold(goldCost);
+            try
+            {
+                target.Synthesize(source, goldCost, DateTimeOffset.UtcNow);
+                player.SpendGold(goldCost);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new DomainException(ex.Message, ex);
+            }
+
             playerEntity.Gold = player.Gold;
 
             PlayerEquipmentEntityMapper.ApplyEntity(targetEntity, target);

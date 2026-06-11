@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
+using server.domain;
 
 namespace server.infrastructure;
 
@@ -9,6 +10,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
         var (statusCode, message) = exception switch
         {
             KeyNotFoundException => (StatusCodes.Status404NotFound, "対象データが見つかりません。"),
+            DomainException => (StatusCodes.Status400BadRequest, exception.Message),
             InvalidOperationException => (StatusCodes.Status400BadRequest, "リクエストを処理できませんでした。"),
             ArgumentException or ArgumentOutOfRangeException => (StatusCodes.Status400BadRequest, exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "予期しないエラーが発生しました。")
@@ -20,7 +22,11 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
         }
         else
         {
-            logger.LogWarning(exception, "Handled exception: {Path}", httpContext.Request.Path);
+            logger.LogInformation(
+                "Handled exception: {Path} {ExceptionType}: {Message}",
+                httpContext.Request.Path,
+                exception.GetType().Name,
+                exception.Message);
         }
 
         httpContext.Response.StatusCode = statusCode;

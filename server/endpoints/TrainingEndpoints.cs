@@ -135,36 +135,31 @@ internal static class TrainingEndpoints
             }
 
             var maxOpponentLevel = (int)(player.Level * TrainingConstants.Battle.PvpOpponentLevelCapMultiplier);
-            var totalCount = await playerRepository.CountPvpOpponentsAsync(playerId.Value, maxOpponentLevel);
-            var opponents = await playerRepository.GetPvpOpponentsAsync(playerId.Value, maxOpponentLevel, offset, effectiveLimit);
-            var resolvedPage = page ?? 1;
-            var resolvedPageSize = pageSize ?? effectiveLimit ?? Math.Max(1, opponents.Count);
-            var hasNextPage = offset is null || effectiveLimit is null
-                ? false
-                : offset.Value + opponents.Count < totalCount;
-
-            return Results.Ok(new
+            var pageResult = await playerRepository.GetPvpOpponentsPageAsync(playerId.Value, maxOpponentLevel, offset, effectiveLimit);
+            var items = pageResult.Opponents.Select(p => new
             {
-                items = opponents.Select(p => new
+                userId = p.Id.Value,
+                userName = p.Name,
+                imagePath = p.ImagePath,
+                level = p.Level,
+                job = new
                 {
-                    userId = p.Id.Value,
-                    userName = p.Name,
-                    imagePath = p.ImagePath,
-                    level = p.Level,
-                    job = new
-                    {
-                        code = p.Job.ToString(),
-                        value = (int)p.Job,
-                        displayName = EndpointHelpers.GetJobDisplayName(p.Job),
-                        description = jobProfileRepository.GetByJob(p.Job).Description
-                    },
-                    combatIndexRank = combatIndexRankEvaluator.Evaluate(combatIndexCalculator.Calculate(p.Status)).ToString()
-                }),
-                page = resolvedPage,
-                pageSize = resolvedPageSize,
-                totalCount,
-                hasNextPage
-            });
+                    code = p.Job.ToString(),
+                    value = (int)p.Job,
+                    displayName = EndpointHelpers.GetJobDisplayName(p.Job),
+                    description = jobProfileRepository.GetByJob(p.Job).Description
+                },
+                combatIndexRank = combatIndexRankEvaluator.Evaluate(combatIndexCalculator.Calculate(p.Status)).ToString()
+            })
+                .ToArray();
+
+            return Results.Ok(PagedResponseFactory.Create(
+                items,
+                pageResult.TotalCount,
+                page,
+                pageSize,
+                offset,
+                effectiveLimit));
         }).RequireAuthorization();
 
         return app;

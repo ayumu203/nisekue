@@ -8,7 +8,6 @@ import { PLAYER_DEDUPING_INTERVAL } from '@/constants/swr'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import PaginationControls from '@/components/common/PaginationControls'
 import { useAuth } from '@/contexts/useAuth'
-import { usePagedList } from '@/hooks/usePagedList'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { resolveRankColor } from '@/lib/playerRank'
 import { resolveCharacterAssetPath } from '@/lib/assets'
@@ -44,29 +43,28 @@ function Players() {
     }
   })
 
+  const playersSWRKey = session?.access_token ? (['players', session.user.id, page] as const) : null
   const {
-    data: players,
+    data: playersPage,
     error: playersError,
     isLoading: isPlayersLoading,
-    hasNextPage,
-  } = usePagedList({
-    enabled: Boolean(session?.access_token),
-    keyPrefix: ['players'],
-    page,
-    fetchPage: async (targetPage) => {
+  } = useSWR(
+    playersSWRKey,
+    async () => {
       if (!session?.access_token) {
         throw new Error(locale.sessionInfoMissing)
       }
 
       return listPlayers(session.access_token, {
-        page: targetPage,
+        page,
         pageSize: PAGE_SIZE,
       })
     },
-    dedupingInterval: PLAYER_DEDUPING_INTERVAL,
-  })
+    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
+  )
 
-  const visitTargets = players?.filter((player) => player.userId !== currentPlayer?.userId) ?? []
+  const hasNextPage = playersPage?.hasNextPage ?? false
+  const visitTargets = playersPage?.items.filter((player) => player.userId !== currentPlayer?.userId) ?? []
 
   if (isLoading) {
     return (

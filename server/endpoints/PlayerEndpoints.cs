@@ -30,8 +30,7 @@ internal static class PlayerEndpoints
             }
 
             var players = await playerRepository.GetAllAsync(offset, effectiveLimit);
-
-            return Results.Ok(players.Select(player => new
+            var items = players.Select(player => new
             {
                 userId = player.Id.Value,
                 userName = player.Name,
@@ -45,7 +44,19 @@ internal static class PlayerEndpoints
                     description = jobProfileRepository.GetByJob(player.Job).Description
                 },
                 combatIndexRank = combatIndexRankEvaluator.Evaluate(combatIndexCalculator.Calculate(player.Status)).ToString()
-            }));
+            }).ToArray();
+
+            var totalCount = (offset is null && effectiveLimit is null)
+                ? items.Length
+                : await playerRepository.CountAllAsync();
+
+            return Results.Ok(PagedResponseFactory.Create(
+                items,
+                totalCount,
+                page,
+                pageSize,
+                offset,
+                effectiveLimit));
         }).RequireAuthorization();
 
         app.MapGet("/player", async (

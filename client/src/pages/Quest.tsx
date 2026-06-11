@@ -237,7 +237,7 @@ export default function Quest() {
   })
 
   const selectablePlayers = useMemo<PlayerSummary[]>(
-    () => (playerCandidates ?? []).filter((candidate) => candidate.userId !== player?.userId),
+    () => (playerCandidates?.items ?? []).filter((candidate) => candidate.userId !== player?.userId),
     [player?.userId, playerCandidates],
   )
   const isCreateDisabled =

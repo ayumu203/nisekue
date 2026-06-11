@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { learnedMoveSchema, playerSummarySchema } from '@/schema/player'
+import { pagedResponseSchema } from '@/schema/pagination'
 
 export const trainingEnemySchema = z.object({
   id: z.number().int().min(1, 'enemyIdは1以上である必要があります'),
@@ -39,13 +40,7 @@ export const trainingCooldownErrorSchema = z.object({
   cooldownUntil: z.string().datetime({ offset: true, message: '日時の形式が不正です' }),
 })
 
-export const getPvpOpponentsResponseSchema = z.object({
-  items: z.array(playerSummarySchema),
-  page: z.number().int().positive(),
-  pageSize: z.number().int().positive(),
-  totalCount: z.number().int().min(0),
-  hasNextPage: z.boolean(),
-})
+export const getPvpOpponentsResponseSchema = pagedResponseSchema(playerSummarySchema)
 
 export type TrainingEnemy = z.infer<typeof trainingEnemySchema>
 export type GetTrainingEnemiesResponse = z.infer<typeof getTrainingEnemiesResponseSchema>

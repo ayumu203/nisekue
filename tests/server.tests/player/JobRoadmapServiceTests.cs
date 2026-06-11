@@ -216,9 +216,30 @@ public class JobRoadmapServiceTests
             return Task.FromResult<IReadOnlyList<Player>>(Array.Empty<Player>());
         }
 
+        public async Task<(IReadOnlyList<Player> Opponents, int TotalCount)> GetPvpOpponentsPageAsync(
+            PlayerId excludeId,
+            int maxLevel,
+            int? offset = null,
+            int? limit = null)
+        {
+            var opponents = await GetPvpOpponentsAsync(excludeId, maxLevel, offset, limit);
+            var totalCount = await CountPvpOpponentsAsync(excludeId, maxLevel);
+            return (opponents, totalCount);
+        }
+
+        public Task<int> CountPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        {
+            return Task.FromResult(0);
+        }
+
         public Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null)
         {
             return Task.FromResult<IReadOnlyList<Player>>([storedPlayer]);
+        }
+
+        public Task<int> CountAllAsync()
+        {
+            return Task.FromResult(1);
         }
 
         public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)

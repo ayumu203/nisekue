@@ -86,9 +86,31 @@ public class PlayerMoveSetServiceTests
             return Task.FromResult(result);
         }
 
+        public async Task<(IReadOnlyList<Player> Opponents, int TotalCount)> GetPvpOpponentsPageAsync(
+            PlayerId excludeId,
+            int maxLevel,
+            int? offset = null,
+            int? limit = null)
+        {
+            var opponents = await GetPvpOpponentsAsync(excludeId, maxLevel, offset, limit);
+            var totalCount = await CountPvpOpponentsAsync(excludeId, maxLevel);
+            return (opponents, totalCount);
+        }
+
+        public Task<int> CountPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        {
+            var count = player.Id != excludeId && player.Level <= maxLevel ? 1 : 0;
+            return Task.FromResult(count);
+        }
+
         public Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null)
         {
             return Task.FromResult<IReadOnlyList<Player>>([player]);
+        }
+
+        public Task<int> CountAllAsync()
+        {
+            return Task.FromResult(1);
         }
 
         public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
