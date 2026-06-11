@@ -4,21 +4,10 @@ using server.shared.constants.player;
 namespace server.application.player;
 
 public class PlayerRebirthService(
-    IPlayerRepository playerRepository,
-    IPlayerMutationService? playerMutationService = null)
+    IPlayerMutationService playerMutationService)
 {
     public async Task<Player> RebirthAsync(PlayerId playerId)
     {
-        if (playerMutationService is null)
-        {
-            var player = await playerRepository.GetPlayerAsync(playerId)
-                ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
-
-            player.Rebirth(BuildInheritedStatus(player.Status));
-            await playerRepository.SaveAsync(player);
-            return player;
-        }
-
         return await playerMutationService.MutateAsync(playerId, player =>
         {
             player.Rebirth(BuildInheritedStatus(player.Status));

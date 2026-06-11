@@ -6,7 +6,6 @@ using server.domain.move;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
-using server.infrastructure.pet;
 
 namespace server.infrastructure.quest.run;
 
@@ -107,11 +106,15 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             .Where(x => runIds.Contains(x.RunId))
             .GroupBy(x => x.RunId)
             .ToDictionaryAsync(x => x.Key, x => x.ToList());
-        var turnCommandsByRunId = await dbContext.QuestTurnCommands
+        var currentTurnNoByRunId = runEntities.ToDictionary(x => x.Id, x => x.CurrentTurnNo);
+        var currentTurnNos = runEntities.Select(x => x.CurrentTurnNo).Distinct().ToArray();
+        var turnCommandsByRunId = (await dbContext.QuestTurnCommands
             .AsNoTracking()
-            .Where(x => runIds.Contains(x.RunId))
+            .Where(x => runIds.Contains(x.RunId) && currentTurnNos.Contains(x.TurnNo))
+            .ToListAsync())
+            .Where(x => currentTurnNoByRunId.GetValueOrDefault(x.RunId) == x.TurnNo)
             .GroupBy(x => x.RunId)
-            .ToDictionaryAsync(x => x.Key, x => x.ToList());
+            .ToDictionary(x => x.Key, x => x.ToList());
         var trapsByRunId = await dbContext.QuestFloorTraps
             .AsNoTracking()
             .Where(x => runIds.Contains(x.RunId))
@@ -127,9 +130,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                 snapshotsByRunId.GetValueOrDefault(entity.Id) ?? [],
                 partyMemberByRunId.GetValueOrDefault(entity.Id) ?? [],
                 enemiesByRunId.GetValueOrDefault(entity.Id) ?? [],
-                (turnCommandsByRunId.GetValueOrDefault(entity.Id) ?? [])
-                    .Where(x => x.TurnNo == entity.CurrentTurnNo)
-                    .ToArray(),
+                turnCommandsByRunId.GetValueOrDefault(entity.Id) ?? [],
                 trapsByRunId.GetValueOrDefault(entity.Id) ?? [],
                 rewardsByRunId.GetValueOrDefault(entity.Id)))
             .ToArray();
@@ -333,23 +334,14 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         var existingEntities = await dbContext.QuestRunPartyMembers
             .Where(x => x.RunId == runId)
             .ToDictionaryAsync(x => x.ParticipantId);
-        var statesById = run.BattleState.PartyMembers.ToDictionary(x => x.ParticipantId.Value);
 
-        foreach (var stale in existingEntities.Values.Where(x => !statesById.ContainsKey(x.ParticipantId)))
-        {
-            dbContext.QuestRunPartyMembers.Remove(stale);
-        }
-
-        foreach (var state in run.BattleState.PartyMembers)
-        {
-            if (existingEntities.TryGetValue(state.ParticipantId.Value, out var existing))
-            {
-                ApplyPartyMemberEntity(existing, state);
-                continue;
-            }
-
-            dbContext.QuestRunPartyMembers.Add(ToPartyMemberEntity(runId, state));
-        }
+        SyncEntities(
+            existingEntities,
+            run.BattleState.PartyMembers,
+            state => state.ParticipantId.Value,
+            stale => dbContext.QuestRunPartyMembers.Remove(stale),
+            state => dbContext.QuestRunPartyMembers.Add(ToPartyMemberEntity(runId, state)),
+            ApplyPartyMemberEntity);
     }
 
     private static async Task SyncEnemiesAsync(AppDbContext dbContext, QuestRun run)
@@ -358,23 +350,14 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         var existingEntities = await dbContext.QuestRunEnemies
             .Where(x => x.RunId == runId)
             .ToDictionaryAsync(x => x.EnemyInstanceId);
-        var enemiesById = run.BattleState.Enemies.ToDictionary(x => x.Id.Value);
 
-        foreach (var stale in existingEntities.Values.Where(x => !enemiesById.ContainsKey(x.EnemyInstanceId)))
-        {
-            dbContext.QuestRunEnemies.Remove(stale);
-        }
-
-        foreach (var enemy in run.BattleState.Enemies)
-        {
-            if (existingEntities.TryGetValue(enemy.Id.Value, out var existing))
-            {
-                ApplyEnemyEntity(existing, run, enemy);
-                continue;
-            }
-
-            dbContext.QuestRunEnemies.Add(ToEnemyEntity(run, enemy));
-        }
+        SyncEntities(
+            existingEntities,
+            run.BattleState.Enemies,
+            enemy => enemy.Id.Value,
+            stale => dbContext.QuestRunEnemies.Remove(stale),
+            enemy => dbContext.QuestRunEnemies.Add(ToEnemyEntity(run, enemy)),
+            (existing, enemy) => ApplyEnemyEntity(existing, run, enemy));
     }
 
     private static async Task SyncTurnCommandsAsync(AppDbContext dbContext, QuestRun run)
@@ -423,25 +406,51 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         var existingEntities = await dbContext.QuestFloorTraps
             .Where(x => x.RunId == runId)
             .ToDictionaryAsync(x => x.TrapId);
-        var trapsById = run.Traps.Traps.ToDictionary(x => x.Id.Value);
 
-        foreach (var stale in existingEntities.Values.Where(x => !trapsById.ContainsKey(x.TrapId)))
-        {
-            dbContext.QuestFloorTraps.Remove(stale);
-        }
-
-        foreach (var trap in run.Traps.Traps)
-        {
-            if (existingEntities.TryGetValue(trap.Id.Value, out var existing))
+        SyncEntities(
+            existingEntities,
+            run.Traps.Traps,
+            trap => trap.Id.Value,
+            stale => dbContext.QuestFloorTraps.Remove(stale),
+            trap => dbContext.QuestFloorTraps.Add(ToTrapEntity(runId, trap)),
+            (existing, trap) =>
             {
                 existing.SourceParticipantId = trap.SourceParticipantId.Value;
                 existing.MoveId = trap.MoveId.Id;
                 existing.ExpiresAfterFloorNo = trap.ExpiresAfterFloorNo;
                 existing.IsTriggered = trap.IsTriggered;
+            });
+    }
+
+    private static void SyncEntities<TEntity, TState, TKey>(
+        IReadOnlyDictionary<TKey, TEntity> existingEntities,
+        IReadOnlyList<TState> states,
+        Func<TState, TKey> stateKeySelector,
+        Action<TEntity> removeStale,
+        Action<TState> addNew,
+        Action<TEntity, TState> apply)
+        where TKey : notnull
+    {
+        var statesByKey = states.ToDictionary(stateKeySelector);
+
+        foreach (var (key, stale) in existingEntities)
+        {
+            if (!statesByKey.ContainsKey(key))
+            {
+                removeStale(stale);
+            }
+        }
+
+        foreach (var state in states)
+        {
+            var key = stateKeySelector(state);
+            if (existingEntities.TryGetValue(key, out var existing))
+            {
+                apply(existing, state);
                 continue;
             }
 
-            dbContext.QuestFloorTraps.Add(ToTrapEntity(runId, trap));
+            addNew(state);
         }
     }
 

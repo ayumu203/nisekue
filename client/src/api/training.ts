@@ -30,7 +30,7 @@ export async function getPvpOpponents(
   options?: PaginationOptions,
 ): Promise<ListPlayersResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
-  const url = new URL(`${apiBaseUrl}${endpoints.training.getPvpOpponents.path}`)
+  const url = new URL(`${apiBaseUrl}${endpoints.training.getPvpOpponents.path}`, window.location.origin)
   applyPaginationSearchParams(url, options)
 
   const response = await fetchSafely(url.toString(), {

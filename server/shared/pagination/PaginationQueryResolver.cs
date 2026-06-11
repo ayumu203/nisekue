@@ -2,6 +2,8 @@ namespace server.shared.pagination;
 
 public static class PaginationQueryResolver
 {
+    private const int MaxPageSize = 100;
+
     public static bool TryResolve(
         int? page,
         int? pageSize,
@@ -33,10 +35,26 @@ public static class PaginationQueryResolver
             return true;
         }
 
-        offset = (page!.Value - 1) * pageSize!.Value;
+        if (pageSize!.Value > MaxPageSize)
+        {
+            errorMessage = $"pageSize は {MaxPageSize} 以下を指定してください。";
+            return false;
+        }
+
+        var effectivePageSize = pageSize.Value;
+        try
+        {
+            offset = checked((page!.Value - 1) * effectivePageSize);
+        }
+        catch (OverflowException)
+        {
+            errorMessage = "page と pageSize の組み合わせが大きすぎます。";
+            return false;
+        }
+
         effectiveLimit = effectiveLimit is null
-            ? pageSize.Value
-            : Math.Min(pageSize.Value, effectiveLimit.Value);
+            ? effectivePageSize
+            : Math.Min(effectivePageSize, effectiveLimit.Value);
         return true;
     }
 }

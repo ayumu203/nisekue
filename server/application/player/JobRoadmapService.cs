@@ -42,7 +42,7 @@ public class JobRoadmapService(
     IJobRoadmapRankRepository roadmapRankRepository,
     IItemRepository itemRepository,
     IQuestStageRepository questStageRepository,
-    IPlayerMutationService? playerMutationService = null)
+    IPlayerMutationService playerMutationService)
 {
     private IReadOnlyDictionary<Job, IReadOnlyList<Item>>? cachedItemsByTargetJob;
 
@@ -89,37 +89,6 @@ public class JobRoadmapService(
         if (rank is null)
         {
             throw new InvalidOperationException("指定されたジョブのロードマップ情報が存在しません。");
-        }
-
-        if (playerMutationService is null)
-        {
-            var player = await playerRepository.GetPlayerAsync(playerId)
-                ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
-
-            if (player.IsRoadmapUnlocked(targetJob))
-            {
-                return new UnlockJobRoadmapResult(
-                    (int)targetJob,
-                    JobDisplayNames.GetDisplayName(targetJob),
-                    0,
-                    player.Gold);
-            }
-
-            if (!await CanUnlockRoadmapAsync(player, targetJob))
-            {
-                throw new InvalidOperationException("前提となるジョブのロードマップが解放されていません。");
-            }
-
-            var goldCost = GoldCostForRank(rank.Value);
-            player.SpendGold(goldCost);
-            player.UnlockRoadmap(targetJob);
-            await playerRepository.SaveAsync(player);
-
-            return new UnlockJobRoadmapResult(
-                (int)targetJob,
-                JobDisplayNames.GetDisplayName(targetJob),
-                goldCost,
-                player.Gold);
         }
 
         return await playerMutationService.MutateAsync(playerId, async player =>

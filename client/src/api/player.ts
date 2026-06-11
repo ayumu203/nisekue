@@ -67,7 +67,7 @@ export async function getPlayerById(playerId: string, accessToken: string): Prom
 
 export async function listPlayers(accessToken: string, options?: PaginationOptions): Promise<ListPlayersResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
-  const url = new URL(`${apiBaseUrl}${endpoints.player.list.path}`)
+  const url = new URL(`${apiBaseUrl}${endpoints.player.list.path}`, window.location.origin)
   applyPaginationSearchParams(url, options)
 
   const response = await fetchSafely(url.toString(), {
