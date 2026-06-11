@@ -121,98 +121,87 @@ internal static class ItemEndpoints
                 return Results.BadRequest(new { message = "使用数は1以上で指定してください。" });
             }
 
-            try
+            stack.ConsumeQuantity(request.Quantity, DateTimeOffset.UtcNow);
+
+            await playerMutationService.MutateAsync(playerId.Value, async player =>
             {
-                stack.ConsumeQuantity(request.Quantity, DateTimeOffset.UtcNow);
-
-                await playerMutationService.MutateAsync(playerId.Value, async player =>
+                if (!item.CanUse(player))
                 {
-                    if (!item.CanUse(player))
-                    {
-                        throw new InvalidOperationException("このアイテムを使用する条件を満たしていません。");
-                    }
-
-                    switch (item.EffectType)
-                    {
-                        case ItemEffectType.StatBoost:
-                            player.UpdateStatus(itemStatBoostService.Apply(player.Status, item, request.Quantity));
-                            break;
-                        case ItemEffectType.ChangeJob:
-                        {
-                            if (request.Quantity != 1)
-                            {
-                                throw new InvalidOperationException("転職アイテムは1個ずつのみ使用できます。");
-                            }
-
-                            if (item.ChangeJobTo is null)
-                            {
-                                throw new InvalidOperationException("転職先ジョブが定義されていません。");
-                            }
-
-                            var jobProfile = jobProfileRepository.GetByJob(item.ChangeJobTo.Value);
-                            var learningRule = jobMoveLearningRuleRepository.GetByJob(item.ChangeJobTo.Value);
-                            player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
-                            break;
-                        }
-                        case ItemEffectType.ExpMultiplier:
-                        {
-                            if (request.Quantity != 1)
-                            {
-                                throw new InvalidOperationException("経験値倍率アイテムは1個ずつのみ使用できます。");
-                            }
-
-                            if (item.ExpMultiplier is null)
-                            {
-                                throw new InvalidOperationException("経験値倍率が定義されていません。");
-                            }
-
-                            if (player.HasAnyExpMultiplierFlag())
-                            {
-                                throw new InvalidOperationException("すでに経験値倍率が設定されています。効果が切れてから使用してください。");
-                            }
-
-                            var flag = ExpMultiplierFlag.ToFlag(item.ExpMultiplier.Value);
-                            player.SetExpMultiplierFlag(flag);
-                            break;
-                        }
-                        case ItemEffectType.UnlockMap:
-                        {
-                            if (request.Quantity != 1)
-                            {
-                                throw new InvalidOperationException("マップ解放アイテムは1個ずつのみ使用できます。");
-                            }
-
-                            if (item.MapUnlockFlag is null)
-                            {
-                                throw new InvalidOperationException("マップ解放フラグが定義されていません。");
-                            }
-
-                            player.SetMapUnlockFlag(item.MapUnlockFlag.Value);
-                            break;
-                        }
-                        default:
-                            throw new InvalidOperationException("未対応のアイテム効果です。");
-                    }
-
-                    return 0;
-                });
-
-                if (stack.Quantity == 0)
-                {
-                    await playerItemStackRepository.DeleteAsync(stack.Id);
+                    throw new InvalidOperationException("このアイテムを使用する条件を満たしていません。");
                 }
-                else
+
+                switch (item.EffectType)
                 {
-                    await playerItemStackRepository.SaveAsync([stack]);
+                    case ItemEffectType.StatBoost:
+                        player.UpdateStatus(itemStatBoostService.Apply(player.Status, item, request.Quantity));
+                        break;
+                    case ItemEffectType.ChangeJob:
+                    {
+                        if (request.Quantity != 1)
+                        {
+                            throw new InvalidOperationException("転職アイテムは1個ずつのみ使用できます。");
+                        }
+
+                        if (item.ChangeJobTo is null)
+                        {
+                            throw new InvalidOperationException("転職先ジョブが定義されていません。");
+                        }
+
+                        var jobProfile = jobProfileRepository.GetByJob(item.ChangeJobTo.Value);
+                        var learningRule = jobMoveLearningRuleRepository.GetByJob(item.ChangeJobTo.Value);
+                        player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
+                        break;
+                    }
+                    case ItemEffectType.ExpMultiplier:
+                    {
+                        if (request.Quantity != 1)
+                        {
+                            throw new InvalidOperationException("経験値倍率アイテムは1個ずつのみ使用できます。");
+                        }
+
+                        if (item.ExpMultiplier is null)
+                        {
+                            throw new InvalidOperationException("経験値倍率が定義されていません。");
+                        }
+
+                        if (player.HasAnyExpMultiplierFlag())
+                        {
+                            throw new InvalidOperationException("すでに経験値倍率が設定されています。効果が切れてから使用してください。");
+                        }
+
+                        var flag = ExpMultiplierFlag.ToFlag(item.ExpMultiplier.Value);
+                        player.SetExpMultiplierFlag(flag);
+                        break;
+                    }
+                    case ItemEffectType.UnlockMap:
+                    {
+                        if (request.Quantity != 1)
+                        {
+                            throw new InvalidOperationException("マップ解放アイテムは1個ずつのみ使用できます。");
+                        }
+
+                        if (item.MapUnlockFlag is null)
+                        {
+                            throw new InvalidOperationException("マップ解放フラグが定義されていません。");
+                        }
+
+                        player.SetMapUnlockFlag(item.MapUnlockFlag.Value);
+                        break;
+                    }
+                    default:
+                        throw new InvalidOperationException("未対応のアイテム効果です。");
                 }
-            }
-            catch (KeyNotFoundException ex)
+
+                return 0;
+            });
+
+            if (stack.Quantity == 0)
             {
-                return Results.NotFound(new { message = ex.Message });
+                await playerItemStackRepository.DeleteAsync(stack.Id);
             }
-            catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException or ArgumentException)
+            else
             {
-                return Results.BadRequest(new { message = ex.Message });
+                await playerItemStackRepository.SaveAsync([stack]);
             }
 
             return Results.Ok(new { message = "アイテムを使用しました。" });
@@ -222,8 +211,9 @@ internal static class ItemEndpoints
             ClaimsPrincipal user,
             Guid targetId,
             SynthesizeEquipmentRequest request,
-            IPlayerMutationService playerMutationService,
-            IPlayerEquipmentRepository playerEquipmentRepository,
+            IDbContextFactory<AppDbContext> dbContextFactory,
+            PlayerForUpdateLockService playerForUpdateLockService,
+            IMemoryCache cache,
             IEquipmentRepository equipmentRepository) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
@@ -232,63 +222,59 @@ internal static class ItemEndpoints
                 return Results.Unauthorized();
             }
 
-            var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(playerId.Value)).ToList();
-            var target = playerEquipments.FirstOrDefault(x => x.Id == new PlayerEquipmentId(targetId));
-            if (target is null)
+            var equipmentMasters = await equipmentRepository.GetAllAsync();
+            var equipmentById = equipmentMasters.ToDictionary(x => x.Id);
+
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var tx = await dbContext.Database.BeginTransactionAsync();
+
+            var lockedPlayers = await playerForUpdateLockService.LockPlayersAsync(dbContext, [playerId.Value.Value]);
+
+            var targetEntity = await dbContext.PlayerEquipments
+                .FromSqlInterpolated($"SELECT * FROM internal.player_equipments WHERE id = {targetId} FOR UPDATE")
+                .SingleOrDefaultAsync();
+            if (targetEntity is null || targetEntity.PlayerId != playerId.Value.Value)
             {
                 return Results.BadRequest(new { message = "合成対象の装備が見つかりません。" });
             }
 
-            var source = playerEquipments.FirstOrDefault(x => x.Id == new PlayerEquipmentId(request.SourcePlayerEquipmentId));
-            if (source is null)
+            var sourceEntity = await dbContext.PlayerEquipments
+                .FromSqlInterpolated($"SELECT * FROM internal.player_equipments WHERE id = {request.SourcePlayerEquipmentId} FOR UPDATE")
+                .SingleOrDefaultAsync();
+            if (sourceEntity is null || sourceEntity.PlayerId != playerId.Value.Value)
             {
                 return Results.BadRequest(new { message = "合成素材として使える装備が見つかりません。" });
             }
 
-            var equipmentMasters = await equipmentRepository.GetAllAsync();
-            var equipmentById = equipmentMasters.ToDictionary(x => x.Id);
+            var target = PlayerEquipmentEntityMapper.MapToDomain(targetEntity);
+            var source = PlayerEquipmentEntityMapper.MapToDomain(sourceEntity);
             if (!equipmentById.TryGetValue(target.EquipmentId, out var master))
             {
                 return Results.BadRequest(new { message = "装備マスタが見つかりません。" });
             }
 
             var goldCost = master.SynthesisGoldCost * (target.PlusValue + 1);
-            try
-            {
-                target.Synthesize(source, goldCost, DateTimeOffset.UtcNow);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return Results.NotFound(new { message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(new { message = ex.Message });
-            }
+            var playerEntity = lockedPlayers[playerId.Value.Value];
+            target.Synthesize(source, goldCost, DateTimeOffset.UtcNow);
+            var player = PlayerEntityMapper.MapToDomain(playerEntity, moveEntity: null);
+            player.SpendGold(goldCost);
+            playerEntity.Gold = player.Gold;
 
-            int gold;
-            try
-            {
-                gold = await playerMutationService.MutateAsync(playerId.Value, currentPlayer =>
-                {
-                    currentPlayer.SpendGold(goldCost);
-                    return Task.FromResult(currentPlayer.Gold);
-                });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(new { message = ex.Message });
-            }
+            PlayerEquipmentEntityMapper.ApplyEntity(targetEntity, target);
+            dbContext.PlayerEquipments.Remove(sourceEntity);
+            await dbContext.SaveChangesAsync();
+            await tx.CommitAsync();
 
-            await playerEquipmentRepository.SaveAsync(playerEquipments.Where(x => x.Id != source.Id).ToArray());
-            await playerEquipmentRepository.DeleteAsync(source.Id);
+            cache.Remove(server.shared.constants.player.PlayerCacheConstants.PlayerKey(playerEntity.Id));
+            cache.Remove(server.shared.constants.player.PlayerCacheConstants.AllPlayersKey);
+            cache.Remove(DbPlayerEquipmentRepository.EquippedCacheKey(playerEntity.Id));
 
             return Results.Ok(new
             {
                 message = "合成しました。",
                 targetPlayerEquipmentId = target.Id.Value,
                 plusValue = target.PlusValue,
-                gold
+                gold = playerEntity.Gold
             });
         }).RequireAuthorization();
 
@@ -647,8 +633,8 @@ internal static class ItemEndpoints
             var price = checked(listing.UnitPrice * request.Quantity);
             try
             {
-                var buyerDomain = MapPlayerEntityForGoldMutation(buyer);
-                var sellerDomain = MapPlayerEntityForGoldMutation(seller);
+                var buyerDomain = PlayerEntityMapper.MapToDomain(buyer, moveEntity: null);
+                var sellerDomain = PlayerEntityMapper.MapToDomain(seller, moveEntity: null);
                 buyerDomain.SpendGold(price);
                 sellerDomain.GainGold(price);
                 buyer.Gold = buyerDomain.Gold;
@@ -774,34 +760,6 @@ internal static class ItemEndpoints
         }).RequireAuthorization();
 
         return app;
-    }
-
-    private static Player MapPlayerEntityForGoldMutation(PlayerEntity entity)
-    {
-        return new Player(
-            new PlayerId(entity.Id),
-            entity.Name,
-            level: entity.Level,
-            exp: entity.Exp,
-            jobLevel: entity.JobLevel,
-            jobExp: entity.JobExp,
-            gold: entity.Gold,
-            status: new Status(
-                maxHp: entity.MaxHp,
-                maxMp: entity.MaxMp,
-                strength: entity.Strength,
-                defense: entity.Defense,
-                intelligence: entity.Intelligence,
-                luck: entity.Luck,
-                speed: entity.Speed),
-            job: entity.Job,
-            imagePath: entity.ImagePath,
-            questCooldownUntil: entity.QuestCooldownUntil,
-            petBattleCooldownUntil: entity.PetBattleCooldownUntil,
-            rebirthCount: entity.RebirthCount,
-            expMultiplierFlags: entity.ExpMultiplierFlags,
-            mapUnlockFlags: entity.MapUnlockFlags,
-            roadmapUnlockFlags: entity.RoadmapUnlockFlags);
     }
 
     private static int CalculateUsedSlots(

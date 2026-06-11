@@ -40,6 +40,34 @@ public class QuestRunServiceTests
     }
 
     [Fact]
+    public async Task SubmitCommandAsync_WhenAnotherManualPlayerIsWaiting_PersistsPendingCommand()
+    {
+        var firstParticipantId = QuestParticipantId.New();
+        var secondParticipantId = QuestParticipantId.New();
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(firstParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 10),
+                new PartyMemberSeed(secondParticipantId, ParticipantType.Player, "Guest", Job.Warrior, new BattlePosition(BattleRow.Back, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 10);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), []);
+
+        var command = new QuestSubmittedCommand(
+            firstParticipantId,
+            run.TurnState.CurrentTurnNo,
+            ActionKind.Wait,
+            DateTimeOffset.UtcNow);
+
+        var result = await service.SubmitCommandAsync(run.Id, firstParticipantId, command);
+
+        result.ResolvedInThisRequest.Should().BeFalse();
+        repository.SaveCount.Should().Be(1);
+        repository.StoredRun!.TurnState.PendingCommands.Should().ContainSingle(x => x.ParticipantId == firstParticipantId);
+    }
+
+    [Fact]
     public async Task ProcessExpiredRunsAsync_WhenDeadlineExceeded_SwitchesPartyToAutoAttack()
     {
         var run = CreateRun(deadlineAt: DateTimeOffset.UtcNow.AddSeconds(-1));
@@ -51,7 +79,7 @@ public class QuestRunServiceTests
 
         updatedRuns.Should().ContainSingle();
         repository.StoredRun!.BattleState.PartyMembers.Should().OnlyContain(x => x.ActionMode == ActionMode.AutoAttackOnly);
-        repository.SaveCount.Should().Be(1);
+        repository.SaveCount.Should().Be(2);
     }
 
     [Fact]
@@ -98,7 +126,7 @@ public class QuestRunServiceTests
 
         result.ResolvedInThisRequest.Should().BeTrue();
         repository.StoredRun!.Status.Should().Be(QuestRunStatus.Succeeded);
-        repository.SaveCount.Should().Be(1);
+        repository.SaveCount.Should().Be(2);
     }
 
     [Fact]
@@ -229,7 +257,31 @@ public class QuestRunServiceTests
         var player = await playerRepository.GetPlayerAsync(room.OwnerId);
         player.Should().NotBeNull();
         player!.QuestCooldownUntil.Should().NotBeNull();
-        repository.SaveCount.Should().Be(1);
+        repository.SaveCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task EscapeAsync_WhenInitialResolvedSaveFails_DoesNotApplyCompletionEffects()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run)
+        {
+            RemainingSaveFailures = 1
+        };
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerRepository = new FakePlayerRepository(roomRepository.PlayerIds.ToArray());
+        var petRepository = new FakePlayerPetRepository();
+        var service = CreateRunService(repository, roomRepository, playerRepository, CreateStage(run.StageId), [], petRepository);
+
+        var act = () => service.EscapeAsync(run.Id, room.OwnerId);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+
+        var player = await playerRepository.GetPlayerAsync(room.OwnerId);
+        player.Should().NotBeNull();
+        player!.QuestCooldownUntil.Should().BeNull();
+        petRepository.StoredPets.Should().BeEmpty();
     }
 
     [Fact]
@@ -2250,6 +2302,7 @@ public class QuestRunServiceTests
     {
         public QuestRun? StoredRun { get; private set; } = run;
         public int SaveCount { get; private set; }
+        public int RemainingSaveFailures { get; set; }
 
         public Task<QuestRun?> GetAsync(QuestRunId id)
             => Task.FromResult(StoredRun?.Id == id ? StoredRun : null);
@@ -2268,6 +2321,12 @@ public class QuestRunServiceTests
 
         public Task SaveAsync(QuestRun run)
         {
+            if (RemainingSaveFailures > 0)
+            {
+                RemainingSaveFailures--;
+                throw new InvalidOperationException("simulated save failure");
+            }
+
             StoredRun = run;
             SaveCount++;
             return Task.CompletedTask;

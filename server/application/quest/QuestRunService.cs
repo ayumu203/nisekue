@@ -61,8 +61,9 @@ public class QuestRunService(
 
         run.SubmitCommand(participantId, command, DateTimeOffset.UtcNow);
         var resolution = await TryResolveIfReadyAsync(run);
-        await SaveRunAsync(run, resolution.CapturedPets);
-        return new QuestCommandSubmissionResult(run, resolution.ResolvedInThisRequest);
+        await PersistResolutionAsync(run, resolution);
+
+        return new QuestCommandSubmissionResult(run, resolution != QuestRunResolution.None);
     }
 
     private async Task EnsurePetCapacityAsync(QuestRun run, QuestParticipantId participantId)
@@ -110,8 +111,7 @@ public class QuestRunService(
         }
 
         run.EscapeByOwner();
-        var capturedPets = await ApplyQuestCompletionEffectsAsync(run);
-        await SaveRunAsync(run, capturedPets);
+        await PersistResolvedRunAndApplyCompletionEffectsAsync(run);
         return run;
     }
 
@@ -128,11 +128,8 @@ public class QuestRunService(
         {
             run.SwitchToAutoActionForTimeout(now);
             var resolution = await TryResolveIfReadyAsync(run);
-            if (resolution.ResolvedInThisRequest)
-            {
-                await SaveRunAsync(run, resolution.CapturedPets);
-                updatedRuns.Add(run);
-            }
+            await PersistResolutionAsync(run, resolution);
+            updatedRuns.Add(run);
         }
 
         return updatedRuns;
@@ -146,17 +143,17 @@ public class QuestRunService(
         return run;
     }
 
-    private async Task<QuestRunResolutionResult> TryResolveIfReadyAsync(QuestRun run)
+    private async Task<QuestRunResolution> TryResolveIfReadyAsync(QuestRun run)
     {
         if (run.Status != QuestRunStatus.InProgress)
         {
-            return QuestRunResolutionResult.None;
+            return QuestRunResolution.None;
         }
 
         var waitingParticipantIds = GetWaitingParticipantIds(run);
         if (waitingParticipantIds.Count > 0)
         {
-            return QuestRunResolutionResult.None;
+            return QuestRunResolution.None;
         }
 
         var stage = await questStageRepository.GetAsync(run.StageId)
@@ -239,13 +236,27 @@ public class QuestRunService(
                 DateTimeOffset.UtcNow.Add(TurnDeadline));
         }
 
-        if (run.Status != QuestRunStatus.InProgress)
+        return run.Status == QuestRunStatus.InProgress
+            ? QuestRunResolution.Resolved
+            : QuestRunResolution.Completed;
+    }
+
+    private async Task PersistResolutionAsync(QuestRun run, QuestRunResolution resolution)
+    {
+        if (resolution == QuestRunResolution.Completed)
         {
-            var capturedPets = await ApplyQuestCompletionEffectsAsync(run);
-            return new QuestRunResolutionResult(true, capturedPets);
+            await PersistResolvedRunAndApplyCompletionEffectsAsync(run);
+            return;
         }
 
-        return new QuestRunResolutionResult(true, []);
+        await SaveRunAsync(run);
+    }
+
+    private async Task PersistResolvedRunAndApplyCompletionEffectsAsync(QuestRun run)
+    {
+        await SaveRunAsync(run);
+        var capturedPets = await ApplyQuestCompletionEffectsAsync(run);
+        await SaveRunAsync(run, capturedPets);
     }
 
     private async Task SaveRunAsync(QuestRun run, IReadOnlyList<PlayerPet>? capturedPets = null)
@@ -403,9 +414,11 @@ public class QuestRunService(
         return new QuestCaptureProcessingResult(logActions);
     }
 
-    private sealed record QuestRunResolutionResult(bool ResolvedInThisRequest, IReadOnlyList<PlayerPet> CapturedPets)
+    private enum QuestRunResolution
     {
-        public static QuestRunResolutionResult None { get; } = new(false, []);
+        None,
+        Resolved,
+        Completed
     }
 
     private sealed record QuestCaptureProcessingResult(IReadOnlyList<QuestResolvedAction> Actions)
@@ -652,10 +665,7 @@ public class QuestRunService(
             var multiplier = ExpMultiplierFlag.ToMultiplier(player.ExpMultiplierFlags);
             var multipliedExp = (int)Math.Floor(run.Rewards.Exp * multiplier);
             player.ClearExpMultiplierFlags();
-            player.GainExp(multipliedExp);
-            var jobProfile = jobProfileRepository.GetByJob(player.Job);
-            var learningRule = jobMoveLearningRuleRepository.GetByJob(player.Job);
-            player.LevelUp(jobProfile, learningRule);
+            PlayerExpRewardApplicator.Apply(player, multipliedExp, jobProfileRepository, jobMoveLearningRuleRepository);
         }
         else
         {
