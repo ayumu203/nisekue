@@ -18,14 +18,18 @@ public class QuestRun(
     IEnumerable<QuestChatMessage>? chatMessages,
     DateTimeOffset startedAt,
     QuestRunStatus status = QuestRunStatus.InProgress,
-    DateTimeOffset? endedAt = null)
+    DateTimeOffset? endedAt = null,
+    int version = 1)
 {
     private readonly List<QuestChatMessage> chatMessages = chatMessages?.ToList() ?? [];
+    private readonly List<QuestChatMessage> pendingChatMessages = [];
     private readonly QuestRunPartyMemberSnapshot[] partySnapshots = partySnapshots?.ToArray()
         ?? throw new ArgumentNullException(nameof(partySnapshots));
 
     public QuestRunId Id { get; } = id;
     public QuestRoomId RoomId { get; } = roomId;
+    public int Version { get; private set; } = version;
+    public int PersistedVersion { get; private set; } = version;
     public QuestStageId StageId { get; } = stageId;
     public IReadOnlyList<QuestRunPartyMemberSnapshot> PartySnapshots => partySnapshots;
     public QuestRunStatus Status { get; private set; } = status;
@@ -36,6 +40,7 @@ public class QuestRun(
     public QuestRewardAccumulator Rewards { get; } = rewards ?? throw new ArgumentNullException(nameof(rewards));
     public QuestLastTurnResults? LastTurnResults { get; private set; } = lastTurnResults;
     public IReadOnlyList<QuestChatMessage> ChatMessages => chatMessages;
+    public IReadOnlyList<QuestChatMessage> PendingChatMessages => pendingChatMessages;
     public DateTimeOffset StartedAt { get; } = startedAt;
     public DateTimeOffset? EndedAt { get; private set; } = endedAt;
 
@@ -89,6 +94,7 @@ public class QuestRun(
         }
 
         TurnState.Submit(command);
+        Version++;
     }
 
     public void SwitchToAutoActionForTimeout(DateTimeOffset now)
@@ -107,12 +113,15 @@ public class QuestRun(
                 partyMember.SwitchToAutoAttackOnly();
             }
         }
+
+        Version++;
     }
 
     public void RequestManualControl(QuestParticipantId participantId)
     {
         EnsureInProgress();
         BattleState.FindPartyMember(participantId).RequestManualControl();
+        Version++;
     }
 
     public void ApproveManualControl(QuestParticipantId participantId, PlayerId ownerId)
@@ -126,6 +135,7 @@ public class QuestRun(
         }
 
         partyMember.SwitchToManual();
+        Version++;
     }
 
     public void AdvanceFloor(bool isBossFloor = false, IEnumerable<QuestEnemyPlacement>? nextPlacements = null)
@@ -137,6 +147,7 @@ public class QuestRun(
         }
 
         FloorState.AdvanceTo(FloorState.CurrentFloorNo + 1, isBossFloor, nextPlacements ?? []);
+        Version++;
     }
 
     public void StartNextFloor(
@@ -158,12 +169,14 @@ public class QuestRun(
         BattleState.ReplaceEnemies(nextEnemies);
         ApplyTrapsOnFloorStart();
         TurnState.Advance(nextDeadlineAt);
+        Version++;
     }
 
     public void ApplyTrapsOnFloorStart()
     {
         EnsureInProgress();
         Traps.RemoveExpired(FloorState.CurrentFloorNo);
+        Version++;
     }
 
     public QuestRunResolutionSummary ResolveTurn(DateTimeOffset nextDeadlineAt)
@@ -203,6 +216,7 @@ public class QuestRun(
             isFloorCleared: isFloorCleared,
             isQuestCompleted: isQuestCompleted,
             isQuestFailed: isQuestFailed);
+
     }
 
     public QuestRunResolutionSummary ApplyBattleResolution(
@@ -216,6 +230,7 @@ public class QuestRun(
         BattleState.ApplyResolution(resolution, partyActorMap, enemyActorMap, TurnState.CurrentTurnNo);
 
         var summary = ResolveTurn(nextDeadlineAt);
+        Version++;
         if (Status == QuestRunStatus.InProgress &&
             summary.IsFloorCleared &&
             FloorState.CurrentFloorNo >= finalFloorNo)
@@ -236,11 +251,26 @@ public class QuestRun(
         EnsureInProgress();
         ArgumentNullException.ThrowIfNull(message);
         chatMessages.Add(message);
+        pendingChatMessages.Add(message);
+        Version++;
+    }
+
+    public void SetChatMessagesForPersistence(IEnumerable<QuestChatMessage> messages)
+    {
+        ArgumentNullException.ThrowIfNull(messages);
+        chatMessages.Clear();
+        chatMessages.AddRange(messages);
+    }
+
+    public void MarkChatMessagesPersisted()
+    {
+        pendingChatMessages.Clear();
     }
 
     public void SetLastTurnResults(QuestLastTurnResults? lastTurnResults)
     {
         LastTurnResults = lastTurnResults;
+        Version++;
     }
 
     public void EscapeByOwner()
@@ -253,6 +283,7 @@ public class QuestRun(
         EnsureInProgress();
         Status = QuestRunStatus.Succeeded;
         EndedAt = DateTimeOffset.UtcNow;
+        Version++;
     }
 
     public void MarkFailed()
@@ -260,6 +291,7 @@ public class QuestRun(
         EnsureInProgress();
         Status = QuestRunStatus.Failed;
         EndedAt = DateTimeOffset.UtcNow;
+        Version++;
     }
 
     public void Abort(string reason)
@@ -272,6 +304,13 @@ public class QuestRun(
 
         Status = QuestRunStatus.Aborted;
         EndedAt = DateTimeOffset.UtcNow;
+        Version++;
+    }
+
+    public void SyncVersion(int version)
+    {
+        Version = version;
+        PersistedVersion = version;
     }
 
     private void EnsureInProgress()

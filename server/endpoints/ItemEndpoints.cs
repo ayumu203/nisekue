@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Mvc;
 using server.application.chat;
 using server.application.player;
+using server.domain;
 using server.domain.move;
 using server.domain.player;
 using server.domain.treasuremap;
@@ -84,7 +86,7 @@ internal static class ItemEndpoints
             ClaimsPrincipal user,
             Guid itemStackId,
             UseItemRequest request,
-            IPlayerRepository playerRepository,
+            IPlayerMutationService playerMutationService,
             IPlayerItemStackRepository playerItemStackRepository,
             IItemRepository itemRepository,
             ITreasureMapRepository treasureMapRepository,
@@ -98,14 +100,8 @@ internal static class ItemEndpoints
                 return Results.Unauthorized();
             }
 
-            var player = await playerRepository.GetPlayerAsync(playerId.Value);
-            if (player is null)
-            {
-                return Results.NotFound(new { message = "プレイヤーが見つかりません。" });
-            }
-
             var stack = await playerItemStackRepository.GetAsync(new PlayerItemStackId(itemStackId));
-            if (stack is null || stack.PlayerId != player.Id)
+            if (stack is null || stack.PlayerId != playerId.Value)
             {
                 return Results.NotFound(new { message = "アイテムスタックが見つかりません。" });
             }
@@ -126,91 +122,94 @@ internal static class ItemEndpoints
                 return Results.BadRequest(new { message = "使用数は1以上で指定してください。" });
             }
 
-            if (!item.CanUse(player))
-            {
-                return Results.BadRequest(new { message = "このアイテムを使用する条件を満たしていません。" });
-            }
+            stack.ConsumeQuantity(request.Quantity, DateTimeOffset.UtcNow);
 
-            try
+            await playerMutationService.MutateAsync(playerId.Value, async player =>
             {
-                switch (item.EffectType)
+                if (!item.CanUse(player))
                 {
-                    case ItemEffectType.StatBoost:
-                        {
+                    throw new DomainException("このアイテムを使用する条件を満たしていません。");
+                }
+
+                try
+                {
+                    switch (item.EffectType)
+                    {
+                        case ItemEffectType.StatBoost:
                             player.UpdateStatus(itemStatBoostService.Apply(player.Status, item, request.Quantity));
                             break;
-                        }
-                    case ItemEffectType.ChangeJob:
-                        {
-                            if (request.Quantity != 1)
+                        case ItemEffectType.ChangeJob:
                             {
-                                return Results.BadRequest(new { message = "転職アイテムは1個ずつのみ使用できます。" });
-                            }
+                                if (request.Quantity != 1)
+                                {
+                                    throw new DomainException("転職アイテムは1個ずつのみ使用できます。");
+                                }
 
-                            if (item.ChangeJobTo is null)
+                                if (item.ChangeJobTo is null)
+                                {
+                                    throw new DomainException("転職先ジョブが定義されていません。");
+                                }
+
+                                var jobProfile = jobProfileRepository.GetByJob(item.ChangeJobTo.Value);
+                                var learningRule = jobMoveLearningRuleRepository.GetByJob(item.ChangeJobTo.Value);
+                                player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
+                                break;
+                            }
+                        case ItemEffectType.ExpMultiplier:
                             {
-                                return Results.BadRequest(new { message = "転職先ジョブが定義されていません。" });
-                            }
+                                if (request.Quantity != 1)
+                                {
+                                    throw new DomainException("経験値倍率アイテムは1個ずつのみ使用できます。");
+                                }
 
-                            var jobProfile = jobProfileRepository.GetByJob(item.ChangeJobTo.Value);
-                            var learningRule = jobMoveLearningRuleRepository.GetByJob(item.ChangeJobTo.Value);
-                            player.ChangeJob(item.ChangeJobTo.Value, jobProfile, learningRule, ignoreRequirements: true);
-                            break;
-                        }
-                    case ItemEffectType.ExpMultiplier:
-                        {
-                            if (request.Quantity != 1)
+                                if (item.ExpMultiplier is null)
+                                {
+                                    throw new DomainException("経験値倍率が定義されていません。");
+                                }
+
+                                if (player.HasAnyExpMultiplierFlag())
+                                {
+                                    throw new DomainException("すでに経験値倍率が設定されています。効果が切れてから使用してください。");
+                                }
+
+                                var flag = ExpMultiplierFlag.ToFlag(item.ExpMultiplier.Value);
+                                player.SetExpMultiplierFlag(flag);
+                                break;
+                            }
+                        case ItemEffectType.UnlockMap:
                             {
-                                return Results.BadRequest(new { message = "経験値倍率アイテムは1個ずつのみ使用できます。" });
-                            }
+                                if (request.Quantity != 1)
+                                {
+                                    throw new DomainException("マップ解放アイテムは1個ずつのみ使用できます。");
+                                }
 
-                            if (item.ExpMultiplier is null)
-                            {
-                                return Results.BadRequest(new { message = "経験値倍率が定義されていません。" });
-                            }
+                                if (item.MapUnlockFlag is null)
+                                {
+                                    throw new DomainException("マップ解放フラグが定義されていません。");
+                                }
 
-                            if (player.HasAnyExpMultiplierFlag())
-                            {
-                                return Results.BadRequest(new { message = "すでに経験値倍率が設定されています。効果が切れてから使用してください。" });
+                                player.SetMapUnlockFlag(item.MapUnlockFlag.Value);
+                                break;
                             }
-
-                            var flag = ExpMultiplierFlag.ToFlag(item.ExpMultiplier.Value);
-                            player.SetExpMultiplierFlag(flag);
-                            break;
-                        }
-                    case ItemEffectType.UnlockMap:
-                        {
-                            if (request.Quantity != 1)
-                            {
-                                return Results.BadRequest(new { message = "マップ解放アイテムは1個ずつのみ使用できます。" });
-                            }
-
-                            if (item.MapUnlockFlag is null)
-                            {
-                                return Results.BadRequest(new { message = "マップ解放フラグが定義されていません。" });
-                            }
-
-                            player.SetMapUnlockFlag(item.MapUnlockFlag.Value);
-                            break;
-                        }
-                    default:
-                        return Results.BadRequest(new { message = "未対応のアイテム効果です。" });
+                        default:
+                            throw new DomainException("未対応のアイテム効果です。");
+                    }
                 }
-
-                stack.ConsumeQuantity(request.Quantity, DateTimeOffset.UtcNow);
-                await playerRepository.SaveAsync(player);
-                if (stack.Quantity == 0)
+                catch (InvalidOperationException ex)
                 {
-                    await playerItemStackRepository.DeleteAsync(stack.Id);
+                    throw new DomainException(ex.Message, ex);
                 }
-                else
-                {
-                    await playerItemStackRepository.SaveAsync([stack]);
-                }
-            }
-            catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException or ArgumentException)
+
+                return 0;
+            });
+
+            if (stack.Quantity == 0)
             {
-                return Results.BadRequest(new { message = ex.Message });
+                await playerItemStackRepository.DeleteAsync(stack.Id);
+            }
+            else
+            {
+                await playerItemStackRepository.SaveAsync([stack]);
             }
 
             return Results.Ok(new { message = "アイテムを使用しました。" });
@@ -220,8 +219,9 @@ internal static class ItemEndpoints
             ClaimsPrincipal user,
             Guid targetId,
             SynthesizeEquipmentRequest request,
-            IPlayerRepository playerRepository,
-            IPlayerEquipmentRepository playerEquipmentRepository,
+            IDbContextFactory<AppDbContext> dbContextFactory,
+            PlayerForUpdateLockService playerForUpdateLockService,
+            IMemoryCache cache,
             IEquipmentRepository equipmentRepository) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
@@ -230,53 +230,67 @@ internal static class ItemEndpoints
                 return Results.Unauthorized();
             }
 
-            var player = await playerRepository.GetPlayerAsync(playerId.Value);
-            if (player is null)
-            {
-                return Results.NotFound(new { message = "プレイヤーが見つかりません。" });
-            }
+            var equipmentMasters = await equipmentRepository.GetAllAsync();
+            var equipmentById = equipmentMasters.ToDictionary(x => x.Id);
 
-            var playerEquipments = (await playerEquipmentRepository.GetByPlayerAsync(player.Id)).ToList();
-            var target = playerEquipments.FirstOrDefault(x => x.Id == new PlayerEquipmentId(targetId));
-            if (target is null)
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var tx = await dbContext.Database.BeginTransactionAsync();
+
+            var lockedPlayers = await playerForUpdateLockService.LockPlayersAsync(dbContext, [playerId.Value.Value]);
+
+            var targetEntity = await dbContext.PlayerEquipments
+                .FromSqlInterpolated($"SELECT * FROM internal.player_equipments WHERE id = {targetId} FOR UPDATE")
+                .SingleOrDefaultAsync();
+            if (targetEntity is null || targetEntity.PlayerId != playerId.Value.Value)
             {
                 return Results.BadRequest(new { message = "合成対象の装備が見つかりません。" });
             }
 
-            var source = playerEquipments.FirstOrDefault(x => x.Id == new PlayerEquipmentId(request.SourcePlayerEquipmentId));
-            if (source is null)
+            var sourceEntity = await dbContext.PlayerEquipments
+                .FromSqlInterpolated($"SELECT * FROM internal.player_equipments WHERE id = {request.SourcePlayerEquipmentId} FOR UPDATE")
+                .SingleOrDefaultAsync();
+            if (sourceEntity is null || sourceEntity.PlayerId != playerId.Value.Value)
             {
                 return Results.BadRequest(new { message = "合成素材として使える装備が見つかりません。" });
             }
 
-            var equipmentMasters = await equipmentRepository.GetAllAsync();
-            var equipmentById = equipmentMasters.ToDictionary(x => x.Id);
+            var target = PlayerEquipmentEntityMapper.MapToDomain(targetEntity);
+            var source = PlayerEquipmentEntityMapper.MapToDomain(sourceEntity);
             if (!equipmentById.TryGetValue(target.EquipmentId, out var master))
             {
                 return Results.BadRequest(new { message = "装備マスタが見つかりません。" });
             }
 
+            var goldCost = master.SynthesisGoldCost * (target.PlusValue + 1);
+            var playerEntity = lockedPlayers[playerId.Value.Value];
+            var player = PlayerEntityMapper.MapToDomain(playerEntity, moveEntity: null);
             try
             {
-                var goldCost = master.SynthesisGoldCost * (target.PlusValue + 1);
-                player.SpendGold(goldCost);
                 target.Synthesize(source, goldCost, DateTimeOffset.UtcNow);
+                player.SpendGold(goldCost);
             }
             catch (InvalidOperationException ex)
             {
-                return Results.BadRequest(new { message = ex.Message });
+                throw new DomainException(ex.Message, ex);
             }
 
-            await playerRepository.SaveAsync(player);
-            await playerEquipmentRepository.SaveAsync(playerEquipments.Where(x => x.Id != source.Id).ToArray());
-            await playerEquipmentRepository.DeleteAsync(source.Id);
+            playerEntity.Gold = player.Gold;
+
+            PlayerEquipmentEntityMapper.ApplyEntity(targetEntity, target);
+            dbContext.PlayerEquipments.Remove(sourceEntity);
+            await dbContext.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            cache.Remove(server.shared.constants.player.PlayerCacheConstants.PlayerKey(playerEntity.Id));
+            cache.Remove(server.shared.constants.player.PlayerCacheConstants.AllPlayersKey);
+            cache.Remove(DbPlayerEquipmentRepository.EquippedCacheKey(playerEntity.Id));
 
             return Results.Ok(new
             {
                 message = "合成しました。",
                 targetPlayerEquipmentId = target.Id.Value,
                 plusValue = target.PlusValue,
-                gold = player.Gold
+                gold = playerEntity.Gold
             });
         }).RequireAuthorization();
 
@@ -495,8 +509,7 @@ internal static class ItemEndpoints
                 return Results.Unauthorized();
             }
 
-            var listings = await marketListingRepository.GetActiveAsync(DateTimeOffset.UtcNow);
-            var filtered = listings.Where(x => x.SellerId != playerId.Value).ToArray();
+            var filtered = await marketListingRepository.GetActiveAsync(DateTimeOffset.UtcNow, playerId.Value);
             var players = await playerRepository.GetAllAsync();
             var playerMap = players.ToDictionary(x => x.Id);
             var playerEquipmentSnapshotMap = await LoadListedPlayerEquipmentSnapshotMapAsync(filtered, dbContextFactory);
@@ -558,7 +571,8 @@ internal static class ItemEndpoints
             Guid listingId,
             PurchaseMarketListingRequest request,
             IDbContextFactory<AppDbContext> dbContextFactory,
-            IPlayerRepository playerRepository,
+            PlayerForUpdateLockService playerForUpdateLockService,
+            IMemoryCache cache,
             IPlayerEquipmentRepository playerEquipmentRepository,
             IPlayerItemStackRepository playerItemStackRepository,
             IItemRepository itemRepository,
@@ -616,18 +630,31 @@ internal static class ItemEndpoints
                 return Results.Conflict(new { message = "出品残数が不足しています。" });
             }
 
-            var buyer = await playerRepository.GetPlayerAsync(buyerId.Value);
-            var seller = await playerRepository.GetPlayerAsync(listing.SellerId);
-            if (buyer is null || seller is null)
+            var lockedPlayerIds = new[] { buyerId.Value.Value, listing.SellerId.Value }
+                .Distinct()
+                .ToArray();
+            IReadOnlyDictionary<Guid, PlayerEntity> lockedPlayers;
+            try
             {
-                return Results.NotFound(new { message = "プレイヤーが見つかりません。" });
+                lockedPlayers = await playerForUpdateLockService.LockPlayersAsync(dbContext, lockedPlayerIds);
             }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message });
+            }
+
+            var buyer = lockedPlayers[buyerId.Value.Value];
+            var seller = lockedPlayers[listing.SellerId.Value];
 
             var price = checked(listing.UnitPrice * request.Quantity);
             try
             {
-                buyer.SpendGold(price);
-                seller.GainGold(price);
+                var buyerDomain = PlayerEntityMapper.MapToDomain(buyer, moveEntity: null);
+                var sellerDomain = PlayerEntityMapper.MapToDomain(seller, moveEntity: null);
+                buyerDomain.SpendGold(price);
+                sellerDomain.GainGold(price);
+                buyer.Gold = buyerDomain.Gold;
+                seller.Gold = sellerDomain.Gold;
             }
             catch (InvalidOperationException ex)
             {
@@ -641,11 +668,11 @@ internal static class ItemEndpoints
                     return Results.BadRequest(new { message = "装備は1件ずつのみ購入できます。" });
                 }
 
-                var buyerEquipments = await playerEquipmentRepository.GetByPlayerAsync(buyer.Id);
-                var buyerStacks = await playerItemStackRepository.GetByPlayerAsync(buyer.Id);
+                var buyerEquipments = await playerEquipmentRepository.GetByPlayerAsync(new PlayerId(buyer.Id));
+                var buyerStacks = await playerItemStackRepository.GetByPlayerAsync(new PlayerId(buyer.Id));
                 var buyerListings = await dbContext.MarketListings
                     .AsNoTracking()
-                    .Where(x => x.SellerId == buyer.Id.Value && x.ExpiresAt > DateTimeOffset.UtcNow && x.RemainingQuantity > 0)
+                    .Where(x => x.SellerId == buyer.Id && x.ExpiresAt > DateTimeOffset.UtcNow && x.RemainingQuantity > 0)
                     .ToListAsync();
                 var buyerListedEquipmentIds = buyerListings
                     .Where(x => x.PlayerEquipmentId is not null)
@@ -668,7 +695,7 @@ internal static class ItemEndpoints
                     return Results.Conflict(new { message = "出品中の装備所有者が一致しません。" });
                 }
 
-                equipment.TransferOwnership(buyer.Id, DateTimeOffset.UtcNow);
+                equipment.TransferOwnership(new PlayerId(buyer.Id), DateTimeOffset.UtcNow);
                 await playerEquipmentRepository.SaveAsync([equipment]);
             }
             else
@@ -684,14 +711,14 @@ internal static class ItemEndpoints
                     return Results.BadRequest(new { message = "アイテムマスタが見つかりません。" });
                 }
 
-                var buyerStacks = (await playerItemStackRepository.GetByPlayerAsync(buyer.Id)).ToList();
+                var buyerStacks = (await playerItemStackRepository.GetByPlayerAsync(new PlayerId(buyer.Id))).ToList();
                 var existingStack = buyerStacks.FirstOrDefault(x => x.ItemId == item.Id);
                 if (existingStack is null)
                 {
-                    var buyerEquipments = await playerEquipmentRepository.GetByPlayerAsync(buyer.Id);
+                    var buyerEquipments = await playerEquipmentRepository.GetByPlayerAsync(new PlayerId(buyer.Id));
                     var buyerListings = await dbContext.MarketListings
                         .AsNoTracking()
-                        .Where(x => x.SellerId == buyer.Id.Value && x.ExpiresAt > DateTimeOffset.UtcNow && x.RemainingQuantity > 0)
+                        .Where(x => x.SellerId == buyer.Id && x.ExpiresAt > DateTimeOffset.UtcNow && x.RemainingQuantity > 0)
                         .ToListAsync();
                     var buyerListedEquipmentIds = buyerListings
                         .Where(x => x.PlayerEquipmentId is not null)
@@ -703,7 +730,7 @@ internal static class ItemEndpoints
                         return Results.UnprocessableEntity(new { message = "所持枠が不足しています。" });
                     }
 
-                    existingStack = new PlayerItemStack(PlayerItemStackId.New(), buyer.Id, item.Id, request.Quantity, DateTimeOffset.UtcNow);
+                    existingStack = new PlayerItemStack(PlayerItemStackId.New(), new PlayerId(buyer.Id), item.Id, request.Quantity, DateTimeOffset.UtcNow);
                     buyerStacks.Add(existingStack);
                 }
                 else
@@ -725,20 +752,25 @@ internal static class ItemEndpoints
             }
 
             await dbContext.SaveChangesAsync();
-            await playerRepository.SaveAsync(buyer);
-            await playerRepository.SaveAsync(seller);
             await marketTradeHistoryRepository.AddAsync(new MarketTradeHistory(
                 Guid.NewGuid(),
-                seller.Id,
-                buyer.Id,
+                new PlayerId(seller.Id),
+                new PlayerId(buyer.Id),
                 listing.PlayerEquipmentId is not null
                     ? $"equipment:{listing.PlayerEquipmentId.Value.Value}"
                     : $"item:{listing.ItemId!.Value.Value}",
                 request.Quantity,
                 listing.UnitPrice,
                 DateTimeOffset.UtcNow));
-            await chatService.PostSystemMessageAsync(seller.Id, $"{listing.ItemName} x{request.Quantity} が {price} Gold で売れました。");
             await tx.CommitAsync();
+
+            cache.Remove(server.shared.constants.player.PlayerCacheConstants.PlayerKey(buyer.Id));
+            cache.Remove(server.shared.constants.player.PlayerCacheConstants.PlayerKey(seller.Id));
+            cache.Remove(server.shared.constants.player.PlayerCacheConstants.AllPlayersKey);
+            await chatService.TryPostSystemMessageAsync(
+                new PlayerId(seller.Id),
+                $"{listing.ItemName} x{request.Quantity} が {price} Gold で売れました。",
+                "マーケット購入");
 
             return Results.Ok(new { message = "購入しました。", gold = buyer.Gold });
         }).RequireAuthorization();

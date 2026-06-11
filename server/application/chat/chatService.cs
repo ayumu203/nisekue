@@ -1,10 +1,16 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using server.domain.chat;
 using server.domain.player;
 
 namespace server.application.chat;
 
-public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerRepository playerRepository)
+public class ChatService(
+    IChatRoomRepository chatRoomRepository,
+    IPlayerRepository playerRepository,
+    ILogger<ChatService>? logger = null)
 {
+    private readonly ILogger<ChatService> logger = logger ?? NullLogger<ChatService>.Instance;
+
     public async Task EnsureRoomAsync(PlayerId ownerId)
     {
         var room = await chatRoomRepository.GetChatRoomAsync(ownerId);
@@ -21,12 +27,13 @@ public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerReposito
             .Distinct()
             .ToArray();
 
-        var senderProfileMap = new Dictionary<PlayerId, (string Name, string? ImagePath)>();
-        foreach (var senderId in senderIds)
-        {
-            var player = await playerRepository.GetPlayerAsync(senderId);
-            senderProfileMap[senderId] = (player?.Name ?? "Unknown", player?.ImagePath);
-        }
+        var fetchedPlayers = await playerRepository.GetPlayersAsync(senderIds);
+        var playerById = fetchedPlayers.ToDictionary(p => p.Id);
+        var senderProfileMap = senderIds.ToDictionary(
+            id => id,
+            id => playerById.TryGetValue(id, out var p)
+                ? (Name: p.Name, ImagePath: p.ImagePath)
+                : (Name: "Unknown", ImagePath: (string?)null));
 
         var messageViews = room.Messages
             .OrderBy(x => x.ChatId)
@@ -74,6 +81,18 @@ public class ChatService(IChatRoomRepository chatRoomRepository, IPlayerReposito
         var room = await chatRoomRepository.GetChatRoomAsync(ownerId);
         room.PostSystemMessage(text);
         await chatRoomRepository.SaveAsync(room);
+    }
+
+    public async Task TryPostSystemMessageAsync(PlayerId ownerId, string text, string operationName)
+    {
+        try
+        {
+            await PostSystemMessageAsync(ownerId, text);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "{OperationName} のシステムメッセージ送信に失敗しました。 ownerId={OwnerId}", operationName, ownerId.Value);
+        }
     }
 
     public Task<int> MarkMessagesAlertedAsync(PlayerId ownerId, IReadOnlyCollection<int> chatIds)

@@ -18,7 +18,8 @@ public class JobRoadmapServiceTests
             new FakeJobProfileRepository(),
             new FakeJobRoadmapRankRepository(),
             new FakeItemRepository(),
-            new FakeQuestStageRepository());
+            new FakeQuestStageRepository(),
+            new TestPlayerMutationService(playerRepository));
 
         var list = await service.GetListAsync(player.Id);
 
@@ -40,7 +41,8 @@ public class JobRoadmapServiceTests
             new FakeJobProfileRepository(),
             new FakeJobRoadmapRankRepository(),
             new FakeItemRepository(),
-            new FakeQuestStageRepository());
+            new FakeQuestStageRepository(),
+            new TestPlayerMutationService(playerRepository));
 
         var result = await service.UnlockAsync(player.Id, Job.Warrior);
 
@@ -61,7 +63,8 @@ public class JobRoadmapServiceTests
             new FakeJobProfileRepository(),
             new FakeJobRoadmapRankRepository(),
             new FakeItemRepository(),
-            new FakeQuestStageRepository());
+            new FakeQuestStageRepository(),
+            new TestPlayerMutationService(playerRepository));
 
         var result = await service.UnlockAsync(player.Id, Job.Warrior);
 
@@ -79,7 +82,8 @@ public class JobRoadmapServiceTests
             new FakeJobProfileRepository(),
             new FakeJobRoadmapRankRepository(),
             new FakeItemRepository(),
-            new FakeQuestStageRepository());
+            new FakeQuestStageRepository(),
+            new TestPlayerMutationService(playerRepository));
 
         var act = async () => await service.UnlockAsync(player.Id, Job.OniWarrior);
 
@@ -98,7 +102,8 @@ public class JobRoadmapServiceTests
             new FakeJobProfileRepository(),
             new FakeJobRoadmapRankRepository(),
             new FakeItemRepository(),
-            new FakeQuestStageRepository());
+            new FakeQuestStageRepository(),
+            new TestPlayerMutationService(playerRepository));
 
         var act = async () => await service.UnlockAsync(player.Id, Job.Warrior);
 
@@ -116,7 +121,8 @@ public class JobRoadmapServiceTests
             new FakeJobProfileRepository(),
             new FakeJobRoadmapRankRepository(),
             new FakeItemRepository(),
-            new FakeQuestStageRepository());
+            new FakeQuestStageRepository(),
+            new TestPlayerMutationService(playerRepository));
 
         var roadmap = await service.GetRoadmapAsync(player.Id, Job.Warrior);
 
@@ -137,7 +143,8 @@ public class JobRoadmapServiceTests
             new FakeJobProfileRepository(),
             new FakeJobRoadmapRankRepository(),
             new FakeItemRepository(),
-            new FakeQuestStageRepository());
+            new FakeQuestStageRepository(),
+            new TestPlayerMutationService(playerRepository));
 
         var roadmap = await service.GetRoadmapAsync(player.Id, Job.OniWarrior);
 
@@ -168,7 +175,8 @@ public class JobRoadmapServiceTests
             new FakeJobProfileRepository(),
             new FakeJobRoadmapRankRepository(),
             new FakeItemRepository(items),
-            new FakeQuestStageRepository());
+            new FakeQuestStageRepository(),
+            new TestPlayerMutationService(playerRepository));
 
         var roadmap = await service.GetRoadmapAsync(player.Id, Job.OniWarrior);
 
@@ -189,32 +197,55 @@ public class JobRoadmapServiceTests
             job: Job.Apprentice);
     }
 
-    private sealed class FakePlayerRepository(Player player) : IPlayerRepository
+    private sealed class FakePlayerRepository(Player initialPlayer) : IPlayerRepository
     {
+        private Player storedPlayer = initialPlayer;
+
         public Task<Player?> GetPlayerAsync(PlayerId id)
         {
-            return Task.FromResult<Player?>(player.Id == id ? player : null);
+            return Task.FromResult<Player?>(storedPlayer.Id == id ? storedPlayer : null);
         }
 
         public Task<Player?> GetPlayerWithinLevelCapAsync(PlayerId id, int maxLevel)
         {
-            return Task.FromResult<Player?>(player.Id == id && player.Level <= maxLevel ? player : null);
+            return Task.FromResult<Player?>(storedPlayer.Id == id && storedPlayer.Level <= maxLevel ? storedPlayer : null);
         }
 
-        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel, int? offset = null, int? limit = null)
         {
             return Task.FromResult<IReadOnlyList<Player>>(Array.Empty<Player>());
         }
 
-        public Task<IReadOnlyList<Player>> GetAllAsync()
+        public async Task<(IReadOnlyList<Player> Opponents, int TotalCount)> GetPvpOpponentsPageAsync(
+            PlayerId excludeId,
+            int maxLevel,
+            int? offset = null,
+            int? limit = null)
         {
-            return Task.FromResult<IReadOnlyList<Player>>([player]);
+            var opponents = await GetPvpOpponentsAsync(excludeId, maxLevel, offset, limit);
+            var totalCount = await CountPvpOpponentsAsync(excludeId, maxLevel);
+            return (opponents, totalCount);
+        }
+
+        public Task<int> CountPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        {
+            return Task.FromResult(0);
+        }
+
+        public Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null)
+        {
+            return Task.FromResult<IReadOnlyList<Player>>([storedPlayer]);
+        }
+
+        public Task<int> CountAllAsync()
+        {
+            return Task.FromResult(1);
         }
 
         public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
         {
             var idSet = ids.ToHashSet();
-            IReadOnlyList<Player> result = idSet.Contains(player.Id) ? [player] : [];
+            IReadOnlyList<Player> result = idSet.Contains(storedPlayer.Id) ? [storedPlayer] : [];
             return Task.FromResult(result);
         }
 
@@ -230,6 +261,7 @@ public class JobRoadmapServiceTests
 
         public Task SaveAsync(Player savedPlayer)
         {
+            storedPlayer = savedPlayer;
             return Task.CompletedTask;
         }
     }

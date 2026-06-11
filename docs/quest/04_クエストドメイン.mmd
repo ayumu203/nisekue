@@ -254,6 +254,13 @@ classDiagram
     }
 
     namespace RunContext {
+        class QuestRunChatPersistenceCoordinator {
+            <<Infrastructure Service>>
+            +Task SaveChatMessagesAsync(run: QuestRun)
+            +OnConcurrencyConflictReloadVersion(runId: QuestRunId) int
+            +MergeChatMessages(existing: IReadOnlyList~QuestChatMessage~, pending: IReadOnlyList~QuestChatMessage~) IReadOnlyList~QuestChatMessage~
+        }
+
         class BattleAilmentState {
             +AilmentType Type
             +int RemainingTurns
@@ -304,6 +311,8 @@ classDiagram
             +QuestRoomId RoomId
             +PlayerId OwnerPlayerId
             +QuestStageId StageId
+            +int Version
+            +int PersistedVersion
             +QuestRunStatus Status
             +QuestFloorState FloorState
             +QuestBattleState BattleState
@@ -327,6 +336,8 @@ classDiagram
             +MarkFailed() void
             +Abort(reason: string) void
             +AddChatMessage(message: QuestChatMessage) void
+            +ConsumePendingChatMessages() IReadOnlyList~QuestChatMessage~
+            +SyncVersion(version: int) void
         }
 
         class QuestRunId {
@@ -428,10 +439,20 @@ classDiagram
             +EquipmentId? EquipmentRewardId
             +ItemId? ItemRewardId
             +IReadOnlySet~PlayerId~ SkippedRewardPlayerIds
+            +IReadOnlyList~QuestCapturedPetReward~ CapturedPetRewards
             +AddExp(value: int) void
             +SetEquipmentReward(equipmentId: EquipmentId?) void
             +SetItemReward(itemId: ItemId?) void
             +SetSkippedRewardPlayerIds(playerIds: IEnumerable~PlayerId~) void
+            +AddCapturedPetReward(reward: QuestCapturedPetReward) void
+            +ClearCapturedPetRewards() void
+        }
+
+        class QuestCapturedPetReward {
+            <<Value Object>>
+            +PlayerId PlayerId
+            +QuestEnemyDefinitionId EnemyDefinitionId
+            +DateTimeOffset CapturedAt
         }
 
         class QuestRunResolutionSummary {
@@ -446,10 +467,13 @@ classDiagram
             +Task~QuestRun?~ GetAsync(id: QuestRunId)
             +Task~QuestRun?~ GetByRoomIdAsync(roomId: QuestRoomId)
             +Task~bool~ ExistsActiveRunByPlayerAsync(playerId: PlayerId)
-            %% 捕獲成功ペットの player_pets 追加を QuestRun 保存と同一トランザクションで確定する
-            +Task SaveAsync(run: QuestRun, capturedPets: IReadOnlyList~PlayerPet~)
+            %% 捕獲ペットは QuestRun 内の保留状態として保存し、クリア時にのみ player_pets へ確定する
+            +Task SaveAsync(run: QuestRun)
+            +Task SaveChatMessagesAsync(run: QuestRun)
         }
     }
+
+    RunContext.QuestRunChatPersistenceCoordinator ..> RunContext.QuestRun : version競合時に再同期してチャット保存
 
     namespace ServiceContext {
         class QuestResponseMapper {
@@ -555,6 +579,7 @@ classDiagram
     QuestRun *-- QuestTurnState : has
     QuestRun *-- QuestTrapCollection : has
     QuestRun *-- QuestRewardAccumulator : has
+    QuestRewardAccumulator *-- QuestCapturedPetReward : 0..*
     QuestRun *-- QuestRunParticipantIdentity : 1..*
     QuestRun *-- QuestChatMessage : 0..*
     QuestFloorState *-- QuestEnemyPlacement : 0..*

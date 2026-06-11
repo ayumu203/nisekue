@@ -161,14 +161,13 @@ public class ThreadService(IThreadRepository threadRepository, IPlayerRepository
     private async Task<Dictionary<PlayerId, (string Name, string? ImagePath)>> LoadProfilesAsync(IEnumerable<PlayerId> playerIds)
     {
         var ids = playerIds.Distinct().ToArray();
-        var profiles = new Dictionary<PlayerId, (string Name, string? ImagePath)>();
-        foreach (var playerId in ids)
-        {
-            var player = await playerRepository.GetPlayerAsync(playerId);
-            profiles[playerId] = (player?.Name ?? "Unknown", player?.ImagePath);
-        }
-
-        return profiles;
+        var fetchedPlayers = await playerRepository.GetPlayersAsync(ids);
+        var playerById = fetchedPlayers.ToDictionary(x => x.Id);
+        return ids.ToDictionary(
+            id => id,
+            id => playerById.TryGetValue(id, out var player)
+                ? (player.Name, player.ImagePath)
+                : ("Unknown", (string?)null));
     }
 
     private static (string Name, string? ImagePath) ResolveProfile(

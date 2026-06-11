@@ -182,6 +182,7 @@ erDiagram
         jsonb chat_messages_json "NOT NULL, quest chat message array"
         timestamptz started_at "NOT NULL"
         timestamptz ended_at "NULL"
+        int version "NOT NULL, optimistic concurrency token"
     }
     QUEST_RUN_PARTY_SNAPSHOTS {
         uuid run_id PK, FK "internal.quest_runs.id"

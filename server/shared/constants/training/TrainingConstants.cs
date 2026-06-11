@@ -12,6 +12,7 @@ public static class TrainingConstants
     {
         public const int MaxTurns = 3;
         public const int CooldownSeconds = 3;
+        public const int MinPvpOpponentLevel = 2;
         public const decimal PvpOpponentLevelCapMultiplier = 1.5m;
     }
 

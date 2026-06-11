@@ -11,6 +11,7 @@ using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
 using server.domain.treasuremap;
+using server.tests;
 using Xunit;
 
 namespace server.tests.quest;
@@ -39,6 +40,34 @@ public class QuestRunServiceTests
     }
 
     [Fact]
+    public async Task SubmitCommandAsync_WhenAnotherManualPlayerIsWaiting_PersistsPendingCommand()
+    {
+        var firstParticipantId = QuestParticipantId.New();
+        var secondParticipantId = QuestParticipantId.New();
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(firstParticipantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 10),
+                new PartyMemberSeed(secondParticipantId, ParticipantType.Player, "Guest", Job.Warrior, new BattlePosition(BattleRow.Back, BattleColumn.Left), ActionMode.Manual, new Status(40, 10, 10, 5, 3, 3, 8), new MoveSet(), 40, 10)
+            ],
+            enemyHp: 10);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var service = CreateRunService(repository, roomRepository, CreateStage(run.StageId), []);
+
+        var command = new QuestSubmittedCommand(
+            firstParticipantId,
+            run.TurnState.CurrentTurnNo,
+            ActionKind.Wait,
+            DateTimeOffset.UtcNow);
+
+        var result = await service.SubmitCommandAsync(run.Id, firstParticipantId, command);
+
+        result.ResolvedInThisRequest.Should().BeFalse();
+        repository.SaveCount.Should().Be(1);
+        repository.StoredRun!.TurnState.PendingCommands.Should().ContainSingle(x => x.ParticipantId == firstParticipantId);
+    }
+
+    [Fact]
     public async Task ProcessExpiredRunsAsync_WhenDeadlineExceeded_SwitchesPartyToAutoAttack()
     {
         var run = CreateRun(deadlineAt: DateTimeOffset.UtcNow.AddSeconds(-1));
@@ -50,7 +79,7 @@ public class QuestRunServiceTests
 
         updatedRuns.Should().ContainSingle();
         repository.StoredRun!.BattleState.PartyMembers.Should().OnlyContain(x => x.ActionMode == ActionMode.AutoAttackOnly);
-        repository.SaveCount.Should().Be(1);
+        repository.SaveCount.Should().Be(2);
     }
 
     [Fact]
@@ -97,7 +126,7 @@ public class QuestRunServiceTests
 
         result.ResolvedInThisRequest.Should().BeTrue();
         repository.StoredRun!.Status.Should().Be(QuestRunStatus.Succeeded);
-        repository.SaveCount.Should().Be(1);
+        repository.SaveCount.Should().Be(2);
     }
 
     [Fact]
@@ -228,7 +257,31 @@ public class QuestRunServiceTests
         var player = await playerRepository.GetPlayerAsync(room.OwnerId);
         player.Should().NotBeNull();
         player!.QuestCooldownUntil.Should().NotBeNull();
-        repository.SaveCount.Should().Be(1);
+        repository.SaveCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task EscapeAsync_WhenInitialResolvedSaveFails_DoesNotApplyCompletionEffects()
+    {
+        var run = CreateRun();
+        var repository = new FakeQuestRunRepository(run)
+        {
+            RemainingSaveFailures = 1
+        };
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var playerRepository = new FakePlayerRepository(roomRepository.PlayerIds.ToArray());
+        var petRepository = new FakePlayerPetRepository();
+        var service = CreateRunService(repository, roomRepository, playerRepository, CreateStage(run.StageId), [], petRepository);
+
+        var act = () => service.EscapeAsync(run.Id, room.OwnerId);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+
+        var player = await playerRepository.GetPlayerAsync(room.OwnerId);
+        player.Should().NotBeNull();
+        player!.QuestCooldownUntil.Should().BeNull();
+        petRepository.StoredPets.Should().BeEmpty();
     }
 
     [Fact]
@@ -730,7 +783,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -792,7 +846,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -855,7 +910,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -934,7 +990,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -987,7 +1044,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -1047,7 +1105,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -1109,7 +1168,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -1176,7 +1236,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -1244,6 +1305,7 @@ public class QuestRunServiceTests
             new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository),
             _ => rolls.Dequeue());
 
         await service.SubmitCommandAsync(
@@ -1342,7 +1404,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.SubmitCommandAsync(
             run.Id,
@@ -1569,7 +1632,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         var target = run.BattleState.Enemies.Single().Position;
         await service.SubmitCommandAsync(
@@ -1614,7 +1678,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         var target = run.BattleState.Enemies.Single().Position;
         var act = async () => await service.SubmitCommandAsync(
@@ -1669,7 +1734,8 @@ public class QuestRunServiceTests
             new FakePlayerPetRepository(),
             new QuestPetActionService(),
             new BattleService(),
-            new QuestBattleFactory());
+            new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository));
 
         await service.EscapeAsync(run.Id, room.OwnerId);
 
@@ -1707,12 +1773,65 @@ public class QuestRunServiceTests
         var enemy = run.BattleState.Enemies.Single();
         enemy.IsCaptured.Should().BeTrue();
         enemy.IsDead.Should().BeTrue();
-        repository.LastCapturedPets.Should().ContainSingle()
+        petRepository.StoredPets.Should().ContainSingle()
             .Which.EnemyDefinitionId.Should().Be(new QuestEnemyDefinitionId(1));
         run.LastTurnResults!.Actions.Should()
             .Contain(x => x.ActionKind == nameof(ActionKind.Capture) && x.Succeeded);
         run.Rewards.Exp.Should().Be(0, "捕獲した敵のレベル分は階層報酬から控除される");
         run.Rewards.Gold.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EscapeAsync_WhenCaptureSucceededBeforeQuestFailure_DoesNotPersistCapturedPet()
+    {
+        var run = CreateRun();
+        var participantId = run.PartySnapshots[0].ParticipantId;
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var petRepository = new FakePlayerPetRepository();
+        var stage = CreateStage(
+            run.StageId,
+            floors:
+            [
+                new QuestFloorDefinition(
+                    1,
+                    FloorType.Normal,
+                    [new QuestEnemyPlacement(1, new QuestEnemyDefinitionId(1), new BattlePosition(BattleRow.Front, BattleColumn.Right))],
+                    new QuestFloorRewardRule(1.0m, 1.0m)),
+                new QuestFloorDefinition(
+                    2,
+                    FloorType.Boss,
+                    [new QuestEnemyPlacement(1, new QuestEnemyDefinitionId(1), new BattlePosition(BattleRow.Front, BattleColumn.Right))],
+                    new QuestFloorRewardRule(1.0m, 1.0m))
+            ]);
+        var service = CreateRunService(
+            repository,
+            roomRepository,
+            new FakePlayerRepository(roomRepository.PlayerIds.ToArray()),
+            stage,
+            [],
+            petRepository,
+            petRollProvider: _ => 1);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Capture,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        run.Status.Should().Be(QuestRunStatus.InProgress);
+        run.Rewards.CapturedPetRewards.Should().HaveCount(1);
+
+        await service.EscapeAsync(run.Id, room.OwnerId);
+
+        run.Status.Should().Be(QuestRunStatus.Failed);
+        petRepository.StoredPets.Should().BeEmpty();
+        run.Rewards.CapturedPetRewards.Should().BeEmpty();
     }
 
     [Fact]
@@ -1745,7 +1864,7 @@ public class QuestRunServiceTests
         var enemy = run.BattleState.Enemies.Single();
         enemy.IsCaptured.Should().BeFalse();
         enemy.IsAlive.Should().BeTrue();
-        repository.LastCapturedPets.Should().BeEmpty();
+        petRepository.StoredPets.Should().BeEmpty();
         run.LastTurnResults!.Actions.Should()
             .Contain(x => x.ActionKind == nameof(ActionKind.Capture) && !x.Succeeded);
     }
@@ -1867,7 +1986,7 @@ public class QuestRunServiceTests
             new QuestSubmittedCommand(guestParticipantId, run.TurnState.CurrentTurnNo, ActionKind.Capture, firstSubmittedAt.AddMilliseconds(10), selectedTargetPosition: targetPosition));
 
         run.BattleState.Enemies.Single().IsCaptured.Should().BeTrue();
-        repository.LastCapturedPets.Should().HaveCount(1, "同じ敵は1体しか捕獲できない");
+        petRepository.StoredPets.Should().HaveCount(1, "同じ敵は1体しか捕獲できない");
         run.LastTurnResults!.Actions.Count(x => x.ActionKind == nameof(ActionKind.Capture) && x.Succeeded).Should().Be(1);
         run.LastTurnResults!.Actions.Count(x => x.ActionKind == nameof(ActionKind.Capture) && !x.Succeeded).Should().Be(1);
     }
@@ -1934,6 +2053,7 @@ public class QuestRunServiceTests
             new QuestPetActionService(),
             new BattleService(),
             new QuestBattleFactory(),
+            new TestPlayerMutationService(playerRepository),
             rewardRollProvider: null,
             petRollProvider: petRollProvider);
     }
@@ -2147,7 +2267,8 @@ public class QuestRunServiceTests
         IReadOnlyList<QuestStageEquipmentRewardEntry>? equipmentRewards = null,
         IReadOnlyList<QuestStageItemRewardEntry>? itemRewards = null,
         QuestFloorRewardRule? floorRewardRule = null,
-        int? requiredMapUnlockFlag = null)
+        int? requiredMapUnlockFlag = null,
+        IReadOnlyList<QuestFloorDefinition>? floors = null)
     {
         return new QuestStageDefinition(
             stageId,
@@ -2158,6 +2279,7 @@ public class QuestRunServiceTests
             minimumEntryLevel: null,
             1,
             6,
+            floors ??
             [
                 new QuestFloorDefinition(
                     1,
@@ -2180,6 +2302,7 @@ public class QuestRunServiceTests
     {
         public QuestRun? StoredRun { get; private set; } = run;
         public int SaveCount { get; private set; }
+        public int RemainingSaveFailures { get; set; }
 
         public Task<QuestRun?> GetAsync(QuestRunId id)
             => Task.FromResult(StoredRun?.Id == id ? StoredRun : null);
@@ -2196,13 +2319,23 @@ public class QuestRunServiceTests
         public Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
             => Task.FromResult<IReadOnlyList<QuestRun>>(StoredRun is not null && StoredRun.TurnState.ActionDeadlineAt <= now ? [StoredRun] : []);
 
-        public IReadOnlyList<PlayerPet> LastCapturedPets { get; private set; } = [];
+        public Task SaveAsync(QuestRun run)
+        {
+            if (RemainingSaveFailures > 0)
+            {
+                RemainingSaveFailures--;
+                throw new InvalidOperationException("simulated save failure");
+            }
 
-        public Task SaveAsync(QuestRun run, IReadOnlyList<PlayerPet>? capturedPets = null)
+            StoredRun = run;
+            SaveCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task SaveChatMessagesAsync(QuestRun run)
         {
             StoredRun = run;
             SaveCount++;
-            LastCapturedPets = capturedPets ?? [];
             return Task.CompletedTask;
         }
     }
@@ -2303,14 +2436,34 @@ public class QuestRunServiceTests
             return Task.FromResult(p is not null && p.Level <= maxLevel ? p : null);
         }
 
-        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel, int? offset = null, int? limit = null)
         {
             IReadOnlyList<Player> result = players.Values.Where(p => p.Id != excludeId && p.Level <= maxLevel).ToArray();
             return Task.FromResult(result);
         }
 
-        public Task<IReadOnlyList<Player>> GetAllAsync()
+        public async Task<(IReadOnlyList<Player> Opponents, int TotalCount)> GetPvpOpponentsPageAsync(
+            PlayerId excludeId,
+            int maxLevel,
+            int? offset = null,
+            int? limit = null)
+        {
+            var opponents = await GetPvpOpponentsAsync(excludeId, maxLevel, offset, limit);
+            var totalCount = await CountPvpOpponentsAsync(excludeId, maxLevel);
+            return (opponents, totalCount);
+        }
+
+        public Task<int> CountPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        {
+            var count = players.Values.Count(p => p.Id != excludeId && p.Level <= maxLevel);
+            return Task.FromResult(count);
+        }
+
+        public Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null)
             => Task.FromResult<IReadOnlyList<Player>>(players.Values.ToArray());
+
+        public Task<int> CountAllAsync()
+            => Task.FromResult(players.Count);
 
         public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
         {
@@ -2389,8 +2542,11 @@ public class QuestRunServiceTests
         public Task<MarketListing?> GetAsync(MarketListingId id)
             => Task.FromResult(listingsById.GetValueOrDefault(id));
 
-        public Task<IReadOnlyList<MarketListing>> GetActiveAsync(DateTimeOffset now)
-            => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values.Where(x => !x.IsExpired(now) && !x.IsSoldOut).ToArray());
+        public Task<IReadOnlyList<MarketListing>> GetActiveAsync(DateTimeOffset now, PlayerId? excludeSellerId = null)
+            => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values
+                .Where(x => !x.IsExpired(now) && !x.IsSoldOut)
+                .Where(x => excludeSellerId is null || x.SellerId != excludeSellerId)
+                .ToArray());
 
         public Task<IReadOnlyList<MarketListing>> GetBySellerAsync(PlayerId sellerId, DateTimeOffset now)
             => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values

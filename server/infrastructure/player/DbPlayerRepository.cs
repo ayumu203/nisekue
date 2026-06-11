@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Npgsql;
-using server.domain.move;
 using server.domain.player;
 using server.shared.constants.player;
+using server.shared.constants.training;
 using static server.shared.constants.player.PlayerCacheConstants;
 
 namespace server.infrastructure.player
@@ -22,7 +22,7 @@ namespace server.infrastructure.player
             var key = PlayerKey(id.Value);
             if (cache.TryGetValue(key, out PlayerSnapshot? snapshot))
             {
-                return MapToDomain(snapshot!.Entity, snapshot.MoveEntity, snapshot.MasteredJobEntities);
+                return PlayerEntityMapper.MapToDomain(snapshot!.Entity, snapshot.MoveEntity, snapshot.MasteredJobEntities);
             }
 
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -45,7 +45,7 @@ namespace server.infrastructure.player
                 .ToListAsync();
 
             cache.Set(key, new PlayerSnapshot(entity, moveEntity, masteredJobEntities), CacheTtl);
-            return MapToDomain(entity, moveEntity, masteredJobEntities);
+            return PlayerEntityMapper.MapToDomain(entity, moveEntity, masteredJobEntities);
         }
 
         public async Task<Player?> GetPlayerWithinLevelCapAsync(PlayerId id, int maxLevel)
@@ -56,18 +56,60 @@ namespace server.infrastructure.player
                 .SingleOrDefaultAsync(x => x.Id == id.Value && x.Level <= maxLevel);
 
             if (entity is null) return null;
-            return MapToDomain(entity, moveEntity: null);
+            return PlayerEntityMapper.MapToDomain(entity, moveEntity: null);
         }
 
-        public async Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        public async Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel, int? offset = null, int? limit = null)
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            var entities = await dbContext.Players
-                .AsNoTracking()
-                .Where(x => x.Id != excludeId.Value && x.Level <= maxLevel)
-                .ToListAsync();
+            var query = BuildPvpOpponentsQuery(dbContext, excludeId, maxLevel);
 
-            return entities.Select(e => MapToDomain(e, moveEntity: null)).ToArray();
+            if (offset is > 0)
+            {
+                query = query.Skip(offset.Value);
+            }
+
+            if (limit is > 0)
+            {
+                query = query.Take(limit.Value);
+            }
+
+            var entities = await query.ToListAsync();
+
+            return entities.Select(e => PlayerEntityMapper.MapToDomain(e, moveEntity: null)).ToArray();
+        }
+
+        public async Task<(IReadOnlyList<Player> Opponents, int TotalCount)> GetPvpOpponentsPageAsync(
+            PlayerId excludeId,
+            int maxLevel,
+            int? offset = null,
+            int? limit = null)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var baseQuery = BuildPvpOpponentsQuery(dbContext, excludeId, maxLevel);
+            var totalCount = await baseQuery.CountAsync();
+
+            var pagedQuery = baseQuery;
+            if (offset is > 0)
+            {
+                pagedQuery = pagedQuery.Skip(offset.Value);
+            }
+
+            if (limit is > 0)
+            {
+                pagedQuery = pagedQuery.Take(limit.Value);
+            }
+
+            var entities = await pagedQuery.ToListAsync();
+            var opponents = entities.Select(e => PlayerEntityMapper.MapToDomain(e, moveEntity: null)).ToArray();
+            return (opponents, totalCount);
+        }
+
+        public async Task<int> CountPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var query = BuildPvpOpponentsQuery(dbContext, excludeId, maxLevel);
+            return await query.CountAsync();
         }
 
         public async Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
@@ -85,28 +127,52 @@ namespace server.infrastructure.player
                 .ToListAsync();
 
             return playerEntities
-                .Select(entity => MapToDomain(entity, moveEntity: null))
+                .Select(entity => PlayerEntityMapper.MapToDomain(entity, moveEntity: null))
                 .ToArray();
         }
 
-        public async Task<IReadOnlyList<Player>> GetAllAsync()
+        public async Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null)
         {
-            if (cache.TryGetValue(AllPlayersKey, out IReadOnlyList<PlayerEntity>? cachedEntities))
+            if (offset is null && limit is null && cache.TryGetValue(AllPlayersKey, out IReadOnlyList<PlayerEntity>? cachedEntities))
             {
-                return cachedEntities!.Select(e => MapToDomain(e, moveEntity: null)).ToArray();
+                return cachedEntities!.Select(e => PlayerEntityMapper.MapToDomain(e, moveEntity: null)).ToArray();
             }
 
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            var playerEntities = await dbContext.Players
+            var query = dbContext.Players
                 .AsNoTracking()
                 .OrderBy(x => x.Name)
                 .ThenBy(x => x.Id)
-                .ToListAsync();
+                .AsQueryable();
 
-            cache.Set(AllPlayersKey, (IReadOnlyList<PlayerEntity>)playerEntities, CacheTtl);
+            if (offset is > 0)
+            {
+                query = query.Skip(offset.Value);
+            }
+
+            if (limit is > 0)
+            {
+                query = query.Take(limit.Value);
+            }
+
+            var playerEntities = await query.ToListAsync();
+
+            if (offset is null && limit is null)
+            {
+                cache.Set(AllPlayersKey, (IReadOnlyList<PlayerEntity>)playerEntities, CacheTtl);
+            }
+
             return playerEntities
-                .Select(entity => MapToDomain(entity, moveEntity: null))
+                .Select(entity => PlayerEntityMapper.MapToDomain(entity, moveEntity: null))
                 .ToArray();
+        }
+
+        public async Task<int> CountAllAsync()
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            return await dbContext.Players
+                .AsNoTracking()
+                .CountAsync();
         }
 
         public async Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown)
@@ -168,6 +234,19 @@ namespace server.infrastructure.player
             return affectedRows > 0;
         }
 
+        private static IQueryable<PlayerEntity> BuildPvpOpponentsQuery(AppDbContext dbContext, PlayerId excludeId, int maxLevel)
+        {
+            var minOpponentLevel = Math.Min(TrainingConstants.Battle.MinPvpOpponentLevel, maxLevel);
+            return dbContext.Players
+                .AsNoTracking()
+                .Where(x => x.Id != excludeId.Value
+                            && x.Level >= minOpponentLevel
+                            && x.Level <= maxLevel)
+                .OrderBy(x => x.Name)
+                .ThenBy(x => x.Id)
+                .AsQueryable();
+        }
+
         public async Task SaveAsync(Player player)
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -176,34 +255,9 @@ namespace server.infrastructure.player
 
             if (existing is null)
             {
-                dbContext.Players.Add(new PlayerEntity
-                {
-                    Id = player.Id.Value,
-                    Name = player.Name,
-                    ImagePath = player.ImagePath,
-                    QuestCooldownUntil = player.QuestCooldownUntil,
-                    PetBattleCooldownUntil = player.PetBattleCooldownUntil,
-                    Job = player.Job,
-                    RebirthCount = player.RebirthCount,
-                    Level = player.Level,
-                    Exp = player.Exp,
-                    JobLevel = player.JobLevel,
-                    JobExp = player.JobExp,
-                    Gold = player.Gold,
-                    MaxHp = player.Status.MaxHp,
-                    MaxMp = player.Status.MaxMp,
-                    Strength = player.Status.Strength,
-                    Defense = player.Status.Defense,
-                    Intelligence = player.Status.Intelligence,
-                    Luck = player.Status.Luck,
-                    Speed = player.Status.Speed,
-                    ExpMultiplierFlags = player.ExpMultiplierFlags,
-                    MapUnlockFlags = player.MapUnlockFlags,
-                    RoadmapUnlockFlags = player.RoadmapUnlockFlags,
-                });
-
-                dbContext.PlayerMoves.Add(CreateMoveEntity(player.Id, player.MoveSet));
-                ApplyMasteredJobs(dbContext, player, []);
+                dbContext.Players.Add(PlayerEntityMapper.CreatePlayerEntity(player));
+                dbContext.PlayerMoves.Add(PlayerEntityMapper.CreateMoveEntity(player.Id, player.MoveSet));
+                PlayerEntityMapper.SyncMasteredJobs(dbContext, player, []);
             }
             else
             {
@@ -213,39 +267,18 @@ namespace server.infrastructure.player
                     .Where(x => x.PlayerId == player.Id.Value)
                     .ToListAsync();
 
-                existing.Name = player.Name;
-                existing.Job = player.Job;
-                existing.ImagePath = player.ImagePath;
-                existing.QuestCooldownUntil = player.QuestCooldownUntil;
-                existing.PetBattleCooldownUntil = player.PetBattleCooldownUntil;
-                existing.RebirthCount = player.RebirthCount;
-                existing.Level = player.Level;
-                existing.Exp = player.Exp;
-                existing.JobLevel = player.JobLevel;
-                existing.JobExp = player.JobExp;
-                existing.Gold = player.Gold;
-                existing.MaxHp = player.Status.MaxHp;
-                existing.MaxMp = player.Status.MaxMp;
-                existing.Strength = player.Status.Strength;
-                existing.Defense = player.Status.Defense;
-                existing.Intelligence = player.Status.Intelligence;
-                existing.Luck = player.Status.Luck;
-                existing.Speed = player.Status.Speed;
-                existing.ExpMultiplierFlags = player.ExpMultiplierFlags;
-                existing.MapUnlockFlags = player.MapUnlockFlags;
-                existing.RoadmapUnlockFlags = player.RoadmapUnlockFlags;
+                PlayerEntityMapper.ApplyPlayerEntity(existing, player);
 
                 if (existingMoves is null)
                 {
-                    dbContext.PlayerMoves.Add(CreateMoveEntity(player.Id, player.MoveSet));
+                    dbContext.PlayerMoves.Add(PlayerEntityMapper.CreateMoveEntity(player.Id, player.MoveSet));
                 }
                 else
                 {
-                    ApplyMoveSet(existingMoves, player.MoveSet);
+                    PlayerEntityMapper.ApplyMoveSet(existingMoves, player.MoveSet);
                 }
 
-                dbContext.PlayerMasterJobs.RemoveRange(existingMasteredJobs);
-                ApplyMasteredJobs(dbContext, player, existingMasteredJobs);
+                PlayerEntityMapper.SyncMasteredJobs(dbContext, player, existingMasteredJobs);
             }
 
             try
@@ -263,109 +296,6 @@ namespace server.infrastructure.player
 
             cache.Remove(PlayerKey(player.Id.Value));
             cache.Remove(AllPlayersKey);
-        }
-
-        private static Player MapToDomain(
-            PlayerEntity entity,
-            PlayerMoveEntity? moveEntity,
-            IReadOnlyCollection<PlayerMasterJobEntity>? masteredJobEntities = null) =>
-            new(
-                new PlayerId(entity.Id),
-                entity.Name,
-                rebirthCount: entity.RebirthCount,
-                imagePath: entity.ImagePath,
-                questCooldownUntil: entity.QuestCooldownUntil,
-                petBattleCooldownUntil: entity.PetBattleCooldownUntil,
-                job: entity.Job,
-                level: entity.Level,
-                exp: entity.Exp,
-                jobLevel: entity.JobLevel,
-                jobExp: entity.JobExp,
-                gold: entity.Gold,
-                status: new Status(
-                    maxHp: entity.MaxHp,
-                    maxMp: entity.MaxMp,
-                    strength: entity.Strength,
-                    defense: entity.Defense,
-                    intelligence: entity.Intelligence,
-                    luck: entity.Luck,
-                    speed: entity.Speed),
-                moveSet: MapToMoveSet(moveEntity),
-                masteredJobs: (masteredJobEntities ?? []).Select(x => x.Job).ToHashSet(),
-                expMultiplierFlags: entity.ExpMultiplierFlags,
-                mapUnlockFlags: entity.MapUnlockFlags,
-                roadmapUnlockFlags: entity.RoadmapUnlockFlags);
-
-        private static MoveSet MapToMoveSet(PlayerMoveEntity? moveEntity)
-        {
-            if (moveEntity is null)
-            {
-                return new MoveSet();
-            }
-
-            return new MoveSet(
-            [
-                ToMoveId(moveEntity.MoveId1),
-                ToMoveId(moveEntity.MoveId2),
-                ToMoveId(moveEntity.MoveId3),
-                ToMoveId(moveEntity.MoveId4),
-                ToMoveId(moveEntity.MoveId5),
-                ToMoveId(moveEntity.MoveId6),
-                ToMoveId(moveEntity.MoveId7),
-                ToMoveId(moveEntity.MoveId8),
-                ToMoveId(moveEntity.MoveId9),
-                ToMoveId(moveEntity.MoveId10)
-            ]);
-        }
-
-        private static PlayerMoveEntity CreateMoveEntity(PlayerId playerId, MoveSet moveSet)
-        {
-            var entity = new PlayerMoveEntity
-            {
-                PlayerId = playerId.Value
-            };
-
-            ApplyMoveSet(entity, moveSet);
-            return entity;
-        }
-
-        private static void ApplyMoveSet(PlayerMoveEntity entity, MoveSet moveSet)
-        {
-            var slots = moveSet.Slots;
-            if (slots.Count != MoveSet.MaxSlots)
-            {
-                throw new InvalidOperationException($"MoveSet のスロット数が不正です。count={slots.Count}");
-            }
-
-            entity.MoveId1 = slots[0]?.Id;
-            entity.MoveId2 = slots[1]?.Id;
-            entity.MoveId3 = slots[2]?.Id;
-            entity.MoveId4 = slots[3]?.Id;
-            entity.MoveId5 = slots[4]?.Id;
-            entity.MoveId6 = slots[5]?.Id;
-            entity.MoveId7 = slots[6]?.Id;
-            entity.MoveId8 = slots[7]?.Id;
-            entity.MoveId9 = slots[8]?.Id;
-            entity.MoveId10 = slots[9]?.Id;
-        }
-
-        private static MoveId? ToMoveId(int? value)
-        {
-            return value.HasValue ? new MoveId(value.Value) : null;
-        }
-
-        private static void ApplyMasteredJobs(
-            AppDbContext dbContext,
-            Player player,
-            IReadOnlyCollection<PlayerMasterJobEntity> existingMasteredJobs)
-        {
-            var masteredAtByJob = existingMasteredJobs.ToDictionary(x => x.Job, x => x.MasteredAt);
-            dbContext.PlayerMasterJobs.AddRange(player.MasteredJobs.Select(job => new PlayerMasterJobEntity
-            {
-                PlayerId = player.Id.Value,
-                Job = job,
-                MasteredAt = masteredAtByJob.GetValueOrDefault(job, DateTimeOffset.UtcNow)
-            }));
         }
     }
 }

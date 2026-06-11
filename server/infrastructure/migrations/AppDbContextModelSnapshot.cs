@@ -1278,10 +1278,18 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasColumnName("status");
 
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
                     b.HasKey("Id");
 
                     b.HasIndex("RoomId")
                         .IsUnique();
+
+                    b.HasIndex("Status", "ActionDeadlineAt")
+                        .HasDatabaseName("ix_quest_runs_status_deadline");
 
                     b.ToTable("quest_runs", "internal");
                 });

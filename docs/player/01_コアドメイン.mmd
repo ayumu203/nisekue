@@ -249,6 +249,21 @@ classDiagram
             +Evaluate(combatIndex: int) StatusRank
         }
 
+        class PaginationQuery {
+            <<Value Object>>
+            +int? Page
+            +int? PageSize
+            +int? Limit
+            +ValidatePair() void
+            +ResolveOffsetAndLimit() (int? Offset, int? Limit)
+        }
+
+        class PlayerForUpdateLockService {
+            <<Infrastructure Service>>
+            +Task~IReadOnlyDictionary~Guid, PlayerEntity~~ LockPlayersAsync(dbContext: AppDbContext, playerIds: IEnumerable~Guid~)
+            +Task~PlayerEntity~ LockPlayerAsync(dbContext: AppDbContext, playerId: Guid)
+        }
+
         class EquipmentStatusBonus {
             <<Value Object>>
             +int MaxHp
@@ -302,11 +317,15 @@ classDiagram
 
         class IPlayerRepository {
             +Task~Player?~ GetPlayerAsync(id: PlayerId)
+            +Task~Player?~ GetPlayerWithinLevelCapAsync(id: PlayerId, maxLevel: int)
+            +Task~IReadOnlyList~Player~~ GetPvpOpponentsAsync(excludeId: PlayerId, maxLevel: int, offset: int?, limit: int?)
+            +Task~(IReadOnlyList~Player~ Opponents, int TotalCount)~ GetPvpOpponentsPageAsync(excludeId: PlayerId, maxLevel: int, offset: int?, limit: int?)
+            +Task~int~ CountPvpOpponentsAsync(excludeId: PlayerId, maxLevel: int)
             +Task~IReadOnlyList~Player~~ GetPlayersAsync(ids: IEnumerable~PlayerId~)
-            +Task~IReadOnlyList~Player~~ GetAllAsync()
+            +Task~IReadOnlyList~Player~~ GetAllAsync(offset: int?, limit: int?)
+            +Task~int~ CountAllAsync()
             +Task~bool~ UpdateNameAsync(id: PlayerId, name: string)
             +Task~DateTimeOffset?~ TryStartTrainingCooldownAsync(id: PlayerId, nowUtc: DateTimeOffset, cooldown: TimeSpan)
-            +Task SetQuestCooldownUntilAsync(id: PlayerId, until: DateTimeOffset?)
             +Task SaveAsync(player: Player)
         }
 
@@ -367,6 +386,8 @@ classDiagram
             +IReadOnlyList~StatusRankThreshold~ GetAll()
         }
     }
+
+    PlayerForUpdateLockService ..> Player : lock順序を統一した更新前ロック
 
     Player *-- PlayerId : has
     Player *-- Status : has

@@ -101,6 +101,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 
 builder.Services.AddAuthorization();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddProblemDetails();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -124,6 +126,8 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 });
 
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
+builder.Services.AddScoped<IPlayerMutationService, DbPlayerMutationService>();
+builder.Services.AddScoped<PlayerForUpdateLockService>();
 builder.Services.AddScoped<IPlayerEquipmentRepository, DbPlayerEquipmentRepository>();
 builder.Services.AddScoped<IPlayerItemStackRepository, DbPlayerItemStackRepository>();
 builder.Services.AddSingleton<ITreasureMapRepository, CsvTreasureMapRepository>();
@@ -206,6 +210,7 @@ builder.Services.AddHostedService<QuestDataCleanupBackgroundService>();
 var app = builder.Build();
 
 app.UseCors("ClientCors");
+app.UseExceptionHandler();
 app.UseAuthentication();
 app.UseAuthorization();
 

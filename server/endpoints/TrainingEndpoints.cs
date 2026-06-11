@@ -2,6 +2,7 @@ using System.Security.Claims;
 using server.application.training;
 using server.domain.player;
 using server.domain.training;
+using server.shared.pagination;
 using server.shared.constants.training;
 
 namespace server.endpoints;
@@ -108,6 +109,9 @@ internal static class TrainingEndpoints
 
         app.MapGet("/training/pvp-opponents", async (
             ClaimsPrincipal user,
+            int? page,
+            int? pageSize,
+            int? limit,
             IPlayerRepository playerRepository,
             IJobProfileRepository jobProfileRepository,
             CombatIndexCalculator combatIndexCalculator,
@@ -119,6 +123,11 @@ internal static class TrainingEndpoints
                 return Results.Unauthorized();
             }
 
+            if (!PaginationQueryResolver.TryResolve(page, pageSize, limit, out var offset, out var effectiveLimit, out var errorMessage))
+            {
+                return Results.BadRequest(new { message = errorMessage });
+            }
+
             var player = await playerRepository.GetPlayerAsync(playerId.Value);
             if (player is null)
             {
@@ -126,24 +135,31 @@ internal static class TrainingEndpoints
             }
 
             var maxOpponentLevel = (int)(player.Level * TrainingConstants.Battle.PvpOpponentLevelCapMultiplier);
-            var opponents = await playerRepository.GetPvpOpponentsAsync(playerId.Value, maxOpponentLevel);
-
-            return Results.Ok(opponents
-                .Select(p => new
+            var pageResult = await playerRepository.GetPvpOpponentsPageAsync(playerId.Value, maxOpponentLevel, offset, effectiveLimit);
+            var items = pageResult.Opponents.Select(p => new
+            {
+                userId = p.Id.Value,
+                userName = p.Name,
+                imagePath = p.ImagePath,
+                level = p.Level,
+                job = new
                 {
-                    userId = p.Id.Value,
-                    userName = p.Name,
-                    imagePath = p.ImagePath,
-                    level = p.Level,
-                    job = new
-                    {
-                        code = p.Job.ToString(),
-                        value = (int)p.Job,
-                        displayName = EndpointHelpers.GetJobDisplayName(p.Job),
-                        description = jobProfileRepository.GetByJob(p.Job).Description
-                    },
-                    combatIndexRank = combatIndexRankEvaluator.Evaluate(combatIndexCalculator.Calculate(p.Status)).ToString()
-                }));
+                    code = p.Job.ToString(),
+                    value = (int)p.Job,
+                    displayName = EndpointHelpers.GetJobDisplayName(p.Job),
+                    description = jobProfileRepository.GetByJob(p.Job).Description
+                },
+                combatIndexRank = combatIndexRankEvaluator.Evaluate(combatIndexCalculator.Calculate(p.Status)).ToString()
+            })
+                .ToArray();
+
+            return Results.Ok(PagedResponseFactory.Create(
+                items,
+                pageResult.TotalCount,
+                page,
+                pageSize,
+                offset,
+                effectiveLimit));
         }).RequireAuthorization();
 
         return app;

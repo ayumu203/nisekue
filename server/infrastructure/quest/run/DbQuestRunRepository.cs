@@ -1,33 +1,50 @@
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 using System.Text.Json;
 using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.move;
-using server.domain.pet;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
-using server.infrastructure.pet;
 
 namespace server.infrastructure.quest.run;
 
 public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFactory) : IQuestRunRepository
 {
-    public Task<QuestRun?> GetAsync(QuestRunId id)
+    private const int SaveChatRetryCount = 3;
+
+    public async Task<QuestRun?> GetAsync(QuestRunId id)
     {
-        return LoadAsync(x => x.Id == id.Value);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var runEntity = await dbContext.QuestRuns
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.Id == id.Value);
+        if (runEntity is null)
+        {
+            return null;
+        }
+
+        return await LoadAsync(dbContext, runEntity);
     }
 
-    public Task<QuestRun?> GetByRoomIdAsync(QuestRoomId roomId)
+    public async Task<QuestRun?> GetByRoomIdAsync(QuestRoomId roomId)
     {
-        return LoadAsync(x => x.RoomId == roomId.Value);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var runEntity = await dbContext.QuestRuns
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.RoomId == roomId.Value);
+        if (runEntity is null)
+        {
+            return null;
+        }
+
+        return await LoadAsync(dbContext, runEntity);
     }
 
     public async Task<QuestRun?> GetActiveByPlayerAsync(PlayerId playerId)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var runId = await (
+        var runEntity = await (
             from run in dbContext.QuestRuns.AsNoTracking()
             join participant in dbContext.QuestRoomParticipants.AsNoTracking()
                 on run.RoomId equals participant.RoomId
@@ -36,10 +53,14 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                 && participant.ParticipantType == (int)ParticipantType.Player
                 && participant.ParticipantStatus != (int)ParticipantStatus.Left
             orderby run.StartedAt descending
-            select run.Id)
+            select run)
             .FirstOrDefaultAsync();
+        if (runEntity is null)
+        {
+            return null;
+        }
 
-        return runId == Guid.Empty ? null : await GetAsync(new QuestRunId(runId));
+        return await LoadAsync(dbContext, runEntity);
     }
 
     public async Task<bool> ExistsActiveRunByPlayerAsync(PlayerId playerId)
@@ -60,184 +81,215 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
     public async Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var runIds = await dbContext.QuestRuns
+        var runEntities = await dbContext.QuestRuns
             .AsNoTracking()
             .Where(x => x.Status == (int)QuestRunStatus.InProgress && x.ActionDeadlineAt <= now)
-            .Select(x => x.Id)
             .ToListAsync();
-
-        var runs = new List<QuestRun>(runIds.Count);
-        foreach (var runId in runIds)
+        if (runEntities.Count == 0)
         {
-            var run = await GetAsync(new QuestRunId(runId));
-            if (run is not null)
-            {
-                runs.Add(run);
-            }
+            return [];
         }
 
-        return runs;
+        var runIds = runEntities.Select(x => x.Id).ToList();
+        var partyMemberByRunId = await dbContext.QuestRunPartyMembers
+            .AsNoTracking()
+            .Where(x => runIds.Contains(x.RunId))
+            .GroupBy(x => x.RunId)
+            .ToDictionaryAsync(x => x.Key, x => x.ToList());
+        var snapshotsByRunId = await dbContext.QuestRunPartySnapshots
+            .AsNoTracking()
+            .Where(x => runIds.Contains(x.RunId))
+            .GroupBy(x => x.RunId)
+            .ToDictionaryAsync(x => x.Key, x => x.ToList());
+        var enemiesByRunId = await dbContext.QuestRunEnemies
+            .AsNoTracking()
+            .Where(x => runIds.Contains(x.RunId))
+            .GroupBy(x => x.RunId)
+            .ToDictionaryAsync(x => x.Key, x => x.ToList());
+        var currentTurnNoByRunId = runEntities.ToDictionary(x => x.Id, x => x.CurrentTurnNo);
+        var currentTurnNos = runEntities.Select(x => x.CurrentTurnNo).Distinct().ToArray();
+        var turnCommandsByRunId = (await dbContext.QuestTurnCommands
+            .AsNoTracking()
+            .Where(x => runIds.Contains(x.RunId) && currentTurnNos.Contains(x.TurnNo))
+            .ToListAsync())
+            .Where(x => currentTurnNoByRunId.GetValueOrDefault(x.RunId) == x.TurnNo)
+            .GroupBy(x => x.RunId)
+            .ToDictionary(x => x.Key, x => x.ToList());
+        var trapsByRunId = await dbContext.QuestFloorTraps
+            .AsNoTracking()
+            .Where(x => runIds.Contains(x.RunId))
+            .GroupBy(x => x.RunId)
+            .ToDictionaryAsync(x => x.Key, x => x.ToList());
+        var rewardsByRunId = await dbContext.QuestRewardSummaries
+            .AsNoTracking()
+            .Where(x => runIds.Contains(x.RunId))
+            .ToDictionaryAsync(x => x.RunId, x => x);
+
+        return runEntities.Select(entity => MapToDomain(
+                entity,
+                snapshotsByRunId.GetValueOrDefault(entity.Id) ?? [],
+                partyMemberByRunId.GetValueOrDefault(entity.Id) ?? [],
+                enemiesByRunId.GetValueOrDefault(entity.Id) ?? [],
+                turnCommandsByRunId.GetValueOrDefault(entity.Id) ?? [],
+                trapsByRunId.GetValueOrDefault(entity.Id) ?? [],
+                rewardsByRunId.GetValueOrDefault(entity.Id)))
+            .ToArray();
     }
 
-    public async Task SaveAsync(QuestRun run, IReadOnlyList<PlayerPet>? capturedPets = null)
+    public async Task SaveAsync(QuestRun run)
     {
         ArgumentNullException.ThrowIfNull(run);
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var existing = await dbContext.QuestRuns.SingleOrDefaultAsync(x => x.Id == run.Id.Value);
-        if (existing is null)
+        var exists = await dbContext.QuestRuns
+            .AsNoTracking()
+            .AnyAsync(x => x.Id == run.Id.Value);
+
+        try
         {
-            dbContext.QuestRuns.Add(new QuestRunEntity
+            if (!exists)
             {
-                Id = run.Id.Value,
-                RoomId = run.RoomId.Value,
-                StageId = run.StageId.Value,
-                Status = (int)run.Status,
-                CurrentFloorNo = run.FloorState.CurrentFloorNo,
-                CurrentTurnNo = run.TurnState.CurrentTurnNo,
-                ActionDeadlineAt = run.TurnState.ActionDeadlineAt,
-                LastResolvedTurnNo = run.TurnState.LastResolvedTurnNo,
-                LastTurnResultsJson = QuestJsonSerializer.SerializeLastTurnResults(run.LastTurnResults),
-                ChatMessagesJson = QuestJsonSerializer.SerializeChatMessages(run.ChatMessages),
-                StartedAt = run.StartedAt,
-                EndedAt = run.EndedAt
-            });
-        }
-        else
-        {
-            existing.StageId = run.StageId.Value;
-            existing.Status = (int)run.Status;
-            existing.CurrentFloorNo = run.FloorState.CurrentFloorNo;
-            existing.CurrentTurnNo = run.TurnState.CurrentTurnNo;
-            existing.ActionDeadlineAt = run.TurnState.ActionDeadlineAt;
-            existing.LastResolvedTurnNo = run.TurnState.LastResolvedTurnNo;
-            existing.LastTurnResultsJson = QuestJsonSerializer.SerializeLastTurnResults(run.LastTurnResults);
-            existing.ChatMessagesJson = QuestJsonSerializer.SerializeChatMessages(run.ChatMessages);
-            existing.EndedAt = run.EndedAt;
-        }
+                dbContext.QuestRuns.Add(MapToEntity(run));
+                AddChildrenForCreate(dbContext, run);
+                await SyncRewardSummaryAsync(dbContext, run);
+            }
+            else
+            {
+                var entity = MapToEntity(run);
+                dbContext.QuestRuns.Attach(entity);
+                var entry = dbContext.Entry(entity);
+                entry.Property(x => x.Version).OriginalValue = run.PersistedVersion;
+                entry.Property(x => x.StageId).IsModified = true;
+                entry.Property(x => x.Status).IsModified = true;
+                entry.Property(x => x.CurrentFloorNo).IsModified = true;
+                entry.Property(x => x.CurrentTurnNo).IsModified = true;
+                entry.Property(x => x.ActionDeadlineAt).IsModified = true;
+                entry.Property(x => x.LastResolvedTurnNo).IsModified = true;
+                entry.Property(x => x.LastTurnResultsJson).IsModified = true;
+                entry.Property(x => x.ChatMessagesJson).IsModified = true;
+                entry.Property(x => x.EndedAt).IsModified = true;
+                entry.Property(x => x.Version).IsModified = true;
 
-        await ReplaceChildrenAsync(dbContext, run);
-        if (capturedPets is not null && capturedPets.Count > 0)
-        {
-            dbContext.PlayerPets.AddRange(capturedPets.Select(MapCapturedPet));
-        }
+                await SyncPartyMembersAsync(dbContext, run);
+                await SyncEnemiesAsync(dbContext, run);
+                await SyncTurnCommandsAsync(dbContext, run);
+                await SyncTrapsAsync(dbContext, run);
+                await SyncRewardSummaryAsync(dbContext, run);
+            }
 
-        await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
+            run.SyncVersion(run.Version);
+            run.MarkChatMessagesPersisted();
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            await SyncRunVersionWithLatestAsync(run);
+            throw new InvalidOperationException("クエスト進行情報が同時更新されました。最新状態を再取得してからやり直してください。", ex);
+        }
     }
 
-    private static PlayerPetEntity MapCapturedPet(PlayerPet pet) => new()
+    public async Task SaveChatMessagesAsync(QuestRun run)
     {
-        Id = pet.Id.Value,
-        PlayerId = pet.PlayerId.Value,
-        EnemyDefinitionId = pet.EnemyDefinitionId.Value,
-        BonusMaxHp = pet.BonusStatus.MaxHp,
-        BonusMaxMp = pet.BonusStatus.MaxMp,
-        BonusStrength = pet.BonusStatus.Strength,
-        BonusDefense = pet.BonusStatus.Defense,
-        BonusIntelligence = pet.BonusStatus.Intelligence,
-        BonusLuck = pet.BonusStatus.Luck,
-        BonusSpeed = pet.BonusStatus.Speed,
-        IsStandby = pet.IsStandby,
-        CapturedAt = pet.CapturedAt,
-        UpdatedAt = pet.UpdatedAt,
-    };
+        ArgumentNullException.ThrowIfNull(run);
 
-    private async Task<QuestRun?> LoadAsync(Expression<Func<QuestRunEntity, bool>> predicate)
+        var pendingMessages = run.PendingChatMessages.ToArray();
+        if (pendingMessages.Length == 0)
+        {
+            return;
+        }
+
+        var messagesToPersist = run.ChatMessages.ToArray();
+        var nextVersion = run.Version;
+
+        for (var attempt = 1; attempt <= SaveChatRetryCount; attempt++)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var entity = new QuestRunEntity
+            {
+                Id = run.Id.Value,
+                ChatMessagesJson = QuestJsonSerializer.SerializeChatMessages(messagesToPersist),
+                Version = nextVersion
+            };
+            dbContext.QuestRuns.Attach(entity);
+
+            var entry = dbContext.Entry(entity);
+            entry.Property(x => x.Version).OriginalValue = run.PersistedVersion;
+            entry.Property(x => x.ChatMessagesJson).IsModified = true;
+            entry.Property(x => x.Version).IsModified = true;
+
+            try
+            {
+                await dbContext.SaveChangesAsync();
+                run.SetChatMessagesForPersistence(messagesToPersist);
+                run.SyncVersion(nextVersion);
+                run.MarkChatMessagesPersisted();
+                return;
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await SyncRunVersionWithLatestAsync(run);
+                if (attempt == SaveChatRetryCount)
+                {
+                    throw new InvalidOperationException("クエスト進行情報が同時更新されました。最新状態を再取得してからやり直してください。", ex);
+                }
+
+                var latest = await LoadRunVersionAndChatMessagesAsync(run.Id);
+                if (latest is null)
+                {
+                    throw new KeyNotFoundException($"クエスト進行情報が見つかりません。 runId={run.Id.Value}");
+                }
+
+                messagesToPersist = MergeChatMessages(latest.Value.ChatMessages, pendingMessages);
+                nextVersion = latest.Value.Version + 1;
+            }
+        }
+
+        throw new InvalidOperationException("チャット保存のリトライに失敗しました。");
+    }
+
+    private async Task SyncRunVersionWithLatestAsync(QuestRun run)
+    {
+        var latest = await LoadRunVersionAndChatMessagesAsync(run.Id);
+        if (latest is null)
+        {
+            return;
+        }
+
+        run.SyncVersion(latest.Value.Version);
+    }
+
+    private async Task<(int Version, QuestChatMessage[] ChatMessages)?> LoadRunVersionAndChatMessagesAsync(QuestRunId runId)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var runEntity = await dbContext.QuestRuns
+        var latest = await dbContext.QuestRuns
             .AsNoTracking()
-            .SingleOrDefaultAsync(predicate);
-        if (runEntity is null)
+            .Where(x => x.Id == runId.Value)
+            .Select(x => new { x.Version, x.ChatMessagesJson })
+            .SingleOrDefaultAsync();
+        if (latest is null)
         {
             return null;
         }
 
-        var partyMemberEntities = await dbContext.QuestRunPartyMembers
-            .AsNoTracking()
-            .Where(x => x.RunId == runEntity.Id)
-            .ToListAsync();
-        var snapshotEntities = await dbContext.QuestRunPartySnapshots
-            .AsNoTracking()
-            .Where(x => x.RunId == runEntity.Id)
-            .ToListAsync();
-        var enemyEntities = await dbContext.QuestRunEnemies
-            .AsNoTracking()
-            .Where(x => x.RunId == runEntity.Id)
-            .ToListAsync();
-        var turnCommandEntities = await dbContext.QuestTurnCommands
-            .AsNoTracking()
-            .Where(x => x.RunId == runEntity.Id && x.TurnNo == runEntity.CurrentTurnNo)
-            .ToListAsync();
-        var trapEntities = await dbContext.QuestFloorTraps
-            .AsNoTracking()
-            .Where(x => x.RunId == runEntity.Id)
-            .ToListAsync();
-        var rewardEntity = await dbContext.QuestRewardSummaries
-            .AsNoTracking()
-            .SingleOrDefaultAsync(x => x.RunId == runEntity.Id);
-
-        var snapshots = snapshotEntities.Select(MapSnapshot).ToArray();
-        var partyMembers = partyMemberEntities.Select(MapPartyMember).ToArray();
-        var enemies = enemyEntities.Select(MapEnemy).ToArray();
-        var turnCommands = turnCommandEntities.Select(MapTurnCommand).ToArray();
-        var traps = trapEntities.Select(MapTrap).ToArray();
-        var lastTurnResults = QuestJsonSerializer.DeserializeLastTurnResults(runEntity.LastTurnResultsJson);
-        var chatMessages = QuestJsonSerializer.DeserializeChatMessages(runEntity.ChatMessagesJson);
-
-        return new QuestRun(
-            new QuestRunId(runEntity.Id),
-            new QuestRoomId(runEntity.RoomId),
-            new QuestStageId(runEntity.StageId),
-            snapshots,
-            new QuestFloorState(runEntity.CurrentFloorNo, false, []),
-            new QuestBattleState(partyMembers, enemies),
-            new QuestTurnState(runEntity.CurrentTurnNo, runEntity.ActionDeadlineAt, turnCommands, runEntity.LastResolvedTurnNo),
-            new QuestTrapCollection(traps),
-            new QuestRewardAccumulator(
-                rewardEntity?.Exp ?? 0,
-                rewardEntity?.EquipmentRewardId is null ? null : new EquipmentId(rewardEntity.EquipmentRewardId.Value),
-                rewardEntity?.ItemRewardId is null ? null : new ItemId(rewardEntity.ItemRewardId.Value),
-                rewardEntity?.Gold ?? 0,
-                DeserializeSkippedRewardPlayerIds(rewardEntity?.SkippedRewardPlayerIdsJson)),
-            lastTurnResults,
-            chatMessages,
-            runEntity.StartedAt,
-            (QuestRunStatus)runEntity.Status,
-            runEntity.EndedAt);
+        return (latest.Version, QuestJsonSerializer.DeserializeChatMessages(latest.ChatMessagesJson));
     }
 
-    private static async Task ReplaceChildrenAsync(AppDbContext dbContext, QuestRun run)
+    private static QuestChatMessage[] MergeChatMessages(
+        IEnumerable<QuestChatMessage> existingMessages,
+        IEnumerable<QuestChatMessage> pendingMessages)
+    {
+        return existingMessages
+            .Concat(pendingMessages)
+            .DistinctBy(message => (message.SenderParticipantId.Value, message.SentAt, message.TurnNo, message.Message))
+            .OrderBy(message => message.SentAt)
+            .ThenBy(message => message.SenderParticipantId.Value)
+            .ThenBy(message => message.Message)
+            .ToArray();
+    }
+
+    private static void AddChildrenForCreate(AppDbContext dbContext, QuestRun run)
     {
         var runId = run.Id.Value;
-
-        dbContext.QuestRunPartyMembers.RemoveRange(await dbContext.QuestRunPartyMembers.Where(x => x.RunId == runId).ToListAsync());
-        dbContext.QuestRunPartySnapshots.RemoveRange(await dbContext.QuestRunPartySnapshots.Where(x => x.RunId == runId).ToListAsync());
-        dbContext.QuestRunEnemies.RemoveRange(await dbContext.QuestRunEnemies.Where(x => x.RunId == runId).ToListAsync());
-        dbContext.QuestTurnCommands.RemoveRange(await dbContext.QuestTurnCommands.Where(x => x.RunId == runId).ToListAsync());
-        dbContext.QuestFloorTraps.RemoveRange(await dbContext.QuestFloorTraps.Where(x => x.RunId == runId).ToListAsync());
-
-        var reward = await dbContext.QuestRewardSummaries.SingleOrDefaultAsync(x => x.RunId == runId);
-        if (reward is null)
-        {
-            dbContext.QuestRewardSummaries.Add(new QuestRewardSummaryEntity
-            {
-                RunId = runId,
-                Exp = run.Rewards.Exp,
-                Gold = run.Rewards.Gold,
-                EquipmentRewardId = run.Rewards.EquipmentRewardId?.Value,
-                ItemRewardId = run.Rewards.ItemRewardId?.Value,
-                SkippedRewardPlayerIdsJson = SerializeSkippedRewardPlayerIds(run.Rewards.SkippedRewardPlayerIds)
-            });
-        }
-        else
-        {
-            reward.Exp = run.Rewards.Exp;
-            reward.Gold = run.Rewards.Gold;
-            reward.EquipmentRewardId = run.Rewards.EquipmentRewardId?.Value;
-            reward.ItemRewardId = run.Rewards.ItemRewardId?.Value;
-            reward.SkippedRewardPlayerIdsJson = SerializeSkippedRewardPlayerIds(run.Rewards.SkippedRewardPlayerIds);
-        }
 
         dbContext.QuestRunPartySnapshots.AddRange(run.PartySnapshots.Select(x => new QuestRunPartySnapshotEntity
         {
@@ -270,69 +322,353 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             PetSpeed = x.Pet?.Status.Speed
         }));
 
-        dbContext.QuestRunPartyMembers.AddRange(run.BattleState.PartyMembers.Select(x =>
+        dbContext.QuestRunPartyMembers.AddRange(run.BattleState.PartyMembers.Select(x => ToPartyMemberEntity(runId, x)));
+        dbContext.QuestRunEnemies.AddRange(run.BattleState.Enemies.Select(x => ToEnemyEntity(run, x)));
+        dbContext.QuestTurnCommands.AddRange(run.TurnState.PendingCommands.Select(x => ToTurnCommandEntity(runId, x)));
+        dbContext.QuestFloorTraps.AddRange(run.Traps.Traps.Select(x => ToTrapEntity(runId, x)));
+    }
+
+    private static async Task SyncPartyMembersAsync(AppDbContext dbContext, QuestRun run)
+    {
+        var runId = run.Id.Value;
+        var existingEntities = await dbContext.QuestRunPartyMembers
+            .Where(x => x.RunId == runId)
+            .ToDictionaryAsync(x => x.ParticipantId);
+
+        SyncEntities(
+            existingEntities,
+            run.BattleState.PartyMembers,
+            state => state.ParticipantId.Value,
+            stale => dbContext.QuestRunPartyMembers.Remove(stale),
+            state => dbContext.QuestRunPartyMembers.Add(ToPartyMemberEntity(runId, state)),
+            ApplyPartyMemberEntity);
+    }
+
+    private static async Task SyncEnemiesAsync(AppDbContext dbContext, QuestRun run)
+    {
+        var runId = run.Id.Value;
+        var existingEntities = await dbContext.QuestRunEnemies
+            .Where(x => x.RunId == runId)
+            .ToDictionaryAsync(x => x.EnemyInstanceId);
+
+        SyncEntities(
+            existingEntities,
+            run.BattleState.Enemies,
+            enemy => enemy.Id.Value,
+            stale => dbContext.QuestRunEnemies.Remove(stale),
+            enemy => dbContext.QuestRunEnemies.Add(ToEnemyEntity(run, enemy)),
+            (existing, enemy) => ApplyEnemyEntity(existing, run, enemy));
+    }
+
+    private static async Task SyncTurnCommandsAsync(AppDbContext dbContext, QuestRun run)
+    {
+        var runId = run.Id.Value;
+        var currentTurnNo = run.TurnState.CurrentTurnNo;
+
+        var resolvedCommands = await dbContext.QuestTurnCommands
+            .Where(x => x.RunId == runId && x.TurnNo < currentTurnNo)
+            .ToListAsync();
+        if (resolvedCommands.Count > 0)
         {
-            var effectsJson = QuestJsonSerializer.SerializeEffects(x.Ailments, x.Buffs);
-            return new QuestRunPartyMemberEntity
+            dbContext.QuestTurnCommands.RemoveRange(resolvedCommands);
+        }
+
+        var existingCommands = await dbContext.QuestTurnCommands
+            .Where(x => x.RunId == runId && x.TurnNo == currentTurnNo)
+            .ToDictionaryAsync(x => x.ParticipantId);
+        var pendingByParticipantId = run.TurnState.PendingCommands.ToDictionary(x => x.ParticipantId.Value);
+
+        foreach (var stale in existingCommands.Values.Where(x => !pendingByParticipantId.ContainsKey(x.ParticipantId)))
+        {
+            dbContext.QuestTurnCommands.Remove(stale);
+        }
+
+        foreach (var command in run.TurnState.PendingCommands)
+        {
+            if (existingCommands.TryGetValue(command.ParticipantId.Value, out var existing))
+            {
+                existing.ActionKind = (int)command.ActionKind;
+                existing.MoveId = command.MoveId?.Id;
+                existing.TargetRow = command.SelectedTargetPosition is null ? null : (int)command.SelectedTargetPosition.Value.Row;
+                existing.TargetColumn = command.SelectedTargetPosition is null ? null : (int)command.SelectedTargetPosition.Value.Column;
+                existing.SubmittedAt = command.SubmittedAt;
+                existing.IsAutoSubmitted = command.IsAutoSubmitted;
+                continue;
+            }
+
+            dbContext.QuestTurnCommands.Add(ToTurnCommandEntity(runId, command));
+        }
+    }
+
+    private static async Task SyncTrapsAsync(AppDbContext dbContext, QuestRun run)
+    {
+        var runId = run.Id.Value;
+        var existingEntities = await dbContext.QuestFloorTraps
+            .Where(x => x.RunId == runId)
+            .ToDictionaryAsync(x => x.TrapId);
+
+        SyncEntities(
+            existingEntities,
+            run.Traps.Traps,
+            trap => trap.Id.Value,
+            stale => dbContext.QuestFloorTraps.Remove(stale),
+            trap => dbContext.QuestFloorTraps.Add(ToTrapEntity(runId, trap)),
+            (existing, trap) =>
+            {
+                existing.SourceParticipantId = trap.SourceParticipantId.Value;
+                existing.MoveId = trap.MoveId.Id;
+                existing.ExpiresAfterFloorNo = trap.ExpiresAfterFloorNo;
+                existing.IsTriggered = trap.IsTriggered;
+            });
+    }
+
+    private static void SyncEntities<TEntity, TState, TKey>(
+        IReadOnlyDictionary<TKey, TEntity> existingEntities,
+        IReadOnlyList<TState> states,
+        Func<TState, TKey> stateKeySelector,
+        Action<TEntity> removeStale,
+        Action<TState> addNew,
+        Action<TEntity, TState> apply)
+        where TKey : notnull
+    {
+        var statesByKey = states.ToDictionary(stateKeySelector);
+
+        foreach (var (key, stale) in existingEntities)
+        {
+            if (!statesByKey.ContainsKey(key))
+            {
+                removeStale(stale);
+            }
+        }
+
+        foreach (var state in states)
+        {
+            var key = stateKeySelector(state);
+            if (existingEntities.TryGetValue(key, out var existing))
+            {
+                apply(existing, state);
+                continue;
+            }
+
+            addNew(state);
+        }
+    }
+
+    private static async Task SyncRewardSummaryAsync(AppDbContext dbContext, QuestRun run)
+    {
+        var runId = run.Id.Value;
+        var existing = await dbContext.QuestRewardSummaries.SingleOrDefaultAsync(x => x.RunId == runId);
+        if (existing is null)
+        {
+            dbContext.QuestRewardSummaries.Add(new QuestRewardSummaryEntity
             {
                 RunId = runId,
-                ParticipantId = x.ParticipantId.Value,
-                CurrentHp = x.CurrentHp,
-                CurrentMp = x.CurrentMp,
-                IsDead = x.IsDead,
-                CanActFromTurn = x.CanActFromTurn,
-                ActionMode = (int)x.ActionMode,
-                HasLeftQuest = x.HasLeftQuest,
-                IsManualControlRequested = x.IsManualControlRequested,
-                PetSummonsUsed = x.PetSummonsUsed,
-                ActiveEffectsJson = effectsJson,
-                DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder(),
-                UpdatedAt = DateTimeOffset.UtcNow
-            };
-        }));
+                Exp = run.Rewards.Exp,
+                Gold = run.Rewards.Gold,
+                EquipmentRewardId = run.Rewards.EquipmentRewardId?.Value,
+                ItemRewardId = run.Rewards.ItemRewardId?.Value,
+                SkippedRewardPlayerIdsJson = SerializeRewardState(run.Rewards)
+            });
+            return;
+        }
 
-        dbContext.QuestRunEnemies.AddRange(run.BattleState.Enemies.Select(x =>
-        {
-            var effectsJson = QuestJsonSerializer.SerializeEffects(x.Ailments, x.Buffs);
-            return new QuestRunEnemyEntity
-            {
-                RunId = runId,
-                EnemyInstanceId = x.Id.Value,
-                FloorNo = run.FloorState.CurrentFloorNo,
-                EnemyDefinitionId = x.EnemyDefinitionId.Value,
-                BattleRow = (int)x.Position.Row,
-                BattleColumn = (int)x.Position.Column,
-                CurrentHp = x.CurrentHp,
-                CurrentMp = x.CurrentMp,
-                IsDead = x.IsDead,
-                IsCaptured = x.IsCaptured,
-                ActiveEffectsJson = effectsJson,
-                DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder()
-            };
-        }));
+        existing.Exp = run.Rewards.Exp;
+        existing.Gold = run.Rewards.Gold;
+        existing.EquipmentRewardId = run.Rewards.EquipmentRewardId?.Value;
+        existing.ItemRewardId = run.Rewards.ItemRewardId?.Value;
+        existing.SkippedRewardPlayerIdsJson = SerializeRewardState(run.Rewards);
+    }
 
-        dbContext.QuestTurnCommands.AddRange(run.TurnState.PendingCommands.Select(x => new QuestTurnCommandEntity
-        {
-            RunId = runId,
-            TurnNo = x.TurnNo,
-            ParticipantId = x.ParticipantId.Value,
-            ActionKind = (int)x.ActionKind,
-            MoveId = x.MoveId?.Id,
-            TargetRow = x.SelectedTargetPosition is null ? null : (int)x.SelectedTargetPosition.Value.Row,
-            TargetColumn = x.SelectedTargetPosition is null ? null : (int)x.SelectedTargetPosition.Value.Column,
-            SubmittedAt = x.SubmittedAt,
-            IsAutoSubmitted = x.IsAutoSubmitted
-        }));
+    private static QuestRunEntity MapToEntity(QuestRun run) => new()
+    {
+        Id = run.Id.Value,
+        RoomId = run.RoomId.Value,
+        StageId = run.StageId.Value,
+        Status = (int)run.Status,
+        CurrentFloorNo = run.FloorState.CurrentFloorNo,
+        CurrentTurnNo = run.TurnState.CurrentTurnNo,
+        ActionDeadlineAt = run.TurnState.ActionDeadlineAt,
+        LastResolvedTurnNo = run.TurnState.LastResolvedTurnNo,
+        LastTurnResultsJson = QuestJsonSerializer.SerializeLastTurnResults(run.LastTurnResults),
+        ChatMessagesJson = QuestJsonSerializer.SerializeChatMessages(run.ChatMessages),
+        StartedAt = run.StartedAt,
+        EndedAt = run.EndedAt,
+        Version = run.Version,
+    };
 
-        dbContext.QuestFloorTraps.AddRange(run.Traps.Traps.Select(x => new QuestFloorTrapEntity
+    private static QuestRunPartyMemberEntity ToPartyMemberEntity(Guid runId, QuestRunPartyMemberState state)
+    {
+        var effectsJson = QuestJsonSerializer.SerializeEffects(state.Ailments, state.Buffs);
+        return new QuestRunPartyMemberEntity
         {
             RunId = runId,
-            TrapId = x.Id.Value,
-            SourceParticipantId = x.SourceParticipantId.Value,
-            MoveId = x.MoveId.Id,
-            ExpiresAfterFloorNo = x.ExpiresAfterFloorNo,
-            IsTriggered = x.IsTriggered
-        }));
+            ParticipantId = state.ParticipantId.Value,
+            CurrentHp = state.CurrentHp,
+            CurrentMp = state.CurrentMp,
+            IsDead = state.IsDead,
+            CanActFromTurn = state.CanActFromTurn,
+            ActionMode = (int)state.ActionMode,
+            HasLeftQuest = state.HasLeftQuest,
+            IsManualControlRequested = state.IsManualControlRequested,
+            PetSummonsUsed = state.PetSummonsUsed,
+            ActiveEffectsJson = effectsJson,
+            DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder(),
+            UpdatedAt = DateTimeOffset.UtcNow
+        };
+    }
+
+    private static void ApplyPartyMemberEntity(QuestRunPartyMemberEntity entity, QuestRunPartyMemberState state)
+    {
+        var effectsJson = QuestJsonSerializer.SerializeEffects(state.Ailments, state.Buffs);
+        entity.CurrentHp = state.CurrentHp;
+        entity.CurrentMp = state.CurrentMp;
+        entity.IsDead = state.IsDead;
+        entity.CanActFromTurn = state.CanActFromTurn;
+        entity.ActionMode = (int)state.ActionMode;
+        entity.HasLeftQuest = state.HasLeftQuest;
+        entity.IsManualControlRequested = state.IsManualControlRequested;
+        entity.PetSummonsUsed = state.PetSummonsUsed;
+        entity.ActiveEffectsJson = effectsJson;
+        entity.DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder();
+        entity.UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    private static QuestRunEnemyEntity ToEnemyEntity(QuestRun run, QuestEnemyState enemy)
+    {
+        var effectsJson = QuestJsonSerializer.SerializeEffects(enemy.Ailments, enemy.Buffs);
+        return new QuestRunEnemyEntity
+        {
+            RunId = run.Id.Value,
+            EnemyInstanceId = enemy.Id.Value,
+            FloorNo = run.FloorState.CurrentFloorNo,
+            EnemyDefinitionId = enemy.EnemyDefinitionId.Value,
+            BattleRow = (int)enemy.Position.Row,
+            BattleColumn = (int)enemy.Position.Column,
+            CurrentHp = enemy.CurrentHp,
+            CurrentMp = enemy.CurrentMp,
+            IsDead = enemy.IsDead,
+            IsCaptured = enemy.IsCaptured,
+            ActiveEffectsJson = effectsJson,
+            DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder()
+        };
+    }
+
+    private static void ApplyEnemyEntity(QuestRunEnemyEntity entity, QuestRun run, QuestEnemyState enemy)
+    {
+        var effectsJson = QuestJsonSerializer.SerializeEffects(enemy.Ailments, enemy.Buffs);
+        entity.FloorNo = run.FloorState.CurrentFloorNo;
+        entity.EnemyDefinitionId = enemy.EnemyDefinitionId.Value;
+        entity.BattleRow = (int)enemy.Position.Row;
+        entity.BattleColumn = (int)enemy.Position.Column;
+        entity.CurrentHp = enemy.CurrentHp;
+        entity.CurrentMp = enemy.CurrentMp;
+        entity.IsDead = enemy.IsDead;
+        entity.IsCaptured = enemy.IsCaptured;
+        entity.ActiveEffectsJson = effectsJson;
+        entity.DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder();
+    }
+
+    private static QuestTurnCommandEntity ToTurnCommandEntity(Guid runId, QuestSubmittedCommand command) => new()
+    {
+        RunId = runId,
+        TurnNo = command.TurnNo,
+        ParticipantId = command.ParticipantId.Value,
+        ActionKind = (int)command.ActionKind,
+        MoveId = command.MoveId?.Id,
+        TargetRow = command.SelectedTargetPosition is null ? null : (int)command.SelectedTargetPosition.Value.Row,
+        TargetColumn = command.SelectedTargetPosition is null ? null : (int)command.SelectedTargetPosition.Value.Column,
+        SubmittedAt = command.SubmittedAt,
+        IsAutoSubmitted = command.IsAutoSubmitted
+    };
+
+    private static QuestFloorTrapEntity ToTrapEntity(Guid runId, QuestTrapState trap) => new()
+    {
+        RunId = runId,
+        TrapId = trap.Id.Value,
+        SourceParticipantId = trap.SourceParticipantId.Value,
+        MoveId = trap.MoveId.Id,
+        ExpiresAfterFloorNo = trap.ExpiresAfterFloorNo,
+        IsTriggered = trap.IsTriggered,
+    };
+
+    private static async Task<QuestRun> LoadAsync(AppDbContext dbContext, QuestRunEntity runEntity)
+    {
+        var runId = runEntity.Id;
+        var partyMemberEntities = await dbContext.QuestRunPartyMembers
+            .AsNoTracking()
+            .Where(x => x.RunId == runId)
+            .ToListAsync();
+        var snapshotEntities = await dbContext.QuestRunPartySnapshots
+            .AsNoTracking()
+            .Where(x => x.RunId == runId)
+            .ToListAsync();
+        var enemyEntities = await dbContext.QuestRunEnemies
+            .AsNoTracking()
+            .Where(x => x.RunId == runId)
+            .ToListAsync();
+        var turnCommandEntities = await dbContext.QuestTurnCommands
+            .AsNoTracking()
+            .Where(x => x.RunId == runId && x.TurnNo == runEntity.CurrentTurnNo)
+            .ToListAsync();
+        var trapEntities = await dbContext.QuestFloorTraps
+            .AsNoTracking()
+            .Where(x => x.RunId == runId)
+            .ToListAsync();
+        var rewardEntity = await dbContext.QuestRewardSummaries
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.RunId == runId);
+
+        return MapToDomain(
+            runEntity,
+            snapshotEntities,
+            partyMemberEntities,
+            enemyEntities,
+            turnCommandEntities,
+            trapEntities,
+            rewardEntity);
+    }
+
+    private static QuestRun MapToDomain(
+        QuestRunEntity runEntity,
+        IReadOnlyCollection<QuestRunPartySnapshotEntity> snapshotEntities,
+        IReadOnlyCollection<QuestRunPartyMemberEntity> partyMemberEntities,
+        IReadOnlyCollection<QuestRunEnemyEntity> enemyEntities,
+        IReadOnlyCollection<QuestTurnCommandEntity> turnCommandEntities,
+        IReadOnlyCollection<QuestFloorTrapEntity> trapEntities,
+        QuestRewardSummaryEntity? rewardEntity)
+    {
+        var snapshots = snapshotEntities.Select(MapSnapshot).ToArray();
+        var partyMembers = partyMemberEntities.Select(MapPartyMember).ToArray();
+        var enemies = enemyEntities.Select(MapEnemy).ToArray();
+        var turnCommands = turnCommandEntities.Select(MapTurnCommand).ToArray();
+        var traps = trapEntities.Select(MapTrap).ToArray();
+        var lastTurnResults = QuestJsonSerializer.DeserializeLastTurnResults(runEntity.LastTurnResultsJson);
+        var chatMessages = QuestJsonSerializer.DeserializeChatMessages(runEntity.ChatMessagesJson);
+
+        var rewardState = DeserializeRewardState(rewardEntity?.SkippedRewardPlayerIdsJson);
+
+        return new QuestRun(
+            new QuestRunId(runEntity.Id),
+            new QuestRoomId(runEntity.RoomId),
+            new QuestStageId(runEntity.StageId),
+            snapshots,
+            new QuestFloorState(runEntity.CurrentFloorNo, false, []),
+            new QuestBattleState(partyMembers, enemies),
+            new QuestTurnState(runEntity.CurrentTurnNo, runEntity.ActionDeadlineAt, turnCommands, runEntity.LastResolvedTurnNo),
+            new QuestTrapCollection(traps),
+            new QuestRewardAccumulator(
+                rewardEntity?.Exp ?? 0,
+                rewardEntity?.EquipmentRewardId is null ? null : new EquipmentId(rewardEntity.EquipmentRewardId.Value),
+                rewardEntity?.ItemRewardId is null ? null : new ItemId(rewardEntity.ItemRewardId.Value),
+                rewardEntity?.Gold ?? 0,
+                rewardState.SkippedRewardPlayerIds,
+                rewardState.CapturedPets),
+            lastTurnResults,
+            chatMessages,
+            runEntity.StartedAt,
+            (QuestRunStatus)runEntity.Status,
+            runEntity.EndedAt,
+            runEntity.Version);
     }
 
     private static QuestRunPartyMemberState MapPartyMember(QuestRunPartyMemberEntity entity)
@@ -434,19 +770,58 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             entity.IsTriggered);
     }
 
-    private static string SerializeSkippedRewardPlayerIds(IReadOnlySet<PlayerId> playerIds)
+    private static string SerializeRewardState(QuestRewardAccumulator rewards)
     {
-        return JsonSerializer.Serialize(playerIds.Select(x => x.Value));
+        return JsonSerializer.Serialize(new QuestRewardStateDto(
+            rewards.SkippedRewardPlayerIds.Select(x => x.Value).ToArray(),
+            rewards.CapturedPetRewards.Select(x => new CapturedPetDto(
+                x.PlayerId.Value,
+                x.EnemyDefinitionId.Value,
+                x.CapturedAt)).ToArray()));
     }
 
-    private static IReadOnlyList<PlayerId> DeserializeSkippedRewardPlayerIds(string? json)
+    private static QuestRewardState DeserializeRewardState(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
-            return [];
+            return QuestRewardState.Empty;
         }
 
-        var values = JsonSerializer.Deserialize<Guid[]>(json) ?? [];
-        return values.Select(x => new PlayerId(x)).ToArray();
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind == JsonValueKind.Array)
+        {
+            var playerIds = JsonSerializer.Deserialize<Guid[]>(json) ?? [];
+            return new QuestRewardState(
+                playerIds.Select(x => new PlayerId(x)).ToArray(),
+                []);
+        }
+
+        var state = JsonSerializer.Deserialize<QuestRewardStateDto>(json);
+        if (state is null)
+        {
+            return QuestRewardState.Empty;
+        }
+
+        return new QuestRewardState(
+            (state.SkippedRewardPlayerIds ?? [])
+                .Select(x => new PlayerId(x))
+                .ToArray(),
+            (state.CapturedPets ?? [])
+                .Select(x => new QuestCapturedPetReward(
+                    new PlayerId(x.PlayerId),
+                    new QuestEnemyDefinitionId(x.EnemyDefinitionId),
+                    x.CapturedAt))
+                .ToArray());
+    }
+
+    private sealed record QuestRewardStateDto(Guid[]? SkippedRewardPlayerIds, CapturedPetDto[]? CapturedPets);
+
+    private sealed record CapturedPetDto(Guid PlayerId, int EnemyDefinitionId, DateTimeOffset CapturedAt);
+
+    private sealed record QuestRewardState(
+        IReadOnlyList<PlayerId> SkippedRewardPlayerIds,
+        IReadOnlyList<QuestCapturedPetReward> CapturedPets)
+    {
+        public static QuestRewardState Empty { get; } = new([], []);
     }
 }

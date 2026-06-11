@@ -1,6 +1,8 @@
 import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
 import { extractErrorMessage, resolveApiBaseUrl } from '@/api/util'
+import { applyPaginationSearchParams } from '@/lib/pagination'
+import type { PaginationOptions } from '@/lib/pagination'
 import type {
   CreatePlayerRequest,
   CreatePlayerResponse,
@@ -63,10 +65,12 @@ export async function getPlayerById(playerId: string, accessToken: string): Prom
   return endpoints.player.getById.responseSchema.parse(json)
 }
 
-export async function listPlayers(accessToken: string): Promise<ListPlayersResponse> {
+export async function listPlayers(accessToken: string, options?: PaginationOptions): Promise<ListPlayersResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
+  const url = new URL(`${apiBaseUrl}${endpoints.player.list.path}`, window.location.origin)
+  applyPaginationSearchParams(url, options)
 
-  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.list.path}`, {
+  const response = await fetchSafely(url.toString(), {
     method: endpoints.player.list.method,
     headers: {
       Authorization: `Bearer ${accessToken}`,

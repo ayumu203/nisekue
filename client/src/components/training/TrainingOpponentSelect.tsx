@@ -1,17 +1,5 @@
-import {
-  Avatar,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Grid,
-  Pagination,
-  Stack,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material'
-import { useRef, useState } from 'react'
+import { Avatar, Button, Card, CardContent, Chip, Grid, Pagination, Stack, Typography } from '@mui/material'
+import { useRef } from 'react'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { PlayerSummary } from '@/schema/player'
 import locale from '../../../locale/training/Training.json'
@@ -20,20 +8,21 @@ type TrainingOpponentSelectProps = {
   opponents: PlayerSummary[]
   isActionDisabled: boolean
   lockRemainingSeconds: number
+  page: number
+  pageCount: number
+  onPageChange: (page: number) => void
   onFight: (opponent: PlayerSummary) => Promise<void> | void
 }
-
-const PAGE_SIZE = 5
 
 export default function TrainingOpponentSelect({
   opponents,
   isActionDisabled,
   lockRemainingSeconds,
+  page,
+  pageCount,
+  onPageChange,
   onFight,
 }: TrainingOpponentSelectProps) {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const [page, setPage] = useState(1)
   const topRef = useRef<HTMLDivElement | null>(null)
   const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
 
@@ -45,19 +34,15 @@ export default function TrainingOpponentSelect({
     )
   }
 
-  const pageCount = Math.ceil(opponents.length / PAGE_SIZE)
-  const safePage = Math.min(Math.max(1, page), pageCount)
-  const visible = isMobile ? opponents.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE) : opponents
-
   function handlePageChange(_: React.ChangeEvent<unknown>, nextPage: number) {
-    setPage(nextPage)
+    onPageChange(nextPage)
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   return (
     <Stack spacing={2} ref={topRef}>
       <Grid container spacing={2}>
-        {visible.map((opponent) => (
+        {opponents.map((opponent) => (
           <Grid key={opponent.userId} size={{ xs: 12, sm: 6, md: 4 }}>
             <Card
               variant="outlined"
@@ -136,10 +121,10 @@ export default function TrainingOpponentSelect({
           </Grid>
         ))}
       </Grid>
-      {isMobile && pageCount > 1 && (
+      {pageCount > 1 && (
         <Stack alignItems="center">
           <Pagination
-            page={safePage}
+            page={Math.min(Math.max(1, page), pageCount)}
             count={pageCount}
             onChange={handlePageChange}
             color="primary"

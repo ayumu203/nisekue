@@ -48,6 +48,7 @@ import {
 } from '@/schema/thread'
 import {
   getTrainingEnemiesResponseSchema,
+  getPvpOpponentsResponseSchema,
   executeTrainingRequestSchema,
   executePvpTrainingRequestSchema,
   executeTrainingResponseSchema,
@@ -394,7 +395,7 @@ export const endpoints = {
     getPvpOpponents: {
       path: '/training/pvp-opponents',
       method: 'GET',
-      responseSchema: listPlayersResponseSchema,
+      responseSchema: getPvpOpponentsResponseSchema,
     },
   },
   quest: {

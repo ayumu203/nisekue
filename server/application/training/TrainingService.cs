@@ -278,10 +278,7 @@ public class TrainingService(
 
     private LevelUpResult ApplyExp(Player player, int exp)
     {
-        player.GainExp(exp);
-        var jobProfile = jobProfileRepository.GetByJob(player.Job);
-        var learningRule = jobMoveLearningRuleRepository.GetByJob(player.Job);
-        return player.LevelUp(jobProfile, learningRule);
+        return PlayerExpRewardApplicator.Apply(player, exp, jobProfileRepository, jobMoveLearningRuleRepository);
     }
 
     private async Task<Move[]> LoadTrainingMovesAsync(Player player, Status effectiveStatus, IReadOnlyList<int?> playerMoveIds)

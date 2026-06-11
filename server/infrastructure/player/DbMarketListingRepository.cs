@@ -15,15 +15,22 @@ public class DbMarketListingRepository(IDbContextFactory<AppDbContext> dbContext
         return entity is null ? null : MapToDomain(entity);
     }
 
-    public async Task<IReadOnlyList<MarketListing>> GetActiveAsync(DateTimeOffset now)
+    public async Task<IReadOnlyList<MarketListing>> GetActiveAsync(DateTimeOffset now, PlayerId? excludeSellerId = null)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var entities = await dbContext.MarketListings
+        var query = dbContext.MarketListings
             .AsNoTracking()
             .Where(x => x.ExpiresAt > now && x.RemainingQuantity > 0)
             .OrderBy(x => x.ExpiresAt)
             .ThenBy(x => x.ListedAt)
-            .ToListAsync();
+            .AsQueryable();
+
+        if (excludeSellerId is not null)
+        {
+            query = query.Where(x => x.SellerId != excludeSellerId.Value.Value);
+        }
+
+        var entities = await query.ToListAsync();
 
         return entities.Select(MapToDomain).ToArray();
     }

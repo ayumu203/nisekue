@@ -41,7 +41,8 @@ public class JobRoadmapService(
     IJobProfileRepository jobProfileRepository,
     IJobRoadmapRankRepository roadmapRankRepository,
     IItemRepository itemRepository,
-    IQuestStageRepository questStageRepository)
+    IQuestStageRepository questStageRepository,
+    IPlayerMutationService playerMutationService)
 {
     private IReadOnlyDictionary<Job, IReadOnlyList<Item>>? cachedItemsByTargetJob;
 
@@ -84,39 +85,38 @@ public class JobRoadmapService(
 
     public async Task<UnlockJobRoadmapResult> UnlockAsync(PlayerId playerId, Job targetJob)
     {
-        var player = await playerRepository.GetPlayerAsync(playerId)
-            ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
-
         var rank = roadmapRankRepository.GetRank(targetJob);
         if (rank is null)
         {
             throw new InvalidOperationException("指定されたジョブのロードマップ情報が存在しません。");
         }
 
-        if (player.IsRoadmapUnlocked(targetJob))
+        return await playerMutationService.MutateAsync(playerId, async player =>
         {
+            if (player.IsRoadmapUnlocked(targetJob))
+            {
+                return new UnlockJobRoadmapResult(
+                    (int)targetJob,
+                    JobDisplayNames.GetDisplayName(targetJob),
+                    0,
+                    player.Gold);
+            }
+
+            if (!await CanUnlockRoadmapAsync(player, targetJob))
+            {
+                throw new InvalidOperationException("前提となるジョブのロードマップが解放されていません。");
+            }
+
+            var goldCost = GoldCostForRank(rank.Value);
+            player.SpendGold(goldCost);
+            player.UnlockRoadmap(targetJob);
+
             return new UnlockJobRoadmapResult(
                 (int)targetJob,
                 JobDisplayNames.GetDisplayName(targetJob),
-                0,
+                goldCost,
                 player.Gold);
-        }
-
-        if (!await CanUnlockRoadmapAsync(player, targetJob))
-        {
-            throw new InvalidOperationException("前提となるジョブのロードマップが解放されていません。");
-        }
-
-        var goldCost = GoldCostForRank(rank.Value);
-        player.SpendGold(goldCost);
-        player.UnlockRoadmap(targetJob);
-        await playerRepository.SaveAsync(player);
-
-        return new UnlockJobRoadmapResult(
-            (int)targetJob,
-            JobDisplayNames.GetDisplayName(targetJob),
-            goldCost,
-            player.Gold);
+        });
     }
 
     private async Task<bool> CanUnlockRoadmapAsync(Player player, Job targetJob)
