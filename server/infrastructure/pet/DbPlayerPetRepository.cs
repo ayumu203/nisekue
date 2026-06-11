@@ -62,6 +62,7 @@ public class DbPlayerPetRepository(IDbContextFactory<AppDbContext> dbContextFact
     public async Task<bool> SetStandbyAsync(PlayerId playerId, PlayerPetId? standbyPetId, DateTimeOffset updatedAt)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
         if (standbyPetId is not null)
         {
@@ -74,18 +75,26 @@ public class DbPlayerPetRepository(IDbContextFactory<AppDbContext> dbContextFact
             }
         }
 
-        var standbyPetValue = standbyPetId?.Value;
+        // ix_player_pets_standby_player (player_id 単位の部分ユニークインデックス) は行ごとに即時検査されるため、
+        // 1文の UPDATE で切り替えると一時的に is_standby = TRUE が2行になり制約違反になる。
+        // 先に解除してから設定する2文に分ける。
         await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
             UPDATE internal.player_pets
-            SET
-                is_standby = CASE
-                    WHEN {standbyPetValue} IS NOT NULL AND id = {standbyPetValue} THEN TRUE
-                    ELSE FALSE
-                END,
-                updated_at = {updatedAt}
-            WHERE player_id = {playerId.Value}
+            SET is_standby = FALSE, updated_at = {updatedAt}
+            WHERE player_id = {playerId.Value} AND is_standby = TRUE
             """);
 
+        if (standbyPetId is not null)
+        {
+            var standbyPetValue = standbyPetId.Value.Value;
+            await dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+                UPDATE internal.player_pets
+                SET is_standby = TRUE, updated_at = {updatedAt}
+                WHERE player_id = {playerId.Value} AND id = {standbyPetValue}
+                """);
+        }
+
+        await transaction.CommitAsync();
         return true;
     }
 
