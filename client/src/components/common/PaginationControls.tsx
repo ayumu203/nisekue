@@ -6,9 +6,12 @@ type PaginationControlsProps = {
   isLoading?: boolean
   previousLabel: string
   nextLabel: string
+  lastLabel?: string
   pageLabel: string
   onPrevious: () => void
   onNext: () => void
+  onLast?: () => void
+  isLastDisabled?: boolean
 }
 
 export default function PaginationControls({
@@ -17,9 +20,12 @@ export default function PaginationControls({
   isLoading = false,
   previousLabel,
   nextLabel,
+  lastLabel,
   pageLabel,
   onPrevious,
   onNext,
+  onLast,
+  isLastDisabled = false,
 }: PaginationControlsProps) {
   return (
     <Stack direction="row" justifyContent="center" alignItems="center" spacing={1.25}>
@@ -32,6 +38,11 @@ export default function PaginationControls({
       <Button variant="outlined" disabled={!hasNextPage || isLoading} onClick={onNext}>
         {nextLabel}
       </Button>
+      {onLast && lastLabel ? (
+        <Button variant="outlined" disabled={isLastDisabled || isLoading} onClick={onLast}>
+          {lastLabel}
+        </Button>
+      ) : null}
     </Stack>
   )
 }

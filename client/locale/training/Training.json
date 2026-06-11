@@ -46,6 +46,7 @@
   "noOpponentsAvailable": "現在対戦可能なプレイヤーがいません",
   "previousPage": "前へ",
   "nextPage": "次へ",
+  "lastPage": "最後へ",
   "pageLabel": "{{page}}ページ",
   "anonymousPlayer": "名無しプレイヤー",
   "newEnemiesUnlocked": "新たな相手と訓練できるようになった！",

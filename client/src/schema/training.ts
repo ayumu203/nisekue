@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { learnedMoveSchema } from '@/schema/player'
+import { learnedMoveSchema, playerSummarySchema } from '@/schema/player'
 
 export const trainingEnemySchema = z.object({
   id: z.number().int().min(1, 'enemyIdは1以上である必要があります'),
@@ -39,9 +39,18 @@ export const trainingCooldownErrorSchema = z.object({
   cooldownUntil: z.string().datetime({ offset: true, message: '日時の形式が不正です' }),
 })
 
+export const getPvpOpponentsResponseSchema = z.object({
+  items: z.array(playerSummarySchema),
+  page: z.number().int().positive(),
+  pageSize: z.number().int().positive(),
+  totalCount: z.number().int().min(0),
+  hasNextPage: z.boolean(),
+})
+
 export type TrainingEnemy = z.infer<typeof trainingEnemySchema>
 export type GetTrainingEnemiesResponse = z.infer<typeof getTrainingEnemiesResponseSchema>
 export type ExecuteTrainingRequest = z.infer<typeof executeTrainingRequestSchema>
 export type ExecutePvpTrainingRequest = z.infer<typeof executePvpTrainingRequestSchema>
 export type ExecuteTrainingResponse = z.infer<typeof executeTrainingResponseSchema>
 export type TrainingCooldownError = z.infer<typeof trainingCooldownErrorSchema>
+export type GetPvpOpponentsResponse = z.infer<typeof getPvpOpponentsResponseSchema>

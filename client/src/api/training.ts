@@ -8,9 +8,9 @@ import type {
   ExecutePvpTrainingRequest,
   ExecuteTrainingRequest,
   ExecuteTrainingResponse,
+  GetPvpOpponentsResponse,
   GetTrainingEnemiesResponse,
 } from '@/schema/training'
-import type { ListPlayersResponse } from '@/schema/player'
 
 export class TrainingCooldownError extends Error {
   public readonly retryAfterSeconds: number
@@ -28,7 +28,7 @@ export class TrainingCooldownError extends Error {
 export async function getPvpOpponents(
   accessToken: string,
   options?: PaginationOptions,
-): Promise<ListPlayersResponse> {
+): Promise<GetPvpOpponentsResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
   const url = new URL(`${apiBaseUrl}${endpoints.training.getPvpOpponents.path}`, window.location.origin)
   applyPaginationSearchParams(url, options)

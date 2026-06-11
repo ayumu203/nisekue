@@ -35,7 +35,6 @@ import { normalizeCharacterPath } from '@/lib/assets'
 import { useAuth } from '@/contexts/useAuth'
 import { innerSurfaceSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
-import { usePagedList } from '@/hooks/usePagedList'
 import { beginnerGuides } from '@/lib/beginnerGuides'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
@@ -226,27 +225,32 @@ export default function Training() {
     { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
   )
 
+  const opponentsSWRKey =
+    session?.access_token && player && mode === 'player'
+      ? ([`training-opponents`, session.user.id, opponentsPage] as const)
+      : null
   const {
-    data: playerList,
+    data: playerListPage,
     error: playerListError,
     isLoading: isPlayerListLoading,
-    hasNextPage: hasNextOpponentsPage,
-  } = usePagedList({
-    enabled: Boolean(session?.access_token && player && mode === 'player'),
-    keyPrefix: ['training-opponents', session?.user.id ?? 'anonymous'],
-    page: opponentsPage,
-    fetchPage: async (targetPage) => {
+  } = useSWR(
+    opponentsSWRKey,
+    async () => {
       if (!session?.access_token) {
         throw new Error(locale.sessionInfoMissing)
       }
 
       return getPvpOpponents(session.access_token, {
-        page: targetPage,
+        page: opponentsPage,
         pageSize: PVP_OPPONENTS_PAGE_SIZE,
       })
     },
-    dedupingInterval: PLAYER_DEDUPING_INTERVAL,
-  })
+    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
+  )
+  const hasNextOpponentsPage = playerListPage?.hasNextPage ?? false
+  const lastOpponentsPage = playerListPage
+    ? Math.max(1, Math.ceil(playerListPage.totalCount / playerListPage.pageSize))
+    : 1
 
   useEffect(() => {
     if (mode !== 'player') {
@@ -801,7 +805,7 @@ export default function Training() {
                 ) : (
                   <Stack spacing={2}>
                     <TrainingOpponentSelect
-                      opponents={(playerList ?? [])
+                      opponents={(playerListPage?.items ?? [])
                         .filter((p) => p.userId !== session?.user.id)
                         .sort((a, b) => a.level - b.level)}
                       isActionDisabled={isTrainingActionDisabled}
@@ -814,9 +818,12 @@ export default function Training() {
                       isLoading={isPlayerListLoading}
                       previousLabel={locale.previousPage}
                       nextLabel={locale.nextPage}
+                      lastLabel={locale.lastPage}
                       pageLabel={locale.pageLabel.replace('{{page}}', String(opponentsPage))}
                       onPrevious={() => setOpponentsPage((current) => Math.max(1, current - 1))}
                       onNext={() => setOpponentsPage((current) => current + 1)}
+                      onLast={() => setOpponentsPage(lastOpponentsPage)}
+                      isLastDisabled={opponentsPage >= lastOpponentsPage}
                     />
                   </Stack>
                 )}

@@ -135,10 +135,17 @@ internal static class TrainingEndpoints
             }
 
             var maxOpponentLevel = (int)(player.Level * TrainingConstants.Battle.PvpOpponentLevelCapMultiplier);
+            var totalCount = await playerRepository.CountPvpOpponentsAsync(playerId.Value, maxOpponentLevel);
             var opponents = await playerRepository.GetPvpOpponentsAsync(playerId.Value, maxOpponentLevel, offset, effectiveLimit);
+            var resolvedPage = page ?? 1;
+            var resolvedPageSize = pageSize ?? effectiveLimit ?? Math.Max(1, opponents.Count);
+            var hasNextPage = offset is null || effectiveLimit is null
+                ? false
+                : offset.Value + opponents.Count < totalCount;
 
-            return Results.Ok(opponents
-                .Select(p => new
+            return Results.Ok(new
+            {
+                items = opponents.Select(p => new
                 {
                     userId = p.Id.Value,
                     userName = p.Name,
@@ -152,7 +159,12 @@ internal static class TrainingEndpoints
                         description = jobProfileRepository.GetByJob(p.Job).Description
                     },
                     combatIndexRank = combatIndexRankEvaluator.Evaluate(combatIndexCalculator.Calculate(p.Status)).ToString()
-                }));
+                }),
+                page = resolvedPage,
+                pageSize = resolvedPageSize,
+                totalCount,
+                hasNextPage
+            });
         }).RequireAuthorization();
 
         return app;
