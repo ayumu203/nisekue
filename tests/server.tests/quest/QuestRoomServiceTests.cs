@@ -570,7 +570,14 @@ public class QuestRoomServiceTests
         public Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
             => Task.FromResult<IReadOnlyList<QuestRun>>([]);
 
-        public Task SaveAsync(QuestRun run, IReadOnlyList<PlayerPet>? capturedPets = null)
+        public Task SaveAsync(QuestRun run)
+        {
+            runs[run.Id.Value] = run;
+            SavedRuns.Add(run);
+            return Task.CompletedTask;
+        }
+
+        public Task SaveChatMessagesAsync(QuestRun run)
         {
             runs[run.Id.Value] = run;
             SavedRuns.Add(run);
@@ -591,13 +598,13 @@ public class QuestRoomServiceTests
             return Task.FromResult(p is not null && p.Level <= maxLevel ? p : null);
         }
 
-        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel, int? offset = null, int? limit = null)
         {
             IReadOnlyList<Player> result = players.Values.Where(p => p.Id != excludeId && p.Level <= maxLevel).ToArray();
             return Task.FromResult(result);
         }
 
-        public Task<IReadOnlyList<Player>> GetAllAsync()
+        public Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null)
             => Task.FromResult<IReadOnlyList<Player>>(players.Values.ToArray());
 
         public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)

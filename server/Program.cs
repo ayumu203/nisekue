@@ -124,6 +124,8 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 });
 
 builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
+builder.Services.AddScoped<IPlayerMutationService, DbPlayerMutationService>();
+builder.Services.AddScoped<PlayerForUpdateLockService>();
 builder.Services.AddScoped<IPlayerEquipmentRepository, DbPlayerEquipmentRepository>();
 builder.Services.AddScoped<IPlayerItemStackRepository, DbPlayerItemStackRepository>();
 builder.Services.AddSingleton<ITreasureMapRepository, CsvTreasureMapRepository>();

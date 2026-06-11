@@ -6,6 +6,7 @@ using server.domain.move;
 using server.domain.player;
 using server.infrastructure;
 using server.infrastructure.player;
+using server.shared.pagination;
 using server.shared.constants.player;
 
 namespace server.endpoints;
@@ -15,12 +16,20 @@ internal static class PlayerEndpoints
     internal static WebApplication MapPlayerEndpoints(this WebApplication app)
     {
         app.MapGet("/players", async (
+            int? page,
+            int? pageSize,
+            int? limit,
             IPlayerRepository playerRepository,
             IJobProfileRepository jobProfileRepository,
             CombatIndexCalculator combatIndexCalculator,
             CombatIndexRankEvaluator combatIndexRankEvaluator) =>
         {
-            var players = await playerRepository.GetAllAsync();
+            if (!PaginationQueryResolver.TryResolve(page, pageSize, limit, out var offset, out var effectiveLimit, out var errorMessage))
+            {
+                return Results.BadRequest(new { message = errorMessage });
+            }
+
+            var players = await playerRepository.GetAllAsync(offset, effectiveLimit);
 
             return Results.Ok(players.Select(player => new
             {
@@ -76,8 +85,9 @@ internal static class PlayerEndpoints
             }
 
             var now = DateTimeOffset.UtcNow;
+            var lastActiveThreshold = now.AddMinutes(-5);
             await db.Players
-                .Where(p => p.Id == playerId.Value.Value)
+                .Where(p => p.Id == playerId.Value.Value && (p.LastActiveAt == null || p.LastActiveAt < lastActiveThreshold))
                 .ExecuteUpdateAsync(s => s.SetProperty(p => p.LastActiveAt, now));
 
             var playerEquipments = await playerEquipmentRepository.GetByPlayerAsync(player.Id);
@@ -482,6 +492,7 @@ internal static class PlayerEndpoints
             Guid targetPlayerId,
             SendPlayerGiftRequest request,
             IDbContextFactory<AppDbContext> dbContextFactory,
+            PlayerForUpdateLockService playerForUpdateLockService,
             IItemRepository itemRepository,
             IEquipmentRepository equipmentRepository,
             ChatService chatService) =>
@@ -515,21 +526,15 @@ internal static class PlayerEndpoints
 
             var lockedPlayerIds = new[] { senderId.Value.Value, targetPlayerId }
                 .Distinct()
-                .OrderBy(x => x)
                 .ToArray();
-            var lockedPlayers = new Dictionary<Guid, PlayerEntity>(lockedPlayerIds.Length);
-
-            foreach (var lockedPlayerId in lockedPlayerIds)
+            IReadOnlyDictionary<Guid, PlayerEntity> lockedPlayers;
+            try
             {
-                var lockedPlayer = await dbContext.Players
-                    .FromSqlInterpolated($"SELECT * FROM internal.players WHERE id = {lockedPlayerId} FOR UPDATE")
-                    .SingleOrDefaultAsync();
-                if (lockedPlayer is null)
-                {
-                    return Results.NotFound(new { message = "プレイヤーが見つかりません。", userId = lockedPlayerId });
-                }
-
-                lockedPlayers[lockedPlayerId] = lockedPlayer;
+                lockedPlayers = await playerForUpdateLockService.LockPlayersAsync(dbContext, lockedPlayerIds);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message });
             }
 
             var sender = lockedPlayers[senderId.Value.Value];

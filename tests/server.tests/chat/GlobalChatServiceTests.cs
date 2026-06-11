@@ -73,8 +73,8 @@ public class GlobalChatServiceTests
     {
         public Task<Player?> GetPlayerAsync(PlayerId id) => Task.FromResult(player);
         public Task<Player?> GetPlayerWithinLevelCapAsync(PlayerId id, int maxLevel) => Task.FromResult<Player?>(null);
-        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel) => Task.FromResult<IReadOnlyList<Player>>([]);
-        public Task<IReadOnlyList<Player>> GetAllAsync() => Task.FromResult<IReadOnlyList<Player>>([]);
+        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel, int? offset = null, int? limit = null) => Task.FromResult<IReadOnlyList<Player>>([]);
+        public Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null) => Task.FromResult<IReadOnlyList<Player>>([]);
         public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids) =>
             Task.FromResult<IReadOnlyList<Player>>(player is not null ? [player] : []);
         public Task<bool> UpdateNameAsync(PlayerId id, string name) => Task.FromResult(false);

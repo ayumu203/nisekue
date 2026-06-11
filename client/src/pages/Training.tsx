@@ -25,6 +25,7 @@ import {
 import { createPlayer, getPlayer } from '@/api/player'
 import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
+import PaginationControls from '@/components/common/PaginationControls'
 import Status from '@/components/home/Status'
 import TrainingBattleResult from '@/components/training/TrainingBattleResult'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
@@ -35,6 +36,7 @@ import { useAuth } from '@/contexts/useAuth'
 import { innerSurfaceSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { beginnerGuides } from '@/lib/beginnerGuides'
+import { resolveHasNextPage } from '@/lib/pagination'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
@@ -58,6 +60,7 @@ function playerSummaryToDisplayEnemy(opponent: PlayerSummary): TrainingEnemy {
 
 const TRAINING_COOLDOWN_MS = 3000
 const AUTO_BATTLE_DURATION_MS = 3 * 60 * 1000
+const PVP_OPPONENTS_PAGE_SIZE = 24
 
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
   return player.moveSlots.flatMap((slot) => (slot.moveId === null ? [] : [slot.moveId]))
@@ -129,6 +132,7 @@ export default function Training() {
   const [autoBattleEndTimeMs, setAutoBattleEndTimeMs] = useState(0)
   const [autoBattleRemainingSeconds, setAutoBattleRemainingSeconds] = useState(0)
   const [autoBattleCount, setAutoBattleCount] = useState(0)
+  const [opponentsPage, setOpponentsPage] = useState(1)
 
   function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
     if (!userId) {
@@ -223,7 +227,9 @@ export default function Training() {
   )
 
   const playerListSWRKey =
-    session?.access_token && player && mode === 'player' ? ([`training-opponents`, session.user.id] as const) : null
+    session?.access_token && player && mode === 'player'
+      ? ([`training-opponents`, session.user.id, opponentsPage] as const)
+      : null
   const {
     data: playerList,
     error: playerListError,
@@ -235,10 +241,40 @@ export default function Training() {
         throw new Error(locale.sessionInfoMissing)
       }
 
-      return getPvpOpponents(session.access_token)
+      return getPvpOpponents(session.access_token, {
+        page: opponentsPage,
+        pageSize: PVP_OPPONENTS_PAGE_SIZE,
+      })
     },
     { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
   )
+  const nextPlayerListSWRKey =
+    session?.access_token && player && mode === 'player'
+      ? ([`training-opponents`, session.user.id, opponentsPage + 1] as const)
+      : null
+  const { data: nextPlayerList } = useSWR(
+    nextPlayerListSWRKey,
+    async () => {
+      if (!session?.access_token) {
+        throw new Error(locale.sessionInfoMissing)
+      }
+
+      return getPvpOpponents(session.access_token, {
+        page: opponentsPage + 1,
+        pageSize: PVP_OPPONENTS_PAGE_SIZE,
+      })
+    },
+    { dedupingInterval: PLAYER_DEDUPING_INTERVAL },
+  )
+  const hasNextOpponentsPage = resolveHasNextPage(playerList?.length ?? 0, nextPlayerList?.length ?? 0)
+
+  useEffect(() => {
+    if (mode !== 'player') {
+      return
+    }
+
+    setOpponentsPage(1)
+  }, [mode])
 
   async function refreshPlayerStatus(): Promise<void> {
     if (!session?.user.id) {
@@ -783,14 +819,26 @@ export default function Training() {
                 ) : playerListError ? (
                   <Alert severity="warning">{playerListError.message}</Alert>
                 ) : (
-                  <TrainingOpponentSelect
-                    opponents={(playerList ?? [])
-                      .filter((p) => p.userId !== session?.user.id)
-                      .sort((a, b) => a.level - b.level)}
-                    isActionDisabled={isTrainingActionDisabled}
-                    lockRemainingSeconds={trainingLockRemainingSeconds}
-                    onFight={handleSelectOpponent}
-                  />
+                  <Stack spacing={2}>
+                    <TrainingOpponentSelect
+                      opponents={(playerList ?? [])
+                        .filter((p) => p.userId !== session?.user.id)
+                        .sort((a, b) => a.level - b.level)}
+                      isActionDisabled={isTrainingActionDisabled}
+                      lockRemainingSeconds={trainingLockRemainingSeconds}
+                      onFight={handleSelectOpponent}
+                    />
+                    <PaginationControls
+                      page={opponentsPage}
+                      hasNextPage={hasNextOpponentsPage}
+                      isLoading={isPlayerListLoading}
+                      previousLabel={locale.previousPage}
+                      nextLabel={locale.nextPage}
+                      pageLabel={locale.pageLabel.replace('{{page}}', String(opponentsPage))}
+                      onPrevious={() => setOpponentsPage((current) => Math.max(1, current - 1))}
+                      onNext={() => setOpponentsPage((current) => current + 1)}
+                    />
+                  </Stack>
                 )}
 
                 {trainingError ? <Alert severity="warning">{trainingError}</Alert> : null}

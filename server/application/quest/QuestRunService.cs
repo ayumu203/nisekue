@@ -1,4 +1,5 @@
 using server.application.battle;
+using server.application.player;
 using server.domain.battle;
 using server.domain.battle.enums;
 using server.domain.move;
@@ -32,7 +33,8 @@ public class QuestRunService(
     BattleService battleService,
     QuestBattleFactory questBattleFactory,
     Func<int, int>? rewardRollProvider = null,
-    Func<int, int>? petRollProvider = null)
+    Func<int, int>? petRollProvider = null,
+    IPlayerMutationService? playerMutationService = null)
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
@@ -40,6 +42,7 @@ public class QuestRunService(
     private const int ItemCapacity = 20;
     private readonly Func<int, int> _rewardRollProvider = rewardRollProvider ?? (maxInclusive => Random.Shared.Next(1, maxInclusive + 1));
     private readonly Func<int, int> _petRollProvider = petRollProvider ?? (maxInclusive => Random.Shared.Next(1, maxInclusive + 1));
+    private readonly IPlayerMutationService _playerMutationService = playerMutationService ?? new RepositoryBackedPlayerMutationService(playerRepository);
 
     public async Task<QuestRun> GetDetailAsync(QuestRunId runId)
     {
@@ -58,7 +61,7 @@ public class QuestRunService(
 
         run.SubmitCommand(participantId, command, DateTimeOffset.UtcNow);
         var resolution = await TryResolveIfReadyAsync(run);
-        await questRunRepository.SaveAsync(run, resolution.CapturedPets);
+        await questRunRepository.SaveAsync(run);
         return new QuestCommandSubmissionResult(run, resolution.ResolvedInThisRequest);
     }
 
@@ -73,7 +76,8 @@ public class QuestRunService(
         }
 
         var petCount = await playerPetRepository.CountByPlayerAsync(playerId.Value);
-        if (petCount >= PetConstants.MaxPetCount)
+        var pendingCapturedPetCount = run.Rewards.CountCapturedPetsByPlayer(playerId.Value);
+        if (petCount + pendingCapturedPetCount >= PetConstants.MaxPetCount)
         {
             throw new InvalidOperationException("これ以上ペットを所持できません。");
         }
@@ -126,7 +130,7 @@ public class QuestRunService(
             var resolution = await TryResolveIfReadyAsync(run);
             if (resolution.ResolvedInThisRequest)
             {
-                await questRunRepository.SaveAsync(run, resolution.CapturedPets);
+                await questRunRepository.SaveAsync(run);
                 updatedRuns.Add(run);
             }
         }
@@ -138,7 +142,7 @@ public class QuestRunService(
     {
         var run = await GetDetailAsync(runId);
         run.AddChatMessage(message);
-        await questRunRepository.SaveAsync(run);
+        await questRunRepository.SaveChatMessagesAsync(run);
         return run;
     }
 
@@ -240,7 +244,7 @@ public class QuestRunService(
             await ApplyQuestCompletionEffectsAsync(run);
         }
 
-        return new QuestRunResolutionResult(true, captureResult.CapturedPets);
+        return new QuestRunResolutionResult(true);
     }
 
     private static int CalculateFloorExp(
@@ -309,7 +313,7 @@ public class QuestRunService(
             ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
         var snapshotById = run.PartySnapshots.ToDictionary(x => x.ParticipantId);
         var logActions = new List<QuestResolvedAction>();
-        var capturedPets = new List<PlayerPet>();
+        var now = DateTimeOffset.UtcNow;
 
         foreach (var command in captureCommands)
         {
@@ -351,7 +355,8 @@ public class QuestRunService(
             }
 
             var petCount = await playerPetRepository.CountByPlayerAsync(playerId.Value);
-            if (petCount >= PetConstants.MaxPetCount)
+            var pendingCapturedPetCount = run.Rewards.CountCapturedPetsByPlayer(playerId.Value);
+            if (petCount + pendingCapturedPetCount >= PetConstants.MaxPetCount)
             {
                 logActions.Add(CreateCaptureLogAction(
                     command.ParticipantId,
@@ -367,7 +372,7 @@ public class QuestRunService(
             if (_petRollProvider(100) <= rate)
             {
                 target.MarkCaptured();
-                capturedPets.Add(PlayerPet.Capture(playerId.Value, definition.Id, DateTimeOffset.UtcNow));
+                run.Rewards.AddCapturedPetReward(new QuestCapturedPetReward(playerId.Value, definition.Id, now));
                 logActions.Add(CreateCaptureLogAction(
                     command.ParticipantId,
                     actorName,
@@ -384,19 +389,17 @@ public class QuestRunService(
             }
         }
 
-        return new QuestCaptureProcessingResult(logActions, capturedPets);
+        return new QuestCaptureProcessingResult(logActions);
     }
 
-    private sealed record QuestRunResolutionResult(bool ResolvedInThisRequest, IReadOnlyList<PlayerPet> CapturedPets)
+    private sealed record QuestRunResolutionResult(bool ResolvedInThisRequest)
     {
-        public static QuestRunResolutionResult None { get; } = new(false, []);
+        public static QuestRunResolutionResult None { get; } = new(false);
     }
 
-    private sealed record QuestCaptureProcessingResult(
-        IReadOnlyList<QuestResolvedAction> Actions,
-        IReadOnlyList<PlayerPet> CapturedPets)
+    private sealed record QuestCaptureProcessingResult(IReadOnlyList<QuestResolvedAction> Actions)
     {
-        public static QuestCaptureProcessingResult Empty { get; } = new([], []);
+        public static QuestCaptureProcessingResult Empty { get; } = new([]);
     }
 
     private static QuestResolvedAction CreateCaptureLogAction(
@@ -531,40 +534,26 @@ public class QuestRunService(
             : null;
         run.Rewards.SetEquipmentReward(rewardEquipmentId);
         run.Rewards.SetItemReward(rewardItemId);
+
+        if (run.Status == QuestRunStatus.Succeeded)
+        {
+            foreach (var capturedPet in run.Rewards.CapturedPetRewards)
+            {
+                await playerPetRepository.AddAsync(PlayerPet.Capture(capturedPet.PlayerId, capturedPet.EnemyDefinitionId, capturedPet.CapturedAt));
+            }
+        }
+
+        run.Rewards.ClearCapturedPetRewards();
+
         var skippedRewardPlayerIds = new List<PlayerId>();
 
         foreach (var playerId in rewardedPlayerIds)
         {
-            var player = await playerRepository.GetPlayerAsync(playerId)
-                ?? throw new KeyNotFoundException($"プレイヤーが見つかりません。 playerId={playerId.Value}");
-
-            if (run.Rewards.Exp > 0)
+            var player = await _playerMutationService.MutateAsync(playerId, currentPlayer =>
             {
-                var multiplier = ExpMultiplierFlag.ToMultiplier(player.ExpMultiplierFlags);
-                var multipliedExp = (int)Math.Floor(run.Rewards.Exp * multiplier);
-                player.ClearExpMultiplierFlags();
-                player.GainExp(multipliedExp);
-                var jobProfile = jobProfileRepository.GetByJob(player.Job);
-                var learningRule = jobMoveLearningRuleRepository.GetByJob(player.Job);
-                player.LevelUp(jobProfile, learningRule);
-            }
-            else
-            {
-                player.ClearExpMultiplierFlags();
-            }
-
-            if (stage.RequiredMapUnlockFlag is not null && playerId == room.OwnerId)
-            {
-                player.ClearMapUnlockFlag(stage.RequiredMapUnlockFlag.Value);
-            }
-
-            if (run.Rewards.Gold > 0)
-            {
-                player.GainGold(run.Rewards.Gold);
-            }
-
-            player.SetQuestCooldownUntil((run.EndedAt ?? DateTimeOffset.UtcNow).Add(QuestCooldown));
-            await playerRepository.SaveAsync(player);
+                ApplyQuestCompletionRewardToPlayer(currentPlayer, run, stage, room.OwnerId);
+                return Task.FromResult(currentPlayer);
+            });
 
             if (run.Status == QuestRunStatus.Succeeded)
             {
@@ -646,6 +635,36 @@ public class QuestRunService(
         run.Rewards.SetSkippedRewardPlayerIds(skippedRewardPlayerIds);
     }
 
+    private void ApplyQuestCompletionRewardToPlayer(Player player, QuestRun run, QuestStageDefinition stage, PlayerId ownerId)
+    {
+        if (run.Rewards.Exp > 0)
+        {
+            var multiplier = ExpMultiplierFlag.ToMultiplier(player.ExpMultiplierFlags);
+            var multipliedExp = (int)Math.Floor(run.Rewards.Exp * multiplier);
+            player.ClearExpMultiplierFlags();
+            player.GainExp(multipliedExp);
+            var jobProfile = jobProfileRepository.GetByJob(player.Job);
+            var learningRule = jobMoveLearningRuleRepository.GetByJob(player.Job);
+            player.LevelUp(jobProfile, learningRule);
+        }
+        else
+        {
+            player.ClearExpMultiplierFlags();
+        }
+
+        if (stage.RequiredMapUnlockFlag is not null && player.Id == ownerId)
+        {
+            player.ClearMapUnlockFlag(stage.RequiredMapUnlockFlag.Value);
+        }
+
+        if (run.Rewards.Gold > 0)
+        {
+            player.GainGold(run.Rewards.Gold);
+        }
+
+        player.SetQuestCooldownUntil((run.EndedAt ?? DateTimeOffset.UtcNow).Add(QuestCooldown));
+    }
+
     private EquipmentId? DrawEquipmentReward(QuestStageDefinition stage, bool hasGreatThiefBonus)
     {
         if (stage.EquipmentRewards.Count == 0)
@@ -682,6 +701,20 @@ public class QuestRunService(
         }
 
         return null;
+    }
+
+    private sealed class RepositoryBackedPlayerMutationService(IPlayerRepository playerRepository) : IPlayerMutationService
+    {
+        public async Task<TResult> MutateAsync<TResult>(PlayerId playerId, Func<Player, Task<TResult>> mutation)
+        {
+            ArgumentNullException.ThrowIfNull(mutation);
+
+            var player = await playerRepository.GetPlayerAsync(playerId)
+                ?? throw new KeyNotFoundException($"プレイヤーが見つかりません。 playerId={playerId.Value}");
+            var result = await mutation(player);
+            await playerRepository.SaveAsync(player);
+            return result;
+        }
     }
 
     private ItemId? DrawItemReward(QuestStageDefinition stage, bool hasGreatThiefBonus)

@@ -1707,12 +1707,65 @@ public class QuestRunServiceTests
         var enemy = run.BattleState.Enemies.Single();
         enemy.IsCaptured.Should().BeTrue();
         enemy.IsDead.Should().BeTrue();
-        repository.LastCapturedPets.Should().ContainSingle()
+        petRepository.StoredPets.Should().ContainSingle()
             .Which.EnemyDefinitionId.Should().Be(new QuestEnemyDefinitionId(1));
         run.LastTurnResults!.Actions.Should()
             .Contain(x => x.ActionKind == nameof(ActionKind.Capture) && x.Succeeded);
         run.Rewards.Exp.Should().Be(0, "捕獲した敵のレベル分は階層報酬から控除される");
         run.Rewards.Gold.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task EscapeAsync_WhenCaptureSucceededBeforeQuestFailure_DoesNotPersistCapturedPet()
+    {
+        var run = CreateRun();
+        var participantId = run.PartySnapshots[0].ParticipantId;
+        var repository = new FakeQuestRunRepository(run);
+        var room = CreateRoom(run);
+        var roomRepository = new FakeQuestRoomRepository(room);
+        var petRepository = new FakePlayerPetRepository();
+        var stage = CreateStage(
+            run.StageId,
+            floors:
+            [
+                new QuestFloorDefinition(
+                    1,
+                    FloorType.Normal,
+                    [new QuestEnemyPlacement(1, new QuestEnemyDefinitionId(1), new BattlePosition(BattleRow.Front, BattleColumn.Right))],
+                    new QuestFloorRewardRule(1.0m, 1.0m)),
+                new QuestFloorDefinition(
+                    2,
+                    FloorType.Boss,
+                    [new QuestEnemyPlacement(1, new QuestEnemyDefinitionId(1), new BattlePosition(BattleRow.Front, BattleColumn.Right))],
+                    new QuestFloorRewardRule(1.0m, 1.0m))
+            ]);
+        var service = CreateRunService(
+            repository,
+            roomRepository,
+            new FakePlayerRepository(roomRepository.PlayerIds.ToArray()),
+            stage,
+            [],
+            petRepository,
+            petRollProvider: _ => 1);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Capture,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: new BattlePosition(BattleRow.Front, BattleColumn.Right)));
+
+        run.Status.Should().Be(QuestRunStatus.InProgress);
+        run.Rewards.CapturedPetRewards.Should().HaveCount(1);
+
+        await service.EscapeAsync(run.Id, room.OwnerId);
+
+        run.Status.Should().Be(QuestRunStatus.Failed);
+        petRepository.StoredPets.Should().BeEmpty();
+        run.Rewards.CapturedPetRewards.Should().BeEmpty();
     }
 
     [Fact]
@@ -1745,7 +1798,7 @@ public class QuestRunServiceTests
         var enemy = run.BattleState.Enemies.Single();
         enemy.IsCaptured.Should().BeFalse();
         enemy.IsAlive.Should().BeTrue();
-        repository.LastCapturedPets.Should().BeEmpty();
+        petRepository.StoredPets.Should().BeEmpty();
         run.LastTurnResults!.Actions.Should()
             .Contain(x => x.ActionKind == nameof(ActionKind.Capture) && !x.Succeeded);
     }
@@ -1867,7 +1920,7 @@ public class QuestRunServiceTests
             new QuestSubmittedCommand(guestParticipantId, run.TurnState.CurrentTurnNo, ActionKind.Capture, firstSubmittedAt.AddMilliseconds(10), selectedTargetPosition: targetPosition));
 
         run.BattleState.Enemies.Single().IsCaptured.Should().BeTrue();
-        repository.LastCapturedPets.Should().HaveCount(1, "同じ敵は1体しか捕獲できない");
+        petRepository.StoredPets.Should().HaveCount(1, "同じ敵は1体しか捕獲できない");
         run.LastTurnResults!.Actions.Count(x => x.ActionKind == nameof(ActionKind.Capture) && x.Succeeded).Should().Be(1);
         run.LastTurnResults!.Actions.Count(x => x.ActionKind == nameof(ActionKind.Capture) && !x.Succeeded).Should().Be(1);
     }
@@ -2147,7 +2200,8 @@ public class QuestRunServiceTests
         IReadOnlyList<QuestStageEquipmentRewardEntry>? equipmentRewards = null,
         IReadOnlyList<QuestStageItemRewardEntry>? itemRewards = null,
         QuestFloorRewardRule? floorRewardRule = null,
-        int? requiredMapUnlockFlag = null)
+        int? requiredMapUnlockFlag = null,
+        IReadOnlyList<QuestFloorDefinition>? floors = null)
     {
         return new QuestStageDefinition(
             stageId,
@@ -2158,6 +2212,7 @@ public class QuestRunServiceTests
             minimumEntryLevel: null,
             1,
             6,
+            floors ??
             [
                 new QuestFloorDefinition(
                     1,
@@ -2196,13 +2251,17 @@ public class QuestRunServiceTests
         public Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
             => Task.FromResult<IReadOnlyList<QuestRun>>(StoredRun is not null && StoredRun.TurnState.ActionDeadlineAt <= now ? [StoredRun] : []);
 
-        public IReadOnlyList<PlayerPet> LastCapturedPets { get; private set; } = [];
-
-        public Task SaveAsync(QuestRun run, IReadOnlyList<PlayerPet>? capturedPets = null)
+        public Task SaveAsync(QuestRun run)
         {
             StoredRun = run;
             SaveCount++;
-            LastCapturedPets = capturedPets ?? [];
+            return Task.CompletedTask;
+        }
+
+        public Task SaveChatMessagesAsync(QuestRun run)
+        {
+            StoredRun = run;
+            SaveCount++;
             return Task.CompletedTask;
         }
     }
@@ -2303,13 +2362,13 @@ public class QuestRunServiceTests
             return Task.FromResult(p is not null && p.Level <= maxLevel ? p : null);
         }
 
-        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel, int? offset = null, int? limit = null)
         {
             IReadOnlyList<Player> result = players.Values.Where(p => p.Id != excludeId && p.Level <= maxLevel).ToArray();
             return Task.FromResult(result);
         }
 
-        public Task<IReadOnlyList<Player>> GetAllAsync()
+        public Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null)
             => Task.FromResult<IReadOnlyList<Player>>(players.Values.ToArray());
 
         public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids)
@@ -2389,8 +2448,11 @@ public class QuestRunServiceTests
         public Task<MarketListing?> GetAsync(MarketListingId id)
             => Task.FromResult(listingsById.GetValueOrDefault(id));
 
-        public Task<IReadOnlyList<MarketListing>> GetActiveAsync(DateTimeOffset now)
-            => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values.Where(x => !x.IsExpired(now) && !x.IsSoldOut).ToArray());
+        public Task<IReadOnlyList<MarketListing>> GetActiveAsync(DateTimeOffset now, PlayerId? excludeSellerId = null)
+            => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values
+                .Where(x => !x.IsExpired(now) && !x.IsSoldOut)
+                .Where(x => excludeSellerId is null || x.SellerId != excludeSellerId)
+                .ToArray());
 
         public Task<IReadOnlyList<MarketListing>> GetBySellerAsync(PlayerId sellerId, DateTimeOffset now)
             => Task.FromResult((IReadOnlyList<MarketListing>)listingsById.Values

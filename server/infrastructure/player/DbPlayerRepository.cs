@@ -59,13 +59,27 @@ namespace server.infrastructure.player
             return MapToDomain(entity, moveEntity: null);
         }
 
-        public async Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        public async Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel, int? offset = null, int? limit = null)
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            var entities = await dbContext.Players
+            var query = dbContext.Players
                 .AsNoTracking()
                 .Where(x => x.Id != excludeId.Value && x.Level <= maxLevel)
-                .ToListAsync();
+                .OrderBy(x => x.Name)
+                .ThenBy(x => x.Id)
+                .AsQueryable();
+
+            if (offset is > 0)
+            {
+                query = query.Skip(offset.Value);
+            }
+
+            if (limit is > 0)
+            {
+                query = query.Take(limit.Value);
+            }
+
+            var entities = await query.ToListAsync();
 
             return entities.Select(e => MapToDomain(e, moveEntity: null)).ToArray();
         }
@@ -89,21 +103,37 @@ namespace server.infrastructure.player
                 .ToArray();
         }
 
-        public async Task<IReadOnlyList<Player>> GetAllAsync()
+        public async Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null)
         {
-            if (cache.TryGetValue(AllPlayersKey, out IReadOnlyList<PlayerEntity>? cachedEntities))
+            if (offset is null && limit is null && cache.TryGetValue(AllPlayersKey, out IReadOnlyList<PlayerEntity>? cachedEntities))
             {
                 return cachedEntities!.Select(e => MapToDomain(e, moveEntity: null)).ToArray();
             }
 
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            var playerEntities = await dbContext.Players
+            var query = dbContext.Players
                 .AsNoTracking()
                 .OrderBy(x => x.Name)
                 .ThenBy(x => x.Id)
-                .ToListAsync();
+                .AsQueryable();
 
-            cache.Set(AllPlayersKey, (IReadOnlyList<PlayerEntity>)playerEntities, CacheTtl);
+            if (offset is > 0)
+            {
+                query = query.Skip(offset.Value);
+            }
+
+            if (limit is > 0)
+            {
+                query = query.Take(limit.Value);
+            }
+
+            var playerEntities = await query.ToListAsync();
+
+            if (offset is null && limit is null)
+            {
+                cache.Set(AllPlayersKey, (IReadOnlyList<PlayerEntity>)playerEntities, CacheTtl);
+            }
+
             return playerEntities
                 .Select(entity => MapToDomain(entity, moveEntity: null))
                 .ToArray();

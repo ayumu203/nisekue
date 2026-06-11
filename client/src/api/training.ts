@@ -1,6 +1,8 @@
 import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
 import { extractErrorMessage, resolveApiBaseUrl } from '@/api/util'
+import { applyPaginationSearchParams } from '@/lib/pagination'
+import type { PaginationOptions } from '@/lib/pagination'
 import { trainingCooldownErrorSchema } from '@/schema/training'
 import type {
   ExecutePvpTrainingRequest,
@@ -23,10 +25,15 @@ export class TrainingCooldownError extends Error {
   }
 }
 
-export async function getPvpOpponents(accessToken: string): Promise<ListPlayersResponse> {
+export async function getPvpOpponents(
+  accessToken: string,
+  options?: PaginationOptions,
+): Promise<ListPlayersResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
+  const url = new URL(`${apiBaseUrl}${endpoints.training.getPvpOpponents.path}`)
+  applyPaginationSearchParams(url, options)
 
-  const response = await fetchSafely(`${apiBaseUrl}${endpoints.training.getPvpOpponents.path}`, {
+  const response = await fetchSafely(url.toString(), {
     method: endpoints.training.getPvpOpponents.method,
     headers: {
       Authorization: `Bearer ${accessToken}`,

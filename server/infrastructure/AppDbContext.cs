@@ -528,6 +528,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRun.Property(x => x.ChatMessagesJson).HasColumnName("chat_messages_json").HasColumnType("jsonb").IsRequired();
         questRun.Property(x => x.StartedAt).HasColumnName("started_at").IsRequired();
         questRun.Property(x => x.EndedAt).HasColumnName("ended_at");
+        questRun.Property(x => x.Version).HasColumnName("version").IsRequired().IsConcurrencyToken();
+        questRun.HasIndex(x => new { x.Status, x.ActionDeadlineAt }).HasDatabaseName("ix_quest_runs_status_deadline");
 
         var questRunPartySnapshot = modelBuilder.Entity<QuestRunPartySnapshotEntity>();
         questRunPartySnapshot.ToTable("quest_run_party_snapshots", "internal");

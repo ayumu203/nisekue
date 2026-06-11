@@ -249,6 +249,21 @@ classDiagram
             +Evaluate(combatIndex: int) StatusRank
         }
 
+        class PaginationQuery {
+            <<Value Object>>
+            +int? Page
+            +int? PageSize
+            +int? Limit
+            +ValidatePair() void
+            +ResolveOffsetAndLimit() (int? Offset, int? Limit)
+        }
+
+        class PlayerForUpdateLockService {
+            <<Infrastructure Service>>
+            +Task~IReadOnlyDictionary~Guid, PlayerEntity~~ LockPlayersAsync(dbContext: AppDbContext, playerIds: IEnumerable~Guid~)
+            +Task~PlayerEntity~ LockPlayerAsync(dbContext: AppDbContext, playerId: Guid)
+        }
+
         class EquipmentStatusBonus {
             <<Value Object>>
             +int MaxHp
@@ -367,6 +382,8 @@ classDiagram
             +IReadOnlyList~StatusRankThreshold~ GetAll()
         }
     }
+
+    PlayerForUpdateLockService ..> Player : lock順序を統一した更新前ロック
 
     Player *-- PlayerId : has
     Player *-- Status : has

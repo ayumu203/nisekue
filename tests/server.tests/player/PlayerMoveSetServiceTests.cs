@@ -80,13 +80,13 @@ public class PlayerMoveSetServiceTests
             return Task.FromResult<Player?>(player.Id == id && player.Level <= maxLevel ? player : null);
         }
 
-        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel, int? offset = null, int? limit = null)
         {
             IReadOnlyList<Player> result = player.Id != excludeId && player.Level <= maxLevel ? [player] : [];
             return Task.FromResult(result);
         }
 
-        public Task<IReadOnlyList<Player>> GetAllAsync()
+        public Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null)
         {
             return Task.FromResult<IReadOnlyList<Player>>([player]);
         }

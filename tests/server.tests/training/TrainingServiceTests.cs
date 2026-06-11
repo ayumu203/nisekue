@@ -878,13 +878,13 @@ public class TrainingServiceTests
             return Task.FromResult(playerState.Id == id && playerState.Level <= maxLevel ? playerState : null);
         }
 
-        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel)
+        public Task<IReadOnlyList<Player>> GetPvpOpponentsAsync(PlayerId excludeId, int maxLevel, int? offset = null, int? limit = null)
         {
             IReadOnlyList<Player> result = playerState.Id != excludeId && playerState.Level <= maxLevel ? [playerState] : [];
             return Task.FromResult(result);
         }
 
-        public Task<IReadOnlyList<Player>> GetAllAsync()
+        public Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null)
         {
             IReadOnlyList<Player> players = [playerState];
             return Task.FromResult(players);
