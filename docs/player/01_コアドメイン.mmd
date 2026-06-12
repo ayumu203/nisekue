@@ -322,6 +322,7 @@ classDiagram
             +Task~(IReadOnlyList~Player~ Opponents, int TotalCount)~ GetPvpOpponentsPageAsync(excludeId: PlayerId, maxLevel: int, offset: int?, limit: int?)
             +Task~int~ CountPvpOpponentsAsync(excludeId: PlayerId, maxLevel: int)
             +Task~IReadOnlyList~Player~~ GetPlayersAsync(ids: IEnumerable~PlayerId~)
+            +Task~(IReadOnlyList~Player~ Players, int TotalCount)~ GetPlayersPageExcludingAsync(excludeId: PlayerId, offset: int?, limit: int?)
             +Task~IReadOnlyList~Player~~ GetAllAsync(offset: int?, limit: int?)
             +Task~int~ CountAllAsync()
             +Task~bool~ UpdateNameAsync(id: PlayerId, name: string)

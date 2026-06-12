@@ -1,35 +1,102 @@
 import { useState } from 'react'
-import type { FormEvent, MouseEvent } from 'react'
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  Divider,
-  Paper,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from '@mui/material'
+import type { FormEvent } from 'react'
+import { Alert, Box, Button, CircularProgress, Divider, Link, Paper, Stack, TextField, Typography } from '@mui/material'
 import { Navigate } from 'react-router-dom'
-import {
-  googleButtonSx,
-  greenOutlinedInputSx,
-  innerSurfaceSx,
-  outerPagePaperSx,
-  softGoldButtonSx,
-  softGreenButtonSx,
-} from '@/constants/styles'
+import { googleButtonSx, greenOutlinedInputSx, softGoldButtonSx, softGreenButtonSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { resolvePublicAssetPath } from '@/lib/assets'
 import { supabase } from '@/lib/supabase'
 import GoogleColorIcon from '@/components/common/GoogleColorIcon'
 import locale from '../../locale/auth/Auth.json'
 
 type SubmitMode = 'google' | 'signIn' | 'signUp' | 'anonymous' | null
 type EmailAuthMode = 'signIn' | 'signUp'
+
+const heroBackgroundUrl = resolvePublicAssetPath('image/quest/enchanted-forest-battlefield.svg')
+
+type MobileHeroSprite = {
+  src: string
+  height: number
+  pixelated?: boolean
+}
+
+// モバイル版のみ表示する最前列のキャラクター
+const mobileHeroSprites: MobileHeroSprite[] = [
+  { src: resolvePublicAssetPath('image/battle/Enemy100.png'), height: 48, pixelated: true },
+  { src: resolvePublicAssetPath('image/character/ch109_hero.png'), height: 96 },
+  { src: resolvePublicAssetPath('image/character/ch001_bmnpc.png'), height: 84 },
+]
+
+type ScatteredHeroSprite = {
+  src: string
+  left: string
+  bottom: string
+  height: number
+  pixelated?: boolean
+}
+
+// PC版のみ表示するキャラクター。タイトル周辺(left 25〜75% × bottom 45〜70%)を避けてパネル全体に散らす
+// キャラPNGは元画像が高さ250〜315pxあるため110〜144px表示、敵ドット絵(48x48)は整数倍率で表示する
+const scatteredHeroSprites: ScatteredHeroSprite[] = [
+  { src: resolvePublicAssetPath('image/character/ch110_hero.png'), left: '8%', bottom: '80%', height: 120 },
+  { src: resolvePublicAssetPath('image/character/ch011_innpc.png'), left: '40%', bottom: '84%', height: 110 },
+  { src: resolvePublicAssetPath('image/battle/Enemy21.png'), left: '58%', bottom: '78%', height: 96, pixelated: true },
+  { src: resolvePublicAssetPath('image/character/ch118_hero.png'), left: '74%', bottom: '81%', height: 116 },
+  { src: resolvePublicAssetPath('image/character/ch020_in.png'), left: '3%', bottom: '54%', height: 116 },
+  { src: resolvePublicAssetPath('image/character/ch003_bmnpc.png'), left: '83%', bottom: '56%', height: 120 },
+  { src: resolvePublicAssetPath('image/character/ch029_sino.png'), left: '7%', bottom: '30%', height: 126 },
+  { src: resolvePublicAssetPath('image/character/ch009_innpc.png'), left: '46%', bottom: '30%', height: 122 },
+  { src: resolvePublicAssetPath('image/character/ch112_hero.png'), left: '85%', bottom: '29%', height: 130 },
+  { src: resolvePublicAssetPath('image/battle/Enemy43.png'), left: '16%', bottom: '7%', height: 96, pixelated: true },
+  { src: resolvePublicAssetPath('image/battle/Enemy1.png'), left: '40%', bottom: '10%', height: 48, pixelated: true },
+  { src: resolvePublicAssetPath('image/battle/Enemy7.png'), left: '60%', bottom: '6%', height: 96, pixelated: true },
+  { src: resolvePublicAssetPath('image/battle/Enemy100.png'), left: '80%', bottom: '8%', height: 96, pixelated: true },
+]
+
+const heroTitleSx = {
+  fontSize: 'clamp(3rem, 6.5vw, 4.75rem)',
+  lineHeight: 1.1,
+  color: '#ffffff',
+  letterSpacing: '0.06em',
+  textShadow: [
+    '-3px -3px 0 #2e5232',
+    '3px -3px 0 #2e5232',
+    '-3px 3px 0 #2e5232',
+    '3px 3px 0 #2e5232',
+    '6px 8px 0 rgba(46, 82, 50, 0.4)',
+  ].join(', '),
+} as const
+
+const heroTaglineSx = {
+  px: 2,
+  py: 0.5,
+  borderRadius: 999,
+  backgroundColor: 'rgba(255, 255, 255, 0.82)',
+  color: '#2e5232',
+  fontWeight: 700,
+} as const
+
+const heroSpriteRowSx = {
+  position: 'absolute',
+  bottom: 12,
+  left: 0,
+  right: 0,
+  display: { xs: 'flex', md: 'none' },
+  justifyContent: 'center',
+  alignItems: 'flex-end',
+  gap: 2,
+  pointerEvents: 'none',
+} as const
+
+const authCardSx = {
+  width: '100%',
+  maxWidth: 440,
+  borderRadius: 4,
+  border: '1px solid #e7d9b6',
+  backgroundColor: '#ffffff',
+  boxShadow: '0 12px 32px rgba(79, 70, 56, 0.12)',
+  p: { xs: 2.5, sm: 3.5 },
+} as const
 
 function Auth() {
   const { user, isLoading } = useAuth()
@@ -77,12 +144,8 @@ function Auth() {
     }
   }
 
-  const handleEmailAuthModeChange = (_event: MouseEvent<HTMLElement>, nextMode: EmailAuthMode | null) => {
-    if (!nextMode) {
-      return
-    }
-
-    setEmailAuthMode(nextMode)
+  const toggleEmailAuthMode = () => {
+    setEmailAuthMode((prev) => (prev === 'signIn' ? 'signUp' : 'signIn'))
     setError(null)
     setMessage(null)
   }
@@ -150,129 +213,178 @@ function Auth() {
   const isAnySubmitting = submitMode !== null
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={2}>
-          {message ? <Alert severity="info">{message}</Alert> : null}
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: '1.15fr 1fr' },
+        gridTemplateRows: { xs: 'auto 1fr', md: '1fr' },
+      }}
+    >
+      <Box
+        sx={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          minHeight: { xs: 300, md: '100dvh' },
+          backgroundImage: `url(${heroBackgroundUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center bottom',
+        }}
+      >
+        {scatteredHeroSprites.map((sprite) => (
+          <Box
+            key={sprite.src}
+            component="img"
+            src={sprite.src}
+            alt=""
+            sx={{
+              position: 'absolute',
+              left: sprite.left,
+              bottom: sprite.bottom,
+              height: sprite.height,
+              imageRendering: sprite.pixelated ? 'pixelated' : 'auto',
+              display: { xs: 'none', md: 'block' },
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
 
-          <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-            <Stack spacing={2}>
-              <Button
-                variant="contained"
-                disabled={isAnySubmitting}
-                onClick={handleGoogleSignIn}
-                sx={googleButtonSx}
-                startIcon={<GoogleColorIcon />}
-              >
-                {submitMode === 'google' ? locale.googleSignInSubmitting : locale.googleSignIn}
-              </Button>
-
-              <Divider>
-                <Typography variant="body2" color="text.secondary">
-                  {locale.orDivider}
-                </Typography>
-              </Divider>
-
-              <Box component="form" onSubmit={handleEmailAuth} noValidate>
-                <Stack spacing={2}>
-                  <ToggleButtonGroup
-                    value={emailAuthMode}
-                    exclusive
-                    onChange={handleEmailAuthModeChange}
-                    fullWidth
-                    disabled={isAnySubmitting}
-                    sx={{
-                      p: 0.5,
-                      borderRadius: 2,
-                      backgroundColor: 'rgba(71, 125, 59, 0.1)',
-                      border: 'none',
-                      '& .MuiToggleButtonGroup-grouped': {
-                        border: 0,
-                        borderRadius: 1.5,
-                        py: 0.9,
-                        fontWeight: 700,
-                        color: 'rgba(36, 58, 31, 0.85)',
-                        textTransform: 'none',
-                        transition: 'none',
-                        '&.Mui-focusVisible': {
-                          outline: 'none',
-                        },
-                      },
-                      '& .MuiToggleButtonGroup-grouped.Mui-selected': {
-                        color: '#ffffff',
-                        backgroundColor: '#4e7f42',
-                        boxShadow: 'none',
-                      },
-                      '& .MuiToggleButtonGroup-grouped.Mui-selected:hover': {
-                        backgroundColor: '#4e7f42',
-                      },
-                    }}
-                  >
-                    <ToggleButton value="signIn" disableRipple>
-                      {locale.signIn}
-                    </ToggleButton>
-                    <ToggleButton value="signUp" disableRipple>
-                      {locale.signUp}
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                  <TextField
-                    id="auth-email"
-                    label={locale.emailLabel}
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    required
-                    fullWidth
-                    sx={greenOutlinedInputSx}
-                  />
-                  <TextField
-                    id="auth-password"
-                    label={locale.passwordLabel}
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    required
-                    fullWidth
-                    sx={greenOutlinedInputSx}
-                  />
-                  <Button type="submit" variant="contained" disabled={isAnySubmitting} fullWidth sx={softGreenButtonSx}>
-                    {submitMode === emailAuthMode
-                      ? emailAuthMode === 'signIn'
-                        ? locale.signInSubmitting
-                        : locale.signUpSubmitting
-                      : emailAuthMode === 'signIn'
-                        ? locale.signIn
-                        : locale.signUp}
-                  </Button>
-                  {error ? <Alert severity="error">{error}</Alert> : null}
-                </Stack>
-              </Box>
-
-              <Divider>
-                <Typography variant="body2" color="text.secondary">
-                  {locale.orDivider}
-                </Typography>
-              </Divider>
-
-              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line', textAlign: 'center' }}>
-                {locale.anonymousDescription}
-              </Typography>
-              <Button
-                type="button"
-                variant="contained"
-                disabled={isAnySubmitting}
-                onClick={handleAnonymousSignIn}
-                sx={softGoldButtonSx}
-              >
-                {submitMode === 'anonymous' ? locale.anonymousSubmitting : locale.anonymousSubmit}
-              </Button>
-            </Stack>
-          </Paper>
+        <Stack
+          alignItems="center"
+          spacing={2}
+          sx={{ px: 3, pb: { xs: 14, md: 20 }, pt: { xs: 6, md: 0 }, textAlign: 'center' }}
+        >
+          <Typography component="h1" sx={heroTitleSx}>
+            {locale.heroTitle}
+          </Typography>
+          <Typography variant="body1" sx={heroTaglineSx}>
+            {locale.heroTagline}
+          </Typography>
         </Stack>
-      </Paper>
-    </Container>
+
+        <Box sx={heroSpriteRowSx}>
+          {mobileHeroSprites.map((sprite) => (
+            <Box
+              key={sprite.src}
+              component="img"
+              src={sprite.src}
+              alt=""
+              sx={{
+                height: sprite.height,
+                imageRendering: sprite.pixelated ? 'pixelated' : 'auto',
+              }}
+            />
+          ))}
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          px: { xs: 2, sm: 4 },
+          py: { xs: 4, md: 6 },
+          background: 'linear-gradient(180deg, #fffdf8 0%, #f5edd8 100%)',
+        }}
+      >
+        <Paper elevation={0} sx={authCardSx}>
+          <Stack spacing={2}>
+            <Typography variant="h5" component="h2" textAlign="center" fontWeight={700}>
+              {locale.cardTitle}
+            </Typography>
+
+            {message ? <Alert severity="info">{message}</Alert> : null}
+
+            <Button
+              type="button"
+              variant="contained"
+              size="large"
+              disabled={isAnySubmitting}
+              onClick={handleAnonymousSignIn}
+              sx={{ ...softGoldButtonSx, py: 1.3 }}
+            >
+              {submitMode === 'anonymous' ? locale.anonymousSubmitting : locale.anonymousSubmit}
+            </Button>
+            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'pre-line', textAlign: 'center' }}>
+              {locale.anonymousDescription}
+            </Typography>
+
+            <Button
+              variant="contained"
+              disabled={isAnySubmitting}
+              onClick={handleGoogleSignIn}
+              sx={googleButtonSx}
+              startIcon={<GoogleColorIcon />}
+            >
+              {submitMode === 'google' ? locale.googleSignInSubmitting : locale.googleSignIn}
+            </Button>
+
+            <Divider>
+              <Typography variant="body2" color="text.secondary">
+                {locale.orDivider}
+              </Typography>
+            </Divider>
+
+            <Box component="form" onSubmit={handleEmailAuth} noValidate>
+              <Stack spacing={2}>
+                <TextField
+                  id="auth-email"
+                  label={locale.emailLabel}
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  fullWidth
+                  sx={greenOutlinedInputSx}
+                />
+                <TextField
+                  id="auth-password"
+                  label={locale.passwordLabel}
+                  type="password"
+                  autoComplete={emailAuthMode === 'signIn' ? 'current-password' : 'new-password'}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  fullWidth
+                  sx={greenOutlinedInputSx}
+                />
+                <Button type="submit" variant="contained" disabled={isAnySubmitting} fullWidth sx={softGreenButtonSx}>
+                  {submitMode === emailAuthMode
+                    ? emailAuthMode === 'signIn'
+                      ? locale.signInSubmitting
+                      : locale.signUpSubmitting
+                    : emailAuthMode === 'signIn'
+                      ? locale.signIn
+                      : locale.signUp}
+                </Button>
+                {error ? <Alert severity="error">{error}</Alert> : null}
+                <Stack direction="row" spacing={0.75} justifyContent="center" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">
+                    {emailAuthMode === 'signIn' ? locale.signUpPrompt : locale.signInPrompt}
+                  </Typography>
+                  <Link
+                    component="button"
+                    type="button"
+                    variant="body2"
+                    onClick={toggleEmailAuthMode}
+                    disabled={isAnySubmitting}
+                    sx={{ color: '#4e7f42', fontWeight: 700, textDecorationColor: 'rgba(78, 127, 66, 0.5)' }}
+                  >
+                    {emailAuthMode === 'signIn' ? locale.signUp : locale.signIn}
+                  </Link>
+                </Stack>
+              </Stack>
+            </Box>
+          </Stack>
+        </Paper>
+      </Box>
+    </Box>
   )
 }
 

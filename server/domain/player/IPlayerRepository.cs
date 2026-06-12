@@ -12,6 +12,10 @@ public interface IPlayerRepository
         int? limit = null);
     Task<int> CountPvpOpponentsAsync(PlayerId excludeId, int maxLevel);
     Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids);
+    Task<(IReadOnlyList<Player> Players, int TotalCount)> GetPlayersPageExcludingAsync(
+        PlayerId excludeId,
+        int? offset = null,
+        int? limit = null);
     Task<IReadOnlyList<Player>> GetAllAsync(int? offset = null, int? limit = null);
     Task<int> CountAllAsync();
     Task<bool> UpdateNameAsync(PlayerId id, string name);
