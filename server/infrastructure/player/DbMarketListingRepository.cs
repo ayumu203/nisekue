@@ -12,7 +12,7 @@ public class DbMarketListingRepository(IDbContextFactory<AppDbContext> dbContext
             .AsNoTracking()
             .SingleOrDefaultAsync(x => x.Id == id.Value);
 
-        return entity is null ? null : MapToDomain(entity);
+        return entity is null ? null : MarketListingEntityMapper.MapToDomain(entity);
     }
 
     public async Task<IReadOnlyList<MarketListing>> GetActiveAsync(DateTimeOffset now, PlayerId? excludeSellerId = null)
@@ -32,7 +32,7 @@ public class DbMarketListingRepository(IDbContextFactory<AppDbContext> dbContext
 
         var entities = await query.ToListAsync();
 
-        return entities.Select(MapToDomain).ToArray();
+        return entities.Select(MarketListingEntityMapper.MapToDomain).ToArray();
     }
 
     public async Task<IReadOnlyList<MarketListing>> GetBySellerAsync(PlayerId sellerId, DateTimeOffset now)
@@ -44,7 +44,7 @@ public class DbMarketListingRepository(IDbContextFactory<AppDbContext> dbContext
             .OrderByDescending(x => x.ListedAt)
             .ToListAsync();
 
-        return entities.Select(MapToDomain).ToArray();
+        return entities.Select(MarketListingEntityMapper.MapToDomain).ToArray();
     }
 
     public async Task<IReadOnlyList<MarketListing>> GetExpiredAsync(DateTimeOffset now)
@@ -57,7 +57,7 @@ public class DbMarketListingRepository(IDbContextFactory<AppDbContext> dbContext
             .ThenBy(x => x.ListedAt)
             .ToListAsync();
 
-        return entities.Select(MapToDomain).ToArray();
+        return entities.Select(MarketListingEntityMapper.MapToDomain).ToArray();
     }
 
     public async Task SaveAsync(MarketListing listing)
@@ -102,21 +102,5 @@ public class DbMarketListingRepository(IDbContextFactory<AppDbContext> dbContext
 
         dbContext.MarketListings.Remove(existing);
         await dbContext.SaveChangesAsync();
-    }
-
-    private static MarketListing MapToDomain(MarketListingEntity entity)
-    {
-        return new MarketListing(
-            new MarketListingId(entity.Id),
-            new PlayerId(entity.SellerId),
-            entity.PlayerEquipmentId is null ? null : new PlayerEquipmentId(entity.PlayerEquipmentId.Value),
-            entity.ItemId is null ? null : new ItemId(entity.ItemId.Value),
-            entity.ItemName,
-            entity.FlavorText,
-            entity.Quantity,
-            entity.RemainingQuantity,
-            entity.UnitPrice,
-            entity.ListedAt,
-            entity.ExpiresAt);
     }
 }

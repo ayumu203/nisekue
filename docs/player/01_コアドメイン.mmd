@@ -264,6 +264,23 @@ classDiagram
             +Task~PlayerEntity~ LockPlayerAsync(dbContext: AppDbContext, playerId: Guid)
         }
 
+        class MarketPurchaseService {
+            <<Application Service>>
+            +Task~PurchaseMarketListingResult~ PurchaseAsync(buyerId: PlayerId, listingId: MarketListingId, quantity: int)
+            -Task HandleEquipmentPurchaseAsync(...)
+            -Task HandleItemPurchaseAsync(...)
+        }
+
+        class PurchaseMarketListingResult {
+            <<Result>>
+            +Guid BuyerId
+            +Guid SellerId
+            +string ItemName
+            +int PurchasedQuantity
+            +int TotalPrice
+            +int BuyerGold
+        }
+
         class EquipmentStatusBonus {
             <<Value Object>>
             +int MaxHp
@@ -391,6 +408,12 @@ classDiagram
     }
 
     PlayerForUpdateLockService ..> Player : lock順序を統一した更新前ロック
+    MarketPurchaseService ..> PlayerForUpdateLockService : use
+    MarketPurchaseService ..> MarketListing : 購入対象をロックして更新
+    MarketPurchaseService ..> PlayerEquipment : 装備出品購入時に所有権更新
+    MarketPurchaseService ..> PlayerItemStack : アイテム出品購入時に在庫更新
+    MarketPurchaseService ..> MarketTradeHistory : 同一トランザクションで記録
+    MarketPurchaseService ..> PurchaseMarketListingResult : returns
 
     Player *-- PlayerId : has
     Player *-- Status : has
