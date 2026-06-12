@@ -35,6 +35,27 @@ const heroSprites: HeroSprite[] = [
   { src: resolvePublicAssetPath('image/character/ch112_hero.png'), height: { xs: 90, md: 128 }, desktopOnly: true },
 ]
 
+type ScatteredHeroSprite = {
+  src: string
+  left: string
+  bottom: string
+  height: number
+}
+
+// PC版のみ表示する遠景・中景のキャラクター(下ほど bottom が小さい=手前で大きい)
+const scatteredHeroSprites: ScatteredHeroSprite[] = [
+  { src: resolvePublicAssetPath('image/character/ch020_in.png'), left: '6%', bottom: '30%', height: 64 },
+  { src: resolvePublicAssetPath('image/character/ch011_innpc.png'), left: '21%', bottom: '33%', height: 60 },
+  { src: resolvePublicAssetPath('image/character/ch040_sino.png'), left: '40%', bottom: '31%', height: 62 },
+  { src: resolvePublicAssetPath('image/character/ch009_innpc.png'), left: '60%', bottom: '33%', height: 64 },
+  { src: resolvePublicAssetPath('image/character/ch003_bmnpc.png'), left: '77%', bottom: '30%', height: 66 },
+  { src: resolvePublicAssetPath('image/character/ch007_inmed.png'), left: '90%', bottom: '32%', height: 60 },
+  { src: resolvePublicAssetPath('image/character/ch029_sino.png'), left: '9%', bottom: '16%', height: 84 },
+  { src: resolvePublicAssetPath('image/character/ch111_hero.png'), left: '28%', bottom: '14%', height: 88 },
+  { src: resolvePublicAssetPath('image/character/ch006_inmed.png'), left: '68%', bottom: '15%', height: 84 },
+  { src: resolvePublicAssetPath('image/character/ch118_hero.png'), left: '86%', bottom: '16%', height: 88 },
+]
+
 const heroTitleSx = {
   fontSize: 'clamp(3rem, 6.5vw, 4.75rem)',
   lineHeight: 1.1,
@@ -217,6 +238,23 @@ function Auth() {
           backgroundPosition: 'center bottom',
         }}
       >
+        {scatteredHeroSprites.map((sprite) => (
+          <Box
+            key={sprite.src}
+            component="img"
+            src={sprite.src}
+            alt=""
+            sx={{
+              position: 'absolute',
+              left: sprite.left,
+              bottom: sprite.bottom,
+              height: sprite.height,
+              display: { xs: 'none', md: 'block' },
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
+
         <Stack
           alignItems="center"
           spacing={2}
