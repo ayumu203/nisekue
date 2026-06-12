@@ -414,7 +414,7 @@ public class BattleServiceTests
     {
         return new Move(
             new MoveId(moveId),
-            "マールイテラピー",
+            "テラピー",
             "味方単体を回復",
             TargetType.Ally,
             AttackRange.Single,
@@ -486,7 +486,7 @@ public class BattleServiceTests
     {
         return new Move(
             new MoveId(moveId),
-            "プラーミア",
+            "プチプラーミヤ",
             "敵横一列を焼く",
             TargetType.Enemy,
             AttackRange.Row,
