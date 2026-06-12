@@ -919,6 +919,28 @@ public class TrainingServiceTests
             return Task.FromResult(result);
         }
 
+        public async Task<(IReadOnlyList<Player> Players, int TotalCount)> GetPlayersPageExcludingAsync(
+            PlayerId excludeId,
+            int? offset = null,
+            int? limit = null)
+        {
+            var allPlayers = await GetAllAsync();
+            var filtered = allPlayers.Where(x => x.Id != excludeId).ToArray();
+            var paged = filtered.AsEnumerable();
+
+            if (offset is > 0)
+            {
+                paged = paged.Skip(offset.Value);
+            }
+
+            if (limit is > 0)
+            {
+                paged = paged.Take(limit.Value);
+            }
+
+            return (paged.ToArray(), filtered.Length);
+        }
+
         public Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown)
         {
             return Task.FromResult<DateTimeOffset?>(null);

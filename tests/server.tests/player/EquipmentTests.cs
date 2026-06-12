@@ -39,7 +39,7 @@ public class EquipmentTests
     [Fact]
     public void CanEquip_WhenBushin_CanEquipWarriorLineWeapon()
     {
-        // 戦鬼の大剣: Warrior|OniWarrior|SwordMaster|GrandWarrior|Shogun
+        // おにの大剣: Warrior|OniWarrior|SwordMaster|GrandWarrior|Shogun
         var equipment = CreateEquipment([Job.Warrior, Job.OniWarrior, Job.SwordMaster, Job.GrandWarrior, Job.Shogun]);
 
         // Bushin は GrandWarrior → OniWarrior/SwordMaster → Warrior の上位職
@@ -49,7 +49,7 @@ public class EquipmentTests
     [Fact]
     public void CanEquip_WhenSeikaiou_CanEquipMageLineWeapon()
     {
-        // 星導の魔杖: Mage|FireMage|WaterMage|WindMage|GrandCaster|Archmage
+        // まどうしの杖: Mage|FireMage|WaterMage|WindMage|GrandCaster|Archmage
         var equipment = CreateMageWeapon();
 
         // Seikaiou は GrandCaster → FireMage/WaterMage/WindMage → Mage の上位職
@@ -68,7 +68,7 @@ public class EquipmentTests
     [Fact]
     public void CanEquip_WhenMatouou_CanEquipGreatThiefLineWeapon()
     {
-        // 災煙双刃: GreatThief のみ
+        // かいとうの双刃: GreatThief のみ
         var equipment = CreateEquipment([Job.GreatThief]);
 
         // Matouou は GreatThief の上位職
@@ -78,11 +78,39 @@ public class EquipmentTests
     [Fact]
     public void CanEquip_WhenMatouou_CanEquipRangerLineWeapon()
     {
-        // 狩人王の長弓: Ranger|Sniper|TrapMaster|GrandRanger|GreatThief
+        // かりうどの長弓: Ranger|Sniper|TrapMaster|GrandRanger|GreatThief
         var equipment = CreateEquipment([Job.Ranger, Job.Sniper, Job.TrapMaster, Job.GrandRanger, Job.GreatThief]);
 
         // Matouou → GreatThief → Warrior/WindMage/GrandRanger → (Sniper/TrapMaster) → Ranger
         equipment.CanEquip(Job.Matouou).Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanEquip_WhenShugoshin_CanEquipGuardianLineWeapon()
+    {
+        // まもりの長槍: Guardian|Trickster|Crusader|GrandGuard|Shogun
+        var equipment = CreateEquipment([Job.Guardian, Job.Trickster, Job.Crusader, Job.GrandGuard, Job.Shogun]);
+
+        // Shugoshin は GrandGuard → SwordMaster/Trickster → Warrior/Guardian の上位職
+        equipment.CanEquip(Job.Shugoshin).Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanEquip_WhenShugoshin_CanEquipGrandGuardOnlyWeapon()
+    {
+        // おしろのやり: GrandGuard のみ
+        var equipment = CreateEquipment([Job.GrandGuard]);
+
+        equipment.CanEquip(Job.Shugoshin).Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanEquip_WhenShugoshin_CannotEquipMageLineWeapon()
+    {
+        var equipment = CreateMageWeapon();
+
+        // Shugoshin は守護系。魔法系装備は装備できない
+        equipment.CanEquip(Job.Shugoshin).Should().BeFalse();
     }
 
     [Fact]
@@ -108,7 +136,7 @@ public class EquipmentTests
     [Fact]
     public void CanEquip_WhenShogun_CanEquipGrandWarriorOnlyArmor()
     {
-        // 覇王戦装: GrandWarrior|Shogun
+        // はおうの鎧: GrandWarrior|Shogun
         var equipment = CreateEquipment([Job.GrandWarrior, Job.Shogun]);
 
         equipment.CanEquip(Job.Shogun).Should().BeTrue();
@@ -117,7 +145,7 @@ public class EquipmentTests
     [Fact]
     public void CanEquip_WhenShogun_CanEquipGrandGuardOnlyArmor()
     {
-        // 城塞聖甲: GrandGuard|Shogun
+        // きんじょうてっぺきの鎧: GrandGuard|Shogun
         var equipment = CreateEquipment([Job.GrandGuard, Job.Shogun]);
 
         equipment.CanEquip(Job.Shogun).Should().BeTrue();
@@ -126,7 +154,7 @@ public class EquipmentTests
     [Fact]
     public void CanEquip_WhenArchmage_CanEquipGrandCasterOnlyArmor()
     {
-        // 元素王法衣: GrandCaster|Archmage
+        // げんそのローブ: GrandCaster|Archmage
         var equipment = CreateEquipment([Job.GrandCaster, Job.Archmage]);
 
         equipment.CanEquip(Job.Archmage).Should().BeTrue();
@@ -203,7 +231,7 @@ public class EquipmentTests
 
     // ----- ヘルパー -----
 
-    // 星導の魔杖相当: Mage|FireMage|WaterMage|WindMage|GrandCaster|Archmage
+    // まどうしの杖相当: Mage|FireMage|WaterMage|WindMage|GrandCaster|Archmage
     private static Equipment CreateMageWeapon() =>
         CreateEquipment([Job.Mage, Job.FireMage, Job.WaterMage, Job.WindMage, Job.GrandCaster, Job.Archmage]);
 

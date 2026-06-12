@@ -16,7 +16,7 @@ public class CsvQuestResourceRepositoryTests
 
         stage.Should().NotBeNull();
         stage!.Id.Value.Should().Be(8);
-        stage.Name.Should().Be("虚鉄の兵装墓所");
+        stage.Name.Should().Be("はがねの墓場");
         stage.RecommendedLevel.Should().Be(2000);
         stage.MinimumEntryLevel.Should().Be(1000);
         stage.Floors.Should().HaveCount(10);
@@ -32,10 +32,10 @@ public class CsvQuestResourceRepositoryTests
         var machine = await repository.GetAsync(new QuestEnemyDefinitionId(60));
 
         knight.Should().NotBeNull();
-        knight!.Name.Should().Be("断罪の黒盾騎士");
+        knight!.Name.Should().Be("黒盾の騎士");
         knight.ImagePath.Should().Be("image/battle/Enemy111.png");
         machine.Should().NotBeNull();
-        machine!.Name.Should().Be("奈落機兵グレイブ");
+        machine!.Name.Should().Be("はがねの番兵");
         machine.ImagePath.Should().Be("image/battle/Enemy116.png");
     }
 

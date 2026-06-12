@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using server.domain.player;
 using server.infrastructure;
 using server.infrastructure.player;
+using server.shared.pagination;
 using Xunit;
 
 namespace server.tests;
@@ -81,6 +82,84 @@ public class DbPlayerRepositoryTests
 
         opponents.Select(x => x.Id.Value).Should().BeEquivalentTo([levelOneOpponentId]);
         count.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetPvpOpponentsPageAsync_ReturnsOpponentsOrderedByLevelThenNameThenId()
+    {
+        var databaseName = $"db-player-repository-{Guid.NewGuid()}";
+        var ownerId = Guid.NewGuid();
+        var sameLevelLaterId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+        var sameLevelEarlierId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var levelTwoId = Guid.NewGuid();
+        var levelFiveId = Guid.NewGuid();
+
+        await SeedPlayersAsync(
+            databaseName,
+            CreatePlayerEntity(ownerId, "Owner", level: 10),
+            CreatePlayerEntity(levelFiveId, "Aaron", level: 5),
+            CreatePlayerEntity(sameLevelLaterId, "Alex", level: 3),
+            CreatePlayerEntity(levelTwoId, "Zed", level: 2),
+            CreatePlayerEntity(sameLevelEarlierId, "Alex", level: 3));
+
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var repository = new SupabasePlayerRepository(new TestDbContextFactory(databaseName), cache);
+
+        var (opponents, _) = await repository.GetPvpOpponentsPageAsync(new PlayerId(ownerId), maxLevel: 10);
+
+        opponents.Select(x => x.Id.Value).Should().Equal(levelTwoId, sameLevelEarlierId, sameLevelLaterId, levelFiveId);
+    }
+
+    [Fact]
+    public async Task GetPlayersPageExcludingAsync_WhenPaging_ExcludesSelfBeforeApplyingOffsetAndLimit()
+    {
+        var databaseName = $"db-player-repository-{Guid.NewGuid()}";
+        var ownerId = Guid.NewGuid();
+        var alphaId = Guid.NewGuid();
+        var bravoId = Guid.NewGuid();
+        var charlieId = Guid.NewGuid();
+
+        await SeedPlayersAsync(
+            databaseName,
+            CreatePlayerEntity(alphaId, "Alpha", level: 10),
+            CreatePlayerEntity(bravoId, "Bravo", level: 10),
+            CreatePlayerEntity(charlieId, "Charlie", level: 10),
+            CreatePlayerEntity(ownerId, "Owner", level: 10));
+
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var repository = new SupabasePlayerRepository(new TestDbContextFactory(databaseName), cache);
+
+        var pageResult = await repository.GetPlayersPageExcludingAsync(new PlayerId(ownerId), offset: 0, limit: 2);
+
+        pageResult.Players.Select(x => x.Id.Value).Should().Equal(alphaId, bravoId);
+        pageResult.TotalCount.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task GetPlayersPageExcludingAsync_WhenBuildingPagedResponse_HasNextPageUsesExcludedTotalCount()
+    {
+        var databaseName = $"db-player-repository-{Guid.NewGuid()}";
+        var ownerId = Guid.NewGuid();
+        var alphaId = Guid.NewGuid();
+        var bravoId = Guid.NewGuid();
+        var charlieId = Guid.NewGuid();
+
+        await SeedPlayersAsync(
+            databaseName,
+            CreatePlayerEntity(alphaId, "Alpha", level: 10),
+            CreatePlayerEntity(bravoId, "Bravo", level: 10),
+            CreatePlayerEntity(charlieId, "Charlie", level: 10),
+            CreatePlayerEntity(ownerId, "Owner", level: 10));
+
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var repository = new SupabasePlayerRepository(new TestDbContextFactory(databaseName), cache);
+
+        var pageResult = await repository.GetPlayersPageExcludingAsync(new PlayerId(ownerId), offset: 2, limit: 2);
+        var response = PagedResponseFactory.Create(pageResult.Players, pageResult.TotalCount, page: 2, pageSize: 2, offset: 2, limit: 2);
+
+        response.Items.Select(x => x.Id.Value).Should().Equal(charlieId);
+        response.TotalCount.Should().Be(3);
+        response.HasNextPage.Should().BeFalse();
     }
 
     private static async Task SeedPlayersAsync(string databaseName, params PlayerEntity[] players)

@@ -95,6 +95,14 @@ stage_id,equipment_id,weight,is_miss
 8,2206,4,false
 8,2207,4,false
 8,2208,4,false
+8,1401,2,false
+8,1402,2,false
+8,1403,2,false
+8,1404,2,false
+8,2301,2,false
+8,2302,2,false
+8,2303,2,false
+8,2304,2,false
 9,,3,true
 9,1007,5,false
 9,1201,4,false
@@ -139,3 +147,11 @@ stage_id,equipment_id,weight,is_miss
 10,2206,4,false
 10,2207,4,false
 10,2208,4,false
+10,1401,3,false
+10,1402,3,false
+10,1403,3,false
+10,1404,3,false
+10,2301,3,false
+10,2302,3,false
+10,2303,3,false
+10,2304,3,false

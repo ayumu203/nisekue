@@ -38,11 +38,12 @@ export const playerJobCodeSchema = z.enum([
   'Bushin',
   'Seikaiou',
   'Matouou',
+  'Shugoshin',
 ])
 
 export const playerJobSchema = z.object({
   code: playerJobCodeSchema,
-  value: z.number().int().min(1).max(29),
+  value: z.number().int().min(1).max(30),
   displayName: z.string().min(1, 'ジョブ名が空です'),
   description: z.string().min(1, 'ジョブ説明が空です'),
 })
@@ -297,7 +298,7 @@ export const updatePlayerImageResponseSchema = z.object({
 })
 
 export const updatePlayerJobRequestSchema = z.object({
-  job: z.number().int().min(1).max(29),
+  job: z.number().int().min(1).max(30),
 })
 
 export const updatePlayerJobResponseSchema = z.object({
@@ -387,7 +388,7 @@ export const jobRoadmapRequirementSchema = z.object({
 })
 
 export const unlockJobRoadmapRequestSchema = z.object({
-  jobId: z.number().int().min(1).max(29),
+  jobId: z.number().int().min(1).max(30),
 })
 
 export const unlockJobRoadmapResponseSchema = z.object({

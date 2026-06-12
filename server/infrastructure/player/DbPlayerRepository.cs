@@ -139,11 +139,7 @@ namespace server.infrastructure.player
             }
 
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            var query = dbContext.Players
-                .AsNoTracking()
-                .OrderBy(x => x.Name)
-                .ThenBy(x => x.Id)
-                .AsQueryable();
+            var query = BuildPlayersQuery(dbContext);
 
             if (offset is > 0)
             {
@@ -165,6 +161,31 @@ namespace server.infrastructure.player
             return playerEntities
                 .Select(entity => PlayerEntityMapper.MapToDomain(entity, moveEntity: null))
                 .ToArray();
+        }
+
+        public async Task<(IReadOnlyList<Player> Players, int TotalCount)> GetPlayersPageExcludingAsync(
+            PlayerId excludeId,
+            int? offset = null,
+            int? limit = null)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var baseQuery = BuildPlayersQuery(dbContext, excludeId);
+            var totalCount = await baseQuery.CountAsync();
+
+            var pagedQuery = baseQuery;
+            if (offset is > 0)
+            {
+                pagedQuery = pagedQuery.Skip(offset.Value);
+            }
+
+            if (limit is > 0)
+            {
+                pagedQuery = pagedQuery.Take(limit.Value);
+            }
+
+            var entities = await pagedQuery.ToListAsync();
+            var players = entities.Select(e => PlayerEntityMapper.MapToDomain(e, moveEntity: null)).ToArray();
+            return (players, totalCount);
         }
 
         public async Task<int> CountAllAsync()
@@ -242,6 +263,24 @@ namespace server.infrastructure.player
                 .Where(x => x.Id != excludeId.Value
                             && x.Level >= minOpponentLevel
                             && x.Level <= maxLevel)
+                .OrderBy(x => x.Level)
+                .ThenBy(x => x.Name)
+                .ThenBy(x => x.Id)
+                .AsQueryable();
+        }
+
+        private static IQueryable<PlayerEntity> BuildPlayersQuery(AppDbContext dbContext, PlayerId? excludeId = null)
+        {
+            var query = dbContext.Players
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (excludeId is not null)
+            {
+                query = query.Where(x => x.Id != excludeId.Value.Value);
+            }
+
+            return query
                 .OrderBy(x => x.Name)
                 .ThenBy(x => x.Id)
                 .AsQueryable();

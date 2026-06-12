@@ -33,6 +33,7 @@ public static class JobDisplayNames
             Job.Bushin => "武神",
             Job.Seikaiou => "星界王",
             Job.Matouou => "魔盗王",
+            Job.Shugoshin => "守護神",
             _ => job.ToString()
         };
 }

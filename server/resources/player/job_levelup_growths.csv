@@ -27,3 +27,4 @@ id,job_code,job_name,description,master_level,max_hp,max_mp,strength,defense,int
 27,Bushin,武神,万武を統べ究極の剣を振るう武の到達点。HP・筋力・防御が極めて伸び、烈震剣技と戦神の構えで戦場を壊す。,60,11,3,9,7,1,3,3,GrandWarrior,,
 28,Seikaiou,星界王,星々の理を極めし大魔導の王。MPと知力が飛躍的に伸び、超広域魔法と魔力の根源で次元を変える。,60,6,11,1,3,10,2,5,GrandCaster,,
 29,Matouou,魔盗王,盗賊道の頂点にして闇の王。運と素早さが極限まで伸び、絶対回避と死の刻印で全てを奪う。,60,8,5,5,3,4,7,8,GreatThief,,
+30,Shugoshin,守護神,仲間のすべてを背に庇う守りの到達点。HPと防御が極めて伸び、冥王のちょうはつと冥府の息吹で戦線を絶対に崩さない。,60,13,4,3,12,3,2,2,GrandGuard,,
