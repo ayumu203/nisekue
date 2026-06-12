@@ -74,7 +74,7 @@
     "targetRow": "対象列",
     "targetColumn": "対象位置",
     "submitted": "送信済み",
-    "pending": "保留中",
+    "pending": "入力待ち",
     "manual": "手動",
     "autoAttackOnly": "自動攻撃のみ",
     "none": "なし"

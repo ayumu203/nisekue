@@ -84,6 +84,24 @@ public class GlobalChatServiceTests
         public Task<int> CountAllAsync() => Task.FromResult(player is null ? 0 : 1);
         public Task<IReadOnlyList<Player>> GetPlayersAsync(IEnumerable<PlayerId> ids) =>
             Task.FromResult<IReadOnlyList<Player>>(player is not null ? [player] : []);
+        public async Task<(IReadOnlyList<Player> Players, int TotalCount)> GetPlayersPageExcludingAsync(PlayerId excludeId, int? offset = null, int? limit = null)
+        {
+            var allPlayers = await GetAllAsync();
+            var filtered = allPlayers.Where(x => x.Id != excludeId).ToArray();
+            var paged = filtered.AsEnumerable();
+
+            if (offset is > 0)
+            {
+                paged = paged.Skip(offset.Value);
+            }
+
+            if (limit is > 0)
+            {
+                paged = paged.Take(limit.Value);
+            }
+
+            return (paged.ToArray(), filtered.Length);
+        }
         public Task<bool> UpdateNameAsync(PlayerId id, string name) => Task.FromResult(false);
         public Task<DateTimeOffset?> TryStartTrainingCooldownAsync(PlayerId id, DateTimeOffset nowUtc, TimeSpan cooldown) => Task.FromResult<DateTimeOffset?>(null);
         public Task SaveAsync(Player player) => Task.CompletedTask;
