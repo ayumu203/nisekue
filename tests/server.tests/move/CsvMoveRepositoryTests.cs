@@ -200,7 +200,7 @@ public class CsvMoveRepositoryTests
         var move = await repository.GetMoveAsync(new(518));
 
         move.Should().NotBeNull();
-        move!.Name.Should().Be("絶対守護");
+        move!.Name.Should().Be("みんなをまもる");
         move.TargetType.Should().Be(TargetType.Self);
         move.Effects.Should().ContainSingle();
         move.Effects[0].EffectType.Should().Be(MoveEffectType.Ailment);
@@ -216,7 +216,7 @@ public class CsvMoveRepositoryTests
         var move = await repository.GetMoveAsync(new(415));
 
         move.Should().NotBeNull();
-        move!.Name.Should().Be("血戦覚悟");
+        move!.Name.Should().Be("おにのかくご");
         move.Effects.Should().HaveCount(2);
         move.Effects[0].EffectType.Should().Be(MoveEffectType.HalveSelfHp);
         move.Effects[1].Buff.Should().NotBeNull();
@@ -246,23 +246,23 @@ public class CsvMoveRepositoryTests
         { 105, "シールドバッシュ", TargetType.Enemy, AttackRange.Single, 3, ElementType.Strike },
         { 106, "ヴズルイフ", TargetType.Enemy, AttackRange.Row, 4, ElementType.None },
         { 107, "ヒルフェ", TargetType.Enemy, AttackRange.Single, 5, ElementType.Holy },
-        { 108, "プラーミア", TargetType.Enemy, AttackRange.Single, 3, ElementType.Fire },
-        { 109, "クラインプラーミヤ", TargetType.Enemy, AttackRange.Single, 6, ElementType.Fire },
-        { 110, "ミッテルプラーミヤ", TargetType.Enemy, AttackRange.Single, 6, ElementType.Fire },
-        { 111, "グロースプラーミヤ", TargetType.Enemy, AttackRange.Single, 25, ElementType.Fire },
-        { 112, "ウアプラーミヤ", TargetType.Enemy, AttackRange.Single, 16, ElementType.Fire },
-        { 113, "クラインヴォーダ", TargetType.Enemy, AttackRange.Column, 4, ElementType.Water },
-        { 114, "ミッテルヴォーダ", TargetType.Enemy, AttackRange.Column, 7, ElementType.Water },
-        { 115, "グロースヴォーダ", TargetType.Enemy, AttackRange.Column, 11, ElementType.Water },
-        { 116, "ウアヴォーダ", TargetType.Enemy, AttackRange.Column, 17, ElementType.Water },
-        { 117, "クラインヴェーチェル", TargetType.Enemy, AttackRange.Square, 5, ElementType.Wind },
-        { 118, "ミッテルヴェーチェル", TargetType.Enemy, AttackRange.Square, 8, ElementType.Wind },
-        { 119, "グロースヴェーチェル", TargetType.Enemy, AttackRange.Square, 12, ElementType.Wind },
-        { 120, "ウアヴェーチェル", TargetType.Enemy, AttackRange.Square, 18, ElementType.Wind },
-        { 121, "クラインゼムリャ", TargetType.Enemy, AttackRange.Row, 4, ElementType.Earth },
-        { 122, "ミッテルゼムリャ", TargetType.Enemy, AttackRange.Row, 7, ElementType.Earth },
-        { 123, "グロースゼムリャ", TargetType.Enemy, AttackRange.Row, 11, ElementType.Earth },
-        { 124, "ウアゼムリャ", TargetType.Enemy, AttackRange.Row, 17, ElementType.Earth },
+        { 108, "プチプラーミヤ", TargetType.Enemy, AttackRange.Single, 3, ElementType.Fire },
+        { 109, "プラーミヤ", TargetType.Enemy, AttackRange.Single, 6, ElementType.Fire },
+        { 110, "デカプラーミヤ", TargetType.Enemy, AttackRange.Single, 6, ElementType.Fire },
+        { 111, "ゲキプラーミヤ", TargetType.Enemy, AttackRange.Single, 25, ElementType.Fire },
+        { 112, "エータプラーミヤ", TargetType.Enemy, AttackRange.Single, 16, ElementType.Fire },
+        { 113, "プチヴォーダ", TargetType.Enemy, AttackRange.Column, 4, ElementType.Water },
+        { 114, "ヴォーダ", TargetType.Enemy, AttackRange.Column, 7, ElementType.Water },
+        { 115, "デカヴォーダ", TargetType.Enemy, AttackRange.Column, 11, ElementType.Water },
+        { 116, "エータヴォーダ", TargetType.Enemy, AttackRange.Column, 17, ElementType.Water },
+        { 117, "プチヴェーチェル", TargetType.Enemy, AttackRange.Square, 5, ElementType.Wind },
+        { 118, "ヴェーチェル", TargetType.Enemy, AttackRange.Square, 8, ElementType.Wind },
+        { 119, "デカヴェーチェル", TargetType.Enemy, AttackRange.Square, 12, ElementType.Wind },
+        { 120, "エータヴェーチェル", TargetType.Enemy, AttackRange.Square, 18, ElementType.Wind },
+        { 121, "プチゼムリャ", TargetType.Enemy, AttackRange.Row, 4, ElementType.Earth },
+        { 122, "ゼムリャ", TargetType.Enemy, AttackRange.Row, 7, ElementType.Earth },
+        { 123, "デカゼムリャ", TargetType.Enemy, AttackRange.Row, 11, ElementType.Earth },
+        { 124, "エータゼムリャ", TargetType.Enemy, AttackRange.Row, 17, ElementType.Earth },
         { 138, "魔神斬り", TargetType.Enemy, AttackRange.Single, 23, ElementType.Slash },
         { 203, "フレアライン", TargetType.Enemy, AttackRange.Column, 37, ElementType.Fire },
         { 205, "テンペスト", TargetType.Enemy, AttackRange.All, 92, ElementType.Wind },
@@ -281,24 +281,24 @@ public class CsvMoveRepositoryTests
         { 502, "パラライズ", MoveCategory.Support, TargetType.Enemy, AttackRange.Single },
         { 503, "ポイズンミスト", MoveCategory.Support, TargetType.Enemy, AttackRange.Column },
         { 504, "トラップセット", MoveCategory.Support, TargetType.Enemy, AttackRange.Single },
-        { 301, "マールイテラピー", MoveCategory.Support, TargetType.Ally, AttackRange.Single },
+        { 301, "テラピー", MoveCategory.Support, TargetType.Ally, AttackRange.Single },
         { 107, "ヒルフェ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Single },
-        { 108, "プラーミア", MoveCategory.Attack, TargetType.Enemy, AttackRange.Single },
-        { 113, "クラインヴォーダ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Column },
-        { 117, "クラインヴェーチェル", MoveCategory.Attack, TargetType.Enemy, AttackRange.Square },
-        { 121, "クラインゼムリャ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Row },
-        { 406, "幻惑の挑発", MoveCategory.Support, TargetType.Self, AttackRange.Single },
+        { 108, "プチプラーミヤ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Single },
+        { 113, "プチヴォーダ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Column },
+        { 117, "プチヴェーチェル", MoveCategory.Attack, TargetType.Enemy, AttackRange.Square },
+        { 121, "プチゼムリャ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Row },
+        { 406, "トリックちょうはつ", MoveCategory.Support, TargetType.Self, AttackRange.Single },
         { 513, "リジェネレイ", MoveCategory.Support, TargetType.Ally, AttackRange.Single },
         { 516, "急所撃ち", MoveCategory.Support, TargetType.Enemy, AttackRange.Single },
-        { 413, "黒霧散布", MoveCategory.Support, TargetType.Enemy, AttackRange.All }
+        { 413, "くろいきり", MoveCategory.Support, TargetType.Enemy, AttackRange.All }
     };
 
     public static TheoryData<int, string, int, decimal, int> HealMoveDefinitions => new()
     {
-        { 301, "マールイテラピー", 2, 1.00m, 20 },
-        { 302, "スレドニーテラピー", 30, 1.25m, 45 },
-        { 303, "ボリショイテラピー", 12, 1.60m, 85 },
-        { 304, "ヴェリーキーテラピー", 18, 2.10m, 150 }
+        { 301, "テラピー", 2, 1.00m, 20 },
+        { 302, "デカテラピー", 30, 1.25m, 45 },
+        { 303, "ゲキテラピー", 12, 1.60m, 85 },
+        { 304, "エータテラピー", 18, 2.10m, 150 }
     };
 
     public static TheoryData<int, string, AttackRange, AilmentType, int> AilmentMoveDefinitions => new()
