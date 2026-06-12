@@ -330,6 +330,8 @@ classDiagram
             +Task SaveAsync(player: Player)
         }
 
+        note for IPlayerRepository "GetPvpOpponentsAsync / GetPvpOpponentsPageAsync\nは Level昇順 -> Name昇順 -> Id昇順で返す"
+
         class IEquipmentRepository {
             +Task~Equipment?~ GetAsync(id: EquipmentId)
             +Task~IReadOnlyList~Equipment~~ GetAllAsync()

@@ -85,6 +85,32 @@ public class DbPlayerRepositoryTests
     }
 
     [Fact]
+    public async Task GetPvpOpponentsPageAsync_ReturnsOpponentsOrderedByLevelThenNameThenId()
+    {
+        var databaseName = $"db-player-repository-{Guid.NewGuid()}";
+        var ownerId = Guid.NewGuid();
+        var sameLevelLaterId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+        var sameLevelEarlierId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var levelTwoId = Guid.NewGuid();
+        var levelFiveId = Guid.NewGuid();
+
+        await SeedPlayersAsync(
+            databaseName,
+            CreatePlayerEntity(ownerId, "Owner", level: 10),
+            CreatePlayerEntity(levelFiveId, "Aaron", level: 5),
+            CreatePlayerEntity(sameLevelLaterId, "Alex", level: 3),
+            CreatePlayerEntity(levelTwoId, "Zed", level: 2),
+            CreatePlayerEntity(sameLevelEarlierId, "Alex", level: 3));
+
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var repository = new SupabasePlayerRepository(new TestDbContextFactory(databaseName), cache);
+
+        var (opponents, _) = await repository.GetPvpOpponentsPageAsync(new PlayerId(ownerId), maxLevel: 10);
+
+        opponents.Select(x => x.Id.Value).Should().Equal(levelTwoId, sameLevelEarlierId, sameLevelLaterId, levelFiveId);
+    }
+
+    [Fact]
     public async Task GetPlayersPageExcludingAsync_WhenPaging_ExcludesSelfBeforeApplyingOffsetAndLimit()
     {
         var databaseName = $"db-player-repository-{Guid.NewGuid()}";

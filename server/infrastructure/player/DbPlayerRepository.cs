@@ -263,7 +263,8 @@ namespace server.infrastructure.player
                 .Where(x => x.Id != excludeId.Value
                             && x.Level >= minOpponentLevel
                             && x.Level <= maxLevel)
-                .OrderBy(x => x.Name)
+                .OrderBy(x => x.Level)
+                .ThenBy(x => x.Name)
                 .ThenBy(x => x.Id)
                 .AsQueryable();
         }
