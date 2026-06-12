@@ -21,7 +21,6 @@ function Players() {
   const [page, setPage] = useState(1)
   const playerSWRKey = session?.user.id ? (['player', session.user.id] as const) : null
   const {
-    data: currentPlayer,
     error: currentPlayerError,
     isLoading: isCurrentPlayerLoading,
   } = useSWR(playerSWRKey, async () => {
@@ -64,7 +63,7 @@ function Players() {
   )
 
   const hasNextPage = playersPage?.hasNextPage ?? false
-  const visitTargets = playersPage?.items.filter((player) => player.userId !== currentPlayer?.userId) ?? []
+  const visitTargets = playersPage?.items ?? []
 
   if (isLoading) {
     return (

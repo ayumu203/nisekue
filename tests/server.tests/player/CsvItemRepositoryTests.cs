@@ -14,7 +14,7 @@ public class CsvItemRepositoryTests
         var item = await repository.GetAsync(new(3005));
 
         item.Should().NotBeNull();
-        item!.Name.Should().Be("生命樹の雫");
+        item!.Name.Should().Be("いのちのしずく");
         item.StatusBonusPercent.Should().NotBeNull();
         item.StatusBonusPercent!.MaxHpPercent.Should().Be(1);
         item.StatusBonusPercent.MaxMpPercent.Should().Be(0);
@@ -29,7 +29,7 @@ public class CsvItemRepositoryTests
         var item = await repository.GetAsync(new(3001));
 
         item.Should().NotBeNull();
-        item!.Name.Should().Be("命脈の種");
+        item!.Name.Should().Be("いのちのたね");
         item.StatusBonus.Should().NotBeNull();
         item.StatusBonus!.MaxHp.Should().Be(1);
         item.StatusBonusPercent.Should().NotBeNull();
@@ -44,7 +44,7 @@ public class CsvItemRepositoryTests
         var item = await repository.GetAsync(new(3051));
 
         item.Should().NotBeNull();
-        item!.Name.Should().Be("疾風の神珠");
+        item!.Name.Should().Be("すばやさのかじつ");
         item.StatusBonus.Should().NotBeNull();
         item.StatusBonus!.Speed.Should().Be(10);
         item.StatusBonusPercent.Should().NotBeNull();

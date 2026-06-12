@@ -1070,7 +1070,7 @@ public class QuestRunServiceTests
         var participantId = QuestParticipantId.New();
         var rewardItem = new Item(
             new ItemId(3001),
-            "命脈の種",
+            "いのちのたね",
             "最大HPが1上がる",
             99,
             ItemEffectType.StatBoost,
@@ -1132,7 +1132,7 @@ public class QuestRunServiceTests
         var participantId = QuestParticipantId.New();
         var rewardItem = new Item(
             new ItemId(3001),
-            "命脈の種",
+            "いのちのたね",
             "最大HPが1上がる",
             99,
             ItemEffectType.StatBoost,
@@ -2469,6 +2469,28 @@ public class QuestRunServiceTests
         {
             var idSet = ids.ToHashSet();
             return Task.FromResult<IReadOnlyList<Player>>(players.Values.Where(p => idSet.Contains(p.Id)).ToArray());
+        }
+
+        public async Task<(IReadOnlyList<Player> Players, int TotalCount)> GetPlayersPageExcludingAsync(
+            PlayerId excludeId,
+            int? offset = null,
+            int? limit = null)
+        {
+            var allPlayers = await GetAllAsync();
+            var filtered = allPlayers.Where(x => x.Id != excludeId).ToArray();
+            var paged = filtered.AsEnumerable();
+
+            if (offset is > 0)
+            {
+                paged = paged.Skip(offset.Value);
+            }
+
+            if (limit is > 0)
+            {
+                paged = paged.Take(limit.Value);
+            }
+
+            return (paged.ToArray(), filtered.Length);
         }
 
         public Task<bool> UpdateNameAsync(PlayerId id, string name)

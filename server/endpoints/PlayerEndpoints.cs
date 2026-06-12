@@ -16,6 +16,7 @@ internal static class PlayerEndpoints
     internal static WebApplication MapPlayerEndpoints(this WebApplication app)
     {
         app.MapGet("/players", async (
+            ClaimsPrincipal user,
             int? page,
             int? pageSize,
             int? limit,
@@ -24,12 +25,19 @@ internal static class PlayerEndpoints
             CombatIndexCalculator combatIndexCalculator,
             CombatIndexRankEvaluator combatIndexRankEvaluator) =>
         {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
             if (!PaginationQueryResolver.TryResolve(page, pageSize, limit, out var offset, out var effectiveLimit, out var errorMessage))
             {
                 return Results.BadRequest(new { message = errorMessage });
             }
 
-            var players = await playerRepository.GetAllAsync(offset, effectiveLimit);
+            var pageResult = await playerRepository.GetPlayersPageExcludingAsync(playerId.Value, offset, effectiveLimit);
+            var players = pageResult.Players;
             var items = players.Select(player => new
             {
                 userId = player.Id.Value,
@@ -46,13 +54,9 @@ internal static class PlayerEndpoints
                 combatIndexRank = combatIndexRankEvaluator.Evaluate(combatIndexCalculator.Calculate(player.Status)).ToString()
             }).ToArray();
 
-            var totalCount = (offset is null && effectiveLimit is null)
-                ? items.Length
-                : await playerRepository.CountAllAsync();
-
             return Results.Ok(PagedResponseFactory.Create(
                 items,
-                totalCount,
+                pageResult.TotalCount,
                 page,
                 pageSize,
                 offset,

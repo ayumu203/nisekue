@@ -633,6 +633,28 @@ public class QuestRoomServiceTests
             return Task.FromResult<IReadOnlyList<Player>>(players.Values.Where(p => idSet.Contains(p.Id)).ToArray());
         }
 
+        public async Task<(IReadOnlyList<Player> Players, int TotalCount)> GetPlayersPageExcludingAsync(
+            PlayerId excludeId,
+            int? offset = null,
+            int? limit = null)
+        {
+            var allPlayers = await GetAllAsync();
+            var filtered = allPlayers.Where(x => x.Id != excludeId).ToArray();
+            var paged = filtered.AsEnumerable();
+
+            if (offset is > 0)
+            {
+                paged = paged.Skip(offset.Value);
+            }
+
+            if (limit is > 0)
+            {
+                paged = paged.Take(limit.Value);
+            }
+
+            return (paged.ToArray(), filtered.Length);
+        }
+
         public Task<bool> UpdateNameAsync(PlayerId id, string name)
             => Task.FromResult(false);
 
