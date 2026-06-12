@@ -68,13 +68,23 @@ public class CsvJobRoadmapRankRepositoryTests
     }
 
     [Fact]
+    public void GetRank_WhenShugoshin_ReturnsFive()
+    {
+        var repository = new CsvJobRoadmapRankRepository();
+
+        var rank = repository.GetRank(Job.Shugoshin);
+
+        rank.Should().Be(5);
+    }
+
+    [Fact]
     public void GetJobs_ReturnsAllJobsInOrder()
     {
         var repository = new CsvJobRoadmapRankRepository();
 
         var jobs = repository.GetJobs();
 
-        jobs.Should().HaveCount(28);
+        jobs.Should().HaveCount(29);
         jobs[0].Should().Be(Job.Apprentice);
     }
 }

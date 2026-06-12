@@ -29,5 +29,6 @@ public enum Job
     GreatThief = 25,
     Bushin = 27,
     Seikaiou = 28,
-    Matouou = 29
+    Matouou = 29,
+    Shugoshin = 30
 }

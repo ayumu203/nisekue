@@ -200,7 +200,7 @@ public class CsvMoveRepositoryTests
         var move = await repository.GetMoveAsync(new(518));
 
         move.Should().NotBeNull();
-        move!.Name.Should().Be("みんなをまもる");
+        move!.Name.Should().Be("ししゅ");
         move.TargetType.Should().Be(TargetType.Self);
         move.Effects.Should().ContainSingle();
         move.Effects[0].EffectType.Should().Be(MoveEffectType.Ailment);

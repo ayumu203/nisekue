@@ -100,7 +100,7 @@ move_id,move_name,description,target_type,attack_range,mp_cost,execution_priorit
 515,ポイズンショット,毒を塗った矢で敵を撃ち抜き蝕む,Enemy,Single,11,0,Hybrid,,
 516,急所撃ち,急所を狙い澄ました必殺の狙撃。即死はボスには効かない,Enemy,Single,12,0,Support,,
 517,スタンワイヤー,仕込んだ鋼線で敵を絡め取り麻痺させる,Enemy,Single,11,0,Hybrid,,
-518,みんなをまもる,味方全員への攻撃を自分が引き受ける,Self,Single,31,1,Support,,
+518,ししゅ,味方全員への攻撃を自分が引き受ける,Self,Single,31,1,Support,,
 519,わなだらけ,無数の罠を戦場全面へ張り巡らせる,Enemy,All,117,0,Support,,
 520,デスハント,死角から放つ狙撃でわずかな隙を刈り取る。即死はボスには効かない,Enemy,Single,25,0,Support,,
 521,首狩り,一瞬の隙に喉元を断ち運命を終わらせる。即死はボスには効かない,Enemy,Single,23,0,Support,,

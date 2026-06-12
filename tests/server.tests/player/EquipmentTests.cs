@@ -86,6 +86,34 @@ public class EquipmentTests
     }
 
     [Fact]
+    public void CanEquip_WhenShugoshin_CanEquipGuardianLineWeapon()
+    {
+        // まもりの長槍: Guardian|Trickster|Crusader|GrandGuard|Shogun
+        var equipment = CreateEquipment([Job.Guardian, Job.Trickster, Job.Crusader, Job.GrandGuard, Job.Shogun]);
+
+        // Shugoshin は GrandGuard → SwordMaster/Trickster → Warrior/Guardian の上位職
+        equipment.CanEquip(Job.Shugoshin).Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanEquip_WhenShugoshin_CanEquipGrandGuardOnlyWeapon()
+    {
+        // おしろのやり: GrandGuard のみ
+        var equipment = CreateEquipment([Job.GrandGuard]);
+
+        equipment.CanEquip(Job.Shugoshin).Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanEquip_WhenShugoshin_CannotEquipMageLineWeapon()
+    {
+        var equipment = CreateMageWeapon();
+
+        // Shugoshin は守護系。魔法系装備は装備できない
+        equipment.CanEquip(Job.Shugoshin).Should().BeFalse();
+    }
+
+    [Fact]
     public void CanEquip_WhenBushin_CannotEquipMageLineWeapon()
     {
         var equipment = CreateMageWeapon();
