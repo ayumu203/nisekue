@@ -20,10 +20,7 @@ function Players() {
   const { session, isLoading } = useAuth()
   const [page, setPage] = useState(1)
   const playerSWRKey = session?.user.id ? (['player', session.user.id] as const) : null
-  const {
-    error: currentPlayerError,
-    isLoading: isCurrentPlayerLoading,
-  } = useSWR(playerSWRKey, async () => {
+  const { error: currentPlayerError, isLoading: isCurrentPlayerLoading } = useSWR(playerSWRKey, async () => {
     if (!session?.access_token) {
       throw new Error(locale.sessionInfoMissing)
     }
