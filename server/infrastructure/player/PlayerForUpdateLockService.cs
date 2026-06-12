@@ -6,9 +6,12 @@ public class PlayerForUpdateLockService
 {
     public async Task<PlayerEntity> LockPlayerAsync(AppDbContext dbContext, Guid playerId)
     {
-        var entity = await dbContext.Players
-            .FromSqlInterpolated($"SELECT * FROM internal.players WHERE id = {playerId} FOR UPDATE")
-            .SingleOrDefaultAsync();
+        var entity = dbContext.Database.IsRelational()
+            ? await dbContext.Players
+                .FromSqlInterpolated($"SELECT * FROM internal.players WHERE id = {playerId} FOR UPDATE")
+                .SingleOrDefaultAsync()
+            : await dbContext.Players
+                .SingleOrDefaultAsync(x => x.Id == playerId);
         if (entity is null)
         {
             throw new KeyNotFoundException($"プレイヤーが見つかりません。 userId={playerId}");
