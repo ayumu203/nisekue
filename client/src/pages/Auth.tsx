@@ -1,18 +1,6 @@
 import { useState } from 'react'
-import type { FormEvent, MouseEvent } from 'react'
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Divider,
-  Paper,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from '@mui/material'
+import type { FormEvent } from 'react'
+import { Alert, Box, Button, CircularProgress, Divider, Link, Paper, Stack, TextField, Typography } from '@mui/material'
 import { Navigate } from 'react-router-dom'
 import { googleButtonSx, greenOutlinedInputSx, softGoldButtonSx, softGreenButtonSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
@@ -25,9 +13,27 @@ type SubmitMode = 'google' | 'signIn' | 'signUp' | 'anonymous' | null
 type EmailAuthMode = 'signIn' | 'signUp'
 
 const heroBackgroundUrl = resolvePublicAssetPath('image/quest/enchanted-forest-battlefield.svg')
-const heroCharacterUrl = resolvePublicAssetPath('image/character/ch109_hero.png')
-const heroCompanionUrl = resolvePublicAssetPath('image/character/ch001_bmnpc.png')
-const heroEnemyUrl = resolvePublicAssetPath('image/battle/Enemy100.png')
+
+type HeroSprite = {
+  src: string
+  height: { xs: number; md: number }
+  pixelated?: boolean
+  desktopOnly?: boolean
+}
+
+const heroSprites: HeroSprite[] = [
+  {
+    src: resolvePublicAssetPath('image/battle/Enemy1.png'),
+    height: { xs: 40, md: 48 },
+    pixelated: true,
+    desktopOnly: true,
+  },
+  { src: resolvePublicAssetPath('image/character/ch110_hero.png'), height: { xs: 96, md: 130 }, desktopOnly: true },
+  { src: resolvePublicAssetPath('image/battle/Enemy100.png'), height: { xs: 48, md: 64 }, pixelated: true },
+  { src: resolvePublicAssetPath('image/character/ch109_hero.png'), height: { xs: 96, md: 136 } },
+  { src: resolvePublicAssetPath('image/character/ch001_bmnpc.png'), height: { xs: 84, md: 120 } },
+  { src: resolvePublicAssetPath('image/character/ch112_hero.png'), height: { xs: 90, md: 128 }, desktopOnly: true },
+]
 
 const heroTitleSx = {
   fontSize: 'clamp(3rem, 6.5vw, 4.75rem)',
@@ -120,12 +126,8 @@ function Auth() {
     }
   }
 
-  const handleEmailAuthModeChange = (_event: MouseEvent<HTMLElement>, nextMode: EmailAuthMode | null) => {
-    if (!nextMode) {
-      return
-    }
-
-    setEmailAuthMode(nextMode)
+  const toggleEmailAuthMode = () => {
+    setEmailAuthMode((prev) => (prev === 'signIn' ? 'signUp' : 'signIn'))
     setError(null)
     setMessage(null)
   }
@@ -229,14 +231,19 @@ function Auth() {
         </Stack>
 
         <Box sx={heroSpriteRowSx}>
-          <Box
-            component="img"
-            src={heroEnemyUrl}
-            alt=""
-            sx={{ height: { xs: 48, md: 64 }, imageRendering: 'pixelated' }}
-          />
-          <Box component="img" src={heroCharacterUrl} alt="" sx={{ height: { xs: 96, md: 136 } }} />
-          <Box component="img" src={heroCompanionUrl} alt="" sx={{ height: { xs: 84, md: 120 } }} />
+          {heroSprites.map((sprite) => (
+            <Box
+              key={sprite.src}
+              component="img"
+              src={sprite.src}
+              alt=""
+              sx={{
+                height: sprite.height,
+                imageRendering: sprite.pixelated ? 'pixelated' : 'auto',
+                display: sprite.desktopOnly ? { xs: 'none', md: 'block' } : 'block',
+              }}
+            />
+          ))}
         </Box>
       </Box>
 
@@ -290,46 +297,6 @@ function Auth() {
 
             <Box component="form" onSubmit={handleEmailAuth} noValidate>
               <Stack spacing={2}>
-                <ToggleButtonGroup
-                  value={emailAuthMode}
-                  exclusive
-                  onChange={handleEmailAuthModeChange}
-                  fullWidth
-                  disabled={isAnySubmitting}
-                  sx={{
-                    p: 0.5,
-                    borderRadius: 2,
-                    backgroundColor: 'rgba(71, 125, 59, 0.1)',
-                    border: 'none',
-                    '& .MuiToggleButtonGroup-grouped': {
-                      border: 0,
-                      borderRadius: 1.5,
-                      py: 0.9,
-                      fontWeight: 700,
-                      color: 'rgba(36, 58, 31, 0.85)',
-                      textTransform: 'none',
-                      transition: 'none',
-                      '&.Mui-focusVisible': {
-                        outline: 'none',
-                      },
-                    },
-                    '& .MuiToggleButtonGroup-grouped.Mui-selected': {
-                      color: '#ffffff',
-                      backgroundColor: '#4e7f42',
-                      boxShadow: 'none',
-                    },
-                    '& .MuiToggleButtonGroup-grouped.Mui-selected:hover': {
-                      backgroundColor: '#4e7f42',
-                    },
-                  }}
-                >
-                  <ToggleButton value="signIn" disableRipple>
-                    {locale.signIn}
-                  </ToggleButton>
-                  <ToggleButton value="signUp" disableRipple>
-                    {locale.signUp}
-                  </ToggleButton>
-                </ToggleButtonGroup>
                 <TextField
                   id="auth-email"
                   label={locale.emailLabel}
@@ -345,7 +312,7 @@ function Auth() {
                   id="auth-password"
                   label={locale.passwordLabel}
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete={emailAuthMode === 'signIn' ? 'current-password' : 'new-password'}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   required
@@ -362,6 +329,21 @@ function Auth() {
                       : locale.signUp}
                 </Button>
                 {error ? <Alert severity="error">{error}</Alert> : null}
+                <Stack direction="row" spacing={0.75} justifyContent="center" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">
+                    {emailAuthMode === 'signIn' ? locale.signUpPrompt : locale.signInPrompt}
+                  </Typography>
+                  <Link
+                    component="button"
+                    type="button"
+                    variant="body2"
+                    onClick={toggleEmailAuthMode}
+                    disabled={isAnySubmitting}
+                    sx={{ color: '#4e7f42', fontWeight: 700, textDecorationColor: 'rgba(78, 127, 66, 0.5)' }}
+                  >
+                    {emailAuthMode === 'signIn' ? locale.signUp : locale.signIn}
+                  </Link>
+                </Stack>
               </Stack>
             </Box>
           </Stack>
