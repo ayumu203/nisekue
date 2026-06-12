@@ -298,7 +298,7 @@ export const updatePlayerImageResponseSchema = z.object({
 })
 
 export const updatePlayerJobRequestSchema = z.object({
-  job: z.number().int().min(1).max(29),
+  job: z.number().int().min(1).max(30),
 })
 
 export const updatePlayerJobResponseSchema = z.object({
@@ -388,7 +388,7 @@ export const jobRoadmapRequirementSchema = z.object({
 })
 
 export const unlockJobRoadmapRequestSchema = z.object({
-  jobId: z.number().int().min(1).max(29),
+  jobId: z.number().int().min(1).max(30),
 })
 
 export const unlockJobRoadmapResponseSchema = z.object({
