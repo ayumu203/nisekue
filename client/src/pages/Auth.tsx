@@ -45,16 +45,12 @@ const scatteredHeroSprites: ScatteredHeroSprite[] = [
   { src: resolvePublicAssetPath('image/character/ch020_in.png'), left: '3%', bottom: '54%', height: 116 },
   { src: resolvePublicAssetPath('image/character/ch003_bmnpc.png'), left: '83%', bottom: '56%', height: 120 },
   { src: resolvePublicAssetPath('image/character/ch029_sino.png'), left: '7%', bottom: '30%', height: 126 },
-  { src: resolvePublicAssetPath('image/character/ch040_sino.png'), left: '26%', bottom: '26%', height: 118 },
   { src: resolvePublicAssetPath('image/character/ch009_innpc.png'), left: '46%', bottom: '30%', height: 122 },
-  { src: resolvePublicAssetPath('image/character/ch007_inmed.png'), left: '66%', bottom: '27%', height: 116 },
   { src: resolvePublicAssetPath('image/character/ch112_hero.png'), left: '85%', bottom: '29%', height: 130 },
-  { src: resolvePublicAssetPath('image/battle/Enemy43.png'), left: '13%', bottom: '7%', height: 96, pixelated: true },
-  { src: resolvePublicAssetPath('image/battle/Enemy1.png'), left: '28%', bottom: '12%', height: 48, pixelated: true },
-  { src: resolvePublicAssetPath('image/character/ch109_hero.png'), left: '38%', bottom: '4%', height: 144 },
-  { src: resolvePublicAssetPath('image/character/ch001_bmnpc.png'), left: '57%', bottom: '9%', height: 130 },
-  { src: resolvePublicAssetPath('image/battle/Enemy7.png'), left: '72%', bottom: '6%', height: 96, pixelated: true },
-  { src: resolvePublicAssetPath('image/battle/Enemy100.png'), left: '84%', bottom: '6%', height: 96, pixelated: true },
+  { src: resolvePublicAssetPath('image/battle/Enemy43.png'), left: '16%', bottom: '7%', height: 96, pixelated: true },
+  { src: resolvePublicAssetPath('image/battle/Enemy1.png'), left: '40%', bottom: '10%', height: 48, pixelated: true },
+  { src: resolvePublicAssetPath('image/battle/Enemy7.png'), left: '60%', bottom: '6%', height: 96, pixelated: true },
+  { src: resolvePublicAssetPath('image/battle/Enemy100.png'), left: '80%', bottom: '8%', height: 96, pixelated: true },
 ]
 
 const heroTitleSx = {
