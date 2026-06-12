@@ -1070,7 +1070,7 @@ public class QuestRunServiceTests
         var participantId = QuestParticipantId.New();
         var rewardItem = new Item(
             new ItemId(3001),
-            "命脈の種",
+            "いのちのたね",
             "最大HPが1上がる",
             99,
             ItemEffectType.StatBoost,
@@ -1132,7 +1132,7 @@ public class QuestRunServiceTests
         var participantId = QuestParticipantId.New();
         var rewardItem = new Item(
             new ItemId(3001),
-            "命脈の種",
+            "いのちのたね",
             "最大HPが1上がる",
             99,
             ItemEffectType.StatBoost,
