@@ -570,14 +570,8 @@ internal static class ItemEndpoints
             ClaimsPrincipal user,
             Guid listingId,
             PurchaseMarketListingRequest request,
-            IDbContextFactory<AppDbContext> dbContextFactory,
-            PlayerForUpdateLockService playerForUpdateLockService,
+            MarketPurchaseService marketPurchaseService,
             IMemoryCache cache,
-            IPlayerEquipmentRepository playerEquipmentRepository,
-            IPlayerItemStackRepository playerItemStackRepository,
-            IItemRepository itemRepository,
-            IEquipmentRepository equipmentRepository,
-            IMarketTradeHistoryRepository marketTradeHistoryRepository,
             ChatService chatService) =>
         {
             var buyerId = EndpointHelpers.TryGetPlayerId(user);
@@ -591,188 +585,24 @@ internal static class ItemEndpoints
                 return Results.BadRequest(new { message = "購入数は1以上で指定してください。" });
             }
 
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            await using var tx = await dbContext.Database.BeginTransactionAsync();
-
-            var lockedListingEntity = await dbContext.MarketListings
-                .FromSqlInterpolated($"SELECT * FROM internal.market_listings WHERE id = {listingId} FOR UPDATE")
-                .SingleOrDefaultAsync();
-            if (lockedListingEntity is null)
-            {
-                return Results.NotFound(new { message = "出品が見つかりません。" });
-            }
-
-            var listing = new MarketListing(
-                new MarketListingId(lockedListingEntity.Id),
-                new PlayerId(lockedListingEntity.SellerId),
-                lockedListingEntity.PlayerEquipmentId is null ? null : new PlayerEquipmentId(lockedListingEntity.PlayerEquipmentId.Value),
-                lockedListingEntity.ItemId is null ? null : new ItemId(lockedListingEntity.ItemId.Value),
-                lockedListingEntity.ItemName,
-                lockedListingEntity.FlavorText,
-                lockedListingEntity.Quantity,
-                lockedListingEntity.RemainingQuantity,
-                lockedListingEntity.UnitPrice,
-                lockedListingEntity.ListedAt,
-                lockedListingEntity.ExpiresAt);
-
-            if (listing.SellerId == buyerId.Value)
-            {
-                return Results.BadRequest(new { message = "自分の出品は購入できません。" });
-            }
-
-            if (listing.IsExpired(DateTimeOffset.UtcNow))
-            {
-                return Results.UnprocessableEntity(new { message = "期限切れの出品です。" });
-            }
-
-            if (request.Quantity > listing.RemainingQuantity)
-            {
-                return Results.Conflict(new { message = "出品残数が不足しています。" });
-            }
-
-            var lockedPlayerIds = new[] { buyerId.Value.Value, listing.SellerId.Value }
-                .Distinct()
-                .ToArray();
-            IReadOnlyDictionary<Guid, PlayerEntity> lockedPlayers;
             try
             {
-                lockedPlayers = await playerForUpdateLockService.LockPlayersAsync(dbContext, lockedPlayerIds);
+                var result = await marketPurchaseService.PurchaseAsync(buyerId.Value, new MarketListingId(listingId), request.Quantity);
+
+                cache.Remove(server.shared.constants.player.PlayerCacheConstants.PlayerKey(result.BuyerId));
+                cache.Remove(server.shared.constants.player.PlayerCacheConstants.PlayerKey(result.SellerId));
+                cache.Remove(server.shared.constants.player.PlayerCacheConstants.AllPlayersKey);
+                await chatService.TryPostSystemMessageAsync(
+                    new PlayerId(result.SellerId),
+                    $"{result.ItemName} x{result.PurchasedQuantity} が {result.TotalPrice} Gold で売れました。",
+                    "マーケット購入");
+
+                return Results.Ok(new { message = "購入しました。", gold = result.BuyerGold });
             }
-            catch (KeyNotFoundException ex)
+            catch (MarketPurchaseFailedException ex)
             {
-                return Results.NotFound(new { message = ex.Message });
+                return Results.Json(new { message = ex.Message }, statusCode: ex.StatusCode);
             }
-
-            var buyer = lockedPlayers[buyerId.Value.Value];
-            var seller = lockedPlayers[listing.SellerId.Value];
-
-            var price = checked(listing.UnitPrice * request.Quantity);
-            try
-            {
-                var buyerDomain = PlayerEntityMapper.MapToDomain(buyer, moveEntity: null);
-                var sellerDomain = PlayerEntityMapper.MapToDomain(seller, moveEntity: null);
-                buyerDomain.SpendGold(price);
-                sellerDomain.GainGold(price);
-                buyer.Gold = buyerDomain.Gold;
-                seller.Gold = sellerDomain.Gold;
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.UnprocessableEntity(new { message = ex.Message });
-            }
-
-            if (listing.PlayerEquipmentId is not null)
-            {
-                if (request.Quantity != 1)
-                {
-                    return Results.BadRequest(new { message = "装備は1件ずつのみ購入できます。" });
-                }
-
-                var buyerEquipments = await playerEquipmentRepository.GetByPlayerAsync(new PlayerId(buyer.Id));
-                var buyerStacks = await playerItemStackRepository.GetByPlayerAsync(new PlayerId(buyer.Id));
-                var buyerListings = await dbContext.MarketListings
-                    .AsNoTracking()
-                    .Where(x => x.SellerId == buyer.Id && x.ExpiresAt > DateTimeOffset.UtcNow && x.RemainingQuantity > 0)
-                    .ToListAsync();
-                var buyerListedEquipmentIds = buyerListings
-                    .Where(x => x.PlayerEquipmentId is not null)
-                    .Select(x => new PlayerEquipmentId(x.PlayerEquipmentId!.Value))
-                    .ToHashSet();
-                var buyerUsedSlots = CalculateUsedSlots(buyerEquipments, buyerStacks, buyerListedEquipmentIds);
-                if (buyerUsedSlots + 1 > ItemCapacity)
-                {
-                    return Results.UnprocessableEntity(new { message = "所持枠が不足しています。" });
-                }
-
-                var equipment = await playerEquipmentRepository.GetAsync(listing.PlayerEquipmentId.Value);
-                if (equipment is null)
-                {
-                    return Results.NotFound(new { message = "装備個体が見つかりません。" });
-                }
-
-                if (equipment.PlayerId != listing.SellerId)
-                {
-                    return Results.Conflict(new { message = "出品中の装備所有者が一致しません。" });
-                }
-
-                equipment.TransferOwnership(new PlayerId(buyer.Id), DateTimeOffset.UtcNow);
-                await playerEquipmentRepository.SaveAsync([equipment]);
-            }
-            else
-            {
-                if (listing.ItemId is null)
-                {
-                    return Results.BadRequest(new { message = "アイテム出品情報が不正です。" });
-                }
-
-                var item = await itemRepository.GetAsync(listing.ItemId.Value);
-                if (item is null)
-                {
-                    return Results.BadRequest(new { message = "アイテムマスタが見つかりません。" });
-                }
-
-                var buyerStacks = (await playerItemStackRepository.GetByPlayerAsync(new PlayerId(buyer.Id))).ToList();
-                var existingStack = buyerStacks.FirstOrDefault(x => x.ItemId == item.Id);
-                if (existingStack is null)
-                {
-                    var buyerEquipments = await playerEquipmentRepository.GetByPlayerAsync(new PlayerId(buyer.Id));
-                    var buyerListings = await dbContext.MarketListings
-                        .AsNoTracking()
-                        .Where(x => x.SellerId == buyer.Id && x.ExpiresAt > DateTimeOffset.UtcNow && x.RemainingQuantity > 0)
-                        .ToListAsync();
-                    var buyerListedEquipmentIds = buyerListings
-                        .Where(x => x.PlayerEquipmentId is not null)
-                        .Select(x => new PlayerEquipmentId(x.PlayerEquipmentId!.Value))
-                        .ToHashSet();
-                    var buyerUsedSlots = CalculateUsedSlots(buyerEquipments, buyerStacks, buyerListedEquipmentIds);
-                    if (buyerUsedSlots + 1 > ItemCapacity)
-                    {
-                        return Results.UnprocessableEntity(new { message = "所持枠が不足しています。" });
-                    }
-
-                    existingStack = new PlayerItemStack(PlayerItemStackId.New(), new PlayerId(buyer.Id), item.Id, request.Quantity, DateTimeOffset.UtcNow);
-                    buyerStacks.Add(existingStack);
-                }
-                else
-                {
-                    existingStack.AddQuantity(request.Quantity, item.MaxStack, DateTimeOffset.UtcNow);
-                }
-
-                await playerItemStackRepository.SaveAsync(buyerStacks);
-            }
-
-            listing.Purchase(request.Quantity);
-            if (listing.IsSoldOut)
-            {
-                dbContext.MarketListings.Remove(lockedListingEntity);
-            }
-            else
-            {
-                lockedListingEntity.RemainingQuantity = listing.RemainingQuantity;
-            }
-
-            await dbContext.SaveChangesAsync();
-            await marketTradeHistoryRepository.AddAsync(new MarketTradeHistory(
-                Guid.NewGuid(),
-                new PlayerId(seller.Id),
-                new PlayerId(buyer.Id),
-                listing.PlayerEquipmentId is not null
-                    ? $"equipment:{listing.PlayerEquipmentId.Value.Value}"
-                    : $"item:{listing.ItemId!.Value.Value}",
-                request.Quantity,
-                listing.UnitPrice,
-                DateTimeOffset.UtcNow));
-            await tx.CommitAsync();
-
-            cache.Remove(server.shared.constants.player.PlayerCacheConstants.PlayerKey(buyer.Id));
-            cache.Remove(server.shared.constants.player.PlayerCacheConstants.PlayerKey(seller.Id));
-            cache.Remove(server.shared.constants.player.PlayerCacheConstants.AllPlayersKey);
-            await chatService.TryPostSystemMessageAsync(
-                new PlayerId(seller.Id),
-                $"{listing.ItemName} x{request.Quantity} が {price} Gold で売れました。",
-                "マーケット購入");
-
-            return Results.Ok(new { message = "購入しました。", gold = buyer.Gold });
         }).RequireAuthorization();
 
         return app;

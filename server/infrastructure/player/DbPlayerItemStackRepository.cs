@@ -15,7 +15,7 @@ public class DbPlayerItemStackRepository(IDbContextFactory<AppDbContext> dbConte
             .ThenBy(x => x.Id)
             .ToListAsync();
 
-        return entities.Select(MapToDomain).ToArray();
+        return entities.Select(PlayerItemStackEntityMapper.MapToDomain).ToArray();
     }
 
     public async Task<PlayerItemStack?> GetAsync(PlayerItemStackId id)
@@ -25,7 +25,7 @@ public class DbPlayerItemStackRepository(IDbContextFactory<AppDbContext> dbConte
             .AsNoTracking()
             .SingleOrDefaultAsync(x => x.Id == id.Value);
 
-        return entity is null ? null : MapToDomain(entity);
+        return entity is null ? null : PlayerItemStackEntityMapper.MapToDomain(entity);
     }
 
     public async Task SaveAsync(IReadOnlyList<PlayerItemStack> playerItemStacks)
@@ -67,15 +67,5 @@ public class DbPlayerItemStackRepository(IDbContextFactory<AppDbContext> dbConte
 
         dbContext.PlayerItemStacks.Remove(existing);
         await dbContext.SaveChangesAsync();
-    }
-
-    private static PlayerItemStack MapToDomain(PlayerItemStackEntity entity)
-    {
-        return new PlayerItemStack(
-            new PlayerItemStackId(entity.Id),
-            new PlayerId(entity.PlayerId),
-            new ItemId(entity.ItemId),
-            entity.Quantity,
-            entity.UpdatedAt);
     }
 }
