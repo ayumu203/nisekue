@@ -172,3 +172,4 @@ stage_id,item_id,weight,is_miss
 10,3040,1,false
 10,3045,1,false
 10,3050,1,false
+10,3080,10,false

@@ -38,11 +38,12 @@ export const playerJobCodeSchema = z.enum([
   'Bushin',
   'Seikaiou',
   'Matouou',
+  'Shugoshin',
 ])
 
 export const playerJobSchema = z.object({
   code: playerJobCodeSchema,
-  value: z.number().int().min(1).max(29),
+  value: z.number().int().min(1).max(30),
   displayName: z.string().min(1, 'ジョブ名が空です'),
   description: z.string().min(1, 'ジョブ説明が空です'),
 })

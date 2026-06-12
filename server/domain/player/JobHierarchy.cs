@@ -41,6 +41,7 @@ public static class JobHierarchy
             [Job.Bushin] = [Job.GrandWarrior],
             [Job.Seikaiou] = [Job.GrandCaster],
             [Job.Matouou] = [Job.GreatThief],
+            [Job.Shugoshin] = [Job.GrandGuard],
         };
 
         var result = new Dictionary<Job, IReadOnlySet<Job>>();

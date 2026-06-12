@@ -61,6 +61,7 @@ const jobAssetFileNameByCode = {
   Bushin: '25_bushin.png',
   Seikaiou: '26_seikaiou.png',
   Matouou: '27_matouou.png',
+  Shugoshin: '28_shugoshin.png',
 } as const
 
 export function resolveJobAssetPath(jobCode: string | null | undefined): string | null {
