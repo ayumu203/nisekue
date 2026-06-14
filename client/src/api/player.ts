@@ -21,6 +21,7 @@ import type {
   SendPlayerGiftRequest,
   SendPlayerGiftResponse,
   RebirthPlayerResponse,
+  RebirthStatusHistoryResponse,
   UnlockJobRoadmapRequest,
   UnlockJobRoadmapResponse,
   JobRoadmapListResponse,
@@ -296,6 +297,25 @@ export async function rebirthPlayer(accessToken: string): Promise<RebirthPlayerR
   }
 
   return endpoints.player.rebirth.responseSchema.parse(json)
+}
+
+export async function getRebirthHistory(accessToken: string): Promise<RebirthStatusHistoryResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.rebirthHistory.path}`, {
+    method: endpoints.player.rebirthHistory.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '転生履歴の取得に失敗しました'))
+  }
+
+  return endpoints.player.rebirthHistory.responseSchema.parse(json)
 }
 
 export async function getJobRoadmapList(accessToken: string): Promise<JobRoadmapListResponse> {

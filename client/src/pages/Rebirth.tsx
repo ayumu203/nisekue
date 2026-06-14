@@ -1,7 +1,7 @@
 import { Alert, Box, Button, Chip, CircularProgress, Container, Divider, Paper, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import useSWR from 'swr'
-import { createPlayer, getPlayer, rebirthPlayer } from '@/api/player'
+import { createPlayer, getPlayer, getRebirthHistory, rebirthPlayer } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { SummaryStat } from '@/components/rebirth/SummaryStat'
 import {
@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/useAuth'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-rebirth/Rebirth.json'
+import { formatDateTime } from '@/components/quest/questFormat'
 
 const REQUIRED_LEVEL = 100
 const REQUIRED_GOLD = 100000
@@ -76,6 +77,20 @@ export default function Rebirth() {
     }
   })
 
+  const rebirthHistorySWRKey = session?.user.id ? (['rebirth-history', session.user.id] as const) : null
+  const {
+    data: rebirthHistory,
+    error: rebirthHistoryError,
+    isLoading: isRebirthHistoryLoading,
+    mutate: mutateRebirthHistory,
+  } = useSWR(rebirthHistorySWRKey, async () => {
+    if (!session?.access_token) {
+      throw new Error(locale.sessionMissing)
+    }
+
+    return getRebirthHistory(session.access_token)
+  })
+
   const canRebirth = (player?.level ?? 0) >= REQUIRED_LEVEL && (player?.gold ?? 0) >= REQUIRED_GOLD
   const characterImageSrc =
     player?.imagePath && player.imagePath !== failedImagePath ? resolveCharacterAssetPath(player.imagePath) : null
@@ -96,6 +111,7 @@ export default function Rebirth() {
       setResultStatus(response.status.baseValues)
       setSuccessMessage(locale.executed)
       await mutatePlayer()
+      await mutateRebirthHistory()
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : locale.executeFailed)
     } finally {
@@ -479,6 +495,106 @@ export default function Rebirth() {
                       })}
                     </Box>
                   </Box>
+                </Stack>
+              </Paper>
+
+              <Paper variant="outlined" sx={{ ...rebirthSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+                <Stack spacing={1.5}>
+                  <Typography variant="h6">{locale.previousLifeTitle}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {locale.previousLifeDescription}
+                  </Typography>
+                  {isRebirthHistoryLoading ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CircularProgress size={16} />
+                      <Typography variant="body2">{locale.previousLifeLoading}</Typography>
+                    </Stack>
+                  ) : rebirthHistoryError ? (
+                    <Alert severity="warning">{locale.previousLifeError}</Alert>
+                  ) : !rebirthHistory || rebirthHistory.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                      {locale.previousLifeEmpty}
+                    </Typography>
+                  ) : (
+                    <Stack spacing={2}>
+                      {[...rebirthHistory].reverse().map((entry) => (
+                        <Box
+                          key={entry.rebirthCount}
+                          sx={{ border: '1px solid #efe1a6', borderRadius: 2, p: { xs: 1.5, sm: 2 } }}
+                        >
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 1, mb: 1 }}>
+                            <Typography variant="subtitle2" fontWeight={700} color="#8a6a00">
+                              {locale.previousLifeGeneration.replace('{{count}}', String(entry.rebirthCount))}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {formatDateTime(entry.rebirthedAt)}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ overflowX: 'auto' }}>
+                            <Box sx={{ minWidth: 480 }}>
+                              <Box
+                                sx={{
+                                  display: 'grid',
+                                  gridTemplateColumns: '1.1fr 0.9fr 0.9fr 0.9fr',
+                                  gap: 2,
+                                  px: 1,
+                                  pb: 1,
+                                }}
+                              >
+                                <Typography variant="caption" color="text.secondary">
+                                  {locale.previousLifeStatLabel}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {locale.previousLifePastValue}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {locale.previousLifeCurrentValue}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {locale.previousLifeDiff}
+                                </Typography>
+                              </Box>
+                              <Divider sx={{ borderColor: '#efe1a6' }} />
+                              {statKeys.map((stat) => {
+                                const pastValue = entry.status[stat.key]
+                                const currentValue = player.baseStatus[stat.key]
+                                const diff = currentValue - pastValue
+                                const diffColor = diff > 0 ? '#1b7f4b' : diff < 0 ? '#b3261e' : 'text.secondary'
+                                const diffLabel = diff > 0 ? `+${diff}` : String(diff)
+
+                                return (
+                                  <Box key={stat.key}>
+                                    <Box
+                                      sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '1.1fr 0.9fr 0.9fr 0.9fr',
+                                        gap: 2,
+                                        px: 1,
+                                        py: 1,
+                                        alignItems: 'center',
+                                      }}
+                                    >
+                                      <Typography variant="body2" fontWeight={700} color="#8a6a00">
+                                        {stat.label}
+                                      </Typography>
+                                      <Typography variant="body2" color="text.secondary">
+                                        {pastValue}
+                                      </Typography>
+                                      <Typography variant="body2">{currentValue}</Typography>
+                                      <Typography variant="body2" fontWeight={700} sx={{ color: diffColor }}>
+                                        {diffLabel}
+                                      </Typography>
+                                    </Box>
+                                    <Divider sx={{ borderColor: '#f2e8bc' }} />
+                                  </Box>
+                                )
+                              })}
+                            </Box>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Stack>
+                  )}
                 </Stack>
               </Paper>
             </Stack>

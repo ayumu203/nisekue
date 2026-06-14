@@ -356,6 +356,14 @@ export const rebirthPlayerResponseSchema = z.object({
   }),
 })
 
+export const rebirthStatusHistoryEntrySchema = z.object({
+  rebirthCount: z.number().int().min(1),
+  rebirthedAt: z.string(),
+  status: playerStatusValuesSchema,
+})
+
+export const rebirthStatusHistoryResponseSchema = z.array(rebirthStatusHistoryEntrySchema)
+
 export type GetPlayerResponse = z.infer<typeof getPlayerResponseSchema>
 export type PlayerSummary = z.infer<typeof playerSummarySchema>
 export type ListPlayersResponse = z.infer<typeof listPlayersResponseSchema>
@@ -375,6 +383,8 @@ export type UpdatePlayerMoveSetResponse = z.infer<typeof updatePlayerMoveSetResp
 export type SendPlayerGiftRequest = z.infer<typeof sendPlayerGiftRequestSchema>
 export type SendPlayerGiftResponse = z.infer<typeof sendPlayerGiftResponseSchema>
 export type RebirthPlayerResponse = z.infer<typeof rebirthPlayerResponseSchema>
+export type RebirthStatusHistoryEntry = z.infer<typeof rebirthStatusHistoryEntrySchema>
+export type RebirthStatusHistoryResponse = z.infer<typeof rebirthStatusHistoryResponseSchema>
 
 export const questStageReferenceSchema = z.object({
   id: z.number().int(),
