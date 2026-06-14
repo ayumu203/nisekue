@@ -27,6 +27,7 @@ public enum Job
     Shogun = 23,
     Archmage = 24,
     GreatThief = 25,
+    GreatKnight = 26,
     Bushin = 27,
     Seikaiou = 28,
     Matouou = 29,

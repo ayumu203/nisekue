@@ -32,4 +32,30 @@ public class CsvJobProfileRepositoryTests
         profile.RequiredMasterJobs.Should().BeEquivalentTo([Job.Warrior, Job.WindMage, Job.GrandRanger]);
         profile.GrowthValue.Luck.Should().Be(8);
     }
+
+    [Fact]
+    public void GetByJob_WhenTankFourthTierJobExists_ReturnsExpectedRequirements()
+    {
+        var repository = new CsvJobProfileRepository();
+
+        var profile = repository.GetByJob(Job.GreatKnight);
+
+        profile.Job.Should().Be(Job.GreatKnight);
+        profile.MasterLevel.Should().Be(50);
+        profile.RequiredMasterJobs.Should().BeEquivalentTo([Job.GrandGuard]);
+        profile.GrowthValue.Defense.Should().Be(10);
+    }
+
+    [Fact]
+    public void GetByJob_WhenShugoshinExists_ReturnsGreatKnightRequirement()
+    {
+        var repository = new CsvJobProfileRepository();
+
+        var profile = repository.GetByJob(Job.Shugoshin);
+
+        profile.Job.Should().Be(Job.Shugoshin);
+        profile.MasterLevel.Should().Be(60);
+        profile.RequiredMasterJobs.Should().BeEquivalentTo([Job.GreatKnight]);
+        profile.GrowthValue.Defense.Should().Be(12);
+    }
 }

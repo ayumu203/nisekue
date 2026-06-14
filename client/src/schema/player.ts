@@ -35,6 +35,7 @@ export const playerJobCodeSchema = z.enum([
   'Shogun',
   'Archmage',
   'GreatThief',
+  'GreatKnight',
   'Bushin',
   'Seikaiou',
   'Matouou',

@@ -58,6 +58,7 @@ const jobAssetFileNameByCode = {
   Shogun: '22_shogun.png',
   Archmage: '23_archmage.png',
   GreatThief: '24_greatthief.png',
+  GreatKnight: '29_greatknight.png',
   Bushin: '25_bushin.png',
   Seikaiou: '26_seikaiou.png',
   Matouou: '27_matouou.png',
