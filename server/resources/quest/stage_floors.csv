@@ -54,3 +54,10 @@ stage_id,floor_no,floor_type,exp_rate,gold_rate
 10,3,Normal,48.0,36.0
 10,4,Normal,52.0,39.0
 10,5,Boss,58.0,44.0
+11,1,Normal,82.0,60.0
+11,2,Normal,90.0,66.0
+11,3,Normal,99.0,73.0
+11,4,Normal,109.0,81.0
+11,5,Normal,120.0,90.0
+11,6,Normal,132.0,100.0
+11,7,Boss,146.0,112.0

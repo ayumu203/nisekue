@@ -74,3 +74,8 @@ id,name,level,max_hp,max_mp,strength,defense,intelligence,luck,speed,image_path,
 74,黄金の魔導兵,510,8300,580,470,430,850,370,350,image/battle/character_megami_02_pink.png,Supportive
 75,黄金の将軍,520,12000,420,880,680,380,320,300,image/battle/character_megami_02_gold.png,Defensive
 76,黄金竜,530,15000,380,920,720,350,290,250,image/battle/character_monster_dragon_01_yellow.png,Aggressive
+77,花守のフェアリー,960,62000,5200,4200,3800,7600,3100,6900,image/battle/Enemy123.png,Supportive
+78,深森の戦士,980,88000,2800,7800,6200,2400,2800,3600,image/battle/Enemy124.png,Defensive
+79,樹界のエルフ,1000,72000,4800,6900,4200,5200,3700,8200,image/battle/Enemy125.png,Aggressive
+80,木霊の小人,1020,76000,7600,4800,4500,8400,4200,6100,image/battle/Enemy126.png,Supportive
+81,試練の森神,1080,132000,9800,9800,8600,10200,4600,5800,image/battle/Enemy127.png,Supportive
