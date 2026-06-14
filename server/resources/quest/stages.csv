@@ -10,3 +10,4 @@ id,stage_code,name,battlefield_image_path,recommended_level,minimum_entry_level,
 9,tenkai-gakudan,天界の楽団,image/quest/moonlit-castle-battlefield.svg,100,,4,6,true,1
 10,ougon-no-sato,黄金の里,image/quest/hell-battlefield.svg,500,,4,6,true,2
 11,trial-forest,試練の森,image/quest/enchanted-forest-battlefield.svg,1000,600,4,6,true,
+12,boss-rush,ボスラッシュ,image/quest/hell-battlefield.svg,2000,1000,4,6,true,

@@ -151,3 +151,11 @@ effect_id,move_id,sequence,effect_type,hit_count,power_rate,fixed_value,critical
 150,611,1,Damage,1,1.35,60,0.06,Slash,Strength,,,,,,,,,,,,,
 151,612,1,Damage,1,1.90,32,0.05,None,Strength,,,,,,,,,,,,,
 152,612,2,Ailment,,,,,,,InstantDeath,0.25,1,,,,,,,,,,false
+153,613,1,Damage,3,0.75,8,0.04,Slash,Strength,,,,,,,,,,,,,
+154,614,1,Damage,5,0.55,10,0.05,Strike,Strength,,,,,,,,,,,,,
+155,615,1,Damage,2,1.05,16,0.05,None,Intelligence,,,,,,,,,,,,,
+156,616,1,Damage,1,1.70,28,0.05,Fire,Intelligence,,,,,,,,,,,,,
+157,617,1,Damage,1,1.30,24,0.04,Earth,Intelligence,,,,,,,,,,,,,
+158,617,2,Ailment,,,,,,,Paralysis,0.40,2,,,,,,,,,,false
+159,618,1,Damage,1,2.30,36,0.06,None,Strength,,,,,,,,,,,,,
+160,618,2,Ailment,,,,,,,InstantDeath,0.20,1,,,,,,,,,,false

@@ -205,3 +205,9 @@ stage_id,floor_no,placement_no,enemy_definition_id,battle_row,battle_column
 11,7,3,80,Back,Left
 11,7,4,78,Front,Right
 11,7,5,77,Back,Right
+12,1,1,82,Front,Left
+12,2,1,83,Front,Left
+12,3,1,84,Front,Left
+12,4,1,85,Front,Left
+12,5,1,86,Front,Left
+12,6,1,87,Front,Left

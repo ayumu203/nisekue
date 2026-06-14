@@ -79,3 +79,9 @@ id,name,level,max_hp,max_mp,strength,defense,intelligence,luck,speed,image_path,
 79,樹界のエルフ,1000,72000,4800,6900,4200,5200,3700,8200,image/battle/Enemy125.png,Aggressive
 80,木霊の小人,1020,76000,7600,4800,4500,8400,4200,6100,image/battle/Enemy126.png,Supportive
 81,試練の森神,1080,132000,9800,9800,8600,10200,4600,5800,image/battle/Enemy127.png,Supportive
+82,トオリャンセ・極,900,96000,3200,6900,6100,4200,2900,5400,image/battle/Enemy43.png,Aggressive
+83,サカサカオクト・極,1200,128000,4600,9200,7600,5100,3400,6200,image/battle/Enemy102.png,Aggressive
+84,ラストウェポン・極,1500,172000,6800,11600,9800,7600,4100,7000,image/battle/Enemy99.png,Defensive
+85,グレートドラゴン・極,1800,214000,8400,12400,10400,9200,4600,7600,image/battle/Enemy100.png,Supportive
+86,試練の森神・極,2200,276000,10800,13800,11800,12800,5200,8400,image/battle/Enemy127.png,Supportive
+87,墓守の王・極,2600,360000,12600,15400,13400,14200,5800,9000,image/battle/Enemy117.png,Defensive
