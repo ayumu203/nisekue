@@ -25,26 +25,10 @@ public class DbPlayerMutationService(
             throw new KeyNotFoundException("プレイヤーが見つかりません。");
         }
 
-        var moveEntity = await dbContext.PlayerMoves
-            .SingleOrDefaultAsync(x => x.PlayerId == playerId.Value);
-        var masteredJobEntities = await dbContext.PlayerMasterJobs
-            .Where(x => x.PlayerId == playerId.Value)
-            .ToListAsync();
+        var aggregate = await PlayerAggregatePersistence.LoadAsync(dbContext, entity);
+        var result = await mutation(aggregate.Player);
 
-        var player = PlayerEntityMapper.MapToDomain(entity, moveEntity, masteredJobEntities);
-        var result = await mutation(player);
-
-        PlayerEntityMapper.ApplyPlayerEntity(entity, player);
-        if (moveEntity is null)
-        {
-            dbContext.PlayerMoves.Add(PlayerEntityMapper.CreateMoveEntity(player.Id, player.MoveSet));
-        }
-        else
-        {
-            PlayerEntityMapper.ApplyMoveSet(moveEntity, player.MoveSet);
-        }
-
-        PlayerEntityMapper.SyncMasteredJobs(dbContext, player, masteredJobEntities);
+        PlayerAggregatePersistence.Apply(dbContext, entity, aggregate);
 
         await dbContext.SaveChangesAsync();
         await tx.CommitAsync();

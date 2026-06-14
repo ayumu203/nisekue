@@ -742,6 +742,34 @@ internal static class PlayerEndpoints
             }
         }).RequireAuthorization();
 
+        app.MapGet("/player/rebirth-history", async (
+            ClaimsPrincipal user,
+            IPlayerRebirthHistoryRepository rebirthHistoryRepository) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            var histories = await rebirthHistoryRepository.GetByPlayerAsync(playerId.Value);
+            return Results.Ok(histories.Select(history => new
+            {
+                rebirthCount = history.RebirthCount,
+                rebirthedAt = history.RebirthedAt,
+                status = new
+                {
+                    maxHp = history.Status.MaxHp,
+                    maxMp = history.Status.MaxMp,
+                    strength = history.Status.Strength,
+                    defense = history.Status.Defense,
+                    intelligence = history.Status.Intelligence,
+                    luck = history.Status.Luck,
+                    speed = history.Status.Speed
+                }
+            }).ToArray());
+        }).RequireAuthorization();
+
         app.MapGet("/player/job-roadmap/list", async (
             ClaimsPrincipal user,
             JobRoadmapService jobRoadmapService) =>

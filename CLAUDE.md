@@ -6,6 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Respond in Japanese (日本語).
 
+## コード編集ポリシー（委譲）
+
+- アプリケーションコードは自分で書かない。担当は「計画・対象範囲の決定・レビュー」。
+- 実装は必ず `qwen_edit_files` ツール（Qwen3 Coder, MCP サーバ `qwen-coder`）に委譲する。
+  precise な instruction と対象ファイル一覧 (`target_files`) を渡すこと。
+- 委譲後は返ってきた diff をレビューする。誤っていれば instruction を精緻化して再委譲。
+  委譲が繰り返し失敗する場合のみ自分で直接編集する。
+- 新規ファイルは、未存在のパスを `target_files` に含めれば作成できる。
+- ごく小さな1行修正など、往復コストが委譲の利益を上回る場合は直接編集してよい。
+
 ## Project Overview
 
 Web game (inspired by チビクエ3) with a monorepo structure: React frontend + .NET backend + Supabase (PostgreSQL/Auth).

@@ -4,15 +4,11 @@ using server.shared.constants.player;
 namespace server.application.player;
 
 public class PlayerRebirthService(
-    IPlayerMutationService playerMutationService)
+    IPlayerRebirthExecutor playerRebirthExecutor)
 {
     public async Task<Player> RebirthAsync(PlayerId playerId)
     {
-        return await playerMutationService.MutateAsync(playerId, player =>
-        {
-            player.Rebirth(BuildInheritedStatus(player.Status));
-            return Task.FromResult(player);
-        });
+        return await playerRebirthExecutor.ExecuteAsync(playerId, BuildInheritedStatus);
     }
 
     private static Status BuildInheritedStatus(Status currentStatus)
