@@ -111,7 +111,7 @@ move_id,move_name,description,target_type,attack_range,mp_cost,execution_priorit
 605,よみがえり,冥府から魂を呼び戻して味方を戦列へ復帰させる,Ally,Single,262,0,Support,,Dead
 606,ほしよみのまい,星のめぐりを読む舞で味方全体の攻撃・防御・知力を押し上げる,Ally,All,16,1,Support,,
 607,しのせんこく,冷たい宣告で敵単体に高確率の死を刻む,Enemy,Single,20,0,Support,,
-608,ダークスター,暗黒の星光を一点に集める極大単体魔法,Enemy,Single,49,0,Attack,,
+608,ダークスター,暗黒の星光を一点に集める極大単体魔法,Enemy,Single,80,0,Attack,,
 609,つらぬきうち,装甲の継ぎ目を射抜く一点狙撃,Enemy,Single,13,0,Attack,,
 610,ながれぼしの矢,ながれぼしのような一矢を急所へ撃ちこむ,Enemy,Single,26,0,Attack,,
 611,てんかむそう,天下無双の剛剣で敵一列を断ち払う,Enemy,Row,77,0,Attack,,
