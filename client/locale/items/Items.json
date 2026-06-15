@@ -75,5 +75,8 @@
   "effectTypeExpMultiplier": "経験値倍率",
   "effectTypeUnlockMap": "マップ解放",
   "actionFailed": "操作に失敗しました",
-  "noSearchResults": "条件に一致する項目はありません"
+  "noSearchResults": "条件に一致する項目はありません",
+  "useConfirmTitle": "アイテムを使用しますか？",
+  "useConfirmMessage": "「{{name}}」を使用します。この操作は取り消せません。",
+  "useConfirmAction": "使用する"
 }
