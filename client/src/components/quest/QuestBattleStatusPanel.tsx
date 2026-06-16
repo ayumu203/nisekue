@@ -13,6 +13,8 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
+import { resolveEndlessThemeName, resolveFloorsToNextBoss } from '@/lib/endless'
+import questRoomLocale from '../../../locale/quest/QuestRoom.json'
 import type { MoveAttackRange } from '@/schema/player'
 import type {
   BattleColumn,
@@ -634,6 +636,38 @@ export default function QuestBattleStatusPanel({
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           <Chip label={`${locale.waitingParticipantsLabel}: ${run.turn.waitingParticipantIds.length}`} />
         </Stack>
+
+        {run.floor.isEndless ? (
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Chip
+              color="warning"
+              label={`${questRoomLocale.endless.floorLabel} ${run.floor.currentFloorNo}`}
+              sx={{ fontWeight: 800 }}
+            />
+            {resolveEndlessThemeName(run.floor.themeNo, questRoomLocale.endless.themeNames) ? (
+              <Chip
+                variant="outlined"
+                label={`${questRoomLocale.endless.themeLabel}: ${resolveEndlessThemeName(
+                  run.floor.themeNo,
+                  questRoomLocale.endless.themeNames,
+                )}`}
+              />
+            ) : null}
+            {run.floor.isBossFloor ? (
+              <Chip color="error" label={questRoomLocale.endless.bossFloorLabel} />
+            ) : (
+              (() => {
+                const floorsToNextBoss = resolveFloorsToNextBoss(run.floor.currentFloorNo, run.floor.bossInterval)
+                return floorsToNextBoss != null ? (
+                  <Chip
+                    variant="outlined"
+                    label={`${questRoomLocale.endless.nextBossLabel} ${floorsToNextBoss} ${questRoomLocale.endless.nextBossSuffix}`}
+                  />
+                ) : null
+              })()
+            )}
+          </Stack>
+        ) : null}
 
         <Box
           sx={{

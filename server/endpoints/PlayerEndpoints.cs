@@ -969,6 +969,7 @@ internal static class PlayerEndpoints
             userName = player.Name,
             imagePath = player.ImagePath,
             rebirthCount = player.RebirthCount,
+            endlessBestFloor = player.EndlessBestFloor,
             job = new
             {
                 code = player.Job.ToString(),

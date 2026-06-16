@@ -1260,6 +1260,7 @@ export default function Quest() {
                   {showRunSection ? (
                     <QuestRunSection
                       currentRun={currentRun}
+                      endlessBestFloor={player?.endlessBestFloor}
                       battlefieldImagePath={
                         currentRunStage?.battlefieldImagePath ?? currentRoomStage?.battlefieldImagePath ?? null
                       }

@@ -8,25 +8,32 @@ namespace server.application.quest;
 public class QuestResponseMapper(
     IQuestStageRepository questStageRepository,
     IQuestEnemyDefinitionRepository questEnemyDefinitionRepository,
+    IQuestEndlessEnemyTemplateRepository questEndlessEnemyTemplateRepository,
+    QuestEndlessFloorGenerator endlessFloorGenerator,
     IPlayerRepository playerRepository,
     IEquipmentRepository equipmentRepository,
     IItemRepository itemRepository)
 {
     private IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? cachedEnemyDefinitionMap;
+    private string? cachedEndlessPreviewImage;
+    private bool endlessPreviewLoaded;
 
     public async Task<object> MapQuestStageSummaryAsync(QuestStageDefinition stage)
     {
         var enemyDefinitions = await GetEnemyDefinitionMapAsync();
+        var endlessPreviewImagePath = stage.IsEndless ? await GetEndlessPreviewImageAsync() : null;
 
-        return MapQuestStageSummary(stage, enemyDefinitions);
+        return MapQuestStageSummary(stage, enemyDefinitions, endlessPreviewImagePath);
     }
 
     public async Task<IReadOnlyList<object>> MapQuestStageSummariesAsync(IEnumerable<QuestStageDefinition> stages)
     {
         var enemyDefinitions = await GetEnemyDefinitionMapAsync();
+        var stageArray = stages.ToArray();
+        var endlessPreviewImagePath = stageArray.Any(x => x.IsEndless) ? await GetEndlessPreviewImageAsync() : null;
 
-        return stages
-            .Select(stage => MapQuestStageSummary(stage, enemyDefinitions))
+        return stageArray
+            .Select(stage => MapQuestStageSummary(stage, enemyDefinitions, stage.IsEndless ? endlessPreviewImagePath : null))
             .ToArray();
     }
 
@@ -205,7 +212,8 @@ public class QuestResponseMapper(
 
     public async Task<object> MapQuestRunDetailAsync(QuestRun run)
     {
-        var enemyDefinitions = await GetEnemyDefinitionMapAsync();
+        var stage = await questStageRepository.GetAsync(run.StageId);
+        var enemyDefinitions = await BuildRunEnemyDefinitionsAsync(run, stage);
         var rewardEquipment = run.Rewards.EquipmentRewardId is not null
             ? await equipmentRepository.GetAsync(run.Rewards.EquipmentRewardId.Value)
             : null;
@@ -229,7 +237,13 @@ public class QuestResponseMapper(
             floor = new
             {
                 currentFloorNo = run.FloorState.CurrentFloorNo,
-                isBossFloor = run.FloorState.IsBossFloor
+                isBossFloor = run.FloorState.IsBossFloor,
+                isEndless = stage?.IsEndless ?? false,
+                themeNo = stage?.EndlessConfig is { } endlessFloorConfig
+                    ? endlessFloorGenerator.ResolveThemeNo(endlessFloorConfig, run.FloorState.CurrentFloorNo)
+                    : (int?)null,
+                floorsPerTheme = stage?.EndlessConfig?.FloorsPerTheme,
+                bossInterval = stage?.EndlessConfig?.BossInterval
             },
             turn = new
             {
@@ -428,13 +442,15 @@ public class QuestResponseMapper(
 
     private static object MapQuestStageSummary(
         QuestStageDefinition stage,
-        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions,
+        string? endlessPreviewImagePath = null)
     {
         var previewEnemyImagePath = stage.Floors
             .OrderBy(floor => floor.FloorNo)
             .SelectMany(floor => floor.Placements.OrderBy(placement => placement.PlacementNo))
             .Select(placement => enemyDefinitions.TryGetValue(placement.EnemyDefinitionId, out var definition) ? definition.ImagePath : null)
-            .FirstOrDefault(path => !string.IsNullOrWhiteSpace(path));
+            .FirstOrDefault(path => !string.IsNullOrWhiteSpace(path))
+            ?? endlessPreviewImagePath;
 
         return new
         {
@@ -445,6 +461,7 @@ public class QuestResponseMapper(
             recommendedLevel = stage.RecommendedLevel,
             minimumEntryLevel = QuestStageEntryPolicy.GetMinimumAllowedLevel(stage),
             previewEnemyImagePath,
+            progressionType = stage.ProgressionType.ToString(),
             minPartyMemberCount = stage.MinPartyMemberCount,
             maxPartyMemberCount = stage.MaxPartyMemberCount,
             isActive = stage.IsActive,
@@ -467,5 +484,50 @@ public class QuestResponseMapper(
         cachedEnemyDefinitionMap = (await questEnemyDefinitionRepository.GetAllAsync())
             .ToDictionary(x => x.Id);
         return cachedEnemyDefinitionMap;
+    }
+
+    // ステージ選択用のエンドレスプレビュー画像（テーマ1の通常敵先頭）。
+    private async Task<string?> GetEndlessPreviewImageAsync()
+    {
+        if (endlessPreviewLoaded)
+        {
+            return cachedEndlessPreviewImage;
+        }
+
+        var templates = await questEndlessEnemyTemplateRepository.GetAllAsync();
+        cachedEndlessPreviewImage = templates
+            .Where(x => x.ThemeNo == 1 && !x.IsBoss)
+            .OrderBy(x => x.Id.Value)
+            .Select(x => x.ImagePath)
+            .FirstOrDefault()
+            ?? templates.Select(x => x.ImagePath).FirstOrDefault();
+        endlessPreviewLoaded = true;
+        return cachedEndlessPreviewImage;
+    }
+
+    // エンドレスは敵テンプレを現在フロアにスケールした定義を静的定義へ重ねて、敵名/画像を解決可能にする。
+    private async Task<IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>> BuildRunEnemyDefinitionsAsync(
+        QuestRun run,
+        QuestStageDefinition? stage)
+    {
+        var baseDefinitions = await GetEnemyDefinitionMapAsync();
+        if (stage?.EndlessConfig is not { } config)
+        {
+            return baseDefinitions;
+        }
+
+        var templatesById = (await questEndlessEnemyTemplateRepository.GetAllAsync()).ToDictionary(x => x.Id);
+        var merged = new Dictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>(baseDefinitions);
+        foreach (var enemy in run.BattleState.Enemies)
+        {
+            if (merged.ContainsKey(enemy.EnemyDefinitionId) || !templatesById.TryGetValue(enemy.EnemyDefinitionId, out var template))
+            {
+                continue;
+            }
+
+            merged[enemy.EnemyDefinitionId] = endlessFloorGenerator.ScaleTemplate(config, template, run.FloorState.CurrentFloorNo);
+        }
+
+        return merged;
     }
 }
