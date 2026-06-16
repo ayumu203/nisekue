@@ -225,20 +225,20 @@ public class CsvMoveRepositoryTests
     }
 
     [Fact]
-    public async Task GetMoveAsync_WhenBossRushExecutionMoveExists_ReturnsHybridDefinition()
+    public async Task GetMoveAsync_WhenHybridExecutionMoveExists_ReturnsHybridDefinition()
     {
         var repository = new CsvMoveRepository();
 
-        var move = await repository.GetMoveAsync(new(618));
+        var move = await repository.GetMoveAsync(new(612));
 
         move.Should().NotBeNull();
-        move!.Name.Should().Be("王墓の断罪");
+        move!.Name.Should().Be("おうのしんぱん");
         move.TargetType.Should().Be(TargetType.Enemy);
         move.AttackRange.Should().Be(AttackRange.Single);
         move.Category.Should().Be(MoveCategory.Hybrid);
         move.Effects.Should().HaveCount(2);
         move.Effects[0].Damage.Should().NotBeNull();
-        move.Effects[0].Damage!.PowerRate.Should().Be(2.30m);
+        move.Effects[0].Damage!.PowerRate.Should().Be(1.90m);
         move.Effects[1].Ailment.Should().NotBeNull();
         move.Effects[1].Ailment!.AilmentType.Should().Be(AilmentType.InstantDeath);
         move.Effects[1].Ailment!.AllowBossInstantDeath.Should().BeFalse();
@@ -283,7 +283,7 @@ public class CsvMoveRepositoryTests
         { 122, "ゼムリャ", TargetType.Enemy, AttackRange.Row, 7, ElementType.Earth },
         { 123, "デカゼムリャ", TargetType.Enemy, AttackRange.Row, 11, ElementType.Earth },
         { 124, "エータゼムリャ", TargetType.Enemy, AttackRange.Row, 17, ElementType.Earth },
-        { 613, "散華烈旋", TargetType.Enemy, AttackRange.All, 28, ElementType.Slash },
+        { 618, "ヒロースマッシュ", TargetType.Enemy, AttackRange.Single, 40, ElementType.Strike },
         { 138, "魔神斬り", TargetType.Enemy, AttackRange.Single, 23, ElementType.Slash },
         { 203, "フレアライン", TargetType.Enemy, AttackRange.Column, 37, ElementType.Fire },
         { 205, "テンペスト", TargetType.Enemy, AttackRange.All, 92, ElementType.Wind },
@@ -308,7 +308,7 @@ public class CsvMoveRepositoryTests
         { 113, "プチヴォーダ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Column },
         { 117, "プチヴェーチェル", MoveCategory.Attack, TargetType.Enemy, AttackRange.Square },
         { 121, "プチゼムリャ", MoveCategory.Attack, TargetType.Enemy, AttackRange.Row },
-        { 613, "散華烈旋", MoveCategory.Attack, TargetType.Enemy, AttackRange.All },
+        { 613, "きしのじゅうあつ", MoveCategory.Support, TargetType.Self, AttackRange.Single },
         { 406, "トリックちょうはつ", MoveCategory.Support, TargetType.Self, AttackRange.Single },
         { 513, "リジェネレイ", MoveCategory.Support, TargetType.Ally, AttackRange.Single },
         { 516, "急所撃ち", MoveCategory.Support, TargetType.Enemy, AttackRange.Single },
