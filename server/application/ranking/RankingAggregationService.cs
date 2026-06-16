@@ -45,6 +45,7 @@ public sealed class RankingAggregationService(
                 x.Name,
                 x.ImagePath,
                 x.RebirthCount,
+                x.EndlessBestFloor,
                 x.MaxHp,
                 x.MaxMp,
                 x.Strength,
@@ -87,6 +88,7 @@ public sealed class RankingAggregationService(
                 combatRank,
                 x.TrainingBattleCount,
                 x.RebirthCount,
+                x.EndlessBestFloor,
                 petBattleRatings.GetValueOrDefault(x.Id, 0),
                 questClearTotal.GetValueOrDefault(x.Id, 0),
                 questClearWeekly.GetValueOrDefault(x.Id, 0),
@@ -115,6 +117,7 @@ public sealed class RankingAggregationService(
         AddTop(entries, snapshotId, now, RankingConstants.StatusLuckTop, RankingPeriodKind.Total, null, playerRows, x => x.Status.Luck, 10);
         AddTop(entries, snapshotId, now, RankingConstants.StatusSpeedTop, RankingPeriodKind.Total, null, playerRows, x => x.Status.Speed, 10);
         AddTop(entries, snapshotId, now, RankingConstants.RebirthCountTop, RankingPeriodKind.Total, null, playerRows, x => x.RebirthCount, 10);
+        AddTop(entries, snapshotId, now, RankingConstants.EndlessMaxFloorTop, RankingPeriodKind.Total, null, playerRows, x => x.EndlessBestFloor, 10);
         AddTop(entries, snapshotId, now, RankingConstants.PetBattleRatingTop, RankingPeriodKind.Total, null, playerRows, x => x.PetBattleRating, 10);
 
         AddTop(entries, snapshotId, now, RankingConstants.QuestClearByCombatRank, RankingPeriodKind.Total, null, playerRows, x => x.QuestClearTotal, 5);
@@ -248,6 +251,7 @@ public sealed class RankingAggregationService(
         StatusRank CombatIndexRank,
         int TrainingBattleCount,
         int RebirthCount,
+        int EndlessBestFloor,
         int PetBattleRating,
         int QuestClearTotal,
         int QuestClearWeekly,
