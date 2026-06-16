@@ -48,7 +48,7 @@ public class CsvQuestResourceRepositoryTests
 
         stage.Should().NotBeNull();
         stage!.Id.Value.Should().Be(12);
-        stage.Name.Should().Be("ボスラッシュ");
+        stage.Name.Should().Be("きおくのとびら");
         stage.RecommendedLevel.Should().Be(2000);
         stage.MinimumEntryLevel.Should().Be(1000);
         stage.Floors.Should().HaveCount(6);
