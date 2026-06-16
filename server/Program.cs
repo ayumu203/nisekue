@@ -154,6 +154,8 @@ builder.Services.AddSingleton<IMoveRepository, CsvMoveRepository>();
 builder.Services.AddSingleton<IJobMoveLearningRuleRepository, CsvJobMoveLearningRuleRepository>();
 builder.Services.AddSingleton<IQuestStageRepository, CsvQuestStageRepository>();
 builder.Services.AddSingleton<IQuestEnemyDefinitionRepository, CsvQuestEnemyDefinitionRepository>();
+builder.Services.AddSingleton<IQuestEndlessConfigRepository, CsvQuestEndlessConfigRepository>();
+builder.Services.AddSingleton<IQuestEndlessEnemyTemplateRepository, CsvQuestEndlessEnemyTemplateRepository>();
 builder.Services.AddSingleton<IQuestNpcTemplateRepository, CsvQuestNpcTemplateRepository>();
 builder.Services.AddScoped<IQuestRoomRepository, DbQuestRoomRepository>();
 builder.Services.AddScoped<IQuestRunRepository, DbQuestRunRepository>();
