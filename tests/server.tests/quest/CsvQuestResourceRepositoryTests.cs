@@ -98,11 +98,11 @@ public class CsvQuestResourceRepositoryTests
         var lastBoss = await repository.GetAsync(new QuestEnemyDefinitionId(87));
 
         firstBoss.Should().NotBeNull();
-        firstBoss!.Name.Should().Be("トオリャンセ・極");
+        firstBoss!.Name.Should().Be("トオリャンセ・幻");
         firstBoss.ImagePath.Should().Be("image/battle/Enemy43.png");
         firstBoss.MoveIds.Select(x => x.Id).Should().ContainInOrder(613, 126, 414);
         lastBoss.Should().NotBeNull();
-        lastBoss!.Name.Should().Be("墓守の王・極");
+        lastBoss!.Name.Should().Be("墓守の王・幻");
         lastBoss.ImagePath.Should().Be("image/battle/Enemy117.png");
         lastBoss.MoveIds.Select(x => x.Id).Should().ContainInOrder(618, 611, 612);
     }
