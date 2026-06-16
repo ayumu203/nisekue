@@ -10,7 +10,7 @@ public class CsvQuestResourceRepositoryTests
     [Fact]
     public async Task GetByStageCodeAsync_WhenTrialForestExists_ReturnsExpectedStageDefinition()
     {
-        var repository = new CsvQuestStageRepository();
+        var repository = new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository());
 
         var stage = await repository.GetByStageCodeAsync("trial-forest");
 
@@ -26,7 +26,7 @@ public class CsvQuestResourceRepositoryTests
     [Fact]
     public async Task GetByStageCodeAsync_WhenVoidArmoryExists_ReturnsExpectedStageDefinition()
     {
-        var repository = new CsvQuestStageRepository();
+        var repository = new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository());
 
         var stage = await repository.GetByStageCodeAsync("void-armory");
 
@@ -42,7 +42,7 @@ public class CsvQuestResourceRepositoryTests
     [Fact]
     public async Task GetByStageCodeAsync_WhenBossRushExists_ReturnsBossRushDefinition()
     {
-        var repository = new CsvQuestStageRepository();
+        var repository = new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository());
 
         var stage = await repository.GetByStageCodeAsync("boss-rush");
 

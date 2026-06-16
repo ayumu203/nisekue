@@ -174,6 +174,7 @@ builder.Services.AddScoped<BattleService>();
 builder.Services.AddScoped<QuestSnapshotFactory>();
 builder.Services.AddScoped<QuestBattleFactory>();
 builder.Services.AddScoped<QuestRunFactory>();
+builder.Services.AddSingleton<QuestEndlessFloorGenerator>();
 builder.Services.AddScoped<QuestNpcAssignmentService>();
 builder.Services.AddScoped<QuestPetActionService>();
 builder.Services.AddScoped<QuestRoomService>();
