@@ -56,6 +56,6 @@ public class CsvJobProfileRepositoryTests
         profile.Job.Should().Be(Job.Shugoshin);
         profile.MasterLevel.Should().Be(60);
         profile.RequiredMasterJobs.Should().BeEquivalentTo([Job.GreatKnight]);
-        profile.GrowthValue.Defense.Should().Be(12);
+        profile.GrowthValue.Defense.Should().Be(14);
     }
 }
