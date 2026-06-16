@@ -90,6 +90,7 @@ export default function Items() {
   const [listingEditorKey, setListingEditorKey] = useState<string | null>(null)
   const [synthesizeTarget, setSynthesizeTarget] = useState<ItemEquipmentView | null>(null)
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null)
+  const [pendingUseItem, setPendingUseItem] = useState<ItemStackView | null>(null)
   const [quantities, setQuantities] = useState<Record<string, string>>({})
   const [unitPrices, setUnitPrices] = useState<Record<string, string>>({})
   const errorAlertRef = useRef<HTMLDivElement | null>(null)
@@ -245,8 +246,17 @@ export default function Items() {
     }
   }
 
-  async function handleUseItem(item: ItemStackView): Promise<void> {
+  function handleUseItem(item: ItemStackView): void {
+    if (item.effectType === 'StatBoost') {
+      void handleUseItemConfirmed(item)
+    } else {
+      setPendingUseItem(item)
+    }
+  }
+
+  async function handleUseItemConfirmed(item: ItemStackView): Promise<void> {
     if (!session?.access_token) return
+    setPendingUseItem(null)
 
     await runAction(`use:${item.itemStackId}`, () =>
       consumeItem(
@@ -421,6 +431,27 @@ export default function Items() {
                   variant="contained"
                 >
                   合成する
+                </Button>
+              </DialogActions>
+            </Dialog>
+
+            <Dialog open={pendingUseItem !== null} onClose={() => setPendingUseItem(null)} maxWidth="xs" fullWidth>
+              <DialogTitle>{locale.useConfirmTitle}</DialogTitle>
+              <DialogContent>
+                <Typography variant="body2">
+                  {locale.useConfirmMessage.replace('{{name}}', pendingUseItem?.name ?? '')}
+                </Typography>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setPendingUseItem(null)} disabled={busyKey !== null}>
+                  {locale.actionCancel}
+                </Button>
+                <Button
+                  onClick={() => pendingUseItem && void handleUseItemConfirmed(pendingUseItem)}
+                  disabled={busyKey !== null}
+                  variant="contained"
+                >
+                  {locale.useConfirmAction}
                 </Button>
               </DialogActions>
             </Dialog>
