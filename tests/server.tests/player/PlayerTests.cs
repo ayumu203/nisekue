@@ -369,6 +369,37 @@ public class PlayerTests
         ExpMultiplierFlag.ToMultiplier(0x1).Should().Be(3.0m);
     }
 
+    [Fact]
+    public void UpdateEndlessBestFloor_WhenDeeperThanBest_UpdatesValue()
+    {
+        var player = CreatePlayer(level: 1);
+
+        player.UpdateEndlessBestFloor(12);
+
+        player.EndlessBestFloor.Should().Be(12);
+    }
+
+    [Fact]
+    public void UpdateEndlessBestFloor_WhenShallowerThanBest_KeepsValue()
+    {
+        var player = CreatePlayer(level: 1);
+        player.UpdateEndlessBestFloor(12);
+
+        player.UpdateEndlessBestFloor(7);
+
+        player.EndlessBestFloor.Should().Be(12);
+    }
+
+    [Fact]
+    public void UpdateEndlessBestFloor_WhenNegative_ThrowsArgumentOutOfRangeException()
+    {
+        var player = CreatePlayer(level: 1);
+
+        var act = () => player.UpdateEndlessBestFloor(-1);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
     private static Player CreatePlayer(
         int level,
         int exp = 0,
