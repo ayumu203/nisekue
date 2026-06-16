@@ -32,6 +32,40 @@ classDiagram
             +IReadOnlyList~QuestStageEquipmentRewardEntry~ EquipmentRewards
             +IReadOnlyList~QuestStageItemRewardEntry~ ItemRewards
             +bool IsActive
+            +int? RequiredMapUnlockFlag
+            +ProgressionType ProgressionType
+            +QuestEndlessConfig? EndlessConfig
+        }
+
+        class ProgressionType {
+            <<Enum>>
+            Static
+            Endless
+        }
+
+        class QuestEndlessConfig {
+            <<Value Object>>
+            %% エンドレスモードのスケーリング設定 (endless_configs.csv)
+            +double GrowthCoefficientA
+            +double GrowthExponentP
+            +int SafetyCapFloor
+            +int BossInterval
+            +decimal BossExtraMultiplier
+            +decimal RewardRate
+            +int ThemeCount
+            +int FloorsPerTheme
+        }
+
+        class QuestEndlessEnemyTemplate {
+            <<Entity>>
+            %% endless_enemy_templates.csv: テーマ帯×アーキタイプの基準テンプレ
+            +QuestEnemyDefinitionId Id
+            +int ThemeNo
+            +EnemyAiType Archetype
+            +bool IsBoss
+            +Status BaseStatus
+            +string ImagePath
+            +IReadOnlyList~MoveId~ MoveIds
         }
 
         class QuestStageSummaryView {
@@ -533,6 +567,15 @@ classDiagram
             +Judge(run: QuestRun, resolution: BattleTurnResolution) QuestRunResolutionSummary
         }
 
+        class QuestEndlessFloorGenerator {
+            <<Domain Service>>
+            %% 通算フロア番号 n から f(n)=1+a*n^p を適用し、その帯の敵テンプレ(1〜3体/ボスは1体)を動的生成
+            %% 敵ステは S_base * f(n) を int 範囲にクランプ。floor50超はテーマ循環
+            +GenerateFloor(config: QuestEndlessConfig, templates: IReadOnlyList~QuestEndlessEnemyTemplate~, floorNo: int) QuestEnemyState[]
+            +IsBossFloor(config: QuestEndlessConfig, floorNo: int) bool
+            +ResolveThemeNo(config: QuestEndlessConfig, floorNo: int) int
+        }
+
         class QuestRunService {
             <<Application Service>>
             +Task~QuestRun~ GetDetailAsync(runId: QuestRunId, playerId: PlayerId)
@@ -562,7 +605,14 @@ classDiagram
     }
 
     QuestStageDefinition *-- QuestStageId : has
-    QuestStageDefinition *-- QuestFloorDefinition : 1..*
+    QuestStageDefinition *-- ProgressionType : Static/Endless
+    QuestStageDefinition *-- QuestEndlessConfig : 0..1 (Endlessのみ)
+    QuestStageDefinition *-- QuestFloorDefinition : 1..* (Staticのみ)
+    QuestEndlessEnemyTemplate *-- QuestEnemyDefinitionId : has
+    QuestEndlessFloorGenerator ..> QuestEndlessConfig : use
+    QuestEndlessFloorGenerator ..> QuestEndlessEnemyTemplate : use
+    QuestEndlessFloorGenerator ..> QuestEnemyState : builds
+    QuestRunService ..> QuestEndlessFloorGenerator : Endless次フロア生成
     QuestStageDefinition *-- QuestStageEquipmentRewardEntry : 0..*
     QuestFloorDefinition *-- QuestFloorRewardRule : has
     QuestFloorDefinition *-- QuestEnemyPlacement : 0..*
