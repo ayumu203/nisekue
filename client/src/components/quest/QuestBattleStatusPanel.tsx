@@ -13,8 +13,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
-import { resolveEndlessThemeName, resolveFloorsToNextBoss } from '@/lib/endless'
-import questRoomLocale from '../../../locale/quest/QuestRoom.json'
+import { resolveEndlessBattlefield } from '@/lib/endless'
 import type { MoveAttackRange } from '@/schema/player'
 import type {
   BattleColumn,
@@ -443,7 +442,13 @@ export default function QuestBattleStatusPanel({
   onSubmitCommand,
   locale,
 }: QuestBattleStatusPanelProps) {
-  const battlefieldImageSrc = resolvePublicAssetPath(battlefieldImagePath ?? 'image/quest/dummy-battlefield.svg')
+  // エンドレスはテーマ帯ごとに背景を切り替える。
+  const effectiveBattlefieldImagePath = run.floor.isEndless
+    ? (resolveEndlessBattlefield(run.floor.themeNo) ?? battlefieldImagePath)
+    : battlefieldImagePath
+  const battlefieldImageSrc = resolvePublicAssetPath(
+    effectiveBattlefieldImagePath ?? 'image/quest/dummy-battlefield.svg',
+  )
   const actionOptions: Array<{ value: QuestActionKind; label: string }> = [
     { value: 'UseMove', label: locale.actionKinds.UseMove },
     { value: 'NormalAttack', label: locale.actionKinds.NormalAttack },
@@ -633,41 +638,11 @@ export default function QuestBattleStatusPanel({
   return (
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
       <Stack spacing={2}>
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-          <Chip label={`${locale.waitingParticipantsLabel}: ${run.turn.waitingParticipantIds.length}`} />
-        </Stack>
-
-        {run.floor.isEndless ? (
+        {run.floor.isEndless ? null : (
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            <Chip
-              color="warning"
-              label={`${questRoomLocale.endless.floorLabel} ${run.floor.currentFloorNo}`}
-              sx={{ fontWeight: 800 }}
-            />
-            {resolveEndlessThemeName(run.floor.themeNo, questRoomLocale.endless.themeNames) ? (
-              <Chip
-                variant="outlined"
-                label={`${questRoomLocale.endless.themeLabel}: ${resolveEndlessThemeName(
-                  run.floor.themeNo,
-                  questRoomLocale.endless.themeNames,
-                )}`}
-              />
-            ) : null}
-            {run.floor.isBossFloor ? (
-              <Chip color="error" label={questRoomLocale.endless.bossFloorLabel} />
-            ) : (
-              (() => {
-                const floorsToNextBoss = resolveFloorsToNextBoss(run.floor.currentFloorNo, run.floor.bossInterval)
-                return floorsToNextBoss != null ? (
-                  <Chip
-                    variant="outlined"
-                    label={`${questRoomLocale.endless.nextBossLabel} ${floorsToNextBoss} ${questRoomLocale.endless.nextBossSuffix}`}
-                  />
-                ) : null
-              })()
-            )}
+            <Chip label={`${locale.waitingParticipantsLabel}: ${run.turn.waitingParticipantIds.length}`} />
           </Stack>
-        ) : null}
+        )}
 
         <Box
           sx={{

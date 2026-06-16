@@ -120,11 +120,6 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
           </Stack>
 
           <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end" sx={{ width: '100%' }}>
-            {isEndless ? (
-              <Typography variant="caption" sx={{ color: 'rgba(222, 236, 255, 0.7)', mr: 'auto' }}>
-                {locale.endless.soloOnlyNote}
-              </Typography>
-            ) : null}
             <Button
               variant={isSoloSelected ? 'contained' : 'outlined'}
               onClick={() => onSelect(stage.stageId, 'Solo')}

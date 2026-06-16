@@ -138,7 +138,7 @@ stage_id,item_id,weight,is_miss
 8,3068,4,false
 8,3069,4,false
 8,3070,4,false
-8,3081,1,false
+8,3081,20,false
 9,,2,true
 9,4005,20,false
 9,3063,4,false

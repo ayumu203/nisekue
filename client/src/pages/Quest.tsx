@@ -219,7 +219,16 @@ export default function Quest() {
     () =>
       [...(stages ?? [])]
         .filter((stage) => stage.isActive)
-        .sort((left, right) => left.recommendedLevel - right.recommendedLevel),
+        .sort((left, right) => {
+          // エンドレスステージは一覧の最後に固定。
+          const leftEndless = left.progressionType === 'Endless' ? 1 : 0
+          const rightEndless = right.progressionType === 'Endless' ? 1 : 0
+          if (leftEndless !== rightEndless) {
+            return leftEndless - rightEndless
+          }
+
+          return left.recommendedLevel - right.recommendedLevel
+        }),
     [stages],
   )
   const playerCandidatesSWRKey =
