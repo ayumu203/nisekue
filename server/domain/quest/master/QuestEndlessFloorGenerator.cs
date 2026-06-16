@@ -42,15 +42,11 @@ public class QuestEndlessFloorGenerator
             throw new InvalidOperationException($"テーマ {themeNo} の敵テンプレが存在しません。floorNo={floorNo}");
         }
 
-        var factor = config.GrowthFactor(floorNo);
-
         if (config.IsBossFloor(floorNo))
         {
             var boss = themeTemplates.FirstOrDefault(x => x.IsBoss)
                 ?? throw new InvalidOperationException($"テーマ {themeNo} のボステンプレが存在しません。");
-            var bossFactor = factor * (double)config.BossExtraMultiplier;
-            var bossLevel = EffectiveLevel(floorNo, config.BossRewardMultiplier);
-            var enemy = BuildEnemy(boss, bossFactor, bossLevel, 1, BossPosition);
+            var enemy = BuildEnemy(config, boss, floorNo, 1, BossPosition);
             return new QuestEndlessFloor(floorNo, themeNo, true, [enemy]);
         }
 
@@ -69,10 +65,36 @@ public class QuestEndlessFloorGenerator
         var enemies = new List<QuestEndlessFloorEnemy>(count);
         for (var index = 0; index < picked.Count; index++)
         {
-            enemies.Add(BuildEnemy(picked[index], factor, floorNo, index + 1, NormalPositions[index]));
+            enemies.Add(BuildEnemy(config, picked[index], floorNo, index + 1, NormalPositions[index]));
         }
 
         return new QuestEndlessFloor(floorNo, themeNo, false, enemies);
+    }
+
+    /// <summary>
+    /// テンプレ1体を通算フロア番号 floorNo にスケールした敵定義へ変換する。
+    /// ボステンプレは追加倍率（ステ）と報酬補正（実効Level）を適用する。
+    /// 戦闘中フロアの敵定義を再構築する用途でも使う。
+    /// </summary>
+    public QuestEnemyDefinition ScaleTemplate(QuestEndlessConfig config, QuestEndlessEnemyTemplate template, int floorNo)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentNullException.ThrowIfNull(template);
+        if (floorNo <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(floorNo), "フロア番号は1以上である必要があります。");
+        }
+
+        var factor = config.GrowthFactor(floorNo) * (template.IsBoss ? (double)config.BossExtraMultiplier : 1.0);
+        var level = template.IsBoss ? EffectiveLevel(floorNo, config.BossRewardMultiplier) : floorNo;
+        return new QuestEnemyDefinition(
+            template.Id,
+            template.Name,
+            level,
+            ScaleStatus(template.BaseStatus, factor),
+            template.ImagePath,
+            template.Archetype,
+            template.MoveIds);
     }
 
     /// <summary>通算フロア番号からテーマ番号(1始まり)を求める。floors_per_theme×theme_count 超は循環。</summary>
@@ -83,21 +105,14 @@ public class QuestEndlessFloorGenerator
         return (band % config.ThemeCount) + 1;
     }
 
-    private static QuestEndlessFloorEnemy BuildEnemy(
+    private QuestEndlessFloorEnemy BuildEnemy(
+        QuestEndlessConfig config,
         QuestEndlessEnemyTemplate template,
-        double factor,
-        int effectiveLevel,
+        int floorNo,
         int placementNo,
         BattlePosition position)
     {
-        var definition = new QuestEnemyDefinition(
-            template.Id,
-            template.Name,
-            effectiveLevel,
-            ScaleStatus(template.BaseStatus, factor),
-            template.ImagePath,
-            template.Archetype,
-            template.MoveIds);
+        var definition = ScaleTemplate(config, template, floorNo);
         var placement = new QuestEnemyPlacement(placementNo, template.Id, position);
         return new QuestEndlessFloorEnemy(placement, definition);
     }

@@ -28,5 +28,6 @@ public class PlayerEntity
     public int ExpMultiplierFlags { get; set; }
     public int MapUnlockFlags { get; set; }
     public long RoadmapUnlockFlags { get; set; }
+    public int EndlessBestFloor { get; set; }
     public DateTimeOffset? LastActiveAt { get; set; }
 }
