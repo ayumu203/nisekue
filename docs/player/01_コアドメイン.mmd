@@ -206,6 +206,14 @@ classDiagram
             +DateTimeOffset PurchasedAt
         }
 
+        class PlayerRebirthStatusHistory {
+            <<Value Object>>
+            +PlayerId PlayerId
+            +int RebirthCount
+            +Status Status
+            +DateTimeOffset RebirthedAt
+        }
+
         class ItemDeletionLog {
             <<Entity>>
             +Guid Id
@@ -386,6 +394,17 @@ classDiagram
             +Task AddAsync(log: ItemDeletionLog)
         }
 
+        class IPlayerRebirthHistoryRepository {
+            +Task~IReadOnlyList~PlayerRebirthStatusHistory~~ GetByPlayerAsync(playerId: PlayerId)
+        }
+
+        class IPlayerRebirthExecutor {
+            <<Application Service>>
+            +Task~Player~ ExecuteAsync(playerId: PlayerId, buildInheritedStatus: Func~Status, Status~)
+        }
+
+        note for IPlayerRebirthExecutor "転生直前(前世ピーク)のStatusを\nplayer_rebirth_status_histories へ\n転生と同一トランザクションで追記する"
+
         class IJobProfileRepository {
             +JobProfile GetByJob(job: Job)
             +IReadOnlyList~JobProfile~ GetAll()
@@ -449,6 +468,10 @@ classDiagram
     IMarketListingRepository ..> MarketListing : stores/loads
     IMarketTradeHistoryRepository ..> MarketTradeHistory : stores
     IItemDeletionLogRepository ..> ItemDeletionLog : stores
+    IPlayerRebirthHistoryRepository ..> PlayerRebirthStatusHistory : loads
+    PlayerRebirthStatusHistory *-- Status : has
+    IPlayerRebirthExecutor ..> Player : 転生実行と履歴追記
+    IPlayerRebirthExecutor ..> PlayerRebirthStatusHistory : appends
     IStatusRankThresholdRepository ..> StatusRankThreshold : stores/loads
     ICombatIndexWeightRepository ..> CombatIndexWeight : stores/loads
     ICombatIndexRankThresholdRepository ..> StatusRankThreshold : stores/loads

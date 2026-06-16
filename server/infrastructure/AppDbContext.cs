@@ -27,6 +27,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PlayerEntity> Players => Set<PlayerEntity>();
     public DbSet<PlayerMoveEntity> PlayerMoves => Set<PlayerMoveEntity>();
     public DbSet<PlayerMasterJobEntity> PlayerMasterJobs => Set<PlayerMasterJobEntity>();
+    public DbSet<PlayerRebirthStatusHistoryEntity> PlayerRebirthStatusHistories => Set<PlayerRebirthStatusHistoryEntity>();
     public DbSet<PlayerEquipmentEntity> PlayerEquipments => Set<PlayerEquipmentEntity>();
     public DbSet<PlayerItemStackEntity> PlayerItemStacks => Set<PlayerItemStackEntity>();
     public DbSet<PlayerPetEntity> PlayerPets => Set<PlayerPetEntity>();
@@ -182,6 +183,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .IsRequired();
         playerMasterJobs
+            .HasOne<PlayerEntity>()
+            .WithMany()
+            .HasForeignKey(x => x.PlayerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        var playerRebirthHistory = modelBuilder.Entity<PlayerRebirthStatusHistoryEntity>();
+        playerRebirthHistory.ToTable("player_rebirth_status_histories", "internal");
+        playerRebirthHistory.HasKey(x => x.Id);
+        playerRebirthHistory.Property(x => x.Id).HasColumnName("id").HasColumnType("uuid").IsRequired();
+        playerRebirthHistory.Property(x => x.PlayerId).HasColumnName("player_id").HasColumnType("uuid").IsRequired();
+        playerRebirthHistory.Property(x => x.RebirthCount).HasColumnName("rebirth_count").IsRequired();
+        playerRebirthHistory.Property(x => x.MaxHp).HasColumnName("max_hp").IsRequired();
+        playerRebirthHistory.Property(x => x.MaxMp).HasColumnName("max_mp").IsRequired();
+        playerRebirthHistory.Property(x => x.Strength).HasColumnName("strength").IsRequired();
+        playerRebirthHistory.Property(x => x.Defense).HasColumnName("defense").IsRequired();
+        playerRebirthHistory.Property(x => x.Intelligence).HasColumnName("intelligence").IsRequired();
+        playerRebirthHistory.Property(x => x.Luck).HasColumnName("luck").IsRequired();
+        playerRebirthHistory.Property(x => x.Speed).HasColumnName("speed").IsRequired();
+        playerRebirthHistory.Property(x => x.RebirthedAt).HasColumnName("rebirthed_at").IsRequired();
+        playerRebirthHistory.HasIndex(x => new { x.PlayerId, x.RebirthCount }).IsUnique();
+        playerRebirthHistory
             .HasOne<PlayerEntity>()
             .WithMany()
             .HasForeignKey(x => x.PlayerId)

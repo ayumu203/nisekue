@@ -38,10 +38,11 @@ public static class JobHierarchy
             [Job.Shogun] = [Job.GrandWarrior, Job.GrandGuard],
             [Job.Archmage] = [Job.GrandCaster, Job.GrandPriest],
             [Job.GreatThief] = [Job.Warrior, Job.WindMage, Job.GrandRanger],
+            [Job.GreatKnight] = [Job.GrandGuard],
             [Job.Bushin] = [Job.GrandWarrior],
             [Job.Seikaiou] = [Job.GrandCaster],
             [Job.Matouou] = [Job.GreatThief],
-            [Job.Shugoshin] = [Job.GrandGuard],
+            [Job.Shugoshin] = [Job.GreatKnight],
         };
 
         var result = new Dictionary<Job, IReadOnlySet<Job>>();

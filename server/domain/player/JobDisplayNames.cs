@@ -30,6 +30,7 @@ public static class JobDisplayNames
             Job.Shogun => "大将軍",
             Job.Archmage => "大魔法使い",
             Job.GreatThief => "大盗賊",
+            Job.GreatKnight => "大騎士長",
             Job.Bushin => "武神",
             Job.Seikaiou => "星界王",
             Job.Matouou => "魔盗王",

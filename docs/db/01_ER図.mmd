@@ -73,6 +73,19 @@ erDiagram
         int job PK "mastered job enum value"
         timestamptz mastered_at "NOT NULL"
     }
+    PLAYER_REBIRTH_STATUS_HISTORIES {
+        uuid id PK "internal.player_rebirth_status_histories.id"
+        uuid player_id FK "internal.players.id"
+        int rebirth_count "NOT NULL, その転生の通算回数 (転生後の rebirth_count 値), UNIQUE(player_id, rebirth_count)"
+        int max_hp "NOT NULL, 転生直前(前世ピーク)のステータス"
+        int max_mp "NOT NULL"
+        int strength "NOT NULL"
+        int defense "NOT NULL"
+        int intelligence "NOT NULL"
+        int luck "NOT NULL"
+        int speed "NOT NULL"
+        timestamptz rebirthed_at "NOT NULL"
+    }
     PLAYER_EQUIPMENTS {
         uuid id PK "internal.player_equipments.id"
         uuid player_id FK "internal.players.id"
@@ -327,6 +340,7 @@ erDiagram
     PLAYERS ||--o{ THREAD_REPLIES : authors
     PLAYERS ||--|| PLAYER_MOVES : has_slots
     PLAYERS ||--o{ PLAYER_MASTER_JOBS : has_mastered
+    PLAYERS ||--o{ PLAYER_REBIRTH_STATUS_HISTORIES : records_rebirth
     PLAYERS ||--o{ PLAYER_EQUIPMENTS : owns
     PLAYERS ||--o{ PLAYER_ITEM_STACKS : owns
     PLAYERS ||--o{ PLAYER_PETS : owns

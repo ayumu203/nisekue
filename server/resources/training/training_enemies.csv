@@ -14,3 +14,7 @@ id,name,image_path,level,max_hp,max_mp,strength,defense,intelligence,luck,speed
 9,アンポ将軍,/image/training/08_anpo.png,500,7206,2112,4907,3155,1059,1578,2630
 10,てんじょうのきし,/image/training/15_brave.png,750,11144,3862,7532,5780,2371,2891,3943
 11,しんえいたいちょう,/image/training/01_heishi.png,1000,15082,5612,10157,8405,3684,4204,5255
+16,かしら,/image/training/16_chief.png,1250,19000,6500,12600,9800,2400,7300,8900
+17,かまいもん,/image/training/17_kamaitachi.png,1750,28200,6200,19800,14800,3800,11100,13300
+18,ぺっぼーくん,/image/training/18_peppa_kun.png,2000,33800,14500,13600,24200,15400,8600,10200
+19,ごくえんちゅう,/image/training/19_dragon.png,2500,48600,17000,30200,26200,16800,11200,13100
