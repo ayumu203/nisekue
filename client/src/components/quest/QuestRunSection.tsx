@@ -16,6 +16,7 @@ type AvailableMove = {
 
 type QuestRunSectionProps = {
   currentRun: QuestRunDetailResponse | null | undefined
+  endlessBestFloor?: number | null
   battlefieldImagePath: string | null
   selfParticipantId: string | null
   availableMoves: AvailableMove[]
@@ -46,6 +47,7 @@ type QuestRunSectionProps = {
 
 export default function QuestRunSection({
   currentRun,
+  endlessBestFloor,
   battlefieldImagePath,
   selfParticipantId,
   availableMoves,
@@ -73,7 +75,12 @@ export default function QuestRunSection({
   return (
     <>
       {currentRun?.status === 'Succeeded' || currentRun?.status === 'Failed' ? (
-        <QuestRunResultPanel run={currentRun} onLeaveFinishedRun={onLeaveFinishedRun} locale={locale} />
+        <QuestRunResultPanel
+          run={currentRun}
+          endlessBestFloor={endlessBestFloor}
+          onLeaveFinishedRun={onLeaveFinishedRun}
+          locale={locale}
+        />
       ) : null}
 
       {currentRun?.status === 'InProgress' ? (

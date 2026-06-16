@@ -10,15 +10,17 @@ public class CsvQuestStageRepository : IQuestStageRepository
     private readonly IReadOnlyDictionary<string, QuestStageDefinition> stagesByCode;
     private readonly IReadOnlyList<QuestStageDefinition> stages;
 
-    public CsvQuestStageRepository()
+    public CsvQuestStageRepository(IQuestEndlessConfigRepository endlessConfigRepository)
     {
+        ArgumentNullException.ThrowIfNull(endlessConfigRepository);
         var resourceDir = Path.Combine(AppContext.BaseDirectory, "resources", "quest");
         stagesById = LoadStages(
             Path.Combine(resourceDir, "stages.csv"),
             Path.Combine(resourceDir, "stage_floors.csv"),
             Path.Combine(resourceDir, "floor_enemy_spawns.csv"),
             Path.Combine(resourceDir, "stage_equipment_rewards.csv"),
-            Path.Combine(resourceDir, "stage_item_rewards.csv"));
+            Path.Combine(resourceDir, "stage_item_rewards.csv"),
+            endlessConfigRepository);
         stagesByCode = stagesById.Values.ToDictionary(x => x.StageCode, StringComparer.OrdinalIgnoreCase);
         stages = stagesById.Values.OrderBy(x => x.StageCode, StringComparer.OrdinalIgnoreCase).ToArray();
     }
@@ -50,7 +52,8 @@ public class CsvQuestStageRepository : IQuestStageRepository
         string floorsPath,
         string spawnsPath,
         string equipmentRewardsPath,
-        string itemRewardsPath)
+        string itemRewardsPath,
+        IQuestEndlessConfigRepository endlessConfigRepository)
     {
         var floorRowsByStage = LoadFloorRows(floorsPath);
         var spawnRowsByFloor = LoadSpawnRows(spawnsPath);
@@ -68,7 +71,7 @@ public class CsvQuestStageRepository : IQuestStageRepository
             }
 
             var columns = CsvQuestParser.SplitColumns(line);
-            if (columns.Length != 10)
+            if (columns.Length != 11)
             {
                 throw new InvalidOperationException($"stages.csv の形式が不正です。行: {i + 1}");
             }
@@ -107,6 +110,16 @@ public class CsvQuestStageRepository : IQuestStageRepository
                 throw new InvalidOperationException($"stages.csv の required_map_unlock_flag が不正です。value: {requiredMapUnlockFlag}, 行: {i + 1}");
             }
 
+            var progressionType = string.IsNullOrWhiteSpace(columns[10])
+                ? ProgressionType.Static
+                : CsvQuestParser.ParseEnum<ProgressionType>(columns[10], "progression_type", i + 1);
+            QuestEndlessConfig? endlessConfig = null;
+            if (progressionType == ProgressionType.Endless)
+            {
+                endlessConfig = endlessConfigRepository.GetByStageIdAsync(stageId).GetAwaiter().GetResult()
+                    ?? throw new InvalidOperationException($"Endless ステージの endless_configs.csv 設定が見つかりません。stageId={stageId}, 行: {i + 1}");
+            }
+
             map.Add(stageId, new QuestStageDefinition(
                 stageId,
                 columns[1],
@@ -120,7 +133,9 @@ public class CsvQuestStageRepository : IQuestStageRepository
                 rewardRows.OrderByDescending(x => x.Weight).Select(x => x.ToRewardEntry()).ToArray(),
                 itemRewardRows.OrderByDescending(x => x.Weight).Select(x => x.ToRewardEntry()).ToArray(),
                 CsvQuestParser.ParseBool(columns[8], "is_active", i + 1),
-                requiredMapUnlockFlag));
+                requiredMapUnlockFlag,
+                progressionType,
+                endlessConfig));
         }
 
         return map;

@@ -21,7 +21,8 @@ public class Player(
     int rebirthCount = 0,
     int expMultiplierFlags = 0,
     int mapUnlockFlags = 0,
-    long roadmapUnlockFlags = 1)
+    long roadmapUnlockFlags = 1,
+    int endlessBestFloor = 0)
 {
     private readonly HashSet<Job> masteredJobs = masteredJobs is null ? [] : new HashSet<Job>(masteredJobs);
 
@@ -43,6 +44,7 @@ public class Player(
     public int ExpMultiplierFlags { get; private set; } = ValidateNonNegative(expMultiplierFlags, nameof(expMultiplierFlags));
     public int MapUnlockFlags { get; private set; } = ValidateNonNegative(mapUnlockFlags, nameof(mapUnlockFlags));
     public long RoadmapUnlockFlags { get; private set; } = ValidateNonNegativeLong(roadmapUnlockFlags, nameof(roadmapUnlockFlags));
+    public int EndlessBestFloor { get; private set; } = ValidateNonNegative(endlessBestFloor, nameof(endlessBestFloor));
 
     public void UpdateName(string name)
     {
@@ -215,6 +217,20 @@ public class Player(
         MapUnlockFlags &= ~flag;
     }
 
+    /// <summary>エンドレス到達フロアでベスト記録を更新（より深い場合のみ）。</summary>
+    public void UpdateEndlessBestFloor(int reachedFloor)
+    {
+        if (reachedFloor < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(reachedFloor), "0以上である必要があります。");
+        }
+
+        if (reachedFloor > EndlessBestFloor)
+        {
+            EndlessBestFloor = reachedFloor;
+        }
+    }
+
     public bool IsRoadmapUnlocked(Job job)
     {
         return (RoadmapUnlockFlags & (1L << ((int)job - 1))) != 0;
@@ -251,7 +267,16 @@ public class Player(
         Gold -= validated;
     }
 
-    public int RequiredExpForNextLevel() => Level * 10;
+    public int RequiredExpForNextLevel()
+    {
+        if (Level <= 2000)
+        {
+            return Level * 10;
+        }
+
+        var over = Level - 2000;
+        return (int)Math.Min(20000L + (10L * over) + ((long)over * over / 50), int.MaxValue);
+    }
 
     public int RequiredJobExpForNextLevel() => JobLevel * 10;
 
@@ -272,15 +297,16 @@ public class Player(
         while (Exp >= RequiredExpForNextLevel())
         {
             Exp -= RequiredExpForNextLevel();
+            var previousLevel = Level;
             Level++;
             Status = new Status(
-                maxHp: ClampedAdd(Status.MaxHp, growth.MaxHp),
-                maxMp: ClampedAdd(Status.MaxMp, growth.MaxMp),
-                strength: ClampedAdd(Status.Strength, growth.Strength),
-                defense: ClampedAdd(Status.Defense, growth.Defense),
-                intelligence: ClampedAdd(Status.Intelligence, growth.Intelligence),
-                luck: ClampedAdd(Status.Luck, growth.Luck),
-                speed: ClampedAdd(Status.Speed, growth.Speed),
+                maxHp: ClampedAdd(Status.MaxHp, CalculateGrowthIncrease(growth.MaxHp, previousLevel, Level)),
+                maxMp: ClampedAdd(Status.MaxMp, CalculateGrowthIncrease(growth.MaxMp, previousLevel, Level)),
+                strength: ClampedAdd(Status.Strength, CalculateGrowthIncrease(growth.Strength, previousLevel, Level)),
+                defense: ClampedAdd(Status.Defense, CalculateGrowthIncrease(growth.Defense, previousLevel, Level)),
+                intelligence: ClampedAdd(Status.Intelligence, CalculateGrowthIncrease(growth.Intelligence, previousLevel, Level)),
+                luck: ClampedAdd(Status.Luck, CalculateGrowthIncrease(growth.Luck, previousLevel, Level)),
+                speed: ClampedAdd(Status.Speed, CalculateGrowthIncrease(growth.Speed, previousLevel, Level)),
                 accuracy: Status.Accuracy,
                 evasion: Status.Evasion,
                 criticalChance: Status.CriticalChance,
@@ -375,6 +401,34 @@ public class Player(
         }
 
         return newlyLearnedMoveIds;
+    }
+
+    // 転生ごとの 1% 成長ボーナスを累積差分で配り、整数成長でも無駄にならないようにする。
+    private int CalculateGrowthIncrease(int baseGrowth, int previousLevel, int currentLevel)
+    {
+        return ClampedAdd(baseGrowth, CalculateRebirthGrowthBonusDelta(baseGrowth, previousLevel, currentLevel));
+    }
+
+    private int CalculateRebirthGrowthBonusDelta(int baseGrowth, int previousLevel, int currentLevel)
+    {
+        if (baseGrowth <= 0 || RebirthCount <= 0)
+        {
+            return 0;
+        }
+
+        var previousBonus = CalculateCumulativeRebirthGrowthBonus(baseGrowth, previousLevel - 1);
+        var currentBonus = CalculateCumulativeRebirthGrowthBonus(baseGrowth, currentLevel - 1);
+        return currentBonus - previousBonus;
+    }
+
+    private int CalculateCumulativeRebirthGrowthBonus(int baseGrowth, int gainedLevels)
+    {
+        if (gainedLevels <= 0)
+        {
+            return 0;
+        }
+
+        return (int)Math.Min((long)baseGrowth * gainedLevels * RebirthCount / 100, int.MaxValue);
     }
 
     private static int ValidateNonNegative(int value, string paramName)

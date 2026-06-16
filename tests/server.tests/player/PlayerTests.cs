@@ -44,6 +44,21 @@ public class PlayerTests
     }
 
     [Fact]
+    public void RequiredExpForNextLevel_WhenLevelIsAtMost2000_ReturnsLinearValue()
+    {
+        CreatePlayer(level: 1999).RequiredExpForNextLevel().Should().Be(19990);
+        CreatePlayer(level: 2000).RequiredExpForNextLevel().Should().Be(20000);
+    }
+
+    [Fact]
+    public void RequiredExpForNextLevel_WhenLevelExceeds2000_ReturnsCurvedValue()
+    {
+        CreatePlayer(level: 2001).RequiredExpForNextLevel().Should().Be(20010);
+        CreatePlayer(level: 2500).RequiredExpForNextLevel().Should().Be(30000);
+        CreatePlayer(level: 3000).RequiredExpForNextLevel().Should().Be(50000);
+    }
+
+    [Fact]
     public void LevelUp_WhenExpIsInsufficient_ReturnsNoLevelUp()
     {
         var player = CreatePlayer(level: 1, exp: 9, jobExp: 9, job: Job.Warrior);
@@ -80,6 +95,38 @@ public class PlayerTests
         player.Status.Strength.Should().Be(beforeStatus.Strength + 2);
         player.Status.Defense.Should().Be(beforeStatus.Defense + 1);
         player.MoveSet.GetLearnedMoveIds().Select(x => x.Id).Should().Equal(101);
+    }
+
+    [Fact]
+    public void LevelUp_WhenRebirthedPlayerLevelsUpBeforeBonusThreshold_AppliesBaseGrowthOnly()
+    {
+        var player = CreatePlayer(level: 33, exp: 330, job: Job.Warrior, rebirthCount: 1);
+        var beforeStatus = player.Status;
+
+        var result = player.LevelUp(CreateJobProfile(Job.Warrior), CreateLearningRule(Job.Warrior));
+
+        result.HasPlayerLeveledUp.Should().BeTrue();
+        player.Level.Should().Be(34);
+        player.Status.MaxHp.Should().Be(beforeStatus.MaxHp + 3);
+        player.Status.Strength.Should().Be(beforeStatus.Strength + 2);
+        player.Status.Defense.Should().Be(beforeStatus.Defense + 1);
+        player.Status.Speed.Should().Be(beforeStatus.Speed + 1);
+    }
+
+    [Fact]
+    public void LevelUp_WhenRebirthedPlayerReachesAccumulatedBonusThreshold_AddsExtraGrowth()
+    {
+        var player = CreatePlayer(level: 34, exp: 340, job: Job.Warrior, rebirthCount: 1);
+        var beforeStatus = player.Status;
+
+        var result = player.LevelUp(CreateJobProfile(Job.Warrior), CreateLearningRule(Job.Warrior));
+
+        result.HasPlayerLeveledUp.Should().BeTrue();
+        player.Level.Should().Be(35);
+        player.Status.MaxHp.Should().Be(beforeStatus.MaxHp + 4);
+        player.Status.Strength.Should().Be(beforeStatus.Strength + 2);
+        player.Status.Defense.Should().Be(beforeStatus.Defense + 1);
+        player.Status.Speed.Should().Be(beforeStatus.Speed + 1);
     }
 
     [Fact]
@@ -369,6 +416,37 @@ public class PlayerTests
         ExpMultiplierFlag.ToMultiplier(0x1).Should().Be(3.0m);
     }
 
+    [Fact]
+    public void UpdateEndlessBestFloor_WhenDeeperThanBest_UpdatesValue()
+    {
+        var player = CreatePlayer(level: 1);
+
+        player.UpdateEndlessBestFloor(12);
+
+        player.EndlessBestFloor.Should().Be(12);
+    }
+
+    [Fact]
+    public void UpdateEndlessBestFloor_WhenShallowerThanBest_KeepsValue()
+    {
+        var player = CreatePlayer(level: 1);
+        player.UpdateEndlessBestFloor(12);
+
+        player.UpdateEndlessBestFloor(7);
+
+        player.EndlessBestFloor.Should().Be(12);
+    }
+
+    [Fact]
+    public void UpdateEndlessBestFloor_WhenNegative_ThrowsArgumentOutOfRangeException()
+    {
+        var player = CreatePlayer(level: 1);
+
+        var act = () => player.UpdateEndlessBestFloor(-1);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
     private static Player CreatePlayer(
         int level,
         int exp = 0,
@@ -378,7 +456,8 @@ public class PlayerTests
         Job job = Job.Apprentice,
         Status? status = null,
         MoveSet? moveSet = null,
-        IReadOnlySet<Job>? masteredJobs = null) =>
+        IReadOnlySet<Job>? masteredJobs = null,
+        int rebirthCount = 0) =>
         new(
             new PlayerId(Guid.NewGuid()),
             name: "Tester",
@@ -397,7 +476,8 @@ public class PlayerTests
                 speed: 1),
             job: job,
             moveSet: moveSet,
-            masteredJobs: masteredJobs);
+            masteredJobs: masteredJobs,
+            rebirthCount: rebirthCount);
 
     private static Status CreateInheritedStatus()
     {

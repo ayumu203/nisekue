@@ -1,3 +1,5 @@
+using server.domain.quest.enums;
+
 namespace server.domain.quest;
 
 public class QuestStageDefinition(
@@ -13,7 +15,9 @@ public class QuestStageDefinition(
     IEnumerable<QuestStageEquipmentRewardEntry>? equipmentRewards,
     IEnumerable<QuestStageItemRewardEntry>? itemRewards,
     bool isActive,
-    int? requiredMapUnlockFlag = null)
+    int? requiredMapUnlockFlag = null,
+    ProgressionType progressionType = ProgressionType.Static,
+    QuestEndlessConfig? endlessConfig = null)
 {
     private readonly QuestFloorDefinition[] floors = floors?.OrderBy(x => x.FloorNo).ToArray()
         ?? throw new ArgumentNullException(nameof(floors));
@@ -33,6 +37,11 @@ public class QuestStageDefinition(
     public IReadOnlyList<QuestStageItemRewardEntry> ItemRewards => itemRewards;
     public bool IsActive { get; } = isActive;
     public int? RequiredMapUnlockFlag { get; } = requiredMapUnlockFlag;
+    public ProgressionType ProgressionType { get; } = progressionType;
+    public QuestEndlessConfig? EndlessConfig { get; } = ValidateEndlessConfig(progressionType, endlessConfig);
+
+    /// <summary>エンドレス（手続き的生成）ステージか。</summary>
+    public bool IsEndless => ProgressionType == ProgressionType.Endless;
 
     private static string ValidateText(string value, string paramName)
     {
@@ -43,6 +52,16 @@ public class QuestStageDefinition(
         }
 
         return normalized;
+    }
+
+    private static QuestEndlessConfig? ValidateEndlessConfig(ProgressionType progressionType, QuestEndlessConfig? endlessConfig)
+    {
+        if (progressionType == ProgressionType.Endless && endlessConfig is null)
+        {
+            throw new ArgumentNullException(nameof(endlessConfig), "Endless ステージには endlessConfig が必須です。");
+        }
+
+        return endlessConfig;
     }
 
     private static int ValidateNonNegative(int value, string paramName)

@@ -141,6 +141,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("roadmap_unlock_flags")
             .HasDefaultValue(1L)
             .IsRequired();
+        player.Property(x => x.EndlessBestFloor)
+            .HasColumnName("endless_best_floor")
+            .HasDefaultValue(0)
+            .IsRequired();
         player.Property(x => x.LastActiveAt)
             .HasColumnName("last_active_at");
 

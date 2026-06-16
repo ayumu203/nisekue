@@ -2,10 +2,13 @@ import { Box, Button, Paper, Stack, Typography } from '@mui/material'
 import { innerSurfaceSx } from '@/constants/styles'
 import { softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
+import { resolveEndlessThemeName } from '@/lib/endless'
+import questRoomLocale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestRunDetailResponse } from '@/schema/quest'
 
 type QuestRunResultPanelProps = {
   run: QuestRunDetailResponse
+  endlessBestFloor?: number | null
   onLeaveFinishedRun: () => void
   locale: {
     clearTitle: string
@@ -27,10 +30,19 @@ type QuestRunResultPanelProps = {
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
 
-export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }: QuestRunResultPanelProps) {
+export default function QuestRunResultPanel({
+  run,
+  endlessBestFloor,
+  onLeaveFinishedRun,
+  locale,
+}: QuestRunResultPanelProps) {
   if (run.status !== 'Succeeded' && run.status !== 'Failed') {
     return null
   }
+
+  const isEndless = run.floor.isEndless === true
+  const reachedFloor = run.floor.currentFloorNo
+  const endlessThemeName = resolveEndlessThemeName(run.floor.themeNo, questRoomLocale.endless.themeNames)
 
   const partyMembers = [...run.partyMembers].sort((left, right) => {
     if (left.position.row !== right.position.row) {
@@ -93,6 +105,34 @@ export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }:
             {isSucceeded ? locale.clearSubtitle : locale.failedSubtitle}
           </Typography>
         </Box>
+
+        {isEndless ? (
+          <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" justifyContent="center">
+            <Stack alignItems="center" spacing={0.25}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#7b5e2f' }}>
+                {questRoomLocale.endless.reachedFloorLabel}
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 900, color: '#8b5a00', lineHeight: 1 }}>
+                {reachedFloor}
+              </Typography>
+              {endlessThemeName ? (
+                <Typography variant="caption" sx={{ color: '#5b4b2d' }}>
+                  {`${questRoomLocale.endless.themeLabel}: ${endlessThemeName}`}
+                </Typography>
+              ) : null}
+            </Stack>
+            {endlessBestFloor != null ? (
+              <Stack alignItems="center" spacing={0.25}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#7b5e2f' }}>
+                  {questRoomLocale.endless.bestFloorLabel}
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 900, color: '#4b391c', lineHeight: 1 }}>
+                  {Math.max(endlessBestFloor, reachedFloor)}
+                </Typography>
+              </Stack>
+            ) : null}
+          </Stack>
+        ) : null}
 
         <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap" justifyContent="center">
           {partyMembers.map((member) => {
@@ -157,7 +197,7 @@ export default function QuestRunResultPanel({ run, onLeaveFinishedRun, locale }:
           })}
         </Stack>
 
-        {isSucceeded ? (
+        {isSucceeded || isEndless ? (
           <Paper
             variant="outlined"
             sx={{

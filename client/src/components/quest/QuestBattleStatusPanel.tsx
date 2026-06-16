@@ -13,6 +13,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
+import { resolveEndlessBattlefield } from '@/lib/endless'
 import type { MoveAttackRange } from '@/schema/player'
 import type {
   BattleColumn,
@@ -441,7 +442,13 @@ export default function QuestBattleStatusPanel({
   onSubmitCommand,
   locale,
 }: QuestBattleStatusPanelProps) {
-  const battlefieldImageSrc = resolvePublicAssetPath(battlefieldImagePath ?? 'image/quest/dummy-battlefield.svg')
+  // エンドレスはテーマ帯ごとに背景を切り替える。
+  const effectiveBattlefieldImagePath = run.floor.isEndless
+    ? (resolveEndlessBattlefield(run.floor.themeNo) ?? battlefieldImagePath)
+    : battlefieldImagePath
+  const battlefieldImageSrc = resolvePublicAssetPath(
+    effectiveBattlefieldImagePath ?? 'image/quest/dummy-battlefield.svg',
+  )
   const actionOptions: Array<{ value: QuestActionKind; label: string }> = [
     { value: 'UseMove', label: locale.actionKinds.UseMove },
     { value: 'NormalAttack', label: locale.actionKinds.NormalAttack },
@@ -631,9 +638,11 @@ export default function QuestBattleStatusPanel({
   return (
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
       <Stack spacing={2}>
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-          <Chip label={`${locale.waitingParticipantsLabel}: ${run.turn.waitingParticipantIds.length}`} />
-        </Stack>
+        {run.floor.isEndless ? null : (
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Chip label={`${locale.waitingParticipantsLabel}: ${run.turn.waitingParticipantIds.length}`} />
+          </Stack>
+        )}
 
         <Box
           sx={{

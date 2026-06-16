@@ -20,6 +20,7 @@ const modeButtonSx = {
 } as const
 
 export default function QuestStageModeCard({ stage, isSelected, selectedMode, onSelect }: QuestStageModeCardProps) {
+  const isEndless = stage.progressionType === 'Endless'
   const isSoloSelected = isSelected && selectedMode === 'Solo'
   const isMultiSelected = isSelected && selectedMode === 'Multi'
   const battlefieldImageSrc = resolvePublicAssetPath(stage.battlefieldImagePath)
@@ -88,9 +89,28 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
 
         <Stack spacing={1.5} sx={{ flex: 1, width: '100%' }}>
           <Stack spacing={0.5}>
-            <Typography variant="h6" sx={{ lineHeight: 1.2, fontWeight: 900, color: '#ffffff' }}>
-              {stage.name}
-            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+              <Typography variant="h6" sx={{ lineHeight: 1.2, fontWeight: 900, color: '#ffffff' }}>
+                {stage.name}
+              </Typography>
+              {isEndless ? (
+                <Box
+                  component="span"
+                  sx={{
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 999,
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    color: '#1b2c4a',
+                    backgroundColor: '#ffd66e',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  {locale.endless.badge}
+                </Box>
+              ) : null}
+            </Stack>
             <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.78)' }}>
               {`${locale.recommendedLevel} ${stage.recommendedLevel}`}
             </Typography>
@@ -99,7 +119,7 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
             </Typography>
           </Stack>
 
-          <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ width: '100%' }}>
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end" sx={{ width: '100%' }}>
             <Button
               variant={isSoloSelected ? 'contained' : 'outlined'}
               onClick={() => onSelect(stage.stageId, 'Solo')}
@@ -117,23 +137,25 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
             >
               {locale.modeSolo}
             </Button>
-            <Button
-              variant={isMultiSelected ? 'contained' : 'outlined'}
-              onClick={() => onSelect(stage.stageId, 'Multi')}
-              disableRipple
-              sx={{
-                ...modeButtonSx,
-                '&&': {
-                  backgroundColor: isMultiSelected ? '#9ed8ce' : 'rgba(239, 252, 248, 0.92)',
-                  borderColor: '#9ed8ce',
-                  color: isMultiSelected ? '#173a34' : '#2e6e64',
-                  boxShadow: 'none',
-                  transition: 'none',
-                },
-              }}
-            >
-              {locale.modeMulti}
-            </Button>
+            {isEndless ? null : (
+              <Button
+                variant={isMultiSelected ? 'contained' : 'outlined'}
+                onClick={() => onSelect(stage.stageId, 'Multi')}
+                disableRipple
+                sx={{
+                  ...modeButtonSx,
+                  '&&': {
+                    backgroundColor: isMultiSelected ? '#9ed8ce' : 'rgba(239, 252, 248, 0.92)',
+                    borderColor: '#9ed8ce',
+                    color: isMultiSelected ? '#173a34' : '#2e6e64',
+                    boxShadow: 'none',
+                    transition: 'none',
+                  },
+                }}
+              >
+                {locale.modeMulti}
+              </Button>
+            )}
           </Stack>
         </Stack>
       </Stack>

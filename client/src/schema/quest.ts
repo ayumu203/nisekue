@@ -48,6 +48,7 @@ export const questStageSummarySchema = z.object({
   recommendedLevel: z.number().int().nonnegative(),
   minimumEntryLevel: z.number().int().positive(),
   previewEnemyImagePath: z.string().min(1).nullable().optional(),
+  progressionType: z.enum(['Static', 'Endless']),
   minPartyMemberCount: z.number().int().positive(),
   maxPartyMemberCount: z.number().int().positive(),
   isActive: z.boolean(),
@@ -325,6 +326,10 @@ export const questRunDetailResponseSchema = z.object({
   floor: z.object({
     currentFloorNo: z.number().int().positive(),
     isBossFloor: z.boolean(),
+    isEndless: z.boolean().optional(),
+    themeNo: z.number().int().positive().nullable().optional(),
+    floorsPerTheme: z.number().int().positive().nullable().optional(),
+    bossInterval: z.number().int().positive().nullable().optional(),
   }),
   turn: z.object({
     currentTurnNo: z.number().int().positive(),

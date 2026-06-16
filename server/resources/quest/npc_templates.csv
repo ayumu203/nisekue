@@ -43,3 +43,8 @@ id,name,job,preferred_row,level,max_hp,max_mp,strength,defense,intelligence,luck
 42,おうメイジ,Mage,Back,500,5500,1100,320,320,1500,420,650,MidSupport
 43,おうプリースト,Priest,Back,500,5800,1150,300,330,1450,450,580,RearHealer
 44,おうレンジャー,Ranger,Middle,500,6000,460,1250,600,650,850,1050,MidSupport
+45,しれんガード,Guardian,Front,1000,52000,3200,5400,6800,1700,1800,2100,FrontGuard
+46,しれんけんし,Warrior,Front,1000,47000,2400,7600,5200,1400,2200,3200,FrontGuard
+47,しれんまどうし,Mage,Back,1000,36000,8800,1700,3400,7600,2800,3600,MidSupport
+48,しれんしんかん,Priest,Back,1000,39000,9200,1500,3800,8100,3000,2900,RearHealer
+49,しれんれんじゃー,Ranger,Middle,1000,41000,3600,6200,4000,3000,3600,4700,MidSupport
