@@ -91,7 +91,15 @@ public class EquipmentTests
         // まもりの長槍: Guardian|Trickster|Crusader|GrandGuard|Shogun
         var equipment = CreateEquipment([Job.Guardian, Job.Trickster, Job.Crusader, Job.GrandGuard, Job.Shogun]);
 
-        // Shugoshin は GrandGuard → SwordMaster/Trickster → Warrior/Guardian の上位職
+        // Shugoshin は GreatKnight → GrandGuard → SwordMaster/Trickster → Warrior/Guardian の上位職
+        equipment.CanEquip(Job.Shugoshin).Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanEquip_WhenShugoshin_CanEquipGreatKnightOnlyWeapon()
+    {
+        var equipment = CreateEquipment([Job.GreatKnight]);
+
         equipment.CanEquip(Job.Shugoshin).Should().BeTrue();
     }
 
@@ -149,6 +157,14 @@ public class EquipmentTests
         var equipment = CreateEquipment([Job.GrandGuard, Job.Shogun]);
 
         equipment.CanEquip(Job.Shogun).Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanEquip_WhenGreatKnight_CanEquipGrandGuardOnlyArmor()
+    {
+        var equipment = CreateEquipment([Job.GrandGuard]);
+
+        equipment.CanEquip(Job.GreatKnight).Should().BeTrue();
     }
 
     [Fact]

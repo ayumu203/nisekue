@@ -42,6 +42,7 @@ DAI_JOBS = {
     "Shogun": "GrandWarrior",
     "Archmage": "GrandCaster",
     "GreatThief": "GrandRanger",
+    "GreatKnight": "GrandGuard",
 }
 
 
