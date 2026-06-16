@@ -770,6 +770,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(CreateStage(run.StageId)),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             playerEquipmentRepository,
@@ -833,6 +835,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(CreateStage(run.StageId)),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             playerEquipmentRepository,
@@ -897,6 +901,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             playerEquipmentRepository,
@@ -977,6 +983,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             playerEquipmentRepository,
@@ -1031,6 +1039,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             playerEquipmentRepository,
@@ -1092,6 +1102,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             new FakePlayerEquipmentRepository(),
@@ -1155,6 +1167,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             new FakePlayerEquipmentRepository(),
@@ -1223,6 +1237,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             playerEquipmentRepository,
@@ -1291,6 +1307,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             playerEquipmentRepository,
@@ -1391,6 +1409,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             playerEquipmentRepository,
@@ -1619,6 +1639,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             new FakePlayerEquipmentRepository(),
@@ -1665,6 +1687,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             new FakePlayerEquipmentRepository(),
@@ -1721,6 +1745,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository([]),
             playerRepository,
             new FakePlayerEquipmentRepository(),
@@ -2039,6 +2065,8 @@ public class QuestRunServiceTests
             roomRepository,
             new FakeQuestStageRepository(stage),
             new FakeQuestEnemyDefinitionRepository(),
+            new FakeQuestEndlessEnemyTemplateRepository(),
+            new QuestEndlessFloorGenerator(),
             new FakeMoveRepository(moves),
             playerRepository,
             new FakePlayerEquipmentRepository(),
@@ -2350,6 +2378,18 @@ public class QuestRunServiceTests
 
         public Task<IReadOnlyList<QuestStageDefinition>> GetAllAsync()
             => Task.FromResult<IReadOnlyList<QuestStageDefinition>>([stage]);
+    }
+
+    private sealed class FakeQuestEndlessEnemyTemplateRepository : IQuestEndlessEnemyTemplateRepository
+    {
+        public Task<QuestEndlessEnemyTemplate?> GetAsync(QuestEnemyDefinitionId id)
+            => Task.FromResult<QuestEndlessEnemyTemplate?>(null);
+
+        public Task<IReadOnlyList<QuestEndlessEnemyTemplate>> GetAllAsync()
+            => Task.FromResult<IReadOnlyList<QuestEndlessEnemyTemplate>>([]);
+
+        public Task<IReadOnlyList<QuestEndlessEnemyTemplate>> GetByThemeAsync(int themeNo)
+            => Task.FromResult<IReadOnlyList<QuestEndlessEnemyTemplate>>([]);
     }
 
     private sealed class FakeQuestRoomRepository(QuestRoom room) : IQuestRoomRepository

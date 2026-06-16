@@ -424,7 +424,7 @@ public class QuestRoomServiceTests
             new FakePlayerPetRepository(),
             new QuestNpcAssignmentService(npcTemplateRepository),
             new QuestSnapshotFactory(new EquipmentStatusResolver()),
-            new QuestRunFactory(enemyDefinitionRepository));
+            new QuestRunFactory(enemyDefinitionRepository, new FakeQuestEndlessEnemyTemplateRepository(), new QuestEndlessFloorGenerator()));
     }
 
     private static Player CreatePlayer(string name, int level = 5)
@@ -684,5 +684,17 @@ public class QuestRoomServiceTests
 
         public Task<IReadOnlyList<QuestEnemyDefinition>> GetAllAsync()
             => Task.FromResult<IReadOnlyList<QuestEnemyDefinition>>([definition]);
+    }
+
+    private sealed class FakeQuestEndlessEnemyTemplateRepository : IQuestEndlessEnemyTemplateRepository
+    {
+        public Task<QuestEndlessEnemyTemplate?> GetAsync(QuestEnemyDefinitionId id)
+            => Task.FromResult<QuestEndlessEnemyTemplate?>(null);
+
+        public Task<IReadOnlyList<QuestEndlessEnemyTemplate>> GetAllAsync()
+            => Task.FromResult<IReadOnlyList<QuestEndlessEnemyTemplate>>([]);
+
+        public Task<IReadOnlyList<QuestEndlessEnemyTemplate>> GetByThemeAsync(int themeNo)
+            => Task.FromResult<IReadOnlyList<QuestEndlessEnemyTemplate>>([]);
     }
 }
