@@ -1,0 +1,2 @@
+stage_id,growth_coefficient_a,growth_exponent_p,safety_cap_floor,boss_interval,boss_extra_multiplier,boss_reward_multiplier,theme_count,floors_per_theme,min_enemies_per_floor,max_enemies_per_floor,reward_exp_rate,reward_gold_rate
+13,0.02,2.0,7161,10,1.5,3.0,5,10,1,3,10000.0,7500.0

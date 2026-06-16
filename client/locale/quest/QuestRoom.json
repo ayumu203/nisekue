@@ -138,6 +138,18 @@
   "roomStatusLabel": "状態",
   "runStatusLabel": "進行状態",
   "currentFloorLabel": "現在階層",
+  "endless": {
+    "badge": "エンドレス",
+    "floorLabel": "フロア",
+    "themeLabel": "テーマ",
+    "nextBossLabel": "次のボスまで",
+    "nextBossSuffix": "フロア",
+    "bossFloorLabel": "ボスフロア",
+    "reachedFloorLabel": "到達フロア",
+    "bestFloorLabel": "自己ベスト",
+    "soloOnlyNote": "ソロ専用",
+    "themeNames": ["そよかぜ草原", "ざわめき森", "みぞれ峠", "ふぶき山", "あらしの果て"]
+  },
   "waitingParticipantsLabel": "入力待ち人数",
   "turnNo": "ターン",
   "deadline": "入力期限",

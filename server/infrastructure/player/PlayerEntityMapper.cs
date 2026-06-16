@@ -34,7 +34,8 @@ internal static class PlayerEntityMapper
             masteredJobs: (masteredJobEntities ?? []).Select(x => x.Job).ToHashSet(),
             expMultiplierFlags: entity.ExpMultiplierFlags,
             mapUnlockFlags: entity.MapUnlockFlags,
-            roadmapUnlockFlags: entity.RoadmapUnlockFlags);
+            roadmapUnlockFlags: entity.RoadmapUnlockFlags,
+            endlessBestFloor: entity.EndlessBestFloor);
 
     public static PlayerEntity CreatePlayerEntity(Player player)
     {
@@ -62,6 +63,7 @@ internal static class PlayerEntityMapper
             ExpMultiplierFlags = player.ExpMultiplierFlags,
             MapUnlockFlags = player.MapUnlockFlags,
             RoadmapUnlockFlags = player.RoadmapUnlockFlags,
+            EndlessBestFloor = player.EndlessBestFloor,
         };
     }
 
@@ -88,6 +90,7 @@ internal static class PlayerEntityMapper
         entity.ExpMultiplierFlags = player.ExpMultiplierFlags;
         entity.MapUnlockFlags = player.MapUnlockFlags;
         entity.RoadmapUnlockFlags = player.RoadmapUnlockFlags;
+        entity.EndlessBestFloor = player.EndlessBestFloor;
     }
 
     public static PlayerMoveEntity CreateMoveEntity(PlayerId playerId, MoveSet moveSet)

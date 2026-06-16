@@ -176,6 +176,48 @@ public class RankingAggregationServiceTests
         petBattleRows.Select(x => x.Score).Should().Equal(1210, 1080);
     }
 
+    [Fact]
+    public async Task RebuildAsync_WhenPlayersHaveEndlessBestFloor_CreatesEndlessMaxFloorTopOrderedByFloor()
+    {
+        var databaseName = $"ranking-aggregation-{Guid.NewGuid()}";
+        var now = DateTimeOffset.UtcNow;
+
+        var alice = CreatePlayer("Alice", maxHp: 80, maxMp: 20, strength: 30, defense: 20, intelligence: 10, luck: 10, speed: 20, trainingBattleCount: 12);
+        var bob = CreatePlayer("Bob", maxHp: 40, maxMp: 10, strength: 10, defense: 8, intelligence: 5, luck: 5, speed: 8, trainingBattleCount: 5);
+        var carol = CreatePlayer("Carol", maxHp: 60, maxMp: 15, strength: 20, defense: 15, intelligence: 8, luck: 7, speed: 12, trainingBattleCount: 3);
+        alice.EndlessBestFloor = 42;
+        bob.EndlessBestFloor = 87;
+        carol.EndlessBestFloor = 0;
+
+        await using (var seedContext = CreateDbContext(databaseName))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+            seedContext.Players.AddRange(alice, bob, carol);
+            await seedContext.SaveChangesAsync();
+        }
+
+        var service = new RankingAggregationService(
+            new TestDbContextFactory(databaseName),
+            new CombatIndexCalculator(new StaticCombatIndexWeightRepository()),
+            new CombatIndexRankEvaluator(new StaticCombatIndexRankThresholdRepository()));
+
+        await service.RebuildAsync(now);
+
+        await using var verifyContext = CreateDbContext(databaseName);
+        var endlessRows = await verifyContext.RankingEntries
+            .AsNoTracking()
+            .Where(x => x.RankingType == RankingConstants.EndlessMaxFloorTop)
+            .OrderBy(x => x.RankPosition)
+            .ToListAsync();
+
+        // 到達フロア降順。0 のプレイヤーは対象外。
+        endlessRows.Should().HaveCount(2);
+        endlessRows.Should().OnlyContain(x => x.PeriodKind == "Total");
+        endlessRows.Should().OnlyContain(x => x.CombatIndexRank == null);
+        endlessRows.Select(x => x.PlayerId).Should().Equal(bob.Id, alice.Id);
+        endlessRows.Select(x => x.Score).Should().Equal(87, 42);
+    }
+
     private static PlayerEntity CreatePlayer(
         string name,
         int maxHp,

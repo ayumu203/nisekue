@@ -24,6 +24,7 @@ erDiagram
         timestamptz quest_cooldown_until "NULL"
         timestamptz pet_battle_cooldown_until "NULL"
         int exp_multiplier_flags "NOT NULL, DEFAULT 0"
+        int endless_best_floor "NOT NULL, DEFAULT 0, エンドレスモード最高到達フロア"
     }
     CHAT_ROOMS {
         uuid owner_id PK, FK "internal.players.id"

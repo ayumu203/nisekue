@@ -21,7 +21,8 @@ public class Player(
     int rebirthCount = 0,
     int expMultiplierFlags = 0,
     int mapUnlockFlags = 0,
-    long roadmapUnlockFlags = 1)
+    long roadmapUnlockFlags = 1,
+    int endlessBestFloor = 0)
 {
     private readonly HashSet<Job> masteredJobs = masteredJobs is null ? [] : new HashSet<Job>(masteredJobs);
 
@@ -43,6 +44,7 @@ public class Player(
     public int ExpMultiplierFlags { get; private set; } = ValidateNonNegative(expMultiplierFlags, nameof(expMultiplierFlags));
     public int MapUnlockFlags { get; private set; } = ValidateNonNegative(mapUnlockFlags, nameof(mapUnlockFlags));
     public long RoadmapUnlockFlags { get; private set; } = ValidateNonNegativeLong(roadmapUnlockFlags, nameof(roadmapUnlockFlags));
+    public int EndlessBestFloor { get; private set; } = ValidateNonNegative(endlessBestFloor, nameof(endlessBestFloor));
 
     public void UpdateName(string name)
     {
@@ -213,6 +215,20 @@ public class Player(
         }
 
         MapUnlockFlags &= ~flag;
+    }
+
+    /// <summary>エンドレス到達フロアでベスト記録を更新（より深い場合のみ）。</summary>
+    public void UpdateEndlessBestFloor(int reachedFloor)
+    {
+        if (reachedFloor < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(reachedFloor), "0以上である必要があります。");
+        }
+
+        if (reachedFloor > EndlessBestFloor)
+        {
+            EndlessBestFloor = reachedFloor;
+        }
     }
 
     public bool IsRoadmapUnlocked(Job job)

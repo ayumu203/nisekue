@@ -693,6 +693,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("integer")
                         .HasColumnName("defense");
 
+                    b.Property<int>("EndlessBestFloor")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("endless_best_floor");
+
                     b.Property<int>("Exp")
                         .HasColumnType("integer")
                         .HasColumnName("exp");

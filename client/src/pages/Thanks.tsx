@@ -34,6 +34,11 @@ const creditEntries = [
     category: 'モンスター素材',
     url: 'https://dot-illust.net/',
   },
+  {
+    name: '【Rド】様',
+    category: 'モンスター素材',
+    url: 'http://rpgdot3319.g1.xrea.com/',
+  },
 ] as const
 
 export default function Thanks() {

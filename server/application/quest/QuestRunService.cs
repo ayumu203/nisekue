@@ -18,6 +18,8 @@ public class QuestRunService(
     IQuestRoomRepository questRoomRepository,
     IQuestStageRepository questStageRepository,
     IQuestEnemyDefinitionRepository questEnemyDefinitionRepository,
+    IQuestEndlessEnemyTemplateRepository questEndlessEnemyTemplateRepository,
+    QuestEndlessFloorGenerator endlessFloorGenerator,
     IMoveRepository moveRepository,
     IPlayerRepository playerRepository,
     IPlayerEquipmentRepository playerEquipmentRepository,
@@ -158,13 +160,22 @@ public class QuestRunService(
 
         var stage = await questStageRepository.GetAsync(run.StageId)
             ?? throw new KeyNotFoundException("ステージ定義が見つかりません。");
-        var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync())
-            .ToDictionary(x => x.Id);
 
         var previousFloorNo = run.FloorState.CurrentFloorNo;
         var previousStatus = run.Status.ToString();
 
-        var captureResult = await ProcessCaptureCommandsAsync(run, enemyDefinitions);
+        // エンドレスは敵テンプレを通算フロア番号にスケールして敵定義を構築。通常は静的定義を全件ロード。
+        IReadOnlyList<QuestEndlessEnemyTemplate> endlessTemplates = stage.IsEndless
+            ? await questEndlessEnemyTemplateRepository.GetAllAsync()
+            : [];
+        var enemyDefinitions = stage.IsEndless
+            ? BuildEndlessFloorDefinitions(stage.EndlessConfig!, endlessTemplates, run.BattleState.Enemies, previousFloorNo)
+            : (await questEnemyDefinitionRepository.GetAllAsync()).ToDictionary(x => x.Id);
+
+        // 捕獲はエンドレスでは無効（exp/gold のみ）。
+        var captureResult = stage.IsEndless
+            ? QuestCaptureProcessingResult.Empty
+            : await ProcessCaptureCommandsAsync(run, enemyDefinitions);
 
         var fieldContext = questBattleFactory.CreateBattleFieldContext(run);
         var actors = questBattleFactory.CreateActorInputs(run, enemyDefinitions);
@@ -181,9 +192,12 @@ public class QuestRunService(
         var resolution = battleService.ResolveTurn(new BattleTurnRequest(actors, actions, moves, fieldContext));
         var resolvedMoves = await LoadMissingAilmentSourceMovesAsync(moves, resolution, moveRepository);
 
-        var finalFloorNo = stage.Floors.Max(x => x.FloorNo);
-        var currentFloor = stage.Floors.FirstOrDefault(x => x.FloorNo == previousFloorNo)
-            ?? throw new InvalidOperationException($"現在階層の定義が見つかりません。 floorNo={previousFloorNo}");
+        // エンドレスは完了を持たないため finalFloorNo を安全上限フロアにし、cap 到達時のみ完了させる。
+        var finalFloorNo = stage.IsEndless ? stage.EndlessConfig!.SafetyCapFloor : stage.Floors.Max(x => x.FloorNo);
+        var currentFloor = stage.IsEndless
+            ? BuildEndlessFloorDefinition(stage.EndlessConfig!, previousFloorNo, run.BattleState.Enemies)
+            : stage.Floors.FirstOrDefault(x => x.FloorNo == previousFloorNo)
+                ?? throw new InvalidOperationException($"現在階層の定義が見つかりません。 floorNo={previousFloorNo}");
         var partyActorMap = questBattleFactory.CreatePartyActorMap(run);
         var enemyActorMap = questBattleFactory.CreateEnemyActorMap(run);
 
@@ -199,10 +213,18 @@ public class QuestRunService(
         if (run.Status == QuestRunStatus.InProgress && summary.IsFloorCleared && !summary.IsQuestCompleted)
         {
             var nextFloorNo = previousFloorNo + 1;
-            nextFloor = stage.Floors.FirstOrDefault(x => x.FloorNo == nextFloorNo)
-                ?? throw new InvalidOperationException($"次階層が見つかりません。 floorNo={nextFloorNo}");
-
-            nextEnemyStates = await CreateEnemyStatesAsync(nextFloor);
+            if (stage.IsEndless)
+            {
+                var generated = endlessFloorGenerator.GenerateFloor(stage.EndlessConfig!, endlessTemplates, nextFloorNo, Random.Shared);
+                nextFloor = BuildEndlessFloorDefinitionFromGenerated(stage.EndlessConfig!, generated);
+                nextEnemyStates = CreateEndlessEnemyStates(generated);
+            }
+            else
+            {
+                nextFloor = stage.Floors.FirstOrDefault(x => x.FloorNo == nextFloorNo)
+                    ?? throw new InvalidOperationException($"次階層が見つかりません。 floorNo={nextFloorNo}");
+                nextEnemyStates = await CreateEnemyStatesAsync(nextFloor);
+            }
         }
 
         run.SetLastTurnResults(BuildLastTurnResults(
@@ -677,6 +699,11 @@ public class QuestRunService(
             player.ClearMapUnlockFlag(stage.RequiredMapUnlockFlag.Value);
         }
 
+        if (stage.IsEndless && player.Id == ownerId)
+        {
+            player.UpdateEndlessBestFloor(run.FloorState.CurrentFloorNo);
+        }
+
         if (run.Rewards.Gold > 0)
         {
             player.GainGold(run.Rewards.Gold);
@@ -759,6 +786,74 @@ public class QuestRunService(
         }
 
         return null;
+    }
+
+    // 戦闘中フロアの敵定義を、テンプレを通算フロア番号にスケールして再構築する（敵IDごとに1回）。
+    private Dictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> BuildEndlessFloorDefinitions(
+        QuestEndlessConfig config,
+        IReadOnlyList<QuestEndlessEnemyTemplate> templates,
+        IReadOnlyList<QuestEnemyState> enemies,
+        int floorNo)
+    {
+        var templatesById = templates.ToDictionary(x => x.Id);
+        var definitions = new Dictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>();
+        foreach (var enemy in enemies)
+        {
+            if (definitions.ContainsKey(enemy.EnemyDefinitionId))
+            {
+                continue;
+            }
+
+            if (!templatesById.TryGetValue(enemy.EnemyDefinitionId, out var template))
+            {
+                throw new KeyNotFoundException($"エンドレス敵テンプレが見つかりません。id={enemy.EnemyDefinitionId}");
+            }
+
+            definitions[enemy.EnemyDefinitionId] = endlessFloorGenerator.ScaleTemplate(config, template, floorNo);
+        }
+
+        return definitions;
+    }
+
+    // 戦闘中フロア（現在敵から）の合成フロア定義。報酬計算（実効Level×報酬係数）に使う。
+    private static QuestFloorDefinition BuildEndlessFloorDefinition(
+        QuestEndlessConfig config,
+        int floorNo,
+        IReadOnlyList<QuestEnemyState> enemies)
+    {
+        var placements = enemies
+            .Select((enemy, index) => new QuestEnemyPlacement(index + 1, enemy.EnemyDefinitionId, enemy.Position))
+            .ToArray();
+        return new QuestFloorDefinition(
+            floorNo,
+            config.IsBossFloor(floorNo) ? FloorType.Boss : FloorType.Normal,
+            placements,
+            new QuestFloorRewardRule(config.RewardExpRate, config.RewardGoldRate));
+    }
+
+    // 生成済みエンドレスフロアからの合成フロア定義。
+    private static QuestFloorDefinition BuildEndlessFloorDefinitionFromGenerated(
+        QuestEndlessConfig config,
+        QuestEndlessFloor generated)
+    {
+        return new QuestFloorDefinition(
+            generated.FloorNo,
+            generated.IsBoss ? FloorType.Boss : FloorType.Normal,
+            generated.Enemies.Select(x => x.Placement).ToArray(),
+            new QuestFloorRewardRule(config.RewardExpRate, config.RewardGoldRate));
+    }
+
+    private static QuestEnemyState[] CreateEndlessEnemyStates(QuestEndlessFloor generated)
+    {
+        return generated.Enemies
+            .Select(x => new QuestEnemyState(
+                QuestEnemyInstanceId.New(),
+                x.ScaledDefinition.Id,
+                x.Placement.Position,
+                x.ScaledDefinition.Status.MaxHp,
+                x.ScaledDefinition.Status.MaxMp,
+                isDead: false))
+            .ToArray();
     }
 
     private async Task<QuestEnemyState[]> CreateEnemyStatesAsync(QuestFloorDefinition floor)

@@ -214,6 +214,7 @@ export const getPlayerResponseSchema = z
     userId: playerIdSchema,
     userName: playerUserNameSchema.optional(),
     imagePath: z.string().min(1).nullable().optional(),
+    endlessBestFloor: z.number().int().min(0).optional(),
     job: playerJobSchema,
     jobProfiles: z.array(playerJobSchema),
     masteredJobs: z.array(playerJobSchema).default([]),
