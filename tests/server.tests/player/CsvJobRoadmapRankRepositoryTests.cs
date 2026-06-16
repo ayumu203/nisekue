@@ -48,11 +48,11 @@ public class CsvJobRoadmapRankRepositoryTests
     }
 
     [Fact]
-    public void GetRank_WhenRank4Job_ReturnsFour()
+    public void GetRank_WhenGreatKnight_ReturnsFour()
     {
         var repository = new CsvJobRoadmapRankRepository();
 
-        var rank = repository.GetRank(Job.Shogun);
+        var rank = repository.GetRank(Job.GreatKnight);
 
         rank.Should().Be(4);
     }
@@ -84,7 +84,7 @@ public class CsvJobRoadmapRankRepositoryTests
 
         var jobs = repository.GetJobs();
 
-        jobs.Should().HaveCount(29);
+        jobs.Should().HaveCount(30);
         jobs[0].Should().Be(Job.Apprentice);
     }
 }
