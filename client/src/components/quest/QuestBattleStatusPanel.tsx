@@ -2,6 +2,11 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   LinearProgress,
   MenuItem,
@@ -11,6 +16,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
+import { useState } from 'react'
 import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import { resolveEndlessBattlefield } from '@/lib/endless'
@@ -78,6 +84,14 @@ type QuestBattleStatusPanelProps = {
       | 'SummonPet',
       string
     >
+    endlessCheckpoint: {
+      bannerTitle: string
+      bannerBody: string
+      confirmTitle: string
+      confirmBody: string
+      confirmButton: string
+      cancelButton: string
+    }
   }
 }
 
@@ -469,6 +483,34 @@ export default function QuestBattleStatusPanel({
       ? [{ value: 'Escape', label: locale.actionKinds.EndlessFinish }]
       : []
     : [{ value: 'Escape', label: locale.actionKinds.Escape }]
+  const [isEndlessFinishConfirmOpen, setIsEndlessFinishConfirmOpen] = useState(false)
+  const endlessCheckpointBannerTitle = locale.endlessCheckpoint.bannerTitle.replace(
+    '{{interval}}',
+    String(run.floor.bossInterval ?? ''),
+  )
+  const endlessFinishConfirmBody = locale.endlessCheckpoint.confirmBody.replace(
+    '{{floor}}',
+    String(run.floor.currentFloorNo),
+  )
+  // 「終了」はランを確定終了する不可逆操作。チェックポイント階では選択即確認ダイアログを挟む。
+  const handleActionButtonClick = (actionKind: QuestActionKind) => {
+    if (run.floor.isEndless && actionKind === 'Escape') {
+      onActionKindChange('Escape')
+      setIsEndlessFinishConfirmOpen(true)
+      return
+    }
+
+    onActionKindChange(actionKind)
+  }
+  const handleEndlessFinishCancel = () => {
+    setIsEndlessFinishConfirmOpen(false)
+    // 誤って送信ボタンで Escape を送らないよう、選択を通常攻撃に戻す。
+    onActionKindChange('NormalAttack')
+  }
+  const handleEndlessFinishConfirm = () => {
+    setIsEndlessFinishConfirmOpen(false)
+    void onSubmitCommand()
+  }
   const actionOptions: Array<{ value: QuestActionKind; label: string }> = [
     { value: 'UseMove', label: locale.actionKinds.UseMove },
     { value: 'NormalAttack', label: locale.actionKinds.NormalAttack },
@@ -591,7 +633,7 @@ export default function QuestBattleStatusPanel({
           key={option.value}
           variant="contained"
           disableRipple
-          onClick={() => onActionKindChange(option.value)}
+          onClick={() => handleActionButtonClick(option.value)}
           sx={{
             minWidth: { xs: 38, sm: 92 },
             width: { xs: 38, sm: 'auto' },
@@ -658,7 +700,27 @@ export default function QuestBattleStatusPanel({
   return (
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
       <Stack spacing={2}>
-        {run.floor.isEndless ? null : (
+        {run.floor.isEndless ? (
+          isEndlessCheckpointFloor ? (
+            <Box
+              sx={{
+                borderRadius: 2.5,
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 1, sm: 1.25 },
+                backgroundColor: '#fff4d2',
+                border: '1px solid #e6b53d',
+                color: '#6a4300',
+              }}
+            >
+              <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.8rem', sm: '0.95rem' } }}>
+                ★ {endlessCheckpointBannerTitle}
+              </Typography>
+              <Typography sx={{ mt: 0.25, fontSize: { xs: '0.7rem', sm: '0.82rem' }, lineHeight: 1.4 }}>
+                {locale.endlessCheckpoint.bannerBody}
+              </Typography>
+            </Box>
+          ) : null
+        ) : (
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip label={`${locale.waitingParticipantsLabel}: ${run.turn.waitingParticipantIds.length}`} />
           </Stack>
@@ -854,6 +916,25 @@ export default function QuestBattleStatusPanel({
           </Box>
         </Box>
       </Stack>
+
+      <Dialog open={isEndlessFinishConfirmOpen} onClose={handleEndlessFinishCancel}>
+        <DialogTitle>{locale.endlessCheckpoint.confirmTitle}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{endlessFinishConfirmBody}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEndlessFinishCancel} disabled={isCommandSubmitting}>
+            {locale.endlessCheckpoint.cancelButton}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleEndlessFinishConfirm}
+            disabled={isCommandSubmitting || !canSubmitCurrentTurn}
+          >
+            {locale.endlessCheckpoint.confirmButton}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   )
 }
