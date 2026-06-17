@@ -253,7 +253,9 @@ public class QuestRunService(
             enemyActorMap,
             finalFloorNo,
             DateTimeOffset.UtcNow.Add(TurnDeadline),
-            escapeEndsAsSuccess: stage.IsEndless);
+            // 「逃走＝成功」はエンドレスのチェックポイント階に限定する（サービスのガードに加えた多層防御）。
+            // 非チェックポイント階に万一 Escape が混入しても、ここで Failed 扱いにフォールバックする。
+            escapeEndsAsSuccess: stage.IsEndless && stage.EndlessConfig!.IsBossFloor(previousFloorNo));
 
         QuestFloorDefinition? nextFloor = null;
         QuestEnemyState[]? nextEnemyStates = null;
