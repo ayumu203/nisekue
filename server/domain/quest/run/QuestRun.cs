@@ -179,7 +179,7 @@ public class QuestRun(
         Version++;
     }
 
-    public QuestRunResolutionSummary ResolveTurn(DateTimeOffset nextDeadlineAt)
+    public QuestRunResolutionSummary ResolveTurn(DateTimeOffset nextDeadlineAt, bool escapeEndsAsSuccess = false)
     {
         EnsureInProgress();
 
@@ -195,8 +195,17 @@ public class QuestRun(
 
         if (escapeRequested)
         {
-            MarkFailed();
-            isQuestFailed = true;
+            // エンドレスのチェックポイント終了は生存撤退でも「成功」扱いにする。
+            if (escapeEndsAsSuccess)
+            {
+                MarkSucceeded();
+                isQuestCompleted = true;
+            }
+            else
+            {
+                MarkFailed();
+                isQuestFailed = true;
+            }
         }
         else if (!BattleState.HasContinuablePartyMember())
         {
@@ -224,12 +233,13 @@ public class QuestRun(
         IReadOnlyDictionary<BattleActorId, QuestParticipantId> partyActorMap,
         IReadOnlyDictionary<BattleActorId, QuestEnemyInstanceId> enemyActorMap,
         int finalFloorNo,
-        DateTimeOffset nextDeadlineAt)
+        DateTimeOffset nextDeadlineAt,
+        bool escapeEndsAsSuccess = false)
     {
         EnsureInProgress();
         BattleState.ApplyResolution(resolution, partyActorMap, enemyActorMap, TurnState.CurrentTurnNo);
 
-        var summary = ResolveTurn(nextDeadlineAt);
+        var summary = ResolveTurn(nextDeadlineAt, escapeEndsAsSuccess);
         Version++;
         if (Status == QuestRunStatus.InProgress &&
             summary.IsFloorCleared &&

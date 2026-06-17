@@ -66,7 +66,16 @@ type QuestBattleStatusPanelProps = {
       none: string
     }
     actionKinds: Record<
-      'NormalAttack' | 'UseMove' | 'Prayer' | 'Guard' | 'Wait' | 'LeaveQuest' | 'Escape' | 'Capture' | 'SummonPet',
+      | 'NormalAttack'
+      | 'UseMove'
+      | 'Prayer'
+      | 'Guard'
+      | 'Wait'
+      | 'LeaveQuest'
+      | 'Escape'
+      | 'EndlessFinish'
+      | 'Capture'
+      | 'SummonPet',
       string
     >
   }
@@ -449,16 +458,27 @@ export default function QuestBattleStatusPanel({
   const battlefieldImageSrc = resolvePublicAssetPath(
     effectiveBattlefieldImagePath ?? 'image/quest/dummy-battlefield.svg',
   )
+  // エンドレスでは「逃走」を boss_interval 倍数フロア（チェックポイント）限定の「終了（成功）」に転用する。
+  const isEndlessCheckpointFloor =
+    run.floor.isEndless === true &&
+    run.floor.bossInterval != null &&
+    run.floor.bossInterval > 0 &&
+    run.floor.currentFloorNo % run.floor.bossInterval === 0
+  const escapeActionOption: Array<{ value: QuestActionKind; label: string }> = run.floor.isEndless
+    ? isEndlessCheckpointFloor
+      ? [{ value: 'Escape', label: locale.actionKinds.EndlessFinish }]
+      : []
+    : [{ value: 'Escape', label: locale.actionKinds.Escape }]
   const actionOptions: Array<{ value: QuestActionKind; label: string }> = [
     { value: 'UseMove', label: locale.actionKinds.UseMove },
     { value: 'NormalAttack', label: locale.actionKinds.NormalAttack },
     { value: 'Guard', label: locale.actionKinds.Guard },
-    { value: 'Wait', label: locale.actionKinds.Wait },
+    // 「待機」はフロントエンドの選択肢からは除外（リクエスト経由では引き続き利用可能）。
     ...(canCapture ? [{ value: 'Capture' as const, label: locale.actionKinds.Capture }] : []),
     ...(petSummon != null && petSummon.remaining > 0
       ? [{ value: 'SummonPet' as const, label: `${locale.actionKinds.SummonPet}(${petSummon.remaining})` }]
       : []),
-    { value: 'Escape', label: locale.actionKinds.Escape },
+    ...escapeActionOption,
   ]
 
   const selectedMove = availableMoves.find((move) => move.moveId === selectedMoveId) ?? null
