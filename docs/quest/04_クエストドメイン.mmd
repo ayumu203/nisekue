@@ -363,7 +363,7 @@ classDiagram
             +SwitchToAutoActionForTimeout(now: DateTimeOffset) void
             +RequestManualControl(participantId: QuestParticipantId) void
             +ApproveManualControl(participantId: QuestParticipantId, ownerId: PlayerId) void
-            +ApplyBattleResolution(resolution: BattleTurnResolution, partyActorMap: IReadOnlyDictionary~BattleActorId, QuestParticipantId~, enemyActorMap: IReadOnlyDictionary~BattleActorId, QuestEnemyInstanceId~, finalFloorNo: int, nextDeadlineAt: DateTimeOffset) QuestRunResolutionSummary
+            +ApplyBattleResolution(resolution: BattleTurnResolution, partyActorMap: IReadOnlyDictionary~BattleActorId, QuestParticipantId~, enemyActorMap: IReadOnlyDictionary~BattleActorId, QuestEnemyInstanceId~, finalFloorNo: int, nextDeadlineAt: DateTimeOffset, escapeEndsAsSuccess: bool) QuestRunResolutionSummary
             +AdvanceFloor() void
             +ApplyTrapsOnFloorStart() void
             +EscapeByOwner() void
@@ -500,6 +500,8 @@ classDiagram
 
         class IQuestRunRepository {
             +Task~QuestRun?~ GetAsync(id: QuestRunId)
+            %% 解決ホットパス向け軽量ロード（表示専用の last_turn_results_json を読まずエグレス削減）
+            +Task~QuestRun?~ GetForResolutionAsync(id: QuestRunId)
             +Task~QuestRun?~ GetByRoomIdAsync(roomId: QuestRoomId)
             +Task~bool~ ExistsActiveRunByPlayerAsync(playerId: PlayerId)
             %% 捕獲ペットは QuestRun 内の保留状態として保存し、クリア時にのみ player_pets へ確定する
