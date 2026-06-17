@@ -54,7 +54,9 @@ public class QuestRunService(
 
     public async Task<QuestCommandSubmissionResult> SubmitCommandAsync(QuestRunId runId, QuestParticipantId participantId, QuestSubmittedCommand command)
     {
-        var run = await GetDetailAsync(runId);
+        // 解決ホットパスは軽量ロード（表示専用の last_turn_results_json を読まない）でエグレスを抑える。
+        var run = await questRunRepository.GetForResolutionAsync(runId)
+            ?? throw new KeyNotFoundException("クエスト進行情報が見つかりません。");
 
         if (command.ActionKind == ActionKind.Capture)
         {

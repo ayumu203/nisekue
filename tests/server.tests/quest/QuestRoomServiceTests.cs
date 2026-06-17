@@ -555,6 +555,12 @@ public class QuestRoomServiceTests
             return Task.FromResult(run);
         }
 
+        public Task<QuestRun?> GetForResolutionAsync(QuestRunId id)
+        {
+            runs.TryGetValue(id.Value, out var run);
+            return Task.FromResult(run);
+        }
+
         public Task<QuestRun?> GetByRoomIdAsync(QuestRoomId roomId)
         {
             var run = runs.Values.FirstOrDefault(x => x.RoomId == roomId);

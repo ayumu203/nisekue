@@ -27,6 +27,56 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         return await LoadAsync(dbContext, runEntity);
     }
 
+    public async Task<QuestRun?> GetForResolutionAsync(QuestRunId id)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        // 表示専用で重い last_turn_results_json は射影から除外し、解決に必要な列のみ取得する。
+        var projected = await dbContext.QuestRuns
+            .AsNoTracking()
+            .Where(x => x.Id == id.Value)
+            .Select(x => new
+            {
+                x.Id,
+                x.RoomId,
+                x.StageId,
+                x.Status,
+                x.CurrentFloorNo,
+                x.CurrentTurnNo,
+                x.ActionDeadlineAt,
+                x.LastResolvedTurnNo,
+                x.ChatMessagesJson,
+                x.StartedAt,
+                x.EndedAt,
+                x.Version
+            })
+            .SingleOrDefaultAsync();
+        if (projected is null)
+        {
+            return null;
+        }
+
+        var runEntity = new QuestRunEntity
+        {
+            Id = projected.Id,
+            RoomId = projected.RoomId,
+            StageId = projected.StageId,
+            Status = projected.Status,
+            CurrentFloorNo = projected.CurrentFloorNo,
+            CurrentTurnNo = projected.CurrentTurnNo,
+            ActionDeadlineAt = projected.ActionDeadlineAt,
+            LastResolvedTurnNo = projected.LastResolvedTurnNo,
+            // 未取得を表す。MapToDomain で LastTurnResults=null となり、保存時もダーティでない限り上書きしない。
+            LastTurnResultsJson = null,
+            ChatMessagesJson = projected.ChatMessagesJson,
+            StartedAt = projected.StartedAt,
+            EndedAt = projected.EndedAt,
+            Version = projected.Version
+        };
+
+        return await LoadAsync(dbContext, runEntity);
+    }
+
     public async Task<QuestRun?> GetByRoomIdAsync(QuestRoomId roomId)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -165,7 +215,9 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                 entry.Property(x => x.CurrentTurnNo).IsModified = true;
                 entry.Property(x => x.ActionDeadlineAt).IsModified = true;
                 entry.Property(x => x.LastResolvedTurnNo).IsModified = true;
-                entry.Property(x => x.LastTurnResultsJson).IsModified = true;
+                // last_turn_results_json は解決でダーティになった時だけ書く。軽量ロード（未取得）由来でも
+                // ダーティでなければ既存値を温存し、null での上書き事故を防ぐ。
+                entry.Property(x => x.LastTurnResultsJson).IsModified = run.LastTurnResultsDirty;
                 entry.Property(x => x.ChatMessagesJson).IsModified = true;
                 entry.Property(x => x.EndedAt).IsModified = true;
                 entry.Property(x => x.Version).IsModified = true;
@@ -180,6 +232,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             await dbContext.SaveChangesAsync();
             run.SyncVersion(run.Version);
             run.MarkChatMessagesPersisted();
+            run.MarkLastTurnResultsPersisted();
         }
         catch (DbUpdateConcurrencyException ex)
         {

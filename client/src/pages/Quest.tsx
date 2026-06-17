@@ -137,7 +137,13 @@ export default function Quest() {
   const [isRecoveringQuest, setIsRecoveringQuest] = useState(false)
   const [hasTriedQuestRecovery, setHasTriedQuestRecovery] = useState(false)
   const hasAttemptedQuestRecoveryRef = useRef(false)
-  const mutateRunRef = useRef<((data: QuestRunDetailResponse, opts: { revalidate: boolean }) => void) | null>(null)
+  const mutateRunRef = useRef<
+    | ((
+        data: QuestRunDetailResponse | ((current: QuestRunDetailResponse | undefined) => QuestRunDetailResponse),
+        opts: { revalidate: boolean },
+      ) => void)
+    | null
+  >(null)
   const questMainRef = useRef<HTMLDivElement | null>(null)
   const errorAlertRef = useRef<HTMLDivElement | null>(null)
   useMobileScrollToRef(questMainRef, { enabled: !isLoading })
@@ -520,7 +526,15 @@ export default function Quest() {
       mutateRunRef.current?.(event, { revalidate: false })
     },
     onUpdated: (event) => {
-      mutateRunRef.current?.(event, { revalidate: false })
+      // 解決ホットパスは軽量ロード由来で lastTurnResults が null になり得る（コマンド送信のみで未解決の場合など）。
+      // 直前ターンの結果表示が消えないよう、null のときは現在値を保持する。
+      mutateRunRef.current?.(
+        (current) =>
+          event.lastTurnResults == null && current?.lastTurnResults != null
+            ? { ...event, lastTurnResults: current.lastTurnResults }
+            : event,
+        { revalidate: false },
+      )
     },
   })
 
