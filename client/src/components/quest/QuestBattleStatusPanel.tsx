@@ -473,7 +473,7 @@ export default function QuestBattleStatusPanel({
     { value: 'UseMove', label: locale.actionKinds.UseMove },
     { value: 'NormalAttack', label: locale.actionKinds.NormalAttack },
     { value: 'Guard', label: locale.actionKinds.Guard },
-    { value: 'Wait', label: locale.actionKinds.Wait },
+    // 「待機」はフロントエンドの選択肢からは除外（リクエスト経由では引き続き利用可能）。
     ...(canCapture ? [{ value: 'Capture' as const, label: locale.actionKinds.Capture }] : []),
     ...(petSummon != null && petSummon.remaining > 0
       ? [{ value: 'SummonPet' as const, label: `${locale.actionKinds.SummonPet}(${petSummon.remaining})` }]
