@@ -16,7 +16,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
-import { useState } from 'react'
+import { useRef } from 'react'
 import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import { resolveEndlessBattlefield } from '@/lib/endless'
@@ -478,12 +478,18 @@ export default function QuestBattleStatusPanel({
     run.floor.bossInterval != null &&
     run.floor.bossInterval > 0 &&
     run.floor.currentFloorNo % run.floor.bossInterval === 0
-  const escapeActionOption: Array<{ value: QuestActionKind; label: string }> = run.floor.isEndless
-    ? isEndlessCheckpointFloor
+  const escapeActionOption: Array<{ value: QuestActionKind; label: string }> = !run.floor.isEndless
+    ? [{ value: 'Escape', label: locale.actionKinds.Escape }]
+    : isEndlessCheckpointFloor
       ? [{ value: 'Escape', label: locale.actionKinds.EndlessFinish }]
       : []
-    : [{ value: 'Escape', label: locale.actionKinds.Escape }]
-  const [isEndlessFinishConfirmOpen, setIsEndlessFinishConfirmOpen] = useState(false)
+  // 終了ダイアログを開く前の選択。キャンセル時にこの選択へ戻す。
+  const actionKindBeforeFinishDialogRef = useRef<QuestActionKind>(selectedActionKind)
+  // 確認ダイアログの開閉は専用 state を持たず選択状態から派生させる。こうすると SignalR 更新で
+  // 非チェックポイント階へ遷移した場合に自動で閉じ、開閉フラグが取り残されることもない。
+  // 選択された 'Escape' 自体の差し戻しは Quest 側のアクション妥当性チェックで行う。
+  const isEndlessFinishConfirmOpen =
+    run.floor.isEndless === true && selectedActionKind === 'Escape' && isEndlessCheckpointFloor
   const endlessCheckpointBannerTitle = locale.endlessCheckpoint.bannerTitle.replace(
     '{{interval}}',
     String(run.floor.bossInterval ?? ''),
@@ -495,20 +501,19 @@ export default function QuestBattleStatusPanel({
   // 「終了」はランを確定終了する不可逆操作。チェックポイント階では選択即確認ダイアログを挟む。
   const handleActionButtonClick = (actionKind: QuestActionKind) => {
     if (run.floor.isEndless && actionKind === 'Escape') {
+      // 'Escape' を選択すると派生値 isEndlessFinishConfirmOpen が真になり確認ダイアログが開く。
+      actionKindBeforeFinishDialogRef.current = selectedActionKind
       onActionKindChange('Escape')
-      setIsEndlessFinishConfirmOpen(true)
       return
     }
 
     onActionKindChange(actionKind)
   }
   const handleEndlessFinishCancel = () => {
-    setIsEndlessFinishConfirmOpen(false)
-    // 誤って送信ボタンで Escape を送らないよう、選択を通常攻撃に戻す。
-    onActionKindChange('NormalAttack')
+    // 選択を開く前へ戻すと派生値が偽になりダイアログが閉じる。送信ボタンからの誤 Escape も防げる。
+    onActionKindChange(actionKindBeforeFinishDialogRef.current)
   }
   const handleEndlessFinishConfirm = () => {
-    setIsEndlessFinishConfirmOpen(false)
     void onSubmitCommand()
   }
   const actionOptions: Array<{ value: QuestActionKind; label: string }> = [

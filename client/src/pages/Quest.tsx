@@ -11,7 +11,7 @@ import {
   useTheme,
 } from '@mui/material'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import useSWR, { useSWRConfig } from 'swr'
+import useSWR, { useSWRConfig, type KeyedMutator } from 'swr'
 import { useQuestRunHub } from '@/hooks/useQuestRunHub'
 import { createPlayer, getPlayer, listPlayers } from '@/api/player'
 import { getPets } from '@/api/pet'
@@ -137,13 +137,7 @@ export default function Quest() {
   const [isRecoveringQuest, setIsRecoveringQuest] = useState(false)
   const [hasTriedQuestRecovery, setHasTriedQuestRecovery] = useState(false)
   const hasAttemptedQuestRecoveryRef = useRef(false)
-  const mutateRunRef = useRef<
-    | ((
-        data: QuestRunDetailResponse | ((current: QuestRunDetailResponse | undefined) => QuestRunDetailResponse),
-        opts: { revalidate: boolean },
-      ) => void)
-    | null
-  >(null)
+  const mutateRunRef = useRef<KeyedMutator<QuestRunDetailResponse> | null>(null)
   const questMainRef = useRef<HTMLDivElement | null>(null)
   const errorAlertRef = useRef<HTMLDivElement | null>(null)
   useMobileScrollToRef(questMainRef, { enabled: !isLoading })
@@ -678,14 +672,25 @@ export default function Quest() {
     }
   }, [selfPartyMember])
 
+  // エンドレスでは Escape を「終了（成功）」としてチェックポイント階限定で許可している。
+  // フロア遷移（SignalR 更新など）で非チェックポイント階に移った後も Escape が選択されたまま残ると、
+  // 送信ボタンから無効な Escape を送って 409 になるため、ここで NormalAttack に差し戻す。
+  const isEndlessNonCheckpointFloor =
+    currentRun?.floor.isEndless === true &&
+    !(
+      currentRun.floor.bossInterval != null &&
+      currentRun.floor.bossInterval > 0 &&
+      currentRun.floor.currentFloorNo % currentRun.floor.bossInterval === 0
+    )
   useEffect(() => {
     if (
       (selectedActionKind === 'Capture' && !canCapture) ||
-      (selectedActionKind === 'SummonPet' && (petSummon == null || petSummon.remaining <= 0))
+      (selectedActionKind === 'SummonPet' && (petSummon == null || petSummon.remaining <= 0)) ||
+      (selectedActionKind === 'Escape' && isEndlessNonCheckpointFloor)
     ) {
       setSelectedActionKind('NormalAttack')
     }
-  }, [selectedActionKind, canCapture, petSummon])
+  }, [selectedActionKind, canCapture, petSummon, isEndlessNonCheckpointFloor])
 
   const lastTurnResultsTurnNo = currentRun?.lastTurnResults?.turnNo ?? null
   const capturedInLastTurn =
