@@ -383,13 +383,14 @@ internal static class QuestEndpoints
                 return Results.Unauthorized();
             }
 
-            var run = await questRunRepository.GetAsync(new QuestRunId(runId));
-            if (run is null)
+            // 参加者検証はルームIDだけで足りるため、集約全体（last_turn_results_json 含む）を読まない。
+            var roomId = await questRunRepository.GetRoomIdAsync(new QuestRunId(runId));
+            if (roomId is null)
             {
                 return Results.NotFound(new { message = "クエスト進行情報が見つかりません。" });
             }
 
-            var room = await questRoomRepository.GetAsync(run.RoomId);
+            var room = await questRoomRepository.GetAsync(roomId.Value);
             if (room is null)
             {
                 return Results.NotFound(new { message = "ルームが見つかりません。" });
@@ -422,7 +423,7 @@ internal static class QuestEndpoints
                     request.MoveId is null ? null : new MoveId(request.MoveId.Value),
                     request.TargetRow is null ? null : new BattlePosition(request.TargetRow.Value, request.TargetColumn!.Value));
 
-                var result = await questRunService.SubmitCommandAsync(run.Id, participantId, command);
+                var result = await questRunService.SubmitCommandAsync(new QuestRunId(runId), participantId, command);
                 var payload = await responseMapper.MapQuestRunDetailAsync(result.Run);
                 await hubContext.Clients.Group(result.Run.Id.Value.ToString()).SendAsync("QuestRunUpdated", payload);
                 return Results.Ok(new

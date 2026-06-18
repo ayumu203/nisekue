@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using System.Text.Json;
 using server.domain.battle;
 using server.domain.battle.enums;
@@ -25,6 +26,38 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         }
 
         return await LoadAsync(dbContext, runEntity);
+    }
+
+    public async Task<QuestRun?> GetForResolutionAsync(QuestRunId id)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        // 表示専用で重い last_turn_results_json は射影から除外し、解決に必要な列のみ取得する。
+        var projected = await dbContext.QuestRuns
+            .AsNoTracking()
+            .Where(x => x.Id == id.Value)
+            .Select(LightRunProjection)
+            .SingleOrDefaultAsync();
+        if (projected is null)
+        {
+            return null;
+        }
+
+        return await LoadAsync(dbContext, ToLightRunEntity(projected));
+    }
+
+    public async Task<QuestRoomId?> GetRoomIdAsync(QuestRunId id)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        // 参加者検証はルームIDだけ分かればよいため、集約全体（特に last_turn_results_json）を読まない。
+        var roomId = await dbContext.QuestRuns
+            .AsNoTracking()
+            .Where(x => x.Id == id.Value)
+            .Select(x => (Guid?)x.RoomId)
+            .SingleOrDefaultAsync();
+
+        return roomId is null ? null : new QuestRoomId(roomId.Value);
     }
 
     public async Task<QuestRun?> GetByRoomIdAsync(QuestRoomId roomId)
@@ -81,14 +114,18 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
     public async Task<IReadOnlyList<QuestRun>> ListExpiredAsync(DateTimeOffset now)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var runEntities = await dbContext.QuestRuns
+        // 自動処理は直近ターン結果を参照しない（解決時に再生成される）ため last_turn_results_json は読まない。
+        var projectedRuns = await dbContext.QuestRuns
             .AsNoTracking()
             .Where(x => x.Status == (int)QuestRunStatus.InProgress && x.ActionDeadlineAt <= now)
+            .Select(LightRunProjection)
             .ToListAsync();
-        if (runEntities.Count == 0)
+        if (projectedRuns.Count == 0)
         {
             return [];
         }
+
+        var runEntities = projectedRuns.Select(ToLightRunEntity).ToList();
 
         var runIds = runEntities.Select(x => x.Id).ToList();
         var partyMemberByRunId = await dbContext.QuestRunPartyMembers
@@ -165,7 +202,9 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                 entry.Property(x => x.CurrentTurnNo).IsModified = true;
                 entry.Property(x => x.ActionDeadlineAt).IsModified = true;
                 entry.Property(x => x.LastResolvedTurnNo).IsModified = true;
-                entry.Property(x => x.LastTurnResultsJson).IsModified = true;
+                // last_turn_results_json は解決でダーティになった時だけ書く。軽量ロード（未取得）由来でも
+                // ダーティでなければ既存値を温存し、null での上書き事故を防ぐ。
+                entry.Property(x => x.LastTurnResultsJson).IsModified = run.LastTurnResultsDirty;
                 entry.Property(x => x.ChatMessagesJson).IsModified = true;
                 entry.Property(x => x.EndedAt).IsModified = true;
                 entry.Property(x => x.Version).IsModified = true;
@@ -180,6 +219,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             await dbContext.SaveChangesAsync();
             run.SyncVersion(run.Version);
             run.MarkChatMessagesPersisted();
+            run.MarkLastTurnResultsPersisted();
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -813,6 +853,54 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                     x.CapturedAt))
                 .ToArray());
     }
+
+    // 解決/自動処理のホットパス向け軽量射影。表示専用で重い last_turn_results_json を読み込まない。
+    private static readonly Expression<Func<QuestRunEntity, LightRunColumns>> LightRunProjection =
+        x => new LightRunColumns(
+            x.Id,
+            x.RoomId,
+            x.StageId,
+            x.Status,
+            x.CurrentFloorNo,
+            x.CurrentTurnNo,
+            x.ActionDeadlineAt,
+            x.LastResolvedTurnNo,
+            x.ChatMessagesJson,
+            x.StartedAt,
+            x.EndedAt,
+            x.Version);
+
+    private static QuestRunEntity ToLightRunEntity(LightRunColumns columns) => new()
+    {
+        Id = columns.Id,
+        RoomId = columns.RoomId,
+        StageId = columns.StageId,
+        Status = columns.Status,
+        CurrentFloorNo = columns.CurrentFloorNo,
+        CurrentTurnNo = columns.CurrentTurnNo,
+        ActionDeadlineAt = columns.ActionDeadlineAt,
+        LastResolvedTurnNo = columns.LastResolvedTurnNo,
+        // 未取得を表す。MapToDomain で LastTurnResults=null となり、保存時もダーティでない限り上書きしない。
+        LastTurnResultsJson = null,
+        ChatMessagesJson = columns.ChatMessagesJson,
+        StartedAt = columns.StartedAt,
+        EndedAt = columns.EndedAt,
+        Version = columns.Version
+    };
+
+    private sealed record LightRunColumns(
+        Guid Id,
+        Guid RoomId,
+        int StageId,
+        int Status,
+        int CurrentFloorNo,
+        int CurrentTurnNo,
+        DateTimeOffset ActionDeadlineAt,
+        int? LastResolvedTurnNo,
+        string ChatMessagesJson,
+        DateTimeOffset StartedAt,
+        DateTimeOffset? EndedAt,
+        int Version);
 
     private sealed record QuestRewardStateDto(Guid[]? SkippedRewardPlayerIds, CapturedPetDto[]? CapturedPets);
 

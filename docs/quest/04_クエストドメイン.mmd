@@ -358,17 +358,20 @@ classDiagram
             +IReadOnlyList~QuestChatMessage~ ChatMessages
             +DateTimeOffset StartedAt
             +DateTimeOffset? EndedAt
+            %% 直近ターン結果が再計算され永続化が必要か。軽量ロード時の last_turn_results_json の null 上書きを防ぐ
+            +bool LastTurnResultsDirty
             +InitializeFirstFloor() void
             +SubmitCommand(participantId: QuestParticipantId, command: QuestSubmittedCommand, now: DateTimeOffset) void
             +SwitchToAutoActionForTimeout(now: DateTimeOffset) void
             +RequestManualControl(participantId: QuestParticipantId) void
             +ApproveManualControl(participantId: QuestParticipantId, ownerId: PlayerId) void
-            +ApplyBattleResolution(resolution: BattleTurnResolution, partyActorMap: IReadOnlyDictionary~BattleActorId, QuestParticipantId~, enemyActorMap: IReadOnlyDictionary~BattleActorId, QuestEnemyInstanceId~, finalFloorNo: int, nextDeadlineAt: DateTimeOffset) QuestRunResolutionSummary
+            +ApplyBattleResolution(resolution: BattleTurnResolution, partyActorMap: IReadOnlyDictionary~BattleActorId, QuestParticipantId~, enemyActorMap: IReadOnlyDictionary~BattleActorId, QuestEnemyInstanceId~, finalFloorNo: int, nextDeadlineAt: DateTimeOffset, escapeEndsAsSuccess: bool) QuestRunResolutionSummary
             +AdvanceFloor() void
             +ApplyTrapsOnFloorStart() void
             +EscapeByOwner() void
             +MarkSucceeded() void
             +MarkFailed() void
+            +MarkLastTurnResultsPersisted() void
             +Abort(reason: string) void
             +AddChatMessage(message: QuestChatMessage) void
             +ConsumePendingChatMessages() IReadOnlyList~QuestChatMessage~
@@ -500,6 +503,10 @@ classDiagram
 
         class IQuestRunRepository {
             +Task~QuestRun?~ GetAsync(id: QuestRunId)
+            %% 解決ホットパス向け軽量ロード（表示専用の last_turn_results_json を読まずエグレス削減）
+            +Task~QuestRun?~ GetForResolutionAsync(id: QuestRunId)
+            %% 集約全体を読まずルームIDのみ取得（コマンド送信前段の参加者検証向け）
+            +Task~QuestRoomId?~ GetRoomIdAsync(id: QuestRunId)
             +Task~QuestRun?~ GetByRoomIdAsync(roomId: QuestRoomId)
             +Task~bool~ ExistsActiveRunByPlayerAsync(playerId: PlayerId)
             %% 捕獲ペットは QuestRun 内の保留状態として保存し、クリア時にのみ player_pets へ確定する

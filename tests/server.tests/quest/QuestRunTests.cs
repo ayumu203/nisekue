@@ -51,6 +51,19 @@ public class QuestRunTests
     }
 
     [Fact]
+    public void SetLastTurnResults_MarksDirty_AndMarkPersistedClearsIt()
+    {
+        var run = CreateRun();
+        run.LastTurnResultsDirty.Should().BeFalse();
+
+        run.SetLastTurnResults(new QuestLastTurnResults(1, DateTimeOffset.UtcNow));
+        run.LastTurnResultsDirty.Should().BeTrue();
+
+        run.MarkLastTurnResultsPersisted();
+        run.LastTurnResultsDirty.Should().BeFalse();
+    }
+
+    [Fact]
     public void ResolveTurn_WhenEscapeEndsAsSuccess_MarksRunSucceeded()
     {
         var run = CreateRun();

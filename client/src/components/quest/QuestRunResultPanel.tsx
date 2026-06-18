@@ -2,7 +2,6 @@ import { Box, Button, Paper, Stack, Typography } from '@mui/material'
 import { innerSurfaceSx } from '@/constants/styles'
 import { softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
-import { resolveEndlessThemeName } from '@/lib/endless'
 import questRoomLocale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestRunDetailResponse } from '@/schema/quest'
 
@@ -42,7 +41,6 @@ export default function QuestRunResultPanel({
 
   const isEndless = run.floor.isEndless === true
   const reachedFloor = run.floor.currentFloorNo
-  const endlessThemeName = resolveEndlessThemeName(run.floor.themeNo, questRoomLocale.endless.themeNames)
 
   const partyMembers = [...run.partyMembers].sort((left, right) => {
     if (left.position.row !== right.position.row) {
@@ -115,11 +113,6 @@ export default function QuestRunResultPanel({
               <Typography variant="h4" sx={{ fontWeight: 900, color: '#8b5a00', lineHeight: 1 }}>
                 {reachedFloor}
               </Typography>
-              {endlessThemeName ? (
-                <Typography variant="caption" sx={{ color: '#5b4b2d' }}>
-                  {`${questRoomLocale.endless.themeLabel}: ${endlessThemeName}`}
-                </Typography>
-              ) : null}
             </Stack>
             {endlessBestFloor != null ? (
               <Stack alignItems="center" spacing={0.25}>

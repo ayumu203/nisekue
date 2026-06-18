@@ -39,6 +39,10 @@ public class QuestRun(
     public QuestTrapCollection Traps { get; } = traps ?? throw new ArgumentNullException(nameof(traps));
     public QuestRewardAccumulator Rewards { get; } = rewards ?? throw new ArgumentNullException(nameof(rewards));
     public QuestLastTurnResults? LastTurnResults { get; private set; } = lastTurnResults;
+
+    // 直近ターン結果が再計算され、永続化が必要かどうか。軽量ロード（last_turn_results_json 未取得）でも
+    // ダーティでない限り保存時に列を上書きしないことで、表示用ログの消失を防ぐ。
+    public bool LastTurnResultsDirty { get; private set; }
     public IReadOnlyList<QuestChatMessage> ChatMessages => chatMessages;
     public IReadOnlyList<QuestChatMessage> PendingChatMessages => pendingChatMessages;
     public DateTimeOffset StartedAt { get; } = startedAt;
@@ -280,7 +284,13 @@ public class QuestRun(
     public void SetLastTurnResults(QuestLastTurnResults? lastTurnResults)
     {
         LastTurnResults = lastTurnResults;
+        LastTurnResultsDirty = true;
         Version++;
+    }
+
+    public void MarkLastTurnResultsPersisted()
+    {
+        LastTurnResultsDirty = false;
     }
 
     public void EscapeByOwner()
