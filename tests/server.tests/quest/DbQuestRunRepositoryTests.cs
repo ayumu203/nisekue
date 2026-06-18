@@ -66,6 +66,53 @@ public class DbQuestRunRepositoryTests
         full.LastTurnResults!.TurnNo.Should().Be(7);
     }
 
+    [Fact]
+    public async Task ListExpiredAsync_DoesNotLoadLastTurnResults_AndPreservesOnSave()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection));
+
+        var run = CreateRun();
+        run.SetLastTurnResults(new QuestLastTurnResults(7, DateTimeOffset.UtcNow));
+        await repository.SaveAsync(run);
+
+        // 期限切れ取得は表示専用の last_turn_results_json を読まない（ダーティでない）。
+        var expired = await repository.ListExpiredAsync(DateTimeOffset.UtcNow.AddMinutes(1));
+        var loaded = expired.Should().ContainSingle().Subject;
+        loaded.LastTurnResults.Should().BeNull();
+        loaded.LastTurnResultsDirty.Should().BeFalse();
+
+        // 軽量ロード由来でも保存時に既存の last_turn_results を上書きしない。
+        await repository.SaveAsync(loaded);
+        var full = await repository.GetAsync(run.Id);
+        full!.LastTurnResults!.TurnNo.Should().Be(7);
+    }
+
+    [Fact]
+    public async Task GetRoomIdAsync_ReturnsRoomId_WhenRunExists_AndNull_WhenMissing()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection));
+
+        var run = CreateRun();
+        await repository.SaveAsync(run);
+
+        (await repository.GetRoomIdAsync(run.Id)).Should().Be(run.RoomId);
+        (await repository.GetRoomIdAsync(QuestRunId.New())).Should().BeNull();
+    }
+
     private static QuestRun CreateRun()
     {
         var participantId = QuestParticipantId.New();

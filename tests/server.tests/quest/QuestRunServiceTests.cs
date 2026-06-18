@@ -2338,6 +2338,9 @@ public class QuestRunServiceTests
         public Task<QuestRun?> GetForResolutionAsync(QuestRunId id)
             => Task.FromResult(StoredRun?.Id == id ? StoredRun : null);
 
+        public Task<QuestRoomId?> GetRoomIdAsync(QuestRunId id)
+            => Task.FromResult<QuestRoomId?>(StoredRun?.Id == id ? StoredRun!.RoomId : null);
+
         public Task<QuestRun?> GetByRoomIdAsync(QuestRoomId roomId)
             => Task.FromResult(StoredRun?.RoomId == roomId ? StoredRun : null);
 

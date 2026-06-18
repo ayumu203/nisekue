@@ -94,25 +94,23 @@ public class QuestRunService(
     }
 
     // エンドレスの「終了」は boss_interval 倍数フロア（チェックポイント）でのみ許可する。
-    private async Task EnsureEndlessEscapeAllowedAsync(QuestRun run)
+    // エンドレスなら true（チェックポイント検証済み）、非エンドレスなら false を返す。
+    private async Task<bool> EnsureEndlessEscapeAllowedAsync(QuestRun run)
     {
         var stage = await questStageRepository.GetAsync(run.StageId)
             ?? throw new KeyNotFoundException("ステージ定義が見つかりません。");
         if (!stage.IsEndless)
         {
-            return;
+            return false;
         }
 
-        if (!IsEndlessCheckpointFloor(stage.EndlessConfig!, run.FloorState.CurrentFloorNo))
+        if (!stage.EndlessConfig!.IsBossFloor(run.FloorState.CurrentFloorNo))
         {
             throw new InvalidOperationException(
                 $"エンドレスは{stage.EndlessConfig!.BossInterval}階ごとのチェックポイントでのみ終了できます。");
         }
-    }
 
-    private static bool IsEndlessCheckpointFloor(QuestEndlessConfig config, int floorNo)
-    {
-        return config.IsBossFloor(floorNo);
+        return true;
     }
 
     public async Task<QuestRun> RequestManualControlAsync(QuestRunId runId, QuestParticipantId participantId)
@@ -141,17 +139,9 @@ public class QuestRunService(
             throw new InvalidOperationException("ルームのオーナーのみ撤退を実行できます。");
         }
 
-        var stage = await questStageRepository.GetAsync(run.StageId)
-            ?? throw new KeyNotFoundException("ステージ定義が見つかりません。");
-        if (stage.IsEndless)
+        // エンドレスの「終了」はチェックポイント（boss_interval 倍数フロア）でのみ成功扱いで終える。
+        if (await EnsureEndlessEscapeAllowedAsync(run))
         {
-            // エンドレスの「終了」はチェックポイント（boss_interval 倍数フロア）でのみ成功扱いで終える。
-            if (!IsEndlessCheckpointFloor(stage.EndlessConfig!, run.FloorState.CurrentFloorNo))
-            {
-                throw new InvalidOperationException(
-                    $"エンドレスは{stage.EndlessConfig!.BossInterval}階ごとのチェックポイントでのみ終了できます。");
-            }
-
             run.MarkSucceeded();
         }
         else
