@@ -2,6 +2,11 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControl,
   LinearProgress,
   MenuItem,
@@ -11,6 +16,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
+import { useRef } from 'react'
 import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import { resolveEndlessBattlefield } from '@/lib/endless'
@@ -66,9 +72,26 @@ type QuestBattleStatusPanelProps = {
       none: string
     }
     actionKinds: Record<
-      'NormalAttack' | 'UseMove' | 'Prayer' | 'Guard' | 'Wait' | 'LeaveQuest' | 'Escape' | 'Capture' | 'SummonPet',
+      | 'NormalAttack'
+      | 'UseMove'
+      | 'Prayer'
+      | 'Guard'
+      | 'Wait'
+      | 'LeaveQuest'
+      | 'Escape'
+      | 'EndlessFinish'
+      | 'Capture'
+      | 'SummonPet',
       string
     >
+    endlessCheckpoint: {
+      bannerTitle: string
+      bannerBody: string
+      confirmTitle: string
+      confirmBody: string
+      confirmButton: string
+      cancelButton: string
+    }
   }
 }
 
@@ -449,16 +472,60 @@ export default function QuestBattleStatusPanel({
   const battlefieldImageSrc = resolvePublicAssetPath(
     effectiveBattlefieldImagePath ?? 'image/quest/dummy-battlefield.svg',
   )
+  // エンドレスでは「逃走」を boss_interval 倍数フロア（チェックポイント）限定の「終了（成功）」に転用する。
+  const isEndlessCheckpointFloor =
+    run.floor.isEndless === true &&
+    run.floor.bossInterval != null &&
+    run.floor.bossInterval > 0 &&
+    run.floor.currentFloorNo % run.floor.bossInterval === 0
+  const escapeActionOption: Array<{ value: QuestActionKind; label: string }> = !run.floor.isEndless
+    ? [{ value: 'Escape', label: locale.actionKinds.Escape }]
+    : isEndlessCheckpointFloor
+      ? [{ value: 'Escape', label: locale.actionKinds.EndlessFinish }]
+      : []
+  // 終了ダイアログを開く前の選択。キャンセル時にこの選択へ戻す。
+  const actionKindBeforeFinishDialogRef = useRef<QuestActionKind>(selectedActionKind)
+  // 確認ダイアログの開閉は専用 state を持たず選択状態から派生させる。こうすると SignalR 更新で
+  // 非チェックポイント階へ遷移した場合に自動で閉じ、開閉フラグが取り残されることもない。
+  // 選択された 'Escape' 自体の差し戻しは Quest 側のアクション妥当性チェックで行う。
+  const isEndlessFinishConfirmOpen =
+    run.floor.isEndless === true && selectedActionKind === 'Escape' && isEndlessCheckpointFloor
+  const endlessCheckpointBannerTitle = locale.endlessCheckpoint.bannerTitle.replace(
+    '{{interval}}',
+    String(run.floor.bossInterval ?? ''),
+  )
+  const endlessFinishConfirmBody = locale.endlessCheckpoint.confirmBody.replace(
+    '{{floor}}',
+    String(run.floor.currentFloorNo),
+  )
+  // 「終了」はランを確定終了する不可逆操作。チェックポイント階では選択即確認ダイアログを挟む。
+  const handleActionButtonClick = (actionKind: QuestActionKind) => {
+    if (run.floor.isEndless && actionKind === 'Escape') {
+      // 'Escape' を選択すると派生値 isEndlessFinishConfirmOpen が真になり確認ダイアログが開く。
+      actionKindBeforeFinishDialogRef.current = selectedActionKind
+      onActionKindChange('Escape')
+      return
+    }
+
+    onActionKindChange(actionKind)
+  }
+  const handleEndlessFinishCancel = () => {
+    // 選択を開く前へ戻すと派生値が偽になりダイアログが閉じる。送信ボタンからの誤 Escape も防げる。
+    onActionKindChange(actionKindBeforeFinishDialogRef.current)
+  }
+  const handleEndlessFinishConfirm = () => {
+    void onSubmitCommand()
+  }
   const actionOptions: Array<{ value: QuestActionKind; label: string }> = [
     { value: 'UseMove', label: locale.actionKinds.UseMove },
     { value: 'NormalAttack', label: locale.actionKinds.NormalAttack },
     { value: 'Guard', label: locale.actionKinds.Guard },
-    { value: 'Wait', label: locale.actionKinds.Wait },
+    // 「待機」はフロントエンドの選択肢からは除外（リクエスト経由では引き続き利用可能）。
     ...(canCapture ? [{ value: 'Capture' as const, label: locale.actionKinds.Capture }] : []),
     ...(petSummon != null && petSummon.remaining > 0
       ? [{ value: 'SummonPet' as const, label: `${locale.actionKinds.SummonPet}(${petSummon.remaining})` }]
       : []),
-    { value: 'Escape', label: locale.actionKinds.Escape },
+    ...escapeActionOption,
   ]
 
   const selectedMove = availableMoves.find((move) => move.moveId === selectedMoveId) ?? null
@@ -571,7 +638,7 @@ export default function QuestBattleStatusPanel({
           key={option.value}
           variant="contained"
           disableRipple
-          onClick={() => onActionKindChange(option.value)}
+          onClick={() => handleActionButtonClick(option.value)}
           sx={{
             minWidth: { xs: 38, sm: 92 },
             width: { xs: 38, sm: 'auto' },
@@ -638,7 +705,27 @@ export default function QuestBattleStatusPanel({
   return (
     <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
       <Stack spacing={2}>
-        {run.floor.isEndless ? null : (
+        {run.floor.isEndless ? (
+          isEndlessCheckpointFloor ? (
+            <Box
+              sx={{
+                borderRadius: 2.5,
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 1, sm: 1.25 },
+                backgroundColor: '#fff4d2',
+                border: '1px solid #e6b53d',
+                color: '#6a4300',
+              }}
+            >
+              <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.8rem', sm: '0.95rem' } }}>
+                ★ {endlessCheckpointBannerTitle}
+              </Typography>
+              <Typography sx={{ mt: 0.25, fontSize: { xs: '0.7rem', sm: '0.82rem' }, lineHeight: 1.4 }}>
+                {locale.endlessCheckpoint.bannerBody}
+              </Typography>
+            </Box>
+          ) : null
+        ) : (
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip label={`${locale.waitingParticipantsLabel}: ${run.turn.waitingParticipantIds.length}`} />
           </Stack>
@@ -834,6 +921,25 @@ export default function QuestBattleStatusPanel({
           </Box>
         </Box>
       </Stack>
+
+      <Dialog open={isEndlessFinishConfirmOpen} onClose={handleEndlessFinishCancel}>
+        <DialogTitle>{locale.endlessCheckpoint.confirmTitle}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{endlessFinishConfirmBody}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEndlessFinishCancel} disabled={isCommandSubmitting}>
+            {locale.endlessCheckpoint.cancelButton}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleEndlessFinishConfirm}
+            disabled={isCommandSubmitting || !canSubmitCurrentTurn}
+          >
+            {locale.endlessCheckpoint.confirmButton}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   )
 }

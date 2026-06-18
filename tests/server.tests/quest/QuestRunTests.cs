@@ -51,6 +51,36 @@ public class QuestRunTests
     }
 
     [Fact]
+    public void SetLastTurnResults_MarksDirty_AndMarkPersistedClearsIt()
+    {
+        var run = CreateRun();
+        run.LastTurnResultsDirty.Should().BeFalse();
+
+        run.SetLastTurnResults(new QuestLastTurnResults(1, DateTimeOffset.UtcNow));
+        run.LastTurnResultsDirty.Should().BeTrue();
+
+        run.MarkLastTurnResultsPersisted();
+        run.LastTurnResultsDirty.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ResolveTurn_WhenEscapeEndsAsSuccess_MarksRunSucceeded()
+    {
+        var run = CreateRun();
+        run.SubmitCommand(
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(run.PartySnapshots[0].ParticipantId, 1, ActionKind.Escape, DateTimeOffset.UtcNow),
+            DateTimeOffset.UtcNow);
+
+        var summary = run.ResolveTurn(DateTimeOffset.UtcNow.AddSeconds(60), escapeEndsAsSuccess: true);
+
+        run.Status.Should().Be(QuestRunStatus.Succeeded);
+        run.EndedAt.Should().NotBeNull();
+        summary.IsQuestCompleted.Should().BeTrue();
+        summary.IsQuestFailed.Should().BeFalse();
+    }
+
+    [Fact]
     public void ApplyBattleResolution_WhenFinalFloorEnemiesAreAllDefeated_MarksRunSucceeded()
     {
         var run = CreateRun();

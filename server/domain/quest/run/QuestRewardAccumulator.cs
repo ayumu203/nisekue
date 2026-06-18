@@ -21,12 +21,12 @@ public class QuestRewardAccumulator(
 
     public void AddExp(int value)
     {
-        Exp += ValidateNonNegative(value);
+        Exp = SaturatingAdd(Exp, ValidateNonNegative(value));
     }
 
     public void AddGold(int value)
     {
-        Gold += ValidateNonNegative(value);
+        Gold = SaturatingAdd(Gold, ValidateNonNegative(value));
     }
 
     public void SetEquipmentReward(EquipmentId? equipmentId)
@@ -80,5 +80,12 @@ public class QuestRewardAccumulator(
         }
 
         return value;
+    }
+
+    // エンドレス深層で蓄積報酬が int を超えてもオーバーフローさせず int.MaxValue に飽和させる。
+    private static int SaturatingAdd(int current, int addend)
+    {
+        var sum = (long)current + addend;
+        return sum >= int.MaxValue ? int.MaxValue : (int)sum;
     }
 }

@@ -54,11 +54,18 @@ public class QuestRunService(
 
     public async Task<QuestCommandSubmissionResult> SubmitCommandAsync(QuestRunId runId, QuestParticipantId participantId, QuestSubmittedCommand command)
     {
-        var run = await GetDetailAsync(runId);
+        // 解決ホットパスは軽量ロード（表示専用の last_turn_results_json を読まない）でエグレスを抑える。
+        var run = await questRunRepository.GetForResolutionAsync(runId)
+            ?? throw new KeyNotFoundException("クエスト進行情報が見つかりません。");
 
         if (command.ActionKind == ActionKind.Capture)
         {
             await EnsurePetCapacityAsync(run, participantId);
+        }
+
+        if (command.ActionKind == ActionKind.Escape)
+        {
+            await EnsureEndlessEscapeAllowedAsync(run);
         }
 
         run.SubmitCommand(participantId, command, DateTimeOffset.UtcNow);
@@ -84,6 +91,26 @@ public class QuestRunService(
         {
             throw new InvalidOperationException("これ以上ペットを所持できません。");
         }
+    }
+
+    // エンドレスの「終了」は boss_interval 倍数フロア（チェックポイント）でのみ許可する。
+    // エンドレスなら true（チェックポイント検証済み）、非エンドレスなら false を返す。
+    private async Task<bool> EnsureEndlessEscapeAllowedAsync(QuestRun run)
+    {
+        var stage = await questStageRepository.GetAsync(run.StageId)
+            ?? throw new KeyNotFoundException("ステージ定義が見つかりません。");
+        if (!stage.IsEndless)
+        {
+            return false;
+        }
+
+        if (!stage.EndlessConfig!.IsBossFloor(run.FloorState.CurrentFloorNo))
+        {
+            throw new InvalidOperationException(
+                $"エンドレスは{stage.EndlessConfig!.BossInterval}階ごとのチェックポイントでのみ終了できます。");
+        }
+
+        return true;
     }
 
     public async Task<QuestRun> RequestManualControlAsync(QuestRunId runId, QuestParticipantId participantId)
@@ -112,7 +139,16 @@ public class QuestRunService(
             throw new InvalidOperationException("ルームのオーナーのみ撤退を実行できます。");
         }
 
-        run.EscapeByOwner();
+        // エンドレスの「終了」はチェックポイント（boss_interval 倍数フロア）でのみ成功扱いで終える。
+        if (await EnsureEndlessEscapeAllowedAsync(run))
+        {
+            run.MarkSucceeded();
+        }
+        else
+        {
+            run.EscapeByOwner();
+        }
+
         await PersistResolvedRunAndApplyCompletionEffectsAsync(run);
         return run;
     }
@@ -206,7 +242,10 @@ public class QuestRunService(
             partyActorMap,
             enemyActorMap,
             finalFloorNo,
-            DateTimeOffset.UtcNow.Add(TurnDeadline));
+            DateTimeOffset.UtcNow.Add(TurnDeadline),
+            // 「逃走＝成功」はエンドレスのチェックポイント階に限定する（サービスのガードに加えた多層防御）。
+            // 非チェックポイント階に万一 Escape が混入しても、ここで Failed 扱いにフォールバックする。
+            escapeEndsAsSuccess: stage.IsEndless && stage.EndlessConfig!.IsBossFloor(previousFloorNo));
 
         QuestFloorDefinition? nextFloor = null;
         QuestEnemyState[]? nextEnemyStates = null;
@@ -685,7 +724,8 @@ public class QuestRunService(
         if (run.Rewards.Exp > 0)
         {
             var multiplier = ExpMultiplierFlag.ToMultiplier(player.ExpMultiplierFlags);
-            var multipliedExp = (int)Math.Floor(run.Rewards.Exp * multiplier);
+            var multipliedExpRaw = Math.Floor(run.Rewards.Exp * multiplier);
+            var multipliedExp = multipliedExpRaw >= int.MaxValue ? int.MaxValue : (int)multipliedExpRaw;
             player.ClearExpMultiplierFlags();
             PlayerExpRewardApplicator.Apply(player, multipliedExp, jobProfileRepository, jobMoveLearningRuleRepository);
         }
