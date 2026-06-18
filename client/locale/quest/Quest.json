@@ -92,10 +92,10 @@
     "SummonPet": "呼出"
   },
   "endlessCheckpoint": {
-    "bannerTitle": "チェックポイント（{{interval}}階ごと）",
-    "bannerBody": "「終了」を選ぶと、ここまでの経験値とゴールドを確定して、安全にクエストを終えられます。続ければさらに深層を狙えます。",
+    "bannerTitle": "チェックポイント（{{interval}}階）",
+    "bannerBody": "「終了」を選ぶと、ここまでの経験値とゴールドを確定し、クエストを終えられます。",
     "confirmTitle": "ここで終了しますか？",
-    "confirmBody": "到達 {{floor}}階。獲得した経験値とゴールドを確定してランを終えます。続ければさらに深層を狙えます。",
+    "confirmBody": "到達 {{floor}}階。獲得した経験値とゴールドを確定しクエストを終えますか？",
     "confirmButton": "終了する",
     "cancelButton": "やめる"
   },
