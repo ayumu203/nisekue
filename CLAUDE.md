@@ -134,4 +134,4 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on PRs and pushes to main:
 
 Migrations auto-deploy via `db-migrate-dev.yml` / `db-migrate-prod.yml`. Use Session Pooler connection strings for Supabase.
 
-Scheduled maintenance workflows (dev/prod pairs): `cleanup-quest-data-*.yml`, `cleanup-expired-market-listings-*.yml`, `ranking-rebuild-*.yml`.
+Scheduled maintenance workflows (dev/prod pairs): `cleanup-quest-data-*.yml`, `ranking-rebuild-*.yml`.
