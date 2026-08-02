@@ -32,14 +32,5 @@
   "loadFailed": "ペット一覧の取得に失敗しました",
   "actionFailed": "操作に失敗しました",
   "sessionInfoMissing": "セッション情報が見つかりません。再ログインしてください。",
-  "summonNote": "スタンバイに設定した1体を、クエスト中に「呼出」で呼び出せます（1クエストにつき3回まで）。",
-  "battleTitle": "にせもんバトル",
-  "battleDescription": "ペットを使って他のプレイヤーとレート戦ができます。",
-  "battleRatingLabel": "レート",
-  "battleWinsSuffix": "勝",
-  "battleLossesSuffix": "敗",
-  "battleTotalLabel": "総対戦数",
-  "battleButton": "対戦する",
-  "battleMatching": "マッチング中…",
-  "battleNeedsPet": "対戦にはペットが1体以上必要です。"
+  "summonNote": "スタンバイに設定した1体を、クエスト中に「呼出」で呼び出せます（1クエストにつき3回まで）。"
 }
