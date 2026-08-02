@@ -9,12 +9,13 @@ function formatExpProgress(
   currentExp: number,
   requiredExp: number,
 ): { current: number; required: number; ratio: number } {
-  const required = Math.max(1, requiredExp)
+  // レベル上限に達すると requiredExp は 0 になる。文言に出る値なので 1 に丸めず、そのまま扱う。
+  const required = Math.max(0, requiredExp)
   const current = Math.max(0, currentExp)
   return {
     current,
     required,
-    ratio: Math.max(0, Math.min(100, (current / required) * 100)),
+    ratio: required > 0 ? Math.max(0, Math.min(100, (current / required) * 100)) : 100,
   }
 }
 

@@ -54,7 +54,8 @@ function formatExpProgress(exp: number | undefined, requiredExp: number | undefi
     return `${fallback} / ${fallback}`
   }
 
-  if (!Number.isFinite(exp) || !Number.isFinite(requiredExp) || requiredExp <= 0) {
+  // レベル上限に達すると requiredExp は 0 になる。値としては正しいので fallback にはしない。
+  if (!Number.isFinite(exp) || !Number.isFinite(requiredExp) || requiredExp < 0) {
     return `${fallback} / ${fallback}`
   }
 
