@@ -97,9 +97,6 @@ export function MarketCard({
                 +{equipmentDetail.plusValue}
               </Typography>
             ) : null}
-            <Typography variant="body2">
-              {locale.mastery} {equipmentDetail.mastery}/{equipmentDetail.masteryCap}
-            </Typography>
           </Stack>
         ) : null}
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap justifyContent="center">

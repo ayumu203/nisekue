@@ -20,7 +20,8 @@ public class EquipmentStatusResolverTests
     }
 
     [Fact]
-    public void BuildEffectiveStatus_WhenEquippedWeaponMasteryReachesTen_AddsOnePercentBonus()
+    // 熟練度は隠しステータスであり、ステータス計算には影響しない。
+    public void BuildEffectiveStatus_WhenWeaponHasMastery_DoesNotAffectStatus()
     {
         var resolver = new EquipmentStatusResolver();
         var baseStatus = new Status(20, 10, 5, 4, 3, 2, 1);
@@ -29,11 +30,11 @@ public class EquipmentStatusResolverTests
 
         var actual = resolver.BuildEffectiveStatus(baseStatus, Job.Apprentice, [playerWeapon], [weapon]);
 
-        actual.Strength.Should().Be(106);
+        actual.Strength.Should().Be(105);
     }
 
     [Fact]
-    public void BuildEffectiveStatus_WhenEquipmentIsArmor_DoesNotApplyMasteryBonus()
+    public void BuildEffectiveStatus_WhenEquipmentIsArmor_DoesNotApplyMastery()
     {
         var resolver = new EquipmentStatusResolver();
         var baseStatus = new Status(20, 10, 5, 4, 3, 2, 1);
@@ -46,7 +47,7 @@ public class EquipmentStatusResolverTests
     }
 
     [Fact]
-    public void BuildEffectiveStatus_WhenWeaponHasPlusValue_AppliesPlusBeforeMastery()
+    public void BuildEffectiveStatus_WhenWeaponHasPlusValue_AppliesPlusOnly()
     {
         var resolver = new EquipmentStatusResolver();
         var baseStatus = new Status(20, 10, 5, 4, 3, 2, 1);
@@ -55,7 +56,7 @@ public class EquipmentStatusResolverTests
 
         var actual = resolver.BuildEffectiveStatus(baseStatus, Job.Apprentice, [playerWeapon], [weapon]);
 
-        actual.Strength.Should().Be(156);
+        actual.Strength.Should().Be(155);
     }
 
     [Fact]

@@ -101,9 +101,6 @@ export function EquipmentCard({
               </Typography>
             ) : null}
             <Typography variant="body2">
-              {locale.mastery} {item.mastery}/{item.masteryCap}
-            </Typography>
-            <Typography variant="body2">
               {locale.synthesisCost} {item.synthesisGoldCost} Gold
             </Typography>
           </Stack>
