@@ -27,7 +27,7 @@ Web game (inspired by チビクエ3) with a monorepo structure: React frontend +
 - **Real-time**: SignalR (quest runs only, at `/quest-hubs/runs`)
 - **Deploy**: Cloudflare Pages (frontend prod), GitHub Pages (frontend dev, via `deploy-frontend-dev.yml`), Azure App Service (backend)
 - **Workers**: `workers/active-reporter/` — Cloudflare Worker (cron every 5 min) reporting active player count to the game portal
-- **Simulation**: `simulation/` — Python scripts generating job status CSV master data
+- **Simulation**: `simulation/balance_report.html` — balance report generated from the resource CSVs (job growth, ranks, equipment, enemies)
 
 ## Build & Dev Commands
 
