@@ -9,7 +9,6 @@ public class Player(
     int level,
     int exp,
     int jobLevel,
-    int jobExp,
     int gold,
     Status status,
     Job job = Job.Apprentice,
@@ -33,10 +32,9 @@ public class Player(
     public DateTimeOffset? PetBattleCooldownUntil { get; private set; } = petBattleCooldownUntil;
     public Job Job { get; private set; } = job;
     public int RebirthCount { get; private set; } = ValidateNonNegative(rebirthCount, nameof(rebirthCount));
-    public int Level { get; private set; } = ValidateLevel(level);
+    public int Level { get; private set; } = ValidatePlayerLevel(level);
     public int Exp { get; private set; } = exp;
     public int JobLevel { get; private set; } = ValidateLevel(jobLevel);
-    public int JobExp { get; private set; } = jobExp;
     public int Gold { get; private set; } = ValidateNonNegative(gold, nameof(gold));
     public Status Status { get; private set; } = status ?? throw new ArgumentNullException(nameof(status));
     public MoveSet MoveSet { get; private set; } = moveSet ?? new MoveSet();
@@ -45,6 +43,8 @@ public class Player(
     public int MapUnlockFlags { get; private set; } = ValidateNonNegative(mapUnlockFlags, nameof(mapUnlockFlags));
     public long RoadmapUnlockFlags { get; private set; } = ValidateNonNegativeLong(roadmapUnlockFlags, nameof(roadmapUnlockFlags));
     public int EndlessBestFloor { get; private set; } = ValidateNonNegative(endlessBestFloor, nameof(endlessBestFloor));
+
+    public bool IsMaxLevel => Level >= PlayerConstants.MaxLevel;
 
     public void UpdateName(string name)
     {
@@ -89,7 +89,6 @@ public class Player(
 
         Job = nextJob;
         JobLevel = 1;
-        JobExp = 0;
         return [];
     }
 
@@ -150,11 +149,31 @@ public class Player(
         return level;
     }
 
+    private static int ValidatePlayerLevel(int level)
+    {
+        if (level < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(level), "レベルは1以上である必要があります。");
+        }
+
+        if (level > PlayerConstants.MaxLevel)
+        {
+            throw new ArgumentOutOfRangeException(nameof(level), $"レベルは{PlayerConstants.MaxLevel}以下である必要があります。");
+        }
+
+        return level;
+    }
+
+    // レベル上限到達後は経験値を加算しない。職業レベルはプレイヤーレベルに連動するため同時に停止する。
     public void GainExp(int exp)
     {
         if (exp < 0) exp = 0;
+        if (IsMaxLevel)
+        {
+            return;
+        }
+
         Exp = ClampedAdd(Exp, exp);
-        JobExp = ClampedAdd(JobExp, exp);
     }
 
     public void SetExpMultiplierFlag(int flag)
@@ -269,16 +288,13 @@ public class Player(
 
     public int RequiredExpForNextLevel()
     {
-        if (Level <= 2000)
+        if (IsMaxLevel)
         {
-            return Level * 10;
+            return 0;
         }
 
-        var over = Level - 2000;
-        return (int)Math.Min(20000L + (10L * over) + ((long)over * over / 50), int.MaxValue);
+        return Level * 10;
     }
-
-    public int RequiredJobExpForNextLevel() => JobLevel * 10;
 
     public LevelUpResult LevelUp(JobProfile jobProfile, JobMoveLearningRule learningRule)
     {
@@ -294,11 +310,12 @@ public class Player(
 
         var growth = jobProfile.GrowthValue;
         var hasPlayerLeveledUp = false;
-        while (Exp >= RequiredExpForNextLevel())
+        while (!IsMaxLevel && Exp >= RequiredExpForNextLevel())
         {
             Exp -= RequiredExpForNextLevel();
             var previousLevel = Level;
             Level++;
+            JobLevel++;
             Status = new Status(
                 maxHp: ClampedAdd(Status.MaxHp, CalculateGrowthIncrease(growth.MaxHp, previousLevel, Level)),
                 maxMp: ClampedAdd(Status.MaxMp, CalculateGrowthIncrease(growth.MaxMp, previousLevel, Level)),
@@ -314,13 +331,13 @@ public class Player(
             hasPlayerLeveledUp = true;
         }
 
-        var hasJobLeveledUp = false;
-        while (JobExp >= RequiredJobExpForNextLevel())
+        if (IsMaxLevel)
         {
-            JobExp -= RequiredJobExpForNextLevel();
-            JobLevel++;
-            hasJobLeveledUp = true;
+            Exp = 0;
         }
+
+        // 職業レベルはプレイヤーレベルに連動するため、レベルアップの有無も一致する。
+        var hasJobLeveledUp = hasPlayerLeveledUp;
 
         var hasMasteredCurrentJob = MarkCurrentJobAsMastered(jobProfile);
         var newlyLearnedMoveIds = SynchronizeLearnableMoves(jobProfile, learningRule);
@@ -346,7 +363,6 @@ public class Player(
         Level = 1;
         Exp = 0;
         JobLevel = 1;
-        JobExp = 0;
         Status = inheritedStatus;
     }
 

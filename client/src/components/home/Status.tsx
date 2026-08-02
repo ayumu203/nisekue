@@ -344,12 +344,6 @@ export default function Status({
                     hideGauge
                   />
                   <StatusStatRow
-                    label={locale.labels.jobExp}
-                    value={formatExpProgress(player?.jobExp, player?.requiredJobExpForNextLevel, locale.unknownValue)}
-                    normalized={0}
-                    hideGauge
-                  />
-                  <StatusStatRow
                     label={locale.labels.weapon}
                     value={formatEquippedItemWithPlus(equippedWeapon, locale.notSet)}
                     normalized={0}
@@ -403,12 +397,6 @@ export default function Status({
                     <StatusStatRow
                       label={locale.labels.exp}
                       value={formatExpProgress(player?.exp, player?.requiredExpForNextLevel, locale.unknownValue)}
-                      normalized={0}
-                      hideGauge
-                    />
-                    <StatusStatRow
-                      label={locale.labels.jobExp}
-                      value={formatExpProgress(player?.jobExp, player?.requiredJobExpForNextLevel, locale.unknownValue)}
                       normalized={0}
                       hideGauge
                     />

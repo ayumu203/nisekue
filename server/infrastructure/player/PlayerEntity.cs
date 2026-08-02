@@ -12,6 +12,8 @@ public class PlayerEntity
     public int Level { get; set; }
     public int Exp { get; set; }
     public int JobLevel { get; set; }
+
+    /// <summary>廃止済み。職業レベルはプレイヤーレベルに連動するため未使用で、常に 0 を書き込む。列自体は未削除。</summary>
     public int JobExp { get; set; }
     public int Gold { get; set; }
     public int MaxHp { get; set; }

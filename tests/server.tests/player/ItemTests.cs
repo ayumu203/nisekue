@@ -78,7 +78,6 @@ public class ItemTests
             level: level,
             exp: 0,
             jobLevel: 1,
-            jobExp: 0,
             gold: 100,
             status: new Status(10, 10, 10, 10, 10, 10, 10),
             job: Job.Apprentice,

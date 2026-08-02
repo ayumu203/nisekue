@@ -5,6 +5,7 @@ using server.domain.player;
 using server.domain.treasuremap;
 using server.domain.treasuremap.enums;
 using server.infrastructure;
+using server.shared.constants.player;
 
 namespace server.endpoints;
 
@@ -263,10 +264,10 @@ internal static class TreasureMapEndpoints
 
         var now = DateTimeOffset.UtcNow;
 
-        if (reward.ExperiencePoints > 0)
+        // ここは Player 集約を経由せず PlayerEntity を直接更新するため、レベル上限の判定を明示的に行う。
+        if (reward.ExperiencePoints > 0 && player.Level < PlayerConstants.MaxLevel)
         {
             player.Exp = (int)Math.Min((long)player.Exp + reward.ExperiencePoints, int.MaxValue);
-            player.JobExp = (int)Math.Min((long)player.JobExp + reward.ExperiencePoints, int.MaxValue);
         }
 
         if (reward.Gold > 0)

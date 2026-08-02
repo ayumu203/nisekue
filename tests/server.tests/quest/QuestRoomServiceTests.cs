@@ -436,7 +436,6 @@ public class QuestRoomServiceTests
             level: level,
             exp: 0,
             jobLevel: 1,
-            jobExp: 0,
             gold: 100,
             status: new Status(30, 10, 12, 8, 6, 3, 10),
             job: Job.Warrior,
