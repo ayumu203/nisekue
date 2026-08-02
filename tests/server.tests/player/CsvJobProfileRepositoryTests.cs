@@ -15,7 +15,7 @@ public class CsvJobProfileRepositoryTests
         var profile = repository.GetByJob(Job.OniWarrior);
 
         profile.Job.Should().Be(Job.OniWarrior);
-        profile.MasterLevel.Should().Be(30);
+        profile.MasterLevel.Should().Be(35);
         profile.RequiredMasterJobs.Should().BeEquivalentTo([Job.Warrior]);
         profile.GrowthValue.Strength.Should().Be(6);
     }
@@ -28,7 +28,7 @@ public class CsvJobProfileRepositoryTests
         var profile = repository.GetByJob(Job.GreatThief);
 
         profile.Job.Should().Be(Job.GreatThief);
-        profile.MasterLevel.Should().Be(50);
+        profile.MasterLevel.Should().Be(75);
         profile.RequiredMasterJobs.Should().BeEquivalentTo([Job.Warrior, Job.WindMage, Job.GrandRanger]);
         profile.GrowthValue.Luck.Should().Be(8);
     }
@@ -41,7 +41,7 @@ public class CsvJobProfileRepositoryTests
         var profile = repository.GetByJob(Job.GreatKnight);
 
         profile.Job.Should().Be(Job.GreatKnight);
-        profile.MasterLevel.Should().Be(50);
+        profile.MasterLevel.Should().Be(75);
         profile.RequiredMasterJobs.Should().BeEquivalentTo([Job.GrandGuard]);
         profile.GrowthValue.Defense.Should().Be(10);
     }
@@ -54,7 +54,7 @@ public class CsvJobProfileRepositoryTests
         var profile = repository.GetByJob(Job.Shugoshin);
 
         profile.Job.Should().Be(Job.Shugoshin);
-        profile.MasterLevel.Should().Be(60);
+        profile.MasterLevel.Should().Be(100);
         profile.RequiredMasterJobs.Should().BeEquivalentTo([Job.GreatKnight]);
         profile.GrowthValue.Defense.Should().Be(14);
     }
