@@ -15,7 +15,6 @@ import Quest from '@/pages/Quest'
 import VisitPlayer from '@/pages/VisitPlayer'
 import Items from '@/pages/Items'
 import Pets from '@/pages/Pets'
-import PetBattle from '@/pages/PetBattle'
 import TreasureMap from '@/pages/TreasureMap'
 import Threads from '@/pages/Threads'
 import ThreadDetail from '@/pages/ThreadDetail'
@@ -52,7 +51,6 @@ function App() {
         <Route path="/training" element={user ? <Training /> : <Navigate to="/auth" replace />} />
         <Route path="/items" element={user ? <Items /> : <Navigate to="/auth" replace />} />
         <Route path="/pets" element={user ? <Pets /> : <Navigate to="/auth" replace />} />
-        <Route path="/pet-battle" element={user ? <PetBattle /> : <Navigate to="/auth" replace />} />
         <Route path="/treasure-map" element={user ? <TreasureMap /> : <Navigate to="/auth" replace />} />
         <Route path="/threads" element={user ? <Threads /> : <Navigate to="/auth" replace />} />
         <Route path="/threads/:threadId" element={user ? <ThreadDetail /> : <Navigate to="/auth" replace />} />

@@ -200,3 +200,34 @@ export const topNavigationIconButtonSx = {
     backgroundColor: 'rgba(110, 68, 21, 0.94)',
   },
 } as const
+
+export const gameTabsSx = {
+  minHeight: 0,
+  '& .MuiTabs-flexContainer': {
+    gap: 0.5,
+  },
+} as const
+
+export const gameTabSx = {
+  minHeight: 40,
+  minWidth: 0,
+  py: 0.5,
+  px: { xs: 0.5, sm: 1 },
+  fontSize: { xs: '0.78rem', sm: '0.875rem' },
+  borderRadius: '10px 10px 0 0',
+  border: '2px solid #8dbe90',
+  borderBottom: 'none',
+  backgroundColor: '#78c27d',
+  color: '#ffffff',
+  fontWeight: 700,
+  textTransform: 'none',
+  transition: 'none',
+  '& .MuiTouchRipple-root': {
+    display: 'none',
+  },
+  '&.Mui-selected': {
+    backgroundColor: '#2f8b3f',
+    borderColor: '#2f8b3f',
+    color: '#ffffff',
+  },
+} as const

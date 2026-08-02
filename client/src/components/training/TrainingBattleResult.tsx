@@ -13,13 +13,8 @@ type TrainingBattleResultProps = {
   nextLevelRequiredExp?: number
   isActionDisabled: boolean
   lockRemainingSeconds: number
-  canUseAutoBattle: boolean
-  isAutoBattling: boolean
-  autoBattleRemainingSeconds: number
-  autoBattleCount: number
   movePlanSlot?: ReactNode
   onRematch: () => Promise<void> | void
-  onToggleAutoBattle: () => void
 }
 
 function toResultColor(trainingResult: ExecuteTrainingResponse['trainingResult']): string {
@@ -50,13 +45,8 @@ export default function TrainingBattleResult({
   nextLevelRequiredExp,
   isActionDisabled,
   lockRemainingSeconds,
-  canUseAutoBattle,
-  isAutoBattling,
-  autoBattleRemainingSeconds,
-  autoBattleCount,
   movePlanSlot,
   onRematch,
-  onToggleAutoBattle,
 }: TrainingBattleResultProps) {
   const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
   const battleAgainst = locale.battleAgainst.replace('{{enemyName}}', enemy.name)
@@ -83,13 +73,6 @@ export default function TrainingBattleResult({
         : result.isJobLevelUp
           ? locale.levelUp
           : null
-
-  const autoBattleMinutes = Math.floor(autoBattleRemainingSeconds / 60)
-  const autoBattleSeconds = autoBattleRemainingSeconds % 60
-  const autoBattleRemainingText = locale.autoBattleRemaining
-    .replace('{{minutes}}', String(autoBattleMinutes))
-    .replace('{{seconds}}', String(autoBattleSeconds).padStart(2, '0'))
-  const autoBattleCountText = locale.autoBattleCount.replace('{{count}}', String(autoBattleCount))
 
   return (
     <Paper
@@ -121,90 +104,29 @@ export default function TrainingBattleResult({
         <Typography variant="subtitle1" fontWeight={800} textAlign="center" sx={{ color: '#fff7dd' }}>
           {battleAgainst}
         </Typography>
-        {isAutoBattling ? (
-          <Stack spacing={0.75} alignItems="center">
-            <Button
-              variant="contained"
-              onClick={onToggleAutoBattle}
-              fullWidth
-              sx={{
-                borderRadius: 999,
-                py: 1.1,
-                fontWeight: 800,
-                color: '#fff5ef',
-                backgroundColor: '#c9443a',
-                boxShadow: 'none',
-                '&:hover': {
-                  backgroundColor: '#d8554b',
-                  boxShadow: 'none',
-                },
-              }}
-            >
-              {locale.autoBattleStop}
-            </Button>
-            <Typography variant="body2" sx={{ color: 'rgba(245, 240, 223, 0.82)', fontWeight: 700 }}>
-              {autoBattleRemainingText}
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.58)' }}>
-              {autoBattleCountText}
-            </Typography>
-          </Stack>
-        ) : (
-          <Stack spacing={0.75}>
-            <Button
-              variant="contained"
-              disabled={isActionDisabled}
-              onClick={onRematch}
-              sx={{
-                borderRadius: 999,
-                py: 1.1,
-                fontWeight: 800,
-                color: '#fff5ef',
-                backgroundColor: '#b65f49',
-                boxShadow: 'none',
-                '&:hover': {
-                  backgroundColor: '#c96a52',
-                  boxShadow: 'none',
-                },
-                '&.Mui-disabled': {
-                  color: 'rgba(255, 238, 229, 0.58)',
-                  backgroundColor: 'rgba(182, 95, 73, 0.24)',
-                },
-              }}
-            >
-              {isActionDisabled ? rematchInSeconds : locale.rematch}
-            </Button>
-            {canUseAutoBattle && (
-              <Button
-                variant="outlined"
-                disabled={isActionDisabled}
-                onClick={onToggleAutoBattle}
-                sx={{
-                  borderRadius: 999,
-                  py: 1,
-                  fontWeight: 700,
-                  color: 'rgba(245, 240, 223, 0.8)',
-                  borderColor: 'rgba(214, 146, 112, 0.42)',
-                  '&:hover': {
-                    borderColor: 'rgba(214, 146, 112, 0.7)',
-                    backgroundColor: 'rgba(182, 95, 73, 0.12)',
-                  },
-                  '&.Mui-disabled': {
-                    color: 'rgba(255, 238, 229, 0.38)',
-                    borderColor: 'rgba(214, 146, 112, 0.18)',
-                  },
-                }}
-              >
-                {locale.autoBattle}
-              </Button>
-            )}
-            {!canUseAutoBattle && (
-              <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.4)', textAlign: 'center' }}>
-                {locale.autoBattleRequirement}
-              </Typography>
-            )}
-          </Stack>
-        )}
+        <Button
+          variant="contained"
+          disabled={isActionDisabled}
+          onClick={onRematch}
+          sx={{
+            borderRadius: 999,
+            py: 1.1,
+            fontWeight: 800,
+            color: '#fff5ef',
+            backgroundColor: '#b65f49',
+            boxShadow: 'none',
+            '&:hover': {
+              backgroundColor: '#c96a52',
+              boxShadow: 'none',
+            },
+            '&.Mui-disabled': {
+              color: 'rgba(255, 238, 229, 0.58)',
+              backgroundColor: 'rgba(182, 95, 73, 0.24)',
+            },
+          }}
+        >
+          {isActionDisabled ? rematchInSeconds : locale.rematch}
+        </Button>
         <Paper
           variant="outlined"
           sx={{

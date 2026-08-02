@@ -1,5 +1,6 @@
 import {
   Alert,
+  Badge,
   Box,
   Button,
   CircularProgress,
@@ -31,6 +32,7 @@ import locale from '../../locale/home/Home.json'
 import ChatMessages from '@/components/chat/ChatMessages'
 import ChatForm from '@/components/chat/ChatForm'
 import BeginnerGuide from '@/components/common/BeginnerGuide'
+import AnnouncementList from '@/components/common/AnnouncementList'
 import Status from '@/components/home/Status'
 import {
   ItemsIcon,
@@ -52,12 +54,16 @@ import {
   SocialGroupIcon,
 } from '@/components/home/HomeIcons'
 import {
+  gameTabSx,
+  gameTabsSx,
   innerSurfaceSx,
   menuButtonSx,
   outerPagePaperSx,
   softGreenButtonSx,
   twoColumnContentGridSx,
 } from '@/constants/styles'
+import { announcementTabLabel, latestAnnouncementDate } from '@/lib/announcements'
+import { hasUnreadAnnouncement, markAnnouncementsSeen } from '@/lib/announcementStorage'
 import { beginnerGuides } from '@/lib/beginnerGuides'
 import { getTutorialStep, isRebirthTutorialShown, setRebirthTutorialShown, setTutorialStep } from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
@@ -78,7 +84,8 @@ function Home() {
     setTutorialStep(userId, next)
     setTutorialStepState(next)
   }
-  const [chatTab, setChatTab] = useState<'personal' | 'global'>('personal')
+  const [chatTab, setChatTab] = useState<'personal' | 'global' | 'announcement'>('personal')
+  const [hasUnreadAnnouncements, setHasUnreadAnnouncements] = useState(false)
   const [globalChatPage, setGlobalChatPage] = useState(1)
   const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
   const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
@@ -219,6 +226,10 @@ function Home() {
       pendingReplyIds.forEach((replyId) => handledReplyIdsRef.current.delete(replyId))
     })
   }, [session?.access_token, threadAlerts])
+
+  useEffect(() => {
+    setHasUnreadAnnouncements(hasUnreadAnnouncement(userId, latestAnnouncementDate))
+  }, [userId])
 
   if (isLoading) {
     return (
@@ -464,14 +475,33 @@ function Home() {
               <Stack spacing={{ xs: 1.5, sm: 2 }}>
                 <Tabs
                   value={chatTab}
-                  onChange={(_, value: 'personal' | 'global') => setChatTab(value)}
+                  onChange={(_, value: 'personal' | 'global' | 'announcement') => {
+                    setChatTab(value)
+
+                    if (value === 'announcement') {
+                      markAnnouncementsSeen(userId, latestAnnouncementDate)
+                      setHasUnreadAnnouncements(false)
+                    }
+                  }}
                   variant="fullWidth"
-                  sx={{ borderBottom: 1, borderColor: 'divider' }}
+                  sx={gameTabsSx}
+                  slotProps={{ indicator: { sx: { display: 'none' } } }}
                 >
-                  <Tab label={locale.chatTabPersonal} value="personal" />
-                  <Tab label={locale.chatTabGlobal} value="global" />
+                  <Tab label={locale.chatTabPersonal} value="personal" sx={gameTabSx} />
+                  <Tab label={locale.chatTabGlobal} value="global" sx={gameTabSx} />
+                  <Tab
+                    label={
+                      <Badge variant="dot" color="error" invisible={!hasUnreadAnnouncements} sx={{ pr: 0.5 }}>
+                        {announcementTabLabel}
+                      </Badge>
+                    }
+                    value="announcement"
+                    sx={gameTabSx}
+                  />
                 </Tabs>
-                {chatTab === 'personal' ? (
+                {chatTab === 'announcement' ? (
+                  <AnnouncementList />
+                ) : chatTab === 'personal' ? (
                   isChatLoading ? (
                     <Stack direction="row" spacing={1} alignItems="center">
                       <CircularProgress size={16} />

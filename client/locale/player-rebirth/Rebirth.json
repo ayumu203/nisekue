@@ -44,7 +44,6 @@
   "executeButton": "転生する",
   "executing": "転生中...",
   "executeFailed": "転生に失敗しました",
-  "executed": "転生しました。",
   "lockedButton": "条件未達",
   "labels": {
     "level": "レベル",
