@@ -1,9 +1,7 @@
 import { Alert, Box, Button, Chip, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import useSWR from 'swr'
 import { clearStandbyPet, getPets, releasePet, standbyPet, trainPet } from '@/api/pet'
-import { getPetBattleStats, matchPetBattle } from '@/api/petBattle'
 import { getPlayer } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { ControlFrame } from '@/components/items/ItemsLayout'
@@ -99,11 +97,9 @@ function PetStatusTable({ pet }: { pet: PlayerPetView }) {
 
 export default function Pets() {
   const { session, isLoading } = useAuth()
-  const navigate = useNavigate()
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [busyPetId, setBusyPetId] = useState<string | null>(null)
-  const [isEnteringBattle, setIsEnteringBattle] = useState(false)
 
   const petsSWRKey = session?.user.id ? (['pets', session.user.id] as const) : null
   const {
@@ -126,15 +122,6 @@ export default function Pets() {
     }
 
     return getPlayer(session.access_token)
-  })
-
-  const battleStatsSWRKey = session?.user.id ? (['pets-battle-stats', session.user.id] as const) : null
-  const { data: battleStats } = useSWR(battleStatsSWRKey, async () => {
-    if (!session?.access_token) {
-      return null
-    }
-
-    return getPetBattleStats(session.access_token)
   })
 
   async function runPetAction(petId: string, action: () => Promise<void>): Promise<void> {
@@ -193,29 +180,8 @@ export default function Pets() {
     })
   }
 
-  async function handleEnterPetBattle(): Promise<void> {
-    if (!session?.access_token) {
-      setActionError(locale.sessionInfoMissing)
-      return
-    }
-
-    setActionError(null)
-    setIsEnteringBattle(true)
-
-    try {
-      await matchPetBattle(session.access_token)
-      navigate('/pet-battle')
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : locale.actionFailed)
-    } finally {
-      setIsEnteringBattle(false)
-    }
-  }
-
   const trainingCostGold = petsResponse?.trainingCostGold ?? 100000
   const canAffordTraining = player != null && player.gold >= trainingCostGold
-  const decidedBattles = (battleStats?.wins ?? 0) + (battleStats?.losses ?? 0)
-  const winRateLabel = decidedBattles > 0 ? `${(((battleStats?.wins ?? 0) / decidedBattles) * 100).toFixed(1)}%` : '--'
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 6 } }}>
@@ -311,39 +277,6 @@ export default function Pets() {
               {actionError ? <Alert severity="error">{actionError}</Alert> : null}
               {actionMessage ? <Alert severity="success">{actionMessage}</Alert> : null}
               {petsError ? <Alert severity="error">{locale.loadFailed}</Alert> : null}
-
-              <Paper variant="outlined" sx={{ ...petCardSx, p: { xs: 1.5, sm: 2 }, borderRadius: 3 }}>
-                <Stack spacing={1}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#3f2f16' }}>
-                    {locale.battleTitle}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#5b4523' }}>
-                    {locale.battleDescription}
-                  </Typography>
-                  <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-                    <Chip
-                      size="small"
-                      label={`RATING ${battleStats?.rating ?? 1000}`}
-                      sx={{ backgroundColor: pokeRed, color: '#ffffff', fontWeight: 700 }}
-                    />
-                    <Chip size="small" label={`TOTAL ${battleStats?.totalBattles ?? 0}`} />
-                    <Chip size="small" label={`WIN RATE ${winRateLabel}`} />
-                  </Stack>
-                  <Button
-                    variant="contained"
-                    disabled={petsResponse == null || petsResponse.pets.length === 0 || isEnteringBattle}
-                    onClick={() => void handleEnterPetBattle()}
-                    sx={petTrainButtonSx}
-                  >
-                    {isEnteringBattle ? locale.battleMatching : locale.battleButton}
-                  </Button>
-                  {petsResponse != null && petsResponse.pets.length === 0 ? (
-                    <Typography variant="caption" sx={{ color: '#5b4523' }}>
-                      {locale.battleNeedsPet}
-                    </Typography>
-                  ) : null}
-                </Stack>
-              </Paper>
 
               <Box sx={{ px: { xs: 0.25, sm: 0.5 }, py: 0.25 }}>
                 {isLoading || isPetsLoading ? (

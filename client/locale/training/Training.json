@@ -45,10 +45,5 @@
   "opponentsLoading": "対戦相手を読み込み中...",
   "noOpponentsAvailable": "現在対戦可能なプレイヤーがいません",
   "anonymousPlayer": "名無しプレイヤー",
-  "newEnemiesUnlocked": "新たな相手と訓練できるようになった！",
-  "autoBattle": "自動再戦",
-  "autoBattleStop": "停止",
-  "autoBattleRemaining": "残り {{minutes}}分{{seconds}}秒",
-  "autoBattleRequirement": "Lv.30以上で自動再戦が利用できます",
-  "autoBattleCount": "{{count}}回訓練しました"
+  "newEnemiesUnlocked": "新たな相手と訓練できるようになった！"
 }
