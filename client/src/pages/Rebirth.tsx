@@ -41,7 +41,6 @@ export default function Rebirth() {
   const { session, isLoading } = useAuth()
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [resultStatus, setResultStatus] = useState<{
     maxHp: number
     maxMp: number
@@ -102,14 +101,12 @@ export default function Rebirth() {
     }
 
     setSubmitError(null)
-    setSuccessMessage(null)
     setResultStatus(null)
     setIsSubmitting(true)
 
     try {
       const response = await rebirthPlayer(session.access_token)
       setResultStatus(response.status.baseValues)
-      setSuccessMessage(locale.executed)
       await mutatePlayer()
       await mutateRebirthHistory()
     } catch (error) {
@@ -420,7 +417,6 @@ export default function Rebirth() {
                 </Box>
               </Paper>
 
-              {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
               {submitError ? <Alert severity="error">{submitError}</Alert> : null}
 
               <Paper variant="outlined" sx={{ ...rebirthSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
