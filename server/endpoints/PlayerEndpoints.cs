@@ -189,7 +189,6 @@ internal static class PlayerEndpoints
                     level: 1,
                     exp: 0,
                     jobLevel: 1,
-                    jobExp: 0,
                     gold: 100,
                     status: new Status(maxHp: 24, maxMp: 8, strength: 7, defense: 5, intelligence: 5, luck: 3, speed: 4),
                     job: Job.Apprentice,
@@ -713,9 +712,9 @@ internal static class PlayerEndpoints
                     level = player.Level,
                     exp = player.Exp,
                     requiredExpForNextLevel = player.RequiredExpForNextLevel(),
+                    maxLevel = PlayerConstants.MaxLevel,
+                    isMaxLevel = player.IsMaxLevel,
                     jobLevel = player.JobLevel,
-                    jobExp = player.JobExp,
-                    requiredJobExpForNextLevel = player.RequiredJobExpForNextLevel(),
                     gold = player.Gold,
                     status = new
                     {
@@ -991,7 +990,6 @@ internal static class PlayerEndpoints
             level = player.Level,
             exp = player.Exp,
             jobLevel = player.JobLevel,
-            jobExp = player.JobExp,
             gold = player.Gold,
             status = new
             {

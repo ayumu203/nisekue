@@ -54,7 +54,8 @@ function formatExpProgress(exp: number | undefined, requiredExp: number | undefi
     return `${fallback} / ${fallback}`
   }
 
-  if (!Number.isFinite(exp) || !Number.isFinite(requiredExp) || requiredExp <= 0) {
+  // レベル上限に達すると requiredExp は 0 になる。値としては正しいので fallback にはしない。
+  if (!Number.isFinite(exp) || !Number.isFinite(requiredExp) || requiredExp < 0) {
     return `${fallback} / ${fallback}`
   }
 
@@ -344,12 +345,6 @@ export default function Status({
                     hideGauge
                   />
                   <StatusStatRow
-                    label={locale.labels.jobExp}
-                    value={formatExpProgress(player?.jobExp, player?.requiredJobExpForNextLevel, locale.unknownValue)}
-                    normalized={0}
-                    hideGauge
-                  />
-                  <StatusStatRow
                     label={locale.labels.weapon}
                     value={formatEquippedItemWithPlus(equippedWeapon, locale.notSet)}
                     normalized={0}
@@ -403,12 +398,6 @@ export default function Status({
                     <StatusStatRow
                       label={locale.labels.exp}
                       value={formatExpProgress(player?.exp, player?.requiredExpForNextLevel, locale.unknownValue)}
-                      normalized={0}
-                      hideGauge
-                    />
-                    <StatusStatRow
-                      label={locale.labels.jobExp}
-                      value={formatExpProgress(player?.jobExp, player?.requiredJobExpForNextLevel, locale.unknownValue)}
                       normalized={0}
                       hideGauge
                     />

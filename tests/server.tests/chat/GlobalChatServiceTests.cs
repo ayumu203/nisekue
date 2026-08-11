@@ -26,7 +26,7 @@ public class GlobalChatServiceTests
     {
         var senderId = new PlayerId(Guid.NewGuid());
         var sender = new Player(
-            senderId, "テストユーザー", 1, 0, 1, 0, 100,
+            senderId, "テストユーザー", 1, 0, 1, 100,
             new Status(10, 0, 1, 1, 1, 1, 1));
         var repository = new FakeGlobalChatRoomRepository(new GlobalChatRoom());
         var playerRepository = new FakePlayerRepository(sender);

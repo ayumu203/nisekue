@@ -44,24 +44,16 @@ public class PlayerTests
     }
 
     [Fact]
-    public void RequiredExpForNextLevel_WhenLevelIsAtMost2000_ReturnsLinearValue()
+    public void RequiredExpForNextLevel_WhenBelowMaxLevel_ReturnsLinearValue()
     {
-        CreatePlayer(level: 1999).RequiredExpForNextLevel().Should().Be(19990);
-        CreatePlayer(level: 2000).RequiredExpForNextLevel().Should().Be(20000);
-    }
-
-    [Fact]
-    public void RequiredExpForNextLevel_WhenLevelExceeds2000_ReturnsCurvedValue()
-    {
-        CreatePlayer(level: 2001).RequiredExpForNextLevel().Should().Be(20010);
-        CreatePlayer(level: 2500).RequiredExpForNextLevel().Should().Be(30000);
-        CreatePlayer(level: 3000).RequiredExpForNextLevel().Should().Be(50000);
+        CreatePlayer(level: 1).RequiredExpForNextLevel().Should().Be(10);
+        CreatePlayer(level: 99).RequiredExpForNextLevel().Should().Be(990);
     }
 
     [Fact]
     public void LevelUp_WhenExpIsInsufficient_ReturnsNoLevelUp()
     {
-        var player = CreatePlayer(level: 1, exp: 9, jobExp: 9, job: Job.Warrior);
+        var player = CreatePlayer(level: 1, exp: 9, job: Job.Warrior);
         var beforeStatus = player.Status;
 
         var result = player.LevelUp(CreateJobProfile(Job.Warrior), CreateLearningRule(Job.Warrior));
@@ -70,15 +62,14 @@ public class PlayerTests
         player.Level.Should().Be(1);
         player.JobLevel.Should().Be(1);
         player.Exp.Should().Be(9);
-        player.JobExp.Should().Be(9);
         player.Status.Should().Be(beforeStatus);
         player.MoveSet.GetLearnedMoveIds().Should().BeEmpty();
     }
 
     [Fact]
-    public void LevelUp_WhenPlayerAndJobExpReachThreshold_UpdatesBothLevelsAndLearnsMoves()
+    public void LevelUp_WhenExpReachesThreshold_UpdatesBothLevelsAndLearnsMoves()
     {
-        var player = CreatePlayer(level: 1, exp: 10, jobExp: 10, job: Job.Warrior);
+        var player = CreatePlayer(level: 1, exp: 10, job: Job.Warrior);
         var beforeStatus = player.Status;
 
         var result = player.LevelUp(CreateJobProfile(Job.Warrior, masterLevel: 4), CreateLearningRule(Job.Warrior, 101, 102));
@@ -90,7 +81,6 @@ public class PlayerTests
         player.Level.Should().Be(2);
         player.JobLevel.Should().Be(2);
         player.Exp.Should().Be(0);
-        player.JobExp.Should().Be(0);
         player.Status.MaxHp.Should().Be(beforeStatus.MaxHp + 3);
         player.Status.Strength.Should().Be(beforeStatus.Strength + 2);
         player.Status.Defense.Should().Be(beforeStatus.Defense + 1);
@@ -132,49 +122,57 @@ public class PlayerTests
     [Fact]
     public void LevelUp_WhenPlayerExpReachThreshold_UpdatesBothLevelsAndLearnsMoves()
     {
-        var player = CreatePlayer(level: 1, exp: 10, jobExp: 9, job: Job.Warrior);
+        var player = CreatePlayer(level: 1, exp: 10, job: Job.Warrior);
         var beforeStatus = player.Status;
 
         var result = player.LevelUp(CreateJobProfile(Job.Warrior, masterLevel: 4), CreateLearningRule(Job.Warrior, 101, 102));
 
         result.HasPlayerLeveledUp.Should().BeTrue();
-        result.HasJobLeveledUp.Should().BeFalse();
+        result.HasJobLeveledUp.Should().BeTrue();
         result.HasMasteredCurrentJob.Should().BeFalse();
         player.Level.Should().Be(2);
-        player.JobLevel.Should().Be(1);
+        player.JobLevel.Should().Be(2);
         player.Exp.Should().Be(0);
-        player.JobExp.Should().Be(9);
         player.Status.MaxHp.Should().Be(beforeStatus.MaxHp + 3);
         player.Status.Strength.Should().Be(beforeStatus.Strength + 2);
         player.Status.Defense.Should().Be(beforeStatus.Defense + 1);
     }
 
     [Fact]
-    public void LevelUp_WhenPlayerJobExpReachThreshold_UpdatesBothLevelsAndLearnsMoves()
+    public void LevelUp_WhenPlayerLevelDoesNotRise_JobLevelDoesNotRiseEither()
     {
-        var player = CreatePlayer(level: 1, exp: 9, jobExp: 10, job: Job.Warrior);
+        var player = CreatePlayer(level: 1, exp: 9, job: Job.Warrior);
         var beforeStatus = player.Status;
 
         var result = player.LevelUp(CreateJobProfile(Job.Warrior, masterLevel: 4), CreateLearningRule(Job.Warrior, 101, 102));
 
         result.HasPlayerLeveledUp.Should().BeFalse();
-        result.HasJobLeveledUp.Should().BeTrue();
+        result.HasJobLeveledUp.Should().BeFalse();
         result.HasMasteredCurrentJob.Should().BeFalse();
-        result.NewlyLearnedMoveIds.Select(x => x.Id).Should().Equal(101);
         player.Level.Should().Be(1);
-        player.JobLevel.Should().Be(2);
+        player.JobLevel.Should().Be(1);
         player.Exp.Should().Be(9);
-        player.JobExp.Should().Be(0);
         player.Status.MaxHp.Should().Be(beforeStatus.MaxHp);
         player.Status.Strength.Should().Be(beforeStatus.Strength);
         player.Status.Defense.Should().Be(beforeStatus.Defense);
-        player.MoveSet.GetLearnedMoveIds().Select(x => x.Id).Should().Equal(101);
+    }
+
+    [Fact]
+    public void LevelUp_WhenMultipleLevelsGained_JobLevelRisesByTheSameAmount()
+    {
+        var player = CreatePlayer(level: 1, exp: 60, jobLevel: 1, job: Job.Warrior);
+
+        player.LevelUp(CreateJobProfile(Job.Warrior, masterLevel: 99), CreateLearningRule(Job.Warrior));
+
+        player.Level.Should().Be(4);
+        player.JobLevel.Should().Be(4);
     }
 
     [Fact]
     public void LevelUp_WhenJobReachesMasterLevel_AddsMasteredJobOnlyOnce()
     {
-        var player = CreatePlayer(level: 5, exp: 0, jobLevel: 3, jobExp: 30, job: Job.Warrior);
+        // 職業レベルはプレイヤーレベルに連動するため、マスター到達にはプレイヤーレベルを上げる経験値が要る。
+        var player = CreatePlayer(level: 5, exp: 50, jobLevel: 3, job: Job.Warrior);
 
         var first = player.LevelUp(CreateJobProfile(Job.Warrior, masterLevel: 4), CreateLearningRule(Job.Warrior, 101, 102));
         var second = player.LevelUp(CreateJobProfile(Job.Warrior, masterLevel: 4), CreateLearningRule(Job.Warrior, 101, 102));
@@ -244,10 +242,9 @@ public class PlayerTests
         moveSet.SetSlot(0, new MoveId(421));
         moveSet.SetSlot(1, new MoveId(141));
         var player = CreatePlayer(
-            level: 120,
+            level: 100,
             exp: 45,
             jobLevel: 9,
-            jobExp: 27,
             gold: 150000,
             job: Job.Mage,
             status: new Status(120, 80, 30, 28, 42, 18, 25),
@@ -260,7 +257,6 @@ public class PlayerTests
         player.Level.Should().Be(1);
         player.Exp.Should().Be(0);
         player.JobLevel.Should().Be(1);
-        player.JobExp.Should().Be(0);
         player.Gold.Should().Be(50000);
         player.Status.MaxHp.Should().Be(35);
         player.Status.MaxMp.Should().Be(24);
@@ -323,24 +319,22 @@ public class PlayerTests
     [Fact]
     public void GainExp_WhenCalled_AddsExpDirectly()
     {
-        var player = CreatePlayer(level: 1, exp: 0, jobExp: 0);
+        var player = CreatePlayer(level: 1, exp: 0);
 
         player.GainExp(100);
 
         player.Exp.Should().Be(100);
-        player.JobExp.Should().Be(100);
     }
 
     [Fact]
     public void GainExp_WhenFlagIsSet_DoesNotAffectExpAddition()
     {
-        var player = CreatePlayer(level: 1, exp: 0, jobExp: 0);
+        var player = CreatePlayer(level: 1, exp: 0);
         player.SetExpMultiplierFlag(0x8);
 
         player.GainExp(100);
 
         player.Exp.Should().Be(100);
-        player.JobExp.Should().Be(100);
     }
 
     [Fact]
@@ -447,11 +441,116 @@ public class PlayerTests
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
+    [Fact]
+    public void Constructor_Level101_ThrowsArgumentOutOfRangeException()
+    {
+        var act = () => CreatePlayer(level: 101);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void Constructor_Level100_SetsLevelTo100()
+    {
+        var player = CreatePlayer(level: 100);
+        player.Level.Should().Be(100);
+    }
+
+    [Fact]
+    public void IsMaxLevel_Level100_ReturnsTrue()
+    {
+        var player = CreatePlayer(level: 100);
+        player.IsMaxLevel.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsMaxLevel_Level99_ReturnsFalse()
+    {
+        var player = CreatePlayer(level: 99);
+        player.IsMaxLevel.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GainExp_Level100_ExpDoesNotIncrease()
+    {
+        var player = CreatePlayer(level: 100);
+        player.GainExp(1000);
+        player.Exp.Should().Be(0);
+    }
+
+    [Fact]
+    public void GainExp_Level99_IncreasesExp()
+    {
+        var player = CreatePlayer(level: 99);
+        player.GainExp(100);
+        player.Exp.Should().Be(100);
+    }
+
+    [Fact]
+    public void RequiredExpForNextLevel_Level100_ReturnsZero()
+    {
+        var player = CreatePlayer(level: 100);
+        player.RequiredExpForNextLevel().Should().Be(0);
+    }
+
+    [Fact]
+    public void LevelUp_Level100_LevelStays100AndHasLeveledUpFalse()
+    {
+        var player = CreatePlayer(level: 100);
+        var jobProfile = CreateJobProfile(Job.Apprentice);
+        var learningRule = CreateLearningRule(Job.Apprentice);
+        var result = player.LevelUp(jobProfile, learningRule);
+        player.Level.Should().Be(100);
+        result.HasLeveledUp.Should().BeFalse();
+    }
+
+    [Fact]
+    public void LevelUp_Level99WithLargeExp_LevelCapsAt100AndExpResetToZero()
+    {
+        var player = CreatePlayer(level: 99, exp: 1_000_000);
+        var jobProfile = CreateJobProfile(Job.Apprentice);
+        var learningRule = CreateLearningRule(Job.Apprentice);
+        var result = player.LevelUp(jobProfile, learningRule);
+        player.Level.Should().Be(100);
+        player.Exp.Should().Be(0);
+        result.HasLeveledUp.Should().BeTrue();
+    }
+
+    [Fact]
+    // 職業レベルはプレイヤーレベルに連動するため、レベル上限に達すると職業レベルも止まる。
+    public void LevelUp_Level100_DoesNotLevelUpJob()
+    {
+        var player = CreatePlayer(level: 100, jobLevel: 1, job: Job.Warrior);
+
+        var result = player.LevelUp(CreateJobProfile(Job.Warrior), CreateLearningRule(Job.Warrior));
+
+        result.HasJobLeveledUp.Should().BeFalse();
+        player.JobLevel.Should().Be(1);
+        player.Level.Should().Be(100);
+    }
+
+    [Fact]
+    public void Rebirth_Level100WithEnoughGold_ResetsAndCanLevelUpAgain()
+    {
+        var player = CreatePlayer(level: 100, gold: 100_000);
+        var status = new Status(maxHp: 10, maxMp: 0, strength: 1, defense: 1, intelligence: 1, luck: 1, speed: 1);
+        player.Rebirth(status);
+        player.Level.Should().Be(1);
+        player.Exp.Should().Be(0);
+        player.JobLevel.Should().Be(1);
+        player.RebirthCount.Should().Be(1);
+
+        player.GainExp(10);
+        var jobProfile = CreateJobProfile(Job.Apprentice);
+        var learningRule = CreateLearningRule(Job.Apprentice);
+        var result = player.LevelUp(jobProfile, learningRule);
+        result.HasLeveledUp.Should().BeTrue();
+        player.Level.Should().Be(2);
+    }
+
     private static Player CreatePlayer(
         int level,
         int exp = 0,
         int jobLevel = 1,
-        int jobExp = 0,
         int gold = 100,
         Job job = Job.Apprentice,
         Status? status = null,
@@ -464,7 +563,6 @@ public class PlayerTests
             level: level,
             exp: exp,
             jobLevel: jobLevel,
-            jobExp: jobExp,
             gold: gold,
             status: status ?? new Status(
                 maxHp: 10,

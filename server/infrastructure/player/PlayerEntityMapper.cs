@@ -20,7 +20,6 @@ internal static class PlayerEntityMapper
             level: entity.Level,
             exp: entity.Exp,
             jobLevel: entity.JobLevel,
-            jobExp: entity.JobExp,
             gold: entity.Gold,
             status: new Status(
                 maxHp: entity.MaxHp,
@@ -51,7 +50,7 @@ internal static class PlayerEntityMapper
             Level = player.Level,
             Exp = player.Exp,
             JobLevel = player.JobLevel,
-            JobExp = player.JobExp,
+            JobExp = 0,
             Gold = player.Gold,
             MaxHp = player.Status.MaxHp,
             MaxMp = player.Status.MaxMp,
@@ -78,7 +77,7 @@ internal static class PlayerEntityMapper
         entity.Level = player.Level;
         entity.Exp = player.Exp;
         entity.JobLevel = player.JobLevel;
-        entity.JobExp = player.JobExp;
+        entity.JobExp = 0;
         entity.Gold = player.Gold;
         entity.MaxHp = player.Status.MaxHp;
         entity.MaxMp = player.Status.MaxMp;

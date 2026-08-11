@@ -2,7 +2,6 @@ namespace server.domain.player;
 
 public class EquipmentStatusResolver
 {
-    private const int MasteryStep = 10;
 
     public Status BuildEffectiveStatus(
         Status baseStatus,
@@ -35,17 +34,14 @@ public class EquipmentStatusResolver
                 continue;
             }
 
-            var masteryRate = equipment.Type == EquipmentType.Weapon
-                ? ResolveMasteryRate(playerEquipment.Mastery)
-                : 0m;
-
-            bonusMaxHp += ApplyBonuses(equipment.BonusValues.MaxHp, masteryRate, playerEquipment.PlusValue);
-            bonusMaxMp += ApplyBonuses(equipment.BonusValues.MaxMp, masteryRate, playerEquipment.PlusValue);
-            bonusStrength += ApplyBonuses(equipment.BonusValues.Strength, masteryRate, playerEquipment.PlusValue);
-            bonusDefense += ApplyBonuses(equipment.BonusValues.Defense, masteryRate, playerEquipment.PlusValue);
-            bonusIntelligence += ApplyBonuses(equipment.BonusValues.Intelligence, masteryRate, playerEquipment.PlusValue);
-            bonusLuck += ApplyBonuses(equipment.BonusValues.Luck, masteryRate, playerEquipment.PlusValue);
-            bonusSpeed += ApplyBonuses(equipment.BonusValues.Speed, masteryRate, playerEquipment.PlusValue);
+            // 熟練度は隠しステータスとして保持するのみで、ステータス計算には用いない。
+            bonusMaxHp += ApplyBonuses(equipment.BonusValues.MaxHp, playerEquipment.PlusValue);
+            bonusMaxMp += ApplyBonuses(equipment.BonusValues.MaxMp, playerEquipment.PlusValue);
+            bonusStrength += ApplyBonuses(equipment.BonusValues.Strength, playerEquipment.PlusValue);
+            bonusDefense += ApplyBonuses(equipment.BonusValues.Defense, playerEquipment.PlusValue);
+            bonusIntelligence += ApplyBonuses(equipment.BonusValues.Intelligence, playerEquipment.PlusValue);
+            bonusLuck += ApplyBonuses(equipment.BonusValues.Luck, playerEquipment.PlusValue);
+            bonusSpeed += ApplyBonuses(equipment.BonusValues.Speed, playerEquipment.PlusValue);
         }
 
         return new Status(
@@ -62,31 +58,13 @@ public class EquipmentStatusResolver
             baseStatus.DamageReduction);
     }
 
-    private static int ApplyBonuses(int baseBonus, decimal masteryRate, int plusValue)
+    private static int ApplyBonuses(int baseBonus, int plusValue)
     {
         if (baseBonus == 0)
         {
             return 0;
         }
 
-        var plusApplied = baseBonus * (100 + plusValue) / 100;
-
-        if (masteryRate <= 0)
-        {
-            return plusApplied;
-        }
-
-        return plusApplied + (int)Math.Floor(plusApplied * masteryRate);
-    }
-
-    private static decimal ResolveMasteryRate(int mastery)
-    {
-        if (mastery < MasteryStep)
-        {
-            return 0m;
-        }
-
-        var masteryTier = mastery / MasteryStep;
-        return masteryTier / 100m;
+        return baseBonus * (100 + plusValue) / 100;
     }
 }

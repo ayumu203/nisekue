@@ -17,7 +17,6 @@ public class PlayerJobServiceTests
             level: 5,
             exp: 0,
             jobLevel: 1,
-            jobExp: 0,
             gold: 100,
             status: new Status(30, 10, 8, 6, 4, 3, 5),
             job: Job.Apprentice);

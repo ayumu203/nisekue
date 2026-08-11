@@ -18,7 +18,7 @@ public class DbPlayerRebirthExecutorTests
 
         await SeedPlayersAsync(
             databaseName,
-            CreatePlayerEntity(playerId, "Hero", level: 120, gold: 150000, maxHp: 120, maxMp: 80, strength: 30, defense: 28, intelligence: 42, luck: 18, speed: 25));
+            CreatePlayerEntity(playerId, "Hero", level: 100, gold: 150000, maxHp: 120, maxMp: 80, strength: 30, defense: 28, intelligence: 42, luck: 18, speed: 25));
 
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var executor = new DbPlayerRebirthExecutor(
@@ -55,7 +55,7 @@ public class DbPlayerRebirthExecutorTests
 
         await SeedPlayersAsync(
             databaseName,
-            CreatePlayerEntity(playerId, "Hero", level: 120, gold: 300000, maxHp: 120, maxMp: 80, strength: 30, defense: 28, intelligence: 42, luck: 18, speed: 25));
+            CreatePlayerEntity(playerId, "Hero", level: 100, gold: 300000, maxHp: 120, maxMp: 80, strength: 30, defense: 28, intelligence: 42, luck: 18, speed: 25));
 
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var executor = new DbPlayerRebirthExecutor(
@@ -69,7 +69,7 @@ public class DbPlayerRebirthExecutorTests
         await using (var prepContext = CreateDbContext(databaseName))
         {
             var entity = prepContext.Players.Single(x => x.Id == playerId);
-            entity.Level = 150;
+            entity.Level = 100;
             entity.Gold = 200000;
             await prepContext.SaveChangesAsync();
         }
