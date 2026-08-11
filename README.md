@@ -4,13 +4,17 @@
 
 - [こちら](https://docs.google.com/presentation/d/1CH4CUAGjw3HgIID_wlaz-j8JuY-V16gEYpGhag1mcgM/edit?usp=sharing)よりご覧いただけます。
 
+## 集計データ
+
+- プレイヤーがどのくらい遊んだか等をまとめたデータは、[こちら](https://ayumu203.github.io/nisekue-report/)からご覧いただけます。
+
 ## 公開先
 
 - 以下のリンクよりゲームをプレイすることができます。
 - [本番用](https://game.arm203.org/)
 - [開発用(開発者が確認する用途)](https://ayumu203.github.io/nisekue/)
 
-## 作るもの
+## 作ったもの
 
 - 某ゲームのオマージュゲー開発.
 - 冒険やエンドレスバトル等を実装する.
