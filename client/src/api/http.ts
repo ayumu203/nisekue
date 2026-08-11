@@ -1,6 +1,5 @@
 const NETWORK_ERROR_PATTERN = /networkerror|failed to fetch|fetch failed|load failed|network request failed/i
-const DEFAULT_CONNECTION_ERROR_MESSAGE =
-  'サーバーに接続できませんでした。時間をおいて再試行してください。'
+const DEFAULT_CONNECTION_ERROR_MESSAGE = 'サーバーに接続できませんでした。時間をおいて再試行してください。'
 
 const SERVER_ERROR_MESSAGE = 'サーバーで問題が発生しています。時間をおいて再試行してください。'
 
