@@ -1,4 +1,5 @@
 using server.domain.battle.enums;
+using server.shared.constants.battle;
 using server.domain.move;
 using server.domain.move.enums;
 using server.domain.player;
@@ -189,7 +190,8 @@ public class BattleActionResolver(
                     move,
                     effect,
                     move.Category != MoveCategory.Attack,
-                    fieldContext);
+                    fieldContext,
+                    effectTargets.Count);
                 if (result is not null)
                 {
                     targetResults.Add(result);
@@ -248,11 +250,12 @@ public class BattleActionResolver(
         Move move,
         MoveEffect effect,
         bool isSupportMove,
-        BattleFieldContext? fieldContext)
+        BattleFieldContext? fieldContext,
+        int targetCount = 1)
     {
         return effect.EffectType switch
         {
-            MoveEffectType.Damage => ResolveDamageEffect(actorSnapshot, actorState, attackerStatus, targetSnapshot, defenderStatus, targetState, snapshots, states, move, effect, isSupportMove, fieldContext),
+            MoveEffectType.Damage => ResolveDamageEffect(actorSnapshot, actorState, attackerStatus, targetSnapshot, defenderStatus, targetState, snapshots, states, move, effect, isSupportMove, fieldContext, targetCount),
             MoveEffectType.Heal => ResolveHealEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
             MoveEffectType.RestoreMp => ResolveRestoreMpEffect(attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, isSupportMove),
             MoveEffectType.Ailment => ResolveAilmentEffect(actorSnapshot, attackerStatus, targetSnapshot, defenderStatus, targetState, move, effect, fieldContext),
@@ -275,7 +278,8 @@ public class BattleActionResolver(
         Move move,
         MoveEffect effect,
         bool isSupportMove,
-        BattleFieldContext? fieldContext)
+        BattleFieldContext? fieldContext,
+        int targetCount)
     {
         ArgumentNullException.ThrowIfNull(effect.Damage);
         var attackStat = ResolveAttackStat(move, effect.Damage, attackerStatus, isSupportMove);
@@ -324,8 +328,21 @@ public class BattleActionResolver(
             actorState.RemoveBuffs(BuffStat.CriticalChance);
         }
 
+        totalDamage = ApplyAreaDamageFalloff(totalDamage, targetCount);
         receiverState.ReceiveDamage(totalDamage);
         return new BattleTargetResult(receiverSnapshot.Id, totalDamage, -totalDamage, 0, receiverState.IsDead, null);
+    }
+
+    /// <summary>範囲攻撃の威力逓減。対象が増えるほど1体あたりのダメージを下げる。</summary>
+    private static int ApplyAreaDamageFalloff(int damage, int targetCount)
+    {
+        if (targetCount <= 1 || damage <= 0)
+        {
+            return damage;
+        }
+
+        var multiplier = 1d / Math.Pow(targetCount, BattleConstants.AreaDamage.FalloffExponent);
+        return Math.Max(1, (int)Math.Round(damage * multiplier, MidpointRounding.AwayFromZero));
     }
 
     private static BattleTargetResult ResolveHealEffect(

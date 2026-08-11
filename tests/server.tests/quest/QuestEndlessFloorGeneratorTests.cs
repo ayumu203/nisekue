@@ -73,7 +73,9 @@ public class QuestEndlessFloorGeneratorTests
         var scaled = generator.ScaleTemplate(config, template, 100_000);
 
         scaled.Status.MaxHp.Should().Be(int.MaxValue);
-        scaled.Status.Strength.Should().Be(int.MaxValue);
+        // 攻撃・防御は伸びを抑える指数を掛けるため、HP より遅れて増加する。
+        scaled.Status.Strength.Should().BePositive();
+        scaled.Status.Defense.Should().BePositive();
     }
 
     [Fact]
@@ -84,8 +86,8 @@ public class QuestEndlessFloorGeneratorTests
         var config = await repository.GetByStageIdAsync(new QuestStageId(13));
 
         config.Should().NotBeNull();
-        config!.GrowthCoefficientA.Should().BeApproximately(0.02, 1e-9);
-        config.GrowthExponentP.Should().BeApproximately(2.0, 1e-9);
+        config!.GrowthCoefficientA.Should().BeApproximately(0.08, 1e-9);
+        config.GrowthExponentP.Should().BeApproximately(1.6, 1e-9);
         config.BossInterval.Should().Be(10);
     }
 

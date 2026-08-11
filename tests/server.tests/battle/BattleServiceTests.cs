@@ -320,6 +320,50 @@ public class BattleServiceTests
         }).ToArray();
     }
 
+    [Fact]
+    public void ResolveTurn_WhenRangeAttackHitsSingleTarget_DoesNotReduceDamage()
+    {
+        var service = new BattleService();
+        const int moveId = 100;
+        var wideSlash = CreateWideAttackMove(moveId);
+        var ally = CreateActorInput(1, BattleSide.Ally, currentHp: 30, currentMp: 10, learnedMoveIds: [moveId]);
+        var enemy = CreateActorInput(2, BattleSide.Enemy, currentHp: 30);
+
+        var resolution = service.ResolveTurn(new BattleTurnRequest(
+            [ally, enemy],
+            [CreateMoveAction(ally.ActorId, moveId, TargetType.Enemy, AttackRange.All)],
+            [wideSlash]));
+
+        // 固定ダメージ25 - 防御5 = 20。対象1体なので逓減しない。
+        resolution.ActionResults[0].TargetResults.Should().ContainSingle();
+        resolution.ActionResults[0].TargetResults[0].Damage.Should().Be(20);
+    }
+
+    [Fact]
+    public void ResolveTurn_WhenRangeAttackHitsFourTargets_ReducesDamagePerTarget()
+    {
+        var service = new BattleService();
+        const int moveId = 100;
+        var wideSlash = CreateWideAttackMove(moveId);
+        var ally = CreateActorInput(1, BattleSide.Ally, currentHp: 30, currentMp: 10, learnedMoveIds: [moveId]);
+        var enemies = new[]
+        {
+            CreateActorInput(2, BattleSide.Enemy, currentHp: 30),
+            CreateActorInput(3, BattleSide.Enemy, currentHp: 30),
+            CreateActorInput(4, BattleSide.Enemy, currentHp: 30),
+            CreateActorInput(5, BattleSide.Enemy, currentHp: 30)
+        };
+
+        var resolution = service.ResolveTurn(new BattleTurnRequest(
+            [ally, .. enemies],
+            [CreateMoveAction(ally.ActorId, moveId, TargetType.Enemy, AttackRange.All)],
+            [wideSlash]));
+
+        // 素のダメージ20 に 1/√4 = 0.5 が掛かる。
+        resolution.ActionResults[0].TargetResults.Should().HaveCount(4);
+        resolution.ActionResults[0].TargetResults.Should().OnlyContain(x => x.Damage == 10);
+    }
+
     private static BattleActorInput CreateActorInput(
         int seed,
         BattleSide side,
@@ -380,7 +424,8 @@ public class BattleServiceTests
                     new MoveId(moveId),
                     1,
                     MoveEffectType.Damage,
-                    damage: new DamageEffect(1, 0m, 15, 0m, ElementType.Slash))
+                    // 範囲攻撃は対象数で威力が逓減するため、2体でも倒しきれる固定値にしている。
+                    damage: new DamageEffect(1, 0m, 25, 0m, ElementType.Slash))
             ]);
     }
 

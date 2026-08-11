@@ -444,7 +444,9 @@ public class Player(
             return 0;
         }
 
-        return (int)Math.Min((long)baseGrowth * gainedLevels * RebirthCount / 100, int.MaxValue);
+        return (int)Math.Min(
+            (long)baseGrowth * gainedLevels * RebirthCount * PlayerConstants.RebirthGrowthBonusPercent / 100,
+            int.MaxValue);
     }
 
     private static int ValidateNonNegative(int value, string paramName)

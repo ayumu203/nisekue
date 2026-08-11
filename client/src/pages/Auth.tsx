@@ -14,6 +14,39 @@ type EmailAuthMode = 'signIn' | 'signUp'
 
 const heroBackgroundUrl = resolvePublicAssetPath('image/quest/enchanted-forest-battlefield.svg')
 
+// フォーム脇に出すマスコット。左のヒーロー背景で使っているキャラは重複を避けるため除外する。
+const formMascotPaths = [
+  'image/character/ch110b_hero.png',
+  'image/character/ch111_hero.png',
+  'image/character/ch112b_hero.png',
+  'image/character/ch112c_hero.png',
+  'image/character/ch118b_hero.png',
+  'image/character/ch119_hero.png',
+  'image/character/ch119b_hero.png',
+  'image/character/ch122_hero.png',
+  'image/character/ch122b_hero.png',
+  'image/character/ch123_hero.png',
+  'image/character/ch129_hero.png',
+  'image/character/ch130_hero.png',
+  'image/character/ch130b_hero.png',
+  'image/character/ch130c_hero.png',
+  'image/character/ch132_hero.png',
+  'image/character/ch171_hero.png',
+  'image/character/ch172_hero.png',
+  'image/character/ch173_hero.png',
+  'image/character/ch174_hero.png',
+  'image/character/ch175_hero.png',
+  'image/character/ch176_hero.png',
+  'image/character/ch176b_hero.png',
+  'image/character/ch177_hero.png',
+  'image/character/ch177b_hero.png',
+  'image/character/ch178_hero.png',
+  'image/character/ch180_hero.png',
+  'image/character/ch183_hero.png',
+  'image/character/ch184_hero.png',
+  'image/character/ch188_hero.png',
+] as const
+
 type MobileHeroSprite = {
   src: string
   height: number
@@ -90,12 +123,12 @@ const heroSpriteRowSx = {
 
 const authCardSx = {
   width: '100%',
-  maxWidth: 440,
-  borderRadius: 4,
-  border: '1px solid #e7d9b6',
-  backgroundColor: '#ffffff',
-  boxShadow: '0 12px 32px rgba(79, 70, 56, 0.12)',
-  p: { xs: 2.5, sm: 3.5 },
+  maxWidth: { xs: 400, md: 460 },
+  borderRadius: 0,
+  border: 'none',
+  backgroundColor: 'transparent',
+  boxShadow: 'none',
+  p: 0,
 } as const
 
 function Auth() {
@@ -105,6 +138,9 @@ function Auth() {
   const [emailAuthMode, setEmailAuthMode] = useState<EmailAuthMode>('signIn')
   const [submitMode, setSubmitMode] = useState<SubmitMode>(null)
   const [error, setError] = useState<string | null>(null)
+  const [mascotSrc] = useState(() =>
+    resolvePublicAssetPath(formMascotPaths[Math.floor(Math.random() * formMascotPaths.length)]),
+  )
   const [message, setMessage] = useState<string | null>(null)
 
   if (isLoading) {
@@ -217,7 +253,7 @@ function Auth() {
       sx={{
         minHeight: '100dvh',
         display: 'grid',
-        gridTemplateColumns: { xs: '1fr', md: '1.15fr 1fr' },
+        gridTemplateColumns: { xs: '1fr', md: '1.45fr 1fr' },
         gridTemplateRows: { xs: 'auto 1fr', md: '1fr' },
       }}
     >
@@ -293,12 +329,36 @@ function Auth() {
         }}
       >
         <Paper elevation={0} sx={authCardSx}>
-          <Stack spacing={2}>
-            <Typography variant="h5" component="h2" textAlign="center" fontWeight={700}>
-              {locale.cardTitle}
-            </Typography>
+          <Stack spacing={{ xs: 3, md: 3.5 }}>
+            <Stack alignItems="center" spacing={1.25}>
+              <Typography
+                component="h2"
+                textAlign="center"
+                fontWeight={800}
+                sx={{ fontSize: { xs: '1.7rem', md: '2.1rem' }, color: '#5c4a33', letterSpacing: '0.04em' }}
+              >
+                {locale.cardTitle}
+              </Typography>
+              {/* 主ボタンとログインボタンの色をつないだ飾り罫で、見出しとフォーム本体を区切る */}
+              <Box
+                aria-hidden
+                sx={{
+                  width: 88,
+                  height: 4,
+                  borderRadius: 999,
+                  background: 'linear-gradient(90deg, #f2d27a 0%, #cbd98a 50%, #78c27d 100%)',
+                }}
+              />
+            </Stack>
 
             {message ? <Alert severity="info">{message}</Alert> : null}
+
+            <Box
+              component="img"
+              src={mascotSrc}
+              alt=""
+              sx={{ height: { xs: 104, md: 132 }, alignSelf: 'center', mb: -1, pointerEvents: 'none' }}
+            />
 
             <Button
               type="button"
@@ -306,32 +366,31 @@ function Auth() {
               size="large"
               disabled={isAnySubmitting}
               onClick={handleAnonymousSignIn}
-              sx={{ ...softGoldButtonSx, py: 1.3 }}
+              sx={{ ...softGoldButtonSx, py: { xs: 1.4, md: 1.8 }, fontSize: { md: '1.05rem' } }}
             >
               {submitMode === 'anonymous' ? locale.anonymousSubmitting : locale.anonymousSubmit}
             </Button>
-            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'pre-line', textAlign: 'center' }}>
-              {locale.anonymousDescription}
-            </Typography>
+
+            <Divider sx={{ '&::before, &::after': { borderColor: '#e0d3b4' } }}>
+              <Typography variant="caption" color="text.secondary">
+                {locale.orDivider}
+              </Typography>
+            </Divider>
 
             <Button
               variant="contained"
               disabled={isAnySubmitting}
               onClick={handleGoogleSignIn}
-              sx={googleButtonSx}
+              sx={{ ...googleButtonSx, py: { xs: 1, md: 1.3 } }}
               startIcon={<GoogleColorIcon />}
             >
               {submitMode === 'google' ? locale.googleSignInSubmitting : locale.googleSignIn}
             </Button>
 
-            <Divider>
-              <Typography variant="body2" color="text.secondary">
-                {locale.orDivider}
-              </Typography>
-            </Divider>
+            <Divider sx={{ borderColor: '#e0d3b4' }} />
 
             <Box component="form" onSubmit={handleEmailAuth} noValidate>
-              <Stack spacing={2}>
+              <Stack spacing={{ xs: 1.5, md: 2 }}>
                 <TextField
                   id="auth-email"
                   label={locale.emailLabel}
@@ -341,6 +400,7 @@ function Auth() {
                   onChange={(event) => setEmail(event.target.value)}
                   required
                   fullWidth
+                  size="medium"
                   sx={greenOutlinedInputSx}
                 />
                 <TextField
@@ -354,7 +414,13 @@ function Auth() {
                   fullWidth
                   sx={greenOutlinedInputSx}
                 />
-                <Button type="submit" variant="contained" disabled={isAnySubmitting} fullWidth sx={softGreenButtonSx}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isAnySubmitting}
+                  fullWidth
+                  sx={{ ...softGreenButtonSx, py: { xs: 1, md: 1.3 } }}
+                >
                   {submitMode === emailAuthMode
                     ? emailAuthMode === 'signIn'
                       ? locale.signInSubmitting
@@ -364,7 +430,7 @@ function Auth() {
                       : locale.signUp}
                 </Button>
                 {error ? <Alert severity="error">{error}</Alert> : null}
-                <Stack direction="row" spacing={0.75} justifyContent="center" alignItems="center">
+                <Stack direction="row" spacing={0.75} justifyContent="center" alignItems="center" sx={{ pt: 0.5 }}>
                   <Typography variant="body2" color="text.secondary">
                     {emailAuthMode === 'signIn' ? locale.signUpPrompt : locale.signInPrompt}
                   </Typography>

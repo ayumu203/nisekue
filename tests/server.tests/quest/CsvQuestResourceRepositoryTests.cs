@@ -17,8 +17,8 @@ public class CsvQuestResourceRepositoryTests
         stage.Should().NotBeNull();
         stage!.Id.Value.Should().Be(11);
         stage.Name.Should().Be("試練の森");
-        stage.RecommendedLevel.Should().Be(1000);
-        stage.MinimumEntryLevel.Should().Be(600);
+        stage.RecommendedLevel.Should().Be(150);
+        stage.MinimumEntryLevel.Should().Be(95);
         stage.Floors.Should().HaveCount(7);
         stage.Floors.Single(x => x.FloorNo == 7).Placements.Should().HaveCount(5);
     }
@@ -33,8 +33,8 @@ public class CsvQuestResourceRepositoryTests
         stage.Should().NotBeNull();
         stage!.Id.Value.Should().Be(8);
         stage.Name.Should().Be("はがねの墓場");
-        stage.RecommendedLevel.Should().Be(2000);
-        stage.MinimumEntryLevel.Should().Be(1000);
+        stage.RecommendedLevel.Should().Be(100);
+        stage.MinimumEntryLevel.Should().Be(88);
         stage.Floors.Should().HaveCount(10);
         stage.Floors.Single(x => x.FloorNo == 10).Placements.Should().HaveCount(5);
     }
@@ -49,8 +49,8 @@ public class CsvQuestResourceRepositoryTests
         stage.Should().NotBeNull();
         stage!.Id.Value.Should().Be(12);
         stage.Name.Should().Be("きおくのとびら");
-        stage.RecommendedLevel.Should().Be(2000);
-        stage.MinimumEntryLevel.Should().Be(1000);
+        stage.RecommendedLevel.Should().Be(200);
+        stage.MinimumEntryLevel.Should().Be(100);
         stage.Floors.Should().HaveCount(6);
         stage.Floors.Should().OnlyContain(x => x.FloorType == server.domain.quest.enums.FloorType.Boss);
         stage.Floors.Should().OnlyContain(x => x.Placements.Count == 1);
@@ -115,7 +115,7 @@ public class CsvQuestResourceRepositoryTests
         var templates = await repository.GetForStartAsync(new QuestStageId(11), 4);
 
         templates.Should().HaveCount(4);
-        templates.Should().OnlyContain(x => x.Level == 1000);
+        templates.Should().OnlyContain(x => x.Level == 150);
         templates.Select(x => x.Id.Value).Should().OnlyContain(id => id >= 45 && id <= 49);
     }
 
@@ -127,7 +127,7 @@ public class CsvQuestResourceRepositoryTests
         var templates = await repository.GetForStartAsync(new QuestStageId(8), 4);
 
         templates.Should().HaveCount(4);
-        templates.Should().OnlyContain(x => x.Level == 2000);
+        templates.Should().OnlyContain(x => x.Level == 100);
         templates.Select(x => x.Id.Value).Should().OnlyContain(id => id >= 30 && id <= 34);
     }
 
@@ -139,7 +139,7 @@ public class CsvQuestResourceRepositoryTests
         var templates = await repository.GetForStartAsync(new QuestStageId(12), 4);
 
         templates.Should().HaveCount(4);
-        templates.Should().OnlyContain(x => x.Level == 2000);
+        templates.Should().OnlyContain(x => x.Level == 100);
         templates.Select(x => x.Id.Value).Should().OnlyContain(id => id >= 30 && id <= 34);
     }
 }

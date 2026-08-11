@@ -11,6 +11,12 @@ namespace server.domain.quest;
 /// </summary>
 public class QuestEndlessFloorGenerator
 {
+    /// <summary>防御・知力の伸びを抑える指数。1.0 で HP と同率。</summary>
+    private const double DefenseFalloffExponent = 0.45d;
+
+    /// <summary>攻撃・運・速さの伸びを抑える指数。1.0 で HP と同率。</summary>
+    private const double OffenseFalloffExponent = 0.6d;
+
     // 通常フロア(最大3体)の配置スロット。
     private static readonly BattlePosition[] NormalPositions =
     [
@@ -125,16 +131,23 @@ public class QuestEndlessFloorGenerator
     }
 
     // S_base の戦闘7ステのみ f(n) でスケール。命中/回避/会心/軽減はテンプレ値を維持。
+    // 攻撃・防御は HP と同率で伸ばさない。ダメージ計算が減算式のため、同率だと
+    // 「敵防御がプレイヤー筋力を超えてダメージが最低保証の1に固定される壁」と
+    // 「敵攻撃がプレイヤー防御を超えた瞬間の即死」が同時に発生し、
+    // 一定フロアから先が緩やかな難化ではなく到達不能になってしまう。
     private static Status ScaleStatus(Status baseStatus, double factor)
     {
+        var defenseFactor = Math.Pow(factor, DefenseFalloffExponent);
+        var offenseFactor = Math.Pow(factor, OffenseFalloffExponent);
         return new Status(
             ScaleStat(baseStatus.MaxHp, factor),
             ScaleStat(baseStatus.MaxMp, factor),
-            ScaleStat(baseStatus.Strength, factor),
-            ScaleStat(baseStatus.Defense, factor),
-            ScaleStat(baseStatus.Intelligence, factor),
-            ScaleStat(baseStatus.Luck, factor),
-            ScaleStat(baseStatus.Speed, factor),
+            ScaleStat(baseStatus.Strength, offenseFactor),
+            ScaleStat(baseStatus.Defense, defenseFactor),
+            // 知力は魔法防御としても働くため防御側の指数を使う。
+            ScaleStat(baseStatus.Intelligence, defenseFactor),
+            ScaleStat(baseStatus.Luck, offenseFactor),
+            ScaleStat(baseStatus.Speed, offenseFactor),
             baseStatus.Accuracy,
             baseStatus.Evasion,
             baseStatus.CriticalChance,
