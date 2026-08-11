@@ -191,7 +191,6 @@ public class JobRoadmapServiceTests
             level: level,
             exp: 0,
             jobLevel: 1,
-            jobExp: 0,
             gold: gold,
             status: new Status(30, 10, 8, 6, 4, 3, 5),
             job: Job.Apprentice);

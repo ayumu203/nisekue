@@ -169,7 +169,6 @@ public class QuestRunServiceTests
             level: 1,
             exp: 0,
             jobLevel: 1,
-            jobExp: 0,
             gold: 100,
             status: new Status(10, 10, 10, 10, 10, 10, 10),
             job: Job.Warrior,
@@ -195,7 +194,6 @@ public class QuestRunServiceTests
         var savedPlayer = await playerRepository.GetPlayerAsync(playerId);
         savedPlayer.Should().NotBeNull();
         savedPlayer!.Exp.Should().Be(2);
-        savedPlayer.JobExp.Should().Be(2);
         savedPlayer.ExpMultiplierFlags.Should().Be(0);
     }
 
@@ -212,7 +210,6 @@ public class QuestRunServiceTests
             level: 1,
             exp: 0,
             jobLevel: 1,
-            jobExp: 0,
             gold: 100,
             status: new Status(10, 10, 10, 10, 10, 10, 10),
             job: Job.Warrior,
@@ -237,7 +234,6 @@ public class QuestRunServiceTests
         var savedPlayer = await playerRepository.GetPlayerAsync(playerId);
         savedPlayer.Should().NotBeNull();
         savedPlayer!.Exp.Should().Be(1);
-        savedPlayer.JobExp.Should().Be(1);
         savedPlayer.ExpMultiplierFlags.Should().Be(0);
     }
 
@@ -1519,7 +1515,6 @@ public class QuestRunServiceTests
             level: 1,
             exp: 0,
             jobLevel: 1,
-            jobExp: 0,
             gold: 100,
             new Status(50, 10, 50, 5, 1, 1, 50),
             job: Job.Warrior);
@@ -1554,7 +1549,6 @@ public class QuestRunServiceTests
             level: 1,
             exp: 0,
             jobLevel: 1,
-            jobExp: 0,
             gold: 100,
             new Status(50, 10, 50, 5, 1, 1, 50),
             job: Job.Warrior);
@@ -1590,9 +1584,9 @@ public class QuestRunServiceTests
         var room = CreateRoom(run, ownerPlayerId);
         room = ReplaceSecondPlayer(room, participantPlayerId);
 
-        var owner = new Player(ownerPlayerId, "Owner", level: 1, exp: 0, jobLevel: 1, jobExp: 0, gold: 100, new Status(50, 10, 50, 5, 1, 1, 50), job: Job.Warrior);
+        var owner = new Player(ownerPlayerId, "Owner", level: 1, exp: 0, jobLevel: 1, gold: 100, new Status(50, 10, 50, 5, 1, 1, 50), job: Job.Warrior);
         owner.SetMapUnlockFlag(MapUnlockFlag.Map1);
-        var participant = new Player(participantPlayerId, "Guest", level: 1, exp: 0, jobLevel: 1, jobExp: 0, gold: 100, new Status(50, 10, 50, 5, 1, 1, 50), job: Job.Warrior);
+        var participant = new Player(participantPlayerId, "Guest", level: 1, exp: 0, jobLevel: 1, gold: 100, new Status(50, 10, 50, 5, 1, 1, 50), job: Job.Warrior);
         participant.SetMapUnlockFlag(MapUnlockFlag.Map1);
 
         var repository = new FakeQuestRunRepository(run);
@@ -2460,7 +2454,6 @@ public class QuestRunServiceTests
                     level: 1,
                     exp: 0,
                     jobLevel: 1,
-                    jobExp: 0,
                     gold: 100,
                     status: new Status(10, 10, 10, 10, 10, 10, 10),
                     job: Job.Warrior,

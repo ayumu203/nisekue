@@ -76,7 +76,6 @@ public class PlayerRebirthServiceTests
                 level: 1,
                 exp: 0,
                 jobLevel: 1,
-                jobExp: 0,
                 gold: 0,
                 status: new Status(maxHp: 1, maxMp: 0, strength: 0, defense: 0, intelligence: 0, luck: 0, speed: 0));
             return Task.FromResult(player);

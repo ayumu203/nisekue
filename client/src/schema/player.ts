@@ -219,11 +219,11 @@ export const getPlayerResponseSchema = z
     jobProfiles: z.array(playerJobSchema),
     masteredJobs: z.array(playerJobSchema).default([]),
     level: z.number().int().min(1, 'レベルは1以上である必要があります'),
+    maxLevel: z.number().int().min(1).optional(),
+    isMaxLevel: z.boolean().optional(),
     exp: z.number().int().min(0, '経験値は0以上である必要があります'),
-    requiredExpForNextLevel: z.number().int().min(1, '次レベル必要経験値は1以上である必要があります').optional(),
+    requiredExpForNextLevel: z.number().int().min(0, '次レベル必要経験値は0以上である必要があります').optional(),
     jobLevel: z.number().int().min(1, '職業レベルは1以上である必要があります'),
-    jobExp: z.number().int().min(0, '職業経験値は0以上である必要があります'),
-    requiredJobExpForNextLevel: z.number().int().min(1, '次職業レベル必要経験値は1以上である必要があります').optional(),
     gold: z.number().int().min(0, 'Goldは0以上である必要があります'),
     status: z.object({
       baseValues: playerStatusValuesSchema,
@@ -240,19 +240,29 @@ export const getPlayerResponseSchema = z
     moveSlots: z.array(playerMoveSlotSchema).length(10),
     equipments: z.array(playerEquipmentSchema),
   })
-  .transform((value) => ({
-    ...value,
-    requiredExpForNextLevel: value.requiredExpForNextLevel ?? Math.max(1, value.level * 10),
-    requiredJobExpForNextLevel: value.requiredJobExpForNextLevel ?? Math.max(1, value.jobLevel * 10),
-    baseStatus: value.status.baseValues,
-    baseStatusRanks: value.status.baseRanks,
-    effectiveStatus: value.status.effectiveValues,
-    effectiveStatusRanks: value.status.effectiveRanks,
-    status: value.status.effectiveValues,
-    statusRanks: value.status.effectiveRanks,
-    combatIndexValue: value.combatIndex.effectiveValue,
-    combatIndexRank: value.combatIndex.effectiveRank,
-  }))
+  .transform((value) => {
+    const isMaxLevel = value.isMaxLevel ?? (typeof value.maxLevel === 'number' ? value.level >= value.maxLevel : false)
+    const requiredExpForNextLevel =
+      typeof value.requiredExpForNextLevel === 'number'
+        ? value.requiredExpForNextLevel
+        : isMaxLevel
+          ? 0
+          : Math.max(1, value.level * 10)
+
+    return {
+      ...value,
+      requiredExpForNextLevel,
+      isMaxLevel,
+      baseStatus: value.status.baseValues,
+      baseStatusRanks: value.status.baseRanks,
+      effectiveStatus: value.status.effectiveValues,
+      effectiveStatusRanks: value.status.effectiveRanks,
+      status: value.status.effectiveValues,
+      statusRanks: value.status.effectiveRanks,
+      combatIndexValue: value.combatIndex.effectiveValue,
+      combatIndexRank: value.combatIndex.effectiveRank,
+    }
+  })
 
 export const playerSummarySchema = z.object({
   userId: playerIdSchema,
@@ -351,7 +361,6 @@ export const rebirthPlayerResponseSchema = z.object({
   level: z.number().int().min(1),
   exp: z.number().int().min(0),
   jobLevel: z.number().int().min(1),
-  jobExp: z.number().int().min(0),
   gold: z.number().int().min(0),
   status: z.object({
     baseValues: playerStatusValuesSchema,

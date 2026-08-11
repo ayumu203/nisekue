@@ -9,12 +9,13 @@ function formatExpProgress(
   currentExp: number,
   requiredExp: number,
 ): { current: number; required: number; ratio: number } {
-  const required = Math.max(1, requiredExp)
+  // レベル上限に達すると requiredExp は 0 になる。文言に出る値なので 1 に丸めず、そのまま扱う。
+  const required = Math.max(0, requiredExp)
   const current = Math.max(0, currentExp)
   return {
     current,
     required,
-    ratio: Math.max(0, Math.min(100, (current / required) * 100)),
+    ratio: required > 0 ? Math.max(0, Math.min(100, (current / required) * 100)) : 100,
   }
 }
 
@@ -27,7 +28,8 @@ interface JobChangeTabProps {
 export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange }: JobChangeTabProps) {
   const currentJobs = (player.jobProfiles ?? []).filter((job) => baseJobCodes.has(job.code))
   const unlockThreshold = 5
-  const jobExpProgress = formatExpProgress(player.jobExp ?? 0, player.requiredJobExpForNextLevel ?? 1)
+  const isMaxLevel = player.isMaxLevel === true
+  const levelProgress = formatExpProgress(player.exp ?? 0, player.requiredExpForNextLevel ?? 1)
   const isCurrentJobMastered =
     player.job?.code != null && (player.masteredJobs ?? []).some((job) => job.code === player.job.code)
 
@@ -152,17 +154,17 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
               <Stack spacing={0.75}>
                 <Stack direction="row" justifyContent="space-between" spacing={1}>
                   <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.84)' }}>
-                    {locale.jobExpProgress
-                      .replace('{{current}}', String(jobExpProgress.current))
-                      .replace('{{required}}', String(jobExpProgress.required))}
+                    {locale.levelExpProgress
+                      .replace('{{current}}', String(levelProgress.current))
+                      .replace('{{required}}', String(levelProgress.required))}
                   </Typography>
                   <Typography variant="body2" fontWeight={700} color="#f0ddb0">
-                    {Math.round(jobExpProgress.ratio)}%
+                    {isMaxLevel ? 100 : Math.round(levelProgress.ratio)}%
                   </Typography>
                 </Stack>
                 <LinearProgress
                   variant="determinate"
-                  value={jobExpProgress.ratio}
+                  value={isMaxLevel ? 100 : levelProgress.ratio}
                   sx={{
                     height: 10,
                     borderRadius: 999,
@@ -176,7 +178,7 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
             </Stack>
           </Box>
 
-          <AlertWarning />
+          <AlertWarning isMaxLevel={isMaxLevel} />
         </Stack>
       </Paper>
 
@@ -356,7 +358,7 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
   )
 }
 
-function AlertWarning() {
+function AlertWarning({ isMaxLevel }: { isMaxLevel: boolean }) {
   return (
     <Box
       sx={{
@@ -371,6 +373,11 @@ function AlertWarning() {
       <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.84)' }}>
         {locale.resetNoticeBody}
       </Typography>
+      {isMaxLevel && (
+        <Typography variant="body2" sx={{ mt: 1, color: '#ffd9a0', fontWeight: 700 }}>
+          {locale.maxLevelNoticeBody}
+        </Typography>
+      )}
     </Box>
   )
 }
