@@ -1,0 +1,41 @@
+# VM 上でバックエンドを常時起動し、Cloudflare Tunnel 経由で公開する構成。
+#
+# 使い方:
+#   cp .env.example .env   # 値を埋める
+#   docker compose up -d --build
+#
+# Cloudflare Zero Trust の Tunnel 設定で、公開ホスト名のサービスを
+# http://api:8080 に向けること。受信ポートを外部に開ける必要はない。
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/ayumu203/nisekue-server:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+    # VM 上での動作確認用。外部には公開せず localhost のみにバインドする
+    ports:
+      - "127.0.0.1:8080:8080"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cloudflared:
+    image: cloudflare/cloudflared:${CLOUDFLARED_TAG:-latest}
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN is required}
+    depends_on:
+      - api
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
