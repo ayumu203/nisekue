@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+**/node_modules/
+publish/
+.git/
+.github/
+.env
+.env.*
+!.env.example
+client/
+workers/
+docs/
+simulation/
+supabase/
+tests/
+*.md
