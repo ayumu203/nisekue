@@ -1,6 +1,21 @@
 # masterdata
 
-スプレッドシート「nisekue マスタデータ」を正として、`server/resources` 配下の CSV を書き出すスクリプトです。
+スプレッドシート「nisekue マスタデータ」を正として、`server/resources` 配下の CSV を書き出すスクリプトです。CSV はリポジトリに置きません（`.gitignore` 対象）。
+
+## 本番・dev 環境への反映
+
+バックエンドのデプロイ（`deploy-backend-dev.yml`・`deploy-backend-prod.yml`）は、実行のたびにスプレッドシートを読み込んでからビルドします。
+
+- スプレッドシートを編集したら、GitHub Actions でデプロイのワークフローを手動実行すれば反映されます（dev 環境・本番環境それぞれ）
+- コードのデプロイでも毎回最新のスプレッドシートが入るので、反映し忘れは起きません。逆に、編集途中のデータもそのとき入ります
+- サーバーが起動できないデータ（数値の列に文字、存在しない ID の参照など）は整合性テストで検出し、デプロイを止めます。値を変えただけでは止まりません
+
+GitHub Actions の設定:
+
+- Secret `GOOGLE_SERVICE_ACCOUNT_JSON`: サービスアカウントキー（JSON の中身）。スプレッドシートをサービスアカウントのメールアドレスに閲覧者として共有しておく
+- Variable `MASTERDATA_SPREADSHEET_ID`: スプレッドシートの ID。環境（`dev`・`prod`）ごとに設定すれば、dev 環境と本番で別のスプレッドシートを使える
+
+サーバーで `docker compose build` する場合は、先に `pnpm masterdata:sync` を実行してください。
 
 ## スプレッドシートの構成
 
