@@ -32,6 +32,7 @@ Web game (inspired by チビクエ3) with a monorepo structure: React frontend +
 ## Build & Dev Commands
 
 ### Backend (run from repo root)
+Master data CSVs are not in git. Run `pnpm masterdata:sync` (see Master Data below) before running the server or the balance simulation.
 ```bash
 dotnet restore
 dotnet build server/server.csproj
@@ -60,6 +61,15 @@ pnpx supabase stop
 ```
 
 Local connection string: `Host=127.0.0.1;Port=54322;Database=postgres;Username=postgres;Password=postgres`
+
+### Master Data (spreadsheet → CSV)
+The spreadsheet "nisekue マスタデータ" is the source of truth for `server/resources/**/*.csv`. Those CSVs are gitignored; never commit them.
+```bash
+pnpm masterdata:sync              # write the latest spreadsheet into server/resources (needs Google ADC + tools/masterdata/.env)
+pnpm --dir tools/masterdata test  # unit tests for the exporter
+dotnet test tests/server.tests/server.tests.csproj -p:UseMasterDataFixtures=false --filter "FullyQualifiedName~MasterDataIntegrityTests"  # validate real data
+```
+Tests use fixed fixture CSVs in `tests/server.tests/fixtures/resources` (copied over the output `resources/` at build). Edit those when a test needs different master data. See `tools/masterdata/README.md`.
 
 ### EF Core Migrations
 ```bash
@@ -135,3 +145,5 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on PRs and pushes to main:
 Migrations auto-deploy via `db-migrate-dev.yml` / `db-migrate-prod.yml`. Use Session Pooler connection strings for Supabase.
 
 Scheduled maintenance workflows (dev/prod pairs): `cleanup-quest-data-*.yml`, `ranking-rebuild-*.yml`.
+
+Backend deploys (`deploy-backend-dev.yml` from `main`, `deploy-backend-prod.yml` from `prod`) import master data from the spreadsheet on every run and stop if `MasterDataIntegrityTests` fails on it. To push spreadsheet edits without a code change, run the deploy workflow manually. Needs secret `GOOGLE_SERVICE_ACCOUNT_JSON` and variable `MASTERDATA_SPREADSHEET_ID` (can be set per environment).

@@ -69,6 +69,12 @@ pnpm dev
 ### バックエンドサーバ
 
 - `.NET Core 10.0` で動作.
+- マスタデータ(CSV)はリポジトリに含まれないため, 起動前にスプレッドシートから取得する(設定は `tools/masterdata/README.md` を参照).
+
+```bash
+# リポジトリのルートで実行.
+pnpm masterdata:sync
+```
 
 ```bash
 # server内で実行.
