@@ -4,9 +4,9 @@
 // 依存パッケージなしで動くので、デプロイのワークフローからもそのまま呼べる。
 //
 //   pnpm masterdata:pull                                   # リポジトリのルートから
-//   node tools/masterdata/src/pull.mjs [--version 1.0.1] [--out <dir>] [--file <bundle.json>] [--if-locked]
+//   node tools/masterdata/src/pull.mjs [--version 3] [--out <dir>] [--file <bundle.json>] [--if-locked]
 //
-//   --version    lock を無視して指定の版を取得する
+//   --version    lock を無視して指定の版（masterdata-<連番> の連番）を取得する
 //   --out        書き出し先のルート（省略時はリポジトリのルート）
 //   --file       Release ではなくローカルのスナップショット JSON から書き出す
 //   --if-locked  masterdata.lock がなければ何もせず終了する
@@ -20,7 +20,7 @@ import { normalizeResourcePath } from './csv.mjs'
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 const LOCK_FILE = join(repoRoot, 'masterdata.lock')
 const DEFAULT_REPOSITORY = 'ayumu203/nisekue'
-const VERSION_PATTERN = /^\d+\.\d+\.\d+$/
+const VERSION_PATTERN = /^[1-9]\d*$/
 
 export function releaseTag(version) {
   return `masterdata-${version}`
@@ -76,7 +76,7 @@ export async function writeBundle(bundle, outRoot) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.help) {
-    console.log('使い方: node tools/masterdata/src/pull.mjs [--version x.y.z] [--out <dir>] [--file <bundle.json>] [--if-locked]')
+    console.log('使い方: node tools/masterdata/src/pull.mjs [--version <連番>] [--out <dir>] [--file <bundle.json>] [--if-locked]')
     return
   }
 
@@ -89,7 +89,7 @@ async function main() {
       }
       throw new Error('masterdata.lock がありません。--version で版を指定してください')
     }
-    if (!VERSION_PATTERN.test(version)) throw new Error(`版の形式が不正です: ${version}`)
+    if (!VERSION_PATTERN.test(version)) throw new Error(`版の形式が不正です（1以上の整数）: ${version}`)
   }
 
   const paths = await writeBundle(await loadBundle(args, version), args.out)

@@ -1,8 +1,8 @@
 name: Release Master Data Snapshot
 
 # スプレッドシートのマスタデータを書き出し、整合性テストを通ったらスナップショットとして
-# GitHub Release（タグ masterdata-x.y.z）に公開する。続けて VERSION の三桁目と
-# masterdata.lock を更新する PR を作る。デプロイは masterdata.lock の版を取得して使う。
+# GitHub Release（タグ masterdata-<連番>）に公開する。続けて masterdata.lock を更新する PR を作る。
+# デプロイは masterdata.lock の版を取得して使う。ゲームのバージョンとは独立している。
 #
 # 必要な設定:
 #   - Secret   GOOGLE_SERVICE_ACCOUNT_JSON: サービスアカウントキー（JSON）。スプレッドシートを閲覧権限で共有しておく
@@ -49,6 +49,16 @@ jobs:
           fi
           if [ -z "${MASTERDATA_SPREADSHEET_ID}" ]; then
             echo "::error::Variable MASTERDATA_SPREADSHEET_ID が設定されていません。"
+            exit 1
+          fi
+
+      # lock を書き換える PR が2本同時に開くとコンフリクトするため、未マージの更新 PR があれば止める
+      - name: Check pending update PR
+        run: |
+          pending="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --search 'head:masterdata/' --json number,headRefName \
+            --jq '[.[] | select(.headRefName | startswith("masterdata/")) | "#\(.number)"] | join(", ")')"
+          if [ -n "$pending" ]; then
+            echo "::error::未マージのマスタデータ更新 PR があります（${pending}）。マージまたはクローズしてから実行してください。"
             exit 1
           fi
 
@@ -118,18 +128,12 @@ jobs:
         if: steps.diff.outputs.changed == 'true'
         id: version
         run: |
-          current="$(tr -d '[:space:]' < VERSION)"
-          if ! printf '%s' "$current" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::VERSION の形式が不正です: ${current}"
-            exit 1
-          fi
-          next="$(printf '%s' "$current" | awk -F. '{ printf "%d.%d.%d", $1, $2, $3 + 1 }')"
-          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/masterdata-${next}" > /dev/null 2>&1; then
-            echo "::error::masterdata-${next} は公開済みです。前回のマスタデータ更新 PR をマージしてから実行してください。"
-            exit 1
-          fi
+          # 公開済みの masterdata-<連番> のうち最大のものに 1 を足す
+          latest="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/masterdata-" \
+            --jq '[.[].ref | ltrimstr("refs/tags/masterdata-") | select(test("^[0-9]+$")) | tonumber] | max // 0')"
+          next=$((latest + 1))
           echo "next=${next}" >> "$GITHUB_OUTPUT"
-          echo "マスタデータ ${next} を公開します（ゲームのバージョン ${current} → ${next}）。" >> "$GITHUB_STEP_SUMMARY"
+          echo "マスタデータ ${next} を公開します（前回: ${latest}）。" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publish snapshot
         if: steps.diff.outputs.changed == 'true'
@@ -162,16 +166,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"
-          printf '%s\n' "$NEXT" > VERSION
           printf '%s\n' "$NEXT" > masterdata.lock
-          git add VERSION masterdata.lock
+          git add masterdata.lock
           git commit -m "file: マスタデータを ${NEXT} に更新"
           git push origin "$branch"
 
           {
             echo "マスタデータのスナップショット [masterdata-${NEXT}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/masterdata-${NEXT}) を使うように更新します。"
             echo
-            echo "- \`masterdata.lock\` と \`VERSION\` を ${NEXT} に更新"
+            echo "- \`masterdata.lock\` を ${NEXT} に更新"
             echo "- 整合性テスト（MasterDataIntegrityTests）は公開前に通過済み"
             echo "- マージ後のデプロイで、この版のマスタデータが使われます"
             echo

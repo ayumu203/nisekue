@@ -7,11 +7,13 @@
 1. スプレッドシートを編集する
 2. GitHub Actions の「Release Master Data Snapshot」（`masterdata-release.yml`）を手動実行する
    - スプレッドシートを CSV に書き出し、本物のデータで整合性テスト（`MasterDataIntegrityTests`）を実行
-   - 通ったら GitHub Release（タグ `masterdata-x.y.z`）にスナップショット `masterdata.json` を公開
-   - `VERSION` の三桁目と `masterdata.lock` を上げる PR を作成し、CI を起動
+   - 通ったら GitHub Release（タグ `masterdata-<連番>`、例: `masterdata-3`）にスナップショット `masterdata.json` を公開
+   - `masterdata.lock` をその連番に更新する PR を作成し、CI を起動（未マージの更新 PR があるときは実行できない）
 3. PR をマージすると、デプロイ時に `masterdata.lock` の版が取得されてビルドに含まれる
 
 ロールバックは `masterdata.lock` を前の版に戻す PR を出すだけです（スプレッドシートを戻す必要はありません）。
+
+スナップショットの連番はゲームのバージョンとは独立しています。ゲームのバージョンは prod へのリリース時に Git タグ（`vX.Y.Z`）で付けます。
 
 ## スプレッドシートの構成
 

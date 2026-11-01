@@ -7,10 +7,10 @@ import { assetUrl, releaseTag, writeBundle } from '../src/pull.mjs'
 
 describe('assetUrl', () => {
   it('版から Release のタグとアセット URL を作る', () => {
-    assert.equal(releaseTag('1.0.1'), 'masterdata-1.0.1')
+    assert.equal(releaseTag('3'), 'masterdata-3')
     assert.equal(
-      assetUrl('ayumu203/nisekue', '1.0.1'),
-      'https://github.com/ayumu203/nisekue/releases/download/masterdata-1.0.1/masterdata.json',
+      assetUrl('ayumu203/nisekue', '3'),
+      'https://github.com/ayumu203/nisekue/releases/download/masterdata-3/masterdata.json',
     )
   })
 })
