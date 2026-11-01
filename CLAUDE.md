@@ -141,6 +141,7 @@ Before implementing changes to `server/domain/` or `server/infrastructure/`, upd
 GitHub Actions (`.github/workflows/ci.yml`) runs on PRs and pushes to main:
 - Backend: format check -> lint -> build -> test
 - Frontend: format check -> lint -> build
+- Master data: export the spreadsheet -> compare file set and headers with the fixture CSVs (`tools/masterdata/src/structure.mjs`) -> run `MasterDataIntegrityTests` on the spreadsheet with the PR's code. If this fails after you changed a loader or a fixture's columns, update the spreadsheet to match before merging.
 
 Migrations auto-deploy via `db-migrate-dev.yml` / `db-migrate-prod.yml`. Use Session Pooler connection strings for Supabase.
 

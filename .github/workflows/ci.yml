@@ -6,6 +6,8 @@ on:
     paths:
       - 'server/**'
       - 'client/**'
+      - 'tests/**'
+      - 'tools/masterdata/**'
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [ main ]
@@ -42,6 +44,52 @@ jobs:
 
       - name: Test
         run: dotnet test tests/server.tests/server.tests.csproj -c Release --no-restore --verbosity normal
+
+  # テスト用 CSV とスプレッドシートの形が一致しているか、PR のコードでスプレッドシートを読めるかを確認する。
+  # コードやテスト用 CSV の列を変えたのにスプレッドシートを直し忘れた、をマージ前に検出するため。
+  masterdata:
+    name: Master data (spreadsheet vs fixtures)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: tools/masterdata/pnpm-lock.yaml
+
+      - name: Import master data from spreadsheet
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          MASTERDATA_SPREADSHEET_ID: ${{ vars.MASTERDATA_SPREADSHEET_ID }}
+        run: |
+          if [ -z "${GOOGLE_SERVICE_ACCOUNT_JSON}" ] || [ -z "${MASTERDATA_SPREADSHEET_ID}" ]; then
+            echo "::error::Secret GOOGLE_SERVICE_ACCOUNT_JSON と Variable MASTERDATA_SPREADSHEET_ID（リポジトリ単位）を設定してください。"
+            exit 1
+          fi
+          pnpm masterdata:sync
+
+      - name: Compare structure with fixtures
+        run: node tools/masterdata/src/structure.mjs tests/server.tests/fixtures/resources server/resources
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Validate master data with this code
+        run: |
+          dotnet test tests/server.tests/server.tests.csproj -c Release -p:UseMasterDataFixtures=false \
+            --filter "FullyQualifiedName~server.tests.masterdata.MasterDataIntegrityTests"
 
   frontend:
     name: Frontend (format/lint/build)

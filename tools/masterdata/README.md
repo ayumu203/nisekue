@@ -17,6 +17,18 @@ GitHub Actions の設定:
 
 サーバーで `docker compose build` する場合は、先に `pnpm masterdata:sync` を実行してください。
 
+## PR の CI でのチェック
+
+`ci.yml` の「Master data」ジョブが、PR ごとに次を確認します。
+
+1. スプレッドシートを書き出し、テスト用 CSV（`tests/server.tests/fixtures/resources`）とファイル構成・ヘッダー（列名と順番）が一致しているか（`src/structure.mjs`）。値の違いは見ません
+2. PR のコードのローダーで、スプレッドシートのデータを読み込めるか（整合性テスト）
+
+機能追加でテスト用 CSV の列を変えたりローダーを変えたりしたのに、スプレッドシートを直し忘れているとここで落ちます。スプレッドシートを直してから CI を再実行してください。
+
+- `MASTERDATA_SPREADSHEET_ID` はリポジトリ単位の Variable として登録してください（CI のジョブは環境を指定しないため、環境単位の Variable は読めません）
+- 列を変える PR のためにスプレッドシートを先に直すと、その PR をマージするまでは他の PR でこのチェックが落ちます
+
 ## スプレッドシートの構成
 
 - `_index` タブ: 1列目がタブ名、2列目が書き出し先の CSV パス（`server/resources/` 配下の `.csv` のみ）
@@ -64,4 +76,5 @@ pnpm masterdata:sync
 ```bash
 pnpm --dir tools/masterdata install
 pnpm --dir tools/masterdata test
+node tools/masterdata/src/structure.mjs tests/server.tests/fixtures/resources server/resources  # 形の突き合わせを手元で
 ```
