@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Fetch master data snapshot
-        run: node tools/masterdata/src/pull.mjs --if-locked
+        run: node tools/masterdata/src/pull.mjs
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3

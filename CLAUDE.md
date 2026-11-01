@@ -32,6 +32,7 @@ Web game (inspired by チビクエ3) with a monorepo structure: React frontend +
 ## Build & Dev Commands
 
 ### Backend (run from repo root)
+Master data CSVs are not in git. Run `pnpm masterdata:pull` once (and after `masterdata.lock` changes) before running the server or the balance simulation.
 ```bash
 dotnet restore
 dotnet build server/server.csproj
@@ -62,7 +63,7 @@ pnpx supabase stop
 Local connection string: `Host=127.0.0.1;Port=54322;Database=postgres;Username=postgres;Password=postgres`
 
 ### Master Data (spreadsheet → snapshot → CSV)
-The spreadsheet "nisekue マスタデータ" is the source of truth for `server/resources/**/*.csv`. Do not edit those CSVs by hand.
+The spreadsheet "nisekue マスタデータ" is the source of truth for `server/resources/**/*.csv`. Those CSVs are gitignored; never commit them.
 Snapshots are published as GitHub Releases (`masterdata-<n>`, a sequential number independent of the game version) by `masterdata-release.yml`; `masterdata.lock` pins the snapshot used by deploys.
 ```bash
 pnpm masterdata:pull              # write the locked snapshot into server/resources (no auth)

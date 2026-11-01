@@ -25,7 +25,7 @@ jobs:
           ref: ${{ github.sha }}
 
       - name: Fetch master data snapshot
-        run: node tools/masterdata/src/pull.mjs --if-locked
+        run: node tools/masterdata/src/pull.mjs
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4

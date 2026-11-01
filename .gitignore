@@ -10,3 +10,6 @@ tools/active-reporter-test/active-reporter-test
 
 # docker compose
 .env
+
+# マスタデータは masterdata.lock の版を pnpm masterdata:pull で取得する（スプレッドシートが正）
+server/resources/**/*.csv

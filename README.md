@@ -69,6 +69,11 @@ pnpm dev
 ### バックエンドサーバ
 
 - `.NET Core 10.0` で動作.
+- マスタデータ(CSV)はリポジトリに含まれないため, 初回と `masterdata.lock` の更新後にリポジトリのルートで取得する.
+
+```bash
+pnpm masterdata:pull
+```
 
 ```bash
 # server内で実行.
