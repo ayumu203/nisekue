@@ -61,6 +61,15 @@ pnpx supabase stop
 
 Local connection string: `Host=127.0.0.1;Port=54322;Database=postgres;Username=postgres;Password=postgres`
 
+### Master Data (spreadsheet → CSV)
+The spreadsheet "nisekue マスタデータ" is the source of truth for `server/resources/**/*.csv`. Do not edit those CSVs by hand; edit the spreadsheet and sync.
+```bash
+pnpm masterdata:sync              # from repo root: overwrite server/resources CSVs with the spreadsheet (needs Google ADC)
+pnpm --dir tools/masterdata test  # unit tests for the exporter
+dotnet test tests/server.tests/server.tests.csproj --filter "FullyQualifiedName~MasterDataIntegrityTests"  # load + cross-reference check
+```
+See `tools/masterdata/README.md` for the sheet layout and authentication.
+
 ### EF Core Migrations
 ```bash
 dotnet ef migrations add <Name> --project server/server.csproj --startup-project server/server.csproj --output-dir infrastructure/migrations
@@ -135,3 +144,5 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on PRs and pushes to main:
 Migrations auto-deploy via `db-migrate-dev.yml` / `db-migrate-prod.yml`. Use Session Pooler connection strings for Supabase.
 
 Scheduled maintenance workflows (dev/prod pairs): `cleanup-quest-data-*.yml`, `ranking-rebuild-*.yml`.
+
+Master data sync (`masterdata-sync.yml`, manual): exports the spreadsheet to CSV, runs `MasterDataIntegrityTests`, then creates or updates a PR from `masterdata/sync` and triggers `ci.yml` on it. Requires the `GOOGLE_SERVICE_ACCOUNT_JSON` secret.

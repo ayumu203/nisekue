@@ -1,0 +1,133 @@
+name: Sync Master Data from Spreadsheet
+
+# スプレッドシートのマスタデータを CSV に書き出し、整合性テストを通ったら PR を作る（更新する）。
+# 必要な設定:
+#   - Secret GOOGLE_SERVICE_ACCOUNT_JSON: サービスアカウントキー（JSON）。スプレッドシートを閲覧権限で共有しておく
+#   - Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests" を有効にする
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: masterdata-sync
+  cancel-in-progress: false
+
+env:
+  SYNC_BRANCH: masterdata/sync
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Validate secret
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "${GOOGLE_SERVICE_ACCOUNT_JSON}" ]; then
+            echo "::error::Secret GOOGLE_SERVICE_ACCOUNT_JSON が設定されていません。"
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: tools/masterdata/pnpm-lock.yaml
+
+      - name: Export CSV from spreadsheet
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: pnpm masterdata:sync
+
+      - name: Detect changes
+        id: diff
+        run: |
+          git add --all server/resources
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "スプレッドシートと CSV に差分はありません。" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "## 変更されたファイル"
+              echo '```'
+              git diff --cached --stat
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Setup .NET
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Validate master data
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          dotnet test tests/server.tests/server.tests.csproj -c Release \
+            --filter "FullyQualifiedName~server.tests.masterdata.MasterDataIntegrityTests" \
+            --logger "console;verbosity=normal"
+
+      - name: Commit and push
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$SYNC_BRANCH"
+          git commit -m "file: マスタデータをスプレッドシートから同期"
+          git push --force origin "$SYNC_BRANCH"
+
+      - name: Create or update pull request
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "スプレッドシート「nisekue マスタデータ」の内容を \`server/resources\` の CSV に書き出しました。"
+            echo
+            echo "- 整合性テスト（MasterDataIntegrityTests）は同期の実行時に通過済みです"
+            echo "- 実行ログ: ${RUN_URL}"
+            echo
+            echo "## 変更されたファイル"
+            echo
+            echo '```'
+            git diff --stat HEAD~1 HEAD
+            echo '```'
+          } > pr-body.md
+
+          pr_number="$(gh pr list --head "$SYNC_BRANCH" --base main --state open --json number --jq '.[0].number')"
+          if [ -n "$pr_number" ]; then
+            gh pr edit "$pr_number" --body-file pr-body.md
+            echo "PR #${pr_number} を更新しました。" >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh pr create --head "$SYNC_BRANCH" --base main \
+              --title "file: マスタデータをスプレッドシートから同期" \
+              --body-file pr-body.md
+            echo "PR を作成しました。" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # GITHUB_TOKEN で作った PR や push では他のワークフローが自動で起動しないため、CI を明示的に起動する
+      - name: Trigger CI
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --ref "$SYNC_BRANCH"
