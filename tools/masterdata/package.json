@@ -1,0 +1,16 @@
+{
+  "name": "nisekue-masterdata",
+  "private": true,
+  "type": "module",
+  "description": "スプレッドシートのマスタデータを server/resources の CSV に書き出す",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "sync": "node src/sync.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "google-auth-library": "^10.0.0"
+  }
+}
