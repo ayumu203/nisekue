@@ -35,7 +35,7 @@ pnpm masterdata:sync
     --scopes=https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/spreadsheets.readonly
   ```
 
-書き出し後は `dotnet test tests/server.tests/server.tests.csproj --filter "FullyQualifiedName~MasterDataIntegrityTests"` で整合性を確認できます。
+書き出し後は `dotnet test tests/server.tests/server.tests.csproj -p:UseMasterDataFixtures=false --filter "FullyQualifiedName~MasterDataIntegrityTests"` で整合性を確認できます。`-p:UseMasterDataFixtures=false` を付けないと、テスト用 CSV（`tests/server.tests/fixtures/resources`）に対して実行されます。
 
 ## 環境変数
 

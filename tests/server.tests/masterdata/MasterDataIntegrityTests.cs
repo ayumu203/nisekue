@@ -10,9 +10,10 @@ using Xunit;
 namespace server.tests.masterdata;
 
 /// <summary>
-/// server/resources 配下のマスタデータ一式が、本番と同じ CSV リポジトリで読み込めることと、
+/// 出力先 resources 配下のマスタデータ一式が、本番と同じ CSV リポジトリで読み込めることと、
 /// ファイル間の参照（ID の指し先）が切れていないことを確認する。
-/// スプレッドシートから書き出した CSV の検証にも使う。
+/// 通常はテスト用 CSV（fixtures/resources）に対して動く。
+/// スプレッドシートから書き出した CSV は -p:UseMasterDataFixtures=false を付けて検証する。
 /// </summary>
 public class MasterDataIntegrityTests
 {
