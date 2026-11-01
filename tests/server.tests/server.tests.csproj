@@ -21,4 +21,22 @@
   <ItemGroup>
     <ProjectReference Include="..\..\server\server.csproj" />
   </ItemGroup>
+
+  <!--
+    テストはスプレッドシートの最新データではなく、fixtures/resources に固定したテスト用 CSV で動かす。
+    server プロジェクトから出力先へコピーされた resources/*.csv を、ビルドのたびにテスト用 CSV で上書きする。
+    本物のマスタデータで整合性テストを回すときは -p:UseMasterDataFixtures=false を付ける
+    （切り替えるときは出力先に前回の CSV が残らないよう、クリーンな状態でビルドする）。
+  -->
+  <PropertyGroup>
+    <UseMasterDataFixtures Condition="'$(UseMasterDataFixtures)' == ''">true</UseMasterDataFixtures>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <MasterDataFixture Include="fixtures\resources\**\*.csv" />
+  </ItemGroup>
+
+  <Target Name="CopyMasterDataFixtures" AfterTargets="CopyFilesToOutputDirectory" Condition="'$(UseMasterDataFixtures)' == 'true'">
+    <Copy SourceFiles="@(MasterDataFixture)" DestinationFiles="@(MasterDataFixture->'$(OutDir)resources\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>
