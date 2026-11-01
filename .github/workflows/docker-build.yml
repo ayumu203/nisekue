@@ -20,6 +20,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ビルドが通るかの確認なので、マスタデータはテスト用 CSV で代用する
+      - name: Use fixture master data
+        run: |
+          mkdir -p server/resources
+          cp -r tests/server.tests/fixtures/resources/. server/resources/
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
