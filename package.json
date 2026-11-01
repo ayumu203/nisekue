@@ -1,0 +1,7 @@
+{
+  "name": "nisekue",
+  "private": true,
+  "scripts": {
+    "masterdata:sync": "pnpm --dir tools/masterdata install --frozen-lockfile && pnpm --dir tools/masterdata run sync"
+  }
+}
