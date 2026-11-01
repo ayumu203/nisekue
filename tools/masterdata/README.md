@@ -17,6 +17,8 @@
 
 ## ローカルで同期する
 
+最初に `tools/masterdata/.env.example` を `tools/masterdata/.env` にコピーし、`MASTERDATA_SPREADSHEET_ID` にスプレッドシートの ID を書きます。
+
 リポジトリのルートで実行します。スプレッドシートの最新の内容で `server/resources` の CSV が上書きされます。
 
 ```bash
@@ -39,7 +41,7 @@ pnpm masterdata:sync
 
 | 変数 | 内容 |
 | --- | --- |
-| `MASTERDATA_SPREADSHEET_ID` | 対象のスプレッドシート ID。省略時は本番のスプレッドシート |
+| `MASTERDATA_SPREADSHEET_ID` | 対象のスプレッドシート ID（必須）。`tools/masterdata/.env` に書いてもよい |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | サービスアカウントキーの JSON 文字列（GitHub Actions 用）。指定すると ADC より優先 |
 
 ## テスト
