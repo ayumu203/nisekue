@@ -61,6 +61,17 @@ pnpx supabase stop
 
 Local connection string: `Host=127.0.0.1;Port=54322;Database=postgres;Username=postgres;Password=postgres`
 
+### Master Data (spreadsheet → snapshot → CSV)
+The spreadsheet "nisekue マスタデータ" is the source of truth for `server/resources/**/*.csv`. Do not edit those CSVs by hand.
+Snapshots are published as GitHub Releases (`masterdata-x.y.z`) by `masterdata-release.yml`; `masterdata.lock` pins the version used by deploys.
+```bash
+pnpm masterdata:pull              # write the locked snapshot into server/resources (no auth)
+pnpm masterdata:sync              # write the latest spreadsheet into server/resources (needs Google ADC + tools/masterdata/.env)
+pnpm --dir tools/masterdata test  # unit tests for the scripts
+dotnet test tests/server.tests/server.tests.csproj -p:UseMasterDataFixtures=false --filter "FullyQualifiedName~MasterDataIntegrityTests"  # validate real data
+```
+Tests use fixed fixture CSVs in `tests/server.tests/fixtures/resources` (copied over the output `resources/` at build). Edit those when a test needs different master data. See `tools/masterdata/README.md`.
+
 ### EF Core Migrations
 ```bash
 dotnet ef migrations add <Name> --project server/server.csproj --startup-project server/server.csproj --output-dir infrastructure/migrations
@@ -135,3 +146,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on PRs and pushes to main:
 Migrations auto-deploy via `db-migrate-dev.yml` / `db-migrate-prod.yml`. Use Session Pooler connection strings for Supabase.
 
 Scheduled maintenance workflows (dev/prod pairs): `cleanup-quest-data-*.yml`, `ranking-rebuild-*.yml`.
+
+Master data release (`masterdata-release.yml`, manual): exports the spreadsheet, runs `MasterDataIntegrityTests` on real data, publishes a `masterdata-x.y.z` Release, then opens a PR bumping `VERSION` (patch) and `masterdata.lock` and triggers `ci.yml`. Needs secret `GOOGLE_SERVICE_ACCOUNT_JSON` and variable `MASTERDATA_SPREADSHEET_ID`. Deploy workflows fetch the locked snapshot before building.
+
+Versioning (`VERSION`, `x.y.z`): x = major game update, y = feature addition, z = master data update or bug fix. Bump x/y by hand (reset lower digits); z for data is bumped by the release workflow.

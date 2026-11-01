@@ -2,6 +2,17 @@
 
 スプレッドシート「nisekue マスタデータ」を正として、`server/resources` 配下の CSV を書き出すスクリプトです。
 
+## 全体の流れ
+
+1. スプレッドシートを編集する
+2. GitHub Actions の「Release Master Data Snapshot」（`masterdata-release.yml`）を手動実行する
+   - スプレッドシートを CSV に書き出し、本物のデータで整合性テスト（`MasterDataIntegrityTests`）を実行
+   - 通ったら GitHub Release（タグ `masterdata-x.y.z`）にスナップショット `masterdata.json` を公開
+   - `VERSION` の三桁目と `masterdata.lock` を上げる PR を作成し、CI を起動
+3. PR をマージすると、デプロイ時に `masterdata.lock` の版が取得されてビルドに含まれる
+
+ロールバックは `masterdata.lock` を前の版に戻す PR を出すだけです（スプレッドシートを戻す必要はありません）。
+
 ## スプレッドシートの構成
 
 - `_index` タブ: 1列目がタブ名、2列目が書き出し先の CSV パス（`server/resources/` 配下の `.csv` のみ）
@@ -15,7 +26,17 @@
 - サーバーのローダーは各行を `,` で分割するため、カンマや改行を含むセルはエラーになります
 - 改行コードは LF、ファイル末尾に改行を付けます
 
-## ローカルで同期する
+## ローカルで使う
+
+確定済みの版（`masterdata.lock`）を取得する。認証は不要です。
+
+```bash
+pnpm masterdata:pull
+```
+
+スプレッドシートの最新（未公開の編集を含む）をそのまま書き出す場合は、次の「スプレッドシートから同期する」を使います。
+
+## スプレッドシートから同期する
 
 最初に `tools/masterdata/.env.example` を `tools/masterdata/.env` にコピーし、`MASTERDATA_SPREADSHEET_ID` にスプレッドシートの ID を書きます。
 
@@ -43,6 +64,15 @@ pnpm masterdata:sync
 | --- | --- |
 | `MASTERDATA_SPREADSHEET_ID` | 対象のスプレッドシート ID（必須）。`tools/masterdata/.env` に書いてもよい |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | サービスアカウントキーの JSON 文字列（GitHub Actions 用）。指定すると ADC より優先 |
+| `MASTERDATA_REPOSITORY` | `pull` でスナップショットを取得するリポジトリ。省略時は `ayumu203/nisekue` |
+
+## GitHub Actions の設定
+
+- Secret `GOOGLE_SERVICE_ACCOUNT_JSON`: サービスアカウントキー（JSON の中身）。スプレッドシートをサービスアカウントのメールアドレスに閲覧者として共有しておく
+- Variable `MASTERDATA_SPREADSHEET_ID`: スプレッドシートの ID
+- Settings > Actions > General の「Allow GitHub Actions to create and approve pull requests」を有効にする
+
+デプロイ（`deploy-backend-*.yml`、`docker-build.yml`）は `masterdata.lock` があればその版を取得してからビルドします。サーバーで `docker compose build` する場合も、先に `pnpm masterdata:pull` を実行してください。
 
 ## テスト
 

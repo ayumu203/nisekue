@@ -2,7 +2,10 @@
 // スプレッドシートのマスタデータを server/resources 配下の CSV に書き出す。
 //
 //   pnpm masterdata:sync                     # リポジトリのルートから
-//   node tools/masterdata/src/sync.mjs --out <dir>
+//   node tools/masterdata/src/sync.mjs --out <dir> --bundle <file>
+//
+//   --out     書き出し先のルート（省略時はリポジトリのルート）
+//   --bundle  書き出した CSV をまとめた JSON（スナップショット）も出力する
 //
 // 環境変数（tools/masterdata/.env に書いてもよい）
 //   MASTERDATA_SPREADSHEET_ID     対象スプレッドシートの ID（必須）
@@ -28,6 +31,7 @@ function parseArgs(argv) {
   const args = { out: repoRoot }
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--out') args.out = resolve(argv[++i])
+    else if (argv[i] === '--bundle') args.bundle = resolve(argv[++i])
     else if (argv[i] === '--help' || argv[i] === '-h') args.help = true
     else throw new Error(`不明な引数です: ${argv[i]}`)
   }
@@ -56,7 +60,7 @@ async function listCsvFiles(dir) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.help) {
-    console.log('使い方: node tools/masterdata/src/sync.mjs [--out <出力先のルート>]')
+    console.log('使い方: node tools/masterdata/src/sync.mjs [--out <出力先のルート>] [--bundle <JSONファイル>]')
     return
   }
 
@@ -82,6 +86,13 @@ async function main() {
     await mkdir(dirname(target), { recursive: true })
     await writeFile(target, csv, 'utf8')
     console.log(`書き出し: ${path} (${csv.split('\n').length - 2} 行)`)
+  }
+
+  if (args.bundle) {
+    const files = Object.fromEntries(outputs.map(({ path, csv }) => [path, csv]))
+    await mkdir(dirname(args.bundle), { recursive: true })
+    await writeFile(args.bundle, JSON.stringify({ files }, null, 2) + '\n', 'utf8')
+    console.log(`スナップショット: ${args.bundle}`)
   }
 
   const written = new Set(outputs.map((o) => resolve(args.out, o.path)))

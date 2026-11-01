@@ -6,6 +6,8 @@ on:
     paths:
       - 'server/**'
       - '.github/workflows/deploy-backend-dev.yml'
+      - 'masterdata.lock'
+      - 'tools/masterdata/**'
   workflow_dispatch:
 
 permissions:
@@ -19,6 +21,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Fetch master data snapshot
+        run: node tools/masterdata/src/pull.mjs --if-locked
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4

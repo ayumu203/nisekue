@@ -68,6 +68,21 @@ export function tableToCsv(values, tabName) {
 }
 
 /**
+ * 書き込み先のパスを検証して正規化する。resourcesPrefix 配下の .csv 以外（`..` を含むものも）は拒否する。
+ */
+export function normalizeResourcePath(path, where, resourcesPrefix = 'server/resources/') {
+  const normalized = String(path).replace(/\\/g, '/')
+  if (
+    !normalized.startsWith(resourcesPrefix) ||
+    !normalized.endsWith('.csv') ||
+    normalized.split('/').some((part) => part === '..' || part === '')
+  ) {
+    throw new Error(`${where}: CSVパスは ${resourcesPrefix} 配下の .csv である必要があります (${path})`)
+  }
+  return normalized
+}
+
+/**
  * `_index` タブの値（ヘッダー行を除く [タブ名, CSVパス] の配列）を検証して返す。
  * 書き込み先は resourcesPrefix 配下の .csv に限定する。
  */
@@ -79,15 +94,7 @@ export function parseIndex(values, resourcesPrefix = 'server/resources/') {
     const path = String(row?.[1] ?? '').trim()
     if (tab === '' && path === '') return
     if (tab === '' || path === '') throw new Error(`_index!A${rowNo}: タブ名とCSVパスの両方が必要です`)
-    const normalized = path.replace(/\\/g, '/')
-    if (
-      !normalized.startsWith(resourcesPrefix) ||
-      !normalized.endsWith('.csv') ||
-      normalized.split('/').some((part) => part === '..' || part === '')
-    ) {
-      throw new Error(`_index!B${rowNo}: CSVパスは ${resourcesPrefix} 配下の .csv である必要があります (${path})`)
-    }
-    entries.push({ tab, path: normalized })
+    entries.push({ tab, path: normalizeResourcePath(path, `_index!B${rowNo}`, resourcesPrefix) })
   })
 
   const findDuplicates = (key) => entries.map((e) => e[key]).filter((v, i, all) => all.indexOf(v) !== i)

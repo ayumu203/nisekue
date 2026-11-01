@@ -1,0 +1,192 @@
+name: Release Master Data Snapshot
+
+# スプレッドシートのマスタデータを書き出し、整合性テストを通ったらスナップショットとして
+# GitHub Release（タグ masterdata-x.y.z）に公開する。続けて VERSION の三桁目と
+# masterdata.lock を更新する PR を作る。デプロイは masterdata.lock の版を取得して使う。
+#
+# 必要な設定:
+#   - Secret   GOOGLE_SERVICE_ACCOUNT_JSON: サービスアカウントキー（JSON）。スプレッドシートを閲覧権限で共有しておく
+#   - Variable MASTERDATA_SPREADSHEET_ID:  スプレッドシートの ID
+#   - Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests" を有効にする
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: masterdata-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      MASTERDATA_SPREADSHEET_ID: ${{ vars.MASTERDATA_SPREADSHEET_ID }}
+      MASTERDATA_REPOSITORY: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set paths
+        run: |
+          echo "BUNDLE=${RUNNER_TEMP}/masterdata.json" >> "$GITHUB_ENV"
+          echo "BASELINE=${RUNNER_TEMP}/baseline" >> "$GITHUB_ENV"
+
+      - name: Validate settings
+        run: |
+          if [ -z "${GOOGLE_SERVICE_ACCOUNT_JSON}" ]; then
+            echo "::error::Secret GOOGLE_SERVICE_ACCOUNT_JSON が設定されていません。"
+            exit 1
+          fi
+          if [ -z "${MASTERDATA_SPREADSHEET_ID}" ]; then
+            echo "::error::Variable MASTERDATA_SPREADSHEET_ID が設定されていません。"
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: tools/masterdata/pnpm-lock.yaml
+
+      # 比較の基準: lock があればその版のスナップショット、なければリポジトリの CSV
+      - name: Prepare baseline
+        run: |
+          mkdir -p "$BASELINE"
+          if [ -f masterdata.lock ]; then
+            node tools/masterdata/src/pull.mjs --out "$BASELINE"
+          else
+            mkdir -p "$BASELINE/server"
+            cp -r server/resources "$BASELINE/server/resources"
+          fi
+
+      - name: Export CSV from spreadsheet
+        run: |
+          find server/resources -name '*.csv' -delete
+          pnpm masterdata:sync --bundle "$BUNDLE"
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --no-index --quiet "$BASELINE/server/resources" server/resources; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "現在のスナップショットから変更はありません。" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            # パスを短くするため old/ と new/ に並べて比較する（表示は {old => new}/quest/stages.csv の形）
+            mkdir -p "$RUNNER_TEMP/compare"
+            cp -r "$BASELINE/server/resources" "$RUNNER_TEMP/compare/old"
+            cp -r server/resources "$RUNNER_TEMP/compare/new"
+            (cd "$RUNNER_TEMP/compare" && git diff --no-index --stat=200 old new > "$RUNNER_TEMP/diffstat.txt" || true)
+            {
+              echo "## 変更されたファイル"
+              echo '```'
+              cat "$RUNNER_TEMP/diffstat.txt"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Setup .NET
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Validate master data
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          dotnet test tests/server.tests/server.tests.csproj -c Release -p:UseMasterDataFixtures=false \
+            --filter "FullyQualifiedName~server.tests.masterdata.MasterDataIntegrityTests" \
+            --logger "console;verbosity=normal"
+
+      - name: Decide version
+        if: steps.diff.outputs.changed == 'true'
+        id: version
+        run: |
+          current="$(tr -d '[:space:]' < VERSION)"
+          if ! printf '%s' "$current" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::VERSION の形式が不正です: ${current}"
+            exit 1
+          fi
+          next="$(printf '%s' "$current" | awk -F. '{ printf "%d.%d.%d", $1, $2, $3 + 1 }')"
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/masterdata-${next}" > /dev/null 2>&1; then
+            echo "::error::masterdata-${next} は公開済みです。前回のマスタデータ更新 PR をマージしてから実行してください。"
+            exit 1
+          fi
+          echo "next=${next}" >> "$GITHUB_OUTPUT"
+          echo "マスタデータ ${next} を公開します（ゲームのバージョン ${current} → ${next}）。" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish snapshot
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          NEXT: ${{ steps.version.outputs.next }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "スプレッドシート「nisekue マスタデータ」から書き出したスナップショットです。"
+            echo
+            echo "- 実行ログ: ${RUN_URL}"
+            echo
+            echo "## 変更されたファイル"
+            echo '```'
+            cat "$RUNNER_TEMP/diffstat.txt"
+            echo '```'
+          } > "$RUNNER_TEMP/notes.md"
+          gh release create "masterdata-${NEXT}" "$BUNDLE" \
+            --target "$(git rev-parse HEAD)" \
+            --title "マスタデータ ${NEXT}" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --latest=false
+
+      - name: Create pull request
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          NEXT: ${{ steps.version.outputs.next }}
+        run: |
+          branch="masterdata/${NEXT}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          printf '%s\n' "$NEXT" > VERSION
+          printf '%s\n' "$NEXT" > masterdata.lock
+          git add VERSION masterdata.lock
+          git commit -m "file: マスタデータを ${NEXT} に更新"
+          git push origin "$branch"
+
+          {
+            echo "マスタデータのスナップショット [masterdata-${NEXT}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/masterdata-${NEXT}) を使うように更新します。"
+            echo
+            echo "- \`masterdata.lock\` と \`VERSION\` を ${NEXT} に更新"
+            echo "- 整合性テスト（MasterDataIntegrityTests）は公開前に通過済み"
+            echo "- マージ後のデプロイで、この版のマスタデータが使われます"
+            echo
+            echo "## 変更されたファイル"
+            echo '```'
+            cat "$RUNNER_TEMP/diffstat.txt"
+            echo '```'
+          } > "$RUNNER_TEMP/pr-body.md"
+          gh pr create --head "$branch" --base main \
+            --title "file: マスタデータを ${NEXT} に更新" \
+            --body-file "$RUNNER_TEMP/pr-body.md"
+
+      # GITHUB_TOKEN で作った PR では他のワークフローが自動で起動しないため、CI を明示的に起動する
+      - name: Trigger CI
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          NEXT: ${{ steps.version.outputs.next }}
+        run: gh workflow run ci.yml --ref "masterdata/${NEXT}"
