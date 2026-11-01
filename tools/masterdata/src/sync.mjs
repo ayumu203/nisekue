@@ -4,19 +4,25 @@
 //   pnpm masterdata:sync                     # リポジトリのルートから
 //   node tools/masterdata/src/sync.mjs --out <dir>
 //
-// 環境変数
-//   MASTERDATA_SPREADSHEET_ID     対象スプレッドシート（省略時は DEFAULT_SPREADSHEET_ID）
+// 環境変数（tools/masterdata/.env に書いてもよい）
+//   MASTERDATA_SPREADSHEET_ID     対象スプレッドシートの ID（必須）
 //   GOOGLE_SERVICE_ACCOUNT_JSON   サービスアカウントキー（JSON 文字列）。省略時は ADC を使う
 
+import { existsSync } from 'node:fs'
 import { mkdir, readdir, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseIndex, tableToCsv } from './csv.mjs'
 import { createSheetsClient, getIndexValues, getTabValues } from './sheets.mjs'
 
-const DEFAULT_SPREADSHEET_ID = '1u8eKVM50g39nCXUWDl7yAgNVkZ3UxpnR9H4VwkMmbJY'
 const RESOURCES_PREFIX = 'server/resources/'
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
+const toolRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const repoRoot = resolve(toolRoot, '../..')
+
+function loadLocalEnv() {
+  const envFile = join(toolRoot, '.env')
+  if (existsSync(envFile)) process.loadEnvFile(envFile)
+}
 
 function parseArgs(argv) {
   const args = { out: repoRoot }
@@ -54,7 +60,11 @@ async function main() {
     return
   }
 
-  const spreadsheetId = process.env.MASTERDATA_SPREADSHEET_ID || DEFAULT_SPREADSHEET_ID
+  loadLocalEnv()
+  const spreadsheetId = process.env.MASTERDATA_SPREADSHEET_ID?.trim()
+  if (!spreadsheetId) {
+    throw new Error('MASTERDATA_SPREADSHEET_ID が設定されていません（tools/masterdata/.env.example を参照）')
+  }
   const client = await createSheetsClient()
 
   const index = parseIndex(await getIndexValues(client, spreadsheetId), RESOURCES_PREFIX)
