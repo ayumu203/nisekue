@@ -1,0 +1,106 @@
+name: Deploy Backend - Production (Oracle VM)
+
+# prod への push で、Oracle Cloud の VM 上のバックエンド（docker compose）を更新する。
+# VM には SSH で接続し、push されたコミットを checkout してイメージを再ビルド・再起動する。
+#
+# 必要な Secrets（prod environment）:
+#   VM_HOST         VM のパブリック IP
+#   VM_SSH_KEY      デプロイ専用の SSH 秘密鍵
+#   VM_KNOWN_HOSTS  `ssh-keyscan -t ed25519 <VM_HOST>` の出力（ホスト鍵の固定）
+
+on:
+  push:
+    branches: [ prod ]
+    paths:
+      - 'server/**'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'docker-compose.yml'
+      - '.github/workflows/deploy-backend-vm-prod.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend-vm-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    timeout-minutes: 30
+
+    steps:
+      - name: Validate secrets
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
+        run: |
+          for name in VM_HOST VM_SSH_KEY VM_KNOWN_HOSTS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret $name is not configured in the prod environment."
+              exit 1
+            fi
+          done
+
+      - name: Configure SSH
+        env:
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VM_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy on VM
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            -o ConnectTimeout=20 \
+            "ubuntu@${VM_HOST}" \
+            "bash -s -- '${DEPLOY_SHA}'" <<'REMOTE'
+          set -euo pipefail
+          sha="$1"
+          cd /opt/nisekue
+
+          if [ ! -f .env ]; then
+            echo "::error::/opt/nisekue/.env が見つかりません。"
+            exit 1
+          fi
+
+          echo "==> Checkout ${sha}"
+          git fetch --quiet origin prod
+          git checkout --quiet --force prod
+          git reset --quiet --hard "${sha}"
+
+          echo "==> Build and restart"
+          docker compose up -d --build --remove-orphans
+
+          echo "==> Health check"
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/ >/dev/null; then
+              echo "Backend is healthy (${sha})."
+              docker image prune -f >/dev/null
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "::error::Health check failed."
+          docker compose ps
+          docker compose logs api --tail 100
+          exit 1
+          REMOTE
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
