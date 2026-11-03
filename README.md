@@ -20,8 +20,8 @@
 - 冒険やエンドレスバトル等を実装する.
 
 ## システムのアーキテクチャ構成
+<img width="600" height="567" alt="image" src="https://github.com/user-attachments/assets/ce3b1499-7e55-4907-a0bb-af48a8ca1828" />
 
-![アーキテクチャ構成](docs/arch.svg)
 
 ### フロントエンド
 
