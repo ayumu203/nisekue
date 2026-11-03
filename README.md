@@ -19,30 +19,8 @@
 - 某ゲームのオマージュゲー開発.
 - 冒険やエンドレスバトル等を実装する.
 
-## システムのアーキテクチャ構成
+## アーキテクチャ構成
 <img width="600" height="567" alt="image" src="https://github.com/user-attachments/assets/ce3b1499-7e55-4907-a0bb-af48a8ca1828" />
-
-
-### フロントエンド
-
-- React + Vite
-- MUI(Material UI)
-- ![Tech Stack](https://skillicons.dev/icons?i=react,vite,mui,nodejs)
-
-### バックエンド
-
-- .NET(Minimal API)
-- EF Core(Entity Framework Core)
-- xUnit
-- SignalR
-- ![Tech Stack](https://skillicons.dev/icons?i=cs,dotnet)
-
-### インフラ
-
-- Supabase(DB・認証)
-- GitHub Pages(フロントエンド公開先)
-- Azure App Service(バックエンド公開先)
-- ![Tech Stack](https://skillicons.dev/icons?i=azure,github,supabase)
 
 ## 実行方法
 
