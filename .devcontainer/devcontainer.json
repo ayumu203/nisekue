@@ -1,0 +1,50 @@
+{
+  "name": "nisekue",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/dotnet:2": {
+      "version": "10.0"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts",
+      "pnpmVersion": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  // ローカル Supabase のコンテナ群が重いため 4 コア / 8GB 以上を要求する
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb"
+  },
+  // ブラウザから開くのは 5173 のみ。/api と /supabase は Vite がコンテナ内へプロキシする
+  "forwardPorts": [5173, 54323],
+  "portsAttributes": {
+    "5173": {
+      "label": "Game (Vite)",
+      "onAutoForward": "notify"
+    },
+    "54323": {
+      "label": "Supabase Studio",
+      "onAutoForward": "silent"
+    },
+    "5068": {
+      "label": "Backend API",
+      "onAutoForward": "silent"
+    },
+    "54321": {
+      "label": "Supabase API",
+      "onAutoForward": "silent"
+    },
+    "54322": {
+      "label": "PostgreSQL",
+      "onAutoForward": "silent"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/start.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-dotnettools.csdevkit", "dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
+    }
+  }
+}
