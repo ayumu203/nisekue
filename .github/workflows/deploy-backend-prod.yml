@@ -5,6 +5,8 @@ on:
     branches: [ prod ]
     paths:
       - 'server/**'
+      - 'tools/masterdata/**'
+      - '.github/actions/masterdata-import/**'
       - '.github/workflows/deploy-backend-prod.yml'
   workflow_dispatch:
 
@@ -26,6 +28,15 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
+      # マスタデータはリポジトリに置かず、デプロイのたびにスプレッドシートから取り込む。
+      # サーバーが起動できないデータ（型の誤りや存在しないIDの参照など）ならここで止まる。
+      # スプレッドシートは Variable MASTERDATA_SPREADSHEET_ID で決まる（環境単位で上書きすればステージング用に切り替えられる）
+      - name: Import master data
+        uses: ./.github/actions/masterdata-import
+        with:
+          google-service-account-json: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          spreadsheet-id: ${{ vars.MASTERDATA_SPREADSHEET_ID }}
 
       - name: Restore
         run: dotnet restore server/server.csproj

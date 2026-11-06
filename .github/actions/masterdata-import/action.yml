@@ -1,0 +1,68 @@
+name: Import master data
+description: >-
+  スプレッドシートのマスタデータを server/resources 配下の CSV に書き出し、
+  整合性テスト（MasterDataIntegrityTests）を通す。サーバーが起動できないデータならここで失敗する。
+  呼び出す前に actions/checkout でリポジトリを取得しておくこと。
+
+inputs:
+  google-service-account-json:
+    description: サービスアカウントキー（JSON の中身）。secrets.GOOGLE_SERVICE_ACCOUNT_JSON を渡す
+    required: true
+  spreadsheet-id:
+    description: >-
+      スプレッドシートの ID。vars.MASTERDATA_SPREADSHEET_ID を渡す
+      （環境単位で上書きすれば、ステージングと本番で別のスプレッドシートを使える）
+    required: true
+  validate:
+    description: 書き出した CSV に整合性テストを実行するか（'true' / 'false'）
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Check settings
+      shell: bash
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ inputs.google-service-account-json }}
+        MASTERDATA_SPREADSHEET_ID: ${{ inputs.spreadsheet-id }}
+      run: |
+        if [ -z "${GOOGLE_SERVICE_ACCOUNT_JSON}" ] || [ -z "${MASTERDATA_SPREADSHEET_ID}" ]; then
+          echo "::error::Secret GOOGLE_SERVICE_ACCOUNT_JSON と Variable MASTERDATA_SPREADSHEET_ID を設定してください（tools/masterdata/README.md）。"
+          exit 1
+        fi
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 10
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'pnpm'
+        cache-dependency-path: tools/masterdata/pnpm-lock.yaml
+
+    - name: Export CSV from spreadsheet
+      shell: bash
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ inputs.google-service-account-json }}
+        MASTERDATA_SPREADSHEET_ID: ${{ inputs.spreadsheet-id }}
+      run: |
+        # 前回の CSV が残っていると、スプレッドシートから消したタブのファイルが紛れ込むので先に消す
+        find server/resources -name '*.csv' -delete 2>/dev/null || true
+        pnpm masterdata:sync
+
+    - name: Setup .NET
+      if: inputs.validate == 'true'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Validate master data
+      if: inputs.validate == 'true'
+      shell: bash
+      run: |
+        dotnet test tests/server.tests/server.tests.csproj -c Release -p:UseMasterDataFixtures=false \
+          --filter "FullyQualifiedName~server.tests.masterdata.MasterDataIntegrityTests"

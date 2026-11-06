@@ -3,8 +3,11 @@
 #   bash .devcontainer/start.sh
 #
 # 1. ローカル Supabase を起動
-# 2. EF Core マイグレーションを適用
-# 3. バックエンド (:5068) とフロントエンド (:5173) をバックグラウンドで起動
+# 2. マスタデータ（server/resources の CSV）を用意
+#    Codespaces の Secret に GOOGLE_SERVICE_ACCOUNT_JSON と MASTERDATA_SPREADSHEET_ID があればスプレッドシートから取得し、
+#    なければテスト用 CSV（tests/server.tests/fixtures/resources）を使う
+# 3. EF Core マイグレーションを適用
+# 4. バックエンド (:5068) とフロントエンド (:5173) をバックグラウンドで起動
 #
 # ログは ~/nisekue-logs/ に出力される。
 set -euo pipefail
@@ -31,21 +34,41 @@ stop_previous() {
   fi
 }
 
-echo "==> [1/4] Docker の起動待ち"
+echo "==> [1/5] Docker の起動待ち"
 for _ in $(seq 1 60); do
   docker info >/dev/null 2>&1 && break
   sleep 2
 done
 docker info >/dev/null 2>&1 || { echo "Docker が起動していません"; exit 1; }
 
-echo "==> [2/4] ローカル Supabase を起動"
+echo "==> [2/5] ローカル Supabase を起動"
 # 使わないサービスは起動しない（メモリ節約）
 (cd "$ROOT/supabase" && pnpm exec supabase start -x logflare,vector,imgproxy,edge-runtime,supavisor)
 
-echo "==> [3/4] マイグレーションを適用"
+echo "==> [3/5] マスタデータを用意"
+use_fixture_master_data() {
+  mkdir -p "$ROOT/server/resources"
+  find "$ROOT/server/resources" -name '*.csv' -delete
+  cp -r "$ROOT/tests/server.tests/fixtures/resources/." "$ROOT/server/resources/"
+  echo "    テスト用 CSV を使います"
+}
+if [[ -n "${GOOGLE_SERVICE_ACCOUNT_JSON:-}" && -n "${MASTERDATA_SPREADSHEET_ID:-}" ]]; then
+  if (cd "$ROOT" && pnpm masterdata:sync); then
+    echo "    スプレッドシートから取得しました"
+  else
+    echo "    スプレッドシートから取得できませんでした"
+    use_fixture_master_data
+  fi
+elif find "$ROOT/server/resources" -name '*.csv' 2>/dev/null | grep -q .; then
+  echo "    既存の CSV をそのまま使います（スプレッドシートの最新にするには pnpm masterdata:sync）"
+else
+  use_fixture_master_data
+fi
+
+echo "==> [4/5] マイグレーションを適用"
 (cd "$ROOT" && dotnet ef database update --project server/server.csproj --startup-project server/server.csproj)
 
-echo "==> [4/4] バックエンドとフロントエンドを起動"
+echo "==> [5/5] バックエンドとフロントエンドを起動"
 stop_previous backend
 stop_previous frontend
 
