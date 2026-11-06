@@ -5,6 +5,8 @@ on:
     branches: [ main ]
     paths:
       - 'server/**'
+      - 'tools/masterdata/**'
+      - '.github/actions/masterdata-import/**'
       - '.github/workflows/deploy-backend-dev.yml'
   workflow_dispatch:
 
@@ -25,35 +27,14 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      # マスタデータはリポジトリに置かず、デプロイのたびにスプレッドシートから取り込む。
+      # サーバーが起動できないデータ（型の誤りや存在しないIDの参照など）ならここで止まる。
+      # スプレッドシートは Variable MASTERDATA_SPREADSHEET_ID で決まる（環境単位で上書きすればステージング用に切り替えられる）
+      - name: Import master data
+        uses: ./.github/actions/masterdata-import
         with:
-          version: 10
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-          cache-dependency-path: tools/masterdata/pnpm-lock.yaml
-
-      # マスタデータはリポジトリに置かず、デプロイのたびにスプレッドシートから取り込む
-      - name: Import master data from spreadsheet
-        env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          MASTERDATA_SPREADSHEET_ID: ${{ vars.MASTERDATA_SPREADSHEET_ID }}
-        run: |
-          if [ -z "${GOOGLE_SERVICE_ACCOUNT_JSON}" ] || [ -z "${MASTERDATA_SPREADSHEET_ID}" ]; then
-            echo "::error::Secret GOOGLE_SERVICE_ACCOUNT_JSON と Variable MASTERDATA_SPREADSHEET_ID を設定してください。"
-            exit 1
-          fi
-          pnpm masterdata:sync
-
-      # サーバーが起動できないデータ（型の誤りや存在しないIDの参照など）ならここで止める
-      - name: Validate master data
-        run: |
-          dotnet test tests/server.tests/server.tests.csproj -c Release -p:UseMasterDataFixtures=false \
-            --filter "FullyQualifiedName~server.tests.masterdata.MasterDataIntegrityTests"
+          google-service-account-json: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          spreadsheet-id: ${{ vars.MASTERDATA_SPREADSHEET_ID }}
 
       - name: Restore
         run: dotnet restore server/server.csproj

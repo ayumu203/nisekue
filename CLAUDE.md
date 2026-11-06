@@ -69,7 +69,7 @@ pnpm masterdata:sync              # write the latest spreadsheet into server/res
 pnpm --dir tools/masterdata test  # unit tests for the exporter
 dotnet test tests/server.tests/server.tests.csproj -p:UseMasterDataFixtures=false --filter "FullyQualifiedName~MasterDataIntegrityTests"  # validate real data
 ```
-Tests use fixed fixture CSVs in `tests/server.tests/fixtures/resources` (copied over the output `resources/` at build). Edit those when a test needs different master data. See `tools/masterdata/README.md`.
+Tests use fixed fixture CSVs in `tests/server.tests/fixtures/resources` (copied over the output `resources/` at build). Edit those when a test needs different master data. See `tools/masterdata/README.md`. Codespaces (`.devcontainer/start.sh`) syncs from the spreadsheet when the Codespaces secrets are set, otherwise it uses the fixture CSVs.
 
 ### EF Core Migrations
 ```bash
@@ -147,4 +147,4 @@ Migrations auto-deploy via `db-migrate-dev.yml` / `db-migrate-prod.yml`. Use Ses
 
 Scheduled maintenance workflows (dev/prod pairs): `cleanup-quest-data-*.yml`, `ranking-rebuild-*.yml`.
 
-Backend deploys (`deploy-backend-dev.yml` from `main`, `deploy-backend-prod.yml` from `prod`) import master data from the spreadsheet on every run and stop if `MasterDataIntegrityTests` fails on it. To push spreadsheet edits without a code change, run the deploy workflow manually. Needs secret `GOOGLE_SERVICE_ACCOUNT_JSON` and variable `MASTERDATA_SPREADSHEET_ID` (can be set per environment).
+Backend deploys import master data from the spreadsheet on every run via the composite action `.github/actions/masterdata-import` (export + `MasterDataIntegrityTests`) and stop before touching the server if it fails. Production (`deploy-backend-vm-prod.yml`, `prod` branch) runs the import on the Actions runner, then ships the CSVs to the Oracle VM and builds there; Google credentials never go to the VM. The Azure workflows (`deploy-backend-dev.yml`, `deploy-backend-prod.yml`; to become staging) call the same action. To push spreadsheet edits without a code change, run the deploy workflow manually (production: on `prod` only). Needs secret `GOOGLE_SERVICE_ACCOUNT_JSON` and variable `MASTERDATA_SPREADSHEET_ID` at repository level; override the variable per environment to give staging its own spreadsheet.
