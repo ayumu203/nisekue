@@ -17,9 +17,10 @@ public sealed class TreasureMapExpedition
         bool rewardClaimed = false,
         DateTimeOffset? completedAt = null)
     {
-        if (endsAt <= startedAt)
+        // AdvanceTime は EndsAt を StartedAt まで切り詰めるため、同値は有効な状態として扱う。
+        if (endsAt < startedAt)
         {
-            throw new ArgumentException("EndsAt must be after StartedAt.");
+            throw new ArgumentException("EndsAt must not be before StartedAt.");
         }
 
         Id = id;

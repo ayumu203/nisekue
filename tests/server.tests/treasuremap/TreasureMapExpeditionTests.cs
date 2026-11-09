@@ -47,6 +47,48 @@ public class TreasureMapExpeditionTests
             .WithMessage("*Only completed expeditions*");
     }
 
+    [Fact]
+    public void AdvanceTime_WhenDurationExceedsRemaining_ClampsEndsAtToStartedAt()
+    {
+        var expedition = CreateInProgressExpedition();
+
+        expedition.AdvanceTime(TimeSpan.FromMinutes(5));
+        expedition.AdvanceTime(TimeSpan.FromMinutes(5));
+        expedition.AdvanceTime(TimeSpan.FromMinutes(5));
+
+        expedition.EndsAt.Should().Be(expedition.StartedAt);
+    }
+
+    [Fact]
+    public void Constructor_WhenEndsAtEqualsStartedAt_Rehydrates()
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        var act = () => new TreasureMapExpedition(
+            TreasureMapExpeditionId.New(),
+            new TreasureMapId(4001),
+            new PlayerId(Guid.NewGuid()),
+            now,
+            now);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Constructor_WhenEndsAtIsBeforeStartedAt_ThrowsArgumentException()
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        var act = () => new TreasureMapExpedition(
+            TreasureMapExpeditionId.New(),
+            new TreasureMapId(4001),
+            new PlayerId(Guid.NewGuid()),
+            now,
+            now.AddSeconds(-1));
+
+        act.Should().Throw<ArgumentException>();
+    }
+
     private static TreasureMapExpedition CreateInProgressExpedition()
     {
         var now = DateTimeOffset.UtcNow;
