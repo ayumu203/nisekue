@@ -1,4 +1,4 @@
-name: Cleanup Quest Data - Development
+name: Cleanup Quest Data - Staging
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ permissions:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: staging
 
     steps:
       - name: Trigger quest data cleanup endpoint

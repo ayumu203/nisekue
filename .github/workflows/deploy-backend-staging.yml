@@ -1,11 +1,11 @@
-name: Deploy Backend - Production
+name: Deploy Backend - Staging
 
 on:
   push:
-    branches: [ prod ]
+    branches: [ main ]
     paths:
       - 'server/**'
-      - '.github/workflows/deploy-backend-prod.yml'
+      - '.github/workflows/deploy-backend-staging.yml'
   workflow_dispatch:
 
 permissions:
@@ -14,13 +14,11 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: prod
+    environment: staging
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -39,5 +37,5 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND_PROD }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND_STAGING }}
           package: publish

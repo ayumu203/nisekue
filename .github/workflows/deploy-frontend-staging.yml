@@ -1,11 +1,11 @@
-name: Deploy Frontend - Development
+name: Deploy Frontend - Staging
 
 on:
   push:
     branches: [ main ]
     paths:
       - 'client/**'
-      - '.github/workflows/deploy-frontend-dev.yml'
+      - '.github/workflows/deploy-frontend-staging.yml'
   workflow_dispatch:
 
 permissions:
@@ -14,13 +14,13 @@ permissions:
   id-token: write
 
 concurrency:
-  group: 'deploy-frontend-dev'
+  group: 'deploy-frontend-staging'
   cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: staging
     steps:
       - name: Checkout
         uses: actions/checkout@v4

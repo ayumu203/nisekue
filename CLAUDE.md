@@ -25,7 +25,9 @@ Web game (inspired by チビクエ3) with a monorepo structure: React frontend +
 - **Database**: PostgreSQL via Supabase
 - **Auth**: Supabase Auth (JWT), validated in `server/Program.cs`
 - **Real-time**: SignalR (quest runs only, at `/quest-hubs/runs`)
-- **Deploy**: Cloudflare Pages (frontend prod), GitHub Pages (frontend dev, via `deploy-frontend-dev.yml`), Azure App Service (backend)
+- **Deploy**: two environments
+  - **staging** (push to `main`): GitHub Pages frontend (`deploy-frontend-staging.yml`), Azure App Service backend (`deploy-backend-staging.yml`, `ASPNETCORE_ENVIRONMENT=Staging`), Supabase project `Nisekue-Prod` (Seoul, the former production DB)
+  - **prod** (push to `prod`): Cloudflare Pages frontend, Oracle VM backend (`deploy-backend-vm-prod.yml`), Supabase project `Nisekue-Prod-Tokyo`
 - **Workers**: `workers/active-reporter/` — Cloudflare Worker (cron every 5 min) reporting active player count to the game portal
 - **Simulation**: `simulation/balance_report.html` — balance report generated from the resource CSVs (job growth, ranks, equipment, enemies)
 
@@ -132,6 +134,6 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on PRs and pushes to main:
 - Backend: format check -> lint -> build -> test
 - Frontend: format check -> lint -> build
 
-Migrations auto-deploy via `db-migrate-dev.yml` / `db-migrate-prod.yml`. Use Session Pooler connection strings for Supabase.
+Migrations auto-deploy via `db-migrate-staging.yml` / `db-migrate-prod.yml`. Use Session Pooler connection strings for Supabase.
 
-Scheduled maintenance workflows (dev/prod pairs): `cleanup-quest-data-*.yml`, `ranking-rebuild-*.yml`.
+Scheduled maintenance workflows (staging/prod pairs): `cleanup-quest-data-*.yml`, `ranking-rebuild-*.yml`.
