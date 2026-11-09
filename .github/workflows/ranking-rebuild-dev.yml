@@ -1,4 +1,4 @@
-name: Rebuild Rankings - Staging
+name: Rebuild Rankings - Development
 
 on:
   schedule:
@@ -11,7 +11,7 @@ permissions:
 jobs:
   rebuild:
     runs-on: ubuntu-latest
-    environment: staging
+    environment: dev
 
     steps:
       - name: Trigger ranking rebuild endpoint
