@@ -33,7 +33,8 @@ internal sealed class FixedMoveRepository(params int[] moveIds) : IMoveRepositor
             AttackRange.Single,
             mpCost: 0,
             executionPriority: 0,
-            MoveCategory.Attack))
+            MoveCategory.Attack,
+            effects: []))
         .ToArray();
 
     public Task<Move?> GetMoveAsync(MoveId moveId) => Task.FromResult(moves.FirstOrDefault(x => x.Id.Id == moveId.Id));
