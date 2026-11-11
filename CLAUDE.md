@@ -34,6 +34,7 @@ Web game (inspired by チビクエ3) with a monorepo structure: React frontend +
 ## Build & Dev Commands
 
 ### Backend (run from repo root)
+Master data CSVs are not in git. Run `pnpm masterdata:sync` (see Master Data below) before running the server or the balance simulation.
 ```bash
 dotnet restore
 dotnet build server/server.csproj
@@ -62,6 +63,15 @@ pnpx supabase stop
 ```
 
 Local connection string: `Host=127.0.0.1;Port=54322;Database=postgres;Username=postgres;Password=postgres`
+
+### Master Data (spreadsheet → CSV)
+The spreadsheet "nisekue マスタデータ" is the source of truth for `server/resources/**/*.csv`. Those CSVs are gitignored; never commit them.
+```bash
+pnpm masterdata:sync              # write the latest spreadsheet into server/resources (needs Google ADC + tools/masterdata/.env)
+pnpm --dir tools/masterdata test  # unit tests for the exporter
+dotnet test tests/server.tests/server.tests.csproj -p:UseMasterDataFixtures=false --filter "FullyQualifiedName~MasterDataIntegrityTests"  # validate real data
+```
+Tests use fixed fixture CSVs in `tests/server.tests/fixtures/resources` (copied over the output `resources/` at build). Edit those when a test needs different master data. See `tools/masterdata/README.md`. Codespaces (`.devcontainer/start.sh`) syncs from the spreadsheet when the Codespaces secrets are set, otherwise it uses the fixture CSVs.
 
 ### EF Core Migrations
 ```bash
@@ -133,7 +143,10 @@ Before implementing changes to `server/domain/` or `server/infrastructure/`, upd
 GitHub Actions (`.github/workflows/ci.yml`) runs on PRs and pushes to main:
 - Backend: format check -> lint -> build -> test
 - Frontend: format check -> lint -> build
+- Master data: export the spreadsheet -> compare file set and headers with the fixture CSVs (`tools/masterdata/src/structure.mjs`) -> run `MasterDataIntegrityTests` on the spreadsheet with the PR's code. If this fails after you changed a loader or a fixture's columns, update the spreadsheet to match before merging.
 
 Migrations auto-deploy via `db-migrate-dev.yml` / `db-migrate-prod.yml`. Use Session Pooler connection strings for Supabase.
 
 Scheduled maintenance workflows (dev/prod pairs): `cleanup-quest-data-*.yml`, `ranking-rebuild-*.yml`.
+
+Backend deploys import master data from the spreadsheet on every run via the composite action `.github/actions/masterdata-import` (export + `MasterDataIntegrityTests`) and stop before touching the server if it fails. Production (`deploy-backend-vm-prod.yml`, `prod` branch) runs the import on the Actions runner, then ships the CSVs to the Oracle VM and builds there; Google credentials never go to the VM. The Azure workflows (`deploy-backend-dev.yml`, `deploy-backend-prod.yml`; to become staging) call the same action. To push spreadsheet edits without a code change, run the deploy workflow manually (production: on `prod` only). Needs secret `GOOGLE_SERVICE_ACCOUNT_JSON` and variable `MASTERDATA_SPREADSHEET_ID` at repository level; override the variable per environment to give staging its own spreadsheet.
