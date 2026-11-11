@@ -23,6 +23,23 @@ GitHub Actions の設定:
 
 VM 上で手動で `docker compose up -d --build` した場合は、前回のデプロイで置いた CSV がそのまま使われます（`.gitignore` 対象なので checkout では消えません）。
 
+## ステージングから本番への昇格
+
+バランス調整などの数値はステージング用スプレッドシートで編集し、ステージングで確認できたら本番用へ写します。本番用スプレッドシートは直接編集しません。
+
+- ワークフロー `promote-masterdata.yml`（手動実行、main のみ）
+  1. ステージング用スプレッドシートを main のコードで整合性テスト（`dev` Environment）
+  2. 本番用スプレッドシートとの差分をジョブのサマリーに出し、ステージング用の内容で上書き（`prod` Environment）。`_index` と、そこに載っているタブだけを対象にする。数式は数式、テキストはテキストのまま写す
+  3. 続けて `deploy-backend-vm-prod.yml` を `prod` ブランチで起動（入力 `deploy` で切り替え）
+- 入力 `dry_run` を付けると、差分の確認だけで書き換えない
+- 手元でも実行できる: `node tools/masterdata/src/promote.mjs --from <ステージング用ID> --to <本番用ID> [--dry-run]`
+
+必要な設定:
+
+- サービスアカウントを本番用スプレッドシートの**編集者**にする（ステージング用は閲覧者のまま）
+- `dev` Environment の Variable `MASTERDATA_SPREADSHEET_ID` をステージング用の ID で上書きする（本番用と同じだとワークフローが止まる）
+- `prod` Environment に承認者（Required reviewers）を付け、誤って昇格しないようにする
+
 ## PR の CI でのチェック
 
 `ci.yml` の「Master data」ジョブが、PR ごとに次を確認します。
