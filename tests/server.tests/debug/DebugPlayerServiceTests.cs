@@ -108,7 +108,7 @@ public class DebugPlayerServiceTests
         player.Status.Strength.Should().BeGreaterThan(10);
         player.MoveSet.Contains(new server.domain.move.MoveId(201)).Should().BeTrue();
         player.MoveSet.Contains(new server.domain.move.MoveId(202)).Should().BeTrue();
-        result.NewlyLearnedMoveIds.Should().BeEquivalentTo([201, 202]);
+        result.NewlyLearnedMoveIds.Should().BeEquivalentTo(new[] { 201, 202 });
         result.HasMasteredCurrentJob.Should().BeTrue();
         player.MasteredJobs.Should().Contain(player.Job);
     }
