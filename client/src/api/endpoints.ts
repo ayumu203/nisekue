@@ -1,3 +1,4 @@
+import { getDebugStatusResponseSchema } from '@/schema/debug'
 import {
   getPlayerResponseSchema,
   listPlayersResponseSchema,
@@ -672,6 +673,13 @@ export const endpoints = {
       path: '/rankings',
       method: 'GET',
       responseSchema: getRankingsResponseSchema,
+    },
+  },
+  debug: {
+    getStatus: {
+      path: '/debug/status',
+      method: 'GET',
+      responseSchema: getDebugStatusResponseSchema,
     },
   },
 } as const

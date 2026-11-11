@@ -27,6 +27,7 @@ import {
 } from '@/api/chat'
 import { getThreadAlerts, markThreadRepliesAlerted } from '@/api/thread'
 import { useAuth } from '@/contexts/useAuth'
+import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/home/Home.json'
 import ChatMessages from '@/components/chat/ChatMessages'
@@ -35,6 +36,7 @@ import BeginnerGuide from '@/components/common/BeginnerGuide'
 import AnnouncementList from '@/components/common/AnnouncementList'
 import Status from '@/components/home/Status'
 import {
+  DebugIcon,
   ItemsIcon,
   JobChangeIcon,
   MoveSettingIcon,
@@ -90,6 +92,7 @@ function Home() {
   const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
   const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
   const [isOthersGroupOpen, setIsOthersGroupOpen] = useState(false)
+  const { canUseDebug } = useDebugStatus()
   const handledChatIdsRef = useRef<Set<number>>(new Set())
   const handledReplyIdsRef = useRef<Set<string>>(new Set())
   const enqueueToast = useEffectEvent((message: string) => {
@@ -467,6 +470,11 @@ function Home() {
                   >
                     {locale.report}
                   </Button>
+                  {canUseDebug && (
+                    <Button component={Link} to="/debug" variant="outlined" startIcon={<DebugIcon />} sx={menuButtonSx}>
+                      {locale.debug}
+                    </Button>
+                  )}
                 </Stack>
               </Collapse>
             </Stack>
