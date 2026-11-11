@@ -25,7 +25,9 @@ Web game (inspired by チビクエ3) with a monorepo structure: React frontend +
 - **Database**: PostgreSQL via Supabase
 - **Auth**: Supabase Auth (JWT), validated in `server/Program.cs`
 - **Real-time**: SignalR (quest runs only, at `/quest-hubs/runs`)
-- **Deploy**: Cloudflare Pages (frontend prod), GitHub Pages (frontend dev, via `deploy-frontend-dev.yml`), Azure App Service (backend)
+- **Deploy**: two environments
+  - **dev** (push to `main`): GitHub Pages frontend (`deploy-frontend-dev.yml`), Azure App Service backend (`deploy-backend-dev.yml`, the former production Web App, `ASPNETCORE_ENVIRONMENT=Development`), Supabase project `Nisekue-Prod` (Seoul, the former production DB)
+  - **prod** (push to `prod`): Cloudflare Pages frontend, Oracle VM backend (`deploy-backend-vm-prod.yml`), Supabase project `Nisekue-Prod-Tokyo`
 - **Workers**: `workers/active-reporter/` — Cloudflare Worker (cron every 5 min) reporting active player count to the game portal
 - **Simulation**: `simulation/balance_report.html` — balance report generated from the resource CSVs (job growth, ranks, equipment, enemies)
 
@@ -147,4 +149,4 @@ Migrations auto-deploy via `db-migrate-dev.yml` / `db-migrate-prod.yml`. Use Ses
 
 Scheduled maintenance workflows (dev/prod pairs): `cleanup-quest-data-*.yml`, `ranking-rebuild-*.yml`.
 
-Backend deploys import master data from the spreadsheet on every run via the composite action `.github/actions/masterdata-import` (export + `MasterDataIntegrityTests`) and stop before touching the server if it fails. Production (`deploy-backend-vm-prod.yml`, `prod` branch) runs the import on the Actions runner, then ships the CSVs to the Oracle VM and builds there; Google credentials never go to the VM. The Azure workflows (`deploy-backend-dev.yml`, `deploy-backend-prod.yml`; to become staging) call the same action. To push spreadsheet edits without a code change, run the deploy workflow manually (production: on `prod` only). Needs secret `GOOGLE_SERVICE_ACCOUNT_JSON` and variable `MASTERDATA_SPREADSHEET_ID` at repository level; override the variable per environment to give staging its own spreadsheet.
+Backend deploys import master data from the spreadsheet on every run via the composite action `.github/actions/masterdata-import` (export + `MasterDataIntegrityTests`) and stop before touching the server if it fails. Production (`deploy-backend-vm-prod.yml`, `prod` branch) runs the import on the Actions runner, then ships the CSVs to the Oracle VM and builds there; Google credentials never go to the VM. The dev deploy to Azure App Service (`deploy-backend-dev.yml`, `main` branch) calls the same action. To push spreadsheet edits without a code change, run the deploy workflow manually (production: on `prod` only). Needs secret `GOOGLE_SERVICE_ACCOUNT_JSON` and variable `MASTERDATA_SPREADSHEET_ID` at repository level; override the variable per environment to give dev its own spreadsheet.
