@@ -34,7 +34,15 @@ internal sealed class FixedMoveRepository(params int[] moveIds) : IMoveRepositor
             mpCost: 0,
             executionPriority: 0,
             MoveCategory.Attack,
-            effects: []))
+            effects:
+            [
+                new MoveEffect(
+                    new MoveEffectId(id),
+                    new MoveId(id),
+                    1,
+                    MoveEffectType.Damage,
+                    damage: new DamageEffect(1, 1m, 0, 0m, ElementType.None, null))
+            ]))
         .ToArray();
 
     public Task<Move?> GetMoveAsync(MoveId moveId) => Task.FromResult(moves.FirstOrDefault(x => x.Id.Id == moveId.Id));
