@@ -1,6 +1,7 @@
 import { Alert, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import DebugItemsSection from '@/components/debug/DebugItemsSection'
+import DebugJobsSection from '@/components/debug/DebugJobsSection'
 import DebugLevelSection from '@/components/debug/DebugLevelSection'
 import DebugMovesSection from '@/components/debug/DebugMovesSection'
 import DebugStatusSection from '@/components/debug/DebugStatusSection'
@@ -35,6 +36,7 @@ function DebugContent() {
     <Stack spacing={2}>
       <Alert severity="warning">{locale.description}</Alert>
       <DebugLevelSection {...sectionProps} />
+      <DebugJobsSection {...sectionProps} />
       <DebugStatusSection key={`status-${player.level}`} {...sectionProps} />
       <DebugMovesSection {...sectionProps} />
       <DebugItemsSection accessToken={accessToken} onChanged={refresh} />

@@ -250,6 +250,20 @@ public class Player(
         }
     }
 
+    /// <summary>
+    /// ジョブをマスター済みにする（デバッグ機能用）。職業レベルやスキルは変えない。
+    /// 新たにマスター済みにした場合は true。
+    /// </summary>
+    public bool MarkJobAsMastered(Job job)
+    {
+        if (!Enum.IsDefined(job))
+        {
+            throw new ArgumentOutOfRangeException(nameof(job), "存在しないジョブです。");
+        }
+
+        return masteredJobs.Add(job);
+    }
+
     public bool IsRoadmapUnlocked(Job job)
     {
         return (RoadmapUnlockFlags & (1L << ((int)job - 1))) != 0;

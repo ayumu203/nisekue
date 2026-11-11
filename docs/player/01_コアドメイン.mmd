@@ -33,6 +33,7 @@ classDiagram
             +SpendGold(gold: int) void
             +LevelUp(jobProfile: JobProfile, learningRule: JobMoveLearningRule) LevelUpResult
             +Rebirth(inheritedStatus: Status) void
+            +MarkJobAsMastered(job: Job) bool
             -CanChangeJob(nextProfile: JobProfile) bool
             -MarkCurrentJobAsMastered(jobProfile: JobProfile) bool
             -SynchronizeLearnableMoves(jobProfile: JobProfile, learningRule: JobMoveLearningRule) IReadOnlyList~MoveId~
@@ -362,6 +363,8 @@ classDiagram
         class IPlayerRoleRepository {
             +Task~PlayerRole?~ FindRoleAsync(id: PlayerId)
         }
+
+        note for Player "MarkJobAsMastered はデバッグ機能用。\n職業レベルやスキルは変えず、マスター済みの記録だけを付ける"
 
         note for IPlayerRoleRepository "role は internal.players.role に保持する。\nゲームの API からは変更せず、Supabase から手動で設定する。\n未設定(null)は一般プレイヤー"
 

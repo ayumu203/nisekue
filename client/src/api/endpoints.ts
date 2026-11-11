@@ -8,6 +8,8 @@ import {
   debugLearnMoveRequestSchema,
   debugLevelUpRequestSchema,
   debugLevelUpResponseSchema,
+  debugMasterJobsRequestSchema,
+  debugMasterJobsResponseSchema,
   debugMoveListResponseSchema,
   debugNoContentSchema,
   debugUpdateStatusRequestSchema,
@@ -722,6 +724,12 @@ export const endpoints = {
       method: 'POST',
       requestSchema: debugLevelUpRequestSchema,
       responseSchema: debugLevelUpResponseSchema,
+    },
+    masterJobs: {
+      path: '/debug/player/master-jobs',
+      method: 'POST',
+      requestSchema: debugMasterJobsRequestSchema,
+      responseSchema: debugMasterJobsResponseSchema,
     },
     getItems: {
       path: '/debug/items',

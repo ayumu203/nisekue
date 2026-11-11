@@ -649,4 +649,43 @@ public class PlayerTests
         player.IsRoadmapUnlocked(Job.Mage).Should().BeTrue();
         player.IsRoadmapUnlocked(Job.Guardian).Should().BeFalse();
     }
+
+    [Fact]
+    public void MarkJobAsMastered_WhenNotMastered_AddsJobAndKeepsJobLevel()
+    {
+        var player = new Player(new PlayerId(Guid.NewGuid()), "Tester", 3, 0, 3, 100, new Status(30, 10, 10, 5, 3, 3, 5), Job.Warrior);
+
+        var added = player.MarkJobAsMastered(Job.Mage);
+
+        added.Should().BeTrue();
+        player.MasteredJobs.Should().Contain(Job.Mage);
+        player.JobLevel.Should().Be(3);
+    }
+
+    [Fact]
+    public void MarkJobAsMastered_WhenAlreadyMastered_ReturnsFalse()
+    {
+        var player = new Player(
+            new PlayerId(Guid.NewGuid()),
+            "Tester",
+            3,
+            0,
+            3,
+            100,
+            new Status(30, 10, 10, 5, 3, 3, 5),
+            Job.Warrior,
+            masteredJobs: new HashSet<Job> { Job.Mage });
+
+        player.MarkJobAsMastered(Job.Mage).Should().BeFalse();
+    }
+
+    [Fact]
+    public void MarkJobAsMastered_WhenUndefinedJob_Throws()
+    {
+        var player = new Player(new PlayerId(Guid.NewGuid()), "Tester", 3, 0, 3, 100, new Status(30, 10, 10, 5, 3, 3, 5), Job.Warrior);
+
+        var act = () => player.MarkJobAsMastered((Job)999);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
 }
