@@ -3,6 +3,10 @@ import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
 import { extractErrorMessage, resolveApiBaseUrl } from '@/api/util'
 import type {
+  DebugEquipmentListResponse,
+  DebugGrantEquipmentRequest,
+  DebugGrantItemRequest,
+  DebugItemListResponse,
   DebugLearnMoveRequest,
   DebugMoveListResponse,
   DebugUpdateStatusRequest,
@@ -57,4 +61,25 @@ export async function learnDebugMove(request: DebugLearnMoveRequest, accessToken
 export async function clearDebugMoveSlot(slotIndex: number, accessToken: string): Promise<void> {
   const endpoint = endpoints.debug.clearMoveSlot
   await callDebugApi({ ...endpoint, path: endpoint.path(slotIndex) }, accessToken, 'スキルを外せませんでした')
+}
+
+export async function getDebugItems(accessToken: string): Promise<DebugItemListResponse> {
+  return callDebugApi(endpoints.debug.getItems, accessToken, 'アイテム一覧の取得に失敗しました')
+}
+
+export async function getDebugEquipments(accessToken: string): Promise<DebugEquipmentListResponse> {
+  return callDebugApi(endpoints.debug.getEquipments, accessToken, '装備一覧の取得に失敗しました')
+}
+
+/** 入手後の所持数を返す */
+export async function grantDebugItem(request: DebugGrantItemRequest, accessToken: string): Promise<number> {
+  const body = endpoints.debug.grantItem.requestSchema.parse(request)
+  const result = await callDebugApi(endpoints.debug.grantItem, accessToken, 'アイテムの入手に失敗しました', body)
+  return result.quantity
+}
+
+export async function grantDebugEquipment(request: DebugGrantEquipmentRequest, accessToken: string): Promise<number> {
+  const body = endpoints.debug.grantEquipment.requestSchema.parse(request)
+  const result = await callDebugApi(endpoints.debug.grantEquipment, accessToken, '装備の入手に失敗しました', body)
+  return result.count
 }

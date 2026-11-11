@@ -1,5 +1,6 @@
 import { Alert, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
+import DebugItemsSection from '@/components/debug/DebugItemsSection'
 import DebugMovesSection from '@/components/debug/DebugMovesSection'
 import DebugStatusSection from '@/components/debug/DebugStatusSection'
 import { outerPagePaperSx } from '@/constants/styles'
@@ -34,6 +35,7 @@ function DebugContent() {
       <Alert severity="warning">{locale.description}</Alert>
       <DebugStatusSection key={`status-${player.userId}`} {...sectionProps} />
       <DebugMovesSection {...sectionProps} />
+      <DebugItemsSection accessToken={accessToken} onChanged={refresh} />
     </Stack>
   )
 }

@@ -134,6 +134,7 @@ builder.Services.AddScoped<IPlayerRoleRepository, DbPlayerRoleRepository>();
 builder.Services.AddSingleton(DebugSettings.FromConfiguration(builder.Configuration));
 builder.Services.AddScoped<DebugAccessService>();
 builder.Services.AddScoped<DebugPlayerService>();
+builder.Services.AddScoped<DebugInventoryService>();
 builder.Services.AddScoped<PlayerForUpdateLockService>();
 builder.Services.AddScoped<IPlayerEquipmentRepository, DbPlayerEquipmentRepository>();
 builder.Services.AddScoped<IPlayerItemStackRepository, DbPlayerItemStackRepository>();

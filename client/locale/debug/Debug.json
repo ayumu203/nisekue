@@ -34,5 +34,19 @@
     "clear": "外す",
     "cleared": "スキルを外しました",
     "empty": "（空き）"
+  },
+  "items": {
+    "title": "アイテム入手",
+    "description": "アイテムや装備を入手します。所持枠の上限は確認しません。アイテムの所持数はスタック上限で止まります。",
+    "itemLabel": "アイテム",
+    "quantityLabel": "個数",
+    "itemSubmit": "入手する",
+    "itemDone": "{name} を入手しました（所持数 {quantity}）",
+    "equipmentLabel": "装備",
+    "countLabel": "個数（1〜20）",
+    "plusLabel": "強化値",
+    "equipmentSubmit": "入手する",
+    "equipmentDone": "{name} を {count} 個入手しました",
+    "maxStack": "上限 {maxStack}"
   }
 }
