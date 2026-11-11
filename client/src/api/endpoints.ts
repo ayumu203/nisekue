@@ -1,4 +1,10 @@
-import { getDebugStatusResponseSchema } from '@/schema/debug'
+import {
+  debugLearnMoveRequestSchema,
+  debugMoveListResponseSchema,
+  debugNoContentSchema,
+  debugUpdateStatusRequestSchema,
+  getDebugStatusResponseSchema,
+} from '@/schema/debug'
 import {
   getPlayerResponseSchema,
   listPlayersResponseSchema,
@@ -680,6 +686,28 @@ export const endpoints = {
       path: '/debug/status',
       method: 'GET',
       responseSchema: getDebugStatusResponseSchema,
+    },
+    getMoves: {
+      path: '/debug/moves',
+      method: 'GET',
+      responseSchema: debugMoveListResponseSchema,
+    },
+    updateStatus: {
+      path: '/debug/player/status',
+      method: 'PUT',
+      requestSchema: debugUpdateStatusRequestSchema,
+      responseSchema: debugNoContentSchema,
+    },
+    learnMove: {
+      path: '/debug/player/moves',
+      method: 'POST',
+      requestSchema: debugLearnMoveRequestSchema,
+      responseSchema: debugNoContentSchema,
+    },
+    clearMoveSlot: {
+      path: (slotIndex: number) => `/debug/player/moves/${slotIndex}`,
+      method: 'DELETE',
+      responseSchema: debugNoContentSchema,
     },
   },
 } as const

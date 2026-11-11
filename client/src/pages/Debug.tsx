@@ -1,8 +1,42 @@
 import { Alert, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
+import DebugMovesSection from '@/components/debug/DebugMovesSection'
+import DebugStatusSection from '@/components/debug/DebugStatusSection'
 import { outerPagePaperSx } from '@/constants/styles'
+import { useDebugPlayer } from '@/hooks/useDebugPlayer'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import locale from '../../locale/debug/Debug.json'
+
+function Loading({ text }: { text: string }) {
+  return (
+    <Stack direction="row" spacing={1} alignItems="center">
+      <CircularProgress size={20} />
+      <Typography>{text}</Typography>
+    </Stack>
+  )
+}
+
+function DebugContent() {
+  const { player, error, isLoading, accessToken, refresh } = useDebugPlayer()
+
+  if (isLoading) {
+    return <Loading text={locale.playerLoading} />
+  }
+
+  if (error || !player || !accessToken) {
+    return <Alert severity="error">{error?.message ?? locale.forbidden}</Alert>
+  }
+
+  const sectionProps = { player, accessToken, onChanged: refresh }
+
+  return (
+    <Stack spacing={2}>
+      <Alert severity="warning">{locale.description}</Alert>
+      <DebugStatusSection key={`status-${player.userId}`} {...sectionProps} />
+      <DebugMovesSection {...sectionProps} />
+    </Stack>
+  )
+}
 
 export default function Debug() {
   const { canUseDebug, isLoading } = useDebugStatus()
@@ -19,17 +53,11 @@ export default function Debug() {
           </Stack>
 
           {isLoading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={20} />
-              <Typography>{locale.loading}</Typography>
-            </Stack>
+            <Loading text={locale.loading} />
           ) : !canUseDebug ? (
             <Alert severity="error">{locale.forbidden}</Alert>
           ) : (
-            <Stack spacing={2}>
-              <Alert severity="warning">{locale.description}</Alert>
-              <Typography color="text.secondary">{locale.comingSoon}</Typography>
-            </Stack>
+            <DebugContent />
           )}
         </Stack>
       </Paper>

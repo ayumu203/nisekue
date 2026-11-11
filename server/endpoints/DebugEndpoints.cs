@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using server.application.debug;
+using server.domain.move;
 
 namespace server.endpoints;
 
@@ -28,7 +29,55 @@ internal static class DebugEndpoints
     /// <summary>デバッグ用の操作を登録する。</summary>
     private static void MapDebugOperations(RouteGroupBuilder group)
     {
-        _ = group;
+        group.MapGet("/moves", GetMoves);
+        group.MapPut("/player/status", UpdateStatus);
+        group.MapPost("/player/moves", LearnMove);
+        group.MapDelete("/player/moves/{slotIndex:int}", ClearMoveSlot);
+    }
+
+    private static async Task<IResult> GetMoves(IMoveRepository moveRepository)
+    {
+        var moves = await moveRepository.GetAllMovesAsync();
+        return Results.Ok(moves
+            .OrderBy(x => x.Id.Id)
+            .Select(x => new { moveId = x.Id.Id, name = x.Name }));
+    }
+
+    private static async Task<IResult> UpdateStatus(
+        ClaimsPrincipal user,
+        DebugUpdateStatusRequest request,
+        DebugPlayerService debugPlayerService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        await debugPlayerService.UpdateStatusAsync(playerId, new DebugStatusValues(
+            request.MaxHp,
+            request.MaxMp,
+            request.Strength,
+            request.Defense,
+            request.Intelligence,
+            request.Luck,
+            request.Speed));
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> LearnMove(
+        ClaimsPrincipal user,
+        DebugLearnMoveRequest request,
+        DebugPlayerService debugPlayerService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        await debugPlayerService.LearnMoveAsync(playerId, request.MoveId, request.SlotIndex);
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> ClearMoveSlot(
+        ClaimsPrincipal user,
+        int slotIndex,
+        DebugPlayerService debugPlayerService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        await debugPlayerService.ClearMoveSlotAsync(playerId, slotIndex);
+        return Results.NoContent();
     }
 
     private static async Task<IResult> GetStatus(ClaimsPrincipal user, DebugAccessService debugAccessService)
@@ -65,3 +114,14 @@ internal static class DebugEndpoints
         return await next(context);
     }
 }
+
+internal sealed record DebugUpdateStatusRequest(
+    int MaxHp,
+    int MaxMp,
+    int Strength,
+    int Defense,
+    int Intelligence,
+    int Luck,
+    int Speed);
+
+internal sealed record DebugLearnMoveRequest(int MoveId, int? SlotIndex);

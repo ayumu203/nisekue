@@ -4,5 +4,35 @@
   "loading": "確認中...",
   "forbidden": "デバッグ機能を利用する権限がありません。",
   "description": "プレイヤーのデータを直接書き換えます。ステージング・ローカルでの確認用です。",
-  "comingSoon": "利用できる機能はまだありません。"
+  "playerLoading": "プレイヤー情報を読み込み中...",
+  "status": {
+    "title": "ステータス変更",
+    "description": "基本ステータス（装備・転生ボーナスを除く値）を指定した値にします。",
+    "labels": {
+      "maxHp": "HP",
+      "maxMp": "MP",
+      "strength": "筋力",
+      "defense": "防御",
+      "intelligence": "知力",
+      "luck": "運",
+      "speed": "素早さ"
+    },
+    "submit": "変更する",
+    "reset": "現在の値に戻す",
+    "done": "ステータスを変更しました",
+    "invalid": "入力が正しくありません"
+  },
+  "moves": {
+    "title": "スキル取得",
+    "description": "スキルを習得させます。スロットを指定しないと空きスロットに入ります（空きが無ければ最も古いスキルが外れます）。",
+    "moveLabel": "スキル",
+    "slotLabel": "スロット",
+    "autoSlot": "空きスロット",
+    "slot": "スロット{slot}",
+    "submit": "習得する",
+    "learned": "{name} を習得しました",
+    "clear": "外す",
+    "cleared": "スキルを外しました",
+    "empty": "（空き）"
+  }
 }

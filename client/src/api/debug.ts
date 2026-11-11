@@ -2,7 +2,12 @@ import type { z } from 'zod'
 import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
 import { extractErrorMessage, resolveApiBaseUrl } from '@/api/util'
-import type { GetDebugStatusResponse } from '@/schema/debug'
+import type {
+  DebugLearnMoveRequest,
+  DebugMoveListResponse,
+  DebugUpdateStatusRequest,
+  GetDebugStatusResponse,
+} from '@/schema/debug'
 
 /** デバッグ用 API の共通処理。body を渡すと JSON で送る。 */
 export async function callDebugApi<TSchema extends z.ZodType>(
@@ -33,4 +38,23 @@ export async function callDebugApi<TSchema extends z.ZodType>(
 
 export async function getDebugStatus(accessToken: string): Promise<GetDebugStatusResponse> {
   return callDebugApi(endpoints.debug.getStatus, accessToken, 'デバッグ機能の状態の取得に失敗しました')
+}
+
+export async function getDebugMoves(accessToken: string): Promise<DebugMoveListResponse> {
+  return callDebugApi(endpoints.debug.getMoves, accessToken, 'スキル一覧の取得に失敗しました')
+}
+
+export async function updateDebugStatus(request: DebugUpdateStatusRequest, accessToken: string): Promise<void> {
+  const body = endpoints.debug.updateStatus.requestSchema.parse(request)
+  await callDebugApi(endpoints.debug.updateStatus, accessToken, 'ステータスの変更に失敗しました', body)
+}
+
+export async function learnDebugMove(request: DebugLearnMoveRequest, accessToken: string): Promise<void> {
+  const body = endpoints.debug.learnMove.requestSchema.parse(request)
+  await callDebugApi(endpoints.debug.learnMove, accessToken, 'スキルの習得に失敗しました', body)
+}
+
+export async function clearDebugMoveSlot(slotIndex: number, accessToken: string): Promise<void> {
+  const endpoint = endpoints.debug.clearMoveSlot
+  await callDebugApi({ ...endpoint, path: endpoint.path(slotIndex) }, accessToken, 'スキルを外せませんでした')
 }
