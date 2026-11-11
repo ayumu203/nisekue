@@ -10,3 +10,6 @@ tools/active-reporter-test/active-reporter-test
 
 # docker compose
 .env
+
+# マスタデータはスプレッドシートが正。ローカルでは pnpm masterdata:sync で取得する
+server/resources/**/*.csv

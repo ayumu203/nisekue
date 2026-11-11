@@ -1,12 +1,18 @@
 name: Deploy Backend - Production (Oracle VM)
 
 # prod への push で、Oracle Cloud の VM 上のバックエンド（docker compose）を更新する。
-# VM には SSH で接続し、push されたコミットを checkout してイメージを再ビルド・再起動する。
+# マスタデータは GitHub Actions 上でスプレッドシートから取り込み、整合性テストを通してから VM に送る
+# （Google の認証情報は VM に置かない）。VM では push されたコミットを checkout し、
+# 送った CSV を server/resources に置いてからイメージを再ビルド・再起動する。
+# スプレッドシートだけを反映したいときは、prod ブランチでこの workflow を手動実行する。
 #
 # 必要な Secrets（prod environment）:
 #   VM_HOST         VM のパブリック IP
 #   VM_SSH_KEY      デプロイ専用の SSH 秘密鍵
 #   VM_KNOWN_HOSTS  `ssh-keyscan -t ed25519 <VM_HOST>` の出力（ホスト鍵の固定）
+# 必要な Secret / Variable（マスタデータ）:
+#   GOOGLE_SERVICE_ACCOUNT_JSON  サービスアカウントキー（JSON）
+#   MASTERDATA_SPREADSHEET_ID    本番のスプレッドシートの ID
 
 on:
   push:
@@ -16,6 +22,8 @@ on:
       - 'Dockerfile'
       - '.dockerignore'
       - 'docker-compose.yml'
+      - 'tools/masterdata/**'
+      - '.github/actions/masterdata-import/**'
       - '.github/workflows/deploy-backend-vm-prod.yml'
   workflow_dispatch:
 
@@ -33,6 +41,13 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      # 手動実行で prod 以外のブランチを本番に出してしまわないようにする
+      - name: Check branch
+        if: github.ref != 'refs/heads/prod'
+        run: |
+          echo "::error::本番へのデプロイは prod ブランチからのみ実行できます（現在: ${GITHUB_REF}）。"
+          exit 1
+
       - name: Validate secrets
         env:
           VM_HOST: ${{ secrets.VM_HOST }}
@@ -46,6 +61,24 @@ jobs:
             fi
           done
 
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      # ここで失敗した場合は VM に触らずに止まるので、本番は前のまま動き続ける
+      - name: Import master data
+        uses: ./.github/actions/masterdata-import
+        with:
+          google-service-account-json: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          spreadsheet-id: ${{ vars.MASTERDATA_SPREADSHEET_ID }}
+
+      - name: Package master data
+        run: |
+          cd server/resources
+          find . -name '*.csv' -print0 | tar --null -czf "${RUNNER_TEMP}/masterdata.tar.gz" -T -
+          echo "CSV: $(tar -tzf "${RUNNER_TEMP}/masterdata.tar.gz" | grep -c '\.csv$') ファイル"
+
       - name: Configure SSH
         env:
           VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
@@ -56,6 +89,18 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "$VM_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
+
+      - name: Upload master data to VM
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          scp -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            -o ConnectTimeout=20 \
+            "${RUNNER_TEMP}/masterdata.tar.gz" \
+            "ubuntu@${VM_HOST}:/tmp/nisekue-masterdata-${DEPLOY_SHA}.tar.gz"
 
       - name: Deploy on VM
         env:
@@ -70,10 +115,16 @@ jobs:
             "bash -s -- '${DEPLOY_SHA}'" <<'REMOTE'
           set -euo pipefail
           sha="$1"
+          archive="/tmp/nisekue-masterdata-${sha}.tar.gz"
+          trap 'rm -f "${archive}"' EXIT
           cd /opt/nisekue
 
           if [ ! -f .env ]; then
             echo "::error::/opt/nisekue/.env が見つかりません。"
+            exit 1
+          fi
+          if [ ! -s "${archive}" ]; then
+            echo "::error::マスタデータ（${archive}）が見つかりません。"
             exit 1
           fi
 
@@ -81,6 +132,13 @@ jobs:
           git fetch --quiet origin prod
           git checkout --quiet --force prod
           git reset --quiet --hard "${sha}"
+
+          # checkout の後に置く（CSV を消すコミットを取り込んだときに消されないように）
+          echo "==> Master data"
+          mkdir -p server/resources
+          find server/resources -name '*.csv' -delete
+          tar -xzf "${archive}" -C server/resources
+          echo "$(find server/resources -name '*.csv' | wc -l) CSV files"
 
           echo "==> Build and restart"
           docker compose up -d --build --remove-orphans
