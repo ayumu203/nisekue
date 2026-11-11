@@ -354,6 +354,17 @@ classDiagram
             +Task SaveAsync(player: Player)
         }
 
+        class PlayerRole {
+            <<Enumeration>>
+            Admin
+        }
+
+        class IPlayerRoleRepository {
+            +Task~PlayerRole?~ FindRoleAsync(id: PlayerId)
+        }
+
+        note for IPlayerRoleRepository "role は internal.players.role に保持する。\nゲームの API からは変更せず、Supabase から手動で設定する。\n未設定(null)は一般プレイヤー"
+
         note for IPlayerRepository "GetPvpOpponentsAsync / GetPvpOpponentsPageAsync\nは Level昇順 -> Name昇順 -> Id昇順で返す"
 
         class IEquipmentRepository {

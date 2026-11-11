@@ -129,6 +129,7 @@ builder.Services.AddScoped<IPlayerRepository, SupabasePlayerRepository>();
 builder.Services.AddScoped<IPlayerMutationService, DbPlayerMutationService>();
 builder.Services.AddScoped<IPlayerRebirthExecutor, DbPlayerRebirthExecutor>();
 builder.Services.AddScoped<IPlayerRebirthHistoryRepository, DbPlayerRebirthHistoryRepository>();
+builder.Services.AddScoped<IPlayerRoleRepository, DbPlayerRoleRepository>();
 builder.Services.AddScoped<PlayerForUpdateLockService>();
 builder.Services.AddScoped<IPlayerEquipmentRepository, DbPlayerEquipmentRepository>();
 builder.Services.AddScoped<IPlayerItemStackRepository, DbPlayerItemStackRepository>();
