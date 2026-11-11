@@ -81,3 +81,21 @@ export const debugGrantEquipmentRequestSchema = z.object({
 export type DebugGrantEquipmentRequest = z.infer<typeof debugGrantEquipmentRequestSchema>
 
 export const debugGrantEquipmentResponseSchema = z.object({ count: z.number().int().min(0) })
+
+export const debugLevelUpRequestSchema = z.object({
+  level: z
+    .number()
+    .int()
+    .min(1, 'レベルは1〜100の整数を入力してください')
+    .max(100, 'レベルは1〜100の整数を入力してください'),
+})
+
+export type DebugLevelUpRequest = z.infer<typeof debugLevelUpRequestSchema>
+
+export const debugLevelUpResponseSchema = z.object({
+  level: z.number().int().min(1),
+  newlyLearnedMoveIds: z.array(z.number().int()),
+  hasMasteredCurrentJob: z.boolean(),
+})
+
+export type DebugLevelUpResponse = z.infer<typeof debugLevelUpResponseSchema>

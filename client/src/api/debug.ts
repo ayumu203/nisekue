@@ -8,6 +8,8 @@ import type {
   DebugGrantItemRequest,
   DebugItemListResponse,
   DebugLearnMoveRequest,
+  DebugLevelUpRequest,
+  DebugLevelUpResponse,
   DebugMoveListResponse,
   DebugUpdateStatusRequest,
   GetDebugStatusResponse,
@@ -82,4 +84,12 @@ export async function grantDebugEquipment(request: DebugGrantEquipmentRequest, a
   const body = endpoints.debug.grantEquipment.requestSchema.parse(request)
   const result = await callDebugApi(endpoints.debug.grantEquipment, accessToken, '装備の入手に失敗しました', body)
   return result.count
+}
+
+export async function levelUpDebugPlayer(
+  request: DebugLevelUpRequest,
+  accessToken: string,
+): Promise<DebugLevelUpResponse> {
+  const body = endpoints.debug.levelUp.requestSchema.parse(request)
+  return callDebugApi(endpoints.debug.levelUp, accessToken, 'レベルの変更に失敗しました', body)
 }

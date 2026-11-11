@@ -72,3 +72,30 @@ internal static class DebugTestPlayers
             moveSet: new MoveSet(slots));
     }
 }
+
+internal sealed class FixedJobProfileRepository(int masterLevel = 20) : IJobProfileRepository
+{
+    public JobProfile GetByJob(Job job)
+    {
+        return new JobProfile(
+            job,
+            description: $"{job} profile",
+            masterLevel: masterLevel,
+            requiredMasterJobs: [],
+            growthValue: new GrowthValue(
+                MaxHp: 1,
+                MaxMp: 0,
+                Strength: 1,
+                Defense: 1,
+                Intelligence: 1,
+                Luck: 1,
+                Speed: 1));
+    }
+
+    public IReadOnlyList<JobProfile> GetAll() => Enum.GetValues<Job>().Select(GetByJob).ToArray();
+}
+
+internal sealed class FixedJobMoveLearningRuleRepository(params int[] moveIds) : IJobMoveLearningRuleRepository
+{
+    public JobMoveLearningRule GetByJob(Job job) => new(job, moveIds.Select(id => new MoveId(id)).ToArray());
+}

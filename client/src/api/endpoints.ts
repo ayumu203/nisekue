@@ -6,6 +6,8 @@ import {
   debugGrantItemResponseSchema,
   debugItemListResponseSchema,
   debugLearnMoveRequestSchema,
+  debugLevelUpRequestSchema,
+  debugLevelUpResponseSchema,
   debugMoveListResponseSchema,
   debugNoContentSchema,
   debugUpdateStatusRequestSchema,
@@ -714,6 +716,12 @@ export const endpoints = {
       path: (slotIndex: number) => `/debug/player/moves/${slotIndex}`,
       method: 'DELETE',
       responseSchema: debugNoContentSchema,
+    },
+    levelUp: {
+      path: '/debug/player/level',
+      method: 'POST',
+      requestSchema: debugLevelUpRequestSchema,
+      responseSchema: debugLevelUpResponseSchema,
     },
     getItems: {
       path: '/debug/items',
