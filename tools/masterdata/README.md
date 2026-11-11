@@ -9,7 +9,7 @@
 | 環境 | ワークフロー | マスタデータの渡し方 |
 | --- | --- | --- |
 | 本番（Oracle VM） | `deploy-backend-vm-prod.yml`（`prod` への push・手動実行） | Actions で取り込んだ CSV を VM に送り、VM でコミットを checkout した後に `server/resources` に置いてから `docker compose up -d --build`。Google の認証情報は VM に置かない |
-| Azure（ステージングに転用予定） | `deploy-backend-prod.yml`・`deploy-backend-dev.yml` | 取り込んだ CSV を含めて `dotnet publish` する |
+| dev（Azure App Service） | `deploy-backend-dev.yml`（`main` への push・手動実行） | 取り込んだ CSV を含めて `dotnet publish` する |
 
 - スプレッドシートを編集したら、デプロイのワークフローを手動実行すれば反映されます。本番は `prod` ブランチでのみ実行できます
 - コードのデプロイでも毎回最新のスプレッドシートが入るので、反映し忘れは起きません。逆に、編集途中のデータもそのとき入ります
