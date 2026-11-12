@@ -26,10 +26,7 @@ export default function Debug() {
           ) : !canUseDebug ? (
             <Alert severity="error">{locale.forbidden}</Alert>
           ) : (
-            <Stack spacing={2}>
-              <Alert severity="warning">{locale.description}</Alert>
-              <Typography color="text.secondary">{locale.comingSoon}</Typography>
-            </Stack>
+            <Stack spacing={2} />
           )}
         </Stack>
       </Paper>
