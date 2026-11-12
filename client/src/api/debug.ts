@@ -10,6 +10,8 @@ import type {
   DebugLearnMoveRequest,
   DebugLevelUpRequest,
   DebugLevelUpResponse,
+  DebugMasterJobsRequest,
+  DebugMasterJobsResponse,
   DebugMoveListResponse,
   DebugUpdateStatusRequest,
   GetDebugStatusResponse,
@@ -92,4 +94,12 @@ export async function levelUpDebugPlayer(
 ): Promise<DebugLevelUpResponse> {
   const body = endpoints.debug.levelUp.requestSchema.parse(request)
   return callDebugApi(endpoints.debug.levelUp, accessToken, 'レベルの変更に失敗しました', body)
+}
+
+export async function masterDebugJobs(
+  request: DebugMasterJobsRequest,
+  accessToken: string,
+): Promise<DebugMasterJobsResponse> {
+  const body = endpoints.debug.masterJobs.requestSchema.parse(request)
+  return callDebugApi(endpoints.debug.masterJobs, accessToken, 'ジョブのマスターに失敗しました', body)
 }

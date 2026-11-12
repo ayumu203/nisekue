@@ -150,6 +150,58 @@ public class DebugPlayerServiceTests
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
+    [Fact]
+    public async Task MasterJobsAsync_WhenCurrentJob_MastersAndLearnsAllMoves()
+    {
+        var player = DebugTestPlayers.Create(level: 1, job: Job.Warrior);
+        var service = CreateService(player, masterLevel: 20, learnableMoveIds: [201, 202, 203]);
+
+        var result = await service.MasterJobsAsync(player.Id, [Job.Warrior], unlockRoadmap: false);
+
+        player.MasteredJobs.Should().Contain(Job.Warrior);
+        player.JobLevel.Should().Be(1);
+        result.NewlyMasteredJobs.Should().Equal(Job.Warrior);
+        result.NewlyLearnedMoveIds.Should().BeEquivalentTo(new[] { 201, 202, 203 });
+    }
+
+    [Fact]
+    public async Task MasterJobsAsync_WhenOtherJobs_MastersWithoutLearningMovesAndUnlocksRoadmap()
+    {
+        var player = DebugTestPlayers.Create(level: 1, job: Job.Warrior);
+        var service = CreateService(player, masterLevel: 20, learnableMoveIds: [201]);
+
+        var result = await service.MasterJobsAsync(player.Id, [Job.Mage, Job.Priest], unlockRoadmap: true);
+
+        player.MasteredJobs.Should().Contain(new[] { Job.Mage, Job.Priest });
+        player.MasteredJobs.Should().NotContain(Job.Warrior);
+        player.IsRoadmapUnlocked(Job.Mage).Should().BeTrue();
+        player.IsRoadmapUnlocked(Job.Priest).Should().BeTrue();
+        result.NewlyLearnedMoveIds.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task MasterJobsAsync_WhenAlreadyMastered_ReturnsOnlyNewlyMastered()
+    {
+        var player = DebugTestPlayers.Create(level: 1, job: Job.Warrior);
+        var service = CreateService(player);
+        await service.MasterJobsAsync(player.Id, [Job.Mage], unlockRoadmap: false);
+
+        var result = await service.MasterJobsAsync(player.Id, [Job.Mage, Job.Priest], unlockRoadmap: false);
+
+        result.NewlyMasteredJobs.Should().Equal(Job.Priest);
+    }
+
+    [Fact]
+    public async Task MasterJobsAsync_WhenNoJobs_Throws()
+    {
+        var player = DebugTestPlayers.Create();
+        var service = CreateService(player);
+
+        var act = () => service.MasterJobsAsync(player.Id, [], unlockRoadmap: false);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
     private static DebugPlayerService CreateService(Player player, params int[] moveIds)
     {
         return CreateService(player, masterLevel: 20, learnableMoveIds: [], moveIds);

@@ -107,6 +107,56 @@ public class DebugPlayerService(
         });
     }
 
+    /// <summary>
+    /// 指定したジョブをマスター済みにする。
+    /// 現在のジョブが含まれていれば、そのジョブで覚えるスキルもすべて習得させる（マスターレベルに達したときと同じ）。
+    /// unlockRoadmap が true なら、そのジョブのロードマップも解放する。
+    /// </summary>
+    public Task<DebugMasterJobsResult> MasterJobsAsync(PlayerId playerId, IReadOnlyCollection<Job> jobs, bool unlockRoadmap)
+    {
+        ArgumentNullException.ThrowIfNull(jobs);
+        if (jobs.Count == 0)
+        {
+            throw new ArgumentException("ジョブを1つ以上指定してください。", nameof(jobs));
+        }
+
+        return playerMutationService.MutateAsync(playerId, player =>
+        {
+            var newlyMastered = new List<Job>();
+            foreach (var job in jobs.Distinct())
+            {
+                if (player.MarkJobAsMastered(job))
+                {
+                    newlyMastered.Add(job);
+                }
+
+                if (unlockRoadmap)
+                {
+                    player.UnlockRoadmap(job);
+                }
+            }
+
+            var learnedMoveIds = new List<int>();
+            if (jobs.Contains(player.Job))
+            {
+                var jobProfile = jobProfileRepository.GetByJob(player.Job);
+                var learningRule = jobMoveLearningRuleRepository.GetByJob(player.Job);
+                foreach (var moveId in learningRule.GetLearnableMoveIds(jobProfile.MasterLevel, jobProfile.MasterLevel))
+                {
+                    if (player.MoveSet.Contains(moveId))
+                    {
+                        continue;
+                    }
+
+                    player.MoveSet.AddLearnedMove(moveId);
+                    learnedMoveIds.Add(moveId.Id);
+                }
+            }
+
+            return Task.FromResult(new DebugMasterJobsResult(newlyMastered, learnedMoveIds));
+        });
+    }
+
     /// <summary>指定したスロットを空にする。</summary>
     public Task<Player> ClearMoveSlotAsync(PlayerId playerId, int slotIndex)
     {
@@ -131,3 +181,7 @@ public sealed record DebugLevelUpResult(
     int Level,
     IReadOnlyList<int> NewlyLearnedMoveIds,
     bool HasMasteredCurrentJob);
+
+public sealed record DebugMasterJobsResult(
+    IReadOnlyList<Job> NewlyMasteredJobs,
+    IReadOnlyList<int> NewlyLearnedMoveIds);

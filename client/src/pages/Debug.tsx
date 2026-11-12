@@ -2,6 +2,7 @@ import { Alert, CircularProgress, Container, Paper, Stack, Tab, Tabs, Typography
 import { useState } from 'react'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import DebugItemsSection from '@/components/debug/DebugItemsSection'
+import DebugJobsSection from '@/components/debug/DebugJobsSection'
 import DebugLevelSection from '@/components/debug/DebugLevelSection'
 import DebugMovesSection from '@/components/debug/DebugMovesSection'
 import DebugStatusSection from '@/components/debug/DebugStatusSection'
@@ -55,6 +56,7 @@ function DebugContent() {
           <>
             <DebugLevelSection {...sectionProps} />
             <DebugStatusSection key={`status-${player.level}`} {...sectionProps} />
+            <DebugJobsSection {...sectionProps} />
           </>
         )}
         {tab === 'moves' && <DebugMovesSection {...sectionProps} />}
