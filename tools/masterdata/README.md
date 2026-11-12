@@ -1,6 +1,11 @@
 # masterdata
 
-スプレッドシート「nisekue マスタデータ」を正として、`server/resources` 配下の CSV を書き出すスクリプトです。CSV はリポジトリに置きません（`.gitignore` 対象）。
+スプレッドシートを正として、`server/resources` 配下の CSV を書き出すスクリプトです。CSV はリポジトリに置きません（`.gitignore` 対象）。
+
+| スプレッドシート | 用途 | ID の設定先 |
+| --- | --- | --- |
+| `[staging] nisekue masterdata` | ステージング。数値の調整はこちらだけで行う | `dev` Environment の Variable `MASTERDATA_SPREADSHEET_ID` |
+| `[prod] nisekue masterdata` | 本番・PR の CI。直接編集せず、`sync-masterdata-to-prod.yml` で同期する | リポジトリ単位の Variable `MASTERDATA_SPREADSHEET_ID` |
 
 ## 本番・ステージングへの反映
 
