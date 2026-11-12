@@ -34,6 +34,8 @@ internal static class DebugEndpoints
         group.MapPut("/player/status", UpdateStatus);
         group.MapPost("/player/moves", LearnMove);
         group.MapDelete("/player/moves/{slotIndex:int}", ClearMoveSlot);
+        group.MapGet("/templates", GetTemplates);
+        group.MapPost("/player/template", ApplyTemplate);
         group.MapPost("/player/level", LevelUp);
         group.MapPost("/player/master-jobs", MasterJobs);
         group.MapGet("/items", GetItems);
@@ -116,6 +118,32 @@ internal static class DebugEndpoints
         var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
         await debugPlayerService.LearnMoveAsync(playerId, request.MoveId, request.SlotIndex);
         return Results.NoContent();
+    }
+
+    private static IResult GetTemplates(DebugTemplateService debugTemplateService)
+    {
+        return Results.Ok(debugTemplateService.GetTemplates().Select(x => new
+        {
+            templateId = x.Id,
+            name = x.Job is { } job
+                ? $"{EndpointHelpers.GetJobDisplayName(job)}マスター"
+                : "作成直後（見習い Lv1）"
+        }));
+    }
+
+    private static async Task<IResult> ApplyTemplate(
+        ClaimsPrincipal user,
+        DebugApplyTemplateRequest request,
+        DebugTemplateService debugTemplateService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        var result = await debugTemplateService.ApplyAsync(playerId, request.TemplateId ?? string.Empty);
+        return Results.Ok(new
+        {
+            level = result.Level,
+            job = result.Job.ToString(),
+            masteredJobs = result.MasteredJobs.Select(x => x.ToString())
+        });
     }
 
     private static async Task<IResult> LevelUp(
@@ -204,6 +232,8 @@ internal sealed record DebugUpdateStatusRequest(
 internal sealed record DebugLearnMoveRequest(int MoveId, int? SlotIndex);
 
 internal sealed record DebugLevelUpRequest(int Level);
+
+internal sealed record DebugApplyTemplateRequest(string? TemplateId);
 
 internal sealed record DebugMasterJobsRequest(IReadOnlyList<Job>? Jobs, bool UnlockRoadmap);
 

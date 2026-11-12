@@ -114,3 +114,24 @@ export const debugMasterJobsResponseSchema = z.object({
 })
 
 export type DebugMasterJobsResponse = z.infer<typeof debugMasterJobsResponseSchema>
+
+export const debugTemplateListResponseSchema = z.array(
+  z.object({
+    templateId: z.string().min(1),
+    name: z.string(),
+  }),
+)
+
+export type DebugTemplateListResponse = z.infer<typeof debugTemplateListResponseSchema>
+
+export const debugApplyTemplateRequestSchema = z.object({
+  templateId: z.string().min(1, 'テンプレートを選んでください'),
+})
+
+export type DebugApplyTemplateRequest = z.infer<typeof debugApplyTemplateRequestSchema>
+
+export const debugApplyTemplateResponseSchema = z.object({
+  level: z.number().int().min(1),
+  job: z.string(),
+  masteredJobs: z.array(z.string()),
+})

@@ -3,6 +3,7 @@ import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
 import { extractErrorMessage, resolveApiBaseUrl } from '@/api/util'
 import type {
+  DebugApplyTemplateRequest,
   DebugEquipmentListResponse,
   DebugGrantEquipmentRequest,
   DebugGrantItemRequest,
@@ -12,6 +13,7 @@ import type {
   DebugLevelUpResponse,
   DebugMasterJobsRequest,
   DebugMasterJobsResponse,
+  DebugTemplateListResponse,
   DebugMoveListResponse,
   DebugUpdateStatusRequest,
   GetDebugStatusResponse,
@@ -102,4 +104,13 @@ export async function masterDebugJobs(
 ): Promise<DebugMasterJobsResponse> {
   const body = endpoints.debug.masterJobs.requestSchema.parse(request)
   return callDebugApi(endpoints.debug.masterJobs, accessToken, 'ジョブのマスターに失敗しました', body)
+}
+
+export async function getDebugTemplates(accessToken: string): Promise<DebugTemplateListResponse> {
+  return callDebugApi(endpoints.debug.getTemplates, accessToken, 'テンプレート一覧の取得に失敗しました')
+}
+
+export async function applyDebugTemplate(request: DebugApplyTemplateRequest, accessToken: string): Promise<void> {
+  const body = endpoints.debug.applyTemplate.requestSchema.parse(request)
+  await callDebugApi(endpoints.debug.applyTemplate, accessToken, 'テンプレートの取り込みに失敗しました', body)
 }
