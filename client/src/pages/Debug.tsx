@@ -2,10 +2,14 @@ import { Alert, CircularProgress, Container, Paper, Stack, Tab, Tabs, Typography
 import { useState } from 'react'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import DebugItemsSection from '@/components/debug/DebugItemsSection'
+import DebugJobsSection from '@/components/debug/DebugJobsSection'
 import DebugLevelSection from '@/components/debug/DebugLevelSection'
 import DebugMovesSection from '@/components/debug/DebugMovesSection'
 import DebugStatusSection from '@/components/debug/DebugStatusSection'
+import DebugTutorialSection from '@/components/debug/DebugTutorialSection'
+import DebugTemplateSection from '@/components/debug/DebugTemplateSection'
 import { gameTabSx, gameTabsSx, outerPagePaperSx } from '@/constants/styles'
+import { useAuth } from '@/contexts/useAuth'
 import { useDebugPlayer } from '@/hooks/useDebugPlayer'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import locale from '../../locale/debug/Debug.json'
@@ -19,13 +23,15 @@ function Loading({ text }: { text: string }) {
   )
 }
 
-type DebugTab = 'player' | 'moves' | 'items'
+type DebugTab = 'player' | 'moves' | 'items' | 'others'
 
-const DEBUG_TABS: readonly DebugTab[] = ['player', 'moves', 'items']
+const DEBUG_TABS: readonly DebugTab[] = ['player', 'moves', 'items', 'others']
 
 function DebugContent() {
   const [tab, setTab] = useState<DebugTab>('player')
   const { player, error, isLoading, accessToken, refresh } = useDebugPlayer()
+  const { session } = useAuth()
+  const userId = session?.user.id ?? null
 
   if (isLoading) {
     return <Loading text={locale.playerLoading} />
@@ -53,12 +59,15 @@ function DebugContent() {
       <Stack spacing={2} sx={{ pt: 2 }}>
         {tab === 'player' && (
           <>
+            <DebugTemplateSection accessToken={accessToken} onChanged={refresh} />
             <DebugLevelSection {...sectionProps} />
             <DebugStatusSection key={`status-${player.level}`} {...sectionProps} />
+            <DebugJobsSection {...sectionProps} />
           </>
         )}
         {tab === 'moves' && <DebugMovesSection {...sectionProps} />}
         {tab === 'items' && <DebugItemsSection accessToken={accessToken} onChanged={refresh} />}
+        {tab === 'others' && userId && <DebugTutorialSection userId={userId} />}
       </Stack>
     </Stack>
   )

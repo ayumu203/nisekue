@@ -179,9 +179,6 @@ internal static class PlayerEndpoints
 
             try
             {
-                var moveSet = new MoveSet();
-                moveSet.SetSlot(0, new MoveId(101));
-
                 var player = new Player(
                     playerId.Value,
                     request.UserName,
@@ -189,11 +186,11 @@ internal static class PlayerEndpoints
                     level: 1,
                     exp: 0,
                     jobLevel: 1,
-                    gold: 100,
-                    status: new Status(maxHp: 24, maxMp: 8, strength: 7, defense: 5, intelligence: 5, luck: 3, speed: 4),
+                    gold: PlayerInitialState.Gold,
+                    status: PlayerInitialState.CreateStatus(),
                     job: Job.Apprentice,
                     imagePath: PlayerImageCatalog.DefaultFileName,
-                    moveSet: moveSet);
+                    moveSet: PlayerInitialState.CreateMoveSet());
                 var now = DateTimeOffset.UtcNow;
                 await playerRepository.SaveAsync(player);
                 var equipments = await equipmentRepository.GetAllAsync();

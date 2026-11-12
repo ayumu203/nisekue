@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { playerJobCodeSchema } from '@/schema/player'
 
 export const getDebugStatusResponseSchema = z.object({
   canUseDebug: z.boolean(),
@@ -99,3 +100,38 @@ export const debugLevelUpResponseSchema = z.object({
 })
 
 export type DebugLevelUpResponse = z.infer<typeof debugLevelUpResponseSchema>
+
+export const debugMasterJobsRequestSchema = z.object({
+  jobs: z.array(playerJobCodeSchema).min(1, 'ジョブを1つ以上選んでください'),
+  unlockRoadmap: z.boolean(),
+})
+
+export type DebugMasterJobsRequest = z.infer<typeof debugMasterJobsRequestSchema>
+
+export const debugMasterJobsResponseSchema = z.object({
+  newlyMasteredJobs: z.array(z.string()),
+  newlyLearnedMoveIds: z.array(z.number().int()),
+})
+
+export type DebugMasterJobsResponse = z.infer<typeof debugMasterJobsResponseSchema>
+
+export const debugTemplateListResponseSchema = z.array(
+  z.object({
+    templateId: z.string().min(1),
+    name: z.string(),
+  }),
+)
+
+export type DebugTemplateListResponse = z.infer<typeof debugTemplateListResponseSchema>
+
+export const debugApplyTemplateRequestSchema = z.object({
+  templateId: z.string().min(1, 'テンプレートを選んでください'),
+})
+
+export type DebugApplyTemplateRequest = z.infer<typeof debugApplyTemplateRequestSchema>
+
+export const debugApplyTemplateResponseSchema = z.object({
+  level: z.number().int().min(1),
+  job: z.string(),
+  masteredJobs: z.array(z.string()),
+})
