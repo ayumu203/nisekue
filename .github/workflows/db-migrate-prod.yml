@@ -1,4 +1,4 @@
-name: Apply DB Migrations - Production
+name: 'Migrate Database [本番]'
 
 on:
   push:
