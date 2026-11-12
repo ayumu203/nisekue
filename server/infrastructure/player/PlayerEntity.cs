@@ -32,4 +32,7 @@ public class PlayerEntity
     public long RoadmapUnlockFlags { get; set; }
     public int EndlessBestFloor { get; set; }
     public DateTimeOffset? LastActiveAt { get; set; }
+
+    /// <summary>権限。null は一般プレイヤー、"admin" はデバッグ機能を利用可。Supabase から手動で設定する。</summary>
+    public string? Role { get; set; }
 }
