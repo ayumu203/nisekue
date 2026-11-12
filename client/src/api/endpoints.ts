@@ -1,4 +1,6 @@
 import {
+  debugApplyTemplateRequestSchema,
+  debugApplyTemplateResponseSchema,
   debugEquipmentListResponseSchema,
   debugGrantEquipmentRequestSchema,
   debugGrantEquipmentResponseSchema,
@@ -12,6 +14,7 @@ import {
   debugMasterJobsResponseSchema,
   debugMoveListResponseSchema,
   debugNoContentSchema,
+  debugTemplateListResponseSchema,
   debugUpdateStatusRequestSchema,
   getDebugStatusResponseSchema,
 } from '@/schema/debug'
@@ -718,6 +721,17 @@ export const endpoints = {
       path: (slotIndex: number) => `/debug/player/moves/${slotIndex}`,
       method: 'DELETE',
       responseSchema: debugNoContentSchema,
+    },
+    getTemplates: {
+      path: '/debug/templates',
+      method: 'GET',
+      responseSchema: debugTemplateListResponseSchema,
+    },
+    applyTemplate: {
+      path: '/debug/player/template',
+      method: 'POST',
+      requestSchema: debugApplyTemplateRequestSchema,
+      responseSchema: debugApplyTemplateResponseSchema,
     },
     levelUp: {
       path: '/debug/player/level',

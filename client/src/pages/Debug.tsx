@@ -6,6 +6,7 @@ import DebugJobsSection from '@/components/debug/DebugJobsSection'
 import DebugLevelSection from '@/components/debug/DebugLevelSection'
 import DebugMovesSection from '@/components/debug/DebugMovesSection'
 import DebugStatusSection from '@/components/debug/DebugStatusSection'
+import DebugTemplateSection from '@/components/debug/DebugTemplateSection'
 import { gameTabSx, gameTabsSx, outerPagePaperSx } from '@/constants/styles'
 import { useDebugPlayer } from '@/hooks/useDebugPlayer'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
@@ -54,6 +55,7 @@ function DebugContent() {
       <Stack spacing={2} sx={{ pt: 2 }}>
         {tab === 'player' && (
           <>
+            <DebugTemplateSection accessToken={accessToken} onChanged={refresh} />
             <DebugLevelSection {...sectionProps} />
             <DebugStatusSection key={`status-${player.level}`} {...sectionProps} />
             <DebugJobsSection {...sectionProps} />

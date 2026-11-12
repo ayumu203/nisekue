@@ -23,6 +23,9 @@ public class Player(
     long roadmapUnlockFlags = 1,
     int endlessBestFloor = 0)
 {
+    /// <summary>ロードマップ解放フラグの初期値（見習いのみ解放）。</summary>
+    public const long DefaultRoadmapUnlockFlags = 1;
+
     private readonly HashSet<Job> masteredJobs = masteredJobs is null ? [] : new HashSet<Job>(masteredJobs);
 
     public PlayerId Id { get; } = id;
@@ -248,6 +251,27 @@ public class Player(
         {
             EndlessBestFloor = reachedFloor;
         }
+    }
+
+    /// <summary>
+    /// 進行状況を作成直後に戻す（デバッグ機能用）。
+    /// レベル・経験値・ジョブ・職業レベル・ステータス・スキル・マスター済みジョブ・ロードマップ・転生回数を初期化する。
+    /// 名前・画像・ゴールド・クールダウン・経験値倍率・マップ解放・エンドレス最高到達フロアは変えない。
+    /// </summary>
+    public void ResetProgress(Status initialStatus, MoveSet initialMoveSet)
+    {
+        ArgumentNullException.ThrowIfNull(initialStatus);
+        ArgumentNullException.ThrowIfNull(initialMoveSet);
+
+        Level = 1;
+        Exp = 0;
+        Job = Job.Apprentice;
+        JobLevel = 1;
+        Status = initialStatus;
+        MoveSet = initialMoveSet;
+        masteredJobs.Clear();
+        RoadmapUnlockFlags = DefaultRoadmapUnlockFlags;
+        RebirthCount = 0;
     }
 
     /// <summary>
