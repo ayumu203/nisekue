@@ -1,4 +1,4 @@
-name: Deploy Frontend - Development
+name: 'Deploy Frontend [ステージング]'
 
 on:
   push:
