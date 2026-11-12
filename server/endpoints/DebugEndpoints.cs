@@ -38,6 +38,7 @@ internal static class DebugEndpoints
         group.MapPost("/player/template", ApplyTemplate);
         group.MapPost("/player/level", LevelUp);
         group.MapPost("/player/master-jobs", MasterJobs);
+        group.MapPost("/player/job", ChangeJob);
         group.MapGet("/items", GetItems);
         group.MapGet("/equipments", GetEquipments);
         group.MapPost("/player/items", GrantItem);
@@ -161,6 +162,16 @@ internal static class DebugEndpoints
         });
     }
 
+    private static async Task<IResult> ChangeJob(
+        ClaimsPrincipal user,
+        DebugChangeJobRequest request,
+        DebugPlayerService debugPlayerService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        var player = await debugPlayerService.ChangeJobAsync(playerId, request.Job);
+        return Results.Ok(new { job = player.Job.ToString(), jobLevel = player.JobLevel });
+    }
+
     private static async Task<IResult> MasterJobs(
         ClaimsPrincipal user,
         DebugMasterJobsRequest request,
@@ -234,6 +245,8 @@ internal sealed record DebugLearnMoveRequest(int MoveId, int? SlotIndex);
 internal sealed record DebugLevelUpRequest(int Level);
 
 internal sealed record DebugApplyTemplateRequest(string? TemplateId);
+
+internal sealed record DebugChangeJobRequest(Job Job);
 
 internal sealed record DebugMasterJobsRequest(IReadOnlyList<Job>? Jobs, bool UnlockRoadmap);
 

@@ -135,3 +135,14 @@ export const debugApplyTemplateResponseSchema = z.object({
   job: z.string(),
   masteredJobs: z.array(z.string()),
 })
+
+export const debugChangeJobRequestSchema = z.object({
+  job: playerJobCodeSchema,
+})
+
+export type DebugChangeJobRequest = z.infer<typeof debugChangeJobRequestSchema>
+
+export const debugChangeJobResponseSchema = z.object({
+  job: z.string(),
+  jobLevel: z.number().int().min(1),
+})

@@ -1,6 +1,8 @@
 import {
   debugApplyTemplateRequestSchema,
   debugApplyTemplateResponseSchema,
+  debugChangeJobRequestSchema,
+  debugChangeJobResponseSchema,
   debugEquipmentListResponseSchema,
   debugGrantEquipmentRequestSchema,
   debugGrantEquipmentResponseSchema,
@@ -738,6 +740,12 @@ export const endpoints = {
       method: 'POST',
       requestSchema: debugLevelUpRequestSchema,
       responseSchema: debugLevelUpResponseSchema,
+    },
+    changeJob: {
+      path: '/debug/player/job',
+      method: 'POST',
+      requestSchema: debugChangeJobRequestSchema,
+      responseSchema: debugChangeJobResponseSchema,
     },
     masterJobs: {
       path: '/debug/player/master-jobs',
