@@ -2,6 +2,7 @@ import { Box, Button, TextField } from '@mui/material'
 import { useState } from 'react'
 import { updateDebugStatus } from '@/api/debug'
 import DebugSection from '@/components/debug/DebugSection'
+import { greenOutlinedInputSx, softGoldButtonSx, softGreenButtonSx } from '@/constants/styles'
 import { useDebugAction } from '@/hooks/useDebugAction'
 import { debugUpdateStatusRequestSchema } from '@/schema/debug'
 import type { DebugUpdateStatusRequest } from '@/schema/debug'
@@ -59,14 +60,15 @@ export default function DebugStatusSection({ player, accessToken, onChanged }: D
             value={form[key]}
             onChange={(event) => setForm((current) => ({ ...current, [key]: event.target.value }))}
             slotProps={{ htmlInput: { min: key === 'maxHp' ? 1 : 0, step: 1 } }}
+            sx={greenOutlinedInputSx}
           />
         ))}
       </Box>
       <Box sx={{ display: 'flex', gap: 1 }}>
-        <Button variant="contained" onClick={() => void handleSubmit()} disabled={isRunning}>
+        <Button variant="contained" sx={softGreenButtonSx} onClick={() => void handleSubmit()} disabled={isRunning}>
           {locale.status.submit}
         </Button>
-        <Button variant="text" onClick={() => setForm(toForm(player))} disabled={isRunning}>
+        <Button variant="contained" sx={softGoldButtonSx} onClick={() => setForm(toForm(player))} disabled={isRunning}>
           {locale.status.reset}
         </Button>
       </Box>

@@ -48,5 +48,10 @@
     "equipmentSubmit": "入手する",
     "equipmentDone": "{name} を {count} 個入手しました",
     "maxStack": "上限 {maxStack}"
+  },
+  "tabs": {
+    "player": "プレイヤー",
+    "moves": "スキル",
+    "items": "アイテム"
   }
 }
