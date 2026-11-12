@@ -59,5 +59,10 @@
     "done": "Lv.{level} になりました。",
     "learned": "新しく習得したスキル {count} 個。",
     "mastered": "ジョブをマスターしました。"
+  },
+  "tabs": {
+    "player": "プレイヤー",
+    "moves": "スキル",
+    "items": "アイテム"
   }
 }
