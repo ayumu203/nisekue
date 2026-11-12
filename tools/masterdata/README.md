@@ -47,7 +47,7 @@ VM 上で手動で `docker compose up -d --build` した場合は、前回のデ
 
 ## PR の CI でのチェック
 
-`ci.yml` の「Master data」ジョブが、PR ごとに次を確認します。
+`ci-backend.yml` の「Master data」ジョブが、PR ごとに次を確認します。
 
 1. スプレッドシートを書き出し、テスト用 CSV（`tests/server.tests/fixtures/resources`）とファイル構成・ヘッダー（列名と順番）が一致しているか（`src/structure.mjs`）。値の違いは見ません
 2. PR のコードのローダーで、スプレッドシートのデータを読み込めるか（整合性テスト）

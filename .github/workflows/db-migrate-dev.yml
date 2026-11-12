@@ -1,4 +1,4 @@
-name: Apply DB Migrations - Development
+name: 'Migrate Database [ステージング]'
 
 on:
   push:

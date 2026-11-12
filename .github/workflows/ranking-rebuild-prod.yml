@@ -1,4 +1,4 @@
-name: Rebuild Rankings - Production
+name: 'Rebuild Rankings [本番]'
 
 on:
   schedule:
