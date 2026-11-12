@@ -1,6 +1,7 @@
 import { Button, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import DebugSection from '@/components/debug/DebugSection'
+import { softGoldButtonSx, softGreenButtonSx } from '@/constants/styles'
 import { completeTutorial, getTutorialStep, resetTutorial } from '@/lib/tutorial'
 import locale from '../../../locale/debug/Debug.json'
 
@@ -32,10 +33,10 @@ export default function DebugTutorialSection({ userId }: DebugTutorialSectionPro
           : locale.tutorial.stateInProgress.replace('{step}', step)}
       </Typography>
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-        <Button variant="contained" onClick={handleComplete} disabled={step === 'completed'}>
+        <Button variant="contained" sx={softGreenButtonSx} onClick={handleComplete} disabled={step === 'completed'}>
           {locale.tutorial.complete}
         </Button>
-        <Button variant="outlined" onClick={handleReset}>
+        <Button variant="contained" sx={softGoldButtonSx} onClick={handleReset}>
           {locale.tutorial.restart}
         </Button>
       </Stack>

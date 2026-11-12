@@ -2,6 +2,7 @@ import { Button, Stack, TextField, Typography } from '@mui/material'
 import { useState } from 'react'
 import { levelUpDebugPlayer } from '@/api/debug'
 import DebugSection from '@/components/debug/DebugSection'
+import { greenOutlinedInputSx, softGoldButtonSx, softGreenButtonSx } from '@/constants/styles'
 import { useDebugAction } from '@/hooks/useDebugAction'
 import { debugLevelUpRequestSchema } from '@/schema/debug'
 import type { DebugLevelUpResponse } from '@/schema/debug'
@@ -60,13 +61,19 @@ export default function DebugLevelSection({ player, accessToken, onChanged }: De
           value={targetLevel}
           onChange={(event) => setTargetLevel(event.target.value)}
           slotProps={{ htmlInput: { min: player.level, max: MAX_LEVEL, step: 1 } }}
-          sx={{ width: 160 }}
+          sx={{ ...greenOutlinedInputSx, width: 160 }}
         />
-        <Button variant="contained" onClick={() => void levelUpTo(Number(targetLevel))} disabled={isRunning}>
+        <Button
+          variant="contained"
+          sx={softGreenButtonSx}
+          onClick={() => void levelUpTo(Number(targetLevel))}
+          disabled={isRunning}
+        >
           {locale.level.submit}
         </Button>
         <Button
-          variant="outlined"
+          variant="contained"
+          sx={softGoldButtonSx}
           onClick={() => void levelUpTo(MAX_LEVEL)}
           disabled={isRunning || player.level >= MAX_LEVEL}
         >
