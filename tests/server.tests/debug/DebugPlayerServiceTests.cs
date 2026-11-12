@@ -94,8 +94,73 @@ public class DebugPlayerServiceTests
         player.MoveSet.Slots.Take(2).Select(x => x?.Id).Should().Equal(null, 2);
     }
 
+    [Fact]
+    public async Task LevelUpToAsync_RaisesLevelWithGrowthAndLearnsMoves()
+    {
+        var player = DebugTestPlayers.Create(level: 1);
+        var service = CreateService(player, masterLevel: 20, learnableMoveIds: [201, 202]);
+
+        var result = await service.LevelUpToAsync(player.Id, 20);
+
+        result.Level.Should().Be(20);
+        player.Level.Should().Be(20);
+        player.Exp.Should().Be(0);
+        player.Status.Strength.Should().BeGreaterThan(10);
+        player.MoveSet.Contains(new server.domain.move.MoveId(201)).Should().BeTrue();
+        player.MoveSet.Contains(new server.domain.move.MoveId(202)).Should().BeTrue();
+        result.NewlyLearnedMoveIds.Should().BeEquivalentTo(new[] { 201, 202 });
+        result.HasMasteredCurrentJob.Should().BeTrue();
+        player.MasteredJobs.Should().Contain(player.Job);
+    }
+
+    [Fact]
+    public async Task LevelUpToAsync_WhenSameLevel_DoesNothing()
+    {
+        var player = DebugTestPlayers.Create(level: 5);
+        var service = CreateService(player);
+
+        var result = await service.LevelUpToAsync(player.Id, 5);
+
+        result.Level.Should().Be(5);
+        result.NewlyLearnedMoveIds.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task LevelUpToAsync_WhenLowerThanCurrent_Throws()
+    {
+        var player = DebugTestPlayers.Create(level: 5);
+        var service = CreateService(player);
+
+        var act = () => service.LevelUpToAsync(player.Id, 4);
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        player.Level.Should().Be(5);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(101)]
+    public async Task LevelUpToAsync_WhenOutOfRange_Throws(int level)
+    {
+        var player = DebugTestPlayers.Create(level: 5);
+        var service = CreateService(player);
+
+        var act = () => service.LevelUpToAsync(player.Id, level);
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+    }
+
     private static DebugPlayerService CreateService(Player player, params int[] moveIds)
     {
-        return new DebugPlayerService(new SinglePlayerMutationService(player), new FixedMoveRepository(moveIds));
+        return CreateService(player, masterLevel: 20, learnableMoveIds: [], moveIds);
+    }
+
+    private static DebugPlayerService CreateService(Player player, int masterLevel, int[] learnableMoveIds, params int[] moveIds)
+    {
+        return new DebugPlayerService(
+            new SinglePlayerMutationService(player),
+            new FixedMoveRepository(moveIds),
+            new FixedJobProfileRepository(masterLevel),
+            new FixedJobMoveLearningRuleRepository(learnableMoveIds));
     }
 }

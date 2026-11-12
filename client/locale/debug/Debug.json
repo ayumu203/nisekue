@@ -49,6 +49,17 @@
     "equipmentDone": "{name} を {count} 個入手しました",
     "maxStack": "上限 {maxStack}"
   },
+  "level": {
+    "title": "レベル操作",
+    "description": "指定したレベルまで上げます。通常のレベルアップと同じく、ステータスの成長・スキルの習得・ジョブのマスターが起きます。レベルを下げることはできません。",
+    "current": "現在 Lv.{level}（{job}）",
+    "label": "目標レベル",
+    "submit": "レベルを上げる",
+    "max": "Lv.100 にする",
+    "done": "Lv.{level} になりました。",
+    "learned": "新しく習得したスキル {count} 個。",
+    "mastered": "ジョブをマスターしました。"
+  },
   "tabs": {
     "player": "プレイヤー",
     "moves": "スキル",
