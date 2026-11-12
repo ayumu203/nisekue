@@ -5,7 +5,9 @@ import DebugJobsSection from '@/components/debug/DebugJobsSection'
 import DebugLevelSection from '@/components/debug/DebugLevelSection'
 import DebugMovesSection from '@/components/debug/DebugMovesSection'
 import DebugStatusSection from '@/components/debug/DebugStatusSection'
+import DebugTutorialSection from '@/components/debug/DebugTutorialSection'
 import { outerPagePaperSx } from '@/constants/styles'
+import { useAuth } from '@/contexts/useAuth'
 import { useDebugPlayer } from '@/hooks/useDebugPlayer'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import locale from '../../locale/debug/Debug.json'
@@ -21,6 +23,8 @@ function Loading({ text }: { text: string }) {
 
 function DebugContent() {
   const { player, error, isLoading, accessToken, refresh } = useDebugPlayer()
+  const { session } = useAuth()
+  const userId = session?.user.id ?? null
 
   if (isLoading) {
     return <Loading text={locale.playerLoading} />
@@ -40,6 +44,7 @@ function DebugContent() {
       <DebugStatusSection key={`status-${player.level}`} {...sectionProps} />
       <DebugMovesSection {...sectionProps} />
       <DebugItemsSection accessToken={accessToken} onChanged={refresh} />
+      {userId && <DebugTutorialSection userId={userId} />}
     </Stack>
   )
 }
