@@ -3,6 +3,7 @@ import { useState } from 'react'
 import useSWR from 'swr'
 import { clearDebugMoveSlot, getDebugMoves, learnDebugMove } from '@/api/debug'
 import DebugSection from '@/components/debug/DebugSection'
+import { greenOutlinedInputSx, mutedGreenButtonSx, softGreenButtonSx } from '@/constants/styles'
 import { useDebugAction } from '@/hooks/useDebugAction'
 import type { DebugMoveListResponse } from '@/schema/debug'
 import type { GetPlayerResponse } from '@/schema/player'
@@ -60,7 +61,9 @@ export default function DebugMovesSection({ player, accessToken, onChanged }: De
           onChange={(_, value) => setSelectedMove(value)}
           getOptionLabel={(option) => `${option.moveId}: ${option.name}`}
           isOptionEqualToValue={(option, value) => option.moveId === value.moveId}
-          renderInput={(params) => <TextField {...params} label={locale.moves.moveLabel} size="small" />}
+          renderInput={(params) => (
+            <TextField {...params} label={locale.moves.moveLabel} size="small" sx={greenOutlinedInputSx} />
+          )}
           sx={{ flex: 1, minWidth: 240 }}
         />
         <TextField
@@ -69,7 +72,7 @@ export default function DebugMovesSection({ player, accessToken, onChanged }: De
           size="small"
           value={slot}
           onChange={(event) => setSlot(event.target.value)}
-          sx={{ minWidth: 160 }}
+          sx={{ ...greenOutlinedInputSx, minWidth: 160 }}
         >
           <MenuItem value={AUTO_SLOT}>{locale.moves.autoSlot}</MenuItem>
           {player.moveSlots.map((moveSlot) => (
@@ -78,7 +81,12 @@ export default function DebugMovesSection({ player, accessToken, onChanged }: De
             </MenuItem>
           ))}
         </TextField>
-        <Button variant="contained" onClick={() => void handleLearn()} disabled={!selectedMove || isRunning}>
+        <Button
+          variant="contained"
+          sx={softGreenButtonSx}
+          onClick={() => void handleLearn()}
+          disabled={!selectedMove || isRunning}
+        >
           {locale.moves.submit}
         </Button>
       </Stack>
@@ -90,7 +98,13 @@ export default function DebugMovesSection({ player, accessToken, onChanged }: De
               {locale.moves.slot.replace('{slot}', String(moveSlot.slot))}: {moveSlot.moveName ?? locale.moves.empty}
             </Typography>
             {moveSlot.moveId !== null && (
-              <Button size="small" onClick={() => void handleClear(moveSlot.slot - 1)} disabled={isRunning}>
+              <Button
+                size="small"
+                variant="outlined"
+                sx={mutedGreenButtonSx}
+                onClick={() => void handleClear(moveSlot.slot - 1)}
+                disabled={isRunning}
+              >
                 {locale.moves.clear}
               </Button>
             )}

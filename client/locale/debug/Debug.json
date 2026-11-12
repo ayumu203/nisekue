@@ -72,5 +72,10 @@
     "current": "現在",
     "done": "{count} 個のジョブを新たにマスターしました。",
     "learned": "スキルを {count} 個習得しました。"
+  },
+  "tabs": {
+    "player": "プレイヤー",
+    "moves": "スキル",
+    "items": "アイテム"
   }
 }
