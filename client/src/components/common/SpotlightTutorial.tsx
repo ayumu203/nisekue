@@ -1,6 +1,10 @@
 import { Box, Button, Paper, Typography, useMediaQuery } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { useLayoutEffect, useState } from 'react'
+import { useAuth } from '@/contexts/useAuth'
+import { useDebugStatus } from '@/hooks/useDebugStatus'
+import { completeTutorial } from '@/lib/tutorial'
+import tutorialLocale from '../../../locale/tutorial/Tutorial.json'
 
 type TargetRect = {
   top: number
@@ -68,6 +72,19 @@ export default function SpotlightTutorial({
   padding = 12,
 }: SpotlightTutorialProps) {
   const targetRect = useTargetRect(targetId, padding)
+  const { session } = useAuth()
+  const { canUseDebug } = useDebugStatus()
+  const userId = session?.user.id ?? null
+
+  // デバッグ機能を使えるときだけ、チュートリアルをまとめて完了扱いにして閉じられる
+  function handleSkip(): void {
+    if (!userId) {
+      return
+    }
+
+    completeTutorial(userId)
+    window.location.reload()
+  }
 
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -149,6 +166,11 @@ export default function SpotlightTutorial({
             }}
           >
             {dismissLabel}
+          </Button>
+        )}
+        {canUseDebug && userId && (
+          <Button size="small" variant="text" onClick={handleSkip} sx={{ mt: 1.5, ml: 1, color: '#8a6d3b' }}>
+            {tutorialLocale.debugSkip}
           </Button>
         )}
       </Paper>
