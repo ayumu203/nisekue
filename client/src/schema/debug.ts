@@ -38,3 +38,64 @@ export const debugMoveListResponseSchema = z.array(
 )
 
 export type DebugMoveListResponse = z.infer<typeof debugMoveListResponseSchema>
+
+export const debugItemListResponseSchema = z.array(
+  z.object({
+    itemId: z.number().int().min(1),
+    name: z.string(),
+    maxStack: z.number().int().min(1),
+  }),
+)
+
+export type DebugItemListResponse = z.infer<typeof debugItemListResponseSchema>
+
+export const debugEquipmentListResponseSchema = z.array(
+  z.object({
+    equipmentId: z.number().int().min(1),
+    name: z.string(),
+    equipmentType: z.string(),
+  }),
+)
+
+export type DebugEquipmentListResponse = z.infer<typeof debugEquipmentListResponseSchema>
+
+export const debugGrantItemRequestSchema = z.object({
+  itemId: z.number().int().min(1),
+  quantity: z.number().int().min(1, '個数は1以上の整数を入力してください'),
+})
+
+export type DebugGrantItemRequest = z.infer<typeof debugGrantItemRequestSchema>
+
+export const debugGrantItemResponseSchema = z.object({ quantity: z.number().int().min(0) })
+
+export const debugGrantEquipmentRequestSchema = z.object({
+  equipmentId: z.number().int().min(1),
+  count: z.number().int().min(1, '個数は1〜20の整数を入力してください').max(20, '個数は1〜20の整数を入力してください'),
+  plusValue: z
+    .number()
+    .int()
+    .min(0, '強化値は0〜100の整数を入力してください')
+    .max(100, '強化値は0〜100の整数を入力してください'),
+})
+
+export type DebugGrantEquipmentRequest = z.infer<typeof debugGrantEquipmentRequestSchema>
+
+export const debugGrantEquipmentResponseSchema = z.object({ count: z.number().int().min(0) })
+
+export const debugLevelUpRequestSchema = z.object({
+  level: z
+    .number()
+    .int()
+    .min(1, 'レベルは1〜100の整数を入力してください')
+    .max(100, 'レベルは1〜100の整数を入力してください'),
+})
+
+export type DebugLevelUpRequest = z.infer<typeof debugLevelUpRequestSchema>
+
+export const debugLevelUpResponseSchema = z.object({
+  level: z.number().int().min(1),
+  newlyLearnedMoveIds: z.array(z.number().int()),
+  hasMasteredCurrentJob: z.boolean(),
+})
+
+export type DebugLevelUpResponse = z.infer<typeof debugLevelUpResponseSchema>

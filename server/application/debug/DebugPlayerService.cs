@@ -1,6 +1,7 @@
 using server.application.player;
 using server.domain.move;
 using server.domain.player;
+using server.shared.constants.player;
 
 namespace server.application.debug;
 
@@ -10,7 +11,9 @@ namespace server.application.debug;
 /// </summary>
 public class DebugPlayerService(
     IPlayerMutationService playerMutationService,
-    IMoveRepository moveRepository)
+    IMoveRepository moveRepository,
+    IJobProfileRepository jobProfileRepository,
+    IJobMoveLearningRuleRepository jobMoveLearningRuleRepository)
 {
     /// <summary>基本ステータス（HP・MP・筋力・防御・知力・運・素早さ）を指定した値にする。</summary>
     public Task<Player> UpdateStatusAsync(PlayerId playerId, DebugStatusValues values)
@@ -68,6 +71,42 @@ public class DebugPlayerService(
         });
     }
 
+    /// <summary>
+    /// 指定したレベルまで上げる。通常のレベルアップと同じく、1 レベルずつ必要経験値を足して
+    /// LevelUp を実行するので、ステータスの成長・スキルの習得・ジョブのマスターも通常どおり起きる。
+    /// レベルを下げることはできない。
+    /// </summary>
+    public Task<DebugLevelUpResult> LevelUpToAsync(PlayerId playerId, int targetLevel)
+    {
+        if (targetLevel is < 1 or > PlayerConstants.MaxLevel)
+        {
+            throw new ArgumentOutOfRangeException(nameof(targetLevel), $"レベルは1以上{PlayerConstants.MaxLevel}以下である必要があります。");
+        }
+
+        return playerMutationService.MutateAsync(playerId, player =>
+        {
+            if (targetLevel < player.Level)
+            {
+                throw new ArgumentOutOfRangeException(nameof(targetLevel), $"レベルは下げられません（現在 {player.Level}）。");
+            }
+
+            var jobProfile = jobProfileRepository.GetByJob(player.Job);
+            var learningRule = jobMoveLearningRuleRepository.GetByJob(player.Job);
+            var learnedMoveIds = new List<int>();
+            var hasMasteredCurrentJob = false;
+
+            while (player.Level < targetLevel)
+            {
+                player.GainExp(Math.Max(0, player.RequiredExpForNextLevel() - player.Exp));
+                var result = player.LevelUp(jobProfile, learningRule);
+                learnedMoveIds.AddRange(result.NewlyLearnedMoveIds.Select(x => x.Id));
+                hasMasteredCurrentJob |= result.HasMasteredCurrentJob;
+            }
+
+            return Task.FromResult(new DebugLevelUpResult(player.Level, learnedMoveIds, hasMasteredCurrentJob));
+        });
+    }
+
     /// <summary>指定したスロットを空にする。</summary>
     public Task<Player> ClearMoveSlotAsync(PlayerId playerId, int slotIndex)
     {
@@ -87,3 +126,8 @@ public sealed record DebugStatusValues(
     int Intelligence,
     int Luck,
     int Speed);
+
+public sealed record DebugLevelUpResult(
+    int Level,
+    IReadOnlyList<int> NewlyLearnedMoveIds,
+    bool HasMasteredCurrentJob);

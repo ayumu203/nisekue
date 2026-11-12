@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using server.application.debug;
 using server.domain.move;
+using server.domain.player;
 
 namespace server.endpoints;
 
@@ -33,6 +34,52 @@ internal static class DebugEndpoints
         group.MapPut("/player/status", UpdateStatus);
         group.MapPost("/player/moves", LearnMove);
         group.MapDelete("/player/moves/{slotIndex:int}", ClearMoveSlot);
+        group.MapPost("/player/level", LevelUp);
+        group.MapGet("/items", GetItems);
+        group.MapGet("/equipments", GetEquipments);
+        group.MapPost("/player/items", GrantItem);
+        group.MapPost("/player/equipments", GrantEquipment);
+    }
+
+    private static async Task<IResult> GetItems(IItemRepository itemRepository)
+    {
+        var items = await itemRepository.GetAllAsync();
+        return Results.Ok(items
+            .OrderBy(x => x.Id.Value)
+            .Select(x => new { itemId = x.Id.Value, name = x.Name, maxStack = x.MaxStack }));
+    }
+
+    private static async Task<IResult> GetEquipments(IEquipmentRepository equipmentRepository)
+    {
+        var equipments = await equipmentRepository.GetAllAsync();
+        return Results.Ok(equipments
+            .OrderBy(x => x.Id.Value)
+            .Select(x => new { equipmentId = x.Id.Value, name = x.Name, equipmentType = x.Type.ToString() }));
+    }
+
+    private static async Task<IResult> GrantItem(
+        ClaimsPrincipal user,
+        DebugGrantItemRequest request,
+        DebugInventoryService debugInventoryService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        var quantity = await debugInventoryService.GrantItemAsync(playerId, request.ItemId, request.Quantity, DateTimeOffset.UtcNow);
+        return Results.Ok(new { quantity });
+    }
+
+    private static async Task<IResult> GrantEquipment(
+        ClaimsPrincipal user,
+        DebugGrantEquipmentRequest request,
+        DebugInventoryService debugInventoryService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        var count = await debugInventoryService.GrantEquipmentAsync(
+            playerId,
+            request.EquipmentId,
+            request.Count,
+            request.PlusValue ?? 0,
+            DateTimeOffset.UtcNow);
+        return Results.Ok(new { count });
     }
 
     private static async Task<IResult> GetMoves(IMoveRepository moveRepository)
@@ -68,6 +115,21 @@ internal static class DebugEndpoints
         var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
         await debugPlayerService.LearnMoveAsync(playerId, request.MoveId, request.SlotIndex);
         return Results.NoContent();
+    }
+
+    private static async Task<IResult> LevelUp(
+        ClaimsPrincipal user,
+        DebugLevelUpRequest request,
+        DebugPlayerService debugPlayerService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        var result = await debugPlayerService.LevelUpToAsync(playerId, request.Level);
+        return Results.Ok(new
+        {
+            level = result.Level,
+            newlyLearnedMoveIds = result.NewlyLearnedMoveIds,
+            hasMasteredCurrentJob = result.HasMasteredCurrentJob
+        });
     }
 
     private static async Task<IResult> ClearMoveSlot(
@@ -125,3 +187,9 @@ internal sealed record DebugUpdateStatusRequest(
     int Speed);
 
 internal sealed record DebugLearnMoveRequest(int MoveId, int? SlotIndex);
+
+internal sealed record DebugLevelUpRequest(int Level);
+
+internal sealed record DebugGrantItemRequest(int ItemId, int Quantity);
+
+internal sealed record DebugGrantEquipmentRequest(int EquipmentId, int Count, int? PlusValue);

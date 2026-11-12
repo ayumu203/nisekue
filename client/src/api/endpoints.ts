@@ -1,5 +1,13 @@
 import {
+  debugEquipmentListResponseSchema,
+  debugGrantEquipmentRequestSchema,
+  debugGrantEquipmentResponseSchema,
+  debugGrantItemRequestSchema,
+  debugGrantItemResponseSchema,
+  debugItemListResponseSchema,
   debugLearnMoveRequestSchema,
+  debugLevelUpRequestSchema,
+  debugLevelUpResponseSchema,
   debugMoveListResponseSchema,
   debugNoContentSchema,
   debugUpdateStatusRequestSchema,
@@ -708,6 +716,34 @@ export const endpoints = {
       path: (slotIndex: number) => `/debug/player/moves/${slotIndex}`,
       method: 'DELETE',
       responseSchema: debugNoContentSchema,
+    },
+    levelUp: {
+      path: '/debug/player/level',
+      method: 'POST',
+      requestSchema: debugLevelUpRequestSchema,
+      responseSchema: debugLevelUpResponseSchema,
+    },
+    getItems: {
+      path: '/debug/items',
+      method: 'GET',
+      responseSchema: debugItemListResponseSchema,
+    },
+    getEquipments: {
+      path: '/debug/equipments',
+      method: 'GET',
+      responseSchema: debugEquipmentListResponseSchema,
+    },
+    grantItem: {
+      path: '/debug/player/items',
+      method: 'POST',
+      requestSchema: debugGrantItemRequestSchema,
+      responseSchema: debugGrantItemResponseSchema,
+    },
+    grantEquipment: {
+      path: '/debug/player/equipments',
+      method: 'POST',
+      requestSchema: debugGrantEquipmentRequestSchema,
+      responseSchema: debugGrantEquipmentResponseSchema,
     },
   },
 } as const

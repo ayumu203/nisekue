@@ -3,6 +3,7 @@
   "backToHome": "ホームへ戻る",
   "loading": "管理権限を確認中...",
   "forbidden": "デバッグ機能を利用する権限がありません。",
+  "description": "プレイヤーのデータを直接書き換えます。",
   "playerLoading": "プレイヤー情報を読み込み中...",
   "status": {
     "title": "ステータス変更",
@@ -34,8 +35,34 @@
     "cleared": "スキルを外しました",
     "empty": "（空き）"
   },
+  "items": {
+    "title": "アイテム入手",
+    "description": "アイテムや装備を入手します。所持枠の上限は確認しません。アイテムの所持数はスタック上限で止まります。",
+    "itemLabel": "アイテム",
+    "quantityLabel": "個数",
+    "itemSubmit": "入手する",
+    "itemDone": "{name} を入手しました（所持数 {quantity}）",
+    "equipmentLabel": "装備",
+    "countLabel": "個数（1〜20）",
+    "plusLabel": "強化値",
+    "equipmentSubmit": "入手する",
+    "equipmentDone": "{name} を {count} 個入手しました",
+    "maxStack": "上限 {maxStack}"
+  },
+  "level": {
+    "title": "レベル操作",
+    "description": "指定したレベルまで上げます。通常のレベルアップと同じく、ステータスの成長・スキルの習得・ジョブのマスターが起きます。レベルを下げることはできません。",
+    "current": "現在 Lv.{level}（{job}）",
+    "label": "目標レベル",
+    "submit": "レベルを上げる",
+    "max": "Lv.100 にする",
+    "done": "Lv.{level} になりました。",
+    "learned": "新しく習得したスキル {count} 個。",
+    "mastered": "ジョブをマスターしました。"
+  },
   "tabs": {
     "player": "プレイヤー",
-    "moves": "スキル"
+    "moves": "スキル",
+    "items": "アイテム"
   }
 }
