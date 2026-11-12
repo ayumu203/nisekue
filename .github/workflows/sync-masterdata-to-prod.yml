@@ -1,10 +1,10 @@
-name: Promote Master Data (staging -> production)
+name: Sync Master Data (staging -> production)
 
 # ステージング用スプレッドシートの内容で本番用スプレッドシートを上書きし、本番のバックエンドを再デプロイする。
-# スプレッドシートの「nisekue → 本番へ昇格」メニュー（tools/masterdata/apps-script）か、Actions の画面から手動実行する。
+# スプレッドシートの「nisekue → 本番へ同期」メニュー（ステージング用スプレッドシートの Apps Script）か、Actions の画面から手動実行する。
 #
 # 1. validate（dev environment）: ステージング用スプレッドシートを main のコードで整合性テストし、本番用との差分をサマリーに出す
-# 2. promote（prod environment）: 本番用スプレッドシートを上書きする。prod environment の承認（Required reviewers）を付けておくこと
+# 2. sync（prod environment）: 本番用スプレッドシートを上書きする。prod environment の承認（Required reviewers）を付けておくこと
 # 3. 続けて deploy-backend-vm-prod.yml を prod ブランチで起動する（inputs.deploy が true のとき）
 #
 # スプレッドシートの ID はどちらも Variable MASTERDATA_SPREADSHEET_ID で決まる。
@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy:
-        description: 昇格後に本番のバックエンドを再デプロイする
+        description: 同期後に本番のバックエンドを再デプロイする
         type: boolean
         default: true
       dry_run:
@@ -28,7 +28,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: promote-masterdata
+  group: sync-masterdata-to-prod
   cancel-in-progress: false
 
 jobs:
@@ -52,7 +52,7 @@ jobs:
           google-service-account-json: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           spreadsheet-id: ${{ vars.MASTERDATA_SPREADSHEET_ID }}
 
-  promote:
+  sync:
     needs: validate
     runs-on: ubuntu-latest
     environment: prod
@@ -89,7 +89,7 @@ jobs:
       - name: Install
         run: pnpm --dir tools/masterdata install --frozen-lockfile
 
-      - name: Promote
+      - name: Sync to production spreadsheet
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           STAGING_ID: ${{ needs.validate.outputs.staging-spreadsheet-id }}
@@ -98,10 +98,10 @@ jobs:
         run: |
           args=(--from "${STAGING_ID}" --to "${PRODUCTION_ID}")
           if [ "${DRY_RUN}" = "true" ]; then args+=(--dry-run); fi
-          node tools/masterdata/src/promote.mjs "${args[@]}"
+          node tools/masterdata/src/syncToProduction.mjs "${args[@]}"
 
   deploy:
-    needs: promote
+    needs: sync
     if: inputs.deploy && !inputs.dry_run
     runs-on: ubuntu-latest
     permissions:

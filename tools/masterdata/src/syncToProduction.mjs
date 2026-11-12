@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ステージング用スプレッドシートの内容で、本番用スプレッドシートを上書きする。
 //
-//   node tools/masterdata/src/promote.mjs --from <ステージング用ID> --to <本番用ID> [--dry-run]
+//   node tools/masterdata/src/syncToProduction.mjs --from <ステージング用ID> --to <本番用ID> [--dry-run]
 //
 // - 対象はステージング用の `_index` タブと、そこに載っているタブだけ。それ以外のタブ（メモなど）は触らない
 // - 本番用に無いタブは追加する。本番用にだけあるタブは消さない（`_index` から外れるので使われなくなる）
@@ -14,7 +14,7 @@
 import { appendFile } from 'node:fs/promises'
 import { parseIndex } from './csv.mjs'
 import { addSheets, batchGetValues, createSheetsClient, listSheetTitles, overwriteTabs, quoteTab } from './sheets.mjs'
-import { diffTable, formatDiffSummary, hasDiff, toUserEnteredTable } from './promoteValues.mjs'
+import { diffTable, formatDiffSummary, hasDiff, toUserEnteredTable } from './syncToProductionValues.mjs'
 
 const INDEX_TAB = '_index'
 
@@ -62,7 +62,7 @@ async function main() {
 
   const results = tabs.map((tab, i) => ({ tab, diff: diffTable(prodByTab.get(tab) ?? [], stagingValues[i]) }))
   const summary =
-    `## マスタデータの昇格${args.dryRun ? '（確認のみ）' : ''}\n\n` +
+    `## マスタデータの本番への同期${args.dryRun ? '（確認のみ）' : ''}\n\n` +
     (missing.length > 0 ? `本番用に無いため追加するタブ: ${missing.join(', ')}\n\n` : '') +
     formatDiffSummary(results)
   console.log(summary)

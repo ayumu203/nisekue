@@ -8,7 +8,7 @@ const API = 'https://sheets.googleapis.com/v4/spreadsheets'
  * Sheets API クライアントを作る。
  * - GOOGLE_SERVICE_ACCOUNT_JSON にサービスアカウントキーの JSON 文字列があればそれを使う（GitHub Actions 用）
  * - なければ Application Default Credentials（GOOGLE_APPLICATION_CREDENTIALS や gcloud のログイン）を使う
- * - write: true のときは書き込みの権限を要求する（本番用スプレッドシートへの昇格用）
+ * - write: true のときは書き込みの権限を要求する（本番用スプレッドシートへの同期用）
  */
 export async function createSheetsClient({ write = false } = {}) {
   const json = process.env.GOOGLE_SERVICE_ACCOUNT_JSON

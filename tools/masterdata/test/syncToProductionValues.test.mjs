@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { diffTable, formatDiffSummary, hasDiff, toUserEnteredTable, toUserEnteredValue } from '../src/promoteValues.mjs'
+import { diffTable, formatDiffSummary, hasDiff, toUserEnteredTable, toUserEnteredValue } from '../src/syncToProductionValues.mjs'
 
 describe('toUserEnteredValue', () => {
   it('文字列は先頭に \' を付けてテキストのまま残す', () => {
