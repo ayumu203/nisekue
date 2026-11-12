@@ -65,7 +65,7 @@ pnpx supabase stop
 Local connection string: `Host=127.0.0.1;Port=54322;Database=postgres;Username=postgres;Password=postgres`
 
 ### Master Data (spreadsheet → CSV)
-The spreadsheet "nisekue マスタデータ" is the source of truth for `server/resources/**/*.csv`. Those CSVs are gitignored; never commit them.
+The spreadsheets are the source of truth for `server/resources/**/*.csv`: "[prod] nisekue masterdata" (production, repository-level `MASTERDATA_SPREADSHEET_ID`) and "[staging] nisekue masterdata" (staging, `dev` environment `MASTERDATA_SPREADSHEET_ID`). Edit only the staging one; production is updated by `sync-masterdata-to-prod.yml`. Those CSVs are gitignored; never commit them.
 ```bash
 pnpm masterdata:sync              # write the latest spreadsheet into server/resources (needs Google ADC + tools/masterdata/.env)
 pnpm --dir tools/masterdata test  # unit tests for the exporter
