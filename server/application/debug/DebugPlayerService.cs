@@ -108,6 +108,33 @@ public class DebugPlayerService(
     }
 
     /// <summary>
+    /// 転職の条件（前提ジョブのマスター・レベル）を無視して転職する。
+    /// 職業レベルは 1 になる（通常の転職と同じ）。見習いと現在のジョブには転職できない。
+    /// </summary>
+    public Task<Player> ChangeJobAsync(PlayerId playerId, Job job)
+    {
+        if (!Enum.IsDefined(job))
+        {
+            throw new ArgumentOutOfRangeException(nameof(job), "存在しないジョブです。");
+        }
+
+        return playerMutationService.MutateAsync(playerId, player =>
+        {
+            if (job == Job.Apprentice || job == player.Job)
+            {
+                throw new ArgumentException("見習いと現在のジョブには転職できません。", nameof(job));
+            }
+
+            player.ChangeJob(
+                job,
+                jobProfileRepository.GetByJob(job),
+                jobMoveLearningRuleRepository.GetByJob(job),
+                ignoreRequirements: true);
+            return Task.FromResult(player);
+        });
+    }
+
+    /// <summary>
     /// 指定したジョブをマスター済みにする。
     /// 現在のジョブが含まれていれば、そのジョブで覚えるスキルもすべて習得させる（マスターレベルに達したときと同じ）。
     /// unlockRoadmap が true なら、そのジョブのロードマップも解放する。

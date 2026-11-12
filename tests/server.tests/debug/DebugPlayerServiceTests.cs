@@ -202,6 +202,34 @@ public class DebugPlayerServiceTests
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
+    [Fact]
+    public async Task ChangeJobAsync_IgnoresRequirementsAndResetsJobLevel()
+    {
+        var player = DebugTestPlayers.Create(level: 1, job: Job.Warrior);
+        var service = CreateService(player);
+
+        await service.ChangeJobAsync(player.Id, Job.SwordMaster);
+
+        player.Job.Should().Be(Job.SwordMaster);
+        player.JobLevel.Should().Be(1);
+        player.Level.Should().Be(1);
+        player.MasteredJobs.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(Job.Apprentice)]
+    [InlineData(Job.Warrior)]
+    public async Task ChangeJobAsync_WhenApprenticeOrCurrentJob_Throws(Job job)
+    {
+        var player = DebugTestPlayers.Create(job: Job.Warrior);
+        var service = CreateService(player);
+
+        var act = () => service.ChangeJobAsync(player.Id, job);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        player.Job.Should().Be(Job.Warrior);
+    }
+
     private static DebugPlayerService CreateService(Player player, params int[] moveIds)
     {
         return CreateService(player, masterLevel: 20, learnableMoveIds: [], moveIds);
