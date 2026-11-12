@@ -1,2 +1,2 @@
-onlyBuiltDependencies:
-  - supabase
+allowBuilds:
+  supabase: true

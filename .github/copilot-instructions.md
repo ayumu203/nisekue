@@ -66,4 +66,4 @@ pnpx supabase stop
   - `client/src/api/*.ts`（fetch + エラーハンドリング）
   - `client/src/pages/*` / `components/*`（SWR 利用）
 - 匿名ログイン利用者の投稿制限は既存ヘルパー（`EndpointHelpers.IsAnonymousUser` / `AnonymousPostingForbidden`）の扱いに揃える。
-- CI は `.github/workflows/ci.yml` に準拠（Backend: format/lint/build/test、Frontend: format/lint/build）。変更はこの流れを壊さないこと。
+- CI は `.github/workflows/ci-backend.yml` / `ci-frontend.yml` に準拠（Backend: format/lint/build/test、Frontend: format/lint/build）。変更はこの流れを壊さないこと。
