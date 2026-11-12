@@ -1,4 +1,4 @@
-name: Deploy Backend - Production (Oracle VM)
+name: 'Deploy Backend [本番]'
 
 # prod への push で、Oracle Cloud の VM 上のバックエンド（docker compose）を更新する。
 # マスタデータは GitHub Actions 上でスプレッドシートから取り込み、整合性テストを通してから VM に送る
