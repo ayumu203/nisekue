@@ -3,6 +3,7 @@ import { useState } from 'react'
 import useSWR from 'swr'
 import { getDebugEquipments, getDebugItems, grantDebugEquipment, grantDebugItem } from '@/api/debug'
 import DebugSection from '@/components/debug/DebugSection'
+import { greenOutlinedInputSx, softGreenButtonSx } from '@/constants/styles'
 import { useDebugAction } from '@/hooks/useDebugAction'
 import { debugGrantEquipmentRequestSchema, debugGrantItemRequestSchema } from '@/schema/debug'
 import type { DebugEquipmentListResponse, DebugItemListResponse } from '@/schema/debug'
@@ -91,7 +92,9 @@ export default function DebugItemsSection({ accessToken, onChanged }: DebugItems
             `${option.itemId}: ${option.name}（${locale.items.maxStack.replace('{maxStack}', String(option.maxStack))}）`
           }
           isOptionEqualToValue={(option, value) => option.itemId === value.itemId}
-          renderInput={(params) => <TextField {...params} label={locale.items.itemLabel} size="small" />}
+          renderInput={(params) => (
+            <TextField {...params} label={locale.items.itemLabel} size="small" sx={greenOutlinedInputSx} />
+          )}
           sx={{ flex: 1, minWidth: 240 }}
         />
         <TextField
@@ -101,9 +104,14 @@ export default function DebugItemsSection({ accessToken, onChanged }: DebugItems
           value={quantity}
           onChange={(event) => setQuantity(event.target.value)}
           slotProps={{ htmlInput: { min: 1, step: 1 } }}
-          sx={{ width: 120 }}
+          sx={{ ...greenOutlinedInputSx, width: 120 }}
         />
-        <Button variant="contained" onClick={() => void handleGrantItem()} disabled={!selectedItem || isRunning}>
+        <Button
+          variant="contained"
+          sx={softGreenButtonSx}
+          onClick={() => void handleGrantItem()}
+          disabled={!selectedItem || isRunning}
+        >
           {locale.items.itemSubmit}
         </Button>
       </Stack>
@@ -116,7 +124,9 @@ export default function DebugItemsSection({ accessToken, onChanged }: DebugItems
           onChange={(_, value) => setSelectedEquipment(value)}
           getOptionLabel={(option) => `${option.equipmentId}: ${option.name}（${option.equipmentType}）`}
           isOptionEqualToValue={(option, value) => option.equipmentId === value.equipmentId}
-          renderInput={(params) => <TextField {...params} label={locale.items.equipmentLabel} size="small" />}
+          renderInput={(params) => (
+            <TextField {...params} label={locale.items.equipmentLabel} size="small" sx={greenOutlinedInputSx} />
+          )}
           sx={{ flex: 1, minWidth: 240 }}
         />
         <TextField
@@ -126,7 +136,7 @@ export default function DebugItemsSection({ accessToken, onChanged }: DebugItems
           value={count}
           onChange={(event) => setCount(event.target.value)}
           slotProps={{ htmlInput: { min: 1, max: 20, step: 1 } }}
-          sx={{ width: 140 }}
+          sx={{ ...greenOutlinedInputSx, width: 140 }}
         />
         <TextField
           label={locale.items.plusLabel}
@@ -135,10 +145,11 @@ export default function DebugItemsSection({ accessToken, onChanged }: DebugItems
           value={plusValue}
           onChange={(event) => setPlusValue(event.target.value)}
           slotProps={{ htmlInput: { min: 0, max: 100, step: 1 } }}
-          sx={{ width: 120 }}
+          sx={{ ...greenOutlinedInputSx, width: 120 }}
         />
         <Button
           variant="contained"
+          sx={softGreenButtonSx}
           onClick={() => void handleGrantEquipment()}
           disabled={!selectedEquipment || isRunning}
         >

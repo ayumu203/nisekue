@@ -2,6 +2,7 @@ import { Box, Button, Checkbox, FormControlLabel, Stack } from '@mui/material'
 import { useState } from 'react'
 import { masterDebugJobs } from '@/api/debug'
 import DebugSection from '@/components/debug/DebugSection'
+import { softGoldButtonSx, softGreenButtonSx } from '@/constants/styles'
 import { useDebugAction } from '@/hooks/useDebugAction'
 import { debugMasterJobsRequestSchema } from '@/schema/debug'
 import type { DebugMasterJobsResponse } from '@/schema/debug'
@@ -59,7 +60,12 @@ export default function DebugJobsSection({ player, accessToken, onChanged }: Deb
   return (
     <DebugSection title={locale.jobs.title} description={locale.jobs.description} message={message}>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }}>
-        <Button variant="contained" onClick={() => void master([player.job.code])} disabled={isRunning}>
+        <Button
+          variant="contained"
+          sx={softGreenButtonSx}
+          onClick={() => void master([player.job.code])}
+          disabled={isRunning}
+        >
           {locale.jobs.currentJob}
         </Button>
         <FormControlLabel
@@ -87,15 +93,20 @@ export default function DebugJobsSection({ player, accessToken, onChanged }: Deb
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
         <Button
           variant="contained"
+          sx={softGreenButtonSx}
           onClick={() => void master([...selected])}
           disabled={isRunning || selected.size === 0}
         >
           {locale.jobs.selected}
         </Button>
-        <Button variant="text" onClick={() => setSelected(new Set(player.jobProfiles.map((job) => job.code)))}>
+        <Button
+          variant="contained"
+          sx={softGoldButtonSx}
+          onClick={() => setSelected(new Set(player.jobProfiles.map((job) => job.code)))}
+        >
           {locale.jobs.selectAll}
         </Button>
-        <Button variant="text" onClick={() => setSelected(new Set())}>
+        <Button variant="contained" sx={softGoldButtonSx} onClick={() => setSelected(new Set())}>
           {locale.jobs.clear}
         </Button>
       </Stack>
