@@ -1,8 +1,9 @@
-import { Alert, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import { Alert, CircularProgress, Container, Paper, Stack, Tab, Tabs, Typography } from '@mui/material'
+import { useState } from 'react'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import DebugMovesSection from '@/components/debug/DebugMovesSection'
 import DebugStatusSection from '@/components/debug/DebugStatusSection'
-import { outerPagePaperSx } from '@/constants/styles'
+import { gameTabSx, gameTabsSx, outerPagePaperSx } from '@/constants/styles'
 import { useDebugPlayer } from '@/hooks/useDebugPlayer'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import locale from '../../locale/debug/Debug.json'
@@ -16,7 +17,12 @@ function Loading({ text }: { text: string }) {
   )
 }
 
+type DebugTab = 'player' | 'moves'
+
+const DEBUG_TABS: readonly DebugTab[] = ['player', 'moves']
+
 function DebugContent() {
+  const [tab, setTab] = useState<DebugTab>('player')
   const { player, error, isLoading, accessToken, refresh } = useDebugPlayer()
 
   if (isLoading) {
@@ -30,9 +36,26 @@ function DebugContent() {
   const sectionProps = { player, accessToken, onChanged: refresh }
 
   return (
-    <Stack spacing={2}>
-      <DebugStatusSection key={`status-${player.userId}`} {...sectionProps} />
-      <DebugMovesSection {...sectionProps} />
+    <Stack spacing={0}>
+      <Tabs
+        value={tab}
+        onChange={(_, value: DebugTab) => setTab(value)}
+        variant="fullWidth"
+        sx={gameTabsSx}
+        slotProps={{ indicator: { sx: { display: 'none' } } }}
+      >
+        {DEBUG_TABS.map((value) => (
+          <Tab key={value} label={locale.tabs[value]} value={value} sx={gameTabSx} />
+        ))}
+      </Tabs>
+      <Stack spacing={2} sx={{ pt: 2 }}>
+        {tab === 'player' && (
+          <>
+            <DebugStatusSection key={`status-${player.level}`} {...sectionProps} />
+          </>
+        )}
+        {tab === 'moves' && <DebugMovesSection {...sectionProps} />}
+      </Stack>
     </Stack>
   )
 }
