@@ -17,6 +17,19 @@
 - ステージングで確認できたら「本番へ昇格」で本番用に反映する
 - PR の CI（`ci.yml` の Master data）はリポジトリ単位の `MASTERDATA_SPREADSHEET_ID`（＝本番用）を見る。列を増やす・変える PR のときは、ステージング用と本番用の両方のスプレッドシートを直す
 
+## 設定する値と取得元
+
+| 設定場所 | 名前 | 値 | 取得元 |
+| --- | --- | --- | --- |
+| GitHub → Settings → Environments → `dev` → Environment variables | `MASTERDATA_SPREADSHEET_ID` | ステージング用スプレッドシートの ID | スプレッドシートの URL の `/d/` と `/edit` の間 |
+| GitHub → Settings → Environments → `prod` → Deployment protection rules | Required reviewers | 自分の GitHub アカウント | — |
+| Apps Script → プロジェクトの設定 → スクリプト プロパティ | `GITHUB_TOKEN` | fine-grained personal access token | GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens で作成（下の 3） |
+| 同上 | `STAGING_SPREADSHEET_ID` | ステージング用スプレッドシートの ID | `MASTERDATA_SPREADSHEET_ID`（dev）と同じ値 |
+| ステージング用スプレッドシートの共有 | 閲覧者 | サービスアカウントのメールアドレス | Secret `GOOGLE_SERVICE_ACCOUNT_JSON` の `client_email`。Secret は GitHub から読めないので、元の JSON キー（Google Cloud コンソール → IAM と管理 → サービス アカウント）か、本番用スプレッドシートの共有設定に並んでいる `...iam.gserviceaccount.com` のアドレスを見る |
+| 本番用スプレッドシートの共有 | 編集者（`promote-masterdata.yml` を使う場合） | 同上 | 同上 |
+
+リポジトリ単位の `GOOGLE_SERVICE_ACCOUNT_JSON`（Secret）と `MASTERDATA_SPREADSHEET_ID`（Variable、本番用）は既存のものをそのまま使う。
+
 ## 初回の設定
 
 ### 1. ステージング用スプレッドシートを作る
