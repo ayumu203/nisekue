@@ -1,4 +1,4 @@
-name: Cleanup Quest Data - Production
+name: 'Clean Up Quest Data [本番]'
 
 on:
   workflow_dispatch:

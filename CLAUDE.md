@@ -140,13 +140,15 @@ Before implementing changes to `server/domain/` or `server/infrastructure/`, upd
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on PRs and pushes to main:
+GitHub Actions (`.github/workflows/ci-backend.yml` for Backend + Master data, `.github/workflows/ci-frontend.yml` for Frontend) runs on PRs and pushes to main:
 - Backend: format check -> lint -> build -> test
 - Frontend: format check -> lint -> build
 - Master data: export the spreadsheet -> compare file set and headers with the fixture CSVs (`tools/masterdata/src/structure.mjs`) -> run `MasterDataIntegrityTests` on the spreadsheet with the PR's code. If this fails after you changed a loader or a fixture's columns, update the spreadsheet to match before merging.
 
 Migrations auto-deploy via `db-migrate-dev.yml` / `db-migrate-prod.yml`. Use Session Pooler connection strings for Supabase.
 
-Scheduled maintenance workflows (dev/prod pairs): `cleanup-quest-data-*.yml`, `ranking-rebuild-*.yml`.
+Maintenance workflows: `cleanup-quest-data-*.yml` (manual, staging/production pair), `ranking-rebuild-prod.yml` (scheduled, production only).
+
+Workflow display names follow `<Verb> <Target> [<環境>]`, with 環境 being `ステージング` or `本番` (e.g. `Deploy Backend [本番]`). The GitHub Environment names and file suffixes stay `dev` / `prod`. Do not rename CI job names: `Backend (format/lint/build/test)` and `Frontend (format/lint/build)` are required status checks in the `main` ruleset.
 
 Backend deploys import master data from the spreadsheet on every run via the composite action `.github/actions/masterdata-import` (export + `MasterDataIntegrityTests`) and stop before touching the server if it fails. Production (`deploy-backend-vm-prod.yml`, `prod` branch) runs the import on the Actions runner, then ships the CSVs to the Oracle VM and builds there; Google credentials never go to the VM. The dev deploy to Azure App Service (`deploy-backend-dev.yml`, `main` branch) calls the same action. To push spreadsheet edits without a code change, run the deploy workflow manually (production: on `prod` only). Needs secret `GOOGLE_SERVICE_ACCOUNT_JSON` and variable `MASTERDATA_SPREADSHEET_ID` at repository level; override the variable per environment to give dev its own spreadsheet.

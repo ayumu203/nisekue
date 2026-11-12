@@ -1,4 +1,4 @@
-name: Sync Master Data (staging -> production)
+name: 'Sync Master Data [ステージング → 本番]'
 
 # ステージング用スプレッドシートの内容で本番用スプレッドシートを上書きし、本番のバックエンドを再デプロイする。
 # スプレッドシートの「nisekue → 本番へ同期」メニュー（ステージング用スプレッドシートの Apps Script）か、Actions の画面から手動実行する。
