@@ -688,4 +688,37 @@ public class PlayerTests
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
+
+    [Fact]
+    public void ResetProgress_ResetsProgressAndKeepsGoldAndName()
+    {
+        var player = new Player(
+            new PlayerId(Guid.NewGuid()),
+            "Tester",
+            50,
+            123,
+            20,
+            999,
+            new Status(300, 100, 80, 70, 60, 50, 40),
+            Job.Warrior,
+            masteredJobs: new HashSet<Job> { Job.Apprentice, Job.Warrior },
+            rebirthCount: 2,
+            roadmapUnlockFlags: 7);
+        var initialMoveSet = new MoveSet();
+        initialMoveSet.SetSlot(0, new MoveId(101));
+
+        player.ResetProgress(new Status(24, 8, 7, 5, 5, 3, 4), initialMoveSet);
+
+        player.Level.Should().Be(1);
+        player.Exp.Should().Be(0);
+        player.Job.Should().Be(Job.Apprentice);
+        player.JobLevel.Should().Be(1);
+        player.Status.MaxHp.Should().Be(24);
+        player.MasteredJobs.Should().BeEmpty();
+        player.RoadmapUnlockFlags.Should().Be(Player.DefaultRoadmapUnlockFlags);
+        player.RebirthCount.Should().Be(0);
+        player.MoveSet.Slots[0]!.Id.Should().Be(101);
+        player.Gold.Should().Be(999);
+        player.Name.Should().Be("Tester");
+    }
 }
