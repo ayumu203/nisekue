@@ -3,7 +3,6 @@
   "backToHome": "ホームへ戻る",
   "loading": "管理権限を確認中...",
   "forbidden": "デバッグ機能を利用する権限がありません。",
-  "description": "プレイヤーのデータを直接書き換えます。",
   "playerLoading": "プレイヤー情報を読み込み中...",
   "status": {
     "title": "ステータス変更",

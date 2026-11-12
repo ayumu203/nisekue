@@ -38,7 +38,6 @@ function DebugContent() {
 
   return (
     <Stack spacing={2}>
-      <Alert severity="warning">{locale.description}</Alert>
       <DebugLevelSection {...sectionProps} />
       <DebugJobsSection {...sectionProps} />
       <DebugStatusSection key={`status-${player.level}`} {...sectionProps} />
