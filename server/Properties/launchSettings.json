@@ -9,7 +9,8 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "Supabase__ProjectUrl": "http://127.0.0.1:54321/",
-        "Supabase__JwtAudience": "authenticated"
+        "Supabase__JwtAudience": "authenticated",
+        "Debug__AlwaysEnabled": "true"
       }
     },
     "https": {
@@ -20,8 +21,8 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "Supabase__ProjectUrl": "http://127.0.0.1:54321/",
-        "Supabase__JwtAudience": "authenticated"
-
+        "Supabase__JwtAudience": "authenticated",
+        "Debug__AlwaysEnabled": "true"
       }
     }
   }
