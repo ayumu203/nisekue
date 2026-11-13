@@ -20,22 +20,25 @@ public class QuestBattleFactory
     {
         ArgumentNullException.ThrowIfNull(run);
 
-        var party = run.PartySnapshots
-            .Join(
-                run.BattleState.PartyMembers,
-                snapshot => snapshot.ParticipantId,
-                state => state.ParticipantId,
-                (snapshot, state) => new BattleActorInput(
-                    ActorId: snapshot.ParticipantId.Value,
-                    DisplayName: snapshot.DisplayName,
-                    Side: BattleSide.Ally,
-                    BaseStatus: snapshot.BaseStatus,
-                    MoveSet: snapshot.MoveSet,
-                    CurrentHp: state.CurrentHp,
-                    CurrentMp: state.CurrentMp,
-                    Ailments: state.Ailments.ToArray(),
-                    Buffs: state.Buffs.ToArray()))
-            .ToArray();
+        // ペット出撃中はプレイヤー側（本人・NPC 味方）は下がって戦闘に参加しない。ペットの入力は QuestRunService で追加する。
+        var party = run.IsPetDeploymentActive
+            ? []
+            : run.PartySnapshots
+                .Join(
+                    run.BattleState.PartyMembers,
+                    snapshot => snapshot.ParticipantId,
+                    state => state.ParticipantId,
+                    (snapshot, state) => new BattleActorInput(
+                        ActorId: snapshot.ParticipantId.Value,
+                        DisplayName: snapshot.DisplayName,
+                        Side: BattleSide.Ally,
+                        BaseStatus: snapshot.BaseStatus,
+                        MoveSet: snapshot.MoveSet,
+                        CurrentHp: state.CurrentHp,
+                        CurrentMp: state.CurrentMp,
+                        Ailments: state.Ailments.ToArray(),
+                        Buffs: state.Buffs.ToArray()))
+                .ToArray();
 
         var enemy = run.BattleState.Enemies
             .Select(x =>
@@ -61,8 +64,11 @@ public class QuestBattleFactory
     {
         ArgumentNullException.ThrowIfNull(run);
 
-        var partyPositions = run.PartySnapshots
-            .Select(x => new BattleActorPosition(new BattleActorId(x.ParticipantId.Value), x.StartPosition));
+        var partyPositions = run.IsPetDeploymentActive
+            ? run.PetDeployment!.LivingPets
+                .Select(x => new BattleActorPosition(new BattleActorId(x.ActorId), x.Position))
+            : run.PartySnapshots
+                .Select(x => new BattleActorPosition(new BattleActorId(x.ParticipantId.Value), x.StartPosition));
         var enemyPositions = run.BattleState.Enemies
             .Select(x => new BattleActorPosition(new BattleActorId(x.Id.Value), x.Position));
         var bossActorIds = run.FloorState.IsBossFloor
@@ -98,7 +104,11 @@ public class QuestBattleFactory
         var partyActions = new List<BattleActionInput>();
         var movesById = new Dictionary<int, Move>();
 
-        foreach (var member in run.BattleState.PartyMembers)
+        // ペット出撃中はプレイヤー側の行動を作らない。
+        var actingPartyMembers = run.IsPetDeploymentActive
+            ? []
+            : run.BattleState.PartyMembers;
+        foreach (var member in actingPartyMembers)
         {
             if (member.IsDead || member.HasLeftQuest || member.CanActFromTurn > run.TurnState.CurrentTurnNo)
             {

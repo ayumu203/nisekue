@@ -1328,6 +1328,14 @@ namespace server.infrastructure.migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("last_turn_results_json");
 
+                    b.Property<string>("PetDeploymentJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("pet_deployment_json");
+
+                    b.Property<bool>("PetSummonUsed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("pet_summon_used");
+
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid")
                         .HasColumnName("room_id");
@@ -1407,12 +1415,6 @@ namespace server.infrastructure.migrations
                     b.Property<bool>("IsManualControlRequested")
                         .HasColumnType("boolean")
                         .HasColumnName("is_manual_control_requested");
-
-                    b.Property<int>("PetSummonsUsed")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("pet_summons_used");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -1516,6 +1518,11 @@ namespace server.infrastructure.migrations
                     b.Property<int?>("PetStrength")
                         .HasColumnType("integer")
                         .HasColumnName("pet_strength");
+
+                    b.Property<string>("PetsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("pets_json");
 
                     b.Property<int>("Speed")
                         .HasColumnType("integer")

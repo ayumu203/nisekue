@@ -10,5 +10,7 @@ public enum ActionKind
     Escape = 6,
     Prayer = 7,
     Capture = 8,
-    SummonPet = 9
+    SummonPet = 9,
+    // ペット出撃中、プレイヤーが「ペットにまかせる」でターンを進める
+    EntrustPet = 10
 }

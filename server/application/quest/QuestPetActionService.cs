@@ -2,20 +2,19 @@ using server.application.battle;
 using server.domain.battle.enums;
 using server.domain.move;
 using server.domain.move.enums;
-using server.domain.player;
 using server.domain.quest;
 
 namespace server.application.quest;
 
 public class QuestPetActionService
 {
-    // 単発登場のため MP は管理しない（技の消費 MP で失敗しない値を与える）
-    private const int SummonedPetMp = 999999;
+    // 出撃中のペットは MP を管理しない（技の消費 MP で失敗しない値を与える）
+    private const int DeployedPetMp = 999999;
 
-    public (BattleActorInput Actor, BattleActionInput Action, Move? SelectedMove) CreateSummonInputs(
-        Guid petActorId,
+    // 出撃中のペット1体の戦闘入力を作る。技を持っていれば毎ターンランダムに1つ使い、なければ通常攻撃。
+    public (BattleActorInput Actor, BattleActionInput Action, Move? SelectedMove) CreateDeployedPetInputs(
+        QuestDeployedPetState pet,
         string displayName,
-        QuestPetSnapshot pet,
         IReadOnlyList<Move> availableMoves,
         Func<int, int> rollProvider)
     {
@@ -32,29 +31,30 @@ public class QuestPetActionService
         var learnableMoves = availableMoves.Take(MoveSet.MaxSlots).ToArray();
 
         var actor = new BattleActorInput(
-            ActorId: petActorId,
+            ActorId: pet.ActorId,
             DisplayName: displayName,
             Side: BattleSide.Ally,
             BaseStatus: pet.Status,
             MoveSet: moveSet,
-            CurrentHp: pet.Status.MaxHp,
-            CurrentMp: SummonedPetMp);
+            CurrentHp: pet.CurrentHp,
+            CurrentMp: DeployedPetMp,
+            Ailments: pet.Ailments.ToArray(),
+            Buffs: pet.Buffs.ToArray());
 
-        var usesMove = learnableMoves.Length > 0 && rollProvider(2) == 2;
-        if (!usesMove)
+        if (learnableMoves.Length == 0)
         {
             var attack = new BattleActionInput(
-                ActorId: petActorId,
+                ActorId: pet.ActorId,
                 Kind: BattleActionKind.NormalAttack,
                 MoveId: null,
                 TargetType: TargetType.Enemy,
-                AttackRange: AttackRange.All);
+                AttackRange: AttackRange.Single);
             return (actor, attack, null);
         }
 
         var selectedMove = learnableMoves[rollProvider(learnableMoves.Length) - 1];
         var action = new BattleActionInput(
-            ActorId: petActorId,
+            ActorId: pet.ActorId,
             Kind: BattleActionKind.UseMove,
             MoveId: selectedMove.Id.Id,
             TargetType: selectedMove.TargetType,

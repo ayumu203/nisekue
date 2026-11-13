@@ -16,7 +16,7 @@ public class QuestRunPartyMemberSnapshot(
     MoveSet moveSet,
     BattlePosition startPosition,
     ActionMode initialActionMode,
-    QuestPetSnapshot? pet = null)
+    IEnumerable<QuestPetSnapshot>? pets = null)
 {
     public QuestParticipantId ParticipantId { get; } = participantId;
     public ParticipantType Type { get; } = type;
@@ -31,5 +31,6 @@ public class QuestRunPartyMemberSnapshot(
     public MoveSet MoveSet { get; } = moveSet ?? throw new ArgumentNullException(nameof(moveSet));
     public BattlePosition StartPosition { get; } = startPosition;
     public ActionMode InitialActionMode { get; } = initialActionMode;
-    public QuestPetSnapshot? Pet { get; } = pet;
+    // クエスト参加時点の所持ペット（スタンバイを先頭、残りは捕獲順）
+    public IReadOnlyList<QuestPetSnapshot> Pets { get; } = pets?.ToArray() ?? [];
 }

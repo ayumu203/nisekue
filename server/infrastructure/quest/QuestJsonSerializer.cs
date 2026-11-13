@@ -26,7 +26,98 @@ internal static class QuestJsonSerializer
 
     public static string SerializeEffects(IEnumerable<BattleAilmentState> ailments, IEnumerable<BattleBuffState> buffs)
     {
-        return JsonSerializer.Serialize(new EffectsDto(
+        return JsonSerializer.Serialize(ToEffectsDto(ailments, buffs), Options);
+    }
+
+    public static (BattleAilmentState[] Ailments, BattleBuffState[] Buffs) DeserializeEffects(string json)
+    {
+        var dto = JsonSerializer.Deserialize<EffectsDto>(json, Options) ?? new EffectsDto([], []);
+        return FromEffectsDto(dto);
+    }
+
+    public static string SerializePets(IEnumerable<QuestPetSnapshot> pets)
+    {
+        return JsonSerializer.Serialize(pets.Select(x => new PetSnapshotDto(x.EnemyDefinitionId.Value, ToStatusDto(x.Status))).ToArray(), Options);
+    }
+
+    public static QuestPetSnapshot[] DeserializePets(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+
+        var dtos = JsonSerializer.Deserialize<PetSnapshotDto[]>(json, Options) ?? [];
+        return dtos
+            .Select(x => new QuestPetSnapshot(new QuestEnemyDefinitionId(x.EnemyDefinitionId), FromStatusDto(x.Status)))
+            .ToArray();
+    }
+
+    public static string? SerializePetDeployment(QuestPetDeployment? deployment)
+    {
+        if (deployment is null)
+        {
+            return null;
+        }
+
+        return JsonSerializer.Serialize(new PetDeploymentDto(
+            deployment.RemainingTurns,
+            deployment.Pets.Select(x => new DeployedPetDto(
+                x.ActorId,
+                x.OwnerParticipantId.Value,
+                x.EnemyDefinitionId.Value,
+                ToStatusDto(x.Status),
+                (int)x.Position.Row,
+                (int)x.Position.Column,
+                x.CurrentHp,
+                x.IsDead,
+                ToEffectsDto(x.Ailments, x.Buffs))).ToArray()), Options);
+    }
+
+    public static QuestPetDeployment? DeserializePetDeployment(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        var dto = JsonSerializer.Deserialize<PetDeploymentDto>(json, Options);
+        if (dto is null)
+        {
+            return null;
+        }
+
+        return new QuestPetDeployment(
+            dto.RemainingTurns,
+            (dto.Pets ?? []).Select(x =>
+            {
+                var (ailments, buffs) = FromEffectsDto(x.Effects ?? new EffectsDto([], []));
+                return new QuestDeployedPetState(
+                    x.ActorId,
+                    new QuestParticipantId(x.OwnerParticipantId),
+                    new QuestEnemyDefinitionId(x.EnemyDefinitionId),
+                    FromStatusDto(x.Status),
+                    new BattlePosition((BattleRow)x.Row, (BattleColumn)x.Column),
+                    x.CurrentHp,
+                    x.IsDead,
+                    ailments,
+                    buffs);
+            }).ToArray());
+    }
+
+    private static StatusDto ToStatusDto(Status status)
+    {
+        return new StatusDto(status.MaxHp, status.MaxMp, status.Strength, status.Defense, status.Intelligence, status.Luck, status.Speed);
+    }
+
+    private static Status FromStatusDto(StatusDto dto)
+    {
+        return new Status(dto.MaxHp, dto.MaxMp, dto.Strength, dto.Defense, dto.Intelligence, dto.Luck, dto.Speed);
+    }
+
+    private static EffectsDto ToEffectsDto(IEnumerable<BattleAilmentState> ailments, IEnumerable<BattleBuffState> buffs)
+    {
+        return new EffectsDto(
             ailments.Select(x => new AilmentDto((int)x.Type, x.RemainingTurns, x.SourceMoveId?.Id, x.MaxHpLimit, x.TriggerDamage is null ? null : new DamageDto(
                 x.TriggerDamage.HitCount,
                 x.TriggerDamage.PowerRate,
@@ -34,12 +125,11 @@ internal static class QuestJsonSerializer
                 x.TriggerDamage.CriticalRate,
                 (int)x.TriggerDamage.ElementType,
                 x.TriggerDamage.AttackStat is null ? null : (int)x.TriggerDamage.AttackStat.Value))).ToArray(),
-            buffs.Select(x => new BuffDto((int)x.Stat, (int)x.CalculationType, x.Value, x.RemainingTurns)).ToArray()), Options);
+            buffs.Select(x => new BuffDto((int)x.Stat, (int)x.CalculationType, x.Value, x.RemainingTurns)).ToArray());
     }
 
-    public static (BattleAilmentState[] Ailments, BattleBuffState[] Buffs) DeserializeEffects(string json)
+    private static (BattleAilmentState[] Ailments, BattleBuffState[] Buffs) FromEffectsDto(EffectsDto dto)
     {
-        var dto = JsonSerializer.Deserialize<EffectsDto>(json, Options) ?? new EffectsDto([], []);
         return (
             dto.Ailments.Select(x => new BattleAilmentState(
                 (AilmentType)x.Type,
@@ -202,6 +292,19 @@ internal static class QuestJsonSerializer
     }
 
     private sealed record EffectsDto(AilmentDto[] Ailments, BuffDto[] Buffs);
+    private sealed record StatusDto(int MaxHp, int MaxMp, int Strength, int Defense, int Intelligence, int Luck, int Speed);
+    private sealed record PetSnapshotDto(int EnemyDefinitionId, StatusDto Status);
+    private sealed record PetDeploymentDto(int RemainingTurns, DeployedPetDto[]? Pets);
+    private sealed record DeployedPetDto(
+        Guid ActorId,
+        Guid OwnerParticipantId,
+        int EnemyDefinitionId,
+        StatusDto Status,
+        int Row,
+        int Column,
+        int CurrentHp,
+        bool IsDead,
+        EffectsDto? Effects);
     private sealed record AilmentDto(int Type, int RemainingTurns, int? SourceMoveId, int? MaxHpLimit, DamageDto? TriggerDamage);
     private sealed record DamageDto(int HitCount, decimal PowerRate, int FixedValue, decimal CriticalRate, int ElementType, int? AttackStat);
     private sealed record BuffDto(int Stat, int CalculationType, decimal Value, int RemainingTurns);

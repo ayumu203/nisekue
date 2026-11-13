@@ -19,7 +19,9 @@ public class QuestRun(
     DateTimeOffset startedAt,
     QuestRunStatus status = QuestRunStatus.InProgress,
     DateTimeOffset? endedAt = null,
-    int version = 1)
+    int version = 1,
+    bool petSummonUsed = false,
+    QuestPetDeployment? petDeployment = null)
 {
     private readonly List<QuestChatMessage> chatMessages = chatMessages?.ToList() ?? [];
     private readonly List<QuestChatMessage> pendingChatMessages = [];
@@ -47,6 +49,13 @@ public class QuestRun(
     public IReadOnlyList<QuestChatMessage> PendingChatMessages => pendingChatMessages;
     public DateTimeOffset StartedAt { get; } = startedAt;
     public DateTimeOffset? EndedAt { get; private set; } = endedAt;
+
+    // ペット呼出はソロ限定・パーティで 1 クエスト 1 回。
+    public bool PetSummonUsed { get; private set; } = petSummonUsed;
+
+    // 出撃中のペット。出撃中はプレイヤー側（本人・NPC 味方）は下がって行動しない。
+    public QuestPetDeployment? PetDeployment { get; private set; } = petDeployment is { IsActive: true } ? petDeployment : null;
+    public bool IsPetDeploymentActive => PetDeployment is { IsActive: true };
 
     public void InitializeFirstFloor()
     {
@@ -82,18 +91,30 @@ public class QuestRun(
             throw new ArgumentException("捕獲には対象の敵の指定が必要です。", nameof(command));
         }
 
+        if (IsPetDeploymentActive)
+        {
+            if (command.ActionKind != ActionKind.EntrustPet)
+            {
+                throw new InvalidOperationException("ペットが戦っている間は「ペットにまかせる」のみ選べます。");
+            }
+        }
+        else if (command.ActionKind == ActionKind.EntrustPet)
+        {
+            throw new InvalidOperationException("ペットが出撃していないため「ペットにまかせる」は選べません。");
+        }
+
         if (command.ActionKind == ActionKind.SummonPet)
         {
             var snapshot = partySnapshots.FirstOrDefault(x => x.ParticipantId == participantId)
                 ?? throw new KeyNotFoundException("参加者スナップショットが見つかりません。");
-            if (snapshot.Pet is null)
+            if (snapshot.Pets.Count == 0)
             {
-                throw new InvalidOperationException("スタンバイのペットがいないため呼出できません。");
+                throw new InvalidOperationException("ペットがいないため呼出できません。");
             }
 
-            if (!partyMember.HasRemainingPetSummons)
+            if (PetSummonUsed)
             {
-                throw new InvalidOperationException("このクエストでの呼出回数の上限に達しています。");
+                throw new InvalidOperationException("このクエストではすでにペットを呼出しています。");
             }
         }
 
@@ -112,10 +133,24 @@ public class QuestRun(
         var submittedIds = TurnState.PendingCommands.Select(x => x.ParticipantId).ToHashSet();
         foreach (var partyMember in BattleState.PartyMembers.Where(x => !x.IsDead && x.ActionMode == ActionMode.Manual))
         {
-            if (!submittedIds.Contains(partyMember.ParticipantId))
+            if (submittedIds.Contains(partyMember.ParticipantId))
             {
-                partyMember.SwitchToAutoAttackOnly();
+                continue;
             }
+
+            // ペット出撃中は自動操作に切り替えず、「ペットにまかせる」を自動提出してターンを進める。
+            if (IsPetDeploymentActive && partyMember.CanAcceptManualCommand(TurnState.CurrentTurnNo))
+            {
+                TurnState.Submit(new QuestSubmittedCommand(
+                    partyMember.ParticipantId,
+                    TurnState.CurrentTurnNo,
+                    ActionKind.EntrustPet,
+                    now,
+                    isAutoSubmitted: true));
+                continue;
+            }
+
+            partyMember.SwitchToAutoAttackOnly();
         }
 
         Version++;
@@ -139,6 +174,26 @@ public class QuestRun(
         }
 
         partyMember.SwitchToManual();
+        Version++;
+    }
+
+    // 呼出コマンドの解決時に呼ぶ。呼出したターンから出撃中として扱う。
+    public void StartPetDeployment(QuestPetDeployment deployment)
+    {
+        EnsureInProgress();
+        ArgumentNullException.ThrowIfNull(deployment);
+        if (PetSummonUsed)
+        {
+            throw new InvalidOperationException("このクエストではすでにペットを呼出しています。");
+        }
+
+        if (!deployment.IsActive)
+        {
+            throw new ArgumentException("出撃できるペットがいません。", nameof(deployment));
+        }
+
+        PetSummonUsed = true;
+        PetDeployment = deployment;
         Version++;
     }
 
@@ -242,6 +297,7 @@ public class QuestRun(
     {
         EnsureInProgress();
         BattleState.ApplyResolution(resolution, partyActorMap, enemyActorMap, TurnState.CurrentTurnNo);
+        ApplyPetDeploymentResolution(resolution);
 
         var summary = ResolveTurn(nextDeadlineAt, escapeEndsAsSuccess);
         Version++;
@@ -331,6 +387,23 @@ public class QuestRun(
     {
         Version = version;
         PersistedVersion = version;
+    }
+
+    private void ApplyPetDeploymentResolution(BattleTurnResolution resolution)
+    {
+        if (PetDeployment is null)
+        {
+            return;
+        }
+
+        PetDeployment.ApplyResolution(resolution);
+        PetDeployment.ConsumeTurn();
+
+        // 3 ターン経過またはペット全滅で終了し、次のターンからプレイヤー側が戻る。
+        if (!PetDeployment.IsActive)
+        {
+            PetDeployment = null;
+        }
     }
 
     private void EnsureInProgress()
