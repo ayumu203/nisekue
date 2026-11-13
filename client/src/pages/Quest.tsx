@@ -56,7 +56,6 @@ import type { PlayerSummary } from '@/schema/player'
 
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
-const maxPetSummonsPerQuest = 3
 const questSessionStorageKeyPrefix = 'nisekue:quest-session'
 
 type PersistedQuestSession = {
@@ -661,16 +660,16 @@ export default function Quest() {
   )
   const canCapture =
     petsResponse != null && petsResponse.pets != null && petsResponse.pets.length < petsResponse.maxPetCount
-  const petSummon = useMemo(() => {
-    if (selfPartyMember?.pet == null) {
-      return null
-    }
-
-    return {
-      name: selfPartyMember.pet.name,
-      remaining: Math.max(0, maxPetSummonsPerQuest - selfPartyMember.petSummonsUsed),
-    }
-  }, [selfPartyMember])
+  // ペット呼出はソロ限定・1クエスト1回。プレイヤーが1人だけのランをソロとみなす（マルチは2人以上で開始する）。
+  const isSoloRun =
+    currentRun != null && currentRun.partyMembers.filter((member) => member.type === 'Player').length === 1
+  const isPetDeploymentActive = currentRun?.petSummon.deployment != null
+  const canSummonPet =
+    isSoloRun &&
+    currentRun != null &&
+    !currentRun.petSummon.used &&
+    !isPetDeploymentActive &&
+    (selfPartyMember?.pets.length ?? 0) > 0
 
   // エンドレスでは Escape を「終了（成功）」としてチェックポイント階限定で許可している。
   // フロア遷移（SignalR 更新など）で非チェックポイント階に移った後も Escape が選択されたまま残ると、
@@ -685,12 +684,19 @@ export default function Quest() {
   useEffect(() => {
     if (
       (selectedActionKind === 'Capture' && !canCapture) ||
-      (selectedActionKind === 'SummonPet' && (petSummon == null || petSummon.remaining <= 0)) ||
+      (selectedActionKind === 'SummonPet' && !canSummonPet) ||
+      (selectedActionKind === 'EntrustPet' && !isPetDeploymentActive) ||
       (selectedActionKind === 'Escape' && isEndlessNonCheckpointFloor)
     ) {
       setSelectedActionKind('NormalAttack')
+      return
     }
-  }, [selectedActionKind, canCapture, petSummon, isEndlessNonCheckpointFloor])
+
+    // ペット出撃中に選べるのは「ペットにまかせる」だけ。
+    if (isPetDeploymentActive && selectedActionKind !== 'EntrustPet') {
+      setSelectedActionKind('EntrustPet')
+    }
+  }, [selectedActionKind, canCapture, canSummonPet, isPetDeploymentActive, isEndlessNonCheckpointFloor])
 
   const lastTurnResultsTurnNo = currentRun?.lastTurnResults?.turnNo ?? null
   const capturedInLastTurn =
@@ -1300,7 +1306,7 @@ export default function Quest() {
                       selectedTargetColumn={selectedTargetColumn}
                       currentPendingCommand={currentPendingCommand}
                       canCapture={canCapture}
-                      petSummon={petSummon}
+                      canSummonPet={canSummonPet}
                       chatMessage={chatMessage}
                       canSubmitCurrentTurn={canSubmitCurrentTurn}
                       isCommandSubmitting={isCommandSubmitting}

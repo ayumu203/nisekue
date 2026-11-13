@@ -106,6 +106,7 @@
   "finishedRunActionsSubtitle": "結果確認後にこの冒険表示を閉じて、ルーム作成画面へ戻れます。",
   "leaveFinishedRun": "クエストを終了",
   "pendingCommandTitle": "送信済みコマンド",
+  "petDeploymentLabel": "ペット出撃中 残り{{turns}}ターン",
   "pendingCommandEmpty": "未送信",
   "submittedAtLabel": "送信時刻",
   "lastTurnResultsTitle": "直前ターン結果",
@@ -216,7 +217,8 @@
     "Escape": "逃走",
     "EndlessFinish": "終了",
     "Capture": "捕獲",
-    "SummonPet": "呼出"
+    "SummonPet": "呼出",
+    "EntrustPet": "ペットにまかせる"
   },
   "endlessCheckpoint": {
     "bannerTitle": "チェックポイント（{{interval}}階ごと）",
