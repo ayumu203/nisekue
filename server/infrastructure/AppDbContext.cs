@@ -147,6 +147,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired();
         player.Property(x => x.LastActiveAt)
             .HasColumnName("last_active_at");
+        player.Property(x => x.Role)
+            .HasColumnName("role")
+            .HasMaxLength(PlayerConstants.RoleMaxLength);
 
         var playerMoves = modelBuilder.Entity<PlayerMoveEntity>();
         playerMoves.ToTable("player_moves", "internal");

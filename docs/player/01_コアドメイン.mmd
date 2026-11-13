@@ -33,6 +33,8 @@ classDiagram
             +SpendGold(gold: int) void
             +LevelUp(jobProfile: JobProfile, learningRule: JobMoveLearningRule) LevelUpResult
             +Rebirth(inheritedStatus: Status) void
+            +MarkJobAsMastered(job: Job) bool
+            +ResetProgress(initialStatus: Status, initialMoveSet: MoveSet) void
             -CanChangeJob(nextProfile: JobProfile) bool
             -MarkCurrentJobAsMastered(jobProfile: JobProfile) bool
             -SynchronizeLearnableMoves(jobProfile: JobProfile, learningRule: JobMoveLearningRule) IReadOnlyList~MoveId~
@@ -353,6 +355,30 @@ classDiagram
             +Task~DateTimeOffset?~ TryStartTrainingCooldownAsync(id: PlayerId, nowUtc: DateTimeOffset, cooldown: TimeSpan)
             +Task SaveAsync(player: Player)
         }
+
+        class PlayerRole {
+            <<Enumeration>>
+            Admin
+        }
+
+        class IPlayerRoleRepository {
+            +Task~PlayerRole?~ FindRoleAsync(id: PlayerId)
+        }
+
+        note for Player "MarkJobAsMastered はデバッグ機能用。\n職業レベルやスキルは変えず、マスター済みの記録だけを付ける"
+
+        class PlayerInitialState {
+            <<static>>
+            +int Gold
+            +CreateStatus() Status
+            +CreateMoveSet() MoveSet
+        }
+
+        note for PlayerInitialState "プレイヤー作成時の初期値。\nプレイヤー作成とデバッグ機能の「作成直後に戻す」で共有する"
+
+        note for Player "ResetProgress はデバッグ機能用。\nレベル・経験値・ジョブ・職業レベル・ステータス・スキル・マスター済みジョブ・ロードマップ・転生回数を作成直後に戻す。\n名前・ゴールド・フラグ類は変えない"
+
+        note for IPlayerRoleRepository "role は internal.players.role に保持する。\nゲームの API からは変更せず、Supabase から手動で設定する。\n未設定(null)は一般プレイヤー"
 
         note for IPlayerRepository "GetPvpOpponentsAsync / GetPvpOpponentsPageAsync\nは Level昇順 -> Name昇順 -> Id昇順で返す"
 

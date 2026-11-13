@@ -1,0 +1,246 @@
+using FluentAssertions;
+using server.application.debug;
+using server.domain.player;
+using Xunit;
+
+namespace server.tests;
+
+public class DebugPlayerServiceTests
+{
+    [Fact]
+    public async Task UpdateStatusAsync_SetsBaseStatusAndKeepsOtherValues()
+    {
+        var player = DebugTestPlayers.Create();
+        var service = CreateService(player);
+
+        await service.UpdateStatusAsync(player.Id, new DebugStatusValues(999, 99, 50, 40, 30, 20, 10));
+
+        player.Status.MaxHp.Should().Be(999);
+        player.Status.MaxMp.Should().Be(99);
+        player.Status.Strength.Should().Be(50);
+        player.Status.Defense.Should().Be(40);
+        player.Status.Intelligence.Should().Be(30);
+        player.Status.Luck.Should().Be(20);
+        player.Status.Speed.Should().Be(10);
+        player.Status.Accuracy.Should().Be(120);
+        player.Status.Evasion.Should().Be(7);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenMaxHpIsZero_Throws()
+    {
+        var player = DebugTestPlayers.Create();
+        var service = CreateService(player);
+
+        var act = () => service.UpdateStatusAsync(player.Id, new DebugStatusValues(0, 0, 0, 0, 0, 0, 0));
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public async Task LearnMoveAsync_WithoutSlot_AddsToFirstEmptySlot()
+    {
+        var player = DebugTestPlayers.Create(moveIds: [1, 2]);
+        var service = CreateService(player, 1, 2, 3);
+
+        await service.LearnMoveAsync(player.Id, 3, slotIndex: null);
+
+        player.MoveSet.Slots.Take(3).Select(x => x?.Id).Should().Equal(1, 2, 3);
+    }
+
+    [Fact]
+    public async Task LearnMoveAsync_WithSlot_MovesExistingMoveToSlot()
+    {
+        var player = DebugTestPlayers.Create(moveIds: [1, 2, 3]);
+        var service = CreateService(player, 1, 2, 3);
+
+        await service.LearnMoveAsync(player.Id, 1, slotIndex: 5);
+
+        player.MoveSet.Slots.Select(x => x?.Id).Should().Equal(null, 2, 3, null, null, 1, null, null, null, null);
+    }
+
+    [Fact]
+    public async Task LearnMoveAsync_WhenMoveDoesNotExist_ThrowsArgumentException()
+    {
+        var player = DebugTestPlayers.Create();
+        var service = CreateService(player, 1);
+
+        var act = () => service.LearnMoveAsync(player.Id, 999, slotIndex: null);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(10)]
+    public async Task LearnMoveAsync_WhenSlotOutOfRange_ThrowsArgumentOutOfRangeException(int slotIndex)
+    {
+        var player = DebugTestPlayers.Create();
+        var service = CreateService(player, 1);
+
+        var act = () => service.LearnMoveAsync(player.Id, 1, slotIndex);
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public async Task ClearMoveSlotAsync_ClearsSlot()
+    {
+        var player = DebugTestPlayers.Create(moveIds: [1, 2]);
+        var service = CreateService(player, 1, 2);
+
+        await service.ClearMoveSlotAsync(player.Id, 0);
+
+        player.MoveSet.Slots.Take(2).Select(x => x?.Id).Should().Equal(null, 2);
+    }
+
+    [Fact]
+    public async Task LevelUpToAsync_RaisesLevelWithGrowthAndLearnsMoves()
+    {
+        var player = DebugTestPlayers.Create(level: 1);
+        var service = CreateService(player, masterLevel: 20, learnableMoveIds: [201, 202]);
+
+        var result = await service.LevelUpToAsync(player.Id, 20);
+
+        result.Level.Should().Be(20);
+        player.Level.Should().Be(20);
+        player.Exp.Should().Be(0);
+        player.Status.Strength.Should().BeGreaterThan(10);
+        player.MoveSet.Contains(new server.domain.move.MoveId(201)).Should().BeTrue();
+        player.MoveSet.Contains(new server.domain.move.MoveId(202)).Should().BeTrue();
+        result.NewlyLearnedMoveIds.Should().BeEquivalentTo(new[] { 201, 202 });
+        result.HasMasteredCurrentJob.Should().BeTrue();
+        player.MasteredJobs.Should().Contain(player.Job);
+    }
+
+    [Fact]
+    public async Task LevelUpToAsync_WhenSameLevel_DoesNothing()
+    {
+        var player = DebugTestPlayers.Create(level: 5);
+        var service = CreateService(player);
+
+        var result = await service.LevelUpToAsync(player.Id, 5);
+
+        result.Level.Should().Be(5);
+        result.NewlyLearnedMoveIds.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task LevelUpToAsync_WhenLowerThanCurrent_Throws()
+    {
+        var player = DebugTestPlayers.Create(level: 5);
+        var service = CreateService(player);
+
+        var act = () => service.LevelUpToAsync(player.Id, 4);
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        player.Level.Should().Be(5);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(101)]
+    public async Task LevelUpToAsync_WhenOutOfRange_Throws(int level)
+    {
+        var player = DebugTestPlayers.Create(level: 5);
+        var service = CreateService(player);
+
+        var act = () => service.LevelUpToAsync(player.Id, level);
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public async Task MasterJobsAsync_WhenCurrentJob_MastersAndLearnsAllMoves()
+    {
+        var player = DebugTestPlayers.Create(level: 1, job: Job.Warrior);
+        var service = CreateService(player, masterLevel: 20, learnableMoveIds: [201, 202, 203]);
+
+        var result = await service.MasterJobsAsync(player.Id, [Job.Warrior], unlockRoadmap: false);
+
+        player.MasteredJobs.Should().Contain(Job.Warrior);
+        player.JobLevel.Should().Be(1);
+        result.NewlyMasteredJobs.Should().Equal(Job.Warrior);
+        result.NewlyLearnedMoveIds.Should().BeEquivalentTo(new[] { 201, 202, 203 });
+    }
+
+    [Fact]
+    public async Task MasterJobsAsync_WhenOtherJobs_MastersWithoutLearningMovesAndUnlocksRoadmap()
+    {
+        var player = DebugTestPlayers.Create(level: 1, job: Job.Warrior);
+        var service = CreateService(player, masterLevel: 20, learnableMoveIds: [201]);
+
+        var result = await service.MasterJobsAsync(player.Id, [Job.Mage, Job.Priest], unlockRoadmap: true);
+
+        player.MasteredJobs.Should().Contain(new[] { Job.Mage, Job.Priest });
+        player.MasteredJobs.Should().NotContain(Job.Warrior);
+        player.IsRoadmapUnlocked(Job.Mage).Should().BeTrue();
+        player.IsRoadmapUnlocked(Job.Priest).Should().BeTrue();
+        result.NewlyLearnedMoveIds.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task MasterJobsAsync_WhenAlreadyMastered_ReturnsOnlyNewlyMastered()
+    {
+        var player = DebugTestPlayers.Create(level: 1, job: Job.Warrior);
+        var service = CreateService(player);
+        await service.MasterJobsAsync(player.Id, [Job.Mage], unlockRoadmap: false);
+
+        var result = await service.MasterJobsAsync(player.Id, [Job.Mage, Job.Priest], unlockRoadmap: false);
+
+        result.NewlyMasteredJobs.Should().Equal(Job.Priest);
+    }
+
+    [Fact]
+    public async Task MasterJobsAsync_WhenNoJobs_Throws()
+    {
+        var player = DebugTestPlayers.Create();
+        var service = CreateService(player);
+
+        var act = () => service.MasterJobsAsync(player.Id, [], unlockRoadmap: false);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Fact]
+    public async Task ChangeJobAsync_IgnoresRequirementsAndResetsJobLevel()
+    {
+        var player = DebugTestPlayers.Create(level: 1, job: Job.Warrior);
+        var service = CreateService(player);
+
+        await service.ChangeJobAsync(player.Id, Job.SwordMaster);
+
+        player.Job.Should().Be(Job.SwordMaster);
+        player.JobLevel.Should().Be(1);
+        player.Level.Should().Be(1);
+        player.MasteredJobs.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(Job.Apprentice)]
+    [InlineData(Job.Warrior)]
+    public async Task ChangeJobAsync_WhenApprenticeOrCurrentJob_Throws(Job job)
+    {
+        var player = DebugTestPlayers.Create(job: Job.Warrior);
+        var service = CreateService(player);
+
+        var act = () => service.ChangeJobAsync(player.Id, job);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        player.Job.Should().Be(Job.Warrior);
+    }
+
+    private static DebugPlayerService CreateService(Player player, params int[] moveIds)
+    {
+        return CreateService(player, masterLevel: 20, learnableMoveIds: [], moveIds);
+    }
+
+    private static DebugPlayerService CreateService(Player player, int masterLevel, int[] learnableMoveIds, params int[] moveIds)
+    {
+        return new DebugPlayerService(
+            new SinglePlayerMutationService(player),
+            new FixedMoveRepository(moveIds),
+            new FixedJobProfileRepository(masterLevel),
+            new FixedJobMoveLearningRuleRepository(learnableMoveIds));
+    }
+}

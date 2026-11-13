@@ -19,6 +19,7 @@ import TreasureMap from '@/pages/TreasureMap'
 import Threads from '@/pages/Threads'
 import ThreadDetail from '@/pages/ThreadDetail'
 import Ranking from '@/pages/Ranking'
+import Debug from '@/pages/Debug'
 import { useAuth } from '@/contexts/useAuth'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 
@@ -60,6 +61,7 @@ function App() {
         <Route path="/move-setting" element={user ? <MoveSetting /> : <Navigate to="/auth" replace />} />
         <Route path="/job-change" element={user ? <JobChange /> : <Navigate to="/auth" replace />} />
         <Route path="/rebirth" element={user ? <Rebirth /> : <Navigate to="/auth" replace />} />
+        <Route path="/debug" element={user ? <Debug /> : <Navigate to="/auth" replace />} />
         <Route path="/thanks" element={<Thanks />} />
         <Route path="*" element={<Navigate to={user ? '/' : '/auth'} replace />} />
       </Routes>

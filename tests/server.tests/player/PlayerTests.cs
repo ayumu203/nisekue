@@ -649,4 +649,76 @@ public class PlayerTests
         player.IsRoadmapUnlocked(Job.Mage).Should().BeTrue();
         player.IsRoadmapUnlocked(Job.Guardian).Should().BeFalse();
     }
+
+    [Fact]
+    public void MarkJobAsMastered_WhenNotMastered_AddsJobAndKeepsJobLevel()
+    {
+        var player = new Player(new PlayerId(Guid.NewGuid()), "Tester", 3, 0, 3, 100, new Status(30, 10, 10, 5, 3, 3, 5), Job.Warrior);
+
+        var added = player.MarkJobAsMastered(Job.Mage);
+
+        added.Should().BeTrue();
+        player.MasteredJobs.Should().Contain(Job.Mage);
+        player.JobLevel.Should().Be(3);
+    }
+
+    [Fact]
+    public void MarkJobAsMastered_WhenAlreadyMastered_ReturnsFalse()
+    {
+        var player = new Player(
+            new PlayerId(Guid.NewGuid()),
+            "Tester",
+            3,
+            0,
+            3,
+            100,
+            new Status(30, 10, 10, 5, 3, 3, 5),
+            Job.Warrior,
+            masteredJobs: new HashSet<Job> { Job.Mage });
+
+        player.MarkJobAsMastered(Job.Mage).Should().BeFalse();
+    }
+
+    [Fact]
+    public void MarkJobAsMastered_WhenUndefinedJob_Throws()
+    {
+        var player = new Player(new PlayerId(Guid.NewGuid()), "Tester", 3, 0, 3, 100, new Status(30, 10, 10, 5, 3, 3, 5), Job.Warrior);
+
+        var act = () => player.MarkJobAsMastered((Job)999);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void ResetProgress_ResetsProgressAndKeepsGoldAndName()
+    {
+        var player = new Player(
+            new PlayerId(Guid.NewGuid()),
+            "Tester",
+            50,
+            123,
+            20,
+            999,
+            new Status(300, 100, 80, 70, 60, 50, 40),
+            Job.Warrior,
+            masteredJobs: new HashSet<Job> { Job.Apprentice, Job.Warrior },
+            rebirthCount: 2,
+            roadmapUnlockFlags: 7);
+        var initialMoveSet = new MoveSet();
+        initialMoveSet.SetSlot(0, new MoveId(101));
+
+        player.ResetProgress(new Status(24, 8, 7, 5, 5, 3, 4), initialMoveSet);
+
+        player.Level.Should().Be(1);
+        player.Exp.Should().Be(0);
+        player.Job.Should().Be(Job.Apprentice);
+        player.JobLevel.Should().Be(1);
+        player.Status.MaxHp.Should().Be(24);
+        player.MasteredJobs.Should().BeEmpty();
+        player.RoadmapUnlockFlags.Should().Be(Player.DefaultRoadmapUnlockFlags);
+        player.RebirthCount.Should().Be(0);
+        player.MoveSet.Slots[0]!.Id.Should().Be(101);
+        player.Gold.Should().Be(999);
+        player.Name.Should().Be("Tester");
+    }
 }

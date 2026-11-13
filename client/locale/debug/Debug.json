@@ -1,0 +1,107 @@
+{
+  "title": "デバッグ",
+  "backToHome": "ホームへ戻る",
+  "loading": "管理権限を確認中...",
+  "forbidden": "デバッグ機能を利用する権限がありません。",
+  "description": "プレイヤーのデータを直接書き換えます。",
+  "playerLoading": "プレイヤー情報を読み込み中...",
+  "status": {
+    "title": "ステータス変更",
+    "description": "基本ステータス（装備・転生ボーナスを除く値）を指定した値にします。",
+    "labels": {
+      "maxHp": "HP",
+      "maxMp": "MP",
+      "strength": "筋力",
+      "defense": "防御",
+      "intelligence": "知力",
+      "luck": "運",
+      "speed": "素早さ"
+    },
+    "submit": "変更する",
+    "reset": "現在の値に戻す",
+    "done": "ステータスを変更しました",
+    "invalid": "入力が正しくありません"
+  },
+  "moves": {
+    "title": "スキル取得",
+    "description": "スキルを習得させます。スロットを指定しないと空きスロットに入ります（空きが無ければ最も古いスキルが外れます）。",
+    "moveLabel": "スキル",
+    "slotLabel": "スロット",
+    "autoSlot": "空きスロット",
+    "slot": "スロット{slot}",
+    "submit": "習得する",
+    "learned": "{name} を習得しました",
+    "clear": "外す",
+    "cleared": "スキルを外しました",
+    "empty": "（空き）"
+  },
+  "items": {
+    "title": "アイテム入手",
+    "description": "アイテムや装備を入手します。所持枠の上限は確認しません。アイテムの所持数はスタック上限で止まります。",
+    "itemLabel": "アイテム",
+    "quantityLabel": "個数",
+    "itemSubmit": "入手する",
+    "itemDone": "{name} を入手しました（所持数 {quantity}）",
+    "equipmentLabel": "装備",
+    "countLabel": "個数（1〜20）",
+    "plusLabel": "強化値",
+    "equipmentSubmit": "入手する",
+    "equipmentDone": "{name} を {count} 個入手しました",
+    "maxStack": "上限 {maxStack}"
+  },
+  "level": {
+    "title": "レベル操作",
+    "description": "指定したレベルまで上げます。通常のレベルアップと同じく、ステータスの成長・スキルの習得・ジョブのマスターが起きます。レベルを下げることはできません。",
+    "current": "現在 Lv.{level}（{job}）",
+    "label": "目標レベル",
+    "submit": "レベルを上げる",
+    "max": "Lv.100 にする",
+    "done": "Lv.{level} になりました。",
+    "learned": "新しく習得したスキル {count} 個。",
+    "mastered": "ジョブをマスターしました。"
+  },
+  "jobs": {
+    "title": "ジョブ自動マスター",
+    "description": "選んだジョブをマスター済みにします。現在のジョブを含めると、そのジョブで覚えるスキルもすべて習得します（スキル枠は 10 個まで。あふれた分は古いものから外れます）。職業レベルは変わりません。",
+    "currentJob": "現在のジョブをマスター",
+    "selected": "選んだジョブをマスター",
+    "selectAll": "すべて選ぶ",
+    "clear": "選択を外す",
+    "unlockRoadmap": "ロードマップも解放する",
+    "mastered": "マスター済み",
+    "current": "現在",
+    "done": "{count} 個のジョブを新たにマスターしました。",
+    "learned": "スキルを {count} 個習得しました。"
+  },
+  "tutorial": {
+    "title": "チュートリアル",
+    "description": "このアカウントのチュートリアルを完了扱いにする、または最初からやり直します。進み具合はブラウザに保存されているため、このブラウザでのみ有効です。",
+    "stateCompleted": "現在：完了",
+    "stateInProgress": "現在：進行中（{step}）",
+    "complete": "完了扱いにする",
+    "restart": "最初からやり直す",
+    "completed": "チュートリアルを完了扱いにしました",
+    "reset": "チュートリアルを最初に戻しました。ホームに戻ると表示されます"
+  },
+  "tabs": {
+    "player": "プレイヤー",
+    "moves": "スキル",
+    "items": "アイテム",
+    "others": "その他"
+  },
+  "template": {
+    "title": "テンプレート",
+    "description": "レベル・ジョブ・ステータス・スキル・マスター済みジョブを、選んだ状態にします。取り込むたびに最新のマスタデータで育て直します。ゴールド・アイテム・装備は変わりません。",
+    "label": "テンプレート",
+    "submit": "取り込む",
+    "confirm": "現在のレベル・ジョブ・ステータス・スキル・マスター済みジョブは失われます。取り込みますか？",
+    "done": "{name} を取り込みました"
+  },
+  "jobChange": {
+    "title": "転職（条件無視）",
+    "description": "前提ジョブのマスターやレベルの条件を無視して転職します。職業レベルは 1 になります（通常の転職と同じ）。",
+    "label": "転職先",
+    "submit": "転職する",
+    "done": "{name} に転職しました"
+  }
+}

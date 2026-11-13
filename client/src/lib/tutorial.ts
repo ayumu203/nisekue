@@ -122,3 +122,23 @@ export function setRebirthTutorialShown(userId: string): void {
     // localStorage が利用できない環境でも継続する
   }
 }
+
+/** チュートリアルを完了扱いにする（転生のチュートリアルも表示済みにする）。デバッグ機能用。 */
+export function completeTutorial(userId: string): void {
+  setTutorialStep(userId, 'completed')
+  setRebirthTutorialShown(userId)
+}
+
+/** チュートリアルを最初からやり直す（転生のチュートリアルも未表示に戻す）。デバッグ機能用。 */
+export function resetTutorial(userId: string): void {
+  setTutorialStep(userId, DEFAULT_TUTORIAL_STEP)
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  try {
+    window.localStorage.removeItem(getRebirthShownKey(userId))
+  } catch {
+    // localStorage が利用できない環境でも継続する
+  }
+}

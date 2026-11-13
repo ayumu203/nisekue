@@ -790,6 +790,11 @@ namespace server.infrastructure.migrations
                         .HasDefaultValue(1L)
                         .HasColumnName("roadmap_unlock_flags");
 
+                    b.Property<string>("Role")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("role");
+
                     b.Property<int>("Speed")
                         .HasColumnType("integer")
                         .HasColumnName("speed");
