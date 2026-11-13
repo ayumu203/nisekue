@@ -2660,6 +2660,9 @@ public class QuestRunServiceTests
             SaveCount++;
             return Task.CompletedTask;
         }
+
+        public Task<bool> TryShortenEndsAtAsync(TreasureMapExpeditionId id, DateTimeOffset endsAt)
+            => throw new NotSupportedException();
     }
 
     private sealed class FakeJobProfileRepository : IJobProfileRepository

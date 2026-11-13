@@ -26,10 +26,11 @@ public class DebugWaitService(
     }
 
     /// <summary>
-    /// 探索中の宝の地図の終了時刻を now まで進める。報酬の抽選は通常の取得・受け取り処理に任せる。
+    /// 探索中の宝の地図の終了時刻を now まで進め、更新後の終了時刻を返す。報酬の抽選は通常の取得・受け取り処理に任せる。
+    /// 受け取り処理と競合しても状態を上書きしないよう、終了時刻だけを条件付きで更新する。
     /// 探索中のものが無ければ DomainException（400）。
     /// </summary>
-    public async Task<TreasureMapExpedition> CompleteTreasureMapAsync(PlayerId playerId, DateTimeOffset now)
+    public async Task<DateTimeOffset> CompleteTreasureMapAsync(PlayerId playerId, DateTimeOffset now)
     {
         var expedition = await treasureMapExpeditionRepository.GetCurrentByPlayerAsync(playerId);
         if (expedition is null || expedition.Status != TreasureMapExpeditionStatus.InProgress)
@@ -37,13 +38,13 @@ public class DebugWaitService(
             throw new DomainException("探索中の宝の地図がありません。");
         }
 
-        var remaining = expedition.EndsAt - now;
-        if (remaining > TimeSpan.Zero)
+        if (expedition.EndsAt <= now)
         {
-            expedition.AdvanceTime(remaining);
-            await treasureMapExpeditionRepository.SaveAsync(expedition);
+            return expedition.EndsAt;
         }
 
-        return expedition;
+        return await treasureMapExpeditionRepository.TryShortenEndsAtAsync(expedition.Id, now)
+            ? now
+            : expedition.EndsAt;
     }
 }

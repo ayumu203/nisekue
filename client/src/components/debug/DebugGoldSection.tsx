@@ -44,7 +44,7 @@ export default function DebugGoldSection({ player, accessToken, onChanged }: Deb
           size="small"
           value={amount}
           onChange={(event) => setAmount(event.target.value)}
-          slotProps={{ htmlInput: { min: 1, step: 1 } }}
+          slotProps={{ htmlInput: { min: 1, max: 2147483647, step: 1 } }}
           sx={{ ...greenOutlinedInputSx, width: 200 }}
         />
         <Button variant="contained" sx={softGreenButtonSx} onClick={() => void handleGrant()} disabled={isRunning}>

@@ -87,7 +87,10 @@ classDiagram
         <<Infrastructure>>
         +Save expedition state
         +Load current expedition by player
+        +TryShortenEndsAt(id, endsAt) bool
     }
+
+    note for DbTreasureMapExpeditionRepository "TryShortenEndsAt はデバッグ用。\n探索中かつ ends_at が endsAt より後の行だけ、\nends_at を条件付き UPDATE で更新する（受け取りと競合しても状態を上書きしない）"
 
     class DbTreasureMapClaimHistoryRepository {
         <<Infrastructure>>

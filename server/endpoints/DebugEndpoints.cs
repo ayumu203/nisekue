@@ -77,8 +77,8 @@ internal static class DebugEndpoints
     private static async Task<IResult> CompleteTreasureMap(ClaimsPrincipal user, DebugWaitService debugWaitService)
     {
         var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
-        var expedition = await debugWaitService.CompleteTreasureMapAsync(playerId, DateTimeOffset.UtcNow);
-        return Results.Ok(new { endsAt = expedition.EndsAt });
+        var endsAt = await debugWaitService.CompleteTreasureMapAsync(playerId, DateTimeOffset.UtcNow);
+        return Results.Ok(new { endsAt });
     }
 
     private static async Task<IResult> GetItems(IItemRepository itemRepository)

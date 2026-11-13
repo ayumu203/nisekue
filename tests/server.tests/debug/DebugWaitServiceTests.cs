@@ -3,7 +3,6 @@ using server.application.debug;
 using server.domain;
 using server.domain.player;
 using server.domain.treasuremap;
-using server.domain.treasuremap.enums;
 using Xunit;
 
 namespace server.tests;
@@ -27,31 +26,45 @@ public class DebugWaitServiceTests
     }
 
     [Fact]
-    public async Task CompleteTreasureMapAsync_WhenInProgress_MovesEndsAtToNow()
+    public async Task CompleteTreasureMapAsync_WhenInProgress_ShortensEndsAtWithoutSavingWholeExpedition()
     {
         var player = DebugTestPlayers.Create();
         var expedition = CreateExpedition(player.Id, Now.AddMinutes(-10), Now.AddHours(1));
         var repository = new SingleExpeditionRepository(expedition);
         var service = new DebugWaitService(new SinglePlayerMutationService(player), repository);
 
-        var result = await service.CompleteTreasureMapAsync(player.Id, Now);
+        var endsAt = await service.CompleteTreasureMapAsync(player.Id, Now);
 
-        result.EndsAt.Should().Be(Now);
-        result.Status.Should().Be(TreasureMapExpeditionStatus.InProgress);
-        repository.SaveCount.Should().Be(1);
+        endsAt.Should().Be(Now);
+        repository.ShortenedTo.Should().Be(Now);
+        repository.SaveCount.Should().Be(0);
     }
 
     [Fact]
-    public async Task CompleteTreasureMapAsync_WhenAlreadyEnded_DoesNotSave()
+    public async Task CompleteTreasureMapAsync_WhenUpdateIsRejected_ReturnsOriginalEndsAt()
+    {
+        var player = DebugTestPlayers.Create();
+        var expedition = CreateExpedition(player.Id, Now.AddMinutes(-10), Now.AddHours(1));
+        var repository = new SingleExpeditionRepository(expedition) { ShortenResult = false };
+        var service = new DebugWaitService(new SinglePlayerMutationService(player), repository);
+
+        var endsAt = await service.CompleteTreasureMapAsync(player.Id, Now);
+
+        endsAt.Should().Be(Now.AddHours(1));
+    }
+
+    [Fact]
+    public async Task CompleteTreasureMapAsync_WhenAlreadyEnded_DoesNotUpdate()
     {
         var player = DebugTestPlayers.Create();
         var expedition = CreateExpedition(player.Id, Now.AddHours(-2), Now.AddHours(-1));
         var repository = new SingleExpeditionRepository(expedition);
         var service = new DebugWaitService(new SinglePlayerMutationService(player), repository);
 
-        var result = await service.CompleteTreasureMapAsync(player.Id, Now);
+        var endsAt = await service.CompleteTreasureMapAsync(player.Id, Now);
 
-        result.EndsAt.Should().Be(Now.AddHours(-1));
+        endsAt.Should().Be(Now.AddHours(-1));
+        repository.ShortenedTo.Should().BeNull();
         repository.SaveCount.Should().Be(0);
     }
 
@@ -97,6 +110,8 @@ public class DebugWaitServiceTests
     private sealed class SingleExpeditionRepository(TreasureMapExpedition? expedition) : ITreasureMapExpeditionRepository
     {
         public int SaveCount { get; private set; }
+        public DateTimeOffset? ShortenedTo { get; private set; }
+        public bool ShortenResult { get; init; } = true;
 
         public Task<TreasureMapExpedition?> GetAsync(TreasureMapExpeditionId id)
             => Task.FromResult(expedition?.Id == id ? expedition : null);
@@ -111,6 +126,12 @@ public class DebugWaitServiceTests
         {
             SaveCount++;
             return Task.CompletedTask;
+        }
+
+        public Task<bool> TryShortenEndsAtAsync(TreasureMapExpeditionId id, DateTimeOffset endsAt)
+        {
+            ShortenedTo = endsAt;
+            return Task.FromResult(ShortenResult);
         }
     }
 }

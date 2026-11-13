@@ -46,6 +46,9 @@ function DebugContent() {
   }
 
   const sectionProps = { player, accessToken, onChanged: refresh }
+  // ステータス欄はフォームの初期値を作成時にしか取り込まないので、レベルや基本ステータスが変わったら作り直す
+  // （Lv.1 のまま転生した場合などはレベルが変わらない）
+  const statusSectionKey = `status-${player.level}-${Object.values(player.baseStatus).join('-')}`
 
   return (
     <Stack spacing={0}>
@@ -67,7 +70,7 @@ function DebugContent() {
             <DebugLevelSection {...sectionProps} />
             <DebugRebirthSection accessToken={accessToken} onChanged={refresh} />
             <DebugJobChangeSection {...sectionProps} />
-            <DebugStatusSection key={`status-${player.level}`} {...sectionProps} />
+            <DebugStatusSection key={statusSectionKey} {...sectionProps} />
             <DebugJobsSection {...sectionProps} />
           </>
         )}
