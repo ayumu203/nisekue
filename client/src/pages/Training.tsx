@@ -677,7 +677,7 @@ export default function Training() {
                                 isActionDisabled={isTrainingActionDisabled}
                                 lockRemainingSeconds={trainingLockRemainingSeconds}
                                 onChangeMoveId={handleChangePlannedMoveId}
-                                showEnemyHeader={false}
+                                showFighterHeader={false}
                                 showSubmitButton={false}
                                 onSubmit={() => {}}
                               />
@@ -700,7 +700,6 @@ export default function Training() {
                           isActionDisabled={isTrainingActionDisabled}
                           lockRemainingSeconds={trainingLockRemainingSeconds}
                           onChangeMoveId={handleChangePlannedMoveId}
-                          showEnemyHeader={false}
                           showSubmitButton={false}
                           onSubmit={() => {}}
                         />

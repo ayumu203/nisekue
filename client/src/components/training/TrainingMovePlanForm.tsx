@@ -1,6 +1,6 @@
 import { Alert, Box, Button, FormControl, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
-import { resolvePublicAssetPath } from '@/lib/assets'
+import { normalizeCharacterPath, resolvePublicAssetPath } from '@/lib/assets'
 import { innerSurfaceSx } from '@/constants/styles'
 import type { GetPlayerResponse, PlayerMoveSlot } from '@/schema/player'
 import type { TrainingEnemy } from '@/schema/training'
@@ -13,7 +13,7 @@ type TrainingMovePlanFormProps = {
   isActionDisabled: boolean
   lockRemainingSeconds: number
   onChangeMoveId: (turnIndex: number, moveId: number | null) => void
-  showEnemyHeader?: boolean
+  showFighterHeader?: boolean
   submitLabel?: string
   submitButtonId?: string
   showSubmitButton?: boolean
@@ -25,6 +25,32 @@ type PlannedTurn = {
   moveName: string
   mpCost: number
   warning: string | null
+}
+
+const DEFAULT_CHARACTER_PATH = 'image/character/ch001_bmnpc.png'
+
+function FighterSummary({ name, imagePath, levelLabel }: { name: string; imagePath: string; levelLabel: string }) {
+  return (
+    <Stack spacing={0.5} alignItems="center" sx={{ minWidth: 0 }}>
+      <Box
+        component="img"
+        src={resolvePublicAssetPath(imagePath)}
+        alt={name}
+        sx={{ width: '100%', maxWidth: 160, height: { xs: 100, sm: 130 }, objectFit: 'contain' }}
+      />
+      <Typography
+        variant="subtitle1"
+        fontWeight={800}
+        textAlign="center"
+        sx={{ color: '#fff7dd', lineHeight: 1.25, overflowWrap: 'anywhere' }}
+      >
+        {name}
+      </Typography>
+      <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.72)' }}>
+        {levelLabel}
+      </Typography>
+    </Stack>
+  )
 }
 
 function getAvailableMoves(player: GetPlayerResponse): PlayerMoveSlot[] {
@@ -82,7 +108,7 @@ export default function TrainingMovePlanForm({
   isActionDisabled,
   lockRemainingSeconds,
   onChangeMoveId,
-  showEnemyHeader = true,
+  showFighterHeader = true,
   submitLabel,
   submitButtonId,
   showSubmitButton = true,
@@ -91,6 +117,8 @@ export default function TrainingMovePlanForm({
   const availableMoves = getAvailableMoves(player)
   const plannedTurns = buildPlannedTurns(player, moveIds)
   const totalMp = plannedTurns.reduce((sum, turn) => sum + turn.mpCost, 0)
+  const maxMp = player.status.maxMp
+  const isMpOver = totalMp > maxMp
   const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
 
   return (
@@ -109,39 +137,34 @@ export default function TrainingMovePlanForm({
       }}
     >
       <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
-        {showEnemyHeader ? (
-          <Stack spacing={1.25}>
-            <Box
-              component="img"
-              src={resolvePublicAssetPath(enemy.imagePath)}
-              alt={enemy.name}
-              sx={{
-                width: '100%',
-                height: 180,
-                objectFit: 'contain',
-                borderRadius: 2,
-                backgroundColor: '#1d1112',
-                border: '1px solid rgba(214, 146, 112, 0.22)',
-                p: 1.1,
-                boxSizing: 'border-box',
-              }}
+        {showFighterHeader ? (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+              alignItems: 'center',
+              gap: { xs: 1, sm: 2 },
+            }}
+          >
+            <FighterSummary
+              name={player.userName ?? locale.anonymousPlayer}
+              imagePath={player.imagePath ? normalizeCharacterPath(player.imagePath) : DEFAULT_CHARACTER_PATH}
+              levelLabel={locale.currentLevel.replace('{{level}}', String(player.level))}
             />
-            <Typography variant="subtitle1" fontWeight={800} textAlign="center" sx={{ color: '#fff7dd' }}>
-              {enemy.name}
+            <Typography variant="h6" fontWeight={900} sx={{ color: 'rgba(243, 179, 141, 0.8)' }}>
+              VS
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(245, 240, 223, 0.72)' }}>
-              {locale.plannedMpSummary
-                .replace('{{currentMp}}', String(player.status.maxMp))
-                .replace('{{totalMp}}', String(totalMp))}
-            </Typography>
-          </Stack>
-        ) : (
-          <Typography variant="body2" sx={{ color: 'rgba(245, 240, 223, 0.72)' }}>
-            {locale.plannedMpSummary
-              .replace('{{currentMp}}', String(player.status.maxMp))
-              .replace('{{totalMp}}', String(totalMp))}
-          </Typography>
-        )}
+            <FighterSummary
+              name={enemy.name}
+              imagePath={enemy.imagePath}
+              levelLabel={locale.enemyLevel.replace('{{level}}', String(enemy.level))}
+            />
+          </Box>
+        ) : null}
+
+        <Typography variant="body2" fontWeight={700} sx={{ color: isMpOver ? '#ff8a7a' : 'rgba(245, 240, 223, 0.72)' }}>
+          {locale.plannedMpSummary.replace('{{plannedMp}}', String(totalMp)).replace('{{maxMp}}', String(maxMp))}
+        </Typography>
 
         {plannedTurns.map((turn, index) => (
           <Stack key={`training-turn-${index}`} spacing={0.75} sx={{ width: '100%', minWidth: 0 }}>
@@ -274,12 +297,13 @@ export default function TrainingMovePlanForm({
             </FormControl>
             {turn.warning ? (
               <Alert
-                severity="warning"
+                severity="error"
                 sx={{
-                  color: '#38240f',
-                  backgroundColor: '#f0d49d',
+                  color: '#ffe3dc',
+                  backgroundColor: 'rgba(201, 74, 58, 0.22)',
+                  border: '1px solid rgba(229, 115, 98, 0.5)',
                   '& .MuiAlert-icon': {
-                    color: '#8c5311',
+                    color: '#ff8a7a',
                   },
                 }}
               >
