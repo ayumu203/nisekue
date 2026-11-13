@@ -207,7 +207,7 @@ export default function TrainingBattleResult({
       </Box>
 
       <Stack spacing={0.5} alignItems="center">
-        <Stack direction="row" alignItems="center" spacing={0.25}>
+        <Stack alignItems="center" spacing={0}>
           <Typography variant="body1" fontWeight={700} textAlign="center" sx={{ color: '#fff7dd' }}>
             {closingMessage}
           </Typography>
