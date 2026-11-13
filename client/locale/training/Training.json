@@ -20,7 +20,7 @@
   "targetTypeSelf": "自分対象",
   "noMoveAvailable": "習得済みのスキルがありません",
   "noMoveAvailableDetail": "特訓を始める前にスキルをセットしてください。",
-  "waitWarning": "MP不足のため、このスキルは選択できません",
+  "waitWarning": "MP不足のためスキルの選択は無効になります",
   "plannedMpSummary": "MP {{plannedMp}}/{{maxMp}}",
   "startTraining": "この内容で特訓開始",
   "startBattle": "戦闘開始",
