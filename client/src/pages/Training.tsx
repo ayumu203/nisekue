@@ -666,8 +666,6 @@ export default function Training() {
                           usedMoveNames={resolveMoveNames(player, lastSubmittedMoveIds)}
                           playerExp={playerExp}
                           nextLevelRequiredExp={nextLevelRequiredExp}
-                          isActionDisabled={isTrainingActionDisabled}
-                          lockRemainingSeconds={trainingLockRemainingSeconds}
                           movePlanSlot={
                             player && plannedMoveIds ? (
                               <TrainingMovePlanForm
@@ -683,7 +681,6 @@ export default function Training() {
                               />
                             ) : null
                           }
-                          onRematch={startBattle}
                         />
                       </Box>
                     ) : null}

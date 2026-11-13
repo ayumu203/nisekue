@@ -1,5 +1,5 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import { Box, Button, Chip, Collapse, IconButton, LinearProgress, Stack, Typography } from '@mui/material'
+import { Box, Chip, Collapse, IconButton, LinearProgress, Stack, Typography } from '@mui/material'
 import { useState, type ReactNode } from 'react'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse } from '@/schema/training'
@@ -18,10 +18,7 @@ type TrainingBattleResultProps = {
   usedMoveNames: string[]
   playerExp?: number
   nextLevelRequiredExp?: number
-  isActionDisabled: boolean
-  lockRemainingSeconds: number
   movePlanSlot?: ReactNode
-  onRematch: () => Promise<void> | void
 }
 
 type TurnLog = {
@@ -161,13 +158,9 @@ export default function TrainingBattleResult({
   usedMoveNames,
   playerExp,
   nextLevelRequiredExp,
-  isActionDisabled,
-  lockRemainingSeconds,
   movePlanSlot,
-  onRematch,
 }: TrainingBattleResultProps) {
   const [isTurnLogOpen, setIsTurnLogOpen] = useState(false)
-  const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
   const turnLogs = buildTurnLogs(player, enemy, result, usedMoveNames)
   const closingMessage = buildClosingMessage(player, enemy, result)
   const expValue = locale.expValue.replace('{{exp}}', String(result.exp))
@@ -325,31 +318,6 @@ export default function TrainingBattleResult({
       </Stack>
 
       {movePlanSlot}
-
-      <Button
-        variant="contained"
-        disabled={isActionDisabled}
-        onClick={onRematch}
-        sx={{
-          borderRadius: 999,
-          py: 1.1,
-          fontWeight: 800,
-          textTransform: 'none',
-          color: '#fff5ef',
-          backgroundColor: '#b65f49',
-          boxShadow: 'none',
-          '&:hover': {
-            backgroundColor: '#c96a52',
-            boxShadow: 'none',
-          },
-          '&.Mui-disabled': {
-            color: 'rgba(255, 238, 229, 0.58)',
-            backgroundColor: 'rgba(182, 95, 73, 0.24)',
-          },
-        }}
-      >
-        {isActionDisabled && lockRemainingSeconds > 0 ? rematchInSeconds : locale.rematch}
-      </Button>
     </Stack>
   )
 }
