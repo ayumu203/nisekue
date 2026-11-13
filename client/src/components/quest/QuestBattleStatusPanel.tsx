@@ -208,8 +208,6 @@ type BattleSpriteProps = {
   maxHp: number | null | undefined
   isDead: boolean
   isAlly: boolean
-  // 敵画像を味方側に置くとき（出撃中のペット）に左右反転して敵の方を向かせる
-  mirrored?: boolean
   isSelected?: boolean
   targetState?: 'preview' | 'affected' | 'reachable' | 'blocked' | 'none'
   onClick?: () => void
@@ -225,7 +223,6 @@ function BattleSprite({
   maxHp,
   isDead,
   isAlly,
-  mirrored = false,
   isSelected = false,
   targetState = 'none',
   onClick,
@@ -362,7 +359,7 @@ function BattleSprite({
               objectFit: 'contain',
               objectPosition: 'center bottom',
               display: 'block',
-              transform: isAlly || mirrored ? 'scaleX(-1)' : 'none',
+              transform: isAlly ? 'scaleX(-1)' : 'none',
               filter: isDead ? 'grayscale(1)' : 'none',
               opacity: isDead ? 0.78 : 1,
               outline: isSelected ? '3px solid #ffffff' : 'none',
@@ -857,7 +854,6 @@ export default function QuestBattleStatusPanel({
                 maxHp={pet.maxHp}
                 isDead={pet.isDead}
                 isAlly={false}
-                mirrored
                 left={position.left}
                 bottom={position.bottom}
               />
