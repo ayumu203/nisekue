@@ -82,6 +82,19 @@ public sealed class DbTreasureMapExpeditionRepository(IDbContextFactory<AppDbCon
         await dbContext.SaveChangesAsync();
     }
 
+    public async Task<bool> TryShortenEndsAtAsync(TreasureMapExpeditionId id, DateTimeOffset endsAt)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var affectedRows = await dbContext.TreasureMapExpeditions
+            .Where(x => x.Id == id.Value)
+            .Where(x => x.Status == (int)TreasureMapExpeditionStatus.InProgress)
+            .Where(x => x.EndsAt > endsAt)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.EndsAt, endsAt)
+                .SetProperty(x => x.UpdatedAt, DateTimeOffset.UtcNow));
+        return affectedRows > 0;
+    }
+
     private static TreasureMapExpedition MapToDomain(TreasureMapExpeditionEntity entity)
     {
         return new TreasureMapExpedition(

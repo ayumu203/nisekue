@@ -7,6 +7,7 @@ import type {
   DebugChangeJobRequest,
   DebugEquipmentListResponse,
   DebugGrantEquipmentRequest,
+  DebugGrantGoldRequest,
   DebugGrantItemRequest,
   DebugItemListResponse,
   DebugLearnMoveRequest,
@@ -16,6 +17,7 @@ import type {
   DebugMasterJobsResponse,
   DebugTemplateListResponse,
   DebugMoveListResponse,
+  DebugRebirthResponse,
   DebugUpdateStatusRequest,
   GetDebugStatusResponse,
 } from '@/schema/debug'
@@ -119,4 +121,26 @@ export async function applyDebugTemplate(request: DebugApplyTemplateRequest, acc
 export async function changeDebugJob(request: DebugChangeJobRequest, accessToken: string): Promise<void> {
   const body = endpoints.debug.changeJob.requestSchema.parse(request)
   await callDebugApi(endpoints.debug.changeJob, accessToken, '転職に失敗しました', body)
+}
+
+/** 加算後の所持ゴールドを返す */
+export async function grantDebugGold(request: DebugGrantGoldRequest, accessToken: string): Promise<number> {
+  const body = endpoints.debug.grantGold.requestSchema.parse(request)
+  const result = await callDebugApi(endpoints.debug.grantGold, accessToken, 'ゴールドの付与に失敗しました', body)
+  return result.gold
+}
+
+/** 条件（レベル・ゴールド）を無視して転生する。ゴールドは減らない */
+export async function rebirthDebugPlayer(accessToken: string): Promise<DebugRebirthResponse> {
+  return callDebugApi(endpoints.debug.rebirth, accessToken, '転生に失敗しました')
+}
+
+/** クエストの再参加待ちとペットバトルの再戦待ちを解除する */
+export async function resetDebugCooldowns(accessToken: string): Promise<void> {
+  await callDebugApi(endpoints.debug.resetCooldowns, accessToken, '待ち時間の解除に失敗しました')
+}
+
+/** 探索中の宝の地図を探索完了の状態にする */
+export async function completeDebugTreasureMap(accessToken: string): Promise<void> {
+  await callDebugApi(endpoints.debug.completeTreasureMap, accessToken, '宝の地図の完了に失敗しました')
 }

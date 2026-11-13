@@ -236,6 +236,19 @@ public class PlayerTests
     }
 
     [Fact]
+    public void Rebirth_WhenIgnoringRequirements_RebirthsWithoutSpendingGold()
+    {
+        var player = CreatePlayer(level: 5, gold: 100);
+
+        player.Rebirth(new Status(35, 24, 9, 8, 12, 5, 7), ignoreRequirements: true);
+
+        player.RebirthCount.Should().Be(1);
+        player.Level.Should().Be(1);
+        player.Gold.Should().Be(100);
+        player.Status.MaxHp.Should().Be(35);
+    }
+
+    [Fact]
     public void Rebirth_WhenEligible_ResetsLevelsAndKeepsJobMovesAndMasteredJobs()
     {
         var moveSet = new MoveSet();
