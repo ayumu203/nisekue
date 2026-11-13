@@ -23,7 +23,7 @@
   "waitWarning": "MP不足のためスキルの選択は無効になります",
   "plannedMpSummary": "MP {{plannedMp}}/{{maxMp}}",
   "startTraining": "この内容で特訓開始",
-  "startBattle": "戦闘開始",
+  "startBattle": "戦闘",
   "rematchInSeconds": "{{seconds}}s",
   "battleResultTitle": "戦闘結果",
   "expGained": "獲得経験値",
