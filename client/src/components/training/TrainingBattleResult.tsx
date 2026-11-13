@@ -1,6 +1,6 @@
-import { Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from '@mui/material'
-import type { ReactNode } from 'react'
-import { innerSurfaceSx } from '@/constants/styles'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { Box, Button, Chip, Collapse, LinearProgress, Stack, Typography } from '@mui/material'
+import { useState, type ReactNode } from 'react'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
@@ -166,6 +166,7 @@ export default function TrainingBattleResult({
   movePlanSlot,
   onRematch,
 }: TrainingBattleResultProps) {
+  const [isTurnLogOpen, setIsTurnLogOpen] = useState(false)
   const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
   const turnLogs = buildTurnLogs(player, enemy, result, usedMoveNames)
   const closingMessage = buildClosingMessage(player, enemy, result)
@@ -186,172 +187,168 @@ export default function TrainingBattleResult({
           : null
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        ...innerSurfaceSx,
-        borderRadius: 3,
-        p: { xs: 1.5, sm: 2.5 },
-        color: '#f5f0df',
-        backgroundColor: '#1d1112',
-        borderColor: 'rgba(214, 146, 112, 0.34)',
-      }}
-    >
-      <Stack spacing={2}>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
-            alignItems: 'center',
-            gap: { xs: 1, sm: 2 },
-          }}
-        >
-          <FighterPanel
-            fighter={player}
-            currentHp={result.currentPlayerHp}
-            maxHp={result.maxPlayerHp}
-            hpBarColor="#78c27d"
-          />
-          <Typography variant="h6" fontWeight={900} sx={{ color: 'rgba(243, 179, 141, 0.8)' }}>
-            VS
-          </Typography>
-          <FighterPanel
-            fighter={enemy}
-            currentHp={result.currentEnemyHp}
-            maxHp={result.maxEnemyHp}
-            hpBarColor="#b65f49"
-          />
-        </Box>
+    <Stack spacing={2} sx={{ color: '#f5f0df' }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+          alignItems: 'center',
+          gap: { xs: 1, sm: 2 },
+        }}
+      >
+        <FighterPanel
+          fighter={player}
+          currentHp={result.currentPlayerHp}
+          maxHp={result.maxPlayerHp}
+          hpBarColor="#78c27d"
+        />
+        <Typography variant="h6" fontWeight={900} sx={{ color: 'rgba(243, 179, 141, 0.8)' }}>
+          VS
+        </Typography>
+        <FighterPanel
+          fighter={enemy}
+          currentHp={result.currentEnemyHp}
+          maxHp={result.maxEnemyHp}
+          hpBarColor="#b65f49"
+        />
+      </Box>
 
-        <Stack
-          spacing={0.75}
-          sx={{
-            px: { xs: 1, sm: 2 },
-            py: 1.5,
-            borderRadius: 2,
-            backgroundColor: 'rgba(56, 37, 38, 0.72)',
-            border: '1px solid rgba(214, 146, 112, 0.22)',
-          }}
-        >
-          {turnLogs.map((log) => (
-            <Box
-              key={log.turn}
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) auto minmax(0, 1fr)' },
-                gridTemplateAreas: { xs: '"turn" "player" "enemy"', sm: '"player turn enemy"' },
-                alignItems: 'center',
-                columnGap: 1,
-                rowGap: 0.25,
-                textAlign: { xs: 'center', sm: 'initial' },
-              }}
-            >
-              <Typography
-                variant="body2"
-                sx={{
-                  gridArea: 'player',
-                  textAlign: { xs: 'center', sm: 'right' },
-                  color: '#fff7dd',
-                  overflowWrap: 'anywhere',
-                }}
-              >
-                {log.playerAction ?? ''}
-              </Typography>
-              <Typography
-                variant="caption"
-                fontWeight={800}
-                sx={{ gridArea: 'turn', color: '#f3b38d', whiteSpace: 'nowrap' }}
-              >
-                {locale.turnLabel.replace('{{turn}}', String(log.turn))}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  gridArea: 'enemy',
-                  textAlign: { xs: 'center', sm: 'left' },
-                  color: '#fff7dd',
-                  overflowWrap: 'anywhere',
-                }}
-              >
-                {log.enemyAction ?? ''}
-              </Typography>
-            </Box>
-          ))}
-          <Typography variant="body2" fontWeight={700} textAlign="center" sx={{ color: '#fff7dd', pt: 0.5 }}>
-            {closingMessage}
-          </Typography>
-        </Stack>
-
-        <Stack spacing={1} alignItems="center">
-          <Typography variant="h5" fontWeight={900} sx={{ color: resultColorByOutcome[result.trainingResult] }}>
-            {resultLabelByOutcome[result.trainingResult]}
-          </Typography>
-          <Typography variant="h6" fontWeight={900} sx={{ color: '#f3b38d' }}>
-            {expValue}
-          </Typography>
-          <Typography variant="body2" fontWeight={800} sx={{ color: '#fff7dd' }}>
-            {locale.currentLevel.replace('{{level}}', String(player.level))}
-            {expProgressLabel ? ` / ${expProgressLabel}` : ''}
-          </Typography>
-          {levelUpLabel ? (
-            <Chip
-              label={levelUpLabel}
-              sx={{
-                fontWeight: 800,
-                color: '#1d2b20',
-                backgroundColor: '#d9e6be',
-              }}
-            />
-          ) : null}
-          {result.newlyLearnedMoves.length > 0 ? (
-            <Stack spacing={0.75} alignItems="center">
-              <Typography variant="body2" fontWeight={800} sx={{ color: '#fff0c8' }}>
-                {locale.newlyLearnedMoves}
-              </Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent="center">
-                {result.newlyLearnedMoves.map((move) => (
-                  <Chip
-                    key={move.moveId}
-                    label={move.moveName}
-                    variant="outlined"
-                    sx={{
-                      color: '#f5f0df',
-                      borderColor: 'rgba(214, 146, 112, 0.38)',
-                    }}
-                  />
-                ))}
-              </Stack>
-            </Stack>
-          ) : null}
-        </Stack>
-
-        {movePlanSlot}
-
+      <Stack spacing={0.5} alignItems="center">
+        <Typography variant="body1" fontWeight={700} textAlign="center" sx={{ color: '#fff7dd' }}>
+          {closingMessage}
+        </Typography>
         <Button
-          variant="contained"
-          disabled={isActionDisabled}
-          onClick={onRematch}
-          sx={{
-            borderRadius: 999,
-            py: 1.1,
-            fontWeight: 800,
-            textTransform: 'none',
-            color: '#fff5ef',
-            backgroundColor: '#b65f49',
-            boxShadow: 'none',
-            '&:hover': {
-              backgroundColor: '#c96a52',
-              boxShadow: 'none',
-            },
-            '&.Mui-disabled': {
-              color: 'rgba(255, 238, 229, 0.58)',
-              backgroundColor: 'rgba(182, 95, 73, 0.24)',
-            },
-          }}
+          size="small"
+          onClick={() => setIsTurnLogOpen((current) => !current)}
+          aria-expanded={isTurnLogOpen}
+          endIcon={
+            <ExpandMoreIcon
+              sx={{ transform: isTurnLogOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms ease' }}
+            />
+          }
+          sx={{ textTransform: 'none', color: 'rgba(245, 240, 223, 0.72)', fontWeight: 700 }}
         >
-          {isActionDisabled && lockRemainingSeconds > 0 ? rematchInSeconds : locale.rematch}
+          {isTurnLogOpen ? locale.hideTurnLog : locale.showTurnLog}
         </Button>
+        <Collapse in={isTurnLogOpen} sx={{ width: '100%' }}>
+          <Stack spacing={0.75} sx={{ pt: 0.5 }}>
+            {turnLogs.map((log) => (
+              <Box
+                key={log.turn}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) auto minmax(0, 1fr)' },
+                  gridTemplateAreas: { xs: '"turn" "player" "enemy"', sm: '"player turn enemy"' },
+                  alignItems: 'center',
+                  columnGap: 1,
+                  rowGap: 0.25,
+                  textAlign: { xs: 'center', sm: 'initial' },
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    gridArea: 'player',
+                    textAlign: { xs: 'center', sm: 'right' },
+                    color: '#fff7dd',
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  {log.playerAction ?? ''}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  fontWeight={800}
+                  sx={{ gridArea: 'turn', color: '#f3b38d', whiteSpace: 'nowrap' }}
+                >
+                  {locale.turnLabel.replace('{{turn}}', String(log.turn))}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    gridArea: 'enemy',
+                    textAlign: { xs: 'center', sm: 'left' },
+                    color: '#fff7dd',
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  {log.enemyAction ?? ''}
+                </Typography>
+              </Box>
+            ))}
+          </Stack>
+        </Collapse>
       </Stack>
-    </Paper>
+
+      <Stack spacing={1} alignItems="center">
+        <Typography variant="h5" fontWeight={900} sx={{ color: resultColorByOutcome[result.trainingResult] }}>
+          {resultLabelByOutcome[result.trainingResult]}
+        </Typography>
+        <Typography variant="h6" fontWeight={900} sx={{ color: '#f3b38d' }}>
+          {expValue}
+        </Typography>
+        <Typography variant="body2" fontWeight={800} sx={{ color: '#fff7dd' }}>
+          {locale.currentLevel.replace('{{level}}', String(player.level))}
+          {expProgressLabel ? ` / ${expProgressLabel}` : ''}
+        </Typography>
+        {levelUpLabel ? (
+          <Chip
+            label={levelUpLabel}
+            sx={{
+              fontWeight: 800,
+              color: '#1d2b20',
+              backgroundColor: '#d9e6be',
+            }}
+          />
+        ) : null}
+        {result.newlyLearnedMoves.length > 0 ? (
+          <Stack spacing={0.75} alignItems="center">
+            <Typography variant="body2" fontWeight={800} sx={{ color: '#fff0c8' }}>
+              {locale.newlyLearnedMoves}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent="center">
+              {result.newlyLearnedMoves.map((move) => (
+                <Chip
+                  key={move.moveId}
+                  label={move.moveName}
+                  variant="outlined"
+                  sx={{
+                    color: '#f5f0df',
+                    borderColor: 'rgba(214, 146, 112, 0.38)',
+                  }}
+                />
+              ))}
+            </Stack>
+          </Stack>
+        ) : null}
+      </Stack>
+
+      {movePlanSlot}
+
+      <Button
+        variant="contained"
+        disabled={isActionDisabled}
+        onClick={onRematch}
+        sx={{
+          borderRadius: 999,
+          py: 1.1,
+          fontWeight: 800,
+          textTransform: 'none',
+          color: '#fff5ef',
+          backgroundColor: '#b65f49',
+          boxShadow: 'none',
+          '&:hover': {
+            backgroundColor: '#c96a52',
+            boxShadow: 'none',
+          },
+          '&.Mui-disabled': {
+            color: 'rgba(255, 238, 229, 0.58)',
+            backgroundColor: 'rgba(182, 95, 73, 0.24)',
+          },
+        }}
+      >
+        {isActionDisabled && lockRemainingSeconds > 0 ? rematchInSeconds : locale.rematch}
+      </Button>
+    </Stack>
   )
 }

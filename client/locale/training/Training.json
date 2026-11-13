@@ -36,6 +36,8 @@
   "actionLog": "{{actor}} の {{move}}！",
   "defeatedLog": "{{name}} は倒れた！",
   "drawLog": "決着がつかなかった！",
+  "showTurnLog": "ターンログを見る",
+  "hideTurnLog": "ターンログを閉じる",
   "playerLevelUp": "レベルアップ！",
   "levelUp": "職業レベルアップ！",
   "playerAndJobLevelUp": "レベル / 職業レベルアップ！",
