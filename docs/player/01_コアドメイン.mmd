@@ -26,13 +26,14 @@ classDiagram
             +UpdateStatus(status: Status) void
             +UpdateMoveSet(moveSet: MoveSet) void
             +SetQuestCooldownUntil(until: DateTimeOffset?) void
+            +SetPetBattleCooldownUntil(until: DateTimeOffset?) void
             -ValidateName(name: string) string
             -ValidateImagePath(imagePath: string?) string?
             +GainExp(exp: int) void
             +GainGold(gold: int) void
             +SpendGold(gold: int) void
             +LevelUp(jobProfile: JobProfile, learningRule: JobMoveLearningRule) LevelUpResult
-            +Rebirth(inheritedStatus: Status) void
+            +Rebirth(inheritedStatus: Status, ignoreRequirements: bool = false) void
             +MarkJobAsMastered(job: Job) bool
             +ResetProgress(initialStatus: Status, initialMoveSet: MoveSet) void
             -CanChangeJob(nextProfile: JobProfile) bool
@@ -425,10 +426,10 @@ classDiagram
 
         class IPlayerRebirthExecutor {
             <<Application Service>>
-            +Task~Player~ ExecuteAsync(playerId: PlayerId, buildInheritedStatus: Func~Status, Status~)
+            +Task~Player~ ExecuteAsync(playerId: PlayerId, buildInheritedStatus: Func~Status, Status~, ignoreRequirements: bool = false)
         }
 
-        note for IPlayerRebirthExecutor "転生直前(前世ピーク)のStatusを\nplayer_rebirth_status_histories へ\n転生と同一トランザクションで追記する"
+        note for IPlayerRebirthExecutor "転生直前(前世ピーク)のStatusを\nplayer_rebirth_status_histories へ\n転生と同一トランザクションで追記する\nignoreRequirements はデバッグ用（Lv・Gold の条件を無視し、Gold も減らさない）"
 
         class IJobProfileRepository {
             +JobProfile GetByJob(job: Job)

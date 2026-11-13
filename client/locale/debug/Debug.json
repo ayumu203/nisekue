@@ -103,5 +103,30 @@
     "label": "転職先",
     "submit": "転職する",
     "done": "{name} に転職しました"
+  },
+  "gold": {
+    "title": "ゴールド付与",
+    "description": "指定した額のゴールドを加算します。",
+    "current": "現在 {gold} G",
+    "label": "ゴールド",
+    "submit": "付与する",
+    "done": "ゴールドを付与しました（所持 {gold} G）"
+  },
+  "rebirth": {
+    "title": "転生",
+    "description": "転生の条件（Lv.100 以上・100,000 G）を無視して転生します。ゴールドは減りません。ステータスの引き継ぎと転生履歴の記録は通常の転生と同じです。",
+    "submit": "転生する",
+    "confirm": "条件を無視して転生します。レベルは 1 に戻ります。よろしいですか？",
+    "done": "転生しました（{count} 回目）"
+  },
+  "wait": {
+    "title": "待ち時間",
+    "description": "待ち時間を即時に解除します。訓練の再戦待ち（3 秒）は対象外です。",
+    "resetCooldowns": "再参加待ちを解除",
+    "resetCooldownsHelp": "クエストの再参加待ちとペットバトルの再戦待ちを解除します。",
+    "cooldownsReset": "クエスト・ペットバトルの待ち時間を解除しました",
+    "completeTreasureMap": "宝の地図を即完了",
+    "completeTreasureMapHelp": "探索中の宝の地図を完了させます。報酬は宝の地図の画面で受け取ってください。",
+    "treasureMapCompleted": "宝の地図の探索を完了しました。宝の地図の画面で報酬を受け取れます"
   }
 }

@@ -1,14 +1,17 @@
 import { Alert, CircularProgress, Container, Paper, Stack, Tab, Tabs, Typography } from '@mui/material'
 import { useState } from 'react'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
+import DebugGoldSection from '@/components/debug/DebugGoldSection'
 import DebugItemsSection from '@/components/debug/DebugItemsSection'
 import DebugJobChangeSection from '@/components/debug/DebugJobChangeSection'
 import DebugJobsSection from '@/components/debug/DebugJobsSection'
 import DebugLevelSection from '@/components/debug/DebugLevelSection'
 import DebugMovesSection from '@/components/debug/DebugMovesSection'
+import DebugRebirthSection from '@/components/debug/DebugRebirthSection'
 import DebugStatusSection from '@/components/debug/DebugStatusSection'
 import DebugTutorialSection from '@/components/debug/DebugTutorialSection'
 import DebugTemplateSection from '@/components/debug/DebugTemplateSection'
+import DebugWaitSection from '@/components/debug/DebugWaitSection'
 import { gameTabSx, gameTabsSx, outerPagePaperSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { useDebugPlayer } from '@/hooks/useDebugPlayer'
@@ -62,14 +65,25 @@ function DebugContent() {
           <>
             <DebugTemplateSection accessToken={accessToken} onChanged={refresh} />
             <DebugLevelSection {...sectionProps} />
+            <DebugRebirthSection accessToken={accessToken} onChanged={refresh} />
             <DebugJobChangeSection {...sectionProps} />
             <DebugStatusSection key={`status-${player.level}`} {...sectionProps} />
             <DebugJobsSection {...sectionProps} />
           </>
         )}
         {tab === 'moves' && <DebugMovesSection {...sectionProps} />}
-        {tab === 'items' && <DebugItemsSection accessToken={accessToken} onChanged={refresh} />}
-        {tab === 'others' && userId && <DebugTutorialSection userId={userId} />}
+        {tab === 'items' && (
+          <>
+            <DebugGoldSection {...sectionProps} />
+            <DebugItemsSection accessToken={accessToken} onChanged={refresh} />
+          </>
+        )}
+        {tab === 'others' && (
+          <>
+            <DebugWaitSection accessToken={accessToken} />
+            {userId && <DebugTutorialSection userId={userId} />}
+          </>
+        )}
       </Stack>
     </Stack>
   )

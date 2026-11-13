@@ -146,3 +146,22 @@ export const debugChangeJobResponseSchema = z.object({
   job: z.string(),
   jobLevel: z.number().int().min(1),
 })
+
+export const debugGrantGoldRequestSchema = z.object({
+  amount: z.number().int().min(1, 'ゴールドは1以上の整数を入力してください'),
+})
+
+export type DebugGrantGoldRequest = z.infer<typeof debugGrantGoldRequestSchema>
+
+export const debugGrantGoldResponseSchema = z.object({ gold: z.number().int().min(0) })
+
+export const debugRebirthResponseSchema = z.object({
+  rebirthCount: z.number().int().min(1),
+  level: z.number().int().min(1),
+})
+
+export type DebugRebirthResponse = z.infer<typeof debugRebirthResponseSchema>
+
+export const debugCompleteTreasureMapResponseSchema = z.object({
+  endsAt: z.string().datetime({ offset: true }),
+})

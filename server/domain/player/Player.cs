@@ -382,21 +382,28 @@ public class Player(
         return new LevelUpResult(hasPlayerLeveledUp, hasJobLeveledUp, hasMasteredCurrentJob, newlyLearnedMoveIds);
     }
 
-    public void Rebirth(Status inheritedStatus)
+    /// <summary>
+    /// 転生する。ignoreRequirements が true（デバッグ用）なら、レベル・Gold の条件を確認せず、Gold も減らさない。
+    /// </summary>
+    public void Rebirth(Status inheritedStatus, bool ignoreRequirements = false)
     {
         ArgumentNullException.ThrowIfNull(inheritedStatus);
 
-        if (Level < PlayerConstants.RebirthRequiredLevel)
+        if (!ignoreRequirements)
         {
-            throw new InvalidOperationException($"転生にはレベル{PlayerConstants.RebirthRequiredLevel}以上が必要です。");
+            if (Level < PlayerConstants.RebirthRequiredLevel)
+            {
+                throw new InvalidOperationException($"転生にはレベル{PlayerConstants.RebirthRequiredLevel}以上が必要です。");
+            }
+
+            if (Gold < PlayerConstants.RebirthGoldCost)
+            {
+                throw new InvalidOperationException($"転生には{PlayerConstants.RebirthGoldCost} Goldが必要です。");
+            }
+
+            Gold -= PlayerConstants.RebirthGoldCost;
         }
 
-        if (Gold < PlayerConstants.RebirthGoldCost)
-        {
-            throw new InvalidOperationException($"転生には{PlayerConstants.RebirthGoldCost} Goldが必要です。");
-        }
-
-        Gold -= PlayerConstants.RebirthGoldCost;
         RebirthCount++;
         Level = 1;
         Exp = 0;
