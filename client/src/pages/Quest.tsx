@@ -1,15 +1,4 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  Paper,
-  Stack,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material'
+import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useSWR, { useSWRConfig, type KeyedMutator } from 'swr'
 import { useQuestRunHub } from '@/hooks/useQuestRunHub'
@@ -37,9 +26,8 @@ import QuestRoomCreateSection from '@/components/quest/QuestRoomCreateSection'
 import QuestRoomLobbySection from '@/components/quest/QuestRoomLobbySection'
 import QuestMultiRoomList from '@/components/quest/QuestMultiRoomList'
 import QuestRunSection from '@/components/quest/QuestRunSection'
-import Status from '@/components/home/Status'
 import { useAuth } from '@/contexts/useAuth'
-import { outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
+import { outerPagePaperSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
@@ -109,8 +97,6 @@ function clearPersistedQuestSession(userId: string): void {
 export default function Quest() {
   const { session, isLoading, isAnonymous } = useAuth()
   const { mutate: mutateCache } = useSWRConfig()
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [selectedStageId, setSelectedStageId] = useState<number | ''>('')
   const [mode, setMode] = useState<CreateQuestRoomRequest['mode']>('Solo')
   const [multiEntryView, setMultiEntryView] = useState<'create' | 'list'>('create')
@@ -1094,20 +1080,10 @@ export default function Quest() {
         }}
       >
         <Stack spacing={{ xs: 1.25, sm: 2 }}>
-          <Box sx={twoColumnContentGridSx}>
-            <Stack spacing={0}>
-              {isMobile ? (
-                <Box sx={{ px: 0.5, pb: 1 }}>
-                  <HomeNavIconButton ariaLabel={locale.backToHome} />
-                </Box>
-              ) : (
-                <Status
-                  player={player}
-                  showDesktopActions={false}
-                  topAction={<HomeNavIconButton ariaLabel={locale.backToHome} />}
-                />
-              )}
-            </Stack>
+          <Box sx={{ display: 'grid', gap: { xs: 1.5, sm: 3 }, alignItems: 'start' }}>
+            <Box sx={{ px: 0.5, pb: 1 }}>
+              <HomeNavIconButton ariaLabel={locale.backToHome} />
+            </Box>
 
             <Paper
               variant="outlined"
@@ -1116,7 +1092,7 @@ export default function Quest() {
                 p: { xs: 1.5, sm: 2 },
                 backgroundColor: '#172742',
                 borderColor: 'rgba(152, 192, 255, 0.34)',
-                mt: '48px',
+                mt: { xs: '48px', sm: 0 },
               }}
             >
               <Stack spacing={{ xs: 1.25, sm: 2 }}>
