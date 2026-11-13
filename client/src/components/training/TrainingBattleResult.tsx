@@ -206,24 +206,33 @@ export default function TrainingBattleResult({
         />
       </Box>
 
-      <Stack spacing={0.5} alignItems="center">
-        <Stack alignItems="center" spacing={0}>
-          <Typography variant="body1" fontWeight={700} textAlign="center" sx={{ color: '#fff7dd' }}>
-            {closingMessage}
-          </Typography>
-          <IconButton
-            size="small"
-            onClick={() => setIsTurnLogOpen((current) => !current)}
-            aria-expanded={isTurnLogOpen}
-            aria-label={isTurnLogOpen ? locale.hideTurnLog : locale.showTurnLog}
-            sx={{ color: 'rgba(245, 240, 223, 0.72)' }}
-          >
-            <ExpandMoreIcon
-              fontSize="small"
-              sx={{ transform: isTurnLogOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms ease' }}
-            />
-          </IconButton>
-        </Stack>
+      <Typography variant="body1" fontWeight={700} textAlign="center" sx={{ color: '#fff7dd' }}>
+        {closingMessage}
+      </Typography>
+
+      <Stack spacing={1} alignItems="center">
+        <Typography variant="h5" fontWeight={900} sx={{ color: resultColorByOutcome[result.trainingResult] }}>
+          {resultLabelByOutcome[result.trainingResult]}
+        </Typography>
+        <Typography variant="body2" fontWeight={800} sx={{ color: '#fff7dd' }}>
+          {locale.currentLevel.replace('{{level}}', String(player.level))}
+          {expProgressLabel ? ` / ${expProgressLabel}` : ''}
+        </Typography>
+        <Typography variant="h6" fontWeight={900} sx={{ color: '#f3b38d' }}>
+          {expValue}
+        </Typography>
+        <IconButton
+          size="small"
+          onClick={() => setIsTurnLogOpen((current) => !current)}
+          aria-expanded={isTurnLogOpen}
+          aria-label={isTurnLogOpen ? locale.hideTurnLog : locale.showTurnLog}
+          sx={{ color: 'rgba(245, 240, 223, 0.72)' }}
+        >
+          <ExpandMoreIcon
+            fontSize="small"
+            sx={{ transform: isTurnLogOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms ease' }}
+          />
+        </IconButton>
         <Collapse in={isTurnLogOpen} sx={{ width: '100%' }}>
           <Stack spacing={0.75} sx={{ pt: 0.5 }}>
             {turnLogs.map((log) => (
@@ -272,19 +281,6 @@ export default function TrainingBattleResult({
             ))}
           </Stack>
         </Collapse>
-      </Stack>
-
-      <Stack spacing={1} alignItems="center">
-        <Typography variant="h5" fontWeight={900} sx={{ color: resultColorByOutcome[result.trainingResult] }}>
-          {resultLabelByOutcome[result.trainingResult]}
-        </Typography>
-        <Typography variant="body2" fontWeight={800} sx={{ color: '#fff7dd' }}>
-          {locale.currentLevel.replace('{{level}}', String(player.level))}
-          {expProgressLabel ? ` / ${expProgressLabel}` : ''}
-        </Typography>
-        <Typography variant="h6" fontWeight={900} sx={{ color: '#f3b38d' }}>
-          {expValue}
-        </Typography>
         {levelUpLabel ? (
           <Chip
             label={levelUpLabel}
