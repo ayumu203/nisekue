@@ -1,7 +1,8 @@
-import { Button, Card, CardContent, CardMedia, Chip, Grid, Stack, Typography } from '@mui/material'
+import { Box, Card, CardContent, CardMedia, Chip, Grid, Radio, Stack, Typography } from '@mui/material'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
+import { trainingSelectCardSx, trainingSelectRadioSx } from './trainingSelectStyles'
 
 const trainingEnemyBackgroundPaths = [
   'image/quest/ancient-ruins-battlefield.svg',
@@ -21,111 +22,88 @@ function getTrainingEnemyBackgroundPath(enemyId: number): string {
 
 type TrainingEnemySelectProps = {
   enemies: TrainingEnemy[]
-  isActionDisabled: boolean
-  lockRemainingSeconds: number
-  tutorialHighlightFirstFightButton?: boolean
-  onFight: (enemy: TrainingEnemy) => Promise<void> | void
+  selectedEnemyId: number | null
+  isSelectionDisabled: boolean
+  tutorialHighlightFirstCard?: boolean
+  onSelect: (enemy: TrainingEnemy) => void
 }
 
 export default function TrainingEnemySelect({
   enemies,
-  isActionDisabled,
-  lockRemainingSeconds,
-  tutorialHighlightFirstFightButton = false,
-  onFight,
+  selectedEnemyId,
+  isSelectionDisabled,
+  tutorialHighlightFirstCard = false,
+  onSelect,
 }: TrainingEnemySelectProps) {
-  const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
-
   return (
-    <Stack spacing={2}>
-      <Grid container spacing={2}>
-        {enemies.map((enemy, index) => (
+    <Grid container spacing={2} role="radiogroup" aria-label={locale.enemySelectTitle}>
+      {enemies.map((enemy, index) => {
+        const isSelected = enemy.id === selectedEnemyId
+
+        return (
           <Grid key={enemy.id} size={{ xs: 12, sm: 6, md: 4 }}>
             <Card
-              variant="outlined"
-              sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                color: '#f5f0df',
-                backgroundColor: '#382526',
-                borderColor: 'rgba(214, 146, 112, 0.42)',
-                boxShadow: 'inset 0 1px 0 rgba(255, 227, 214, 0.08)',
-              }}
+              component="label"
+              id={tutorialHighlightFirstCard && index === 0 ? 'tutorial-fight-card' : undefined}
+              elevation={0}
+              sx={trainingSelectCardSx(isSelected, isSelectionDisabled)}
             >
-              <CardMedia
-                component="img"
-                height="160"
-                image={resolvePublicAssetPath(enemy.imagePath)}
-                alt={enemy.name}
-                sx={{
-                  objectFit: 'contain',
-                  backgroundColor: '#1e1213',
-                  backgroundImage: `linear-gradient(rgba(34, 18, 19, 0.36), rgba(34, 18, 19, 0.58)), url(${getTrainingEnemyBackgroundPath(enemy.id)})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  p: 1.25,
-                  borderBottom: '1px solid rgba(214, 146, 112, 0.22)',
-                }}
-              />
-              <CardContent sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                <Stack spacing={1.5} sx={{ height: '100%' }}>
-                  <Stack spacing={0.9} alignItems="center">
-                    <Chip
-                      label={locale.enemyLevel.replace('{{level}}', String(enemy.level))}
-                      size="small"
-                      sx={{
-                        fontWeight: 800,
-                        color: '#ffe9dc',
-                        backgroundColor: 'rgba(214, 146, 112, 0.18)',
-                        border: '1px solid rgba(214, 146, 112, 0.35)',
-                      }}
-                    />
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight={700}
-                      textAlign="center"
-                      sx={{
-                        color: '#fff7dd',
-                        fontSize: { xs: '1.02rem', sm: '0.98rem', md: '1.02rem' },
-                        lineHeight: 1.35,
-                        minHeight: '2.7em',
-                      }}
-                    >
-                      {enemy.name}
-                    </Typography>
-                  </Stack>
-                  <Button
-                    id={tutorialHighlightFirstFightButton && index === 0 ? 'tutorial-fight-btn' : undefined}
-                    variant="contained"
-                    disabled={isActionDisabled}
-                    onClick={() => onFight(enemy)}
+              <Box sx={{ position: 'relative' }}>
+                <Radio
+                  name="training-enemy"
+                  checked={isSelected}
+                  disabled={isSelectionDisabled}
+                  onChange={() => onSelect(enemy)}
+                  inputProps={{ 'aria-label': enemy.name }}
+                  size="small"
+                  sx={trainingSelectRadioSx}
+                />
+                <CardMedia
+                  component="img"
+                  height="160"
+                  image={resolvePublicAssetPath(enemy.imagePath)}
+                  alt={enemy.name}
+                  sx={{
+                    objectFit: 'contain',
+                    backgroundColor: '#1e1213',
+                    backgroundImage: `linear-gradient(rgba(34, 18, 19, 0.36), rgba(34, 18, 19, 0.58)), url(${getTrainingEnemyBackgroundPath(enemy.id)})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    p: 1.25,
+                    borderBottom: '1px solid rgba(214, 146, 112, 0.22)',
+                  }}
+                />
+              </Box>
+              <CardContent sx={{ '&:last-child': { pb: 2 } }}>
+                <Stack spacing={0.9} alignItems="center">
+                  <Chip
+                    label={locale.enemyLevel.replace('{{level}}', String(enemy.level))}
+                    size="small"
                     sx={{
-                      mt: 'auto',
-                      borderRadius: 999,
-                      border: 'none',
                       fontWeight: 800,
-                      color: '#fff5ef',
-                      backgroundColor: '#b65f49',
-                      boxShadow: 'none',
-                      '&:hover': {
-                        backgroundColor: '#c96a52',
-                        boxShadow: 'none',
-                      },
-                      '&.Mui-disabled': {
-                        color: 'rgba(255, 238, 229, 0.58)',
-                        backgroundColor: 'rgba(182, 95, 73, 0.24)',
-                      },
+                      color: '#ffe9dc',
+                      backgroundColor: 'rgba(214, 146, 112, 0.18)',
+                      border: '1px solid rgba(214, 146, 112, 0.35)',
+                    }}
+                  />
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight={700}
+                    textAlign="center"
+                    sx={{
+                      color: '#fff7dd',
+                      fontSize: { xs: '1.02rem', sm: '0.98rem', md: '1.02rem' },
+                      lineHeight: 1.35,
                     }}
                   >
-                    {isActionDisabled ? rematchInSeconds : locale.fight}
-                  </Button>
+                    {enemy.name}
+                  </Typography>
                 </Stack>
               </CardContent>
             </Card>
           </Grid>
-        ))}
-      </Grid>
-    </Stack>
+        )
+      })}
+    </Grid>
   )
 }

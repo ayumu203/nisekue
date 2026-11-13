@@ -20,13 +20,13 @@
       "message": "まずは訓練場で戦ってみましょう！"
     },
     "trainingFight": {
-      "message": "敵を選んで「戦う」を押してみよう！"
+      "message": "戦いたい敵を選んでみよう！"
     },
     "trainingMoveSelect": {
       "message": "技を選んで戦おう！"
     },
     "trainingConfirm": {
-      "message": "特訓を開始しよう！"
+      "message": "「戦闘」を押して特訓を始めよう！"
     },
     "trainingToLv5": {
       "message": "レベル5まで敵と戦ってみよう！"

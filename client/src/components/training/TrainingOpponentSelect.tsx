@@ -1,30 +1,30 @@
-import { Avatar, Button, Card, CardContent, Chip, Grid, Pagination, Stack, Typography } from '@mui/material'
+import { Avatar, Card, CardContent, Chip, Grid, Pagination, Radio, Stack, Typography } from '@mui/material'
 import { useRef } from 'react'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { PlayerSummary } from '@/schema/player'
 import locale from '../../../locale/training/Training.json'
+import { trainingSelectCardSx, trainingSelectRadioSx } from './trainingSelectStyles'
 
 type TrainingOpponentSelectProps = {
   opponents: PlayerSummary[]
-  isActionDisabled: boolean
-  lockRemainingSeconds: number
+  selectedOpponentId: string | null
+  isSelectionDisabled: boolean
   page: number
   pageCount: number
   onPageChange: (page: number) => void
-  onFight: (opponent: PlayerSummary) => Promise<void> | void
+  onSelect: (opponent: PlayerSummary) => void
 }
 
 export default function TrainingOpponentSelect({
   opponents,
-  isActionDisabled,
-  lockRemainingSeconds,
+  selectedOpponentId,
+  isSelectionDisabled,
   page,
   pageCount,
   onPageChange,
-  onFight,
+  onSelect,
 }: TrainingOpponentSelectProps) {
   const topRef = useRef<HTMLDivElement | null>(null)
-  const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
 
   if (opponents.length === 0) {
     return (
@@ -41,21 +41,26 @@ export default function TrainingOpponentSelect({
 
   return (
     <Stack spacing={2} ref={topRef}>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} role="radiogroup" aria-label={locale.enemySelectTitle}>
         {opponents.map((opponent) => (
           <Grid key={opponent.userId} size={{ xs: 12, sm: 6, md: 4 }}>
             <Card
-              variant="outlined"
+              component="label"
+              elevation={0}
               sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                color: '#f5f0df',
-                backgroundColor: '#382526',
-                borderColor: 'rgba(214, 146, 112, 0.42)',
-                boxShadow: 'inset 0 1px 0 rgba(255, 227, 214, 0.08)',
+                ...trainingSelectCardSx(opponent.userId === selectedOpponentId, isSelectionDisabled),
+                position: 'relative',
               }}
             >
+              <Radio
+                name="training-opponent"
+                checked={opponent.userId === selectedOpponentId}
+                disabled={isSelectionDisabled}
+                onChange={() => onSelect(opponent)}
+                inputProps={{ 'aria-label': opponent.userName ?? locale.anonymousPlayer }}
+                size="small"
+                sx={trainingSelectRadioSx}
+              />
               <CardContent sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                 <Stack spacing={1.5} sx={{ height: '100%' }}>
                   <Stack spacing={0.9} alignItems="center">
@@ -91,30 +96,6 @@ export default function TrainingOpponentSelect({
                       {opponent.job.displayName}
                     </Typography>
                   </Stack>
-                  <Button
-                    variant="contained"
-                    disabled={isActionDisabled}
-                    onClick={() => onFight(opponent)}
-                    sx={{
-                      mt: 'auto',
-                      borderRadius: 999,
-                      border: 'none',
-                      fontWeight: 800,
-                      color: '#fff5ef',
-                      backgroundColor: '#b65f49',
-                      boxShadow: 'none',
-                      '&:hover': {
-                        backgroundColor: '#c96a52',
-                        boxShadow: 'none',
-                      },
-                      '&.Mui-disabled': {
-                        color: 'rgba(255, 238, 229, 0.58)',
-                        backgroundColor: 'rgba(182, 95, 73, 0.24)',
-                      },
-                    }}
-                  >
-                    {isActionDisabled ? rematchInSeconds : locale.fight}
-                  </Button>
                 </Stack>
               </CardContent>
             </Card>
