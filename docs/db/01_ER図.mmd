@@ -310,6 +310,14 @@ erDiagram
         timestamptz created_at "NOT NULL"
     }
 
+    ANNOUNCEMENTS {
+        varchar(100) id PK "internal.announcements.id, 英小文字・数字・ハイフン"
+        date date "NOT NULL, 表示用の日付（JST）"
+        varchar(100) title "NOT NULL"
+        varchar(2000) body "NOT NULL, 改行を含む本文"
+        timestamptz created_at "NOT NULL, 同じ日付内の並び順に使用"
+    }
+
     RANKING_ENTRIES {
         uuid id PK "internal.ranking_entries.id"
         uuid snapshot_id FK "internal.ranking_snapshots.id"

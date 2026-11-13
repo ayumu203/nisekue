@@ -115,6 +115,7 @@ import {
   treasureMapExpeditionSchema,
 } from '@/schema/treasureMap'
 import { getRankingsResponseSchema } from '@/schema/ranking'
+import { getAnnouncementsResponseSchema } from '@/schema/announcement'
 import { getPetsResponseSchema, trainPetResponseSchema } from '@/schema/pet'
 
 export type {
@@ -219,6 +220,7 @@ export type {
   TreasureMapSummary,
 } from '@/schema/treasureMap'
 export type { GetRankingsResponse, RankingRow } from '@/schema/ranking'
+export type { Announcement, GetAnnouncementsResponse } from '@/schema/announcement'
 import {
   assignPetBattleSlotRequestSchema,
   getPetBattleStatsResponseSchema,
@@ -694,6 +696,13 @@ export const endpoints = {
       path: '/rankings',
       method: 'GET',
       responseSchema: getRankingsResponseSchema,
+    },
+  },
+  announcement: {
+    list: {
+      path: '/announcements',
+      method: 'GET',
+      responseSchema: getAnnouncementsResponseSchema,
     },
   },
   debug: {

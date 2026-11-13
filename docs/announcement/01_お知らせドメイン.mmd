@@ -1,0 +1,46 @@
+classDiagram
+    %% お知らせはホーム画面の「お知らせ」タブに表示する。
+    %% 登録・削除は GitHub Actions（post-announcement-*.yml / delete-announcement-*.yml）から
+    %% X-Maintenance-Token 付きで /internal/announcements を呼び出して行う。編集機能は持たない。
+    namespace AnnouncementDomain {
+        class Announcement {
+            <<Entity>>
+            +Id: AnnouncementId
+            +Date: DateOnly
+            +Title: string
+            +Body: string
+            +CreatedAt: DateTimeOffset
+            +Create(id, date, title, body, createdAt)$ Announcement
+        }
+
+        class AnnouncementId {
+            <<Value Object>>
+            +Value: string
+            +MaxLength = 100
+            +Generate(date: DateOnly)$ AnnouncementId
+        }
+
+        class IAnnouncementRepository {
+            <<Repository Interface>>
+            +ListAsync() IReadOnlyList~Announcement~
+            +TryAddAsync(announcement: Announcement) bool
+            +DeleteAsync(id: AnnouncementId) bool
+        }
+
+        class AnnouncementService {
+            <<Application Service>>
+            +ListAsync() IReadOnlyList~Announcement~
+            +PostAsync(command: PostAnnouncementCommand, now: DateTimeOffset) Announcement
+            +DeleteAsync(id: string) bool
+        }
+
+        class DbAnnouncementRepository {
+            <<Infrastructure>>
+            internal.announcements
+        }
+    }
+
+    AnnouncementService --> IAnnouncementRepository
+    IAnnouncementRepository <|.. DbAnnouncementRepository
+    IAnnouncementRepository --> Announcement
+    Announcement *-- AnnouncementId

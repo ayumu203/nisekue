@@ -1,0 +1,41 @@
+name: 'Delete Announcement [本番]'
+
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        description: '削除するお知らせのID（登録時のサマリーに表示されたもの）'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    environment: prod
+
+    steps:
+      - name: Delete announcement
+        env:
+          API_BASE_URL: ${{ vars.VITE_API_BASE_URL || secrets.VITE_API_BASE_URL }}
+          MARKET_CLEANUP_TOKEN: ${{ secrets.MARKET_CLEANUP_TOKEN }}
+          ID: ${{ inputs.id }}
+        run: |
+          if [ -z "$API_BASE_URL" ] || [ -z "$MARKET_CLEANUP_TOKEN" ]; then
+            echo "VITE_API_BASE_URL or MARKET_CLEANUP_TOKEN is not configured."
+            exit 1
+          fi
+
+          if ! [[ "$ID" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "お知らせIDは英小文字・数字・ハイフンのみ使用できます: $ID"
+            exit 1
+          fi
+
+          response=$(curl --fail-with-body --silent --show-error \
+            -X DELETE "${API_BASE_URL%/}/internal/announcements/$ID" \
+            -H "X-Maintenance-Token: $MARKET_CLEANUP_TOKEN" \
+            -H "Accept: application/json")
+
+          echo "$response"

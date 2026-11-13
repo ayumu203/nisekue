@@ -1,0 +1,69 @@
+name: 'Post Announcement [ステージング]'
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'タイトル（100文字以内）'
+        required: true
+        type: string
+      body:
+        description: '本文（2000文字以内）。改行したい位置に \n と書く'
+        required: true
+        type: string
+      date:
+        description: '表示する日付 YYYY-MM-DD（省略すると今日の日付 / JST）'
+        required: false
+        type: string
+      id:
+        description: 'お知らせID（英小文字・数字・ハイフン。省略すると日付から自動採番）'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Post announcement
+        env:
+          API_BASE_URL: ${{ vars.VITE_API_BASE_URL || secrets.VITE_API_BASE_URL }}
+          MARKET_CLEANUP_TOKEN: ${{ secrets.MARKET_CLEANUP_TOKEN }}
+          TITLE: ${{ inputs.title }}
+          BODY: ${{ inputs.body }}
+          DATE: ${{ inputs.date }}
+          ID: ${{ inputs.id }}
+        run: |
+          if [ -z "$API_BASE_URL" ] || [ -z "$MARKET_CLEANUP_TOKEN" ]; then
+            echo "VITE_API_BASE_URL or MARKET_CLEANUP_TOKEN is not configured."
+            exit 1
+          fi
+
+          # 入力欄では改行を打てないため、本文中の \n を改行に変換する
+          payload=$(jq -n \
+            --arg title "$TITLE" \
+            --arg body "$BODY" \
+            --arg date "$DATE" \
+            --arg id "$ID" \
+            '{title: $title, body: ($body | gsub("\\\\n"; "\n")), date: (if $date == "" then null else $date end), id: (if $id == "" then null else $id end)}')
+
+          response=$(curl --fail-with-body --silent --show-error \
+            -X POST "${API_BASE_URL%/}/internal/announcements" \
+            -H "X-Maintenance-Token: $MARKET_CLEANUP_TOKEN" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            --data "$payload")
+
+          echo "$response"
+
+          {
+            echo "### お知らせを登録しました（ステージング）"
+            echo
+            echo "- ID: \`$(echo "$response" | jq -r '.id')\`（削除するときに使います）"
+            echo "- 日付: $(echo "$response" | jq -r '.date')"
+            echo "- タイトル: $(echo "$response" | jq -r '.title')"
+          } >> "$GITHUB_STEP_SUMMARY"
