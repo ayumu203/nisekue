@@ -1,7 +1,27 @@
 import { Box, Stack, Typography } from '@mui/material'
-import { announcementEmptyMessage, announcements, formatAnnouncementDate } from '@/lib/announcements'
+import { useAnnouncements } from '@/hooks/useAnnouncements'
+import {
+  announcementEmptyMessage,
+  announcementErrorMessage,
+  announcementLoadingMessage,
+  formatAnnouncementDate,
+} from '@/lib/announcements'
 
 export default function AnnouncementList() {
+  const { announcements, error, isLoading } = useAnnouncements()
+
+  if (isLoading) {
+    return <Typography variant="body2">{announcementLoadingMessage}</Typography>
+  }
+
+  if (error && announcements.length === 0) {
+    return (
+      <Typography variant="body2" color="error">
+        {announcementErrorMessage}
+      </Typography>
+    )
+  }
+
   return (
     <>
       {announcements.length === 0 ? (

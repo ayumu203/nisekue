@@ -3,8 +3,10 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using server.domain.chat;
 using server.domain.player;
+using server.shared.constants.announcement;
 using server.shared.constants.chat;
 using server.shared.constants.player;
+using server.infrastructure.announcement;
 using server.infrastructure.chat;
 using server.infrastructure.pet;
 using server.infrastructure.player;
@@ -59,6 +61,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<TreasureMapClaimHistoryEntity> TreasureMapClaimHistories => Set<TreasureMapClaimHistoryEntity>();
     public DbSet<RankingSnapshotEntity> RankingSnapshots => Set<RankingSnapshotEntity>();
     public DbSet<RankingEntryEntity> RankingEntries => Set<RankingEntryEntity>();
+    public DbSet<AnnouncementEntity> Announcements => Set<AnnouncementEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -717,6 +720,25 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany()
             .HasForeignKey(x => x.PlayerId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        var announcement = modelBuilder.Entity<AnnouncementEntity>();
+        announcement.ToTable("announcements", "internal");
+        announcement.HasKey(x => x.Id);
+        announcement.Property(x => x.Id)
+            .HasColumnName("id")
+            .HasMaxLength(AnnouncementConstants.IdMaxLength)
+            .IsRequired();
+        announcement.Property(x => x.Date).HasColumnName("date").IsRequired();
+        announcement.Property(x => x.Title)
+            .HasColumnName("title")
+            .HasMaxLength(AnnouncementConstants.TitleMaxLength)
+            .IsRequired();
+        announcement.Property(x => x.Body)
+            .HasColumnName("body")
+            .HasMaxLength(AnnouncementConstants.BodyMaxLength)
+            .IsRequired();
+        announcement.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
+        announcement.HasIndex(x => new { x.Date, x.CreatedAt });
 
         var petBattleStats = modelBuilder.Entity<PlayerPetBattleStatsEntity>();
         petBattleStats.ToTable("player_pet_battle_stats", "internal");
