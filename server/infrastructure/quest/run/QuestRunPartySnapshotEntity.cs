@@ -21,6 +21,8 @@ public class QuestRunPartySnapshotEntity
     public int Speed { get; set; }
     public string MoveSetJson { get; set; } = "[]";
     public int InitialActionMode { get; set; }
+    public string PetsJson { get; set; } = "[]";
+    // 旧形式（pets_json 導入前）のスタンバイペット。読み取り時のフォールバックにのみ使う。
     public int? PetEnemyDefinitionId { get; set; }
     public int? PetMaxHp { get; set; }
     public int? PetMaxMp { get; set; }

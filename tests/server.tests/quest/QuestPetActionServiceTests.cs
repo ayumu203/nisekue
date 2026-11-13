@@ -14,85 +14,82 @@ public class QuestPetActionServiceTests
     private readonly QuestPetActionService service = new();
 
     [Fact]
-    public void CreateSummonInputs_WhenRollSelectsAttack_ReturnsNormalAttackOnAllEnemies()
+    public void CreateDeployedPetInputs_WithMoves_AlwaysUsesMove()
     {
-        var pet = CreatePetSnapshot();
+        var pet = CreateDeployedPet();
         var moves = new[] { CreateMove(1, AttackRange.Single) };
 
-        var (actor, action, selectedMove) = service.CreateSummonInputs(
-            Guid.NewGuid(),
-            "Ownerのスライム",
+        var (actor, action, selectedMove) = service.CreateDeployedPetInputs(
             pet,
+            "Ownerのスライム",
             moves,
             rollProvider: _ => 1);
 
-        action.Kind.Should().Be(BattleActionKind.NormalAttack);
-        action.TargetType.Should().Be(TargetType.Enemy);
-        action.AttackRange.Should().Be(AttackRange.All);
-        selectedMove.Should().BeNull();
+        action.Kind.Should().Be(BattleActionKind.UseMove);
+        action.MoveId.Should().Be(1);
+        selectedMove.Should().Be(moves[0]);
+        actor.ActorId.Should().Be(pet.ActorId);
         actor.Side.Should().Be(BattleSide.Ally);
         actor.BaseStatus.Should().Be(pet.Status);
-        actor.CurrentHp.Should().Be(pet.Status.MaxHp);
     }
 
     [Fact]
-    public void CreateSummonInputs_WhenRollSelectsMove_UsesMoveTargeting()
+    public void CreateDeployedPetInputs_WhenRollSelectsSecondMove_PicksByRoll()
     {
-        var pet = CreatePetSnapshot();
-        var move = CreateMove(10, AttackRange.Single);
-        var rolls = new Queue<int>([2, 1]); // 1回目: 技を選択 / 2回目: 1番目の技
+        var pet = CreateDeployedPet();
+        var moves = new[] { CreateMove(1, AttackRange.Single), CreateMove(2, AttackRange.All) };
 
-        var (_, action, selectedMove) = service.CreateSummonInputs(
-            Guid.NewGuid(),
-            "Ownerのスライム",
-            pet,
-            [move],
-            rollProvider: _ => rolls.Dequeue());
+        var (_, action, selectedMove) = service.CreateDeployedPetInputs(pet, "Ownerのスライム", moves, _ => 2);
 
-        action.Kind.Should().Be(BattleActionKind.UseMove);
-        action.MoveId.Should().Be(10);
-        action.TargetType.Should().Be(move.TargetType);
-        action.AttackRange.Should().Be(AttackRange.Single, "技の対象仕様に従う");
-        selectedMove.Should().Be(move);
+        action.MoveId.Should().Be(2);
+        action.AttackRange.Should().Be(AttackRange.All);
+        selectedMove.Should().Be(moves[1]);
     }
 
     [Fact]
-    public void CreateSummonInputs_WhenRollSelectsSecondMove_PicksByRoll()
+    public void CreateDeployedPetInputs_WithNoMoves_UsesSingleNormalAttack()
     {
-        var pet = CreatePetSnapshot();
-        var moves = new[] { CreateMove(10, AttackRange.Single), CreateMove(20, AttackRange.All) };
-        var rolls = new Queue<int>([2, 2]);
+        var pet = CreateDeployedPet();
 
-        var (_, action, _) = service.CreateSummonInputs(Guid.NewGuid(), "Ownerのスライム", pet, moves, _ => rolls.Dequeue());
-
-        action.MoveId.Should().Be(20);
-    }
-
-    [Fact]
-    public void CreateSummonInputs_WithNoMoves_AlwaysNormalAttack()
-    {
-        var pet = CreatePetSnapshot();
-
-        var (_, action, selectedMove) = service.CreateSummonInputs(
-            Guid.NewGuid(),
-            "Ownerのスライム",
-            pet,
-            availableMoves: [],
-            rollProvider: _ => 2);
+        var (_, action, selectedMove) = service.CreateDeployedPetInputs(pet, "Ownerのスライム", [], _ => 1);
 
         action.Kind.Should().Be(BattleActionKind.NormalAttack);
-        action.AttackRange.Should().Be(AttackRange.All);
+        action.TargetType.Should().Be(TargetType.Enemy);
+        action.AttackRange.Should().Be(AttackRange.Single);
         selectedMove.Should().BeNull();
     }
 
     [Fact]
-    public void CreateSummonInputs_GrantsEnoughMpToCastAnyMove()
+    public void CreateDeployedPetInputs_UsesCurrentHpOfDeployedPet()
     {
-        var pet = CreatePetSnapshot();
+        var pet = CreateDeployedPet(currentHp: 42);
 
-        var (actor, _, _) = service.CreateSummonInputs(Guid.NewGuid(), "Ownerのスライム", pet, [], _ => 1);
+        var (actor, _, _) = service.CreateDeployedPetInputs(pet, "Ownerのスライム", [], _ => 1);
 
-        actor.CurrentMp.Should().BeGreaterThan(pet.Status.MaxMp, "単発登場のためMP切れで技が失敗しないようにする");
+        actor.CurrentHp.Should().Be(42);
+    }
+
+    [Fact]
+    public void CreateDeployedPetInputs_GrantsEnoughMpToCastAnyMove()
+    {
+        var pet = CreateDeployedPet();
+
+        var (actor, _, _) = service.CreateDeployedPetInputs(pet, "Ownerのスライム", [], _ => 1);
+
+        actor.CurrentMp.Should().BeGreaterThan(pet.Status.MaxMp, "出撃中のペットは MP を管理しない");
+    }
+
+    private static QuestDeployedPetState CreateDeployedPet(int? currentHp = null)
+    {
+        var snapshot = CreatePetSnapshot();
+        return new QuestDeployedPetState(
+            Guid.NewGuid(),
+            QuestParticipantId.New(),
+            snapshot.EnemyDefinitionId,
+            snapshot.Status,
+            new server.domain.battle.BattlePosition(BattleRow.Front, BattleColumn.Left),
+            currentHp ?? snapshot.Status.MaxHp,
+            isDead: false);
     }
 
     private static QuestPetSnapshot CreatePetSnapshot()

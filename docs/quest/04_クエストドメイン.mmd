@@ -323,12 +323,13 @@ classDiagram
             +MoveSet MoveSet
             +BattlePosition StartPosition
             +ActionMode InitialActionMode
-            +QuestPetSnapshot? Pet
+            %% クエスト参加時点の所持ペット（スタンバイを先頭、残りは捕獲順。最大3体）
+            +IReadOnlyList~QuestPetSnapshot~ Pets
         }
 
         class QuestPetSnapshot {
             <<Value Object>>
-            %% クエスト参加時点のスタンバイペット（敵マスタ + 育成加算の合算ステータス）
+            %% クエスト参加時点の所持ペット1体（敵マスタ + 育成加算の合算ステータス）
             +QuestEnemyDefinitionId EnemyDefinitionId
             +Status Status
         }
@@ -360,6 +361,12 @@ classDiagram
             +DateTimeOffset? EndedAt
             %% 直近ターン結果が再計算され永続化が必要か。軽量ロード時の last_turn_results_json の null 上書きを防ぐ
             +bool LastTurnResultsDirty
+            %% ペット呼出はソロ限定・パーティで1クエスト1回
+            +bool PetSummonUsed
+            %% 出撃中のペット。null または IsActive=false のときはプレイヤー側が戦う
+            +QuestPetDeployment? PetDeployment
+            +bool IsPetDeploymentActive
+            +StartPetDeployment(deployment: QuestPetDeployment) void
             +InitializeFirstFloor() void
             +SubmitCommand(participantId: QuestParticipantId, command: QuestSubmittedCommand, now: DateTimeOffset) void
             +SwitchToAutoActionForTimeout(now: DateTimeOffset) void
@@ -405,8 +412,31 @@ classDiagram
             +int CanActFromTurn
             +ActionMode ActionMode
             +ManualControlRequestStatus ManualControlRequestStatus
-            +int PetSummonsUsed
-            +ConsumePetSummon() void
+        }
+
+        class QuestPetDeployment {
+            <<Entity>>
+            %% 呼出で出撃したペットのチーム。出撃中はプレイヤー側の代わりに戦闘へ参加する
+            %% 呼出ターンを1ターン目として3ターン。残りターン0またはペット全滅で終了
+            +int RemainingTurns
+            +IReadOnlyList~QuestDeployedPetState~ Pets
+            +bool IsActive
+            +ConsumeTurn() void
+            +ApplyResolution(resolution: BattleTurnResolution) void
+        }
+
+        class QuestDeployedPetState {
+            <<Entity>>
+            %% 位置は前列左→前列右→中列左…の順に詰める
+            +Guid ActorId
+            +QuestParticipantId OwnerParticipantId
+            +QuestEnemyDefinitionId EnemyDefinitionId
+            +Status Status
+            +BattlePosition Position
+            +int CurrentHp
+            +bool IsDead
+            +IReadOnlyList~BattleAilmentState~ Ailments
+            +IReadOnlyList~BattleBuffState~ Buffs
         }
 
         class QuestEnemyState {
@@ -605,9 +635,10 @@ classDiagram
             <<Domain Service>>
             %% 捕獲判定は PetCaptureRateCalculator（docs/pet/02_ペットドメイン.mmd）を使用
             %% 捕獲成功した敵は報酬対象外として戦闘から除外する
-            %% 呼出は 50% で敵全体への通常攻撃、50% で元の敵マスタの技からランダム1つ（MP消費なし）
+            %% 出撃中のペットは元の敵マスタの技からランダム1つ。技がなければ通常攻撃（MP消費なし）
             +ResolveCapture(playerLevel: int, enemyDefinition: QuestEnemyDefinition) bool
-            +ResolveSummonAction(pet: QuestPetSnapshot, enemyDefinition: QuestEnemyDefinition, availableMoves: IReadOnlyList~Move~) BattleActionInput
+            +CreateDeployment(pets: IReadOnlyList~QuestPetSnapshot~, owner: QuestParticipantId) QuestPetDeployment
+            +CreatePetInputs(pet: QuestDeployedPetState, displayName: string, availableMoves: IReadOnlyList~Move~) (BattleActorInput, BattleActionInput)
         }
     }
 
@@ -676,7 +707,11 @@ classDiagram
     QuestRewardAccumulator ..> QuestStageEquipmentRewardEntry : common reward roll; doubled when any party member is GreatThief
     QuestRewardAccumulator ..> QuestStageItemRewardEntry : common reward roll; doubled when any party member is GreatThief
     QuestSnapshotFactory ..> QuestRunPartyMemberSnapshot : builds
-    QuestRunPartyMemberSnapshot *-- QuestPetSnapshot : 0..1
+    QuestRunPartyMemberSnapshot *-- QuestPetSnapshot : 0..3
+    QuestRun *-- QuestPetDeployment : 0..1
+    QuestPetDeployment *-- QuestDeployedPetState : 1..3
+    QuestPetActionService ..> QuestPetDeployment : builds
+    QuestEnemyActionPolicy ..> QuestPetDeployment : 出撃中はペットを狙う
     QuestPetActionService ..> QuestPetSnapshot : use
     QuestSnapshotFactory ..> EquipmentStatusResolver : use
     QuestSnapshotFactory ..> PlayerEquipment : use

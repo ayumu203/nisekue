@@ -13,7 +13,8 @@ public class QuestSnapshotFactory(EquipmentStatusResolver equipmentStatusResolve
         IEnumerable<QuestNpcTemplate> npcTemplates,
         IEnumerable<PlayerEquipment> playerEquipments,
         IEnumerable<Equipment> equipments,
-        IReadOnlyDictionary<PlayerId, PlayerPet>? activePetsByPlayerId = null,
+        // 所持ペット（スタンバイを先頭、残りは捕獲順に並べ替えて保存する）
+        IReadOnlyDictionary<PlayerId, IReadOnlyList<PlayerPet>>? petsByPlayerId = null,
         IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? enemyDefinitions = null)
     {
         ArgumentNullException.ThrowIfNull(participants);
@@ -42,14 +43,7 @@ public class QuestSnapshotFactory(EquipmentStatusResolver equipmentStatusResolve
                     var weaponEquipmentId = ownedEquipments.FirstOrDefault(x => x.Status == EquipmentStatus.Equipped && x.Type == EquipmentType.Weapon)?.Id;
                     var armorEquipmentId = ownedEquipments.FirstOrDefault(x => x.Status == EquipmentStatus.Equipped && x.Type == EquipmentType.Armor)?.Id;
 
-                    QuestPetSnapshot? petSnapshot = null;
-                    if (activePetsByPlayerId is not null &&
-                        enemyDefinitions is not null &&
-                        activePetsByPlayerId.TryGetValue(player.Id, out var activePet) &&
-                        enemyDefinitions.TryGetValue(activePet.EnemyDefinitionId, out var petDefinition))
-                    {
-                        petSnapshot = new QuestPetSnapshot(activePet.EnemyDefinitionId, PetStatusResolver.Resolve(activePet, petDefinition));
-                    }
+                    var petSnapshots = CreatePetSnapshots(player.Id, petsByPlayerId, enemyDefinitions);
 
                     return new QuestRunPartyMemberSnapshot(
                         participant.Id,
@@ -63,7 +57,7 @@ public class QuestSnapshotFactory(EquipmentStatusResolver equipmentStatusResolve
                         player.MoveSet,
                         participant.Position,
                         ActionMode.Manual,
-                        petSnapshot);
+                        petSnapshots);
                 }
 
                 var npcTemplate = participant.NpcTemplateId is not null && npcById.TryGetValue(participant.NpcTemplateId.Value, out var foundTemplate)
@@ -89,6 +83,27 @@ public class QuestSnapshotFactory(EquipmentStatusResolver equipmentStatusResolve
                     participant.Position,
                     ActionMode.AutoAttackOnly);
             })
+            .ToArray();
+    }
+
+    private static QuestPetSnapshot[] CreatePetSnapshots(
+        PlayerId playerId,
+        IReadOnlyDictionary<PlayerId, IReadOnlyList<PlayerPet>>? petsByPlayerId,
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? enemyDefinitions)
+    {
+        if (petsByPlayerId is null ||
+            enemyDefinitions is null ||
+            !petsByPlayerId.TryGetValue(playerId, out var pets))
+        {
+            return [];
+        }
+
+        // OrderBy は安定ソートなので、スタンバイ以外は渡された順（捕獲順）のまま並ぶ。
+        return pets
+            .OrderBy(pet => pet.IsStandby ? 0 : 1)
+            .Take(PetConstants.MaxPetCount)
+            .Where(pet => enemyDefinitions.ContainsKey(pet.EnemyDefinitionId))
+            .Select(pet => new QuestPetSnapshot(pet.EnemyDefinitionId, PetStatusResolver.Resolve(pet, enemyDefinitions[pet.EnemyDefinitionId])))
             .ToArray();
     }
 }

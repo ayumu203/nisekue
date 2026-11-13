@@ -267,18 +267,18 @@ public class QuestRoomService(
 
         var equipments = await equipmentRepository.GetAllAsync();
 
-        var activePetsByPlayerId = new Dictionary<PlayerId, PlayerPet>();
+        var petsByPlayerId = new Dictionary<PlayerId, IReadOnlyList<PlayerPet>>();
         foreach (var player in players)
         {
-            var activePet = await playerPetRepository.GetStandbyByPlayerAsync(player.Id);
-            if (activePet is not null)
+            var pets = await playerPetRepository.GetByPlayerAsync(player.Id);
+            if (pets.Count > 0)
             {
-                activePetsByPlayerId[player.Id] = activePet;
+                petsByPlayerId[player.Id] = pets;
             }
         }
 
         var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync()).ToDictionary(x => x.Id);
-        var snapshots = questSnapshotFactory.Create(activeParticipants, players, snapshotNpcs, playerEquipments, equipments, activePetsByPlayerId, enemyDefinitions);
+        var snapshots = questSnapshotFactory.Create(activeParticipants, players, snapshotNpcs, playerEquipments, equipments, petsByPlayerId, enemyDefinitions);
         var run = await questRunFactory.Create(room, stage, snapshots, DateTimeOffset.UtcNow);
 
         await questRoomRepository.SaveAsync(room);

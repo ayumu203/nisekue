@@ -53,7 +53,7 @@ type QuestBattleStatusPanelProps = {
     submittedAt: string
   } | null
   canCapture: boolean
-  petSummon: { name: string; remaining: number } | null
+  canSummonPet: boolean
   canSubmitCurrentTurn: boolean
   isCommandSubmitting: boolean
   onActionKindChange: (actionKind: QuestActionKind) => void
@@ -67,6 +67,7 @@ type QuestBattleStatusPanelProps = {
     submitCommand: string
     submittingCommand: string
     pendingCommandTitle: string
+    petDeploymentLabel: string
     leaveFinishedRun: string
     labels: {
       none: string
@@ -81,7 +82,8 @@ type QuestBattleStatusPanelProps = {
       | 'Escape'
       | 'EndlessFinish'
       | 'Capture'
-      | 'SummonPet',
+      | 'SummonPet'
+      | 'EntrustPet',
       string
     >
     endlessCheckpoint: {
@@ -455,7 +457,7 @@ export default function QuestBattleStatusPanel({
   selectedTargetColumn,
   currentPendingCommand,
   canCapture,
-  petSummon,
+  canSummonPet,
   canSubmitCurrentTurn,
   isCommandSubmitting,
   onActionKindChange,
@@ -516,17 +518,21 @@ export default function QuestBattleStatusPanel({
   const handleEndlessFinishConfirm = () => {
     void onSubmitCommand()
   }
-  const actionOptions: Array<{ value: QuestActionKind; label: string }> = [
-    { value: 'UseMove', label: locale.actionKinds.UseMove },
-    { value: 'NormalAttack', label: locale.actionKinds.NormalAttack },
-    { value: 'Guard', label: locale.actionKinds.Guard },
-    // 「待機」はフロントエンドの選択肢からは除外（リクエスト経由では引き続き利用可能）。
-    ...(canCapture ? [{ value: 'Capture' as const, label: locale.actionKinds.Capture }] : []),
-    ...(petSummon != null && petSummon.remaining > 0
-      ? [{ value: 'SummonPet' as const, label: `${locale.actionKinds.SummonPet}(${petSummon.remaining})` }]
-      : []),
-    ...escapeActionOption,
-  ]
+  // ペット出撃中はプレイヤー側が下がっているため、「ペットにまかせる」だけを出す。
+  const petDeployment = run.petSummon.deployment
+  const isPetDeploymentActive = petDeployment != null
+  const actionOptions: Array<{ value: QuestActionKind; label: string }> = isPetDeploymentActive
+    ? [{ value: 'EntrustPet', label: locale.actionKinds.EntrustPet }]
+    : [
+        { value: 'UseMove', label: locale.actionKinds.UseMove },
+        { value: 'NormalAttack', label: locale.actionKinds.NormalAttack },
+        { value: 'Guard', label: locale.actionKinds.Guard },
+        // 「待機」はフロントエンドの選択肢からは除外（リクエスト経由では引き続き利用可能）。
+        ...(canCapture ? [{ value: 'Capture' as const, label: locale.actionKinds.Capture }] : []),
+        ...(canSummonPet ? [{ value: 'SummonPet' as const, label: locale.actionKinds.SummonPet }] : []),
+        ...escapeActionOption,
+      ]
+  const deployedPets = petDeployment?.pets ?? []
 
   const selectedMove = availableMoves.find((move) => move.moveId === selectedMoveId) ?? null
   const selectedTargetKey =
@@ -785,6 +791,21 @@ export default function QuestBattleStatusPanel({
             {commandControls}
           </Stack>
 
+          {petDeployment != null ? (
+            <Chip
+              color="warning"
+              label={locale.petDeploymentLabel.replace('{{turns}}', String(petDeployment.remainingTurns))}
+              sx={{
+                display: 'inline-flex',
+                position: 'absolute',
+                top: { xs: 58, sm: 72 },
+                left: { xs: 10, sm: 16 },
+                zIndex: 4,
+                fontWeight: 700,
+              }}
+            />
+          ) : null}
+
           {currentPendingCommand ? (
             <Chip
               color="success"
@@ -821,7 +842,25 @@ export default function QuestBattleStatusPanel({
             }}
           />
 
-          {sortedPartyMembers.map((member) => {
+          {deployedPets.map((pet) => {
+            const position = allyPositions[pet.position.row][pet.position.column]
+
+            return (
+              <BattleSprite
+                key={pet.actorId}
+                name={pet.name}
+                imagePath={pet.imagePath}
+                hp={pet.currentHp}
+                maxHp={pet.maxHp}
+                isDead={pet.isDead}
+                isAlly={false}
+                left={position.left}
+                bottom={position.bottom}
+              />
+            )
+          })}
+
+          {(isPetDeploymentActive ? [] : sortedPartyMembers).map((member) => {
             const position = allyPositions[member.position.row][member.position.column]
             const allyKey = `${member.position.row}:${member.position.column}`
             const isActor = member.participantId === selfParticipantId

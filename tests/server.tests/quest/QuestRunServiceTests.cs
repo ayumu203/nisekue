@@ -2012,18 +2012,15 @@ public class QuestRunServiceTests
     }
 
     [Fact]
-    public async Task SubmitCommandAsync_SummonPet_ConsumesSummonAndPetAttacksEnemies()
+    public async Task SubmitCommandAsync_SummonPet_DeploysPetsAndPartyStepsBack()
     {
         var participantId = QuestParticipantId.New();
-        var petSnapshot = new QuestPetSnapshot(
-            new QuestEnemyDefinitionId(1),
-            new Status(maxHp: 100, maxMp: 10, strength: 30, defense: 5, intelligence: 1, luck: 1, speed: 99));
         var run = CreateRunWithParty(
             [
                 new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(50, 10, 10, 5, 1, 1, 50), new MoveSet(), 50, 10)
             ],
             enemyHp: 100,
-            pet: petSnapshot);
+            pets: [CreateSummonPetSnapshot(), CreateSummonPetSnapshot()]);
         var repository = new FakeQuestRunRepository(run);
         var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
         var service = CreateRunService(
@@ -2039,10 +2036,98 @@ public class QuestRunServiceTests
             participantId,
             new QuestSubmittedCommand(participantId, run.TurnState.CurrentTurnNo, ActionKind.SummonPet, DateTimeOffset.UtcNow));
 
-        run.BattleState.FindPartyMember(participantId).PetSummonsUsed.Should().Be(1);
-        run.BattleState.Enemies.Single().CurrentHp.Should().BeLessThan(100, "ペットの全体攻撃でダメージを受ける");
+        run.PetSummonUsed.Should().BeTrue();
+        run.IsPetDeploymentActive.Should().BeTrue();
+        run.PetDeployment!.RemainingTurns.Should().Be(2, "呼出したターンを1ターン目と数える");
+        run.PetDeployment.Pets.Should().HaveCount(2);
+        run.BattleState.FindPartyMember(participantId).CurrentHp.Should().Be(50, "下がっているプレイヤーは攻撃を受けない");
+        run.BattleState.Enemies.Single().CurrentHp.Should().BeLessThan(100, "ペットの攻撃でダメージを受ける");
         run.LastTurnResults!.Actions.Should()
             .Contain(x => x.ActorDisplayName == "OwnerのSlime" && x.ActionKind == nameof(ActionKind.NormalAttack));
+        run.LastTurnResults.Actions.Should().NotContain(x => x.ActorParticipantId == participantId.Value);
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_EntrustPetUntilThirdTurn_ReturnsPartyToBattle()
+    {
+        var participantId = QuestParticipantId.New();
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(50, 10, 10, 5, 1, 1, 50), new MoveSet(), 50, 10)
+            ],
+            enemyHp: 100000,
+            pets: [CreateSummonPetSnapshot()]);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var service = CreateRunService(
+            repository,
+            roomRepository,
+            new FakePlayerRepository(roomRepository.PlayerIds.ToArray()),
+            CreateStage(run.StageId),
+            [],
+            petRollProvider: _ => 1);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(participantId, run.TurnState.CurrentTurnNo, ActionKind.SummonPet, DateTimeOffset.UtcNow));
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(participantId, run.TurnState.CurrentTurnNo, ActionKind.EntrustPet, DateTimeOffset.UtcNow));
+
+        run.IsPetDeploymentActive.Should().BeTrue();
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(participantId, run.TurnState.CurrentTurnNo, ActionKind.EntrustPet, DateTimeOffset.UtcNow));
+
+        run.IsPetDeploymentActive.Should().BeFalse();
+        run.PetDeployment.Should().BeNull();
+        run.TurnState.CurrentTurnNo.Should().Be(4);
+
+        await service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(participantId, run.TurnState.CurrentTurnNo, ActionKind.Wait, DateTimeOffset.UtcNow));
+
+        run.TurnState.CurrentTurnNo.Should().Be(5, "ペットが下がった後はプレイヤーの行動でターンが進む");
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_SummonPetInMultiRoom_ThrowsInvalidOperationException()
+    {
+        var participantId = QuestParticipantId.New();
+        var run = CreateRunWithParty(
+            [
+                new PartyMemberSeed(participantId, ParticipantType.Player, "Owner", Job.Warrior, new BattlePosition(BattleRow.Front, BattleColumn.Left), ActionMode.Manual, new Status(50, 10, 10, 5, 1, 1, 50), new MoveSet(), 50, 10)
+            ],
+            enemyHp: 100,
+            pets: [CreateSummonPetSnapshot()]);
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run, mode: QuestRoomMode.Multi));
+        var service = CreateRunService(
+            repository,
+            roomRepository,
+            new FakePlayerRepository(roomRepository.PlayerIds.ToArray()),
+            CreateStage(run.StageId),
+            []);
+
+        var act = () => service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(participantId, run.TurnState.CurrentTurnNo, ActionKind.SummonPet, DateTimeOffset.UtcNow));
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*ソロクエスト*");
+        run.PetSummonUsed.Should().BeFalse();
+    }
+
+    private static QuestPetSnapshot CreateSummonPetSnapshot()
+    {
+        return new QuestPetSnapshot(
+            new QuestEnemyDefinitionId(1),
+            new Status(maxHp: 100, maxMp: 10, strength: 30, defense: 5, intelligence: 1, luck: 1, speed: 99));
     }
 
     private static QuestRunService CreateRunService(
@@ -2161,7 +2246,7 @@ public class QuestRunServiceTests
         PlayerEquipmentId? armorEquipmentId = null,
         IReadOnlyList<BattleAilmentState>? enemyAilments = null,
         IReadOnlyList<BattleBuffState>? enemyBuffs = null,
-        QuestPetSnapshot? pet = null)
+        IReadOnlyList<QuestPetSnapshot>? pets = null)
     {
         enemyPositions ??= [new BattlePosition(BattleRow.Front, BattleColumn.Right)];
 
@@ -2177,7 +2262,7 @@ public class QuestRunServiceTests
             member.MoveSet,
             member.Position,
             member.ActionMode,
-            member.Type == ParticipantType.Player ? pet : null)).ToArray();
+            member.Type == ParticipantType.Player ? pets : null)).ToArray();
 
         var partyStates = partyMembers.Select(member => new QuestRunPartyMemberState(
             member.ParticipantId,
@@ -2215,7 +2300,7 @@ public class QuestRunServiceTests
             startedAt: DateTimeOffset.UtcNow);
     }
 
-    private static QuestRoom CreateRoom(QuestRun run, PlayerId? ownerPlayerId = null)
+    private static QuestRoom CreateRoom(QuestRun run, PlayerId? ownerPlayerId = null, QuestRoomMode mode = QuestRoomMode.Solo)
     {
         var playerIds = run.PartySnapshots
             .Where(x => x.Type == ParticipantType.Player)
@@ -2232,7 +2317,7 @@ public class QuestRunServiceTests
             run.RoomId,
             resolvedOwnerPlayerId,
             run.StageId,
-            QuestRoomMode.Solo,
+            mode,
             formation: new FormationLayout(run.PartySnapshots.Select(x => x.StartPosition)),
             participants: run.PartySnapshots.Select((snapshot, index) =>
             {
