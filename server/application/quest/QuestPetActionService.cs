@@ -2,6 +2,7 @@ using server.application.battle;
 using server.domain.battle.enums;
 using server.domain.move;
 using server.domain.move.enums;
+using server.domain.player;
 using server.domain.quest;
 
 namespace server.application.quest;
