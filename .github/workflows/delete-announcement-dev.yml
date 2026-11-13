@@ -33,9 +33,13 @@ jobs:
             exit 1
           fi
 
-          response=$(curl --fail-with-body --silent --show-error \
+          # 失敗時も API のエラーメッセージをログに出すため、bash -e で止まる前に表示する
+          if ! response=$(curl --fail-with-body --silent --show-error \
             -X DELETE "${API_BASE_URL%/}/internal/announcements/$ID" \
             -H "X-Maintenance-Token: $MARKET_CLEANUP_TOKEN" \
-            -H "Accept: application/json")
+            -H "Accept: application/json"); then
+            echo "$response"
+            exit 1
+          fi
 
           echo "$response"

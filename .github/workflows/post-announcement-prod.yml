@@ -51,12 +51,16 @@ jobs:
             --arg id "$ID" \
             '{title: $title, body: ($body | gsub("\\\\n"; "\n")), date: (if $date == "" then null else $date end), id: (if $id == "" then null else $id end)}')
 
-          response=$(curl --fail-with-body --silent --show-error \
+          # 失敗時も API のエラーメッセージをログに出すため、bash -e で止まる前に表示する
+          if ! response=$(curl --fail-with-body --silent --show-error \
             -X POST "${API_BASE_URL%/}/internal/announcements" \
             -H "X-Maintenance-Token: $MARKET_CLEANUP_TOKEN" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
-            --data "$payload")
+            --data "$payload"); then
+            echo "$response"
+            exit 1
+          fi
 
           echo "$response"
 
