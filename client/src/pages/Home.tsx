@@ -28,6 +28,7 @@ import {
 import { getThreadAlerts, markThreadRepliesAlerted } from '@/api/thread'
 import { useAuth } from '@/contexts/useAuth'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
+import { useAnnouncements } from '@/hooks/useAnnouncements'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/home/Home.json'
 import ChatMessages from '@/components/chat/ChatMessages'
@@ -64,7 +65,7 @@ import {
   softGreenButtonSx,
   twoColumnContentGridSx,
 } from '@/constants/styles'
-import { announcementTabLabel, latestAnnouncementDate } from '@/lib/announcements'
+import { announcementTabLabel } from '@/lib/announcements'
 import { hasUnreadAnnouncement, markAnnouncementsSeen } from '@/lib/announcementStorage'
 import { beginnerGuides } from '@/lib/beginnerGuides'
 import { getTutorialStep, isRebirthTutorialShown, setRebirthTutorialShown, setTutorialStep } from '@/lib/tutorial'
@@ -87,12 +88,12 @@ function Home() {
     setTutorialStepState(next)
   }
   const [chatTab, setChatTab] = useState<'personal' | 'global' | 'announcement'>('personal')
-  const [hasUnreadAnnouncements, setHasUnreadAnnouncements] = useState(false)
   const [globalChatPage, setGlobalChatPage] = useState(1)
   const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
   const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
   const [isOthersGroupOpen, setIsOthersGroupOpen] = useState(false)
   const { canUseDebug } = useDebugStatus()
+  const { latestAnnouncementDate } = useAnnouncements()
   const handledChatIdsRef = useRef<Set<number>>(new Set())
   const handledReplyIdsRef = useRef<Set<string>>(new Set())
   const enqueueToast = useEffectEvent((message: string) => {
@@ -230,9 +231,14 @@ function Home() {
     })
   }, [session?.access_token, threadAlerts])
 
+  // お知らせタブを開いている間は、後から取得した新しいお知らせもその場で既読にする
   useEffect(() => {
-    setHasUnreadAnnouncements(hasUnreadAnnouncement(userId, latestAnnouncementDate))
-  }, [userId])
+    if (chatTab === 'announcement') {
+      markAnnouncementsSeen(userId, latestAnnouncementDate)
+    }
+  }, [chatTab, userId, latestAnnouncementDate])
+
+  const hasUnreadAnnouncements = chatTab !== 'announcement' && hasUnreadAnnouncement(userId, latestAnnouncementDate)
 
   if (isLoading) {
     return (
@@ -485,11 +491,6 @@ function Home() {
                   value={chatTab}
                   onChange={(_, value: 'personal' | 'global' | 'announcement') => {
                     setChatTab(value)
-
-                    if (value === 'announcement') {
-                      markAnnouncementsSeen(userId, latestAnnouncementDate)
-                      setHasUnreadAnnouncements(false)
-                    }
                   }}
                   variant="fullWidth"
                   sx={gameTabsSx}

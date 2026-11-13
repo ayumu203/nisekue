@@ -1,14 +1,9 @@
 import locale from '../../locale/announcement/Announcement.json'
 
-export type AnnouncementItem = {
-  id: string
-  date: string
-  title: string
-  body: string
-}
-
 export const announcementTabLabel = locale.tabLabel
 export const announcementEmptyMessage = locale.emptyMessage
+export const announcementLoadingMessage = locale.loadingMessage
+export const announcementErrorMessage = locale.errorMessage
 
 /**
  * 'YYYY-MM-DD' を 'YY/M/D' 形式（例: 2026-08-02 -> 26/8/2）に整形する。
@@ -25,11 +20,3 @@ export function formatAnnouncementDate(date: string): string {
 
   return `${year.slice(2)}/${Number(month)}/${Number(day)}`
 }
-
-/**
- * お知らせ一覧。並べ替えは行わないため、Announcement.json の items は
- * 日付の新しい順（先頭が最新）で記述すること。
- */
-export const announcements = locale.items as AnnouncementItem[]
-
-export const latestAnnouncementDate: string | null = announcements[0]?.date ?? null
