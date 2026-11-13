@@ -285,12 +285,12 @@ export default function TrainingBattleResult({
         <Typography variant="h5" fontWeight={900} sx={{ color: resultColorByOutcome[result.trainingResult] }}>
           {resultLabelByOutcome[result.trainingResult]}
         </Typography>
-        <Typography variant="h6" fontWeight={900} sx={{ color: '#f3b38d' }}>
-          {expValue}
-        </Typography>
         <Typography variant="body2" fontWeight={800} sx={{ color: '#fff7dd' }}>
           {locale.currentLevel.replace('{{level}}', String(player.level))}
           {expProgressLabel ? ` / ${expProgressLabel}` : ''}
+        </Typography>
+        <Typography variant="h6" fontWeight={900} sx={{ color: '#f3b38d' }}>
+          {expValue}
         </Typography>
         {levelUpLabel ? (
           <Chip
