@@ -162,6 +162,34 @@ export default function TrainingMovePlanForm({
           </Box>
         ) : null}
 
+        {showSubmitButton ? (
+          <Button
+            id={submitButtonId}
+            variant="contained"
+            disabled={isActionDisabled}
+            onClick={onSubmit}
+            sx={{
+              borderRadius: 999,
+              py: 1.1,
+              fontWeight: 800,
+              textTransform: 'none',
+              color: '#fff5ef',
+              backgroundColor: '#b65f49',
+              boxShadow: 'none',
+              '&:hover': {
+                backgroundColor: '#c96a52',
+                boxShadow: 'none',
+              },
+              '&.Mui-disabled': {
+                color: 'rgba(255, 238, 229, 0.58)',
+                backgroundColor: 'rgba(182, 95, 73, 0.24)',
+              },
+            }}
+          >
+            {lockRemainingSeconds > 0 ? rematchInSeconds : (submitLabel ?? locale.startTraining)}
+          </Button>
+        ) : null}
+
         <Typography variant="body2" fontWeight={700} sx={{ color: isMpOver ? '#ff8a7a' : 'rgba(245, 240, 223, 0.72)' }}>
           {locale.plannedMpSummary.replace('{{plannedMp}}', String(totalMp)).replace('{{maxMp}}', String(maxMp))}
         </Typography>
@@ -312,33 +340,6 @@ export default function TrainingMovePlanForm({
             ) : null}
           </Stack>
         ))}
-
-        {showSubmitButton ? (
-          <Button
-            id={submitButtonId}
-            variant="contained"
-            disabled={isActionDisabled}
-            onClick={onSubmit}
-            sx={{
-              borderRadius: 999,
-              py: 1.1,
-              fontWeight: 800,
-              color: '#fff5ef',
-              backgroundColor: '#b65f49',
-              boxShadow: 'none',
-              '&:hover': {
-                backgroundColor: '#c96a52',
-                boxShadow: 'none',
-              },
-              '&.Mui-disabled': {
-                color: 'rgba(255, 238, 229, 0.58)',
-                backgroundColor: 'rgba(182, 95, 73, 0.24)',
-              },
-            }}
-          >
-            {isActionDisabled ? rematchInSeconds : (submitLabel ?? locale.startTraining)}
-          </Button>
-        ) : null}
       </Stack>
     </Paper>
   )

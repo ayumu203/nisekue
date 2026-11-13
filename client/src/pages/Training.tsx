@@ -1,7 +1,6 @@
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
   Container,
   Paper,
@@ -497,8 +496,6 @@ export default function Training() {
     }
   }
 
-  const canStartBattle = player !== undefined && plannedMoveIds !== null && (selectedEnemy !== null || isOpponentMode)
-
   async function startBattle(): Promise<void> {
     if (!player || !plannedMoveIds) {
       throw new Error(locale.playerLoading)
@@ -614,36 +611,6 @@ export default function Training() {
                   <ToggleButton value="npc">{locale.modeNpc}</ToggleButton>
                   <ToggleButton value="player">{locale.modePlayer}</ToggleButton>
                 </ToggleButtonGroup>
-                <Button
-                  id={tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined}
-                  variant="contained"
-                  disabled={!canStartBattle || isTrainingActionDisabled}
-                  onClick={() => {
-                    void startBattle()
-                  }}
-                  sx={{
-                    minWidth: 128,
-                    borderRadius: 999,
-                    textTransform: 'none',
-                    px: 2.5,
-                    fontWeight: 800,
-                    color: '#fff5ef',
-                    backgroundColor: '#b65f49',
-                    boxShadow: 'none',
-                    '&:hover': {
-                      backgroundColor: '#c96a52',
-                      boxShadow: 'none',
-                    },
-                    '&.Mui-disabled': {
-                      color: 'rgba(255, 238, 229, 0.58)',
-                      backgroundColor: 'rgba(182, 95, 73, 0.24)',
-                    },
-                  }}
-                >
-                  {trainingLockRemainingSeconds > 0
-                    ? locale.rematchInSeconds.replace('{{seconds}}', String(trainingLockRemainingSeconds))
-                    : locale.startBattle}
-                </Button>
               </Stack>
 
               {(() => {
@@ -676,8 +643,8 @@ export default function Training() {
                                 lockRemainingSeconds={trainingLockRemainingSeconds}
                                 onChangeMoveId={handleChangePlannedMoveId}
                                 showFighterHeader={false}
-                                showSubmitButton={false}
-                                onSubmit={() => {}}
+                                submitLabel={locale.startBattle}
+                                onSubmit={startBattle}
                               />
                             ) : null
                           }
@@ -697,8 +664,11 @@ export default function Training() {
                           isActionDisabled={isTrainingActionDisabled}
                           lockRemainingSeconds={trainingLockRemainingSeconds}
                           onChangeMoveId={handleChangePlannedMoveId}
-                          showSubmitButton={false}
-                          onSubmit={() => {}}
+                          submitLabel={locale.startBattle}
+                          submitButtonId={
+                            tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined
+                          }
+                          onSubmit={startBattle}
                         />
                       </Box>
                     ) : null}
