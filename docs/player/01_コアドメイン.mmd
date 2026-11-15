@@ -422,6 +422,7 @@ classDiagram
 
         class IPlayerRebirthHistoryRepository {
             +Task~IReadOnlyList~PlayerRebirthStatusHistory~~ GetByPlayerAsync(playerId: PlayerId)
+            +Task DeleteByPlayerAsync(playerId: PlayerId)
         }
 
         class IPlayerRebirthExecutor {
