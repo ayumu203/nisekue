@@ -8,6 +8,7 @@
   "currentJobLabel": "現在の職業",
   "masteredJobsTitle": "マスター済みジョブ",
   "masteredJobsEmpty": "まだありません",
+  "requirementTitle": "転生条件",
   "requirementLevel": "レベル: Lv.{{level}} / 100",
   "requirementGold": "Gold: {{gold}} / 100000",
   "inheritTitle": "引き継ぎ内容",
@@ -30,7 +31,7 @@
   "executeButton": "転生する",
   "executing": "転生中...",
   "executeFailed": "転生に失敗しました",
-  "lockedButton": "条件未達",
+  "lockedButton": "転生条件未達成",
   "labels": {
     "level": "レベル",
     "jobLevel": "ジョブ",

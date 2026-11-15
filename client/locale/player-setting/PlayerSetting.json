@@ -9,7 +9,7 @@
   "moveListTitle": "スキル",
   "moveListDescription": "左上の六点アイコンをドラッグすることでスキル配置を変更できます。新しいスキルを覚えると左上のものから消えてしまいます。",
   "slotLabel": "スロット",
-  "editingOrderTitle": "スロット編成",
+  "editingOrderTitle": "スキル設定",
   "saveMoveOrder": "確定",
   "cancelMoveOrder": "取消",
   "savingMoveOrder": "保存中...",

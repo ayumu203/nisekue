@@ -876,9 +876,13 @@ export default function TreasureMap() {
                                     <Typography variant="caption" sx={{ color: '#7d5f20', fontWeight: 700 }}>
                                       {gradeStars(map.grade)}
                                     </Typography>
-                                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                                      <Chip size="small" label={`${formatDuration(map.durationSeconds)}`} />
-                                      <Chip size="small" label={`${map.ownedQuantity}`} />
+                                    <Stack spacing={0.25}>
+                                      <Typography variant="body2" sx={{ color: '#5b4523' }}>
+                                        {locale.duration} {formatDuration(map.durationSeconds)}
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ color: '#5b4523' }}>
+                                        {locale.ownedQuantity} {map.ownedQuantity}
+                                      </Typography>
                                     </Stack>
                                   </Stack>
                                 </Paper>

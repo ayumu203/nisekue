@@ -34,7 +34,7 @@
   "categoryArmor": "防具",
   "categoryItem": "アイテム",
   "categoryMap": "地図",
-  "capacity": "枠",
+  "capacity": "アイテム所持上限",
   "gold": "Gold",
   "emptyEquipped": "装備中アイテムはありません",
   "emptyInventory": "所持アイテムはありません",
