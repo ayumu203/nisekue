@@ -40,4 +40,41 @@ public class DbMirrorCandidateRepository(IDbContextFactory<AppDbContext> dbConte
 
         return ids.Select(x => new PlayerId(x)).ToArray();
     }
+
+    public async Task<IReadOnlyList<PlayerId>> GetAllyPlayerIdsAsync(PlayerId excludedPlayerId, int level, int levelRange, int count)
+    {
+        if (count <= 0)
+        {
+            return [];
+        }
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var excludedId = excludedPlayerId.Value;
+        var minLevel = level - levelRange;
+        var maxLevel = level + levelRange;
+
+        var inRange = await dbContext.Players
+            .AsNoTracking()
+            .Where(x => x.Id != excludedId && x.Level >= minLevel && x.Level <= maxLevel)
+            .OrderBy(_ => EF.Functions.Random())
+            .Select(x => x.Id)
+            .Take(count)
+            .ToListAsync();
+        if (inRange.Count >= count)
+        {
+            return inRange.Select(x => new PlayerId(x)).ToArray();
+        }
+
+        // レベル差の範囲内で足りないときは、レベルが近い順に足す。
+        var nearest = await dbContext.Players
+            .AsNoTracking()
+            .Where(x => x.Id != excludedId && !inRange.Contains(x.Id))
+            .OrderBy(x => Math.Abs(x.Level - level))
+            .ThenBy(x => x.Id)
+            .Select(x => x.Id)
+            .Take(count - inRange.Count)
+            .ToListAsync();
+
+        return inRange.Concat(nearest).Select(x => new PlayerId(x)).ToArray();
+    }
 }

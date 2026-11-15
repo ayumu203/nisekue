@@ -60,6 +60,30 @@ public class QuestSnapshotFactory(EquipmentStatusResolver equipmentStatusResolve
                         petSnapshots);
                 }
 
+                // 名鑑の祠の味方プレイヤー：装備込みのステータスと技セットを持ち、行動は NPC と同じ自動。ペットは連れない。
+                if (participant.SourcePlayerId is not null)
+                {
+                    var sourcePlayer = playerById.TryGetValue(participant.SourcePlayerId.Value, out var foundSourcePlayer)
+                        ? foundSourcePlayer
+                        : throw new KeyNotFoundException($"味方プレイヤーの情報が見つかりません。 participantId={participant.Id}");
+                    var sourceEquipments = equipmentsByPlayerId.TryGetValue(sourcePlayer.Id, out var foundSourceEquipments)
+                        ? foundSourceEquipments
+                        : Array.Empty<PlayerEquipment>();
+
+                    return new QuestRunPartyMemberSnapshot(
+                        participant.Id,
+                        participant.Type,
+                        participant.DisplayName,
+                        sourcePlayer.ImagePath,
+                        sourcePlayer.Job,
+                        equipmentStatusResolver.BuildEffectiveStatus(sourcePlayer.Status, sourcePlayer.Job, sourceEquipments, equipments),
+                        weaponEquipmentId: null,
+                        armorEquipmentId: null,
+                        sourcePlayer.MoveSet,
+                        participant.Position,
+                        ActionMode.AutoAttackOnly);
+                }
+
                 var npcTemplate = participant.NpcTemplateId is not null && npcById.TryGetValue(participant.NpcTemplateId.Value, out var foundTemplate)
                     ? foundTemplate
                     : throw new KeyNotFoundException($"NPC テンプレートが見つかりません。 participantId={participant.Id}");

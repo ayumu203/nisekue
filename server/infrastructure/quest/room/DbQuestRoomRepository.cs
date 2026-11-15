@@ -213,6 +213,7 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
                 ParticipantType = (int)x.Type,
                 PlayerId = x.PlayerId?.Value,
                 NpcTemplateId = x.NpcTemplateId?.Value,
+                SourcePlayerId = x.SourcePlayerId?.Value,
                 DisplayName = x.DisplayName,
                 BattleRow = (int)x.Position.Row,
                 BattleColumn = (int)x.Position.Column,
@@ -249,7 +250,8 @@ public class DbQuestRoomRepository(IDbContextFactory<AppDbContext> dbContextFact
             entity.NpcTemplateId is null ? null : new QuestNpcTemplateId(entity.NpcTemplateId.Value),
             (ParticipantStatus)entity.ParticipantStatus,
             entity.LastSeenAt,
-            entity.LeftAt);
+            entity.LeftAt,
+            entity.SourcePlayerId is null ? null : new PlayerId(entity.SourcePlayerId.Value));
     }
 
     private static async Task<QuestRoom> MapRoomAsync(AppDbContext dbContext, QuestRoomEntity roomEntity)

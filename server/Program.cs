@@ -192,6 +192,7 @@ builder.Services.AddScoped<QuestNpcAssignmentService>();
 builder.Services.AddScoped<QuestPetActionService>();
 builder.Services.AddScoped<IMirrorCandidateRepository, DbMirrorCandidateRepository>();
 builder.Services.AddScoped<QuestMirrorEnemyPlanService>();
+builder.Services.AddScoped<QuestMirrorAllyService>();
 builder.Services.AddScoped<QuestRoomService>();
 builder.Services.AddScoped<QuestRunService>();
 builder.Services.AddScoped<PetService>();

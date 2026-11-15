@@ -1195,6 +1195,10 @@ namespace server.infrastructure.migrations
                         .HasColumnType("uuid")
                         .HasColumnName("room_id");
 
+                    b.Property<Guid?>("SourcePlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_player_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("RoomId", "BattleRow", "BattleColumn")

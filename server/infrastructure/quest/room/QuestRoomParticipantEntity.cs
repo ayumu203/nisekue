@@ -7,6 +7,7 @@ public class QuestRoomParticipantEntity
     public int ParticipantType { get; set; }
     public Guid? PlayerId { get; set; }
     public int? NpcTemplateId { get; set; }
+    public Guid? SourcePlayerId { get; set; }
     public string DisplayName { get; set; } = string.Empty;
     public int BattleRow { get; set; }
     public int BattleColumn { get; set; }

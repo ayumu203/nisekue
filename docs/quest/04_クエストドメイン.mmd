@@ -105,11 +105,17 @@ classDiagram
 
         class IMirrorCandidateRepository {
             <<Repository>>
-            %% 20番目と同点の（転生回数, レベル）までを装備込みで返す
-            +GetTopCandidatesAsync(count: int) Task~IReadOnlyList~MirrorCandidate~~
-            +GetAsync(playerId: PlayerId) Task~MirrorCandidate?~
-            %% 味方補充用。自分を除きレベル差±range、足りなければ近い順
-            +GetAllyCandidatesAsync(self: PlayerId, level: int, range: int, count: int) Task~IReadOnlyList~MirrorCandidate~~
+            %% （転生回数, レベル）で count 人目と同点の人までのID。戦闘指数（装備込み）での並べ替えは呼び出し側
+            +GetTopPlayerIdsWithTiesAsync(count: int) Task~IReadOnlyList~PlayerId~~
+            %% 味方補充用。自分を除きレベル差±levelRange からランダム、足りなければレベルが近い順
+            +GetAllyPlayerIdsAsync(excludedPlayerId: PlayerId, level: int, levelRange: int, count: int) Task~IReadOnlyList~PlayerId~~
+        }
+
+        class QuestPlayerNpc {
+            <<Value Object>>
+            +PlayerId PlayerId
+            +string DisplayName
+            +BattleRow PreferredRow
         }
 
         class QuestEndlessConfig {
@@ -299,6 +305,8 @@ classDiagram
             +RemoveParticipant(participantId: QuestParticipantId, at: DateTimeOffset) void
             +CanStart() bool
             +AddNpcParticipants(npcTemplates: IEnumerable~QuestNpcTemplate~) void
+            %% 名鑑の祠：ほかのプレイヤーを味方 NPC（SourcePlayerId 付き）として加える
+            +AddPlayerNpcParticipants(playerNpcs: IEnumerable~QuestPlayerNpc~) void
             +CloseRecruitment(reason: QuestRoomCloseReason, at: DateTimeOffset) void
             +CancelForOwnerRoomReplacement(at: DateTimeOffset) void
             +CancelByOwner(at: DateTimeOffset) void

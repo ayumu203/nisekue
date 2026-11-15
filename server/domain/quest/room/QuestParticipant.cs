@@ -15,12 +15,16 @@ public class QuestParticipant(
     QuestNpcTemplateId? npcTemplateId = null,
     ParticipantStatus status = ParticipantStatus.Joined,
     DateTimeOffset? lastSeenAt = null,
-    DateTimeOffset? leftAt = null)
+    DateTimeOffset? leftAt = null,
+    PlayerId? sourcePlayerId = null)
 {
     public QuestParticipantId Id { get; } = id;
     public ParticipantType Type { get; } = type;
-    public PlayerId? PlayerId { get; } = ValidatePlayerId(type, playerId, npcTemplateId);
-    public QuestNpcTemplateId? NpcTemplateId { get; } = ValidateNpcTemplateId(type, playerId, npcTemplateId);
+    public PlayerId? PlayerId { get; } = ValidatePlayerId(type, playerId, npcTemplateId, sourcePlayerId);
+    public QuestNpcTemplateId? NpcTemplateId { get; } = ValidateNpcTemplateId(type, playerId, npcTemplateId, sourcePlayerId);
+
+    // 名鑑の祠で味方 NPC として参加するプレイヤー。NPC のとき NpcTemplateId とどちらか一方だけを持つ。
+    public PlayerId? SourcePlayerId { get; } = ValidateSourcePlayerId(type, npcTemplateId, sourcePlayerId);
     public string DisplayName { get; private set; } = ValidateDisplayName(displayName);
     public ParticipantStatus Status { get; private set; } = status;
     public BattlePosition Position { get; private set; } = position;
@@ -85,26 +89,41 @@ public class QuestParticipant(
         return normalized;
     }
 
-    private static PlayerId? ValidatePlayerId(ParticipantType type, PlayerId? playerId, QuestNpcTemplateId? npcTemplateId)
+    private static PlayerId? ValidatePlayerId(
+        ParticipantType type,
+        PlayerId? playerId,
+        QuestNpcTemplateId? npcTemplateId,
+        PlayerId? sourcePlayerId)
     {
         if (type == ParticipantType.Player)
         {
             return playerId ?? throw new ArgumentException("プレイヤー参加者には playerId が必要です。", nameof(playerId));
         }
 
-        if (npcTemplateId is null)
+        if (npcTemplateId is null && sourcePlayerId is null)
         {
-            throw new ArgumentException("NPC 参加者には npcTemplateId が必要です。", nameof(npcTemplateId));
+            throw new ArgumentException("NPC 参加者には npcTemplateId か sourcePlayerId が必要です。", nameof(npcTemplateId));
         }
 
         return null;
     }
 
-    private static QuestNpcTemplateId? ValidateNpcTemplateId(ParticipantType type, PlayerId? playerId, QuestNpcTemplateId? npcTemplateId)
+    private static QuestNpcTemplateId? ValidateNpcTemplateId(
+        ParticipantType type,
+        PlayerId? playerId,
+        QuestNpcTemplateId? npcTemplateId,
+        PlayerId? sourcePlayerId)
     {
         if (type == ParticipantType.Npc)
         {
-            return npcTemplateId ?? throw new ArgumentException("NPC 参加者には npcTemplateId が必要です。", nameof(npcTemplateId));
+            if (npcTemplateId is not null && sourcePlayerId is not null)
+            {
+                throw new ArgumentException("NPC 参加者は npcTemplateId と sourcePlayerId を同時に持てません。", nameof(sourcePlayerId));
+            }
+
+            return npcTemplateId is not null || sourcePlayerId is not null
+                ? npcTemplateId
+                : throw new ArgumentException("NPC 参加者には npcTemplateId か sourcePlayerId が必要です。", nameof(npcTemplateId));
         }
 
         if (playerId is null)
@@ -113,5 +132,15 @@ public class QuestParticipant(
         }
 
         return null;
+    }
+
+    private static PlayerId? ValidateSourcePlayerId(ParticipantType type, QuestNpcTemplateId? npcTemplateId, PlayerId? sourcePlayerId)
+    {
+        if (type == ParticipantType.Player && sourcePlayerId is not null)
+        {
+            throw new ArgumentException("プレイヤー参加者は sourcePlayerId を持てません。", nameof(sourcePlayerId));
+        }
+
+        return type == ParticipantType.Npc && npcTemplateId is null ? sourcePlayerId : null;
     }
 }

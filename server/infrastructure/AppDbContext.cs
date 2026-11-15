@@ -534,6 +534,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRoomParticipant.Property(x => x.ParticipantType).HasColumnName("participant_type").IsRequired();
         questRoomParticipant.Property(x => x.PlayerId).HasColumnName("player_id").HasColumnType("uuid");
         questRoomParticipant.Property(x => x.NpcTemplateId).HasColumnName("npc_template_id");
+        questRoomParticipant.Property(x => x.SourcePlayerId).HasColumnName("source_player_id").HasColumnType("uuid");
         questRoomParticipant.Property(x => x.DisplayName).HasColumnName("display_name").HasMaxLength(100).IsRequired();
         questRoomParticipant.Property(x => x.BattleRow).HasColumnName("battle_row").IsRequired();
         questRoomParticipant.Property(x => x.BattleColumn).HasColumnName("battle_column").IsRequired();

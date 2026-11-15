@@ -469,6 +469,54 @@ public class QuestRoomServiceTests
     }
 
     [Fact]
+    public async Task StartAsync_WhenMirrorStageNeedsAllies_FillsWithPlayersBeforeNpcTemplates()
+    {
+        var owner = CreatePlayer("Owner");
+        var ally = CreatePlayer("Ally", level: 8);
+        var stage = CreateMirrorStage(minPartyMemberCount: 3, maxPartyMemberCount: 3);
+        var playerRepository = new FakePlayerRepository(owner, ally);
+        var roomRepository = new FakeQuestRoomRepository();
+        var runRepository = new FakeQuestRunRepository();
+        var candidateRepository = new FakeMirrorCandidateRepository(owner.Id) { AllyIds = [ally.Id] };
+        var mirrorEnemyPlanService = new QuestMirrorEnemyPlanService(
+            candidateRepository,
+            playerRepository,
+            new FakePlayerEquipmentRepository(),
+            new FakeEquipmentRepository(),
+            new FakeMoveRepository(),
+            new EquipmentStatusResolver(),
+            new CombatIndexCalculator(new CsvCombatIndexWeightRepository()));
+
+        var service = CreateRoomService(
+            new FakeQuestStageRepository(stage),
+            roomRepository,
+            runRepository,
+            playerRepository,
+            new FakeQuestNpcTemplateRepository([CreateNpcTemplate()]),
+            new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()),
+            mirrorEnemyPlanService: mirrorEnemyPlanService,
+            mirrorAllyService: new QuestMirrorAllyService(candidateRepository, playerRepository));
+
+        var room = await service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Solo);
+        var run = await service.StartAsync(room.Id);
+
+        run.PartySnapshots.Should().HaveCount(3);
+        var allySnapshot = run.PartySnapshots.Single(x => x.DisplayName == "Ally");
+        allySnapshot.Type.Should().Be(ParticipantType.Npc);
+        allySnapshot.InitialActionMode.Should().Be(ActionMode.AutoAttackOnly);
+        allySnapshot.Job.Should().Be(ally.Job);
+        allySnapshot.ImagePath.Should().Be(ally.ImagePath);
+        allySnapshot.Pets.Should().BeEmpty();
+        run.PartySnapshots.Should().ContainSingle(x => x.DisplayName == "Support NPC");
+
+        var savedRoom = roomRepository.SavedRooms.Last();
+        var allyParticipant = savedRoom.Participants.Single(x => x.DisplayName == "Ally");
+        allyParticipant.SourcePlayerId.Should().Be(ally.Id);
+        allyParticipant.NpcTemplateId.Should().BeNull();
+        allyParticipant.PlayerId.Should().BeNull();
+    }
+
+    [Fact]
     public async Task StartAsync_WhenMirrorStageWithoutPlanService_Throws()
     {
         var owner = CreatePlayer("Owner");
@@ -488,7 +536,7 @@ public class QuestRoomServiceTests
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
-    private static QuestStageDefinition CreateMirrorStage()
+    private static QuestStageDefinition CreateMirrorStage(int minPartyMemberCount = 1, int maxPartyMemberCount = 1)
     {
         return new QuestStageDefinition(
             new QuestStageId(14),
@@ -497,8 +545,8 @@ public class QuestRoomServiceTests
             "image/quest/mirror-shrine-battlefield.svg",
             recommendedLevel: 1,
             minimumEntryLevel: null,
-            minPartyMemberCount: 1,
-            maxPartyMemberCount: 1,
+            minPartyMemberCount: minPartyMemberCount,
+            maxPartyMemberCount: maxPartyMemberCount,
             [
                 new QuestFloorDefinition(1, FloorType.Normal, [], new QuestFloorRewardRule(0, 0)),
                 new QuestFloorDefinition(2, FloorType.Boss, [], new QuestFloorRewardRule(0, 0))
@@ -518,7 +566,8 @@ public class QuestRoomServiceTests
         IQuestEnemyDefinitionRepository enemyDefinitionRepository,
         IPlayerEquipmentRepository? playerEquipmentRepository = null,
         IEquipmentRepository? equipmentRepository = null,
-        QuestMirrorEnemyPlanService? mirrorEnemyPlanService = null)
+        QuestMirrorEnemyPlanService? mirrorEnemyPlanService = null,
+        QuestMirrorAllyService? mirrorAllyService = null)
     {
         return new QuestRoomService(
             stageRepository,
@@ -532,7 +581,8 @@ public class QuestRoomServiceTests
             new QuestNpcAssignmentService(npcTemplateRepository),
             new QuestSnapshotFactory(new EquipmentStatusResolver()),
             new QuestRunFactory(enemyDefinitionRepository, new FakeQuestEndlessEnemyTemplateRepository(), new QuestEndlessFloorGenerator()),
-            mirrorEnemyPlanService);
+            mirrorEnemyPlanService,
+            mirrorAllyService);
     }
 
     private static Player CreatePlayer(string name, int level = 5)
@@ -807,8 +857,13 @@ public class QuestRoomServiceTests
 
     private sealed class FakeMirrorCandidateRepository(params PlayerId[] ids) : IMirrorCandidateRepository
     {
+        public IReadOnlyList<PlayerId> AllyIds { get; init; } = [];
+
         public Task<IReadOnlyList<PlayerId>> GetTopPlayerIdsWithTiesAsync(int count)
             => Task.FromResult<IReadOnlyList<PlayerId>>(ids.Take(count).ToArray());
+
+        public Task<IReadOnlyList<PlayerId>> GetAllyPlayerIdsAsync(PlayerId excludedPlayerId, int level, int levelRange, int count)
+            => Task.FromResult<IReadOnlyList<PlayerId>>(AllyIds.Where(x => x != excludedPlayerId).Take(count).ToArray());
     }
 
     private sealed class FakeMoveRepository : IMoveRepository

@@ -18,7 +18,8 @@ public class QuestRoomService(
     QuestNpcAssignmentService questNpcAssignmentService,
     QuestSnapshotFactory questSnapshotFactory,
     QuestRunFactory questRunFactory,
-    QuestMirrorEnemyPlanService? questMirrorEnemyPlanService = null)
+    QuestMirrorEnemyPlanService? questMirrorEnemyPlanService = null,
+    QuestMirrorAllyService? questMirrorAllyService = null)
 {
     private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
 
@@ -242,6 +243,16 @@ public class QuestRoomService(
 
         var stage = await questStageRepository.GetAsync(room.StageId)
             ?? throw new KeyNotFoundException("ステージが見つかりません。");
+
+        // 名鑑の祠は、足りない味方をまずほかのプレイヤーで補充し、それでも足りなければ NPC テンプレで補う。
+        var allyPlayers = stage.IsMirror
+            ? await PickMirrorAllyPlayersAsync(room, stage)
+            : [];
+        if (allyPlayers.Count > 0)
+        {
+            room.AddPlayerNpcParticipants(QuestMirrorAllyService.ToPlayerNpcs(allyPlayers));
+        }
+
         var npcTemplates = await questNpcAssignmentService.AssignForStart(room, stage.MinPartyMemberCount);
         room.AddNpcParticipants(npcTemplates);
         room.CloseRecruitment(QuestRoomCloseReason.Started, DateTimeOffset.UtcNow);
@@ -271,7 +282,7 @@ public class QuestRoomService(
                 })
                 .ToArray();
 
-        var playerEquipmentTasks = players.Select(player => playerEquipmentRepository.GetByPlayerAsync(player.Id));
+        var playerEquipmentTasks = players.Concat(allyPlayers).Select(player => playerEquipmentRepository.GetByPlayerAsync(player.Id));
         var playerEquipments = (await Task.WhenAll(playerEquipmentTasks))
             .SelectMany(x => x)
             .ToList();
@@ -289,7 +300,7 @@ public class QuestRoomService(
         }
 
         var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync()).ToDictionary(x => x.Id);
-        var snapshots = questSnapshotFactory.Create(activeParticipants, players, snapshotNpcs, playerEquipments, equipments, petsByPlayerId, enemyDefinitions);
+        var snapshots = questSnapshotFactory.Create(activeParticipants, players.Concat(allyPlayers), snapshotNpcs, playerEquipments, equipments, petsByPlayerId, enemyDefinitions);
         var mirrorEnemyPlan = stage.IsMirror
             ? await CreateMirrorEnemyPlanAsync(stage, room.OwnerId)
             : null;
@@ -298,6 +309,20 @@ public class QuestRoomService(
         await questRoomRepository.SaveAsync(room);
         await questRunRepository.SaveAsync(run);
         return run;
+    }
+
+    private async Task<IReadOnlyList<Player>> PickMirrorAllyPlayersAsync(QuestRoom room, QuestStageDefinition stage)
+    {
+        var activeCount = room.Participants.Count(x => x.Status != ParticipantStatus.Left);
+        var requiredCount = Math.Max(0, stage.MinPartyMemberCount - activeCount);
+        if (requiredCount == 0 || questMirrorAllyService is null)
+        {
+            return [];
+        }
+
+        var owner = await playerRepository.GetPlayerAsync(room.OwnerId)
+            ?? throw new KeyNotFoundException($"プレイヤーが見つかりません。 playerId={room.OwnerId.Value}");
+        return await questMirrorAllyService.PickAllyPlayersAsync(owner, requiredCount);
     }
 
     private Task<MirrorEnemyPlan> CreateMirrorEnemyPlanAsync(QuestStageDefinition stage, PlayerId ownerId)

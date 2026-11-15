@@ -454,6 +454,67 @@ public class QuestRoomTests
     }
 
     [Fact]
+    public void AddPlayerNpcParticipants_AddsNpcWithSourcePlayerInPreferredRow()
+    {
+        var ownerId = new PlayerId(Guid.NewGuid());
+        var allyId = new PlayerId(Guid.NewGuid());
+        var room = CreateRoom(ownerId, QuestRoomMode.Solo);
+        room.AddPlayer(ownerId, "Owner");
+
+        room.AddPlayerNpcParticipants([new QuestPlayerNpc(allyId, "Ally", BattleRow.Back)]);
+
+        var ally = room.Participants.Single(x => x.Type == ParticipantType.Npc);
+        ally.SourcePlayerId.Should().Be(allyId);
+        ally.NpcTemplateId.Should().BeNull();
+        ally.PlayerId.Should().BeNull();
+        ally.DisplayName.Should().Be("Ally");
+        ally.Position.Row.Should().Be(BattleRow.Back);
+    }
+
+    [Fact]
+    public void QuestParticipant_WhenNpcHasBothTemplateAndSourcePlayer_Throws()
+    {
+        var act = () => new QuestParticipant(
+            QuestParticipantId.New(),
+            ParticipantType.Npc,
+            "Npc",
+            new BattlePosition(BattleRow.Front, BattleColumn.Left),
+            DateTimeOffset.UtcNow,
+            npcTemplateId: new QuestNpcTemplateId(1),
+            sourcePlayerId: new PlayerId(Guid.NewGuid()));
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void QuestParticipant_WhenNpcHasNeitherTemplateNorSourcePlayer_Throws()
+    {
+        var act = () => new QuestParticipant(
+            QuestParticipantId.New(),
+            ParticipantType.Npc,
+            "Npc",
+            new BattlePosition(BattleRow.Front, BattleColumn.Left),
+            DateTimeOffset.UtcNow);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void QuestParticipant_WhenPlayerHasSourcePlayer_Throws()
+    {
+        var act = () => new QuestParticipant(
+            QuestParticipantId.New(),
+            ParticipantType.Player,
+            "Player",
+            new BattlePosition(BattleRow.Front, BattleColumn.Left),
+            DateTimeOffset.UtcNow,
+            playerId: new PlayerId(Guid.NewGuid()),
+            sourcePlayerId: new PlayerId(Guid.NewGuid()));
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
     public void AddNpcParticipants_WhenPreferredRowHasVacancy_AssignsNpcToPreferredRow()
     {
         var ownerId = new PlayerId(Guid.NewGuid());

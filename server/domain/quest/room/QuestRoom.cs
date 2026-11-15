@@ -167,6 +167,29 @@ public class QuestRoom(
         }
     }
 
+    /// <summary>名鑑の祠で、ほかのプレイヤーを味方 NPC として加える（行動は自動）。</summary>
+    public void AddPlayerNpcParticipants(IEnumerable<QuestPlayerNpc> playerNpcs)
+    {
+        EnsureRecruiting();
+        ArgumentNullException.ThrowIfNull(playerNpcs);
+
+        foreach (var playerNpc in playerNpcs)
+        {
+            EnsureCapacityAvailable();
+            var position = Formation.FindFirstEmpty(playerNpc.PreferredRow);
+            var participant = new QuestParticipant(
+                QuestParticipantId.New(),
+                ParticipantType.Npc,
+                playerNpc.DisplayName,
+                position,
+                DateTimeOffset.UtcNow,
+                sourcePlayerId: playerNpc.PlayerId);
+
+            Formation.Assign(participant.Id, position);
+            participants.Add(participant);
+        }
+    }
+
     public void CloseRecruitment(QuestRoomCloseReason reason, DateTimeOffset at)
     {
         EnsureRecruiting();

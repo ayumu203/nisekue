@@ -10,4 +10,10 @@ public interface IMirrorCandidateRepository
     /// 同点の並べ替え（戦闘指数）は呼び出し側で行う。
     /// </summary>
     Task<IReadOnlyList<PlayerId>> GetTopPlayerIdsWithTiesAsync(int count);
+
+    /// <summary>
+    /// 味方として補充するプレイヤーIDを返す。excludedPlayerId 以外で、レベル差 levelRange 以内からランダムに選び、
+    /// 足りなければレベル差が小さい順に足す。
+    /// </summary>
+    Task<IReadOnlyList<PlayerId>> GetAllyPlayerIdsAsync(PlayerId excludedPlayerId, int level, int levelRange, int count);
 }
