@@ -206,6 +206,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                 // ダーティでなければ既存値を温存し、null での上書き事故を防ぐ。
                 entry.Property(x => x.LastTurnResultsJson).IsModified = run.LastTurnResultsDirty;
                 entry.Property(x => x.ChatMessagesJson).IsModified = true;
+                entry.Property(x => x.PetSummonUsed).IsModified = true;
+                entry.Property(x => x.PetDeploymentJson).IsModified = true;
                 entry.Property(x => x.EndedAt).IsModified = true;
                 entry.Property(x => x.Version).IsModified = true;
 
@@ -352,14 +354,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             Speed = x.BaseStatus.Speed,
             MoveSetJson = QuestJsonSerializer.SerializeMoveSet(x.MoveSet),
             InitialActionMode = (int)x.InitialActionMode,
-            PetEnemyDefinitionId = x.Pet?.EnemyDefinitionId.Value,
-            PetMaxHp = x.Pet?.Status.MaxHp,
-            PetMaxMp = x.Pet?.Status.MaxMp,
-            PetStrength = x.Pet?.Status.Strength,
-            PetDefense = x.Pet?.Status.Defense,
-            PetIntelligence = x.Pet?.Status.Intelligence,
-            PetLuck = x.Pet?.Status.Luck,
-            PetSpeed = x.Pet?.Status.Speed
+            PetsJson = QuestJsonSerializer.SerializePets(x.Pets)
         }));
 
         dbContext.QuestRunPartyMembers.AddRange(run.BattleState.PartyMembers.Select(x => ToPartyMemberEntity(runId, x)));
@@ -531,6 +526,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         LastResolvedTurnNo = run.TurnState.LastResolvedTurnNo,
         LastTurnResultsJson = QuestJsonSerializer.SerializeLastTurnResults(run.LastTurnResults),
         ChatMessagesJson = QuestJsonSerializer.SerializeChatMessages(run.ChatMessages),
+        PetSummonUsed = run.PetSummonUsed,
+        PetDeploymentJson = QuestJsonSerializer.SerializePetDeployment(run.PetDeployment),
         StartedAt = run.StartedAt,
         EndedAt = run.EndedAt,
         Version = run.Version,
@@ -550,7 +547,6 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             ActionMode = (int)state.ActionMode,
             HasLeftQuest = state.HasLeftQuest,
             IsManualControlRequested = state.IsManualControlRequested,
-            PetSummonsUsed = state.PetSummonsUsed,
             ActiveEffectsJson = effectsJson,
             DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder(),
             UpdatedAt = DateTimeOffset.UtcNow
@@ -567,7 +563,6 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         entity.ActionMode = (int)state.ActionMode;
         entity.HasLeftQuest = state.HasLeftQuest;
         entity.IsManualControlRequested = state.IsManualControlRequested;
-        entity.PetSummonsUsed = state.PetSummonsUsed;
         entity.ActiveEffectsJson = effectsJson;
         entity.DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder();
         entity.UpdatedAt = DateTimeOffset.UtcNow;
@@ -708,7 +703,9 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             runEntity.StartedAt,
             (QuestRunStatus)runEntity.Status,
             runEntity.EndedAt,
-            runEntity.Version);
+            runEntity.Version,
+            runEntity.PetSummonUsed,
+            QuestJsonSerializer.DeserializePetDeployment(runEntity.PetDeploymentJson));
     }
 
     private static QuestRunPartyMemberState MapPartyMember(QuestRunPartyMemberEntity entity)
@@ -724,16 +721,16 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             entity.HasLeftQuest,
             entity.IsManualControlRequested,
             ailments,
-            buffs,
-            entity.PetSummonsUsed);
+            buffs);
     }
 
     private static QuestRunPartyMemberSnapshot MapSnapshot(QuestRunPartySnapshotEntity entity)
     {
-        QuestPetSnapshot? pet = null;
-        if (entity.PetEnemyDefinitionId is not null && entity.PetMaxHp is not null)
+        var pets = QuestJsonSerializer.DeserializePets(entity.PetsJson);
+        if (pets.Length == 0 && entity.PetEnemyDefinitionId is not null && entity.PetMaxHp is not null)
         {
-            pet = new QuestPetSnapshot(
+            // pets_json 導入前に始まったランは旧形式のスタンバイペット1体を使う。
+            pets = [new QuestPetSnapshot(
                 new QuestEnemyDefinitionId(entity.PetEnemyDefinitionId.Value),
                 new Status(
                     entity.PetMaxHp.Value,
@@ -742,7 +739,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
                     entity.PetDefense ?? 0,
                     entity.PetIntelligence ?? 0,
                     entity.PetLuck ?? 0,
-                    entity.PetSpeed ?? 0));
+                    entity.PetSpeed ?? 0))];
         }
 
         return new QuestRunPartyMemberSnapshot(
@@ -764,7 +761,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             QuestJsonSerializer.DeserializeMoveSet(entity.MoveSetJson),
             new BattlePosition((BattleRow)entity.StartRow, (BattleColumn)entity.StartColumn),
             (ActionMode)entity.InitialActionMode,
-            pet);
+            pets);
     }
 
     private static QuestEnemyState MapEnemy(QuestRunEnemyEntity entity)
@@ -866,6 +863,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             x.ActionDeadlineAt,
             x.LastResolvedTurnNo,
             x.ChatMessagesJson,
+            x.PetSummonUsed,
+            x.PetDeploymentJson,
             x.StartedAt,
             x.EndedAt,
             x.Version);
@@ -883,6 +882,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         // 未取得を表す。MapToDomain で LastTurnResults=null となり、保存時もダーティでない限り上書きしない。
         LastTurnResultsJson = null,
         ChatMessagesJson = columns.ChatMessagesJson,
+        PetSummonUsed = columns.PetSummonUsed,
+        PetDeploymentJson = columns.PetDeploymentJson,
         StartedAt = columns.StartedAt,
         EndedAt = columns.EndedAt,
         Version = columns.Version
@@ -898,6 +899,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         DateTimeOffset ActionDeadlineAt,
         int? LastResolvedTurnNo,
         string ChatMessagesJson,
+        bool PetSummonUsed,
+        string? PetDeploymentJson,
         DateTimeOffset StartedAt,
         DateTimeOffset? EndedAt,
         int Version);

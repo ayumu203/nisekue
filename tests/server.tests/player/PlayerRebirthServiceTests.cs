@@ -18,6 +18,18 @@ public class PlayerRebirthServiceTests
 
         executor.ReceivedPlayerId.Should().Be(playerId);
         executor.CapturedBuildInheritedStatus.Should().NotBeNull();
+        executor.ReceivedIgnoreRequirements.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RebirthAsync_WhenIgnoringRequirements_PassesFlagToExecutor()
+    {
+        var executor = new CapturingRebirthExecutor();
+        var service = new PlayerRebirthService(executor);
+
+        await service.RebirthAsync(new PlayerId(Guid.NewGuid()), ignoreRequirements: true);
+
+        executor.ReceivedIgnoreRequirements.Should().BeTrue();
     }
 
     [Fact]
@@ -64,11 +76,13 @@ public class PlayerRebirthServiceTests
     {
         public PlayerId? ReceivedPlayerId { get; private set; }
         public Func<Status, Status>? CapturedBuildInheritedStatus { get; private set; }
+        public bool? ReceivedIgnoreRequirements { get; private set; }
 
-        public Task<Player> ExecuteAsync(PlayerId playerId, Func<Status, Status> buildInheritedStatus)
+        public Task<Player> ExecuteAsync(PlayerId playerId, Func<Status, Status> buildInheritedStatus, bool ignoreRequirements = false)
         {
             ReceivedPlayerId = playerId;
             CapturedBuildInheritedStatus = buildInheritedStatus;
+            ReceivedIgnoreRequirements = ignoreRequirements;
 
             var player = new Player(
                 playerId,

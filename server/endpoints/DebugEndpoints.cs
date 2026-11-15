@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using server.application.debug;
+using server.application.player;
 using server.domain.move;
 using server.domain.player;
 
@@ -43,6 +44,41 @@ internal static class DebugEndpoints
         group.MapGet("/equipments", GetEquipments);
         group.MapPost("/player/items", GrantItem);
         group.MapPost("/player/equipments", GrantEquipment);
+        group.MapPost("/player/gold", GrantGold);
+        group.MapPost("/player/rebirth", Rebirth);
+        group.MapPost("/player/cooldowns/reset", ResetCooldowns);
+        group.MapPost("/treasure-map/complete", CompleteTreasureMap);
+    }
+
+    private static async Task<IResult> GrantGold(
+        ClaimsPrincipal user,
+        DebugGrantGoldRequest request,
+        DebugPlayerService debugPlayerService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        var gold = await debugPlayerService.GrantGoldAsync(playerId, request.Amount);
+        return Results.Ok(new { gold });
+    }
+
+    private static async Task<IResult> Rebirth(ClaimsPrincipal user, PlayerRebirthService playerRebirthService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        var player = await playerRebirthService.RebirthAsync(playerId, ignoreRequirements: true);
+        return Results.Ok(new { rebirthCount = player.RebirthCount, level = player.Level });
+    }
+
+    private static async Task<IResult> ResetCooldowns(ClaimsPrincipal user, DebugWaitService debugWaitService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        await debugWaitService.ResetCooldownsAsync(playerId);
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> CompleteTreasureMap(ClaimsPrincipal user, DebugWaitService debugWaitService)
+    {
+        var playerId = EndpointHelpers.TryGetPlayerId(user)!.Value;
+        var endsAt = await debugWaitService.CompleteTreasureMapAsync(playerId, DateTimeOffset.UtcNow);
+        return Results.Ok(new { endsAt });
     }
 
     private static async Task<IResult> GetItems(IItemRepository itemRepository)
@@ -253,3 +289,5 @@ internal sealed record DebugMasterJobsRequest(IReadOnlyList<Job>? Jobs, bool Unl
 internal sealed record DebugGrantItemRequest(int ItemId, int Quantity);
 
 internal sealed record DebugGrantEquipmentRequest(int EquipmentId, int Count, int? PlusValue);
+
+internal sealed record DebugGrantGoldRequest(int Amount);

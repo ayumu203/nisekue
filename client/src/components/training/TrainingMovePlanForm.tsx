@@ -247,7 +247,8 @@ export default function TrainingMovePlanForm({
                           component="span"
                           variant="caption"
                           sx={{
-                            color: 'rgba(245, 240, 223, 0.66)',
+                            color: '#e0957f',
+                            fontWeight: 700,
                             display: 'block',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',

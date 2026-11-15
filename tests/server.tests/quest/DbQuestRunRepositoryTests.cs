@@ -95,6 +95,42 @@ public class DbQuestRunRepositoryTests
     }
 
     [Fact]
+    public async Task SaveAsync_WithPetDeployment_RoundTripsPetsAndDeployment()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection));
+
+        var run = CreateRun(
+        [
+            new QuestPetSnapshot(new QuestEnemyDefinitionId(3), new Status(40, 5, 7, 4, 1, 1, 6)),
+            new QuestPetSnapshot(new QuestEnemyDefinitionId(5), new Status(60, 8, 9, 6, 2, 2, 3))
+        ]);
+        await repository.SaveAsync(run);
+
+        var participantId = run.PartySnapshots[0].ParticipantId;
+        run.StartPetDeployment(QuestPetDeployment.Create(participantId, run.PartySnapshots[0].Pets, Guid.NewGuid));
+        await repository.SaveAsync(run);
+
+        var loaded = await repository.GetForResolutionAsync(run.Id);
+
+        loaded.Should().NotBeNull();
+        loaded!.PartySnapshots[0].Pets.Select(x => x.EnemyDefinitionId.Value).Should().Equal(3, 5);
+        loaded.PartySnapshots[0].Pets[1].Status.MaxHp.Should().Be(60);
+        loaded.PetSummonUsed.Should().BeTrue();
+        loaded.IsPetDeploymentActive.Should().BeTrue();
+        loaded.PetDeployment!.RemainingTurns.Should().Be(3);
+        loaded.PetDeployment.Pets.Select(x => x.ActorId).Should().Equal(run.PetDeployment!.Pets.Select(x => x.ActorId));
+        loaded.PetDeployment.Pets[1].Position.Should().Be(new BattlePosition(BattleRow.Front, BattleColumn.Right));
+        loaded.PetDeployment.Pets[1].CurrentHp.Should().Be(60);
+    }
+
+    [Fact]
     public async Task GetRoomIdAsync_ReturnsRoomId_WhenRunExists_AndNull_WhenMissing()
     {
         await using var connection = new SqliteConnection("DataSource=:memory:");
@@ -113,7 +149,7 @@ public class DbQuestRunRepositoryTests
         (await repository.GetRoomIdAsync(QuestRunId.New())).Should().BeNull();
     }
 
-    private static QuestRun CreateRun()
+    private static QuestRun CreateRun(IReadOnlyList<QuestPetSnapshot>? pets = null)
     {
         var participantId = QuestParticipantId.New();
         var snapshot = new QuestRunPartyMemberSnapshot(
@@ -128,7 +164,7 @@ public class DbQuestRunRepositoryTests
             new MoveSet(),
             new BattlePosition(BattleRow.Front, BattleColumn.Left),
             ActionMode.Manual,
-            pet: null);
+            pets);
 
         var enemyId = QuestEnemyInstanceId.New();
         return new QuestRun(

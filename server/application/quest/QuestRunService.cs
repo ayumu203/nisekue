@@ -68,11 +68,27 @@ public class QuestRunService(
             await EnsureEndlessEscapeAllowedAsync(run);
         }
 
+        if (command.ActionKind == ActionKind.SummonPet)
+        {
+            await EnsureSoloRoomAsync(run);
+        }
+
         run.SubmitCommand(participantId, command, DateTimeOffset.UtcNow);
         var resolution = await TryResolveIfReadyAsync(run);
         await PersistResolutionAsync(run, resolution);
 
         return new QuestCommandSubmissionResult(run, resolution != QuestRunResolution.None);
+    }
+
+    // ペット呼出はソロクエスト限定。
+    private async Task EnsureSoloRoomAsync(QuestRun run)
+    {
+        var room = await questRoomRepository.GetAsync(run.RoomId)
+            ?? throw new KeyNotFoundException($"ルームが見つかりません。 roomId={run.RoomId.Value}");
+        if (room.Mode != QuestRoomMode.Solo)
+        {
+            throw new InvalidOperationException("ペットの呼出はソロクエストでのみ使えます。");
+        }
     }
 
     private async Task EnsurePetCapacityAsync(QuestRun run, QuestParticipantId participantId)
@@ -213,11 +229,15 @@ public class QuestRunService(
             ? QuestCaptureProcessingResult.Empty
             : await ProcessCaptureCommandsAsync(run, enemyDefinitions);
 
+        // 呼出したターンから出撃中として扱うため、戦闘入力を作る前にペットを出撃させる。
+        StartPetDeploymentIfSummoned(run);
+
+        // 出撃中はプレイヤー側を戦闘から外し、ペットを味方として入れる（QuestBattleFactory 側で除外）。
         var fieldContext = questBattleFactory.CreateBattleFieldContext(run);
         var actors = questBattleFactory.CreateActorInputs(run, enemyDefinitions);
         var (actions, moves) = await questBattleFactory.CreateTurnInputsAsync(run, moveRepository, enemyDefinitions);
 
-        var petSummons = await CreatePetSummonInputsAsync(run, enemyDefinitions);
+        var petSummons = await CreateDeployedPetInputsAsync(run);
         if (petSummons.Actors.Length > 0)
         {
             actors = [.. actors, .. petSummons.Actors];
@@ -505,17 +525,44 @@ public class QuestRunService(
             logEntries: [entry]);
     }
 
-    private async Task<(BattleActorInput[] Actors, BattleActionInput[] Actions, Move[] Moves, IReadOnlyDictionary<BattleActorId, string> ActorNames)> CreatePetSummonInputsAsync(
-        QuestRun run,
-        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+    private static void StartPetDeploymentIfSummoned(QuestRun run)
     {
-        var summonCommands = run.TurnState.PendingCommands
-            .Where(x => x.ActionKind == ActionKind.SummonPet)
-            .ToArray();
-        if (summonCommands.Length == 0)
+        if (run.PetSummonUsed || run.IsPetDeploymentActive)
+        {
+            return;
+        }
+
+        var summonCommand = run.TurnState.PendingCommands.FirstOrDefault(x => x.ActionKind == ActionKind.SummonPet);
+        if (summonCommand is null)
+        {
+            return;
+        }
+
+        var member = run.BattleState.FindPartyMember(summonCommand.ParticipantId);
+        if (member.IsDead || member.HasLeftQuest)
+        {
+            return;
+        }
+
+        var snapshot = run.PartySnapshots.FirstOrDefault(x => x.ParticipantId == summonCommand.ParticipantId);
+        if (snapshot is null || snapshot.Pets.Count == 0)
+        {
+            return;
+        }
+
+        run.StartPetDeployment(QuestPetDeployment.Create(snapshot.ParticipantId, snapshot.Pets, Guid.NewGuid));
+    }
+
+    private async Task<(BattleActorInput[] Actors, BattleActionInput[] Actions, Move[] Moves, IReadOnlyDictionary<BattleActorId, string> ActorNames)> CreateDeployedPetInputsAsync(
+        QuestRun run)
+    {
+        if (!run.IsPetDeploymentActive)
         {
             return ([], [], [], new Dictionary<BattleActorId, string>());
         }
+
+        // ペットは通常ステージの敵マスタから捕獲されるため、エンドレスでも静的な敵定義から技・名前を引く。
+        var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync()).ToDictionary(x => x.Id);
 
         var snapshotById = run.PartySnapshots.ToDictionary(x => x.ParticipantId);
         var actors = new List<BattleActorInput>();
@@ -523,22 +570,9 @@ public class QuestRunService(
         var movesById = new Dictionary<int, Move>();
         var actorNames = new Dictionary<BattleActorId, string>();
 
-        foreach (var command in summonCommands)
+        foreach (var pet in run.PetDeployment!.LivingPets)
         {
-            var member = run.BattleState.FindPartyMember(command.ParticipantId);
-            if (member.IsDead || member.HasLeftQuest || !member.HasRemainingPetSummons)
-            {
-                continue;
-            }
-
-            if (!snapshotById.TryGetValue(command.ParticipantId, out var snapshot) || snapshot.Pet is null)
-            {
-                continue;
-            }
-
-            member.ConsumePetSummon();
-
-            enemyDefinitions.TryGetValue(snapshot.Pet.EnemyDefinitionId, out var definition);
+            enemyDefinitions.TryGetValue(pet.EnemyDefinitionId, out var definition);
             var petMoves = new List<Move>();
             foreach (var moveId in definition?.MoveIds ?? [])
             {
@@ -550,12 +584,10 @@ public class QuestRunService(
                 }
             }
 
-            var petName = definition?.Name ?? "ペット";
-            var displayName = $"{snapshot.DisplayName}の{petName}";
-            var (actor, action, _) = questPetActionService.CreateSummonInputs(
-                Guid.NewGuid(),
+            var displayName = CreateDeployedPetDisplayName(pet, definition, snapshotById);
+            var (actor, action, _) = questPetActionService.CreateDeployedPetInputs(
+                pet,
                 displayName,
-                snapshot.Pet,
                 petMoves,
                 _petRollProvider);
             actors.Add(actor);
@@ -564,6 +596,17 @@ public class QuestRunService(
         }
 
         return (actors.ToArray(), actions.ToArray(), movesById.Values.ToArray(), actorNames);
+    }
+
+    private static string CreateDeployedPetDisplayName(
+        QuestDeployedPetState pet,
+        QuestEnemyDefinition? definition,
+        IReadOnlyDictionary<QuestParticipantId, QuestRunPartyMemberSnapshot> snapshotById)
+    {
+        var petName = definition?.Name ?? "ペット";
+        return snapshotById.TryGetValue(pet.OwnerParticipantId, out var owner)
+            ? $"{owner.DisplayName}の{petName}"
+            : petName;
     }
 
     private static Move[] MergeMoves(IReadOnlyList<Move> baseMoves, IReadOnlyList<Move> additionalMoves)
@@ -1067,7 +1110,8 @@ public class QuestRunService(
             snapshotByParticipantId,
             partyById,
             enemyById,
-            enemyDefinitions);
+            enemyDefinitions,
+            petActorNames);
 
         actions = [.. captureActions, .. actions, .. ailmentLogActions];
 
@@ -1368,7 +1412,8 @@ public class QuestRunService(
         IReadOnlyDictionary<QuestParticipantId, QuestRunPartyMemberSnapshot> snapshotByParticipantId,
         IReadOnlyDictionary<QuestParticipantId, QuestRunPartyMemberState> partyById,
         IReadOnlyDictionary<QuestEnemyInstanceId, QuestEnemyState> enemyById,
-        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions,
+        IReadOnlyDictionary<BattleActorId, string> petActorNames)
     {
         var logActions = new List<QuestResolvedAction>();
 
@@ -1393,7 +1438,8 @@ public class QuestRunService(
                 snapshotByParticipantId,
                 partyById,
                 enemyById,
-                enemyDefinitions);
+                enemyDefinitions,
+                petActorNames);
             var entry = BuildAilmentTickLog(actorDisplayName, targetResult.Damage, targetResult.TriggeredAilment.Value, sourceMove);
 
             logActions.Add(new QuestResolvedAction(
@@ -1418,7 +1464,8 @@ public class QuestRunService(
         IReadOnlyDictionary<QuestParticipantId, QuestRunPartyMemberSnapshot> snapshotByParticipantId,
         IReadOnlyDictionary<QuestParticipantId, QuestRunPartyMemberState> partyById,
         IReadOnlyDictionary<QuestEnemyInstanceId, QuestEnemyState> enemyById,
-        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions,
+        IReadOnlyDictionary<BattleActorId, string> petActorNames)
     {
         if (partyActorMap.TryGetValue(actorId, out var participantId))
         {
@@ -1432,6 +1479,11 @@ public class QuestRunService(
                 ? definition.Name
                 : enemy.EnemyDefinitionId.ToString();
             return (null, enemyInstanceId.Value, name);
+        }
+
+        if (petActorNames.TryGetValue(actorId, out var petName))
+        {
+            return (null, null, petName);
         }
 
         return (null, null, actorId.Value.ToString());

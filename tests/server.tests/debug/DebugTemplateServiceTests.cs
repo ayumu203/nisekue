@@ -66,12 +66,45 @@ public class DebugTemplateServiceTests
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
-    private static DebugTemplateService CreateService(Player player)
+    [Fact]
+    public async Task ApplyAsync_DeletesRebirthHistoriesOfPlayer()
+    {
+        var player = DebugTestPlayers.Create();
+        var rebirthHistoryRepository = new RecordingRebirthHistoryRepository();
+        var service = CreateService(player, rebirthHistoryRepository);
+
+        await service.ApplyAsync(player.Id, "initial");
+
+        rebirthHistoryRepository.DeletedPlayerIds.Should().Equal(player.Id);
+        player.RebirthCount.Should().Be(0);
+    }
+
+    private static DebugTemplateService CreateService(
+        Player player,
+        IPlayerRebirthHistoryRepository? rebirthHistoryRepository = null)
     {
         return new DebugTemplateService(
             new SinglePlayerMutationService(player),
             new TieredJobProfileRepository(),
-            new FixedJobMoveLearningRuleRepository());
+            new FixedJobMoveLearningRuleRepository(),
+            rebirthHistoryRepository ?? new RecordingRebirthHistoryRepository());
+    }
+
+    /// <summary>削除の呼び出しを記録するだけの転生履歴リポジトリ。</summary>
+    private sealed class RecordingRebirthHistoryRepository : IPlayerRebirthHistoryRepository
+    {
+        public List<PlayerId> DeletedPlayerIds { get; } = [];
+
+        public Task<IReadOnlyList<PlayerRebirthStatusHistory>> GetByPlayerAsync(PlayerId playerId)
+        {
+            return Task.FromResult<IReadOnlyList<PlayerRebirthStatusHistory>>([]);
+        }
+
+        public Task DeleteByPlayerAsync(PlayerId playerId)
+        {
+            DeletedPlayerIds.Add(playerId);
+            return Task.CompletedTask;
+        }
     }
 
     /// <summary>見習い（マスター5）、一次職の戦士・魔法使い（25）、二次職の剣聖（戦士が前提）。</summary>

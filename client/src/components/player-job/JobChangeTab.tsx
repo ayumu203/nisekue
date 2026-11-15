@@ -178,7 +178,7 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
             </Stack>
           </Box>
 
-          <AlertWarning isMaxLevel={isMaxLevel} />
+          {isMaxLevel ? <MaxLevelWarning /> : null}
         </Stack>
       </Paper>
 
@@ -287,13 +287,11 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
                       <Typography variant="body2" color="text.secondary">
                         {job.description}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {isCurrent
-                          ? locale.currentDetail
-                          : isLocked
-                            ? locale.jobLockedDetail
-                            : locale.jobResetDetail.replace('{{jobName}}', job.displayName)}
-                      </Typography>
+                      {isCurrent || isLocked ? (
+                        <Typography variant="body2" color="text.secondary">
+                          {isCurrent ? locale.currentDetail : locale.jobLockedDetail}
+                        </Typography>
+                      ) : null}
                     </Stack>
                   </Stack>
                   {isCurrent ? null : (
@@ -358,7 +356,7 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
   )
 }
 
-function AlertWarning({ isMaxLevel }: { isMaxLevel: boolean }) {
+function MaxLevelWarning() {
   return (
     <Box
       sx={{
@@ -370,14 +368,9 @@ function AlertWarning({ isMaxLevel }: { isMaxLevel: boolean }) {
         borderColor: 'rgba(200, 187, 131, 0.45)',
       }}
     >
-      <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.84)' }}>
-        {locale.resetNoticeBody}
+      <Typography variant="body2" sx={{ color: '#ffd9a0', fontWeight: 700 }}>
+        {locale.maxLevelNoticeBody}
       </Typography>
-      {isMaxLevel && (
-        <Typography variant="body2" sx={{ mt: 1, color: '#ffd9a0', fontWeight: 700 }}>
-          {locale.maxLevelNoticeBody}
-        </Typography>
-      )}
     </Box>
   )
 }

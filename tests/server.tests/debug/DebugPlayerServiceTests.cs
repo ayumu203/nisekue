@@ -230,6 +230,42 @@ public class DebugPlayerServiceTests
         player.Job.Should().Be(Job.Warrior);
     }
 
+    [Fact]
+    public async Task GrantGoldAsync_AddsGold()
+    {
+        var player = DebugTestPlayers.Create();
+        var service = CreateService(player);
+
+        var gold = await service.GrantGoldAsync(player.Id, 500);
+
+        gold.Should().Be(600);
+        player.Gold.Should().Be(600);
+    }
+
+    [Fact]
+    public async Task GrantGoldAsync_WhenOverflowing_CapsAtIntMax()
+    {
+        var player = DebugTestPlayers.Create();
+        var service = CreateService(player);
+
+        var gold = await service.GrantGoldAsync(player.Id, int.MaxValue);
+
+        gold.Should().Be(int.MaxValue);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task GrantGoldAsync_WhenAmountIsNotPositive_Throws(int amount)
+    {
+        var player = DebugTestPlayers.Create();
+        var service = CreateService(player);
+
+        var act = () => service.GrantGoldAsync(player.Id, amount);
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+    }
+
     private static DebugPlayerService CreateService(Player player, params int[] moveIds)
     {
         return CreateService(player, masterLevel: 20, learnableMoveIds: [], moveIds);

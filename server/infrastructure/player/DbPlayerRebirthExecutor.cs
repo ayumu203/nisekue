@@ -11,7 +11,7 @@ public class DbPlayerRebirthExecutor(
     PlayerForUpdateLockService lockService,
     IMemoryCache cache) : IPlayerRebirthExecutor
 {
-    public async Task<Player> ExecuteAsync(PlayerId playerId, Func<Status, Status> buildInheritedStatus)
+    public async Task<Player> ExecuteAsync(PlayerId playerId, Func<Status, Status> buildInheritedStatus, bool ignoreRequirements = false)
     {
         ArgumentNullException.ThrowIfNull(buildInheritedStatus);
 
@@ -28,7 +28,7 @@ public class DbPlayerRebirthExecutor(
         var previousStatus = player.Status;
         var inheritedStatus = buildInheritedStatus(previousStatus);
 
-        player.Rebirth(inheritedStatus);
+        player.Rebirth(inheritedStatus, ignoreRequirements);
 
         PlayerAggregatePersistence.Apply(dbContext, entity, aggregate);
 

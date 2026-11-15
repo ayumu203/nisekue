@@ -165,7 +165,7 @@ public class QuestRunTests
     }
 
     [Fact]
-    public void SubmitCommand_SummonPetWithoutStandbyPet_ThrowsInvalidOperationException()
+    public void SubmitCommand_SummonPetWithoutPets_ThrowsInvalidOperationException()
     {
         var run = CreateRun();
         var command = new QuestSubmittedCommand(
@@ -176,13 +176,13 @@ public class QuestRunTests
 
         var act = () => run.SubmitCommand(run.PartySnapshots[0].ParticipantId, command, DateTimeOffset.UtcNow);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("*スタンバイのペット*");
+        act.Should().Throw<InvalidOperationException>().WithMessage("*ペットがいない*");
     }
 
     [Fact]
-    public void SubmitCommand_SummonPetWithStandbyPet_AcceptsCommand()
+    public void SubmitCommand_SummonPetWithPets_AcceptsCommand()
     {
-        var run = CreateRun(pet: CreatePetSnapshot());
+        var run = CreateRun(pets: [CreatePetSnapshot()]);
         var command = new QuestSubmittedCommand(
             run.PartySnapshots[0].ParticipantId,
             1,
@@ -195,9 +195,9 @@ public class QuestRunTests
     }
 
     [Fact]
-    public void SubmitCommand_SummonPetWhenLimitReached_ThrowsInvalidOperationException()
+    public void SubmitCommand_SummonPetWhenAlreadyUsed_ThrowsInvalidOperationException()
     {
-        var run = CreateRun(pet: CreatePetSnapshot(), petSummonsUsed: 3);
+        var run = CreateRun(pets: [CreatePetSnapshot()], petSummonUsed: true);
         var command = new QuestSubmittedCommand(
             run.PartySnapshots[0].ParticipantId,
             1,
@@ -206,7 +206,147 @@ public class QuestRunTests
 
         var act = () => run.SubmitCommand(run.PartySnapshots[0].ParticipantId, command, DateTimeOffset.UtcNow);
 
-        act.Should().Throw<InvalidOperationException>().WithMessage("*上限*");
+        act.Should().Throw<InvalidOperationException>().WithMessage("*すでにペットを呼出*");
+    }
+
+    [Fact]
+    public void SubmitCommand_EntrustPetWithoutDeployment_ThrowsInvalidOperationException()
+    {
+        var run = CreateRun(pets: [CreatePetSnapshot()]);
+        var command = new QuestSubmittedCommand(
+            run.PartySnapshots[0].ParticipantId,
+            1,
+            ActionKind.EntrustPet,
+            DateTimeOffset.UtcNow);
+
+        var act = () => run.SubmitCommand(run.PartySnapshots[0].ParticipantId, command, DateTimeOffset.UtcNow);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*出撃していない*");
+    }
+
+    [Fact]
+    public void SubmitCommand_NormalAttackDuringDeployment_ThrowsInvalidOperationException()
+    {
+        var run = CreateDeployedRun();
+        var command = new QuestSubmittedCommand(
+            run.PartySnapshots[0].ParticipantId,
+            1,
+            ActionKind.NormalAttack,
+            DateTimeOffset.UtcNow);
+
+        var act = () => run.SubmitCommand(run.PartySnapshots[0].ParticipantId, command, DateTimeOffset.UtcNow);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*ペットにまかせる*");
+    }
+
+    [Fact]
+    public void SubmitCommand_EntrustPetDuringDeployment_AcceptsCommand()
+    {
+        var run = CreateDeployedRun();
+        var command = new QuestSubmittedCommand(
+            run.PartySnapshots[0].ParticipantId,
+            1,
+            ActionKind.EntrustPet,
+            DateTimeOffset.UtcNow);
+
+        run.SubmitCommand(run.PartySnapshots[0].ParticipantId, command, DateTimeOffset.UtcNow);
+
+        run.TurnState.PendingCommands.Should().ContainSingle().Which.ActionKind.Should().Be(ActionKind.EntrustPet);
+    }
+
+    [Fact]
+    public void StartPetDeployment_MarksSummonUsedAndActivatesDeployment()
+    {
+        var run = CreateRun(pets: [CreatePetSnapshot()]);
+        var participantId = run.PartySnapshots[0].ParticipantId;
+
+        run.StartPetDeployment(QuestPetDeployment.Create(participantId, run.PartySnapshots[0].Pets, Guid.NewGuid));
+
+        run.PetSummonUsed.Should().BeTrue();
+        run.IsPetDeploymentActive.Should().BeTrue();
+        run.PetDeployment!.RemainingTurns.Should().Be(3);
+    }
+
+    [Fact]
+    public void StartPetDeployment_WhenAlreadyUsed_ThrowsInvalidOperationException()
+    {
+        var run = CreateRun(pets: [CreatePetSnapshot()], petSummonUsed: true);
+        var participantId = run.PartySnapshots[0].ParticipantId;
+
+        var act = () => run.StartPetDeployment(QuestPetDeployment.Create(participantId, run.PartySnapshots[0].Pets, Guid.NewGuid));
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void SwitchToAutoActionForTimeout_DuringDeployment_SubmitsEntrustPetWithoutSwitchingMode()
+    {
+        var run = CreateDeployedRun();
+        var participantId = run.PartySnapshots[0].ParticipantId;
+
+        run.SwitchToAutoActionForTimeout(DateTimeOffset.UtcNow.AddMinutes(1));
+
+        run.TurnState.PendingCommands.Should().ContainSingle()
+            .Which.ActionKind.Should().Be(ActionKind.EntrustPet);
+        run.BattleState.FindPartyMember(participantId).ActionMode.Should().Be(ActionMode.Manual);
+    }
+
+    [Fact]
+    public void ApplyBattleResolution_DuringDeployment_EndsAfterThreeTurns()
+    {
+        var run = CreateDeployedRun();
+
+        ApplyEmptyResolution(run);
+        ApplyEmptyResolution(run);
+
+        run.IsPetDeploymentActive.Should().BeTrue();
+        run.PetDeployment!.RemainingTurns.Should().Be(1);
+
+        ApplyEmptyResolution(run);
+
+        run.IsPetDeploymentActive.Should().BeFalse();
+        run.PetDeployment.Should().BeNull();
+        run.PetSummonUsed.Should().BeTrue();
+        run.Status.Should().Be(QuestRunStatus.InProgress);
+    }
+
+    [Fact]
+    public void ApplyBattleResolution_WhenAllPetsDefeated_EndsDeployment()
+    {
+        var run = CreateDeployedRun();
+        var petActorId = run.PetDeployment!.Pets[0].ActorId;
+        var resolution = new BattleTurnResolution(
+            actionResults: [],
+            updatedStates: [new BattleActorState(new BattleActorId(petActorId), 0, 0)]);
+
+        run.ApplyBattleResolution(
+            resolution,
+            new Dictionary<BattleActorId, QuestParticipantId>(),
+            new Dictionary<BattleActorId, QuestEnemyInstanceId>(),
+            finalFloorNo: 3,
+            DateTimeOffset.UtcNow.AddSeconds(60));
+
+        run.IsPetDeploymentActive.Should().BeFalse();
+        run.PetDeployment.Should().BeNull();
+        run.Status.Should().Be(QuestRunStatus.InProgress);
+    }
+
+    private static void ApplyEmptyResolution(QuestRun run)
+    {
+        run.ApplyBattleResolution(
+            new BattleTurnResolution(actionResults: [], updatedStates: []),
+            new Dictionary<BattleActorId, QuestParticipantId>(),
+            new Dictionary<BattleActorId, QuestEnemyInstanceId>(),
+            finalFloorNo: 3,
+            DateTimeOffset.UtcNow.AddSeconds(60));
+    }
+
+    private static QuestRun CreateDeployedRun()
+    {
+        var run = CreateRun(pets: [CreatePetSnapshot()]);
+        var participantId = run.PartySnapshots[0].ParticipantId;
+        run.StartPetDeployment(QuestPetDeployment.Create(participantId, run.PartySnapshots[0].Pets, Guid.NewGuid));
+        return run;
     }
 
     private static QuestPetSnapshot CreatePetSnapshot()
@@ -216,7 +356,7 @@ public class QuestRunTests
             new Status(maxHp: 30, maxMp: 10, strength: 5, defense: 3, intelligence: 1, luck: 1, speed: 4));
     }
 
-    private static QuestRun CreateRun(QuestPetSnapshot? pet = null, int petSummonsUsed = 0)
+    private static QuestRun CreateRun(IEnumerable<QuestPetSnapshot>? pets = null, bool petSummonUsed = false)
     {
         var participantId = QuestParticipantId.New();
         var snapshot = new QuestRunPartyMemberSnapshot(
@@ -231,7 +371,7 @@ public class QuestRunTests
             new MoveSet(),
             new BattlePosition(BattleRow.Front, BattleColumn.Left),
             ActionMode.Manual,
-            pet);
+            pets);
 
         var enemyId = QuestEnemyInstanceId.New();
         return new QuestRun(
@@ -242,7 +382,7 @@ public class QuestRunTests
             new QuestFloorState(1, false, []),
             new QuestBattleState(
                 [
-                    new QuestRunPartyMemberState(participantId, 20, 5, false, 1, ActionMode.Manual, petSummonsUsed: petSummonsUsed)
+                    new QuestRunPartyMemberState(participantId, 20, 5, false, 1, ActionMode.Manual)
                 ],
                 [
                     new QuestEnemyState(
@@ -258,6 +398,7 @@ public class QuestRunTests
             new QuestRewardAccumulator(),
             lastTurnResults: null,
             chatMessages: [],
-            startedAt: DateTimeOffset.UtcNow);
+            startedAt: DateTimeOffset.UtcNow,
+            petSummonUsed: petSummonUsed);
     }
 }

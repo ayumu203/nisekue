@@ -214,6 +214,9 @@ public class QuestResponseMapper(
     {
         var stage = await questStageRepository.GetAsync(run.StageId);
         var enemyDefinitions = await BuildRunEnemyDefinitionsAsync(run, stage);
+        // ペットは通常ステージの敵マスタ由来なので、エンドレスの敵定義で上書きされていない静的な定義を使う。
+        var petDefinitions = await GetEnemyDefinitionMapAsync();
+        var activePetDeployment = run.IsPetDeploymentActive ? run.PetDeployment : null;
         var rewardEquipment = run.Rewards.EquipmentRewardId is not null
             ? await equipmentRepository.GetAsync(run.Rewards.EquipmentRewardId.Value)
             : null;
@@ -273,19 +276,16 @@ public class QuestResponseMapper(
                     canActFromTurn = state.CanActFromTurn,
                     actionMode = state.ActionMode.ToString(),
                     manualControlRequestStatus = state.IsManualControlRequested ? "Pending" : "None",
-                    petSummonsUsed = state.PetSummonsUsed,
-                    pet = snapshot.Pet is null
-                        ? null
-                        : new
-                        {
-                            enemyDefinitionId = snapshot.Pet.EnemyDefinitionId.Value,
-                            name = enemyDefinitions.TryGetValue(snapshot.Pet.EnemyDefinitionId, out var petDefinition)
-                                ? petDefinition.Name
-                                : "ペット",
-                            imagePath = enemyDefinitions.TryGetValue(snapshot.Pet.EnemyDefinitionId, out var petImageDefinition)
-                                ? petImageDefinition.ImagePath
-                                : null
-                        },
+                    pets = snapshot.Pets.Select(pet => new
+                    {
+                        enemyDefinitionId = pet.EnemyDefinitionId.Value,
+                        name = petDefinitions.TryGetValue(pet.EnemyDefinitionId, out var petDefinition)
+                            ? petDefinition.Name
+                            : "ペット",
+                        imagePath = petDefinitions.TryGetValue(pet.EnemyDefinitionId, out var petImageDefinition)
+                            ? petImageDefinition.ImagePath
+                            : null
+                    }),
                     activeEffects = state.Ailments.Select(x => new
                     {
                         effectType = x.Type.ToString(),
@@ -301,6 +301,49 @@ public class QuestResponseMapper(
                     }))
                 };
             }),
+            petSummon = new
+            {
+                used = run.PetSummonUsed,
+                deployment = activePetDeployment is null
+                    ? null
+                    : new
+                    {
+                        remainingTurns = activePetDeployment.RemainingTurns,
+                        pets = activePetDeployment.Pets.Select(pet =>
+                        {
+                            petDefinitions.TryGetValue(pet.EnemyDefinitionId, out var petDefinition);
+                            return new
+                            {
+                                actorId = pet.ActorId,
+                                ownerParticipantId = pet.OwnerParticipantId.Value,
+                                enemyDefinitionId = pet.EnemyDefinitionId.Value,
+                                name = petDefinition?.Name ?? "ペット",
+                                imagePath = petDefinition?.ImagePath,
+                                position = new
+                                {
+                                    row = pet.Position.Row.ToString(),
+                                    column = pet.Position.Column.ToString()
+                                },
+                                currentHp = pet.CurrentHp,
+                                maxHp = pet.Status.MaxHp,
+                                isDead = pet.IsDead,
+                                activeEffects = pet.Ailments.Select(x => new
+                                {
+                                    effectType = x.Type.ToString(),
+                                    displayName = x.Type.ToString(),
+                                    remainingTurns = x.RemainingTurns,
+                                    stacks = (int?)null
+                                }).Concat(pet.Buffs.Select(x => new
+                                {
+                                    effectType = x.Stat.ToString(),
+                                    displayName = x.Stat.ToString(),
+                                    remainingTurns = x.RemainingTurns,
+                                    stacks = (int?)null
+                                }))
+                            };
+                        })
+                    }
+            },
             enemies = run.BattleState.Enemies.Select(enemy =>
             {
                 enemyDefinitions.TryGetValue(enemy.EnemyDefinitionId, out var definition);

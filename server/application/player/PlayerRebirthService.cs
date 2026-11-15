@@ -6,9 +6,10 @@ namespace server.application.player;
 public class PlayerRebirthService(
     IPlayerRebirthExecutor playerRebirthExecutor)
 {
-    public async Task<Player> RebirthAsync(PlayerId playerId)
+    /// <param name="ignoreRequirements">true（デバッグ用）なら転生の条件（レベル・Gold）を確認せず、Gold も減らさない。</param>
+    public async Task<Player> RebirthAsync(PlayerId playerId, bool ignoreRequirements = false)
     {
-        return await playerRebirthExecutor.ExecuteAsync(playerId, BuildInheritedStatus);
+        return await playerRebirthExecutor.ExecuteAsync(playerId, BuildInheritedStatus, ignoreRequirements);
     }
 
     private static Status BuildInheritedStatus(Status currentStatus)

@@ -1,6 +1,7 @@
 import { Box, Button, Chip, Paper, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { DetailsToggleButton } from './DetailsToggleButton'
 import { ItemArtwork } from './ItemIllustrations'
 import { ListingControls } from './ListingControls'
 import { formatDateTime, formatStatusBonus } from './itemUtils'
@@ -67,15 +68,11 @@ export function MarketCard({
           {listing.flavorText || '-'}
         </Typography>
         {equipmentDetail ? (
-          <Button
-            variant="text"
-            onClick={() => setShowDetails((current) => !current)}
-            aria-expanded={showDetails}
-            aria-controls={detailRegionId}
-            sx={{ alignSelf: 'center', color: deepGreen, fontWeight: 700 }}
-          >
-            {showDetails ? locale.hideDetails : locale.showDetails}
-          </Button>
+          <DetailsToggleButton
+            isOpen={showDetails}
+            onToggle={() => setShowDetails((current) => !current)}
+            controlsId={detailRegionId}
+          />
         ) : null}
         {showDetails && equipmentDetail ? (
           <Stack

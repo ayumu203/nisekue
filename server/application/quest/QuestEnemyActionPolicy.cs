@@ -485,32 +485,35 @@ public class QuestEnemyActionPolicy
             new BattleActorSnapshot(actorSnapshot.Id, enemyDefinition.Name, BattleSide.Enemy, enemyDefinition.Status, CreateMoveSet(enemyDefinition.MoveIds)),
             actorState);
 
-        var playerTargets = run.PartySnapshots
-            .Join(
-                run.BattleState.PartyMembers,
-                snapshot => snapshot.ParticipantId,
-                state => state.ParticipantId,
-                (snapshot, state) => new { snapshot, state })
-            .Where(x => !x.state.IsDead && !x.state.HasLeftQuest)
-            .Select(x => new CombatTargetCandidate(
-                new BattleActorId(x.snapshot.ParticipantId.Value),
-                x.snapshot.StartPosition,
-                x.snapshot.BaseStatus.MaxHp,
-                x.state.CurrentHp,
-                x.state.Ailments.Any(ailment => ailment.Type == AilmentType.Taunt),
-                new BattleActorSnapshot(
+        // ペット出撃中はプレイヤー側が下がっているため、出撃中のペットだけを狙う。
+        var playerTargets = run.IsPetDeploymentActive
+            ? CreateDeployedPetTargets(run.PetDeployment!)
+            : run.PartySnapshots
+                .Join(
+                    run.BattleState.PartyMembers,
+                    snapshot => snapshot.ParticipantId,
+                    state => state.ParticipantId,
+                    (snapshot, state) => new { snapshot, state })
+                .Where(x => !x.state.IsDead && !x.state.HasLeftQuest)
+                .Select(x => new CombatTargetCandidate(
                     new BattleActorId(x.snapshot.ParticipantId.Value),
-                    x.snapshot.DisplayName,
-                    BattleSide.Ally,
-                    x.snapshot.BaseStatus,
-                    x.snapshot.MoveSet),
-                new BattleActorState(
-                    new BattleActorId(x.snapshot.ParticipantId.Value),
+                    x.snapshot.StartPosition,
+                    x.snapshot.BaseStatus.MaxHp,
                     x.state.CurrentHp,
-                    x.state.CurrentMp,
-                    x.state.Ailments,
-                    x.state.Buffs)))
-            .ToArray();
+                    x.state.Ailments.Any(ailment => ailment.Type == AilmentType.Taunt),
+                    new BattleActorSnapshot(
+                        new BattleActorId(x.snapshot.ParticipantId.Value),
+                        x.snapshot.DisplayName,
+                        BattleSide.Ally,
+                        x.snapshot.BaseStatus,
+                        x.snapshot.MoveSet),
+                    new BattleActorState(
+                        new BattleActorId(x.snapshot.ParticipantId.Value),
+                        x.state.CurrentHp,
+                        x.state.CurrentMp,
+                        x.state.Ailments,
+                        x.state.Buffs)))
+                .ToArray();
 
         var friendlyTargets = run.BattleState.Enemies
             .Where(other => other.Id != enemy.Id)
@@ -547,6 +550,24 @@ public class QuestEnemyActionPolicy
             snapshots,
             states,
             new BattleFieldContext(positions));
+    }
+
+    private static CombatTargetCandidate[] CreateDeployedPetTargets(QuestPetDeployment deployment)
+    {
+        return deployment.LivingPets
+            .Select(pet =>
+            {
+                var actorId = new BattleActorId(pet.ActorId);
+                return new CombatTargetCandidate(
+                    actorId,
+                    pet.Position,
+                    pet.Status.MaxHp,
+                    pet.CurrentHp,
+                    pet.Ailments.Any(ailment => ailment.Type == AilmentType.Taunt),
+                    new BattleActorSnapshot(actorId, "ペット", BattleSide.Ally, pet.Status, new MoveSet()),
+                    new BattleActorState(actorId, pet.CurrentHp, 0, pet.Ailments, pet.Buffs));
+            })
+            .ToArray();
     }
 
     private static QuestEnemyDefinition ResolveDefinition(

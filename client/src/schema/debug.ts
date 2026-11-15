@@ -146,3 +146,29 @@ export const debugChangeJobResponseSchema = z.object({
   job: z.string(),
   jobLevel: z.number().int().min(1),
 })
+
+/** サーバー側の金額は C# の int なので、それを超える値は送らない */
+const MAX_INT32 = 2147483647
+
+export const debugGrantGoldRequestSchema = z.object({
+  amount: z
+    .number()
+    .int('ゴールドは1〜2147483647の整数を入力してください')
+    .min(1, 'ゴールドは1〜2147483647の整数を入力してください')
+    .max(MAX_INT32, 'ゴールドは1〜2147483647の整数を入力してください'),
+})
+
+export type DebugGrantGoldRequest = z.infer<typeof debugGrantGoldRequestSchema>
+
+export const debugGrantGoldResponseSchema = z.object({ gold: z.number().int().min(0) })
+
+export const debugRebirthResponseSchema = z.object({
+  rebirthCount: z.number().int().min(1),
+  level: z.number().int().min(1),
+})
+
+export type DebugRebirthResponse = z.infer<typeof debugRebirthResponseSchema>
+
+export const debugCompleteTreasureMapResponseSchema = z.object({
+  endsAt: z.string().datetime({ offset: true }),
+})

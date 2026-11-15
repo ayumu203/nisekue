@@ -28,6 +28,7 @@ export const questActionKindSchema = z.enum([
   'Escape',
   'Capture',
   'SummonPet',
+  'EntrustPet',
 ])
 export const questManualControlRequestStatusSchema = z.enum(['None', 'Pending'])
 export const questTargetResultTypeSchema = z.enum([
@@ -204,16 +205,42 @@ export const questPartyMemberViewSchema = z.object({
   canActFromTurn: z.number().int().positive(),
   actionMode: questActionModeSchema,
   manualControlRequestStatus: questManualControlRequestStatusSchema,
-  petSummonsUsed: z.number().int().nonnegative().optional().default(0),
-  pet: z
-    .object({
-      enemyDefinitionId: z.number().int().positive(),
-      name: z.string().min(1),
-      imagePath: z.string().min(1).nullable().optional(),
-    })
-    .nullable()
-    .optional(),
+  // クエスト参加時点の所持ペット（呼出で出撃するチーム。スタンバイが先頭）
+  pets: z
+    .array(
+      z.object({
+        enemyDefinitionId: z.number().int().positive(),
+        name: z.string().min(1),
+        imagePath: z.string().min(1).nullable().optional(),
+      }),
+    )
+    .optional()
+    .default([]),
   activeEffects: z.array(questActiveEffectSchema),
+})
+
+export const questDeployedPetViewSchema = z.object({
+  actorId: z.string().uuid(),
+  ownerParticipantId: questParticipantIdSchema,
+  enemyDefinitionId: z.number().int().positive(),
+  name: z.string().min(1),
+  imagePath: z.string().min(1).nullable().optional(),
+  position: battlePositionSchema,
+  currentHp: z.number().int().nonnegative(),
+  maxHp: z.number().int().positive(),
+  isDead: z.boolean(),
+  activeEffects: z.array(questActiveEffectSchema),
+})
+
+// ペット呼出（ソロ限定・1クエスト1回）。deployment は出撃中のみ non-null
+export const questPetSummonViewSchema = z.object({
+  used: z.boolean(),
+  deployment: z
+    .object({
+      remainingTurns: z.number().int().nonnegative(),
+      pets: z.array(questDeployedPetViewSchema),
+    })
+    .nullable(),
 })
 
 export const questEnemyViewSchema = z.object({
@@ -337,6 +364,7 @@ export const questRunDetailResponseSchema = z.object({
     waitingParticipantIds: z.array(questParticipantIdSchema),
   }),
   partyMembers: z.array(questPartyMemberViewSchema),
+  petSummon: questPetSummonViewSchema.optional().default({ used: false, deployment: null }),
   enemies: z.array(questEnemyViewSchema),
   pendingCommands: z.array(questPendingCommandViewSchema),
   chatMessages: z.array(questChatMessageViewSchema),
@@ -405,6 +433,7 @@ export type ListQuestRoomsRequest = z.infer<typeof listQuestRoomsRequestSchema>
 export type QuestRoomSummaryResponse = z.infer<typeof questRoomSummaryResponseSchema>
 export type ListQuestRoomsResponse = z.infer<typeof listQuestRoomsResponseSchema>
 export type QuestPartyMemberView = z.infer<typeof questPartyMemberViewSchema>
+export type QuestDeployedPetView = z.infer<typeof questDeployedPetViewSchema>
 export type QuestChatMessageView = z.infer<typeof questChatMessageViewSchema>
 export type QuestRunDetailResponse = z.infer<typeof questRunDetailResponseSchema>
 export type SubmitQuestCommandRequest = z.infer<typeof submitQuestCommandRequestSchema>

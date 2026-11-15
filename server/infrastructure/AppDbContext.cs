@@ -558,6 +558,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRun.Property(x => x.LastResolvedTurnNo).HasColumnName("last_resolved_turn_no");
         questRun.Property(x => x.LastTurnResultsJson).HasColumnName("last_turn_results_json").HasColumnType("jsonb");
         questRun.Property(x => x.ChatMessagesJson).HasColumnName("chat_messages_json").HasColumnType("jsonb").IsRequired();
+        questRun.Property(x => x.PetSummonUsed).HasColumnName("pet_summon_used").IsRequired();
+        questRun.Property(x => x.PetDeploymentJson).HasColumnName("pet_deployment_json").HasColumnType("jsonb");
         questRun.Property(x => x.StartedAt).HasColumnName("started_at").IsRequired();
         questRun.Property(x => x.EndedAt).HasColumnName("ended_at");
         questRun.Property(x => x.Version).HasColumnName("version").IsRequired().IsConcurrencyToken();
@@ -585,6 +587,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRunPartySnapshot.Property(x => x.Speed).HasColumnName("speed").IsRequired();
         questRunPartySnapshot.Property(x => x.MoveSetJson).HasColumnName("move_set_json").HasColumnType("jsonb").IsRequired();
         questRunPartySnapshot.Property(x => x.InitialActionMode).HasColumnName("initial_action_mode").IsRequired();
+        questRunPartySnapshot.Property(x => x.PetsJson).HasColumnName("pets_json").HasColumnType("jsonb").IsRequired();
         questRunPartySnapshot.Property(x => x.PetEnemyDefinitionId).HasColumnName("pet_enemy_definition_id");
         questRunPartySnapshot.Property(x => x.PetMaxHp).HasColumnName("pet_max_hp");
         questRunPartySnapshot.Property(x => x.PetMaxMp).HasColumnName("pet_max_mp");
@@ -606,7 +609,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRunPartyMember.Property(x => x.ActionMode).HasColumnName("action_mode").IsRequired();
         questRunPartyMember.Property(x => x.HasLeftQuest).HasColumnName("has_left_quest").IsRequired();
         questRunPartyMember.Property(x => x.IsManualControlRequested).HasColumnName("is_manual_control_requested").IsRequired();
-        questRunPartyMember.Property(x => x.PetSummonsUsed).HasColumnName("pet_summons_used").HasDefaultValue(0).IsRequired();
         questRunPartyMember.Property(x => x.ActiveEffectsJson).HasColumnName("active_effects_json").HasColumnType("jsonb").IsRequired();
         questRunPartyMember.Property(x => x.DerivedParametersJson).HasColumnName("derived_parameters_json").HasColumnType("jsonb").IsRequired();
         questRunPartyMember.Property(x => x.UpdatedAt).HasColumnName("updated_at").IsRequired();

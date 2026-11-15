@@ -89,7 +89,8 @@
     "Escape": "逃走",
     "EndlessFinish": "終了",
     "Capture": "捕獲",
-    "SummonPet": "呼出"
+    "SummonPet": "呼出",
+    "EntrustPet": "ペットにまかせる"
   },
   "endlessCheckpoint": {
     "bannerTitle": "チェックポイント（{{interval}}階）",

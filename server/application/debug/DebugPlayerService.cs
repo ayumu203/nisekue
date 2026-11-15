@@ -184,6 +184,21 @@ public class DebugPlayerService(
         });
     }
 
+    /// <summary>ゴールドを amount だけ加算する（int の上限で頭打ち）。加算後の所持ゴールドを返す。</summary>
+    public Task<int> GrantGoldAsync(PlayerId playerId, int amount)
+    {
+        if (amount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount), "ゴールドは1以上である必要があります。");
+        }
+
+        return playerMutationService.MutateAsync(playerId, player =>
+        {
+            player.GainGold(amount);
+            return Task.FromResult(player.Gold);
+        });
+    }
+
     /// <summary>指定したスロットを空にする。</summary>
     public Task<Player> ClearMoveSlotAsync(PlayerId playerId, int slotIndex)
     {
