@@ -866,14 +866,13 @@ export default function TreasureMap() {
                                   variant="outlined"
                                   sx={{
                                     width: '100%',
-                                    height: { xs: 'auto', sm: 126 },
                                     p: 1,
                                     borderRadius: 1.5,
                                     borderColor: '#d8c89f',
                                     backgroundColor: 'rgba(255,253,246,0.96)',
                                   }}
                                 >
-                                  <Stack spacing={0.75} sx={{ height: '100%', justifyContent: 'space-between' }}>
+                                  <Stack spacing={0.75}>
                                     <Typography variant="caption" sx={{ color: '#7d5f20', fontWeight: 700 }}>
                                       {gradeStars(map.grade)}
                                     </Typography>
