@@ -9,10 +9,11 @@ using server.domain.quest.enums;
 
 namespace server.application.quest;
 
-public class QuestBattleFactory
+public class QuestBattleFactory(MirrorEnemyActionPolicy? mirrorEnemyActionPolicy = null)
 {
     private readonly QuestAllyNpcActionPolicy allyNpcActionPolicy = new();
     private readonly QuestEnemyActionPolicy enemyActionPolicy = new();
+    private readonly MirrorEnemyActionPolicy mirrorEnemyActionPolicy = mirrorEnemyActionPolicy ?? new();
 
     public BattleActorInput[] CreateActorInputs(
         QuestRun run,
@@ -140,6 +141,20 @@ public class QuestBattleFactory
             foreach (var moveId in definition.MoveIds)
             {
                 availableMoves.Add(await GetMoveAsync(moveId, moveRepository, movesById));
+            }
+
+            // 名鑑の祠の敵（プレイヤー）は職業から行動を決める。
+            var mirrorSnapshot = run.MirrorEnemyPlan?.FindEnemy(enemy.EnemyDefinitionId);
+            if (mirrorSnapshot is not null && enemyDefinitions is not null)
+            {
+                var decision = mirrorEnemyActionPolicy.SelectAction(run, enemy, mirrorSnapshot, availableMoves, enemyDefinitions);
+                if (decision.IsRevive)
+                {
+                    enemy.RecordReviveUsed();
+                }
+
+                enemyActions.Add(decision.Action);
+                continue;
             }
 
             enemyActions.Add(enemyActionPolicy.SelectAction(run, enemy, definition, availableMoves, enemyDefinitions));

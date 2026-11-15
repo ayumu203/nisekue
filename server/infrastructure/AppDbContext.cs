@@ -627,6 +627,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRunEnemy.Property(x => x.CurrentMp).HasColumnName("current_mp").IsRequired();
         questRunEnemy.Property(x => x.IsDead).HasColumnName("is_dead").IsRequired();
         questRunEnemy.Property(x => x.IsCaptured).HasColumnName("is_captured").HasDefaultValue(false).IsRequired();
+        questRunEnemy.Property(x => x.ReviveUsedCount).HasColumnName("revive_used_count").HasDefaultValue(0).IsRequired();
         questRunEnemy.Property(x => x.ActiveEffectsJson).HasColumnName("active_effects_json").HasColumnType("jsonb").IsRequired();
         questRunEnemy.Property(x => x.DerivedParametersJson).HasColumnName("derived_parameters_json").HasColumnType("jsonb").IsRequired();
 

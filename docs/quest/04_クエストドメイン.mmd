@@ -674,7 +674,8 @@ classDiagram
             <<Domain Service>>
             %% 名鑑の祠専用。職業別の優先順＋共通ガード（重ねがけしない・自傷はHP20%以上・蘇生は1フロア3回）
             %% 単体はHPが一番低い相手、15%で第2候補。守護系はかばう最優先
-            +SelectAction(run: QuestRun, enemy: QuestEnemyState, snapshot: MirrorEnemySnapshot, availableMoves: IReadOnlyList~Move~, random: Random) BattleActionInput
+            %% 蘇生を選んだら QuestBattleFactory が QuestEnemyState.RecordReviveUsed() を呼ぶ
+            +SelectAction(run: QuestRun, enemy: QuestEnemyState, snapshot: MirrorEnemySnapshot, availableMoves: IReadOnlyList~Move~, enemyDefinitions: IReadOnlyDictionary~QuestEnemyDefinitionId, QuestEnemyDefinition~) MirrorEnemyActionDecision
         }
 
         class QuestRunFactory {

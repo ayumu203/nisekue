@@ -1321,6 +1321,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_dead");
 
+                    b.Property<int>("ReviveUsedCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("revive_used_count");
+
                     b.HasKey("RunId", "EnemyInstanceId");
 
                     b.ToTable("quest_run_enemies", "internal");
