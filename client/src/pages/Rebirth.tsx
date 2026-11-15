@@ -5,8 +5,6 @@ import { createPlayer, getPlayer, getRebirthHistory, rebirthPlayer } from '@/api
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { SummaryStat } from '@/components/rebirth/SummaryStat'
 import {
-  rebirthHintBadgeSx,
-  rebirthHintTextSx,
   rebirthPagePaperSx,
   rebirthPrimaryButtonSx,
   rebirthSurfaceSx,
@@ -321,23 +319,6 @@ export default function Rebirth() {
                           'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(145,213,255,0.92), rgba(227,216,165,0.3))',
                       }}
                     />
-                    {canRebirth ? (
-                      <Box sx={rebirthHintBadgeSx}>
-                        <Typography variant="body2" sx={rebirthHintTextSx}>
-                          {locale.executeHintReady}
-                        </Typography>
-                      </Box>
-                    ) : null}
-                    <Button
-                      variant="contained"
-                      disabled={!canRebirth || isSubmitting}
-                      onClick={() => {
-                        void handleRebirth()
-                      }}
-                      sx={rebirthPrimaryButtonSx}
-                    >
-                      {isSubmitting ? locale.executing : canRebirth ? locale.executeButton : locale.lockedButton}
-                    </Button>
                     <Stack spacing={1} alignItems="center" sx={{ pt: 0.5 }}>
                       <Typography variant="body2" color="text.secondary">
                         {locale.currentJobLabel}: {player.job.displayName}
@@ -364,6 +345,16 @@ export default function Rebirth() {
                         </Stack>
                       ) : null}
                     </Stack>
+                    <Button
+                      variant="contained"
+                      disabled={!canRebirth || isSubmitting}
+                      onClick={() => {
+                        void handleRebirth()
+                      }}
+                      sx={rebirthPrimaryButtonSx}
+                    >
+                      {isSubmitting ? locale.executing : canRebirth ? locale.executeButton : locale.lockedButton}
+                    </Button>
                   </Stack>
                 </Box>
               </Paper>

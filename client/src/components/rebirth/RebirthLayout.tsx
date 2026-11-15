@@ -33,19 +33,6 @@ export const rebirthPrimaryButtonSx = {
   },
 } as const
 
-export const rebirthHintBadgeSx = {
-  px: 1.5,
-  py: 0.75,
-  borderRadius: 999,
-  border: '1px solid #eadb9f',
-  background: 'linear-gradient(135deg, rgba(255, 234, 151, 0.3), rgba(150, 218, 255, 0.18))',
-} as const
-
-export const rebirthHintTextSx = {
-  color: '#8a6a00',
-  fontWeight: 700,
-} as const
-
 export const templeColumnSx = {
   position: 'relative',
   borderRadius: 3,

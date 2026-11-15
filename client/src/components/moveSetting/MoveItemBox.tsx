@@ -9,6 +9,7 @@ import locale from '../../../locale/player-setting/PlayerSetting.json'
 
 // 確定はグリーン、取消は赤系の枠線にして見分けやすくする。
 const saveMoveOrderButtonSx = {
+  borderRadius: 1,
   fontWeight: 800,
   color: '#ffffff',
   backgroundColor: '#3f6b46',
@@ -18,6 +19,7 @@ const saveMoveOrderButtonSx = {
 } as const
 
 const cancelMoveOrderButtonSx = {
+  borderRadius: 1,
   fontWeight: 800,
   color: '#b65f49',
   borderColor: '#b65f49',
@@ -279,75 +281,82 @@ export default function MoveItemBox({ player, accessToken, onSaved }: MoveItemBo
 
         {feedback ? <Alert severity={feedback.type}>{feedback.message}</Alert> : null}
 
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          justifyContent="space-between"
-          spacing={1.5}
-          alignItems={{ sm: 'center' }}
+        <Paper
+          variant="outlined"
+          sx={{ borderRadius: 3, p: { xs: 1.5, sm: 2 }, borderColor: '#cdb884', backgroundColor: '#fbf6e8' }}
         >
-          <Stack spacing={0.5}>
-            <Typography variant="h6" fontWeight={900}>
-              {locale.editingOrderTitle}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {locale.moveListDescription}
-            </Typography>
-          </Stack>
-          <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-            <Button
-              variant="outlined"
-              onClick={handleCancel}
-              disabled={isSaving || !hasChanges}
-              sx={cancelMoveOrderButtonSx}
+          <Stack spacing={1.5}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              spacing={1.5}
+              alignItems={{ sm: 'center' }}
             >
-              {locale.cancelMoveOrder}
-            </Button>
-            <Button
-              variant="contained"
-              onClick={() => void handleSave()}
-              disabled={isSaving || !hasChanges}
-              sx={saveMoveOrderButtonSx}
-            >
-              {isSaving ? locale.savingMoveOrder : locale.saveMoveOrder}
-            </Button>
-          </Stack>
-        </Stack>
+              <Stack spacing={0.5}>
+                <Typography variant="h6" fontWeight={900}>
+                  {locale.editingOrderTitle}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {locale.moveListDescription}
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleCancel}
+                  disabled={isSaving || !hasChanges}
+                  sx={cancelMoveOrderButtonSx}
+                >
+                  {locale.cancelMoveOrder}
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => void handleSave()}
+                  disabled={isSaving || !hasChanges}
+                  sx={saveMoveOrderButtonSx}
+                >
+                  {isSaving ? locale.savingMoveOrder : locale.saveMoveOrder}
+                </Button>
+              </Stack>
+            </Stack>
 
-        <Box onPointerMove={handlePointerMove} onPointerUp={finishDragging} onPointerCancel={finishDragging}>
-          <Stack
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-              gap: 1.5,
-            }}
-          >
-            {editableSlots.map((slot, index) => (
-              <Box
-                key={`${slot.moveId ?? 'empty'}-${index}`}
-                data-move-slot-index={index}
+            <Box onPointerMove={handlePointerMove} onPointerUp={finishDragging} onPointerCancel={finishDragging}>
+              <Stack
                 sx={{
-                  transition: 'transform 120ms ease, opacity 120ms ease',
-                  opacity: draggingIndex === index ? 0.9 : 1,
-                  transform: draggingIndex === index ? 'scale(1.01)' : 'none',
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                  gap: 1.5,
                 }}
               >
-                <MoveItem
-                  slot={slot}
-                  isDragging={draggingIndex === index}
-                  onHandlePointerDown={(event) => {
-                    event.preventDefault()
-                    pointerIdRef.current = event.pointerId
-                    if (typeof event.currentTarget.setPointerCapture === 'function') {
-                      event.currentTarget.setPointerCapture(event.pointerId)
-                      pointerCaptureRef.current = event.currentTarget
-                    }
-                    setDraggingIndex(index)
-                  }}
-                />
-              </Box>
-            ))}
+                {editableSlots.map((slot, index) => (
+                  <Box
+                    key={`${slot.moveId ?? 'empty'}-${index}`}
+                    data-move-slot-index={index}
+                    sx={{
+                      transition: 'transform 120ms ease, opacity 120ms ease',
+                      opacity: draggingIndex === index ? 0.9 : 1,
+                      transform: draggingIndex === index ? 'scale(1.01)' : 'none',
+                    }}
+                  >
+                    <MoveItem
+                      slot={slot}
+                      isDragging={draggingIndex === index}
+                      onHandlePointerDown={(event) => {
+                        event.preventDefault()
+                        pointerIdRef.current = event.pointerId
+                        if (typeof event.currentTarget.setPointerCapture === 'function') {
+                          event.currentTarget.setPointerCapture(event.pointerId)
+                          pointerCaptureRef.current = event.currentTarget
+                        }
+                        setDraggingIndex(index)
+                      }}
+                    />
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
           </Stack>
-        </Box>
+        </Paper>
       </Stack>
     </Paper>
   )

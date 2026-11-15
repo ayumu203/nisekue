@@ -728,174 +728,162 @@ export default function TreasureMap() {
               </Paper>
             ) : null}
 
-            <Paper
-              variant="outlined"
-              sx={{
-                p: { xs: 2, sm: 2.5 },
-                borderRadius: 3,
-                ...sectionPanelSx,
-              }}
-            >
-              <Stack spacing={1.5}>
-                <Typography variant="h6" fontWeight={900} sx={sectionHeadingSx}>
-                  {locale.mapListTitle}
-                </Typography>
-                {isMapsLoading ? (
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <CircularProgress size={16} />
-                    <Typography variant="body2" sx={{ color: sectionBodyColor }}>
-                      {locale.mapsLoading}
-                    </Typography>
-                  </Stack>
-                ) : mapsError ? (
-                  <Alert severity="warning">{mapsError.message}</Alert>
-                ) : (
-                  <Stack spacing={1.25}>
-                    {(maps ?? []).map((map) => {
-                      const tendencyChips = buildTendencyChips(map)
-                      const narrativeLocked = inProgress && currentExpedition?.mapId === map.mapId
-                      return (
-                        <Paper
-                          key={map.mapId}
-                          variant="outlined"
+            <Box>
+              {isMapsLoading ? (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CircularProgress size={16} />
+                  <Typography variant="body2" sx={{ color: sectionBodyColor }}>
+                    {locale.mapsLoading}
+                  </Typography>
+                </Stack>
+              ) : mapsError ? (
+                <Alert severity="warning">{mapsError.message}</Alert>
+              ) : (
+                <Stack spacing={1.25}>
+                  {(maps ?? []).map((map) => {
+                    const tendencyChips = buildTendencyChips(map)
+                    const narrativeLocked = inProgress && currentExpedition?.mapId === map.mapId
+                    return (
+                      <Paper
+                        key={map.mapId}
+                        variant="outlined"
+                        sx={{
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                          borderColor: '#c6d6ca',
+                          backgroundColor: '#ffffff',
+                        }}
+                      >
+                        <Box
                           sx={{
-                            borderRadius: 2,
-                            overflow: 'hidden',
-                            borderColor: '#c6d6ca',
-                            backgroundColor: '#ffffff',
+                            position: 'relative',
+                            p: { xs: 1.25, sm: 1.5 },
+                            minHeight: 156,
                           }}
                         >
                           <Box
+                            component="img"
+                            src={resolvePublicAssetPath(mapBackgroundByGrade[map.grade])}
+                            alt=""
+                            aria-hidden="true"
                             sx={{
-                              position: 'relative',
-                              p: { xs: 1.25, sm: 1.5 },
-                              minHeight: 156,
+                              position: 'absolute',
+                              inset: 0,
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              opacity: 0.18,
+                              pointerEvents: 'none',
+                              userSelect: 'none',
                             }}
+                          />
+                          <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={{ xs: 1, sm: 1.5 }}
+                            justifyContent="space-between"
+                            alignItems={{ xs: 'stretch', sm: 'stretch' }}
+                            sx={{ position: 'relative', zIndex: 1 }}
                           >
-                            <Box
-                              component="img"
-                              src={resolvePublicAssetPath(mapBackgroundByGrade[map.grade])}
-                              alt=""
-                              aria-hidden="true"
-                              sx={{
-                                position: 'absolute',
-                                inset: 0,
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                opacity: 0.18,
-                                pointerEvents: 'none',
-                                userSelect: 'none',
-                              }}
-                            />
-                            <Stack
-                              direction={{ xs: 'column', sm: 'row' }}
-                              spacing={{ xs: 1, sm: 1.5 }}
-                              justifyContent="space-between"
-                              alignItems={{ xs: 'stretch', sm: 'stretch' }}
-                              sx={{ position: 'relative', zIndex: 1 }}
-                            >
-                              <Stack spacing={1} flex={1} minWidth={0}>
-                                <Chip size="small" sx={{ alignSelf: 'flex-start' }} label={`ランク${map.grade}`} />
-                                <Typography variant="h6" fontWeight={900}>
-                                  {map.name}
-                                </Typography>
-                                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-                                  {tendencyChips.length > 0 ? (
-                                    tendencyChips.map((chip) => (
-                                      <Chip
-                                        key={`${map.mapId}-${chip.key}`}
-                                        size="small"
-                                        variant="outlined"
-                                        sx={{
-                                          borderColor:
-                                            chip.key === 'item'
-                                              ? '#7eb67e'
-                                              : chip.key === 'equipment'
-                                                ? '#7f9bcf'
-                                                : chip.key === 'experience'
-                                                  ? '#d8a05b'
-                                                  : '#d2b35f',
-                                          backgroundColor:
-                                            chip.key === 'item'
-                                              ? '#e8f6e8'
-                                              : chip.key === 'equipment'
-                                                ? '#edf3ff'
-                                                : chip.key === 'experience'
-                                                  ? '#fff3e5'
-                                                  : '#fff9dd',
-                                        }}
-                                        label={chip.label}
-                                      />
-                                    ))
-                                  ) : (
-                                    <Chip size="small" variant="outlined" label={locale.none} />
-                                  )}
-                                </Stack>
-                                <Typography variant="body2" color="text.secondary">
-                                  {narrativeLocked ? '……' : map.narrativeText || map.description || locale.none}
-                                </Typography>
-                                <Box sx={{ minHeight: 40, display: 'flex', alignItems: 'flex-start' }}>
-                                  {map.ownedQuantity > 0 ? (
-                                    <Button
+                            <Stack spacing={1} flex={1} minWidth={0}>
+                              <Chip size="small" sx={{ alignSelf: 'flex-start' }} label={`ランク${map.grade}`} />
+                              <Typography variant="h6" fontWeight={900}>
+                                {map.name}
+                              </Typography>
+                              <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                                {tendencyChips.length > 0 ? (
+                                  tendencyChips.map((chip) => (
+                                    <Chip
+                                      key={`${map.mapId}-${chip.key}`}
+                                      size="small"
                                       variant="outlined"
-                                      sx={{ ...mutedGreenButtonSx, alignSelf: 'flex-start' }}
-                                      disabled={
-                                        isStartDisabled(map, currentExpedition ?? null) || actionMapId === map.mapId
-                                      }
-                                      onClick={() => {
-                                        void handleStart(map.mapId)
+                                      sx={{
+                                        borderColor:
+                                          chip.key === 'item'
+                                            ? '#7eb67e'
+                                            : chip.key === 'equipment'
+                                              ? '#7f9bcf'
+                                              : chip.key === 'experience'
+                                                ? '#d8a05b'
+                                                : '#d2b35f',
+                                        backgroundColor:
+                                          chip.key === 'item'
+                                            ? '#e8f6e8'
+                                            : chip.key === 'equipment'
+                                              ? '#edf3ff'
+                                              : chip.key === 'experience'
+                                                ? '#fff3e5'
+                                                : '#fff9dd',
                                       }}
-                                    >
-                                      {actionMapId === map.mapId ? locale.starting : locale.startButton}
-                                    </Button>
-                                  ) : (
-                                    <Box aria-hidden="true" sx={{ width: 1, minHeight: 38 }} />
-                                  )}
-                                </Box>
+                                      label={chip.label}
+                                    />
+                                  ))
+                                ) : (
+                                  <Chip size="small" variant="outlined" label={locale.none} />
+                                )}
                               </Stack>
-
-                              <Box
-                                sx={{
-                                  minWidth: { xs: '100%', sm: 182 },
-                                  display: 'flex',
-                                  alignItems: { xs: 'stretch', sm: 'center' },
-                                }}
-                              >
-                                <Paper
-                                  variant="outlined"
-                                  sx={{
-                                    width: '100%',
-                                    p: 1,
-                                    borderRadius: 1.5,
-                                    borderColor: '#d8c89f',
-                                    backgroundColor: 'rgba(255,253,246,0.96)',
-                                  }}
-                                >
-                                  <Stack spacing={0.75}>
-                                    <Typography variant="caption" sx={{ color: '#7d5f20', fontWeight: 700 }}>
-                                      {gradeStars(map.grade)}
-                                    </Typography>
-                                    <Stack spacing={0.25}>
-                                      <Typography variant="body2" sx={{ color: '#5b4523' }}>
-                                        {locale.duration} {formatDuration(map.durationSeconds)}
-                                      </Typography>
-                                      <Typography variant="body2" sx={{ color: '#5b4523' }}>
-                                        {locale.ownedQuantity} {map.ownedQuantity}
-                                      </Typography>
-                                    </Stack>
-                                  </Stack>
-                                </Paper>
+                              <Typography variant="body2" color="text.secondary">
+                                {narrativeLocked ? '……' : map.narrativeText || map.description || locale.none}
+                              </Typography>
+                              <Box sx={{ minHeight: 40, display: 'flex', alignItems: 'flex-start' }}>
+                                {map.ownedQuantity > 0 ? (
+                                  <Button
+                                    variant="outlined"
+                                    sx={{ ...mutedGreenButtonSx, alignSelf: 'flex-start' }}
+                                    disabled={
+                                      isStartDisabled(map, currentExpedition ?? null) || actionMapId === map.mapId
+                                    }
+                                    onClick={() => {
+                                      void handleStart(map.mapId)
+                                    }}
+                                  >
+                                    {actionMapId === map.mapId ? locale.starting : locale.startButton}
+                                  </Button>
+                                ) : (
+                                  <Box aria-hidden="true" sx={{ width: 1, minHeight: 38 }} />
+                                )}
                               </Box>
                             </Stack>
-                          </Box>
-                        </Paper>
-                      )
-                    })}
-                  </Stack>
-                )}
-              </Stack>
-            </Paper>
+
+                            <Box
+                              sx={{
+                                minWidth: { xs: '100%', sm: 182 },
+                                display: 'flex',
+                                alignItems: { xs: 'stretch', sm: 'center' },
+                              }}
+                            >
+                              <Paper
+                                variant="outlined"
+                                sx={{
+                                  width: '100%',
+                                  p: 1,
+                                  borderRadius: 1.5,
+                                  borderColor: '#d8c89f',
+                                  backgroundColor: 'rgba(255,253,246,0.96)',
+                                }}
+                              >
+                                <Stack spacing={0.75}>
+                                  <Typography variant="caption" sx={{ color: '#7d5f20', fontWeight: 700 }}>
+                                    {gradeStars(map.grade)}
+                                  </Typography>
+                                  <Stack spacing={0.25}>
+                                    <Typography variant="body2" sx={{ color: '#5b4523' }}>
+                                      {locale.duration} {formatDuration(map.durationSeconds)}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: '#5b4523' }}>
+                                      {locale.ownedQuantity} {map.ownedQuantity}
+                                    </Typography>
+                                  </Stack>
+                                </Stack>
+                              </Paper>
+                            </Box>
+                          </Stack>
+                        </Box>
+                      </Paper>
+                    )
+                  })}
+                </Stack>
+              )}
+            </Box>
 
             <Paper
               variant="outlined"
