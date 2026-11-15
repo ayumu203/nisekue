@@ -1,11 +1,13 @@
 import { Box, Button, Card, Stack, Typography } from '@mui/material'
 import { innerSurfaceSx } from '@/constants/styles'
-import { resolvePublicAssetPath } from '@/lib/assets'
+import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/quest'
 import locale from '../../../locale/quest/QuestRoom.json'
 
 type QuestStageModeCardProps = {
   stage: GetQuestStagesResponse[number]
+  // 名鑑の祠ではステージのアイコンに自分のキャラ画像を出す。
+  playerImagePath?: string | null
   isSelected: boolean
   selectedMode: CreateQuestRoomRequest['mode']
   onSelect: (stageId: number, mode: CreateQuestRoomRequest['mode']) => void
@@ -19,8 +21,21 @@ const modeButtonSx = {
   px: 2,
 } as const
 
-export default function QuestStageModeCard({ stage, isSelected, selectedMode, onSelect }: QuestStageModeCardProps) {
+export default function QuestStageModeCard({
+  stage,
+  playerImagePath,
+  isSelected,
+  selectedMode,
+  onSelect,
+}: QuestStageModeCardProps) {
   const isEndless = stage.progressionType === 'Endless'
+  // 名鑑の祠：ソロ限定・推奨レベルは伏せる・アイコンは自分
+  const isMirror = stage.progressionType === 'Mirror'
+  const iconImageSrc = isMirror
+    ? resolveCharacterAssetPath(playerImagePath)
+    : stage.previewEnemyImagePath
+      ? resolvePublicAssetPath(stage.previewEnemyImagePath)
+      : null
   const isSoloSelected = isSelected && selectedMode === 'Solo'
   const isMultiSelected = isSelected && selectedMode === 'Multi'
   const battlefieldImageSrc = resolvePublicAssetPath(stage.battlefieldImagePath)
@@ -69,10 +84,10 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
             border: '2px solid #a9c3eb',
           }}
         >
-          {stage.previewEnemyImagePath ? (
+          {iconImageSrc ? (
             <Box
               component="img"
-              src={resolvePublicAssetPath(stage.previewEnemyImagePath)}
+              src={iconImageSrc}
               alt={stage.name}
               sx={{
                 width: '100%',
@@ -110,9 +125,26 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
                   {locale.endless.badge}
                 </Box>
               ) : null}
+              {isMirror ? (
+                <Box
+                  component="span"
+                  sx={{
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 999,
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    color: '#f4f7ff',
+                    backgroundColor: '#6b4fa8',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  {locale.mirror.badge}
+                </Box>
+              ) : null}
             </Stack>
             <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.78)' }}>
-              {`${locale.recommendedLevel} ${stage.recommendedLevel}`}
+              {`${locale.recommendedLevel} ${isMirror ? locale.mirror.hiddenRecommendedLevel : stage.recommendedLevel}`}
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.78)' }}>
               {`${locale.minRequiredLevel} ${stage.minimumEntryLevel}`}
@@ -137,7 +169,7 @@ export default function QuestStageModeCard({ stage, isSelected, selectedMode, on
             >
               {locale.modeSolo}
             </Button>
-            {isEndless ? null : (
+            {isEndless || isMirror ? null : (
               <Button
                 variant={isMultiSelected ? 'contained' : 'outlined'}
                 onClick={() => onSelect(stage.stageId, 'Multi')}

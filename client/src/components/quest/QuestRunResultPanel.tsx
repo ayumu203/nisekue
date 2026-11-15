@@ -40,6 +40,7 @@ export default function QuestRunResultPanel({
   }
 
   const isEndless = run.floor.isEndless === true
+  const isMirror = run.floor.isMirror === true
   const reachedFloor = run.floor.currentFloorNo
 
   const partyMembers = [...run.partyMembers].sort((left, right) => {
@@ -205,7 +206,12 @@ export default function QuestRunResultPanel({
               <Typography variant="subtitle1" fontWeight={800} color="#6f4d11">
                 {locale.rewardTitle}
               </Typography>
-              {rewardRows.map((reward) => (
+              {isMirror ? (
+                <Typography variant="body2" fontWeight={700} color="#4b391c" textAlign="center">
+                  {questRoomLocale.mirror.noReward}
+                </Typography>
+              ) : null}
+              {(isMirror ? [] : rewardRows).map((reward) => (
                 <Stack
                   key={reward.label}
                   direction="row"
