@@ -56,17 +56,3 @@ export const templeColumnSx = {
   px: { xs: 1.5, sm: 2 },
   py: { xs: 2, sm: 2.5 },
 } as const
-
-export const templeSectionTitleSx = {
-  color: '#8a6a00',
-  letterSpacing: '0.08em',
-} as const
-
-export const templeBodyTextSx = {
-  color: 'text.secondary',
-  fontSize: { xs: '0.875rem', md: '0.8125rem' },
-  lineHeight: 1.55,
-  whiteSpace: 'normal',
-  textWrap: 'pretty',
-  overflowWrap: 'anywhere',
-} as const

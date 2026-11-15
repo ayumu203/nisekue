@@ -10,9 +10,7 @@ import {
   rebirthPagePaperSx,
   rebirthPrimaryButtonSx,
   rebirthSurfaceSx,
-  templeBodyTextSx,
   templeColumnSx,
-  templeSectionTitleSx,
 } from '@/components/rebirth/RebirthLayout'
 import { useAuth } from '@/contexts/useAuth'
 import { resolveCharacterAssetPath } from '@/lib/assets'
@@ -179,17 +177,10 @@ export default function Rebirth() {
                           'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(255,232,137,0.9), rgba(227,216,165,0.3))',
                       }}
                     />
-                    <Typography variant="h6" sx={templeSectionTitleSx}>
-                      {locale.requirementTitle}
-                    </Typography>
                     <Stack spacing={1} flexWrap="wrap" useFlexGap>
                       <Chip
                         color={player.level >= REQUIRED_LEVEL ? 'success' : 'default'}
-                        label={
-                          player.level >= REQUIRED_LEVEL
-                            ? locale.requirementLevelMet.replace('{{level}}', String(player.level))
-                            : locale.requirementLevelNotMet.replace('{{level}}', String(player.level))
-                        }
+                        label={locale.requirementLevel.replace('{{level}}', String(player.level))}
                         sx={{
                           bgcolor: player.level >= REQUIRED_LEVEL ? '#edf9ff' : '#f6f9fc',
                           border: '1px solid',
@@ -199,11 +190,7 @@ export default function Rebirth() {
                       />
                       <Chip
                         color={player.gold >= REQUIRED_GOLD ? 'success' : 'default'}
-                        label={
-                          player.gold >= REQUIRED_GOLD
-                            ? locale.requirementGoldMet.replace('{{gold}}', String(player.gold))
-                            : locale.requirementGoldNotMet.replace('{{gold}}', String(player.gold))
-                        }
+                        label={locale.requirementGold.replace('{{gold}}', String(player.gold))}
                         sx={{
                           bgcolor: player.gold >= REQUIRED_GOLD ? '#fffbe9' : '#f6f9fc',
                           border: '1px solid',
@@ -212,16 +199,6 @@ export default function Rebirth() {
                         }}
                       />
                     </Stack>
-                    <Divider sx={{ borderColor: '#efe1a6' }} />
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.inheritMasteredJobs}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.inheritMoves}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.inheritStatus}
-                    </Typography>
                   </Stack>
 
                   <Stack
@@ -367,24 +344,6 @@ export default function Rebirth() {
                           'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(145,213,255,0.92), rgba(227,216,165,0.3))',
                       }}
                     />
-                    <Typography variant="h6" sx={templeSectionTitleSx}>
-                      {locale.resetTitle}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.resetLevel}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.resetJobLevel}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.resetExp}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.resetGold}
-                    </Typography>
-
-                    <Divider sx={{ borderColor: '#efe1a6' }} />
-
                     <Box
                       sx={{
                         p: 1.5,
@@ -396,11 +355,13 @@ export default function Rebirth() {
                       }}
                     >
                       <Stack spacing={1.25}>
-                        <Box sx={canRebirth ? rebirthHintBadgeSx : undefined}>
-                          <Typography variant="body2" sx={canRebirth ? rebirthHintTextSx : { color: 'text.secondary' }}>
-                            {canRebirth ? locale.executeHintReady : locale.executeHintLocked}
-                          </Typography>
-                        </Box>
+                        {canRebirth ? (
+                          <Box sx={rebirthHintBadgeSx}>
+                            <Typography variant="body2" sx={rebirthHintTextSx}>
+                              {locale.executeHintReady}
+                            </Typography>
+                          </Box>
+                        ) : null}
                         <Button
                           variant="contained"
                           disabled={!canRebirth || isSubmitting}
@@ -482,7 +443,7 @@ export default function Rebirth() {
                                 fontWeight={resultStatus ? 700 : 500}
                                 color={resultStatus ? '#8a6a00' : 'text.secondary'}
                               >
-                                {actualValue ?? locale.statusTablePending}
+                                {actualValue ?? ''}
                               </Typography>
                             </Box>
                             <Divider sx={{ borderColor: '#f2e8bc' }} />
@@ -497,9 +458,6 @@ export default function Rebirth() {
               <Paper variant="outlined" sx={{ ...rebirthSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
                 <Stack spacing={1.5}>
                   <Typography variant="h6">{locale.previousLifeTitle}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {locale.previousLifeDescription}
-                  </Typography>
                   {isRebirthHistoryLoading ? (
                     <Stack direction="row" spacing={1} alignItems="center">
                       <CircularProgress size={16} />

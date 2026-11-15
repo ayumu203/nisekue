@@ -142,23 +142,14 @@ function buildTendencyChips(map: TreasureMapSummary): Array<{ key: string; label
   const chips: Array<{ key: string; label: string }> = []
 
   if (map.rewardTendency.itemRate > 0) {
-    chips.push({ key: 'item', label: `${locale.candidateItems} ${map.rewardTendency.itemRate}%` })
+    chips.push({ key: 'item', label: locale.candidateItems })
   }
 
   if (map.rewardTendency.equipmentRate > 0) {
-    chips.push({ key: 'equipment', label: `${locale.candidateEquipments} ${map.rewardTendency.equipmentRate}%` })
+    chips.push({ key: 'equipment', label: locale.candidateEquipments })
   }
 
   return chips
-}
-
-function getDominantTendency(map: TreasureMapSummary): string {
-  const entries = [
-    { label: locale.candidateItems, rate: map.rewardTendency.itemRate },
-    { label: locale.candidateEquipments, rate: map.rewardTendency.equipmentRate },
-  ]
-  const top = entries.sort((a, b) => b.rate - a.rate)[0]
-  return top && top.rate > 0 ? `${top.label} ${top.rate}%` : locale.none
 }
 
 function gradeStars(grade: TreasureMapSummary['grade']): string {
@@ -890,12 +881,6 @@ export default function TreasureMap() {
                                       <Chip size="small" label={`${formatDuration(map.durationSeconds)}`} />
                                       <Chip size="small" label={`${map.ownedQuantity}`} />
                                     </Stack>
-                                    <Typography variant="caption" color="text.secondary">
-                                      {locale.rewardTendency}
-                                    </Typography>
-                                    <Typography variant="body2" fontWeight={700}>
-                                      {getDominantTendency(map)}
-                                    </Typography>
                                   </Stack>
                                 </Paper>
                               </Box>

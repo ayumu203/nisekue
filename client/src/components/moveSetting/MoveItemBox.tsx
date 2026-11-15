@@ -7,6 +7,25 @@ import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { GetPlayerResponse, PlayerMoveSlot } from '@/schema/player'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
 
+// 確定はグリーン、取消は赤系の枠線にして見分けやすくする。
+const saveMoveOrderButtonSx = {
+  fontWeight: 800,
+  color: '#ffffff',
+  backgroundColor: '#3f6b46',
+  boxShadow: 'none',
+  '&:hover': { backgroundColor: '#4c7d54', boxShadow: 'none' },
+  '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.7)', backgroundColor: 'rgba(63, 107, 70, 0.38)' },
+} as const
+
+const cancelMoveOrderButtonSx = {
+  fontWeight: 800,
+  color: '#b65f49',
+  borderColor: '#b65f49',
+  backgroundColor: '#ffffff',
+  '&:hover': { borderColor: '#9e4f3b', backgroundColor: 'rgba(182, 95, 73, 0.08)' },
+  '&.Mui-disabled': { color: 'rgba(182, 95, 73, 0.45)', borderColor: 'rgba(182, 95, 73, 0.3)' },
+} as const
+
 type MoveItemBoxProps = {
   player: GetPlayerResponse
   accessToken: string
@@ -181,9 +200,6 @@ export default function MoveItemBox({ player, accessToken, onSaved }: MoveItemBo
                   <Typography variant="h4" fontWeight={900} lineHeight={1.1} color="#fff8ea">
                     {locale.moveListTitle}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(242, 235, 207, 0.82)' }}>
-                    {locale.moveListDescription}
-                  </Typography>
                 </Stack>
 
                 <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
@@ -269,14 +285,29 @@ export default function MoveItemBox({ player, accessToken, onSaved }: MoveItemBo
           spacing={1.5}
           alignItems={{ sm: 'center' }}
         >
-          <Typography variant="h6" fontWeight={900}>
-            {locale.editingOrderTitle}
-          </Typography>
-          <Stack direction="row" spacing={1}>
-            <Button variant="outlined" onClick={handleCancel} disabled={isSaving || !hasChanges}>
+          <Stack spacing={0.5}>
+            <Typography variant="h6" fontWeight={900}>
+              {locale.editingOrderTitle}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {locale.moveListDescription}
+            </Typography>
+          </Stack>
+          <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+            <Button
+              variant="outlined"
+              onClick={handleCancel}
+              disabled={isSaving || !hasChanges}
+              sx={cancelMoveOrderButtonSx}
+            >
               {locale.cancelMoveOrder}
             </Button>
-            <Button variant="contained" onClick={() => void handleSave()} disabled={isSaving || !hasChanges}>
+            <Button
+              variant="contained"
+              onClick={() => void handleSave()}
+              disabled={isSaving || !hasChanges}
+              sx={saveMoveOrderButtonSx}
+            >
               {isSaving ? locale.savingMoveOrder : locale.saveMoveOrder}
             </Button>
           </Stack>
