@@ -27,7 +27,8 @@ public sealed record DebugApplyTemplateResult(int Level, Job Job, IReadOnlyColle
 public class DebugTemplateService(
     IPlayerMutationService playerMutationService,
     IJobProfileRepository jobProfileRepository,
-    IJobMoveLearningRuleRepository jobMoveLearningRuleRepository)
+    IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
+    IPlayerRebirthHistoryRepository rebirthHistoryRepository)
 {
     public const string InitialTemplateId = "initial";
     private const string FirstTierMasteredPrefix = "master-";
@@ -51,8 +52,14 @@ public class DebugTemplateService(
         var template = GetTemplates().FirstOrDefault(x => x.Id == templateId)
             ?? throw new ArgumentException($"テンプレート {templateId} は存在しません。", nameof(templateId));
 
-        return playerMutationService.MutateAsync(playerId, player =>
+        return playerMutationService.MutateAsync(playerId, async player =>
         {
+            // 転生回数を 0 に戻すので、転生履歴も消す。履歴は (プレイヤー, 転生回数) で一意なので、
+            // 残すと次の転生で同じ転生回数の履歴を追加しようとして失敗する。
+            // プレイヤーの行ロック中に消すので転生は割り込まない。プレイヤーの更新が失敗しても
+            // 「履歴なし・転生回数そのまま」になるだけで、次の転生は失敗しない。
+            await rebirthHistoryRepository.DeleteByPlayerAsync(playerId);
+
             player.ResetProgress(PlayerInitialState.CreateStatus(), PlayerInitialState.CreateMoveSet());
 
             if (template is { Kind: DebugTemplateKind.FirstTierMastered, Job: { } job })
@@ -62,7 +69,7 @@ public class DebugTemplateService(
                 LevelUpUntil(player, p => p.MasteredJobs.Contains(job));
             }
 
-            return Task.FromResult(new DebugApplyTemplateResult(player.Level, player.Job, player.MasteredJobs.ToArray()));
+            return new DebugApplyTemplateResult(player.Level, player.Job, player.MasteredJobs.ToArray());
         });
     }
 

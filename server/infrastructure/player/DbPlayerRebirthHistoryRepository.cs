@@ -30,4 +30,12 @@ public class DbPlayerRebirthHistoryRepository(
                 x.RebirthedAt))
             .ToList();
     }
+
+    public async Task DeleteByPlayerAsync(PlayerId playerId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        await dbContext.PlayerRebirthStatusHistories
+            .Where(x => x.PlayerId == playerId.Value)
+            .ExecuteDeleteAsync();
+    }
 }
