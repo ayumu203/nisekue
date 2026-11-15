@@ -35,6 +35,8 @@ classDiagram
             +int? RequiredMapUnlockFlag
             +ProgressionType ProgressionType
             +QuestEndlessConfig? EndlessConfig
+            %% エンドレスは boss_interval の倍数、それ以外は stage_floors の floor_type
+            +IsBossFloor(floorNo: int) bool
         }
 
         class ProgressionType {
@@ -682,6 +684,7 @@ classDiagram
     IQuestRoomRepository ..> QuestRoom : stores/loads
     IQuestRoomRepository ..> QuestRoomSearchCondition : searches
     IQuestRunRepository ..> QuestRun : stores/loads
+    IQuestRunRepository ..> IQuestStageRepository : 読み込み時に現在フロアのボス判定を復元（DB には持たない）
     IQuestNpcTemplateRepository ..> QuestNpcTemplate : loads
     IQuestEnemyDefinitionRepository ..> QuestEnemyDefinition : loads
     CsvQuestStageRepository ..|> IQuestStageRepository : implements

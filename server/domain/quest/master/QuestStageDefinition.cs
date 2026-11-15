@@ -43,6 +43,20 @@ public class QuestStageDefinition(
     /// <summary>エンドレス（手続き的生成）ステージか。</summary>
     public bool IsEndless => ProgressionType == ProgressionType.Endless;
 
+    /// <summary>
+    /// 指定したフロア番号がボスフロアか。エンドレスは boss_interval の倍数、
+    /// それ以外は stage_floors の floor_type で決まる。
+    /// </summary>
+    public bool IsBossFloor(int floorNo)
+    {
+        if (EndlessConfig is not null)
+        {
+            return EndlessConfig.IsBossFloor(floorNo);
+        }
+
+        return floors.Any(x => x.FloorNo == floorNo && x.FloorType == FloorType.Boss);
+    }
+
     private static string ValidateText(string value, string paramName)
     {
         var normalized = value?.Trim() ?? string.Empty;
