@@ -1,7 +1,7 @@
 import { Alert, Box, Button, Chip, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import useSWR from 'swr'
-import { clearStandbyPet, getPets, releasePet, standbyPet, trainPet } from '@/api/pet'
+import { getPets, releasePet, trainPet } from '@/api/pet'
 import { getPlayer } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { ControlFrame } from '@/components/items/ItemsLayout'
@@ -33,19 +33,6 @@ const petTrainButtonSx = {
     transition: 'none',
   },
   '&&:hover': { background: '#a02838', boxShadow: 'none' },
-} as const
-
-const petStandbyButtonSx = {
-  '&&': {
-    borderRadius: 2,
-    minHeight: 38,
-    background: '#f3d9de',
-    color: '#5c1320',
-    border: '1px solid #f9ebee',
-    fontWeight: 800,
-    boxShadow: 'none',
-  },
-  '&&:hover': { background: '#fae9ed', boxShadow: 'none' },
 } as const
 
 const petReleaseButtonSx = {
@@ -159,16 +146,6 @@ export default function Pets() {
     })
   }
 
-  async function handleToggleStandby(pet: PlayerPetView): Promise<void> {
-    await runPetAction(pet.petId, async () => {
-      if (pet.isStandby) {
-        await clearStandbyPet(pet.petId, session!.access_token)
-      } else {
-        await standbyPet(pet.petId, session!.access_token)
-      }
-    })
-  }
-
   async function handleRelease(pet: PlayerPetView): Promise<void> {
     if (!window.confirm(`${pet.name}${locale.releaseConfirm}`)) {
       return
@@ -262,12 +239,6 @@ export default function Pets() {
                         >
                           {locale.description}
                         </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: 'rgba(255,255,255,0.7)', textAlign: { xs: 'left', sm: 'right' } }}
-                        >
-                          {locale.summonNote}
-                        </Typography>
                       </Stack>
                     </Box>
                   </Stack>
@@ -308,21 +279,14 @@ export default function Pets() {
                         return (
                           <Paper key={pet.petId} variant="outlined" sx={{ ...petCardSx, p: 1.5, borderRadius: 3 }}>
                             <Stack spacing={1}>
-                              <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                                <Typography
-                                  variant="subtitle2"
-                                  noWrap
-                                  title={pet.name}
-                                  sx={{ fontWeight: 800, color: '#3f2f16' }}
-                                >
-                                  {pet.name}
-                                </Typography>
-                                <Chip
-                                  size="small"
-                                  color={pet.isStandby ? 'error' : 'default'}
-                                  label={pet.isStandby ? locale.activeChip : locale.inactiveChip}
-                                />
-                              </Stack>
+                              <Typography
+                                variant="subtitle2"
+                                noWrap
+                                title={pet.name}
+                                sx={{ fontWeight: 800, color: '#3f2f16' }}
+                              >
+                                {pet.name}
+                              </Typography>
 
                               <Box sx={{ display: 'flex', justifyContent: 'center', minHeight: 84 }}>
                                 {spriteSrc ? (
@@ -353,15 +317,6 @@ export default function Pets() {
                                   {isBusy
                                     ? locale.training
                                     : `${locale.train} (${trainingCostGold.toLocaleString()}${locale.trainCostSuffix})`}
-                                </Button>
-                                <Button
-                                  size="small"
-                                  variant="contained"
-                                  disabled={isBusy}
-                                  onClick={() => void handleToggleStandby(pet)}
-                                  sx={petStandbyButtonSx}
-                                >
-                                  {pet.isStandby ? locale.deactivate : locale.activate}
                                 </Button>
                                 <Button
                                   size="small"

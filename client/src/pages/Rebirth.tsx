@@ -5,12 +5,9 @@ import { createPlayer, getPlayer, getRebirthHistory, rebirthPlayer } from '@/api
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { SummaryStat } from '@/components/rebirth/SummaryStat'
 import {
-  rebirthHintBadgeSx,
-  rebirthHintTextSx,
   rebirthPagePaperSx,
   rebirthPrimaryButtonSx,
   rebirthSurfaceSx,
-  templeBodyTextSx,
   templeColumnSx,
   templeSectionTitleSx,
 } from '@/components/rebirth/RebirthLayout'
@@ -135,21 +132,6 @@ export default function Rebirth() {
             <HomeNavIconButton ariaLabel={locale.backToHome} />
           </Stack>
 
-          <Stack spacing={1}>
-            <Typography
-              variant="overline"
-              textAlign="center"
-              sx={{ letterSpacing: '0.16em', color: 'rgba(138, 106, 0, 0.72)' }}
-            >
-              REBIRTH
-            </Typography>
-            <Typography variant="h4" textAlign="center">
-              <Box component="span" sx={{ color: '#8a6a00' }}>
-                {locale.title}
-              </Box>
-            </Typography>
-          </Stack>
-
           {isPlayerLoading ? (
             <Stack direction="row" spacing={1} alignItems="center">
               <CircularProgress size={16} />
@@ -162,6 +144,18 @@ export default function Rebirth() {
           ) : (
             <Stack spacing={2}>
               <Paper variant="outlined" sx={{ ...rebirthSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+                <Stack spacing={0.5} sx={{ mb: 2 }}>
+                  <Typography
+                    variant="overline"
+                    textAlign="center"
+                    sx={{ letterSpacing: '0.16em', color: 'rgba(138, 106, 0, 0.72)', lineHeight: 1.6 }}
+                  >
+                    REBIRTH
+                  </Typography>
+                  <Typography variant="h4" textAlign="center" sx={{ color: '#8a6a00' }}>
+                    {locale.title}
+                  </Typography>
+                </Stack>
                 <Box
                   sx={{
                     display: 'grid',
@@ -185,11 +179,7 @@ export default function Rebirth() {
                     <Stack spacing={1} flexWrap="wrap" useFlexGap>
                       <Chip
                         color={player.level >= REQUIRED_LEVEL ? 'success' : 'default'}
-                        label={
-                          player.level >= REQUIRED_LEVEL
-                            ? locale.requirementLevelMet.replace('{{level}}', String(player.level))
-                            : locale.requirementLevelNotMet.replace('{{level}}', String(player.level))
-                        }
+                        label={locale.requirementLevel.replace('{{level}}', String(player.level))}
                         sx={{
                           bgcolor: player.level >= REQUIRED_LEVEL ? '#edf9ff' : '#f6f9fc',
                           border: '1px solid',
@@ -199,11 +189,7 @@ export default function Rebirth() {
                       />
                       <Chip
                         color={player.gold >= REQUIRED_GOLD ? 'success' : 'default'}
-                        label={
-                          player.gold >= REQUIRED_GOLD
-                            ? locale.requirementGoldMet.replace('{{gold}}', String(player.gold))
-                            : locale.requirementGoldNotMet.replace('{{gold}}', String(player.gold))
-                        }
+                        label={locale.requirementGold.replace('{{gold}}', String(player.gold))}
                         sx={{
                           bgcolor: player.gold >= REQUIRED_GOLD ? '#fffbe9' : '#f6f9fc',
                           border: '1px solid',
@@ -212,16 +198,6 @@ export default function Rebirth() {
                         }}
                       />
                     </Stack>
-                    <Divider sx={{ borderColor: '#efe1a6' }} />
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.inheritMasteredJobs}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.inheritMoves}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.inheritStatus}
-                    </Typography>
                   </Stack>
 
                   <Stack
@@ -264,30 +240,6 @@ export default function Rebirth() {
                       <Typography variant="h4" fontWeight={900} color="#8a6a00">
                         {player.userName}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {locale.currentJobLabel}: {player.job.displayName}
-                      </Typography>
-                      {player.masteredJobs.length > 0 ? (
-                        <Stack spacing={0.75} alignItems="center" sx={{ width: '100%', maxWidth: 360 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            {locale.masteredJobsTitle}
-                          </Typography>
-                          <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" justifyContent="center">
-                            {player.masteredJobs.map((job) => (
-                              <Chip
-                                key={job.code}
-                                label={job.displayName}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#fff9e3',
-                                  border: '1px solid #eedc90',
-                                  color: '#8a6a00',
-                                }}
-                              />
-                            ))}
-                          </Stack>
-                        </Stack>
-                      ) : null}
                     </Stack>
 
                     <Box
@@ -367,52 +319,42 @@ export default function Rebirth() {
                           'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(145,213,255,0.92), rgba(227,216,165,0.3))',
                       }}
                     />
-                    <Typography variant="h6" sx={templeSectionTitleSx}>
-                      {locale.resetTitle}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.resetLevel}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.resetJobLevel}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.resetExp}
-                    </Typography>
-                    <Typography variant="body2" sx={templeBodyTextSx}>
-                      {locale.resetGold}
-                    </Typography>
-
-                    <Divider sx={{ borderColor: '#efe1a6' }} />
-
-                    <Box
-                      sx={{
-                        p: 1.5,
-                        borderRadius: 2,
-                        border: '1px solid #efe1a6',
-                        background: canRebirth
-                          ? 'linear-gradient(135deg, rgba(255, 249, 213, 0.96), rgba(232, 247, 255, 0.92))'
-                          : 'linear-gradient(135deg, rgba(255, 252, 240, 0.96), rgba(248, 252, 255, 0.92))',
-                      }}
-                    >
-                      <Stack spacing={1.25}>
-                        <Box sx={canRebirth ? rebirthHintBadgeSx : undefined}>
-                          <Typography variant="body2" sx={canRebirth ? rebirthHintTextSx : { color: 'text.secondary' }}>
-                            {canRebirth ? locale.executeHintReady : locale.executeHintLocked}
+                    <Stack spacing={1} alignItems="center" sx={{ pt: 0.5 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {locale.currentJobLabel}: {player.job.displayName}
+                      </Typography>
+                      {player.masteredJobs.length > 0 ? (
+                        <Stack spacing={0.75} alignItems="center" sx={{ width: '100%', maxWidth: 360 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {locale.masteredJobsTitle}
                           </Typography>
-                        </Box>
-                        <Button
-                          variant="contained"
-                          disabled={!canRebirth || isSubmitting}
-                          onClick={() => {
-                            void handleRebirth()
-                          }}
-                          sx={rebirthPrimaryButtonSx}
-                        >
-                          {isSubmitting ? locale.executing : canRebirth ? locale.executeButton : locale.lockedButton}
-                        </Button>
-                      </Stack>
-                    </Box>
+                          <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" justifyContent="center">
+                            {player.masteredJobs.map((job) => (
+                              <Chip
+                                key={job.code}
+                                label={job.displayName}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#fff9e3',
+                                  border: '1px solid #eedc90',
+                                  color: '#8a6a00',
+                                }}
+                              />
+                            ))}
+                          </Stack>
+                        </Stack>
+                      ) : null}
+                    </Stack>
+                    <Button
+                      variant="contained"
+                      disabled={!canRebirth || isSubmitting}
+                      onClick={() => {
+                        void handleRebirth()
+                      }}
+                      sx={rebirthPrimaryButtonSx}
+                    >
+                      {isSubmitting ? locale.executing : canRebirth ? locale.executeButton : locale.lockedButton}
+                    </Button>
                   </Stack>
                 </Box>
               </Paper>
@@ -482,7 +424,7 @@ export default function Rebirth() {
                                 fontWeight={resultStatus ? 700 : 500}
                                 color={resultStatus ? '#8a6a00' : 'text.secondary'}
                               >
-                                {actualValue ?? locale.statusTablePending}
+                                {actualValue ?? ''}
                               </Typography>
                             </Box>
                             <Divider sx={{ borderColor: '#f2e8bc' }} />
@@ -497,9 +439,6 @@ export default function Rebirth() {
               <Paper variant="outlined" sx={{ ...rebirthSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
                 <Stack spacing={1.5}>
                   <Typography variant="h6">{locale.previousLifeTitle}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {locale.previousLifeDescription}
-                  </Typography>
                   {isRebirthHistoryLoading ? (
                     <Stack direction="row" spacing={1} alignItems="center">
                       <CircularProgress size={16} />

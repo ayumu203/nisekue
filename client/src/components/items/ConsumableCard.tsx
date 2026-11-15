@@ -1,5 +1,6 @@
 import { Box, Button, Paper, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
+import { DetailsToggleButton } from './DetailsToggleButton'
 import { ItemArtwork } from './ItemIllustrations'
 import { ListingControls } from './ListingControls'
 import { formatEffectAmount, getEffectTypeLabel } from './itemUtils'
@@ -73,13 +74,7 @@ export function ConsumableCard({
         <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', minHeight: 34 }}>
           {item.flavorText || '-'}
         </Typography>
-        <Button
-          variant="text"
-          onClick={() => setShowDetails((current) => !current)}
-          sx={{ alignSelf: 'center', color: deepGreen, fontWeight: 700 }}
-        >
-          {showDetails ? locale.hideDetails : locale.showDetails}
-        </Button>
+        <DetailsToggleButton isOpen={showDetails} onToggle={() => setShowDetails((current) => !current)} />
         {showDetails ? (
           <Stack
             spacing={0.75}
