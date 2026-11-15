@@ -1,5 +1,7 @@
 using FluentAssertions;
 using server.domain.player;
+using server.domain.quest;
+using server.domain.quest.enums;
 using server.infrastructure.move;
 using server.infrastructure.player;
 using server.infrastructure.quest;
@@ -90,6 +92,39 @@ public class MasterDataIntegrityTests
         missingEnemies.Should().BeEmpty("floor_enemy_spawns.csv の敵は enemies.csv に存在すること");
         missingItems.Should().BeEmpty("stage_item_rewards.csv のアイテムは item_master.csv に存在すること");
         missingEquipments.Should().BeEmpty("stage_equipment_rewards.csv の装備は equipment_master.csv に存在すること");
+    }
+
+    [Fact]
+    public async Task MirrorStages_WithCurrentResources_HaveFloorsWithoutEnemySpawns()
+    {
+        var mirrorStages = (await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository()).GetAllAsync())
+            .Where(stage => stage.IsMirror)
+            .ToList();
+
+        var invalidStages = mirrorStages
+            .Where(stage =>
+                stage.Floors.Count == 0 ||
+                stage.Floors.Any(floor => floor.Placements.Count > 0) ||
+                stage.Floors.All(floor => floor.FloorType != FloorType.Normal))
+            .Select(stage => $"stages.csv: id={stage.Id.Value}")
+            .ToList();
+
+        invalidStages.Should().BeEmpty("名鑑の祠（Mirror）は stage_floors.csv にフロアを持ち、floor_enemy_spawns.csv の敵は持たないこと");
+    }
+
+    [Fact]
+    public async Task EnemyDefinitionIds_WithCurrentResources_DoNotOverlapMirrorEnemyIds()
+    {
+        var overlapping = (await new CsvQuestEnemyDefinitionRepository().GetAllAsync())
+            .Where(enemy => enemy.Id.Value >= MirrorEnemyPlanBuilder.FirstDefinitionId)
+            .Select(enemy => $"enemies.csv: id={enemy.Id.Value}")
+            .ToList();
+        var overlappingEndless = (await new CsvQuestEndlessEnemyTemplateRepository().GetAllAsync())
+            .Where(template => template.Id.Value >= MirrorEnemyPlanBuilder.FirstDefinitionId)
+            .Select(template => $"endless_enemy_templates.csv: template_id={template.Id.Value}")
+            .ToList();
+
+        overlapping.Concat(overlappingEndless).Should().BeEmpty("名鑑の祠の仮の敵ID（1,000,001〜）と重ならないこと");
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using server.domain.player;
+using server.domain.quest;
 using server.domain.quest.enums;
 using server.infrastructure;
 using server.infrastructure.ranking;
@@ -9,7 +10,8 @@ namespace server.application.ranking;
 public sealed class RankingAggregationService(
     IDbContextFactory<AppDbContext> dbContextFactory,
     CombatIndexCalculator combatIndexCalculator,
-    CombatIndexRankEvaluator combatIndexRankEvaluator)
+    CombatIndexRankEvaluator combatIndexRankEvaluator,
+    IQuestStageRepository? questStageRepository = null)
 {
     public async Task<RankingRebuildResult> RebuildAsync(DateTimeOffset now)
     {
@@ -57,9 +59,10 @@ public sealed class RankingAggregationService(
             })
             .ToListAsync();
 
-        var questClearTotal = await BuildQuestClearCountAsync(dbContext, null);
-        var questClearWeekly = await BuildQuestClearCountAsync(dbContext, weeklyFrom);
-        var questClearDaily = await BuildQuestClearCountAsync(dbContext, dailyFrom);
+        var excludedStageIds = await GetClearCountExcludedStageIdsAsync();
+        var questClearTotal = await BuildQuestClearCountAsync(dbContext, null, excludedStageIds);
+        var questClearWeekly = await BuildQuestClearCountAsync(dbContext, weeklyFrom, excludedStageIds);
+        var questClearDaily = await BuildQuestClearCountAsync(dbContext, dailyFrom, excludedStageIds);
 
         var treasureMapUsageTotal = await BuildTreasureMapUsageCountAsync(dbContext, null);
         var treasureMapUsageWeekly = await BuildTreasureMapUsageCountAsync(dbContext, weeklyFrom);
@@ -192,13 +195,32 @@ public sealed class RankingAggregationService(
         }
     }
 
-    private static async Task<Dictionary<Guid, int>> BuildQuestClearCountAsync(AppDbContext dbContext, DateTimeOffset? from)
+    // 名鑑の祠（報酬なしのチャレンジステージ）はクリア回数に数えない。
+    private async Task<int[]> GetClearCountExcludedStageIdsAsync()
+    {
+        if (questStageRepository is null)
+        {
+            return [];
+        }
+
+        var stages = await questStageRepository.GetAllAsync();
+        return stages
+            .Where(x => x.IsMirror)
+            .Select(x => x.Id.Value)
+            .ToArray();
+    }
+
+    private static async Task<Dictionary<Guid, int>> BuildQuestClearCountAsync(
+        AppDbContext dbContext,
+        DateTimeOffset? from,
+        int[] excludedStageIds)
     {
         var query =
             from run in dbContext.QuestRuns.AsNoTracking()
             join snapshot in dbContext.QuestRunPartySnapshots.AsNoTracking() on run.Id equals snapshot.RunId
             where run.Status == (int)QuestRunStatus.Succeeded
                 && snapshot.ParticipantType == (int)ParticipantType.Player
+                && !excludedStageIds.Contains(run.StageId)
             select new
             {
                 PlayerId = snapshot.ParticipantId,

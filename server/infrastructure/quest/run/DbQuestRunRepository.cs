@@ -528,6 +528,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         ChatMessagesJson = QuestJsonSerializer.SerializeChatMessages(run.ChatMessages),
         PetSummonUsed = run.PetSummonUsed,
         PetDeploymentJson = QuestJsonSerializer.SerializePetDeployment(run.PetDeployment),
+        MirrorEnemyPlanJson = QuestJsonSerializer.SerializeMirrorEnemyPlan(run.MirrorEnemyPlan),
         StartedAt = run.StartedAt,
         EndedAt = run.EndedAt,
         Version = run.Version,
@@ -705,7 +706,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             runEntity.EndedAt,
             runEntity.Version,
             runEntity.PetSummonUsed,
-            QuestJsonSerializer.DeserializePetDeployment(runEntity.PetDeploymentJson));
+            QuestJsonSerializer.DeserializePetDeployment(runEntity.PetDeploymentJson),
+            QuestJsonSerializer.DeserializeMirrorEnemyPlan(runEntity.MirrorEnemyPlanJson));
     }
 
     private static QuestRunPartyMemberState MapPartyMember(QuestRunPartyMemberEntity entity)
@@ -865,6 +867,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             x.ChatMessagesJson,
             x.PetSummonUsed,
             x.PetDeploymentJson,
+            x.MirrorEnemyPlanJson,
             x.StartedAt,
             x.EndedAt,
             x.Version);
@@ -884,6 +887,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         ChatMessagesJson = columns.ChatMessagesJson,
         PetSummonUsed = columns.PetSummonUsed,
         PetDeploymentJson = columns.PetDeploymentJson,
+        MirrorEnemyPlanJson = columns.MirrorEnemyPlanJson,
         StartedAt = columns.StartedAt,
         EndedAt = columns.EndedAt,
         Version = columns.Version
@@ -901,6 +905,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         string ChatMessagesJson,
         bool PetSummonUsed,
         string? PetDeploymentJson,
+        string? MirrorEnemyPlanJson,
         DateTimeOffset StartedAt,
         DateTimeOffset? EndedAt,
         int Version);

@@ -14,7 +14,8 @@ public class QuestRunFactory(
         QuestRoom room,
         QuestStageDefinition stageDefinition,
         IEnumerable<QuestRunPartyMemberSnapshot> snapshots,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        MirrorEnemyPlan? mirrorEnemyPlan = null)
     {
         ArgumentNullException.ThrowIfNull(room);
         ArgumentNullException.ThrowIfNull(stageDefinition);
@@ -26,9 +27,16 @@ public class QuestRunFactory(
             throw new InvalidOperationException("開始時スナップショットが空です。");
         }
 
+        if (stageDefinition.IsMirror && mirrorEnemyPlan is null)
+        {
+            throw new InvalidOperationException("名鑑の祠には敵の計画が必要です。");
+        }
+
         var (firstFloorNo, isBossFloor, placements, enemyStates) = stageDefinition.IsEndless
             ? await CreateEndlessFirstFloorAsync(stageDefinition)
-            : await CreateStaticFirstFloorAsync(stageDefinition);
+            : stageDefinition.IsMirror
+                ? CreateMirrorFirstFloor(mirrorEnemyPlan!)
+                : await CreateStaticFirstFloorAsync(stageDefinition);
 
         var partyStates = snapshotArray
             .Select(x => new QuestRunPartyMemberState(
@@ -52,7 +60,8 @@ public class QuestRunFactory(
             new QuestRewardAccumulator(),
             lastTurnResults: null,
             chatMessages: [],
-            startedAt: now);
+            startedAt: now,
+            mirrorEnemyPlan: stageDefinition.IsMirror ? mirrorEnemyPlan : null);
     }
 
     private async Task<(int FloorNo, bool IsBoss, QuestEnemyPlacement[] Placements, QuestEnemyState[] EnemyStates)>
@@ -79,6 +88,40 @@ public class QuestRunFactory(
             firstFloor.FloorType == FloorType.Boss,
             firstFloor.Placements.ToArray(),
             enemyStates.ToArray());
+    }
+
+    private static (int FloorNo, bool IsBoss, QuestEnemyPlacement[] Placements, QuestEnemyState[] EnemyStates)
+        CreateMirrorFirstFloor(MirrorEnemyPlan plan)
+    {
+        var firstFloor = plan.Floors.FirstOrDefault()
+            ?? throw new InvalidOperationException("名鑑の祠の敵の計画にフロアがありません。");
+        return (
+            firstFloor.FloorNo,
+            firstFloor.IsBoss,
+            firstFloor.Placements.ToArray(),
+            CreateMirrorEnemyStates(plan, firstFloor));
+    }
+
+    /// <summary>名鑑の祠のフロア計画から、そのフロアの敵の初期状態（HP・MP 満タン）を作る。</summary>
+    public static QuestEnemyState[] CreateMirrorEnemyStates(MirrorEnemyPlan plan, MirrorFloorPlan floor)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(floor);
+
+        return floor.Placements
+            .Select(placement =>
+            {
+                var enemy = plan.FindEnemy(placement.EnemyDefinitionId)
+                    ?? throw new InvalidOperationException($"名鑑の祠の敵が見つかりません。 definitionId={placement.EnemyDefinitionId}");
+                return new QuestEnemyState(
+                    QuestEnemyInstanceId.New(),
+                    enemy.DefinitionId,
+                    placement.Position,
+                    enemy.Status.MaxHp,
+                    enemy.Status.MaxMp,
+                    isDead: false);
+            })
+            .ToArray();
     }
 
     private async Task<(int FloorNo, bool IsBoss, QuestEnemyPlacement[] Placements, QuestEnemyState[] EnemyStates)>

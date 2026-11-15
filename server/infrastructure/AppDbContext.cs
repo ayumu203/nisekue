@@ -560,6 +560,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRun.Property(x => x.ChatMessagesJson).HasColumnName("chat_messages_json").HasColumnType("jsonb").IsRequired();
         questRun.Property(x => x.PetSummonUsed).HasColumnName("pet_summon_used").IsRequired();
         questRun.Property(x => x.PetDeploymentJson).HasColumnName("pet_deployment_json").HasColumnType("jsonb");
+        questRun.Property(x => x.MirrorEnemyPlanJson).HasColumnName("mirror_enemy_plan_json").HasColumnType("jsonb");
         questRun.Property(x => x.StartedAt).HasColumnName("started_at").IsRequired();
         questRun.Property(x => x.EndedAt).HasColumnName("ended_at");
         questRun.Property(x => x.Version).HasColumnName("version").IsRequired().IsConcurrencyToken();

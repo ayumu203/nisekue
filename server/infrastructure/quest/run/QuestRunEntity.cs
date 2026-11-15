@@ -14,6 +14,7 @@ public class QuestRunEntity
     public string ChatMessagesJson { get; set; } = "[]";
     public bool PetSummonUsed { get; set; }
     public string? PetDeploymentJson { get; set; }
+    public string? MirrorEnemyPlanJson { get; set; }
     public DateTimeOffset StartedAt { get; set; }
     public DateTimeOffset? EndedAt { get; set; }
     public int Version { get; set; }
