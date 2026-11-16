@@ -292,7 +292,7 @@ public class MirrorEnemyActionPolicyTests
         var revive = CreateReviveMove(501);
         var scenario = new Scenario()
             .AddOpponent(FrontLeft, hp: 100)
-            .AddEnemy(Job.Priest, BackLeft, [revive], reviveUsedCount: MirrorEnemyActionPolicy.MaxRevivesPerFloor)
+            .AddEnemy(Job.Priest, BackLeft, [revive], reviveUsedCount: MirrorTestConfigs.Default().MaxRevivesPerFloor)
             .AddEnemy(Job.Warrior, FrontLeft, [], hp: 0, isDead: true);
 
         var decision = scenario.Select(NeverSecond);
@@ -412,7 +412,8 @@ public class MirrorEnemyActionPolicyTests
         var (actions, _) = await factory.CreateTurnInputsAsync(
             run,
             new FakeMoveRepository([revive]),
-            run.MirrorEnemyPlan!.BuildEnemyDefinitions());
+            run.MirrorEnemyPlan!.BuildEnemyDefinitions(),
+            MirrorTestConfigs.Default());
 
         var priest = run.BattleState.Enemies.First();
         actions.Should().Contain(action => action.ActorId == priest.Id.Value && action.MoveId == 501);
@@ -624,7 +625,7 @@ public class MirrorEnemyActionPolicyTests
             var plan = run.MirrorEnemyPlan!;
             var (snapshot, _, moves) = enemies[0];
             var actor = run.BattleState.Enemies.First();
-            return new MirrorEnemyActionPolicy(nextDouble, nextSelfBuffRoll ?? AlwaysSelfBuff).SelectAction(run, actor, snapshot, moves, plan.BuildEnemyDefinitions());
+            return new MirrorEnemyActionPolicy(nextDouble, nextSelfBuffRoll ?? AlwaysSelfBuff).SelectAction(run, actor, snapshot, moves, plan.BuildEnemyDefinitions(), MirrorTestConfigs.Default());
         }
 
         public QuestRun BuildRun()

@@ -19,8 +19,6 @@ public class QuestMirrorEnemyPlanService(
 {
     private const string CharacterImageDirectory = "image/character/";
 
-    private readonly MirrorEnemyPlanBuilder builder = new();
-
     public async Task<MirrorEnemyPlan> CreateAsync(QuestStageDefinition stage, PlayerId selfId)
     {
         ArgumentNullException.ThrowIfNull(stage);
@@ -29,7 +27,9 @@ public class QuestMirrorEnemyPlanService(
             throw new InvalidOperationException($"名鑑の祠ではないステージです。 stageId={stage.Id.Value}");
         }
 
-        var topIds = await candidateRepository.GetTopPlayerIdsWithTiesAsync(MirrorEnemyPlanBuilder.TopCount);
+        var config = stage.MirrorConfig
+            ?? throw new InvalidOperationException($"名鑑の祠の調整値（mirror_configs）がありません。 stageId={stage.Id.Value}");
+        var topIds = await candidateRepository.GetTopPlayerIdsWithTiesAsync(config.TopPlayerCount);
         var playerIds = topIds.Append(selfId).Distinct().ToArray();
         var players = await candidateRepository.GetPlayersWithMovesAsync(playerIds);
         var equipments = await equipmentRepository.GetAllAsync();
@@ -47,7 +47,7 @@ public class QuestMirrorEnemyPlanService(
         var topCandidates = candidates.Where(x => topIdSet.Contains(x.PlayerId)).ToArray();
         var excludedMoveIds = await GetExcludedMoveIdsAsync();
 
-        return builder.Build(topCandidates, self, stage.Floors, excludedMoveIds);
+        return new MirrorEnemyPlanBuilder(config).Build(topCandidates, self, stage.Floors, excludedMoveIds);
     }
 
     private MirrorCandidate ToCandidate(Player player, IReadOnlyList<PlayerEquipment> equipped, IReadOnlyList<Equipment> equipments)

@@ -15,23 +15,10 @@ public sealed record MirrorEnemyActionDecision(BattleActionInput Action, bool Is
 /// 名鑑の祠の敵（プレイヤー）の行動を職業から決める。
 /// docs/quest/06_名鑑の祠設計.md の「3. 敵の行動」を実装する。
 /// 既存の敵 AI（QuestEnemyActionPolicy）は他のステージで使うので変更しない。
+/// 確率・しきい値・蘇生回数はマスタデータ mirror_configs.csv（<see cref="QuestMirrorConfig"/>）から取る。
 /// </summary>
 public class MirrorEnemyActionPolicy
 {
-    /// <summary>第2候補を選ぶ確率。</summary>
-    public const double SecondChoiceRate = 0.15;
-
-    /// <summary>蘇生技を使う敵1体が1フロアで蘇生できる回数。</summary>
-    public const int MaxRevivesPerFloor = 3;
-
-    private const int SelfHarmMinHpPercent = 20;
-    private const int HealHpPercent = 50;
-    private const int RestoreMpPercent = 30;
-
-    // 自分へのバフは、使える状況でも半分の確率で見送り、攻撃などほかの行動に進む。
-    // 毎回の初手がバフだと単調になるため。
-    private const double SelfBuffRate = 0.5;
-
     // 自分にかけるバフは職業の攻撃に効く能力だけ（設計 3.4）。
     // 能力を限定しないと、バフ技を2種類以上持つ敵がかけ直しを続けて攻撃しなくなる。
     private static readonly IReadOnlySet<BuffStat> WarriorSelfBuffStats =
@@ -45,7 +32,7 @@ public class MirrorEnemyActionPolicy
     private readonly Func<double> nextSelfBuffRoll;
 
     /// <param name="nextDouble">第2候補を選ぶかの乱数。</param>
-    /// <param name="nextSelfBuffRoll">自分へのバフを使うかの乱数。<see cref="SelfBuffRate"/> 未満なら使う。</param>
+    /// <param name="nextSelfBuffRoll">自分へのバフを使うかの乱数。<see cref="QuestMirrorConfig.SelfBuffRate"/> 未満なら使う。</param>
     public MirrorEnemyActionPolicy(Func<double>? nextDouble = null, Func<double>? nextSelfBuffRoll = null)
     {
         this.nextDouble = nextDouble ?? Random.Shared.NextDouble;
@@ -57,19 +44,21 @@ public class MirrorEnemyActionPolicy
         QuestEnemyState enemy,
         MirrorEnemySnapshot snapshot,
         IReadOnlyList<Move> availableMoves,
-        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions,
+        QuestMirrorConfig config)
     {
         ArgumentNullException.ThrowIfNull(run);
         ArgumentNullException.ThrowIfNull(enemy);
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(availableMoves);
         ArgumentNullException.ThrowIfNull(enemyDefinitions);
+        ArgumentNullException.ThrowIfNull(config);
 
-        var context = CreateContext(run, enemy, snapshot, enemyDefinitions);
+        var context = CreateContext(run, enemy, snapshot, enemyDefinitions, config);
         var usableMoves = availableMoves
             .Where(move => enemy.CurrentMp >= move.MpCost)
             .Where(move => !KnocksOutSelf(move))
-            .Where(move => !HalvesSelfHp(move) || IsAtLeastPercent(enemy.CurrentHp, snapshot.Status.MaxHp, SelfHarmMinHpPercent))
+            .Where(move => !HalvesSelfHp(move) || IsAtLeastPercent(enemy.CurrentHp, snapshot.Status.MaxHp, config.SelfHarmMinHpPercent))
             .ToArray();
 
         var candidates = BuildCandidates(MirrorJobRowPolicy.ResolveGroup(snapshot.Job), enemy, availableMoves, usableMoves, context);
@@ -78,7 +67,7 @@ public class MirrorEnemyActionPolicy
             return new MirrorEnemyActionDecision(CreateWait(enemy), IsRevive: false);
         }
 
-        if (candidates.Count > 1 && nextDouble() < SecondChoiceRate)
+        if (candidates.Count > 1 && nextDouble() < config.SecondChoiceRate)
         {
             return candidates[1];
         }
@@ -151,7 +140,7 @@ public class MirrorEnemyActionPolicy
 
     private MirrorEnemyActionDecision? TryRevive(QuestEnemyState enemy, IReadOnlyList<Move> usableMoves, Context context)
     {
-        if (enemy.ReviveUsedCount >= MaxRevivesPerFloor)
+        if (enemy.ReviveUsedCount >= context.Config.MaxRevivesPerFloor)
         {
             return null;
         }
@@ -186,7 +175,7 @@ public class MirrorEnemyActionPolicy
 
         var targets = context.Friends
             .Append(context.Self)
-            .Where(x => x.CurrentHp > 0 && !IsAbovePercent(x.CurrentHp, x.MaxHp, HealHpPercent))
+            .Where(x => x.CurrentHp > 0 && !IsAbovePercent(x.CurrentHp, x.MaxHp, context.Config.HealHpPercent))
             .OrderBy(x => HpRatio(x));
         foreach (var target in targets)
         {
@@ -222,8 +211,8 @@ public class MirrorEnemyActionPolicy
             return null;
         }
 
-        // 使えるバフがあっても半分の確率で見送る。
-        return nextSelfBuffRoll() < SelfBuffRate ? buffDecision : null;
+        // 使えるバフがあっても一定の確率で見送り、攻撃などほかの行動に進む（毎回の初手がバフになるのを避ける）。
+        return nextSelfBuffRoll() < context.Config.SelfBuffRate ? buffDecision : null;
     }
 
     private MirrorEnemyActionDecision? SelectSelfBuff(
@@ -341,7 +330,7 @@ public class MirrorEnemyActionPolicy
 
     private MirrorEnemyActionDecision? TryRestoreMp(QuestEnemyState enemy, IReadOnlyList<Move> usableMoves, Context context)
     {
-        if (IsAbovePercent(enemy.CurrentMp, context.Status.MaxMp, RestoreMpPercent))
+        if (IsAbovePercent(enemy.CurrentMp, context.Status.MaxMp, context.Config.RestoreMpPercent))
         {
             return null;
         }
@@ -724,7 +713,8 @@ public class MirrorEnemyActionPolicy
         QuestRun run,
         QuestEnemyState enemy,
         MirrorEnemySnapshot snapshot,
-        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions)
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition> enemyDefinitions,
+        QuestMirrorConfig config)
     {
         var self = CreateEnemyTarget(enemy, snapshot.Name, snapshot.Status, snapshot.MoveIds);
 
@@ -790,7 +780,8 @@ public class MirrorEnemyActionPolicy
             allTargets.Select(target => target.Snapshot).ToArray(),
             allTargets.Select(target => target.State).ToArray(),
             new BattleFieldContext(positions),
-            PrefersBackRow: MirrorJobRowPolicy.ResolveGroup(snapshot.Job) is MirrorJobGroup.Mage or MirrorJobGroup.Ranger);
+            PrefersBackRow: MirrorJobRowPolicy.ResolveGroup(snapshot.Job) is MirrorJobGroup.Mage or MirrorJobGroup.Ranger,
+            Config: config);
     }
 
     private static Target CreateEnemyTarget(QuestEnemyState enemy, string name, Status status, IReadOnlyList<MoveId> moveIds)
@@ -826,7 +817,8 @@ public class MirrorEnemyActionPolicy
         IReadOnlyList<BattleActorSnapshot> Snapshots,
         IReadOnlyList<BattleActorState> States,
         BattleFieldContext FieldContext,
-        bool PrefersBackRow);
+        bool PrefersBackRow,
+        QuestMirrorConfig Config);
 
     private sealed record Target(
         BattleActorId ActorId,

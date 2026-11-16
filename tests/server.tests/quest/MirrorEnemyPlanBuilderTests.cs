@@ -20,7 +20,7 @@ public class MirrorEnemyPlanBuilderTests
         var candidates = Enumerable.Range(1, 20).Select(rank => CreateCandidate($"P{rank}", rebirthCount: 100 - rank)).ToArray();
         var self = CreateCandidate("Self", rebirthCount: 0);
 
-        var plan = new MirrorEnemyPlanBuilder().Build(candidates, self, CreateFloors(), NoExcludedMoves);
+        var plan = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default()).Build(candidates, self, CreateFloors(), NoExcludedMoves);
 
         NamesOnFloor(plan, 1).Should().BeEquivalentTo(new[] { "P16", "P17", "P18", "P19", "P20" });
         NamesOnFloor(plan, 2).Should().BeEquivalentTo(new[] { "P11", "P12", "P13", "P14", "P15" });
@@ -32,12 +32,63 @@ public class MirrorEnemyPlanBuilderTests
     }
 
     [Fact]
+    public void Build_WithCustomConfig_UsesConfiguredCounts()
+    {
+        var candidates = Enumerable.Range(1, 12).Select(rank => CreateCandidate($"P{rank}", rebirthCount: 100 - rank)).ToArray();
+        var self = CreateCandidate("Self", rebirthCount: 0);
+        var config = MirrorTestConfigs.Default(topPlayerCount: 10, enemiesPerNormalFloor: 2, bossCompanionCount: 1);
+
+        var plan = new MirrorEnemyPlanBuilder(config).Build(candidates, self, CreateFloors(), NoExcludedMoves);
+
+        NamesOnFloor(plan, 1).Should().BeEquivalentTo(new[] { "P9", "P10" });
+        NamesOnFloor(plan, 2).Should().BeEquivalentTo(new[] { "P7", "P8" });
+        NamesOnFloor(plan, 3).Should().BeEquivalentTo(new[] { "P5", "P6" });
+        NamesOnFloor(plan, 4).Should().BeEquivalentTo(new[] { "P3", "P4" });
+        NamesOnFloor(plan, 5).Should().BeEquivalentTo(new[] { "Self", "P1" });
+        plan.Enemies.Select(x => x.Name).Should().NotContain(new[] { "P11", "P12" });
+    }
+
+    [Fact]
+    public void Build_WhenBossAppearanceWouldExceedTotalLimit_ExcludesCompanionFromBossFloor()
+    {
+        var p1 = CreateCandidate("P1", rebirthCount: 10);
+        var p2 = CreateCandidate("P2", rebirthCount: 9);
+        var self = CreateCandidate("Self", rebirthCount: 0);
+        IReadOnlyList<QuestFloorDefinition> floors =
+            [CreateFloor(1, FloorType.Normal), CreateFloor(2, FloorType.Normal), CreateFloor(3, FloorType.Boss)];
+
+        var limited = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default(maxNormalAppearances: 2, maxTotalAppearances: 2))
+            .Build([p1, p2], self, floors, NoExcludedMoves);
+        var relaxed = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default(maxNormalAppearances: 2, maxTotalAppearances: 3))
+            .Build([p1, p2], self, floors, NoExcludedMoves);
+
+        NamesOnFloor(limited, 3).Should().BeEquivalentTo(new[] { "Self" });
+        NamesOnFloor(relaxed, 3).Should().BeEquivalentTo(new[] { "Self", "P1", "P2" });
+    }
+
+    [Fact]
+    public void Build_WhenSelfIsCandidate_KeepsOneAppearanceForBossFloor()
+    {
+        var self = CreateCandidate("Self", rebirthCount: 99);
+        var p1 = CreateCandidate("P1", rebirthCount: 1);
+        IReadOnlyList<QuestFloorDefinition> floors =
+            [CreateFloor(1, FloorType.Normal), CreateFloor(2, FloorType.Normal), CreateFloor(3, FloorType.Boss)];
+
+        var plan = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default(maxNormalAppearances: 2, maxTotalAppearances: 2))
+            .Build([self, p1], self, floors, NoExcludedMoves);
+
+        NamesOnFloor(plan, 1).Should().BeEquivalentTo(new[] { "P1", "Self" });
+        NamesOnFloor(plan, 2).Should().BeEquivalentTo(new[] { "P1" });
+        NamesOnFloor(plan, 3).Should().BeEquivalentTo(new[] { "Self" });
+    }
+
+    [Fact]
     public void Build_WithMoreThan20Candidates_UsesOnlyTop20()
     {
         var candidates = Enumerable.Range(1, 25).Select(rank => CreateCandidate($"P{rank}", rebirthCount: 100 - rank)).ToArray();
         var self = CreateCandidate("Self", rebirthCount: 0);
 
-        var plan = new MirrorEnemyPlanBuilder().Build(candidates, self, CreateFloors(), NoExcludedMoves);
+        var plan = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default()).Build(candidates, self, CreateFloors(), NoExcludedMoves);
 
         plan.Enemies.Select(x => x.Name).Should().NotContain(new[] { "P21", "P22", "P23", "P24", "P25" });
     }
@@ -50,7 +101,7 @@ public class MirrorEnemyPlanBuilderTests
         var higherLevel = CreateCandidate("HigherLevel", rebirthCount: 3, level: 101, combatIndex: 1);
         var moreRebirths = CreateCandidate("MoreRebirths", rebirthCount: 4, level: 1, combatIndex: 1);
 
-        var ranked = MirrorEnemyPlanBuilder.RankTop([weak, strong, higherLevel, moreRebirths]);
+        var ranked = MirrorEnemyPlanBuilder.RankTop([weak, strong, higherLevel, moreRebirths], topCount: 20);
 
         ranked.Select(x => x.Name).Should().ContainInOrder("MoreRebirths", "HigherLevel", "Strong", "Weak");
     }
@@ -61,7 +112,7 @@ public class MirrorEnemyPlanBuilderTests
         var candidates = Enumerable.Range(1, 8).Select(rank => CreateCandidate($"P{rank}", rebirthCount: 100 - rank)).ToArray();
         var self = CreateCandidate("Self", rebirthCount: 0);
 
-        var plan = new MirrorEnemyPlanBuilder().Build(candidates, self, CreateFloors(), NoExcludedMoves);
+        var plan = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default()).Build(candidates, self, CreateFloors(), NoExcludedMoves);
 
         foreach (var floor in plan.Floors)
         {
@@ -73,7 +124,7 @@ public class MirrorEnemyPlanBuilderTests
             .SelectMany(x => x.Placements)
             .GroupBy(x => x.EnemyDefinitionId)
             .Select(x => x.Count());
-        normalAppearances.Should().OnlyContain(count => count <= MirrorEnemyPlanBuilder.MaxNormalAppearances);
+        normalAppearances.Should().OnlyContain(count => count <= MirrorTestConfigs.Default().MaxNormalAppearances);
 
         var totalAppearances = plan.Floors
             .SelectMany(x => x.Placements)
@@ -92,7 +143,7 @@ public class MirrorEnemyPlanBuilderTests
         var candidates = Enumerable.Range(1, 3).Select(rank => CreateCandidate($"P{rank}", rebirthCount: 100 - rank)).ToArray();
         var self = CreateCandidate("Self", rebirthCount: 0);
 
-        var plan = new MirrorEnemyPlanBuilder().Build(candidates, self, CreateFloors(), NoExcludedMoves);
+        var plan = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default()).Build(candidates, self, CreateFloors(), NoExcludedMoves);
 
         plan.Floors.Where(x => !x.IsBoss).Should().OnlyContain(x => x.Placements.Count >= 1 && x.Placements.Count <= 3);
         NamesOnFloor(plan, 5).Should().BeEquivalentTo(new[] { "Self", "P1", "P2", "P3" });
@@ -103,7 +154,7 @@ public class MirrorEnemyPlanBuilderTests
     {
         var self = CreateCandidate("Self", rebirthCount: 0);
 
-        var plan = new MirrorEnemyPlanBuilder().Build([self], self, CreateFloors(), NoExcludedMoves);
+        var plan = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default()).Build([self], self, CreateFloors(), NoExcludedMoves);
 
         plan.Floors.Should().OnlyContain(x => x.Placements.Count == 1);
         plan.Enemies.Should().ContainSingle();
@@ -116,7 +167,7 @@ public class MirrorEnemyPlanBuilderTests
         var others = Enumerable.Range(1, 19).Select(rank => CreateCandidate($"P{rank}", rebirthCount: 100 - rank));
         var candidates = others.Append(self).ToArray();
 
-        var plan = new MirrorEnemyPlanBuilder().Build(candidates, self, CreateFloors(), NoExcludedMoves);
+        var plan = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default()).Build(candidates, self, CreateFloors(), NoExcludedMoves);
 
         NamesOnFloor(plan, 5).Should().BeEquivalentTo(new[] { "Self", "P1", "P2", "P3" });
         // 自分は上位1位として4階にも出る（通常フロアから外さない）。
@@ -129,7 +180,7 @@ public class MirrorEnemyPlanBuilderTests
         var candidates = Enumerable.Range(1, 20).Select(rank => CreateCandidate($"P{rank}", rebirthCount: 100 - rank)).ToArray();
         var self = CreateCandidate("Self", rebirthCount: 0);
 
-        var plan = new MirrorEnemyPlanBuilder().Build(candidates, self, CreateFloors(), NoExcludedMoves);
+        var plan = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default()).Build(candidates, self, CreateFloors(), NoExcludedMoves);
 
         plan.Enemies.Select(x => x.DefinitionId.Value).Should().OnlyHaveUniqueItems();
         plan.Enemies.Should().OnlyContain(x => x.DefinitionId.Value >= MirrorEnemyPlanBuilder.FirstDefinitionId);
@@ -141,7 +192,7 @@ public class MirrorEnemyPlanBuilderTests
     {
         var self = CreateCandidate("Self", rebirthCount: 0, moveIds: [101, 102, 103]);
 
-        var plan = new MirrorEnemyPlanBuilder().Build([self], self, CreateFloors(), new HashSet<int> { 102 });
+        var plan = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default()).Build([self], self, CreateFloors(), new HashSet<int> { 102 });
 
         plan.Enemies.Single().MoveIds.Select(x => x.Id).Should().Equal(101, 103);
     }
@@ -152,7 +203,7 @@ public class MirrorEnemyPlanBuilderTests
         var status = new Status(1234, 56, 78, 90, 12, 34, 56);
         var self = CreateCandidate("Self", rebirthCount: 0, status: status);
 
-        var plan = new MirrorEnemyPlanBuilder().Build([self], self, CreateFloors(), NoExcludedMoves);
+        var plan = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default()).Build([self], self, CreateFloors(), NoExcludedMoves);
 
         var definition = plan.BuildEnemyDefinitions().Values.Single();
         definition.Status.MaxHp.Should().Be(1234);

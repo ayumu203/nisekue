@@ -17,7 +17,8 @@ public class QuestStageDefinition(
     bool isActive,
     int? requiredMapUnlockFlag = null,
     ProgressionType progressionType = ProgressionType.Static,
-    QuestEndlessConfig? endlessConfig = null)
+    QuestEndlessConfig? endlessConfig = null,
+    QuestMirrorConfig? mirrorConfig = null)
 {
     private readonly QuestFloorDefinition[] floors = floors?.OrderBy(x => x.FloorNo).ToArray()
         ?? throw new ArgumentNullException(nameof(floors));
@@ -39,6 +40,9 @@ public class QuestStageDefinition(
     public int? RequiredMapUnlockFlag { get; } = requiredMapUnlockFlag;
     public ProgressionType ProgressionType { get; } = progressionType;
     public QuestEndlessConfig? EndlessConfig { get; } = ValidateEndlessConfig(progressionType, endlessConfig);
+
+    /// <summary>名鑑の祠の調整値（mirror_configs.csv）。Mirror のときだけ持つ。</summary>
+    public QuestMirrorConfig? MirrorConfig { get; } = ValidateMirrorConfig(progressionType, mirrorConfig);
 
     /// <summary>エンドレス（手続き的生成）ステージか。</summary>
     public bool IsEndless => ProgressionType == ProgressionType.Endless;
@@ -65,6 +69,16 @@ public class QuestStageDefinition(
         }
 
         return endlessConfig;
+    }
+
+    private static QuestMirrorConfig? ValidateMirrorConfig(ProgressionType progressionType, QuestMirrorConfig? mirrorConfig)
+    {
+        if (progressionType == ProgressionType.Mirror && mirrorConfig is null)
+        {
+            throw new ArgumentNullException(nameof(mirrorConfig), "Mirror ステージには mirrorConfig が必須です。");
+        }
+
+        return mirrorConfig;
     }
 
     private static int ValidateNonNegative(int value, string paramName)
