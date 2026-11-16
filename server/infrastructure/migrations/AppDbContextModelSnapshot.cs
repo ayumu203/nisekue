@@ -1362,6 +1362,10 @@ namespace server.infrastructure.migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("last_turn_results_json");
 
+                    b.Property<string>("MirrorEnemyPlanJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("mirror_enemy_plan_json");
+
                     b.Property<string>("PetDeploymentJson")
                         .HasColumnType("jsonb")
                         .HasColumnName("pet_deployment_json");

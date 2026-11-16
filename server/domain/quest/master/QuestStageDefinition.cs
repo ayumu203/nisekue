@@ -43,6 +43,9 @@ public class QuestStageDefinition(
     /// <summary>エンドレス（手続き的生成）ステージか。</summary>
     public bool IsEndless => ProgressionType == ProgressionType.Endless;
 
+    /// <summary>プレイヤーを敵として出すステージ（名鑑の祠）か。</summary>
+    public bool IsMirror => ProgressionType == ProgressionType.Mirror;
+
     private static string ValidateText(string value, string paramName)
     {
         var normalized = value?.Trim() ?? string.Empty;

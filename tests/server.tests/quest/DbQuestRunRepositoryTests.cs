@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using server.domain.battle;
 using server.domain.battle.enums;
+using server.domain.move;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
@@ -149,7 +150,85 @@ public class DbQuestRunRepositoryTests
         (await repository.GetRoomIdAsync(QuestRunId.New())).Should().BeNull();
     }
 
-    private static QuestRun CreateRun(IReadOnlyList<QuestPetSnapshot>? pets = null)
+    [Fact]
+    public async Task SaveAsync_WithMirrorEnemyPlan_RestoresPlanOnLoad()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection));
+        var sourcePlayerId = new PlayerId(Guid.NewGuid());
+        var definitionId = new QuestEnemyDefinitionId(1_000_001);
+        var plan = new MirrorEnemyPlan(
+            [
+                new MirrorEnemySnapshot(
+                    definitionId,
+                    sourcePlayerId,
+                    "Top",
+                    "image/character/ch001_bmnpc.png",
+                    Job.Mage,
+                    100,
+                    3,
+                    new Status(500, 60, 70, 80, 90, 10, 20),
+                    [new MoveId(101), new MoveId(102)])
+            ],
+            [
+                new MirrorFloorPlan(
+                    1,
+                    isBoss: false,
+                    [new QuestEnemyPlacement(1, definitionId, new BattlePosition(BattleRow.Back, BattleColumn.Right))]),
+                new MirrorFloorPlan(
+                    2,
+                    isBoss: true,
+                    [new QuestEnemyPlacement(1, definitionId, new BattlePosition(BattleRow.Back, BattleColumn.Left))])
+            ]);
+        var run = CreateRun(mirrorEnemyPlan: plan);
+        await repository.SaveAsync(run);
+
+        var loaded = await repository.GetForResolutionAsync(run.Id);
+
+        loaded.Should().NotBeNull();
+        var loadedPlan = loaded!.MirrorEnemyPlan;
+        loadedPlan.Should().NotBeNull();
+        var enemy = loadedPlan!.Enemies.Should().ContainSingle().Subject;
+        enemy.DefinitionId.Should().Be(definitionId);
+        enemy.SourcePlayerId.Should().Be(sourcePlayerId);
+        enemy.Name.Should().Be("Top");
+        enemy.Job.Should().Be(Job.Mage);
+        enemy.Level.Should().Be(100);
+        enemy.RebirthCount.Should().Be(3);
+        enemy.Status.MaxHp.Should().Be(500);
+        enemy.Status.Speed.Should().Be(20);
+        enemy.MoveIds.Select(x => x.Id).Should().Equal(101, 102);
+        loadedPlan.Floors.Should().HaveCount(2);
+        loadedPlan.GetFloor(2).IsBoss.Should().BeTrue();
+        loadedPlan.GetFloor(1).Placements.Single().Position.Should().Be(new BattlePosition(BattleRow.Back, BattleColumn.Right));
+    }
+
+    [Fact]
+    public async Task SaveAsync_WithoutMirrorEnemyPlan_LoadsNullPlan()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection));
+        var run = CreateRun();
+        await repository.SaveAsync(run);
+
+        var loaded = await repository.GetAsync(run.Id);
+
+        loaded!.MirrorEnemyPlan.Should().BeNull();
+    }
+
+    private static QuestRun CreateRun(IReadOnlyList<QuestPetSnapshot>? pets = null, MirrorEnemyPlan? mirrorEnemyPlan = null)
     {
         var participantId = QuestParticipantId.New();
         var snapshot = new QuestRunPartyMemberSnapshot(
@@ -191,6 +270,7 @@ public class DbQuestRunRepositoryTests
             new QuestRewardAccumulator(),
             lastTurnResults: null,
             chatMessages: [],
-            startedAt: DateTimeOffset.UtcNow);
+            startedAt: DateTimeOffset.UtcNow,
+            mirrorEnemyPlan: mirrorEnemyPlan);
     }
 }

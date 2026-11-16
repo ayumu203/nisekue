@@ -49,7 +49,7 @@ export const questStageSummarySchema = z.object({
   recommendedLevel: z.number().int().nonnegative(),
   minimumEntryLevel: z.number().int().positive(),
   previewEnemyImagePath: z.string().min(1).nullable().optional(),
-  progressionType: z.enum(['Static', 'Endless']),
+  progressionType: z.enum(['Static', 'Endless', 'Mirror']),
   minPartyMemberCount: z.number().int().positive(),
   maxPartyMemberCount: z.number().int().positive(),
   isActive: z.boolean(),

@@ -190,6 +190,8 @@ builder.Services.AddScoped<QuestRunFactory>();
 builder.Services.AddSingleton<QuestEndlessFloorGenerator>();
 builder.Services.AddScoped<QuestNpcAssignmentService>();
 builder.Services.AddScoped<QuestPetActionService>();
+builder.Services.AddScoped<IMirrorCandidateRepository, DbMirrorCandidateRepository>();
+builder.Services.AddScoped<QuestMirrorEnemyPlanService>();
 builder.Services.AddScoped<QuestRoomService>();
 builder.Services.AddScoped<QuestRunService>();
 builder.Services.AddScoped<PetService>();

@@ -11,6 +11,7 @@ namespace server.infrastructure.quest;
 
 internal static class QuestJsonSerializer
 {
+    private const int MirrorEnemyPlanDtoVersion = 1;
     private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web);
 
     public static string SerializeMoveSet(MoveSet moveSet)
@@ -103,6 +104,68 @@ internal static class QuestJsonSerializer
                     ailments,
                     buffs);
             }).ToArray());
+    }
+
+    public static string? SerializeMirrorEnemyPlan(MirrorEnemyPlan? plan)
+    {
+        if (plan is null)
+        {
+            return null;
+        }
+
+        return JsonSerializer.Serialize(new MirrorEnemyPlanDto(
+            MirrorEnemyPlanDtoVersion,
+            plan.Enemies.Select(x => new MirrorEnemySnapshotDto(
+                x.DefinitionId.Value,
+                x.SourcePlayerId.Value,
+                x.Name,
+                x.ImagePath,
+                (int)x.Job,
+                x.Level,
+                x.RebirthCount,
+                ToStatusDto(x.Status),
+                x.MoveIds.Select(moveId => moveId.Id).ToArray())).ToArray(),
+            plan.Floors.Select(x => new MirrorFloorPlanDto(
+                x.FloorNo,
+                x.IsBoss,
+                x.Placements.Select(placement => new MirrorPlacementDto(
+                    placement.PlacementNo,
+                    placement.EnemyDefinitionId.Value,
+                    (int)placement.Position.Row,
+                    (int)placement.Position.Column)).ToArray())).ToArray()), Options);
+    }
+
+    public static MirrorEnemyPlan? DeserializeMirrorEnemyPlan(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        var dto = JsonSerializer.Deserialize<MirrorEnemyPlanDto>(json, Options);
+        if (dto is null)
+        {
+            return null;
+        }
+
+        return new MirrorEnemyPlan(
+            (dto.Enemies ?? []).Select(x => new MirrorEnemySnapshot(
+                new QuestEnemyDefinitionId(x.DefinitionId),
+                new PlayerId(x.SourcePlayerId),
+                x.Name,
+                x.ImagePath,
+                (Job)x.Job,
+                x.Level,
+                x.RebirthCount,
+                FromStatusDto(x.Status),
+                (x.MoveIds ?? []).Select(moveId => new MoveId(moveId)))),
+            (dto.Floors ?? []).Select(x => new MirrorFloorPlan(
+                x.FloorNo,
+                x.IsBoss,
+                (x.Placements ?? []).Select(placement => new QuestEnemyPlacement(
+                    placement.PlacementNo,
+                    new QuestEnemyDefinitionId(placement.DefinitionId),
+                    new BattlePosition((BattleRow)placement.Row, (BattleColumn)placement.Column))))));
     }
 
     private static StatusDto ToStatusDto(Status status)
@@ -293,6 +356,19 @@ internal static class QuestJsonSerializer
 
     private sealed record EffectsDto(AilmentDto[] Ailments, BuffDto[] Buffs);
     private sealed record StatusDto(int MaxHp, int MaxMp, int Strength, int Defense, int Intelligence, int Luck, int Speed);
+    private sealed record MirrorEnemyPlanDto(int Version, MirrorEnemySnapshotDto[]? Enemies, MirrorFloorPlanDto[]? Floors);
+    private sealed record MirrorEnemySnapshotDto(
+        int DefinitionId,
+        Guid SourcePlayerId,
+        string Name,
+        string ImagePath,
+        int Job,
+        int Level,
+        int RebirthCount,
+        StatusDto Status,
+        int[]? MoveIds);
+    private sealed record MirrorFloorPlanDto(int FloorNo, bool IsBoss, MirrorPlacementDto[]? Placements);
+    private sealed record MirrorPlacementDto(int PlacementNo, int DefinitionId, int Row, int Column);
     private sealed record PetSnapshotDto(int EnemyDefinitionId, StatusDto Status);
     private sealed record PetDeploymentDto(int RemainingTurns, DeployedPetDto[]? Pets);
     private sealed record DeployedPetDto(
