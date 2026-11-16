@@ -593,6 +593,7 @@ public class DbQuestRunRepository(
             CurrentMp = enemy.CurrentMp,
             IsDead = enemy.IsDead,
             IsCaptured = enemy.IsCaptured,
+            ReviveUsedCount = enemy.ReviveUsedCount,
             ActiveEffectsJson = effectsJson,
             DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder()
         };
@@ -609,6 +610,7 @@ public class DbQuestRunRepository(
         entity.CurrentMp = enemy.CurrentMp;
         entity.IsDead = enemy.IsDead;
         entity.IsCaptured = enemy.IsCaptured;
+        entity.ReviveUsedCount = enemy.ReviveUsedCount;
         entity.ActiveEffectsJson = effectsJson;
         entity.DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder();
     }
@@ -807,7 +809,8 @@ public class DbQuestRunRepository(
             entity.IsDead,
             ailments,
             buffs,
-            entity.IsCaptured);
+            entity.IsCaptured,
+            entity.ReviveUsedCount);
     }
 
     private static QuestSubmittedCommand MapTurnCommand(QuestTurnCommandEntity entity)

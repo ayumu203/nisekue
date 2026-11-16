@@ -11,7 +11,8 @@ public class QuestEnemyState(
     bool isDead,
     IEnumerable<BattleAilmentState>? ailments = null,
     IEnumerable<BattleBuffState>? buffs = null,
-    bool isCaptured = false)
+    bool isCaptured = false,
+    int reviveUsedCount = 0)
 {
     private BattleAilmentState[] ailments = ailments?.ToArray() ?? [];
     private BattleBuffState[] buffs = buffs?.ToArray() ?? [];
@@ -23,6 +24,9 @@ public class QuestEnemyState(
     public int CurrentMp { get; private set; } = ValidateNonNegative(currentMp, nameof(currentMp));
     public bool IsDead { get; private set; } = isDead;
     public bool IsCaptured { get; private set; } = isCaptured;
+
+    // このフロアで蘇生技を使った回数（名鑑の祠の上限判定用）。敵はフロアごとに作り直すので次のフロアには残らない。
+    public int ReviveUsedCount { get; private set; } = ValidateNonNegative(reviveUsedCount, nameof(reviveUsedCount));
     public IReadOnlyList<BattleAilmentState> Ailments => ailments;
     public IReadOnlyList<BattleBuffState> Buffs => buffs;
 
@@ -43,6 +47,11 @@ public class QuestEnemyState(
 
         IsCaptured = true;
         MarkDead();
+    }
+
+    public void RecordReviveUsed()
+    {
+        ReviveUsedCount++;
     }
 
     public void ApplyBattleState(BattleActorState state)
