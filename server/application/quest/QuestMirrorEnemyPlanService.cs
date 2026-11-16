@@ -11,7 +11,6 @@ namespace server.application.quest;
 /// </summary>
 public class QuestMirrorEnemyPlanService(
     IMirrorCandidateRepository candidateRepository,
-    IPlayerRepository playerRepository,
     IPlayerEquipmentRepository playerEquipmentRepository,
     IEquipmentRepository equipmentRepository,
     IMoveRepository moveRepository,
@@ -32,7 +31,7 @@ public class QuestMirrorEnemyPlanService(
 
         var topIds = await candidateRepository.GetTopPlayerIdsWithTiesAsync(MirrorEnemyPlanBuilder.TopCount);
         var playerIds = topIds.Append(selfId).Distinct().ToArray();
-        var players = await playerRepository.GetPlayersAsync(playerIds);
+        var players = await candidateRepository.GetPlayersWithMovesAsync(playerIds);
         var equipments = await equipmentRepository.GetAllAsync();
 
         var candidates = new List<MirrorCandidate>(players.Count);
