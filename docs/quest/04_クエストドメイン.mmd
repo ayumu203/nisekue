@@ -105,11 +105,10 @@ classDiagram
 
         class IMirrorCandidateRepository {
             <<Repository>>
-            %% 20番目と同点の（転生回数, レベル）までを装備込みで返す
-            +GetTopCandidatesAsync(count: int) Task~IReadOnlyList~MirrorCandidate~~
-            +GetAsync(playerId: PlayerId) Task~MirrorCandidate?~
-            %% 味方補充用。自分を除きレベル差±range、足りなければ近い順
-            +GetAllyCandidatesAsync(self: PlayerId, level: int, range: int, count: int) Task~IReadOnlyList~MirrorCandidate~~
+            %% 20番目と同点の（転生回数, レベル）までのプレイヤーIDを返す。装備込みの組み立ては QuestMirrorEnemyPlanService
+            +GetTopPlayerIdsWithTiesAsync(count: int) Task~IReadOnlyList~PlayerId~~
+            %% 技セット込みでまとめて返す（IPlayerRepository.GetPlayersAsync は技を読まない）
+            +GetPlayersWithMovesAsync(ids: IEnumerable~PlayerId~) Task~IReadOnlyList~Player~~
         }
 
         class QuestEndlessConfig {

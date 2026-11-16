@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using server.domain.player;
 using server.domain.quest;
+using server.infrastructure.player;
 
 namespace server.infrastructure.quest;
 
@@ -39,5 +40,28 @@ public class DbMirrorCandidateRepository(IDbContextFactory<AppDbContext> dbConte
             .ToListAsync();
 
         return ids.Select(x => new PlayerId(x)).ToArray();
+    }
+
+    public async Task<IReadOnlyList<Player>> GetPlayersWithMovesAsync(IEnumerable<PlayerId> ids)
+    {
+        var idValues = ids.Select(x => x.Value).Distinct().ToList();
+        if (idValues.Count == 0)
+        {
+            return [];
+        }
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var players = await dbContext.Players
+            .AsNoTracking()
+            .Where(x => idValues.Contains(x.Id))
+            .ToListAsync();
+        var moves = await dbContext.PlayerMoves
+            .AsNoTracking()
+            .Where(x => idValues.Contains(x.PlayerId))
+            .ToDictionaryAsync(x => x.PlayerId);
+
+        return players
+            .Select(entity => PlayerEntityMapper.MapToDomain(entity, moves.GetValueOrDefault(entity.Id)))
+            .ToArray();
     }
 }
