@@ -28,6 +28,14 @@ public class MirrorEnemyActionPolicy
     private const int HealHpPercent = 50;
     private const int RestoreMpPercent = 30;
 
+    // 自分にかけるバフは職業の攻撃に効く能力だけ（設計 3.4）。
+    // 能力を限定しないと、バフ技を2種類以上持つ敵がかけ直しを続けて攻撃しなくなる。
+    private static readonly IReadOnlySet<BuffStat> WarriorSelfBuffStats =
+        new HashSet<BuffStat> { BuffStat.Strength, BuffStat.StrengthIntelligence };
+
+    private static readonly IReadOnlySet<BuffStat> MageSelfBuffStats =
+        new HashSet<BuffStat> { BuffStat.Intelligence, BuffStat.StrengthIntelligence };
+
     private readonly BattleTargetingResolver targetingResolver = new();
     private readonly Func<double> nextDouble;
 
@@ -81,7 +89,7 @@ public class MirrorEnemyActionPolicy
         switch (group)
         {
             case MirrorJobGroup.Warrior:
-                steps.Add(() => TrySelfBuff(enemy, usableMoves, context));
+                steps.Add(() => TrySelfBuff(enemy, usableMoves, context, WarriorSelfBuffStats));
                 steps.Add(() => TryBestAttack(enemy, usableMoves, context));
                 break;
             case MirrorJobGroup.Guardian:
@@ -95,7 +103,7 @@ public class MirrorEnemyActionPolicy
                 steps.Add(() => TryBestAttack(enemy, usableMoves, context));
                 break;
             case MirrorJobGroup.Mage:
-                steps.Add(() => TrySelfBuff(enemy, usableMoves, context));
+                steps.Add(() => TrySelfBuff(enemy, usableMoves, context, MageSelfBuffStats));
                 steps.Add(() => TryBestAttack(enemy, usableMoves, context));
                 steps.Add(() => TryRestoreMp(enemy, usableMoves, context));
                 break;
@@ -188,14 +196,23 @@ public class MirrorEnemyActionPolicy
         return null;
     }
 
-    private MirrorEnemyActionDecision? TrySelfBuff(QuestEnemyState enemy, IReadOnlyList<Move> usableMoves, Context context)
+    private MirrorEnemyActionDecision? TrySelfBuff(
+        QuestEnemyState enemy,
+        IReadOnlyList<Move> usableMoves,
+        Context context,
+        IReadOnlySet<BuffStat> stats)
     {
+        // 対象の能力のバフが1つでもかかっていれば、かけ直さずに攻撃へ進む。
+        if (stats.Any(stat => HasBuff(context.Self, stat)))
+        {
+            return null;
+        }
+
         var buffMoves = usableMoves
             .Where(move => move.TargetType != TargetType.Enemy)
-            .Where(move => HasPositiveBuff(move))
+            .Where(move => GetPositiveBuffStats(move).Any(stats.Contains))
             .Where(move => !HasAilment(move, AilmentType.Taunt) && !HasAilment(move, AilmentType.CoverAll))
             .Where(move => CanTarget(move, context.Self, context))
-            .Where(move => NeedsBuff(move, context.Self))
             .OrderByDescending(move => CountMissingBuffStats(move, context.Self))
             .ThenBy(move => move.MpCost)
             .ToArray();
@@ -569,16 +586,16 @@ public class MirrorEnemyActionPolicy
 
     private static bool IsPositiveBuff(BuffEffect buff)
     {
-        return buff.BuffCalculationType switch
-        {
-            BuffCalculationType.Mul => buff.BuffValue > 1m,
-            _ => buff.BuffValue > 0m
-        };
+        return IsPositive(buff.BuffCalculationType, buff.BuffValue);
     }
 
-    private static bool NeedsBuff(Move move, Target target)
+    private static bool IsPositive(BuffCalculationType calculationType, decimal value)
     {
-        return CountMissingBuffStats(move, target) > 0;
+        return calculationType switch
+        {
+            BuffCalculationType.Mul => value > 1m,
+            _ => value > 0m
+        };
     }
 
     private static int CountMissingBuffStats(Move move, Target target)
@@ -586,9 +603,10 @@ public class MirrorEnemyActionPolicy
         return GetPositiveBuffStats(move).Count(stat => !HasBuff(target, stat));
     }
 
+    /// <summary>上げる向きのバフがかかっているか。下げられている（デバフ）だけならかかっていない扱い。</summary>
     private static bool HasBuff(Target target, BuffStat stat)
     {
-        return target.State.Buffs.Any(buff => buff.Stat == stat);
+        return target.State.Buffs.Any(buff => buff.Stat == stat && IsPositive(buff.CalculationType, buff.Value));
     }
 
     private static bool HasAilmentState(Target target, AilmentType ailmentType)

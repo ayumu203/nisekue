@@ -47,6 +47,86 @@ public class MirrorEnemyActionPolicyTests
     }
 
     [Fact]
+    public void SelectAction_WarriorWithStrengthBuffActiveAndOtherBuffMove_AttacksInsteadOfOtherBuff()
+    {
+        var strengthBuff = CreateSelfBuffMove(201, BuffStat.Strength);
+        var criticalBuff = CreateSelfBuffMove(203, BuffStat.CriticalChance);
+        var attack = CreateAttackMove(202, AttackRange.Single, power: 1m);
+        var scenario = new Scenario()
+            .AddOpponent(FrontLeft, hp: 100)
+            .AddEnemy(
+                Job.Warrior,
+                FrontLeft,
+                [strengthBuff, criticalBuff, attack],
+                buffs: [new BattleBuffState(BuffStat.Strength, BuffCalculationType.Mul, 1.5m, 1)]);
+
+        var decision = scenario.Select(NeverSecond);
+
+        decision.Action.MoveId.Should().Be(202);
+    }
+
+    [Fact]
+    public void SelectAction_WarriorWithOnlyNonStrengthBuffMove_Attacks()
+    {
+        var criticalBuff = CreateSelfBuffMove(203, BuffStat.CriticalChance);
+        var attack = CreateAttackMove(202, AttackRange.Single, power: 1m);
+        var scenario = new Scenario()
+            .AddOpponent(FrontLeft, hp: 100)
+            .AddEnemy(Job.Warrior, FrontLeft, [criticalBuff, attack]);
+
+        var decision = scenario.Select(NeverSecond);
+
+        decision.Action.MoveId.Should().Be(202);
+    }
+
+    [Fact]
+    public void SelectAction_WarriorWithStrengthDebuffed_UsesSelfBuff()
+    {
+        var strengthBuff = CreateSelfBuffMove(201, BuffStat.Strength);
+        var attack = CreateAttackMove(202, AttackRange.Single, power: 1m);
+        var scenario = new Scenario()
+            .AddOpponent(FrontLeft, hp: 100)
+            .AddEnemy(
+                Job.Warrior,
+                FrontLeft,
+                [strengthBuff, attack],
+                buffs: [new BattleBuffState(BuffStat.Strength, BuffCalculationType.Mul, 0.5m, 2)]);
+
+        var decision = scenario.Select(NeverSecond);
+
+        decision.Action.MoveId.Should().Be(201);
+    }
+
+    [Fact]
+    public void SelectAction_MageWithoutIntelligenceBuff_UsesIntelligenceBuff()
+    {
+        var intelligenceBuff = CreateSelfBuffMove(303, BuffStat.Intelligence);
+        var defenseBuff = CreateSelfBuffMove(304, BuffStat.Defense);
+        var single = CreateAttackMove(301, AttackRange.Single, power: 1m);
+        var scenario = new Scenario()
+            .AddOpponent(FrontLeft, hp: 100)
+            .AddEnemy(Job.Mage, BackLeft, [defenseBuff, intelligenceBuff, single]);
+
+        var decision = scenario.Select(NeverSecond);
+
+        decision.Action.MoveId.Should().Be(303);
+    }
+
+    [Fact]
+    public void SelectAction_MageWithOnlyDefenseBuffMove_Attacks()
+    {
+        var defenseBuff = CreateSelfBuffMove(304, BuffStat.Defense);
+        var single = CreateAttackMove(301, AttackRange.Single, power: 1m);
+        var scenario = new Scenario()
+            .AddOpponent(FrontLeft, hp: 100)
+            .AddEnemy(Job.Mage, BackLeft, [defenseBuff, single]);
+
+        var decision = scenario.Select(NeverSecond);
+
+        decision.Action.MoveId.Should().Be(301);
+    }
+
+    [Fact]
     public void SelectAction_WithRandomBelowRate_PicksSecondCandidate()
     {
         var buff = CreateSelfBuffMove(201, BuffStat.Strength);
