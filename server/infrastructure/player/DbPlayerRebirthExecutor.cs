@@ -32,6 +32,18 @@ public class DbPlayerRebirthExecutor(
 
         PlayerAggregatePersistence.Apply(dbContext, entity, aggregate);
 
+        // 新しい転生回数以上の履歴は通常は存在しない。デバッグ機能などで転生回数と履歴が
+        // 食い違ったときに残る古い履歴を消し、(プレイヤー, 転生回数) の一意制約違反を防ぐ。
+        var staleHistories = await dbContext.PlayerRebirthStatusHistories
+            .Where(x => x.PlayerId == player.Id.Value && x.RebirthCount >= player.RebirthCount)
+            .ToListAsync();
+        if (staleHistories.Count > 0)
+        {
+            dbContext.PlayerRebirthStatusHistories.RemoveRange(staleHistories);
+            // 削除を先に反映してから追加する（同じ転生回数の行の削除と追加の順序を確定させる）
+            await dbContext.SaveChangesAsync();
+        }
+
         dbContext.PlayerRebirthStatusHistories.Add(new PlayerRebirthStatusHistoryEntity
         {
             Id = Guid.NewGuid(),
