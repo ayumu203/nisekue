@@ -34,11 +34,12 @@ public class MasterDataIntegrityTests
             ["job_roadmap_ranks.csv"] = () => new CsvJobRoadmapRankRepository(),
             ["status_rank_thresholds.csv"] = () => new CsvStatusRankThresholdRepository(),
             ["endless_configs.csv"] = () => new CsvQuestEndlessConfigRepository(),
+            ["mirror_configs.csv"] = () => new CsvQuestMirrorConfigRepository(),
             ["endless_enemy_templates.csv"] = () => new CsvQuestEndlessEnemyTemplateRepository(),
             ["enemies.csv / enemy_moves.csv"] = () => new CsvQuestEnemyDefinitionRepository(),
             ["npc_templates.csv / npc_moves.csv / stage_npc_templates.csv"] = () => new CsvQuestNpcTemplateRepository(),
             ["stages.csv / stage_floors.csv / floor_enemy_spawns.csv / stage_*_rewards.csv"] =
-                () => new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository()),
+                () => new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository(), new CsvQuestMirrorConfigRepository()),
             ["training_enemies.csv"] = () => new CsvTrainingEnemyRepository(),
             ["treasure_maps.csv"] = () => new CsvTreasureMapRepository(),
             ["reward_pools.csv / reward_entries.csv"] = () => new CsvTreasureMapRewardPoolRepository(),
@@ -63,7 +64,7 @@ public class MasterDataIntegrityTests
     [Fact]
     public async Task StageDefinitions_WithCurrentResources_ReferenceExistingEnemiesItemsAndEquipments()
     {
-        var stages = await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository()).GetAllAsync();
+        var stages = await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository(), new CsvQuestMirrorConfigRepository()).GetAllAsync();
         var enemyIds = (await new CsvQuestEnemyDefinitionRepository().GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
         var itemIds = (await new CsvItemRepository().GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
         var equipmentIds = (await new CsvEquipmentRepository().GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
@@ -97,7 +98,7 @@ public class MasterDataIntegrityTests
     [Fact]
     public async Task MirrorStages_WithCurrentResources_HaveFloorsWithoutEnemySpawns()
     {
-        var mirrorStages = (await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository()).GetAllAsync())
+        var mirrorStages = (await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository(), new CsvQuestMirrorConfigRepository()).GetAllAsync())
             .Where(stage => stage.IsMirror)
             .ToList();
 
@@ -189,7 +190,7 @@ public class MasterDataIntegrityTests
             .Select(item => item.MapUnlockFlag!.Value)
             .ToHashSet();
 
-        var unreachableStages = (await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository()).GetAllAsync())
+        var unreachableStages = (await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository(), new CsvQuestMirrorConfigRepository()).GetAllAsync())
             .Where(stage => stage.RequiredMapUnlockFlag is not null && !grantedFlags.Contains(stage.RequiredMapUnlockFlag.Value))
             .Select(stage => $"stages.csv: id={stage.Id.Value}, required_map_unlock_flag={stage.RequiredMapUnlockFlag}")
             .ToList();

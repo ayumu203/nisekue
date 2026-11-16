@@ -35,6 +35,8 @@ classDiagram
             +int? RequiredMapUnlockFlag
             +ProgressionType ProgressionType
             +QuestEndlessConfig? EndlessConfig
+            %% Mirror のときだけ必須
+            +QuestMirrorConfig? MirrorConfig
             %% エンドレスは boss_interval の倍数、それ以外は stage_floors の floor_type
             +IsBossFloor(floorNo: int) bool
         }
@@ -96,6 +98,8 @@ classDiagram
             <<Domain Service>>
             %% 転生回数→レベル→戦闘指数（装備込み）→ID の順で上位20人。下位から強くなる帯で通常4フロアに振り分け、
             %% ボスフロアは自分＋自分を除く上位3人。同一フロア重複なし、通常フロア2回・合計3回まで
+            %% 人数・回数は QuestMirrorConfig から取る
+            +MirrorEnemyPlanBuilder(config: QuestMirrorConfig)
             +Build(candidates: IReadOnlyList~MirrorCandidate~, self: MirrorCandidate, floors: IReadOnlyList~QuestFloorDefinition~) MirrorEnemyPlan
         }
 
@@ -124,6 +128,22 @@ classDiagram
             +decimal RewardRate
             +int ThemeCount
             +int FloorsPerTheme
+        }
+
+        class QuestMirrorConfig {
+            <<Value Object>>
+            %% 名鑑の祠の調整値 (mirror_configs.csv)。敵の選出と行動で使う
+            +int TopPlayerCount
+            +int EnemiesPerNormalFloor
+            +int BossCompanionCount
+            +int MaxNormalAppearances
+            +int MaxTotalAppearances
+            +double SecondChoiceRate
+            +double SelfBuffRate
+            +int SelfHarmMinHpPercent
+            +int HealHpPercent
+            +int RestoreMpPercent
+            +int MaxRevivesPerFloor
         }
 
         class QuestEndlessEnemyTemplate {
@@ -674,7 +694,8 @@ classDiagram
             %% 名鑑の祠専用。職業別の優先順＋共通ガード（重ねがけしない・自傷はHP20%以上・蘇生は1フロア3回）
             %% 単体はHPが一番低い相手、15%で第2候補。守護系はかばう最優先
             %% 蘇生を選んだら QuestBattleFactory が QuestEnemyState.RecordReviveUsed() を呼ぶ
-            +SelectAction(run: QuestRun, enemy: QuestEnemyState, snapshot: MirrorEnemySnapshot, availableMoves: IReadOnlyList~Move~, enemyDefinitions: IReadOnlyDictionary~QuestEnemyDefinitionId, QuestEnemyDefinition~) MirrorEnemyActionDecision
+            %% 確率・しきい値・蘇生回数は QuestMirrorConfig から取る
+            +SelectAction(run: QuestRun, enemy: QuestEnemyState, snapshot: MirrorEnemySnapshot, availableMoves: IReadOnlyList~Move~, enemyDefinitions: IReadOnlyDictionary~QuestEnemyDefinitionId, QuestEnemyDefinition~, config: QuestMirrorConfig) MirrorEnemyActionDecision
         }
 
         class QuestRunFactory {
@@ -728,6 +749,9 @@ classDiagram
     QuestStageDefinition *-- QuestStageId : has
     QuestStageDefinition *-- ProgressionType : Static/Endless
     QuestStageDefinition *-- QuestEndlessConfig : 0..1 (Endlessのみ)
+    QuestStageDefinition *-- QuestMirrorConfig : 0..1 (Mirrorのみ)
+    MirrorEnemyPlanBuilder ..> QuestMirrorConfig : use
+    MirrorEnemyActionPolicy ..> QuestMirrorConfig : use
     QuestRun *-- MirrorEnemyPlan : 0..1 (Mirrorのみ)
     MirrorEnemyPlan *-- MirrorEnemySnapshot : 1..*
     MirrorEnemyPlan *-- MirrorFloorPlan : 1..*

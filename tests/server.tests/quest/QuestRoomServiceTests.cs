@@ -505,7 +505,8 @@ public class QuestRoomServiceTests
             equipmentRewards: [],
             itemRewards: [],
             isActive: true,
-            progressionType: ProgressionType.Mirror);
+            progressionType: ProgressionType.Mirror,
+            mirrorConfig: MirrorTestConfigs.Default());
     }
 
     private static QuestRoomService CreateRoomService(

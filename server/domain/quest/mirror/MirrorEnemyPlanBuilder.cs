@@ -9,19 +9,10 @@ namespace server.domain.quest;
 /// 名鑑の祠の敵の組み立て（DB に触らない純粋なロジック）。
 /// docs/quest/06_名鑑の祠設計.md の「2. 敵の選出」を実装する。
 /// </summary>
-public sealed class MirrorEnemyPlanBuilder
+/// <remarks>人数・回数はマスタデータ mirror_configs.csv（<see cref="QuestMirrorConfig"/>）から取る。</remarks>
+public sealed class MirrorEnemyPlanBuilder(QuestMirrorConfig config)
 {
-    /// <summary>敵として選ぶ上位の人数。</summary>
-    public const int TopCount = 20;
-
-    /// <summary>通常フロア1つあたりの敵の数。</summary>
-    public const int EnemiesPerNormalFloor = 5;
-
-    /// <summary>ボスフロアで自分と一緒に出る上位の人数。</summary>
-    public const int BossCompanionCount = 3;
-
-    /// <summary>通常フロアでの1人あたりの最大登場回数（ボスフロアの分を1回残す）。</summary>
-    public const int MaxNormalAppearances = 2;
+    private readonly QuestMirrorConfig config = config ?? throw new ArgumentNullException(nameof(config));
 
     /// <summary>仮の敵IDの開始値。CSV の敵ID・エンドレスのテンプレIDと衝突しない範囲。</summary>
     public const int FirstDefinitionId = 1_000_001;
@@ -51,7 +42,7 @@ public sealed class MirrorEnemyPlanBuilder
             throw new ArgumentException("フロア定義が空です。", nameof(floors));
         }
 
-        var ranked = RankTop(candidates);
+        var ranked = RankTop(candidates, config.TopPlayerCount);
         var rankIndex = ranked
             .Select((candidate, index) => (candidate.PlayerId, index))
             .ToDictionary(x => x.PlayerId, x => x.index);
@@ -71,15 +62,17 @@ public sealed class MirrorEnemyPlanBuilder
         {
             if (floor.FloorType == FloorType.Boss)
             {
+                // ボスフロアの1回を足すと合計の上限を超える人は外す（その分ボスフロアの敵が減る）。
                 var bossMembers = new List<MirrorCandidate> { self };
                 bossMembers.AddRange(ranked
                     .Where(x => x.PlayerId != self.PlayerId)
-                    .Take(BossCompanionCount));
+                    .Where(x => normalAppearances.GetValueOrDefault(x.PlayerId) + 1 <= config.MaxTotalAppearances)
+                    .Take(config.BossCompanionCount));
                 membersByFloor.Add((floor, bossMembers));
                 continue;
             }
 
-            var members = PickNormalFloorMembers(weakestFirst, normalAppearances, ref pointer);
+            var members = PickNormalFloorMembers(weakestFirst, self.PlayerId, normalAppearances, ref pointer);
             membersByFloor.Add((floor, members));
         }
 
@@ -113,10 +106,11 @@ public sealed class MirrorEnemyPlanBuilder
         return new MirrorEnemyPlan(snapshots.Values, floorPlans);
     }
 
-    /// <summary>転生回数→レベル→戦闘指数→プレイヤーID の順で上位を取る。</summary>
-    public static IReadOnlyList<MirrorCandidate> RankTop(IEnumerable<MirrorCandidate> candidates)
+    /// <summary>転生回数→レベル→戦闘指数→プレイヤーID の順で上位 <paramref name="topCount"/> 人を取る。</summary>
+    public static IReadOnlyList<MirrorCandidate> RankTop(IEnumerable<MirrorCandidate> candidates, int topCount)
     {
         ArgumentNullException.ThrowIfNull(candidates);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(topCount);
 
         return candidates
             .GroupBy(x => x.PlayerId)
@@ -125,7 +119,7 @@ public sealed class MirrorEnemyPlanBuilder
             .ThenByDescending(x => x.Level)
             .ThenByDescending(x => x.CombatIndex)
             .ThenBy(x => x.PlayerId.Value)
-            .Take(TopCount)
+            .Take(topCount)
             .ToArray();
     }
 
@@ -159,21 +153,25 @@ public sealed class MirrorEnemyPlanBuilder
         return positions;
     }
 
-    private static IReadOnlyList<MirrorCandidate> PickNormalFloorMembers(
+    private IReadOnlyList<MirrorCandidate> PickNormalFloorMembers(
         IReadOnlyList<MirrorCandidate> weakestFirst,
+        PlayerId selfId,
         Dictionary<PlayerId, int> normalAppearances,
         ref int pointer)
     {
-        var members = new List<MirrorCandidate>(EnemiesPerNormalFloor);
+        // 自分はボスフロアに必ず出るので、通常フロアは合計の上限から1回分を残す。
+        var selfNormalLimit = Math.Min(config.MaxNormalAppearances, config.MaxTotalAppearances - 1);
+        var members = new List<MirrorCandidate>(config.EnemiesPerNormalFloor);
         var picked = new HashSet<PlayerId>();
 
         // 1人ずつずらしながら、同じフロアに同じ人を入れず、通常フロアの登場上限を守って埋める。
-        for (var checkedCount = 0; checkedCount < weakestFirst.Count && members.Count < EnemiesPerNormalFloor; checkedCount++)
+        for (var checkedCount = 0; checkedCount < weakestFirst.Count && members.Count < config.EnemiesPerNormalFloor; checkedCount++)
         {
             var candidate = weakestFirst[pointer % weakestFirst.Count];
             pointer++;
+            var limit = candidate.PlayerId == selfId ? selfNormalLimit : config.MaxNormalAppearances;
             if (picked.Contains(candidate.PlayerId) ||
-                normalAppearances.GetValueOrDefault(candidate.PlayerId) >= MaxNormalAppearances)
+                normalAppearances.GetValueOrDefault(candidate.PlayerId) >= limit)
             {
                 continue;
             }

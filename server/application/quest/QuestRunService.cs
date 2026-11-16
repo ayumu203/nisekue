@@ -250,7 +250,7 @@ public class QuestRunService(
         // 出撃中はプレイヤー側を戦闘から外し、ペットを味方として入れる（QuestBattleFactory 側で除外）。
         var fieldContext = questBattleFactory.CreateBattleFieldContext(run);
         var actors = questBattleFactory.CreateActorInputs(run, enemyDefinitions);
-        var (actions, moves) = await questBattleFactory.CreateTurnInputsAsync(run, moveRepository, enemyDefinitions);
+        var (actions, moves) = await questBattleFactory.CreateTurnInputsAsync(run, moveRepository, enemyDefinitions, stage.MirrorConfig);
 
         var petSummons = await CreateDeployedPetInputsAsync(run);
         if (petSummons.Actors.Length > 0)

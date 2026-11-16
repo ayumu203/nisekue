@@ -107,7 +107,7 @@ public class QuestEndlessFloorGeneratorTests
     [Fact]
     public async Task CsvQuestStageRepository_EndlessStage_HasEndlessConfig()
     {
-        var repository = new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository());
+        var repository = new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository(), new CsvQuestMirrorConfigRepository());
 
         var stage = await repository.GetByStageCodeAsync("endless-abyss");
 
