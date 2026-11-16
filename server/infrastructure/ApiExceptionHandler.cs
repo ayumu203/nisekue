@@ -1,4 +1,6 @@
+using System.Text;
 using Microsoft.AspNetCore.Diagnostics;
+using server.application.debug;
 using server.domain;
 
 namespace server.infrastructure;
@@ -22,6 +24,12 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
                 exception.Message);
         }
 
+        if (statusCode >= StatusCodes.Status500InternalServerError && IsDebugOperation(httpContext))
+        {
+            // デバッグ用の操作は一般ユーザーには見えないので、原因が分かるよう例外の中身を返す
+            message = $"{message}\n{DescribeException(exception)}";
+        }
+
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(new { message }, cancellationToken);
         return true;
@@ -41,6 +49,33 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             ArgumentException or ArgumentOutOfRangeException => (StatusCodes.Status400BadRequest, exception.Message),
             _ => (StatusCodes.Status500InternalServerError, "予期しないエラーが発生しました。")
         };
+    }
+
+    /// <summary>
+    /// デバッグ用の操作（DebugOperationMetadata が付いたエンドポイント）で起きた例外か。
+    /// UseExceptionHandler はハンドラーを呼ぶ前に HttpContext のエンドポイントを消すので、IExceptionHandlerFeature から取る。
+    /// </summary>
+    private static bool IsDebugOperation(HttpContext httpContext)
+    {
+        var endpoint = httpContext.Features.Get<IExceptionHandlerFeature>()?.Endpoint ?? httpContext.GetEndpoint();
+        return endpoint?.Metadata.GetMetadata<DebugOperationMetadata>() is not null;
+    }
+
+    /// <summary>例外の種類とメッセージを InnerException までたどって並べる（スタックトレースは含めない）。</summary>
+    private static string DescribeException(Exception exception)
+    {
+        var builder = new StringBuilder();
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (builder.Length > 0)
+            {
+                builder.Append("\n→ ");
+            }
+
+            builder.Append(current.GetType().Name).Append(": ").Append(current.Message);
+        }
+
+        return builder.ToString();
     }
 
     private static TException? FindInnerException<TException>(Exception exception)

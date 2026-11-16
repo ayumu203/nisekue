@@ -22,6 +22,7 @@ internal static class DebugEndpoints
         var group = app.MapGroup("/debug")
             .RequireAuthorization()
             .AddEndpointFilter(RequireDebugAccess)
+            .WithMetadata(DebugOperationMetadata.Instance)
             .ExcludeFromDescription();
         MapDebugOperations(group);
 
