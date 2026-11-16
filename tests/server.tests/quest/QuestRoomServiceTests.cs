@@ -432,8 +432,7 @@ public class QuestRoomServiceTests
         var playerRepository = new FakePlayerRepository(owner, top);
         var runRepository = new FakeQuestRunRepository();
         var mirrorEnemyPlanService = new QuestMirrorEnemyPlanService(
-            new FakeMirrorCandidateRepository(top.Id, owner.Id),
-            playerRepository,
+            new FakeMirrorCandidateRepository(playerRepository, top.Id, owner.Id),
             new FakePlayerEquipmentRepository(),
             new FakeEquipmentRepository(),
             new FakeMoveRepository(),
@@ -805,10 +804,14 @@ public class QuestRoomServiceTests
             => Task.FromResult<IReadOnlyList<QuestEnemyDefinition>>([definition]);
     }
 
-    private sealed class FakeMirrorCandidateRepository(params PlayerId[] ids) : IMirrorCandidateRepository
+    private sealed class FakeMirrorCandidateRepository(IPlayerRepository playerRepository, params PlayerId[] ids)
+        : IMirrorCandidateRepository
     {
         public Task<IReadOnlyList<PlayerId>> GetTopPlayerIdsWithTiesAsync(int count)
             => Task.FromResult<IReadOnlyList<PlayerId>>(ids.Take(count).ToArray());
+
+        public Task<IReadOnlyList<Player>> GetPlayersWithMovesAsync(IEnumerable<PlayerId> playerIds)
+            => playerRepository.GetPlayersAsync(playerIds);
     }
 
     private sealed class FakeMoveRepository : IMoveRepository
