@@ -21,7 +21,8 @@ public class QuestRun(
     DateTimeOffset? endedAt = null,
     int version = 1,
     bool petSummonUsed = false,
-    QuestPetDeployment? petDeployment = null)
+    QuestPetDeployment? petDeployment = null,
+    MirrorEnemyPlan? mirrorEnemyPlan = null)
 {
     private readonly List<QuestChatMessage> chatMessages = chatMessages?.ToList() ?? [];
     private readonly List<QuestChatMessage> pendingChatMessages = [];
@@ -56,6 +57,9 @@ public class QuestRun(
     // 出撃中のペット。出撃中はプレイヤー側（本人・NPC 味方）は下がって行動しない。
     public QuestPetDeployment? PetDeployment { get; private set; } = petDeployment is { IsActive: true } ? petDeployment : null;
     public bool IsPetDeploymentActive => PetDeployment is { IsActive: true };
+
+    // 名鑑の祠のみ。ラン開始時に確定した敵のスナップショットと全フロアの配置（ラン中は変わらない）。
+    public MirrorEnemyPlan? MirrorEnemyPlan { get; } = mirrorEnemyPlan;
 
     public void InitializeFirstFloor()
     {

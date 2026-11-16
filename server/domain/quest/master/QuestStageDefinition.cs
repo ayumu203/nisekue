@@ -43,6 +43,9 @@ public class QuestStageDefinition(
     /// <summary>エンドレス（手続き的生成）ステージか。</summary>
     public bool IsEndless => ProgressionType == ProgressionType.Endless;
 
+    /// <summary>プレイヤーを敵として出すステージ（名鑑の祠）か。</summary>
+    public bool IsMirror => ProgressionType == ProgressionType.Mirror;
+
     /// <summary>
     /// 指定したフロア番号がボスフロアか。エンドレスは boss_interval の倍数、
     /// それ以外は stage_floors の floor_type で決まる。

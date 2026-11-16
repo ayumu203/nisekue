@@ -12,3 +12,4 @@ id,stage_code,name,battlefield_image_path,recommended_level,minimum_entry_level,
 11,trial-forest,試練の森,image/quest/enchanted-forest-battlefield.svg,150,95,4,6,true,,Static
 12,boss-rush,きおくのとびら,image/quest/hell-battlefield.svg,200,100,4,6,true,,Static
 13,endless-abyss,はてなき旅路,image/quest/enchanted-forest-battlefield.svg,150,95,1,1,true,4,Endless
+14,meikan-shrine,名鑑の祠,image/quest/mirror-shrine-battlefield.svg,100,100,4,4,true,,Mirror

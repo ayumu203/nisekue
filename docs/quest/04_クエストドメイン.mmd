@@ -43,6 +43,74 @@ classDiagram
             <<Enum>>
             Static
             Endless
+            Mirror
+        }
+
+        %% 名鑑の祠（Mirror）：プレイヤーを敵として出すステージ。敵はラン開始時に全フロア分を確定する
+        class MirrorEnemySnapshot {
+            <<Value Object>>
+            %% 1,000,001 から採番するラン内一意の仮ID
+            +QuestEnemyDefinitionId DefinitionId
+            +PlayerId SourcePlayerId
+            +string Name
+            +string ImagePath
+            +Job Job
+            +int Level
+            +int RebirthCount
+            %% 装備込みの実効ステータス
+            +Status Status
+            %% 即死技を除いた技セット
+            +IReadOnlyList~MoveId~ MoveIds
+            +ToEnemyDefinition() QuestEnemyDefinition
+        }
+
+        class MirrorFloorPlan {
+            <<Value Object>>
+            +int FloorNo
+            +bool IsBoss
+            +IReadOnlyList~QuestEnemyPlacement~ Placements
+        }
+
+        class MirrorEnemyPlan {
+            <<Value Object>>
+            +IReadOnlyList~MirrorEnemySnapshot~ Enemies
+            +IReadOnlyList~MirrorFloorPlan~ Floors
+            +GetFloor(floorNo: int) MirrorFloorPlan
+            +BuildEnemyDefinitions() IReadOnlyDictionary~QuestEnemyDefinitionId, QuestEnemyDefinition~
+        }
+
+        class MirrorCandidate {
+            <<Value Object>>
+            +PlayerId PlayerId
+            +string Name
+            +string? ImagePath
+            +Job Job
+            +int Level
+            +int RebirthCount
+            +Status EffectiveStatus
+            +int CombatIndex
+            +MoveSet MoveSet
+        }
+
+        class MirrorEnemyPlanBuilder {
+            <<Domain Service>>
+            %% 転生回数→レベル→戦闘指数（装備込み）→ID の順で上位20人。下位から強くなる帯で通常4フロアに振り分け、
+            %% ボスフロアは自分＋自分を除く上位3人。同一フロア重複なし、通常フロア2回・合計3回まで
+            +Build(candidates: IReadOnlyList~MirrorCandidate~, self: MirrorCandidate, floors: IReadOnlyList~QuestFloorDefinition~) MirrorEnemyPlan
+        }
+
+        class MirrorJobRowPolicy {
+            <<Domain Service>>
+            %% 前衛=戦士系・守護系（トリックスター除く）／中衛=狩人系・見習い・トリックスター・ネクロマンサー／後衛=魔法系・僧侶系
+            +ResolvePreferredRow(job: Job) BattleRow
+        }
+
+        class IMirrorCandidateRepository {
+            <<Repository>>
+            %% 20番目と同点の（転生回数, レベル）までのプレイヤーIDを返す。装備込みの組み立ては QuestMirrorEnemyPlanService
+            +GetTopPlayerIdsWithTiesAsync(count: int) Task~IReadOnlyList~PlayerId~~
+            %% 技セット込みでまとめて返す（IPlayerRepository.GetPlayersAsync は技を読まない）
+            +GetPlayersWithMovesAsync(ids: IEnumerable~PlayerId~) Task~IReadOnlyList~Player~~
         }
 
         class QuestEndlessConfig {
@@ -255,6 +323,8 @@ classDiagram
             +ParticipantType Type
             +PlayerId? PlayerId
             +QuestNpcTemplateId? NpcTemplateId
+            %% 名鑑の祠で味方NPCとして参加するプレイヤー。Npc のとき NpcTemplateId とどちらか一方
+            +PlayerId? SourcePlayerId
             +string DisplayName
             +ParticipantStatus Status
             +BattlePosition Position
@@ -368,6 +438,8 @@ classDiagram
             %% 出撃中のペット。null または IsActive=false のときはプレイヤー側が戦う
             +QuestPetDeployment? PetDeployment
             +bool IsPetDeploymentActive
+            %% 名鑑の祠のみ。ラン開始時に確定した敵と全フロアの配置
+            +MirrorEnemyPlan? MirrorEnemyPlan
             +StartPetDeployment(deployment: QuestPetDeployment) void
             +InitializeFirstFloor() void
             +SubmitCommand(participantId: QuestParticipantId, command: QuestSubmittedCommand, now: DateTimeOffset) void
@@ -449,6 +521,9 @@ classDiagram
             +int CurrentHp
             +int CurrentMp
             +bool IsDead
+            %% このフロアで蘇生技を使った回数。フロアが変わると敵ごと入れ替わるので引き継がない
+            +int ReviveUsedCount
+            +RecordReviveUsed() void
         }
 
         class QuestEnemyInstanceId {
@@ -596,6 +671,13 @@ classDiagram
             +SelectAction(run: QuestRun, enemy: QuestEnemyState, enemyDefinition: QuestEnemyDefinition, availableMoves: IReadOnlyList~Move~) BattleActionInput
         }
 
+        class MirrorEnemyActionPolicy {
+            <<Domain Service>>
+            %% 名鑑の祠専用。職業別の優先順＋共通ガード（重ねがけしない・自傷はHP20%以上・蘇生は1フロア3回）
+            %% 単体はHPが一番低い相手、15%で第2候補。守護系はかばう最優先
+            +SelectAction(run: QuestRun, enemy: QuestEnemyState, snapshot: MirrorEnemySnapshot, availableMoves: IReadOnlyList~Move~, random: Random) BattleActionInput
+        }
+
         class QuestRunFactory {
             <<Application Service>>
             +Create(stageDefinition: QuestStageDefinition, snapshots: IEnumerable~QuestRunPartyMemberSnapshot~, now: DateTimeOffset) QuestRun
@@ -647,6 +729,20 @@ classDiagram
     QuestStageDefinition *-- QuestStageId : has
     QuestStageDefinition *-- ProgressionType : Static/Endless
     QuestStageDefinition *-- QuestEndlessConfig : 0..1 (Endlessのみ)
+    QuestRun *-- MirrorEnemyPlan : 0..1 (Mirrorのみ)
+    MirrorEnemyPlan *-- MirrorEnemySnapshot : 1..*
+    MirrorEnemyPlan *-- MirrorFloorPlan : 1..*
+    MirrorFloorPlan *-- QuestEnemyPlacement : 0..6
+    MirrorEnemyPlanBuilder ..> MirrorCandidate : use
+    MirrorEnemyPlanBuilder ..> MirrorJobRowPolicy : use
+    MirrorEnemyPlanBuilder ..> MirrorEnemyPlan : builds
+    IMirrorCandidateRepository ..> MirrorCandidate : loads
+    QuestRoomService ..> IMirrorCandidateRepository : Mirror開始時の敵・味方候補
+    QuestRoomService ..> MirrorEnemyPlanBuilder : use
+    QuestRunFactory ..> MirrorEnemyPlan : Mirror1階
+    QuestRunService ..> MirrorEnemyPlan : Mirror次フロア・敵定義
+    QuestBattleFactory ..> MirrorEnemyActionPolicy : Mirrorの敵行動
+    MirrorEnemyActionPolicy ..> QuestEnemyState : ReviveUsedCount
     QuestStageDefinition *-- QuestFloorDefinition : 1..* (Staticのみ)
     QuestEndlessEnemyTemplate *-- QuestEnemyDefinitionId : has
     QuestEndlessFloorGenerator ..> QuestEndlessConfig : use

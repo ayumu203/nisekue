@@ -537,6 +537,7 @@ public class DbQuestRunRepository(
         ChatMessagesJson = QuestJsonSerializer.SerializeChatMessages(run.ChatMessages),
         PetSummonUsed = run.PetSummonUsed,
         PetDeploymentJson = QuestJsonSerializer.SerializePetDeployment(run.PetDeployment),
+        MirrorEnemyPlanJson = QuestJsonSerializer.SerializeMirrorEnemyPlan(run.MirrorEnemyPlan),
         StartedAt = run.StartedAt,
         EndedAt = run.EndedAt,
         Version = run.Version,
@@ -703,6 +704,13 @@ public class DbQuestRunRepository(
         var chatMessages = QuestJsonSerializer.DeserializeChatMessages(runEntity.ChatMessagesJson);
 
         var rewardState = DeserializeRewardState(rewardEntity?.SkippedRewardPlayerIdsJson);
+        var mirrorEnemyPlan = QuestJsonSerializer.DeserializeMirrorEnemyPlan(runEntity.MirrorEnemyPlanJson);
+
+        // 名鑑の祠はラン開始時の計画がボスフロアを決める。ステージ定義より計画を優先する。
+        if (mirrorEnemyPlan?.Floors.FirstOrDefault(x => x.FloorNo == runEntity.CurrentFloorNo) is { } mirrorFloor)
+        {
+            isBossFloor = mirrorFloor.IsBoss;
+        }
 
         return new QuestRun(
             new QuestRunId(runEntity.Id),
@@ -727,7 +735,8 @@ public class DbQuestRunRepository(
             runEntity.EndedAt,
             runEntity.Version,
             runEntity.PetSummonUsed,
-            QuestJsonSerializer.DeserializePetDeployment(runEntity.PetDeploymentJson));
+            QuestJsonSerializer.DeserializePetDeployment(runEntity.PetDeploymentJson),
+            mirrorEnemyPlan);
     }
 
     private static QuestRunPartyMemberState MapPartyMember(QuestRunPartyMemberEntity entity)
@@ -887,6 +896,7 @@ public class DbQuestRunRepository(
             x.ChatMessagesJson,
             x.PetSummonUsed,
             x.PetDeploymentJson,
+            x.MirrorEnemyPlanJson,
             x.StartedAt,
             x.EndedAt,
             x.Version);
@@ -906,6 +916,7 @@ public class DbQuestRunRepository(
         ChatMessagesJson = columns.ChatMessagesJson,
         PetSummonUsed = columns.PetSummonUsed,
         PetDeploymentJson = columns.PetDeploymentJson,
+        MirrorEnemyPlanJson = columns.MirrorEnemyPlanJson,
         StartedAt = columns.StartedAt,
         EndedAt = columns.EndedAt,
         Version = columns.Version
@@ -923,6 +934,7 @@ public class DbQuestRunRepository(
         string ChatMessagesJson,
         bool PetSummonUsed,
         string? PetDeploymentJson,
+        string? MirrorEnemyPlanJson,
         DateTimeOffset StartedAt,
         DateTimeOffset? EndedAt,
         int Version);

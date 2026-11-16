@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using server.domain.battle;
 using server.domain.battle.enums;
+using server.domain.move;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
@@ -234,7 +235,132 @@ public class DbQuestRunRepositoryTests
         loaded!.FloorState.IsBossFloor.Should().BeFalse();
     }
 
-    private static QuestStageDefinition CreateStaticStage()
+    [Fact]
+    public async Task SaveAsync_WithMirrorEnemyPlan_RestoresPlanOnLoad()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection));
+        var sourcePlayerId = new PlayerId(Guid.NewGuid());
+        var definitionId = new QuestEnemyDefinitionId(1_000_001);
+        var plan = new MirrorEnemyPlan(
+            [
+                new MirrorEnemySnapshot(
+                    definitionId,
+                    sourcePlayerId,
+                    "Top",
+                    "image/character/ch001_bmnpc.png",
+                    Job.Mage,
+                    100,
+                    3,
+                    new Status(500, 60, 70, 80, 90, 10, 20),
+                    [new MoveId(101), new MoveId(102)])
+            ],
+            [
+                new MirrorFloorPlan(
+                    1,
+                    isBoss: false,
+                    [new QuestEnemyPlacement(1, definitionId, new BattlePosition(BattleRow.Back, BattleColumn.Right))]),
+                new MirrorFloorPlan(
+                    2,
+                    isBoss: true,
+                    [new QuestEnemyPlacement(1, definitionId, new BattlePosition(BattleRow.Back, BattleColumn.Left))])
+            ]);
+        var run = CreateRun(mirrorEnemyPlan: plan);
+        await repository.SaveAsync(run);
+
+        var loaded = await repository.GetForResolutionAsync(run.Id);
+
+        loaded.Should().NotBeNull();
+        var loadedPlan = loaded!.MirrorEnemyPlan;
+        loadedPlan.Should().NotBeNull();
+        var enemy = loadedPlan!.Enemies.Should().ContainSingle().Subject;
+        enemy.DefinitionId.Should().Be(definitionId);
+        enemy.SourcePlayerId.Should().Be(sourcePlayerId);
+        enemy.Name.Should().Be("Top");
+        enemy.Job.Should().Be(Job.Mage);
+        enemy.Level.Should().Be(100);
+        enemy.RebirthCount.Should().Be(3);
+        enemy.Status.MaxHp.Should().Be(500);
+        enemy.Status.Speed.Should().Be(20);
+        enemy.MoveIds.Select(x => x.Id).Should().Equal(101, 102);
+        loadedPlan.Floors.Should().HaveCount(2);
+        loadedPlan.GetFloor(2).IsBoss.Should().BeTrue();
+        loadedPlan.GetFloor(1).Placements.Single().Position.Should().Be(new BattlePosition(BattleRow.Back, BattleColumn.Right));
+    }
+
+    [Fact]
+    public async Task SaveAsync_WithoutMirrorEnemyPlan_LoadsNullPlan()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection));
+        var run = CreateRun();
+        await repository.SaveAsync(run);
+
+        var loaded = await repository.GetAsync(run.Id);
+
+        loaded!.MirrorEnemyPlan.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(1, false)]
+    [InlineData(2, true)]
+    public async Task GetForResolutionAsync_WithMirrorEnemyPlan_RestoresBossFloorFromPlan(int floorNo, bool expected)
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        // ステージ定義はフロア2をボスにしていない。名鑑の祠はラン開始時の計画を正とする。
+        var stage = CreateStaticStage(bossFloorNo: 1);
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection), new FakeQuestStageRepository(stage));
+        var definitionId = new QuestEnemyDefinitionId(1_000_001);
+        var plan = new MirrorEnemyPlan(
+            [
+                new MirrorEnemySnapshot(
+                    definitionId,
+                    new PlayerId(Guid.NewGuid()),
+                    "Top",
+                    "image/character/ch001_bmnpc.png",
+                    Job.Mage,
+                    100,
+                    0,
+                    new Status(500, 60, 70, 80, 90, 10, 20),
+                    [new MoveId(101)])
+            ],
+            [
+                new MirrorFloorPlan(
+                    1,
+                    isBoss: false,
+                    [new QuestEnemyPlacement(1, definitionId, new BattlePosition(BattleRow.Back, BattleColumn.Right))]),
+                new MirrorFloorPlan(
+                    2,
+                    isBoss: true,
+                    [new QuestEnemyPlacement(1, definitionId, new BattlePosition(BattleRow.Back, BattleColumn.Left))])
+            ]);
+        var run = CreateRun(stageId: stage.Id, floorNo: floorNo, mirrorEnemyPlan: plan);
+        await repository.SaveAsync(run);
+
+        var loaded = await repository.GetForResolutionAsync(run.Id);
+
+        loaded!.FloorState.IsBossFloor.Should().Be(expected);
+    }
+
+    private static QuestStageDefinition CreateStaticStage(int bossFloorNo = 2)
     {
         return new QuestStageDefinition(
             new QuestStageId(5),
@@ -246,8 +372,8 @@ public class DbQuestRunRepositoryTests
             1,
             6,
             [
-                new QuestFloorDefinition(1, FloorType.Normal, [], new QuestFloorRewardRule(0, 0)),
-                new QuestFloorDefinition(2, FloorType.Boss, [], new QuestFloorRewardRule(0, 0))
+                new QuestFloorDefinition(1, bossFloorNo == 1 ? FloorType.Boss : FloorType.Normal, [], new QuestFloorRewardRule(0, 0)),
+                new QuestFloorDefinition(2, bossFloorNo == 2 ? FloorType.Boss : FloorType.Normal, [], new QuestFloorRewardRule(0, 0))
             ],
             equipmentRewards: [],
             itemRewards: [],
@@ -289,7 +415,8 @@ public class DbQuestRunRepositoryTests
         IReadOnlyList<QuestPetSnapshot>? pets = null,
         QuestStageId? stageId = null,
         int floorNo = 1,
-        DateTimeOffset? deadlineAt = null)
+        DateTimeOffset? deadlineAt = null,
+        MirrorEnemyPlan? mirrorEnemyPlan = null)
     {
         var participantId = QuestParticipantId.New();
         var snapshot = new QuestRunPartyMemberSnapshot(
@@ -331,6 +458,7 @@ public class DbQuestRunRepositoryTests
             new QuestRewardAccumulator(),
             lastTurnResults: null,
             chatMessages: [],
-            startedAt: DateTimeOffset.UtcNow);
+            startedAt: DateTimeOffset.UtcNow,
+            mirrorEnemyPlan: mirrorEnemyPlan);
     }
 }
