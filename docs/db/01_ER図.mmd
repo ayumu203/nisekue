@@ -175,7 +175,6 @@ erDiagram
         int participant_type "NOT NULL (Player/Npc)"
         uuid player_id FK "NULL, internal.players.id"
         int npc_template_id "NULL, references CSV npc template id logically"
-        uuid source_player_id "NULL, internal.players.id, 名鑑の祠で味方NPCとして参加するプレイヤー（npc_template_id とどちらか一方）"
         varchar(100) display_name "NOT NULL"
         int battle_row "NOT NULL"
         int battle_column "NOT NULL"
