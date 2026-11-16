@@ -50,6 +50,20 @@ public class QuestStageDefinition(
     /// <summary>プレイヤーを敵として出すステージ（名鑑の祠）か。</summary>
     public bool IsMirror => ProgressionType == ProgressionType.Mirror;
 
+    /// <summary>
+    /// 指定したフロア番号がボスフロアか。エンドレスは boss_interval の倍数、
+    /// それ以外は stage_floors の floor_type で決まる。
+    /// </summary>
+    public bool IsBossFloor(int floorNo)
+    {
+        if (EndlessConfig is not null)
+        {
+            return EndlessConfig.IsBossFloor(floorNo);
+        }
+
+        return floors.Any(x => x.FloorNo == floorNo && x.FloorType == FloorType.Boss);
+    }
+
     private static string ValidateText(string value, string paramName)
     {
         var normalized = value?.Trim() ?? string.Empty;
