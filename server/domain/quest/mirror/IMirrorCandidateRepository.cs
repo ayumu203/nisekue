@@ -12,6 +12,12 @@ public interface IMirrorCandidateRepository
     Task<IReadOnlyList<PlayerId>> GetTopPlayerIdsWithTiesAsync(int count);
 
     /// <summary>
+    /// 指定したプレイヤーを、技セット込みでまとめて返す。
+    /// IPlayerRepository.GetPlayersAsync は技を読まないので、敵・味方の組み立てにはこちらを使う。
+    /// </summary>
+    Task<IReadOnlyList<Player>> GetPlayersWithMovesAsync(IEnumerable<PlayerId> ids);
+
+    /// <summary>
     /// 味方として補充するプレイヤーIDを返す。excludedPlayerId 以外で、レベル差 levelRange 以内からランダムに選び、
     /// 足りなければレベル差が小さい順に足す。
     /// </summary>

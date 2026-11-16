@@ -68,6 +68,41 @@ public class DbMirrorCandidateRepositoryTests
         ids.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task GetPlayersWithMovesAsync_WhenPlayersHaveMoves_ReturnsPlayersWithMoveSets()
+    {
+        await using var connection = await OpenAsync();
+        var withMoves = CreatePlayer("WithMoves", level: 100, rebirthCount: 0);
+        var withoutMoves = CreatePlayer("WithoutMoves", level: 90, rebirthCount: 0);
+        var notRequested = CreatePlayer("NotRequested", level: 80, rebirthCount: 0);
+        await SeedAsync(connection, withMoves, withoutMoves, notRequested);
+        await using (var dbContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            dbContext.PlayerMoves.Add(new PlayerMoveEntity { PlayerId = withMoves.Id, MoveId1 = 101, MoveId2 = 205 });
+            await dbContext.SaveChangesAsync();
+        }
+
+        var repository = new DbMirrorCandidateRepository(new TestHelpers.SqliteDbContextFactory(connection));
+
+        var players = await repository.GetPlayersWithMovesAsync([new PlayerId(withMoves.Id), new PlayerId(withoutMoves.Id)]);
+
+        players.Select(x => x.Id.Value).Should().BeEquivalentTo(new[] { withMoves.Id, withoutMoves.Id });
+        players.Single(x => x.Id.Value == withMoves.Id).MoveSet.GetLearnedMoveIds()
+            .Select(x => x.Id).Should().Equal(101, 205);
+        players.Single(x => x.Id.Value == withoutMoves.Id).MoveSet.GetLearnedMoveIds().Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPlayersWithMovesAsync_WhenIdsEmpty_ReturnsEmpty()
+    {
+        await using var connection = await OpenAsync();
+        var repository = new DbMirrorCandidateRepository(new TestHelpers.SqliteDbContextFactory(connection));
+
+        var players = await repository.GetPlayersWithMovesAsync([]);
+
+        players.Should().BeEmpty();
+    }
+
     private static async Task<SqliteConnection> OpenAsync()
     {
         var connection = new SqliteConnection("DataSource=:memory:");

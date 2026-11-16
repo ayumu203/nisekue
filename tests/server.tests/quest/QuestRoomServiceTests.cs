@@ -432,8 +432,7 @@ public class QuestRoomServiceTests
         var playerRepository = new FakePlayerRepository(owner, top);
         var runRepository = new FakeQuestRunRepository();
         var mirrorEnemyPlanService = new QuestMirrorEnemyPlanService(
-            new FakeMirrorCandidateRepository(top.Id, owner.Id),
-            playerRepository,
+            new FakeMirrorCandidateRepository(playerRepository, top.Id, owner.Id),
             new FakePlayerEquipmentRepository(),
             new FakeEquipmentRepository(),
             new FakeMoveRepository(),
@@ -477,10 +476,9 @@ public class QuestRoomServiceTests
         var playerRepository = new FakePlayerRepository(owner, ally);
         var roomRepository = new FakeQuestRoomRepository();
         var runRepository = new FakeQuestRunRepository();
-        var candidateRepository = new FakeMirrorCandidateRepository(owner.Id) { AllyIds = [ally.Id] };
+        var candidateRepository = new FakeMirrorCandidateRepository(playerRepository, owner.Id) { AllyIds = [ally.Id] };
         var mirrorEnemyPlanService = new QuestMirrorEnemyPlanService(
             candidateRepository,
-            playerRepository,
             new FakePlayerEquipmentRepository(),
             new FakeEquipmentRepository(),
             new FakeMoveRepository(),
@@ -855,12 +853,16 @@ public class QuestRoomServiceTests
             => Task.FromResult<IReadOnlyList<QuestEnemyDefinition>>([definition]);
     }
 
-    private sealed class FakeMirrorCandidateRepository(params PlayerId[] ids) : IMirrorCandidateRepository
+    private sealed class FakeMirrorCandidateRepository(IPlayerRepository playerRepository, params PlayerId[] ids)
+        : IMirrorCandidateRepository
     {
         public IReadOnlyList<PlayerId> AllyIds { get; init; } = [];
 
         public Task<IReadOnlyList<PlayerId>> GetTopPlayerIdsWithTiesAsync(int count)
             => Task.FromResult<IReadOnlyList<PlayerId>>(ids.Take(count).ToArray());
+
+        public Task<IReadOnlyList<Player>> GetPlayersWithMovesAsync(IEnumerable<PlayerId> playerIds)
+            => playerRepository.GetPlayersAsync(playerIds);
 
         public Task<IReadOnlyList<PlayerId>> GetAllyPlayerIdsAsync(PlayerId excludedPlayerId, int level, int levelRange, int count)
             => Task.FromResult<IReadOnlyList<PlayerId>>(AllyIds.Where(x => x != excludedPlayerId).Take(count).ToArray());

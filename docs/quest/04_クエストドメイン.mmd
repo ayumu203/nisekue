@@ -107,6 +107,8 @@ classDiagram
             <<Repository>>
             %% （転生回数, レベル）で count 人目と同点の人までのID。戦闘指数（装備込み）での並べ替えは呼び出し側
             +GetTopPlayerIdsWithTiesAsync(count: int) Task~IReadOnlyList~PlayerId~~
+            %% 技セット込みでまとめて返す（IPlayerRepository.GetPlayersAsync は技を読まない）
+            +GetPlayersWithMovesAsync(ids: IEnumerable~PlayerId~) Task~IReadOnlyList~Player~~
             %% 味方補充用。自分を除きレベル差±levelRange からランダム、足りなければレベルが近い順
             +GetAllyPlayerIdsAsync(excludedPlayerId: PlayerId, level: int, levelRange: int, count: int) Task~IReadOnlyList~PlayerId~~
         }
