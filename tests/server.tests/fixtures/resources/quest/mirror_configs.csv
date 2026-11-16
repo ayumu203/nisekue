@@ -1,0 +1,2 @@
+stage_id,top_player_count,enemies_per_normal_floor,boss_companion_count,max_normal_appearances,max_total_appearances,second_choice_rate,self_buff_rate,self_harm_min_hp_percent,heal_hp_percent,restore_mp_percent,max_revives_per_floor
+14,20,5,3,2,3,0.15,0.5,20,50,30,3

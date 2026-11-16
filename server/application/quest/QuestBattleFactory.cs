@@ -96,7 +96,8 @@ public class QuestBattleFactory(MirrorEnemyActionPolicy? mirrorEnemyActionPolicy
     public async Task<(BattleActionInput[] Actions, Move[] Moves)> CreateTurnInputsAsync(
         QuestRun run,
         IMoveRepository moveRepository,
-        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? enemyDefinitions = null)
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? enemyDefinitions = null,
+        QuestMirrorConfig? mirrorConfig = null)
     {
         ArgumentNullException.ThrowIfNull(run);
         ArgumentNullException.ThrowIfNull(moveRepository);
@@ -147,7 +148,9 @@ public class QuestBattleFactory(MirrorEnemyActionPolicy? mirrorEnemyActionPolicy
             var mirrorSnapshot = run.MirrorEnemyPlan?.FindEnemy(enemy.EnemyDefinitionId);
             if (mirrorSnapshot is not null && enemyDefinitions is not null)
             {
-                var decision = mirrorEnemyActionPolicy.SelectAction(run, enemy, mirrorSnapshot, availableMoves, enemyDefinitions);
+                var config = mirrorConfig
+                    ?? throw new InvalidOperationException("名鑑の祠の敵の行動には調整値（mirror_configs）が必要です。");
+                var decision = mirrorEnemyActionPolicy.SelectAction(run, enemy, mirrorSnapshot, availableMoves, enemyDefinitions, config);
                 if (decision.IsRevive)
                 {
                     enemy.RecordReviveUsed();
