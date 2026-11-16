@@ -146,7 +146,8 @@ public class MirrorEnemyPlanBuilderTests
         var plan = new MirrorEnemyPlanBuilder(MirrorTestConfigs.Default()).Build(candidates, self, CreateFloors(), NoExcludedMoves);
 
         plan.Floors.Where(x => !x.IsBoss).Should().OnlyContain(x => x.Placements.Count >= 1 && x.Placements.Count <= 3);
-        NamesOnFloor(plan, 5).Should().BeEquivalentTo(new[] { "Self", "P1", "P2", "P3" });
+        // 3F・4F は上限を外して1体ずつ置くので、P3・P2 は通常フロアで3回出る。合計の上限（3回）を超えるのでボスフロアには出さない。
+        NamesOnFloor(plan, 5).Should().BeEquivalentTo(new[] { "Self", "P1" });
     }
 
     [Fact]
