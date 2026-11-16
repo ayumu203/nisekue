@@ -430,7 +430,7 @@ classDiagram
             +Task~Player~ ExecuteAsync(playerId: PlayerId, buildInheritedStatus: Func~Status, Status~, ignoreRequirements: bool = false)
         }
 
-        note for IPlayerRebirthExecutor "転生直前(前世ピーク)のStatusを\nplayer_rebirth_status_histories へ\n転生と同一トランザクションで追記する\nignoreRequirements はデバッグ用（Lv・Gold の条件を無視し、Gold も減らさない）"
+        note for IPlayerRebirthExecutor "転生直前(前世ピーク)のStatusを\nplayer_rebirth_status_histories へ\n転生と同一トランザクションで追記する\n追記の前に、新しい転生回数以上の古い履歴を消す\nignoreRequirements はデバッグ用（Lv・Gold の条件を無視し、Gold も減らさない）"
 
         class IJobProfileRepository {
             +JobProfile GetByJob(job: Job)
