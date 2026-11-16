@@ -472,6 +472,7 @@ public class QuestRoomServiceTests
     {
         var owner = CreatePlayer("Owner");
         var ally = CreatePlayer("Ally", level: 8);
+        ally.MoveSet.AddLearnedMove(new MoveId(101));
         var stage = CreateMirrorStage(minPartyMemberCount: 3, maxPartyMemberCount: 3);
         var playerRepository = new FakePlayerRepository(owner, ally);
         var roomRepository = new FakeQuestRoomRepository();
@@ -493,7 +494,7 @@ public class QuestRoomServiceTests
             new FakeQuestNpcTemplateRepository([CreateNpcTemplate()]),
             new FakeQuestEnemyDefinitionRepository(CreateEnemyDefinition()),
             mirrorEnemyPlanService: mirrorEnemyPlanService,
-            mirrorAllyService: new QuestMirrorAllyService(candidateRepository, playerRepository));
+            mirrorAllyService: new QuestMirrorAllyService(candidateRepository));
 
         var room = await service.CreateRoomAsync(owner.Id, stage.Id, QuestRoomMode.Solo);
         var run = await service.StartAsync(room.Id);
@@ -504,6 +505,7 @@ public class QuestRoomServiceTests
         allySnapshot.InitialActionMode.Should().Be(ActionMode.AutoAttackOnly);
         allySnapshot.Job.Should().Be(ally.Job);
         allySnapshot.ImagePath.Should().Be(ally.ImagePath);
+        allySnapshot.MoveSet.GetLearnedMoveIds().Select(x => x.Id).Should().Equal(101);
         allySnapshot.Pets.Should().BeEmpty();
         run.PartySnapshots.Should().ContainSingle(x => x.DisplayName == "Support NPC");
 

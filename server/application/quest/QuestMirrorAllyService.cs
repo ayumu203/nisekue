@@ -4,7 +4,7 @@ using server.domain.quest;
 namespace server.application.quest;
 
 /// <summary>名鑑の祠で、最低出撃人数に足りない分の味方をほかのプレイヤーから選ぶ。</summary>
-public class QuestMirrorAllyService(IMirrorCandidateRepository candidateRepository, IPlayerRepository playerRepository)
+public class QuestMirrorAllyService(IMirrorCandidateRepository candidateRepository)
 {
     /// <summary>味方を選ぶときのレベル差の範囲。</summary>
     public const int AllyLevelRange = 10;
@@ -24,7 +24,8 @@ public class QuestMirrorAllyService(IMirrorCandidateRepository candidateReposito
         }
 
         // 取得した順（範囲内のランダム → レベルが近い順）を保つ。
-        var players = await playerRepository.GetPlayersAsync(ids);
+        // 味方は自動行動で技を使うので、技セット込みで読む。
+        var players = await candidateRepository.GetPlayersWithMovesAsync(ids);
         var playerById = players.ToDictionary(x => x.Id);
         return ids
             .Where(playerById.ContainsKey)
