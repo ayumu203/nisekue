@@ -354,6 +354,7 @@ export const questRunDetailResponseSchema = z.object({
     currentFloorNo: z.number().int().positive(),
     isBossFloor: z.boolean(),
     isEndless: z.boolean().optional(),
+    isMirror: z.boolean().optional(),
     themeNo: z.number().int().positive().nullable().optional(),
     floorsPerTheme: z.number().int().positive().nullable().optional(),
     bossInterval: z.number().int().positive().nullable().optional(),

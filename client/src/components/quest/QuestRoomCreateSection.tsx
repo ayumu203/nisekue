@@ -14,6 +14,7 @@ type QuestRoomCreateSectionProps = {
   selectedStageId: number | ''
   mode: CreateQuestRoomRequest['mode']
   currentPlayerLevel: number | null
+  currentPlayerImagePath?: string | null
   minRequiredLevelInput: string
   selectablePlayers: PlayerSummary[]
   allowedPlayerIds: string[]
@@ -33,6 +34,7 @@ export default function QuestRoomCreateSection({
   selectedStageId,
   mode,
   currentPlayerLevel,
+  currentPlayerImagePath,
   minRequiredLevelInput,
   selectablePlayers,
   allowedPlayerIds,
@@ -92,6 +94,7 @@ export default function QuestRoomCreateSection({
                 <QuestStageModeCard
                   key={stage.stageId}
                   stage={stage}
+                  playerImagePath={currentPlayerImagePath}
                   isSelected={selectedStageId === stage.stageId}
                   selectedMode={mode}
                   onSelect={handleStageModeSelect}

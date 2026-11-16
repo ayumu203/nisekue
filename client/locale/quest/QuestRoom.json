@@ -139,6 +139,11 @@
   "roomStatusLabel": "状態",
   "runStatusLabel": "進行状態",
   "currentFloorLabel": "現在階層",
+  "mirror": {
+    "badge": "チャレンジ",
+    "hiddenRecommendedLevel": "???",
+    "noReward": "このステージでは報酬はありません"
+  },
   "endless": {
     "badge": "エンドレス",
     "floorLabel": "フロア",

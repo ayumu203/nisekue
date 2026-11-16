@@ -242,6 +242,7 @@ public class QuestResponseMapper(
                 currentFloorNo = run.FloorState.CurrentFloorNo,
                 isBossFloor = run.FloorState.IsBossFloor,
                 isEndless = stage?.IsEndless ?? false,
+                isMirror = stage?.IsMirror ?? false,
                 themeNo = stage?.EndlessConfig is { } endlessFloorConfig
                     ? endlessFloorGenerator.ResolveThemeNo(endlessFloorConfig, run.FloorState.CurrentFloorNo)
                     : (int?)null,
