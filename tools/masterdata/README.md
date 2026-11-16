@@ -4,8 +4,8 @@
 
 | スプレッドシート | 用途 | ID の設定先 |
 | --- | --- | --- |
-| `[staging] nisekue masterdata` | ステージング。数値の調整はこちらだけで行う | `dev` Environment の Variable `MASTERDATA_SPREADSHEET_ID` |
-| `[prod] nisekue masterdata` | 本番・PR の CI。直接編集せず、`sync-masterdata-to-prod.yml` で同期する | リポジトリ単位の Variable `MASTERDATA_SPREADSHEET_ID` |
+| `[staging] nisekue masterdata` | ステージング・PR の CI。数値の調整はこちらだけで行う | `dev` Environment の Variable `MASTERDATA_SPREADSHEET_ID` |
+| `[prod] nisekue masterdata` | 本番。直接編集せず、`sync-masterdata-to-prod.yml` で同期する | リポジトリ単位の Variable `MASTERDATA_SPREADSHEET_ID` |
 
 ## 本番・ステージングへの反映
 
@@ -23,7 +23,7 @@
 GitHub Actions の設定:
 
 - Secret `GOOGLE_SERVICE_ACCOUNT_JSON`: サービスアカウントキー（JSON の中身）。スプレッドシートをサービスアカウントのメールアドレスに閲覧者として共有しておく
-- Variable `MASTERDATA_SPREADSHEET_ID`: 本番のスプレッドシートの ID。**リポジトリ単位**で登録する（PR の CI のジョブは環境を指定しないため）
+- Variable `MASTERDATA_SPREADSHEET_ID`: 本番のスプレッドシートの ID。**リポジトリ単位**で登録する（`prod` Environment はこの値を使う）
   - ステージングで別のスプレッドシートを使うときは、ステージングの Environment に同じ名前の Variable を設定して上書きする
 
 VM 上で手動で `docker compose up -d --build` した場合は、前回のデプロイで置いた CSV がそのまま使われます（`.gitignore` 対象なので checkout では消えません）。
@@ -47,7 +47,7 @@ VM 上で手動で `docker compose up -d --build` した場合は、前回のデ
 
 ## PR の CI でのチェック
 
-`ci-backend.yml` の「Master data」ジョブが、PR ごとに次を確認します。
+`ci-backend.yml` の「Master data」ジョブが、PR ごとに次を確認します。マージ先の `main` はステージングに出るので、照合するのは**ステージング用**スプレッドシートです（ジョブは `dev` Environment で動く）。
 
 1. スプレッドシートを書き出し、テスト用 CSV（`tests/server.tests/fixtures/resources`）とファイル構成・ヘッダー（列名と順番）が一致しているか（`src/structure.mjs`）。値の違いは見ません
 2. PR のコードのローダーで、スプレッドシートのデータを読み込めるか（整合性テスト）
@@ -55,6 +55,7 @@ VM 上で手動で `docker compose up -d --build` した場合は、前回のデ
 機能追加でテスト用 CSV の列を変えたりローダーを変えたりしたのに、スプレッドシートを直し忘れているとここで落ちます。スプレッドシートを直してから CI を再実行してください。
 
 - 列を変える PR のためにスプレッドシートを先に直すと、その PR をマージするまでは他の PR でこのチェックが落ちます
+- 本番用スプレッドシートはここでは見ません。タブや列を足したら、本番へデプロイする前に `sync-masterdata-to-prod.yml` で同期してください。同期し忘れても、本番へのデプロイ時の取り込み（整合性テスト）でサーバーに触る前に止まります
 
 ## スプレッドシートの構成
 
