@@ -47,6 +47,34 @@ public class MirrorEnemyActionPolicyTests
     }
 
     [Fact]
+    public void SelectAction_WarriorWithoutBuffWhenSelfBuffRollFails_Attacks()
+    {
+        var strengthBuff = CreateSelfBuffMove(201, BuffStat.Strength);
+        var attack = CreateAttackMove(202, AttackRange.Single, power: 1m);
+        var scenario = new Scenario()
+            .AddOpponent(FrontLeft, hp: 100)
+            .AddEnemy(Job.Warrior, FrontLeft, [strengthBuff, attack]);
+
+        var decision = scenario.Select(NeverSecond, SkipSelfBuff);
+
+        decision.Action.MoveId.Should().Be(202);
+    }
+
+    [Fact]
+    public void SelectAction_MageWithoutBuffWhenSelfBuffRollFails_Attacks()
+    {
+        var intelligenceBuff = CreateSelfBuffMove(303, BuffStat.Intelligence);
+        var single = CreateAttackMove(301, AttackRange.Single, power: 1m);
+        var scenario = new Scenario()
+            .AddOpponent(FrontLeft, hp: 100)
+            .AddEnemy(Job.Mage, BackLeft, [intelligenceBuff, single]);
+
+        var decision = scenario.Select(NeverSecond, SkipSelfBuff);
+
+        decision.Action.MoveId.Should().Be(301);
+    }
+
+    [Fact]
     public void SelectAction_WarriorWithStrengthBuffActiveAndOtherBuffMove_AttacksInsteadOfOtherBuff()
     {
         var strengthBuff = CreateSelfBuffMove(201, BuffStat.Strength);
@@ -393,6 +421,10 @@ public class MirrorEnemyActionPolicyTests
 
     private static double NeverSecond() => 1.0;
 
+    private static double AlwaysSelfBuff() => 0.0;
+
+    private static double SkipSelfBuff() => 0.5;
+
     private static Move CreateAttackMove(int id, AttackRange range, decimal power)
     {
         var moveId = new MoveId(id);
@@ -586,13 +618,13 @@ public class MirrorEnemyActionPolicyTests
             return this;
         }
 
-        public MirrorEnemyActionDecision Select(Func<double> nextDouble)
+        public MirrorEnemyActionDecision Select(Func<double> nextDouble, Func<double>? nextSelfBuffRoll = null)
         {
             var run = BuildRun();
             var plan = run.MirrorEnemyPlan!;
             var (snapshot, _, moves) = enemies[0];
             var actor = run.BattleState.Enemies.First();
-            return new MirrorEnemyActionPolicy(nextDouble).SelectAction(run, actor, snapshot, moves, plan.BuildEnemyDefinitions());
+            return new MirrorEnemyActionPolicy(nextDouble, nextSelfBuffRoll ?? AlwaysSelfBuff).SelectAction(run, actor, snapshot, moves, plan.BuildEnemyDefinitions());
         }
 
         public QuestRun BuildRun()

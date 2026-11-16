@@ -28,6 +28,10 @@ public class MirrorEnemyActionPolicy
     private const int HealHpPercent = 50;
     private const int RestoreMpPercent = 30;
 
+    // 自分へのバフは、使える状況でも半分の確率で見送り、攻撃などほかの行動に進む。
+    // 毎回の初手がバフだと単調になるため。
+    private const double SelfBuffRate = 0.5;
+
     // 自分にかけるバフは職業の攻撃に効く能力だけ（設計 3.4）。
     // 能力を限定しないと、バフ技を2種類以上持つ敵がかけ直しを続けて攻撃しなくなる。
     private static readonly IReadOnlySet<BuffStat> WarriorSelfBuffStats =
@@ -38,10 +42,14 @@ public class MirrorEnemyActionPolicy
 
     private readonly BattleTargetingResolver targetingResolver = new();
     private readonly Func<double> nextDouble;
+    private readonly Func<double> nextSelfBuffRoll;
 
-    public MirrorEnemyActionPolicy(Func<double>? nextDouble = null)
+    /// <param name="nextDouble">第2候補を選ぶかの乱数。</param>
+    /// <param name="nextSelfBuffRoll">自分へのバフを使うかの乱数。<see cref="SelfBuffRate"/> 未満なら使う。</param>
+    public MirrorEnemyActionPolicy(Func<double>? nextDouble = null, Func<double>? nextSelfBuffRoll = null)
     {
         this.nextDouble = nextDouble ?? Random.Shared.NextDouble;
+        this.nextSelfBuffRoll = nextSelfBuffRoll ?? Random.Shared.NextDouble;
     }
 
     public MirrorEnemyActionDecision SelectAction(
@@ -208,6 +216,22 @@ public class MirrorEnemyActionPolicy
             return null;
         }
 
+        var buffDecision = SelectSelfBuff(enemy, usableMoves, context, stats);
+        if (buffDecision is null)
+        {
+            return null;
+        }
+
+        // 使えるバフがあっても半分の確率で見送る。
+        return nextSelfBuffRoll() < SelfBuffRate ? buffDecision : null;
+    }
+
+    private MirrorEnemyActionDecision? SelectSelfBuff(
+        QuestEnemyState enemy,
+        IReadOnlyList<Move> usableMoves,
+        Context context,
+        IReadOnlySet<BuffStat> stats)
+    {
         var buffMoves = usableMoves
             .Where(move => move.TargetType != TargetType.Enemy)
             .Where(move => GetPositiveBuffStats(move).Any(stats.Contains))
