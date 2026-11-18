@@ -54,18 +54,90 @@ public class GlobalChatServiceTests
             .WithMessage("*投稿者のプレイヤーが見つかりません*");
     }
 
+    [Fact]
+    public async Task DeleteMessageAsync_BySender_DeletesAndExcludesFromCount()
+    {
+        var senderId = new PlayerId(Guid.NewGuid());
+        var room = new GlobalChatRoom();
+        room.PostMessage(senderId, "消したい発言");
+        room.PostMessage(senderId, "残す発言");
+        var repository = new FakeGlobalChatRoomRepository(room);
+        var service = new GlobalChatService(repository, new FakePlayerRepository());
+
+        var result = await service.DeleteMessageAsync(chatId: 1, senderId);
+
+        result.Should().Be(ChatMessageDeleteResult.Deleted);
+        var view = await service.GetAsync();
+        view.Messages.Should().ContainSingle().Which.Message.Should().Be("残す発言");
+        view.TotalCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task DeleteMessageAsync_ByOtherPlayer_ReturnsForbidden()
+    {
+        var senderId = new PlayerId(Guid.NewGuid());
+        var otherId = new PlayerId(Guid.NewGuid());
+        var room = new GlobalChatRoom();
+        room.PostMessage(senderId, "他人の発言");
+        var repository = new FakeGlobalChatRoomRepository(room);
+        var service = new GlobalChatService(repository, new FakePlayerRepository());
+
+        var result = await service.DeleteMessageAsync(chatId: 1, otherId);
+
+        result.Should().Be(ChatMessageDeleteResult.Forbidden);
+        var view = await service.GetAsync();
+        view.Messages.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task DeleteMessageAsync_MissingMessage_ReturnsNotFound()
+    {
+        var repository = new FakeGlobalChatRoomRepository(new GlobalChatRoom());
+        var service = new GlobalChatService(repository, new FakePlayerRepository());
+
+        var result = await service.DeleteMessageAsync(chatId: 1, new PlayerId(Guid.NewGuid()));
+
+        result.Should().Be(ChatMessageDeleteResult.NotFound);
+    }
+
     private sealed class FakeGlobalChatRoomRepository(GlobalChatRoom room) : IGlobalChatRoomRepository
     {
         private GlobalChatRoom storedRoom = room;
+        private readonly HashSet<int> deletedChatIds = [];
 
-        public Task<GlobalChatRoom> GetAsync(int page = 1) => Task.FromResult(storedRoom);
+        public Task<GlobalChatRoom> GetAsync(int page = 1)
+        {
+            var visibleMessages = storedRoom.Messages.Where(x => !deletedChatIds.Contains(x.ChatId));
+            return Task.FromResult(new GlobalChatRoom(storedRoom.LastChatId, visibleMessages));
+        }
 
-        public Task<int> GetTotalCountAsync() => Task.FromResult(storedRoom.Messages.Count);
+        public Task<int> GetTotalCountAsync() =>
+            Task.FromResult(storedRoom.Messages.Count(x => !deletedChatIds.Contains(x.ChatId)));
 
         public Task SaveAsync(GlobalChatRoom room)
         {
             storedRoom = room;
             return Task.CompletedTask;
+        }
+
+        public Task<ChatMessage?> FindMessageAsync(int chatId)
+        {
+            var message = deletedChatIds.Contains(chatId)
+                ? null
+                : storedRoom.Messages.SingleOrDefault(x => x.ChatId == chatId);
+            return Task.FromResult(message);
+        }
+
+        public Task<bool> DeleteMessageAsync(int chatId, PlayerId senderId)
+        {
+            var message = storedRoom.Messages.SingleOrDefault(x => x.ChatId == chatId);
+            if (message is null || message.SenderId != senderId || deletedChatIds.Contains(chatId))
+            {
+                return Task.FromResult(false);
+            }
+
+            deletedChatIds.Add(chatId);
+            return Task.FromResult(true);
         }
     }
 
