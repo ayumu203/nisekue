@@ -1,12 +1,17 @@
 # README
 
-## 開発資料
+## なにをつくってるか？
 
-- [こちら](https://docs.google.com/presentation/d/1CH4CUAGjw3HgIID_wlaz-j8JuY-V16gEYpGhag1mcgM/edit?usp=sharing)よりご覧いただけます。
+- エンドレスバトルなどをモダンにオマージュしたポチポチゲー
+- 自身が中学生くらいのときから遊んでいたのだが、周りの友人はUIが古臭くてやりたくないなどと言ってきたことで開発に着手した
 
-## 集計データ
+## 開発発表用資料
 
-- プレイヤーがどのくらい遊んだか等をまとめたデータは、[こちら](https://ayumu203.github.io/nisekue-report/)からご覧いただけます。
+- [こちら](https://docs.google.com/presentation/d/1CH4CUAGjw3HgIID_wlaz-j8JuY-V16gEYpGhag1mcgM/edit?usp=sharing)はサークルや就活系のイベントなどで開発物を発表する際に利用しているスライド。
+
+## ドキュメント
+
+- 以前はIssueとMarkdownでタスク管理をしていましたが、[Notion](https://app.notion.com/p/nisekue-40ac138fea5a802dba61d87712590f7a)へ移行しました。
 
 ## 公開先
 
@@ -14,17 +19,16 @@
 - [本番環境](https://game.arm203.org/)
 - [ステージング環境](https://ayumu203.github.io/nisekue/)
 
-## 作ったもの
+## 集計データ
 
-- 某ゲームのオマージュゲー開発.
-- 冒険やエンドレスバトル等を実装する.
+- データベースから集計したプレイヤーがどのくらい遊んでくれたかなどのデータが[こちら](https://ayumu203.github.io/nisekue-report/)にあります。
 
 ## アーキテクチャ構成
 <img width="600" height="567" alt="image" src="https://github.com/user-attachments/assets/ce3b1499-7e55-4907-a0bb-af48a8ca1828" />
 
 ## 実行方法
 
-- 各実行方法は以下のとおりである.
+- 今だとコードスペースを開いて、`.devcontainer/start.sh`を実行するのが早いと思います。
 
 ### フロントエンド
 
