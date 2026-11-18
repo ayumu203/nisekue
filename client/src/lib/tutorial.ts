@@ -1,5 +1,6 @@
 export type TutorialStep =
   | 'home-player-setting'
+  | 'player-setting-name'
   | 'player-setting-random'
   | 'player-setting-save'
   | 'player-setting-account'
@@ -26,6 +27,7 @@ const REBIRTH_SHOWN_KEY_SUFFIX = 'rebirth-shown'
 const DEFAULT_TUTORIAL_STEP: TutorialStep = 'home-player-setting'
 const TUTORIAL_STEPS: readonly TutorialStep[] = [
   'home-player-setting',
+  'player-setting-name',
   'player-setting-random',
   'player-setting-save',
   'player-setting-account',

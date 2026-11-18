@@ -343,7 +343,10 @@ export default function PlayerSetting() {
                         {locale.title}
                       </Typography>
                     </Stack>
-                    <Stack spacing={0.75}>
+                    <Stack
+                      spacing={0.75}
+                      id={tutorialStep === 'player-setting-name' ? 'tutorial-name-field' : undefined}
+                    >
                       <Typography id="player-name-label" variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
                         {locale.playerNameLabel}
                       </Typography>
@@ -554,6 +557,15 @@ export default function PlayerSetting() {
           )}
         </Stack>
       </Paper>
+      {tutorialStep === 'player-setting-name' && (
+        <SpotlightTutorial
+          targetId="tutorial-name-field"
+          message={tutorialLocale.steps.playerSettingName.message}
+          showDismiss
+          dismissLabel={tutorialLocale.steps.playerSettingName.dismissLabel}
+          onDismiss={() => advanceTutorial('player-setting-random')}
+        />
+      )}
       {tutorialStep === 'player-setting-random' && (
         <SpotlightTutorial targetId="tutorial-random-btn" message={tutorialLocale.steps.playerSettingRandom.message} />
       )}
