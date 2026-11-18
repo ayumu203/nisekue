@@ -57,7 +57,11 @@ export async function getThreadDetail(threadId: string, accessToken: string): Pr
 }
 
 export async function createThread(input: CreateThreadRequest, accessToken: string): Promise<CreateThreadResponse> {
-  const payload = endpoints.thread.create.requestSchema.parse(input)
+  const parsedPayload = endpoints.thread.create.requestSchema.safeParse(input)
+  if (!parsedPayload.success) {
+    throw new Error(parsedPayload.error.issues[0]?.message ?? '入力内容が不正です')
+  }
+  const payload = parsedPayload.data
   const apiBaseUrl = resolveApiBaseUrl()
   const response = await fetchSafely(`${apiBaseUrl}${endpoints.thread.create.path}`, {
     method: endpoints.thread.create.method,
@@ -81,7 +85,11 @@ export async function createThreadReply(
   input: CreateThreadReplyRequest,
   accessToken: string,
 ): Promise<CreateThreadReplyResponse> {
-  const payload = endpoints.thread.reply.requestSchema.parse(input)
+  const parsedPayload = endpoints.thread.reply.requestSchema.safeParse(input)
+  if (!parsedPayload.success) {
+    throw new Error(parsedPayload.error.issues[0]?.message ?? '入力内容が不正です')
+  }
+  const payload = parsedPayload.data
   const apiBaseUrl = resolveApiBaseUrl()
   const response = await fetchSafely(`${apiBaseUrl}${endpoints.thread.reply.path(threadId)}`, {
     method: endpoints.thread.reply.method,

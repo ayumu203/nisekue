@@ -3,6 +3,10 @@
     "homePlayerSetting": {
       "message": "まずはキャラクターを設定しましょう！\n歯車アイコンから設定ページへ移動できます。"
     },
+    "playerSettingName": {
+      "message": "プレイヤー名を好きな名前に変えてみよう！\n入力できたら「次へ」を押してね。",
+      "dismissLabel": "次へ"
+    },
     "playerSettingRandom": {
       "message": "「ランダムで選ぶ」を押してキャラクター画像を変えてみよう！"
     },

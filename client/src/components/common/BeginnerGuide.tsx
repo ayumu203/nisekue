@@ -1,6 +1,5 @@
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import {
   Box,
   Button,
@@ -18,13 +17,13 @@ import {
 import { alpha, type SxProps, type Theme, useTheme } from '@mui/material/styles'
 import { useState } from 'react'
 import {
-  beginnerGuideBadge,
   beginnerGuideCloseLabel,
   beginnerGuideFooterHint,
-  beginnerGuideOpenLabel,
+  beginnerGuideLabel,
   type BeginnerGuideDefinition,
 } from '@/lib/beginnerGuides'
 import { markBeginnerGuideSeen } from '@/lib/beginnerGuideStorage'
+import BeginnerMarkIcon from './BeginnerMarkIcon'
 
 type BeginnerGuideProps = {
   userId?: string | null
@@ -44,7 +43,6 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
       triggerBorderColor: '#eef8ef',
       triggerTextColor: '#ffffff',
       triggerBadgeBackgroundColor: 'rgba(255,255,255,0.18)',
-      triggerBadgeTextColor: 'rgba(255,255,255,0.8)',
       dialogBackgroundColor: '#f7f7f4',
       dialogBorderColor: '#d7d9d2',
       headerBackgroundColor: '#365b3a',
@@ -71,7 +69,6 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
       triggerBorderColor: '#b9cdee',
       triggerTextColor: '#f7fbff',
       triggerBadgeBackgroundColor: 'rgba(255,255,255,0.14)',
-      triggerBadgeTextColor: 'rgba(226,239,255,0.82)',
       dialogBackgroundColor: '#f7f7f4',
       dialogBorderColor: '#d7d9d2',
       headerBackgroundColor: '#1f3554',
@@ -98,7 +95,6 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
       triggerBorderColor: '#d3ab93',
       triggerTextColor: '#fff6ec',
       triggerBadgeBackgroundColor: 'rgba(255,255,255,0.14)',
-      triggerBadgeTextColor: 'rgba(255,231,216,0.84)',
       dialogBackgroundColor: '#f7f7f4',
       dialogBorderColor: '#d7d9d2',
       headerBackgroundColor: '#472824',
@@ -125,7 +121,6 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
       triggerBorderColor: '#e4c48c',
       triggerTextColor: '#fff9ef',
       triggerBadgeBackgroundColor: 'rgba(255,255,255,0.14)',
-      triggerBadgeTextColor: 'rgba(255,236,204,0.84)',
       dialogBackgroundColor: '#f7f7f4',
       dialogBorderColor: '#d7d9d2',
       headerBackgroundColor: '#6a4833',
@@ -152,7 +147,6 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
       triggerBorderColor: '#b8dbde',
       triggerTextColor: '#f3fcfc',
       triggerBadgeBackgroundColor: 'rgba(255,255,255,0.14)',
-      triggerBadgeTextColor: 'rgba(224,248,248,0.82)',
       dialogBackgroundColor: '#f7f7f4',
       dialogBorderColor: '#d7d9d2',
       headerBackgroundColor: '#20464b',
@@ -179,7 +173,6 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
     triggerBorderColor: '#70613b',
     triggerTextColor: '#f5f7fb',
     triggerBadgeBackgroundColor: 'rgba(141,122,70,0.18)',
-    triggerBadgeTextColor: 'rgba(232,221,189,0.78)',
     dialogBackgroundColor: '#f7f7f4',
     dialogBorderColor: '#d7d9d2',
     headerBackgroundColor: '#131a26',
@@ -244,24 +237,11 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
               backgroundColor: guidePalette.triggerBadgeBackgroundColor,
             }}
           >
-            <HelpOutlineIcon fontSize="small" />
+            <BeginnerMarkIcon sx={{ fontSize: 20 }} />
           </Box>
-          <Stack spacing={0.15} alignItems="flex-start">
-            <Typography
-              variant="caption"
-              sx={{
-                lineHeight: 1,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: guidePalette.triggerBadgeTextColor,
-              }}
-            >
-              {beginnerGuideBadge}
-            </Typography>
-            <Typography component="span" fontSize="0.95rem" fontWeight={800} lineHeight={1.1}>
-              {beginnerGuideOpenLabel}
-            </Typography>
-          </Stack>
+          <Typography component="span" fontSize="0.95rem" fontWeight={800} lineHeight={1.1}>
+            {beginnerGuideLabel}
+          </Typography>
         </Stack>
       </Button>
 
@@ -297,7 +277,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                 <Stack spacing={1.25} sx={{ minWidth: 0 }}>
                   <Chip
                     icon={<AutoStoriesRoundedIcon />}
-                    label={beginnerGuideBadge}
+                    label={beginnerGuideLabel}
                     sx={{
                       alignSelf: 'flex-start',
                       color: guidePalette.headerTextColor,

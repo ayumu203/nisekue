@@ -273,7 +273,7 @@ function Home() {
                   gearIconId={tutorialStep === 'home-player-setting' ? 'tutorial-gear-btn' : undefined}
                   onGearClick={() => {
                     if (userId && tutorialStep === 'home-player-setting') {
-                      setTutorialStep(userId, 'player-setting-random')
+                      setTutorialStep(userId, 'player-setting-name')
                     }
                   }}
                   topAction={

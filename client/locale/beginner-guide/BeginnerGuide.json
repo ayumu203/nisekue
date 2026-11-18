@@ -1,8 +1,7 @@
 {
-  "badge": "冒険ガイド",
-  "openGuide": "冒険のヒント",
+  "label": "プチガイド",
   "closeGuide": "閉じる",
-  "footerHint": "この画面は左上のガイドを開くことでいつでも確認できます。",
+  "footerHint": "この画面は左上のプチガイドからいつでも確認できます。",
   "pages": {
     "home": {
       "pageKey": "home",
