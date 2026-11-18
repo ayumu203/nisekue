@@ -1,5 +1,6 @@
 import AutoStoriesRoundedIcon from '@mui/icons-material/AutoStoriesRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import {
   Box,
   Button,
@@ -23,7 +24,6 @@ import {
   type BeginnerGuideDefinition,
 } from '@/lib/beginnerGuides'
 import { markBeginnerGuideSeen } from '@/lib/beginnerGuideStorage'
-import BeginnerMarkIcon from './BeginnerMarkIcon'
 
 type BeginnerGuideProps = {
   userId?: string | null
@@ -237,7 +237,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
               backgroundColor: guidePalette.triggerBadgeBackgroundColor,
             }}
           >
-            <BeginnerMarkIcon sx={{ fontSize: 20 }} />
+            <HelpOutlineIcon fontSize="small" />
           </Box>
           <Typography component="span" fontSize="0.95rem" fontWeight={800} lineHeight={1.1}>
             {beginnerGuideLabel}
