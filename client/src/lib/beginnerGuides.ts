@@ -12,8 +12,7 @@ export type BeginnerGuideDefinition = {
   sections: BeginnerGuideSection[]
 }
 
-export const beginnerGuideBadge = locale.badge
-export const beginnerGuideOpenLabel = locale.openGuide
+export const beginnerGuideLabel = locale.label
 export const beginnerGuideCloseLabel = locale.closeGuide
 export const beginnerGuideFooterHint = locale.footerHint
 
