@@ -40,7 +40,7 @@
   "roadmapUnlockDialogJob": "ジョブ: ",
   "roadmapUnlockDialogCost": "消費 Gold",
   "roadmapUnlockDialogCancel": "キャンセル",
-  "roadmapUnlockDialogConfirm": "解放する",
+  "roadmapUnlockDialogConfirm": "解放",
   "roadmapItemStage": "出現ステージ",
   "roadmapItemRequiredJobs": "必要なマスタージョブ",
   "roadmapUnlockSuccess": "{{jobName}} のロードマップを解放しました。",

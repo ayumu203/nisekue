@@ -430,7 +430,7 @@ export default function Items() {
                   disabled={busyKey !== null || selectedSourceId === null || synthesizeSources.length === 0}
                   variant="contained"
                 >
-                  合成する
+                  合成
                 </Button>
               </DialogActions>
             </Dialog>

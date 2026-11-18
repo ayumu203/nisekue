@@ -97,7 +97,7 @@
     "bannerBody": "「終了」を選ぶと、ここまでの経験値とゴールドを確定し、クエストを終えられます。",
     "confirmTitle": "ここで終了しますか？",
     "confirmBody": "到達 {{floor}}階。獲得した経験値とゴールドを確定しクエストを終えますか？",
-    "confirmButton": "終了する",
+    "confirmButton": "終了",
     "cancelButton": "やめる"
   },
   "rows": {
