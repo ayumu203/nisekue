@@ -338,15 +338,6 @@ function Home() {
                 {locale.items}
               </Button>
               <Button
-                component={Link}
-                to="/pets"
-                variant="contained"
-                startIcon={<PetsIcon />}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-              >
-                {locale.pets}
-              </Button>
-              <Button
                 variant="contained"
                 startIcon={<TrainingGroupIcon />}
                 onClick={() => setIsTrainingGroupOpenByUser((prev) => !prev)}
@@ -395,6 +386,15 @@ function Home() {
                     sx={{ ...menuButtonSx, ...softGreenButtonSx }}
                   >
                     {locale.rebirth}
+                  </Button>
+                  <Button
+                    component={Link}
+                    to="/pets"
+                    variant="contained"
+                    startIcon={<PetsIcon />}
+                    sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                  >
+                    {locale.pets}
                   </Button>
                 </Stack>
               </Collapse>
