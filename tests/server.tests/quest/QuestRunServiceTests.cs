@@ -2130,6 +2130,162 @@ public class QuestRunServiceTests
             new Status(maxHp: 100, maxMp: 10, strength: 30, defense: 5, intelligence: 1, luck: 1, speed: 99));
     }
 
+    [Fact]
+    public async Task SubmitCommandAsync_WhenMirrorFloorIsCleared_StartsNextFloorFromPlan()
+    {
+        var run = CreateMirrorRun();
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var service = CreateRunService(repository, roomRepository, CreateMirrorStage(run.StageId), []);
+        var target = run.BattleState.Enemies.Single().Position;
+
+        var result = await service.SubmitCommandAsync(
+            run.Id,
+            run.PartySnapshots[0].ParticipantId,
+            new QuestSubmittedCommand(
+                run.PartySnapshots[0].ParticipantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.NormalAttack,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: target));
+
+        result.ResolvedInThisRequest.Should().BeTrue();
+        var stored = repository.StoredRun!;
+        stored.Status.Should().Be(QuestRunStatus.InProgress);
+        stored.FloorState.CurrentFloorNo.Should().Be(2);
+        stored.FloorState.IsBossFloor.Should().BeTrue();
+        var nextEnemy = stored.BattleState.Enemies.Should().ContainSingle().Subject;
+        nextEnemy.EnemyDefinitionId.Should().Be(new QuestEnemyDefinitionId(1_000_002));
+        nextEnemy.CurrentHp.Should().Be(77);
+        stored.Rewards.Exp.Should().Be(0);
+        stored.Rewards.Gold.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task SubmitCommandAsync_CaptureOnMirrorStage_ThrowsInvalidOperationException()
+    {
+        var run = CreateMirrorRun();
+        var participantId = run.PartySnapshots[0].ParticipantId;
+        var repository = new FakeQuestRunRepository(run);
+        var roomRepository = new FakeQuestRoomRepository(CreateRoom(run));
+        var service = CreateRunService(repository, roomRepository, CreateMirrorStage(run.StageId), []);
+
+        var act = () => service.SubmitCommandAsync(
+            run.Id,
+            participantId,
+            new QuestSubmittedCommand(
+                participantId,
+                run.TurnState.CurrentTurnNo,
+                ActionKind.Capture,
+                DateTimeOffset.UtcNow,
+                selectedTargetPosition: run.BattleState.Enemies.Single().Position));
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*捕獲できません*");
+        run.TurnState.PendingCommands.Should().BeEmpty();
+    }
+
+    private static QuestRun CreateMirrorRun()
+    {
+        var participantId = QuestParticipantId.New();
+        var snapshot = new QuestRunPartyMemberSnapshot(
+            participantId,
+            ParticipantType.Player,
+            "Owner",
+            "/images/player.png",
+            Job.Warrior,
+            new Status(40, 10, 50, 5, 1, 1, 50),
+            weaponEquipmentId: null,
+            armorEquipmentId: null,
+            new MoveSet(),
+            new BattlePosition(BattleRow.Front, BattleColumn.Left),
+            ActionMode.Manual);
+
+        var firstEnemyId = new QuestEnemyDefinitionId(1_000_001);
+        var bossEnemyId = new QuestEnemyDefinitionId(1_000_002);
+        var firstPlacement = new QuestEnemyPlacement(1, firstEnemyId, new BattlePosition(BattleRow.Front, BattleColumn.Right));
+        var plan = new MirrorEnemyPlan(
+            [
+                CreateMirrorEnemySnapshot(firstEnemyId, "Rival", maxHp: 10),
+                CreateMirrorEnemySnapshot(bossEnemyId, "Self", maxHp: 77)
+            ],
+            [
+                new MirrorFloorPlan(1, isBoss: false, [firstPlacement]),
+                new MirrorFloorPlan(
+                    2,
+                    isBoss: true,
+                    [new QuestEnemyPlacement(1, bossEnemyId, new BattlePosition(BattleRow.Front, BattleColumn.Left))])
+            ]);
+
+        return new QuestRun(
+            QuestRunId.New(),
+            QuestRoomId.New(),
+            new QuestStageId(14),
+            [snapshot],
+            new QuestFloorState(1, false, [firstPlacement]),
+            new QuestBattleState(
+                [
+                    new QuestRunPartyMemberState(
+                        participantId,
+                        currentHp: 40,
+                        currentMp: 10,
+                        isDead: false,
+                        canActFromTurn: 1,
+                        actionMode: ActionMode.Manual)
+                ],
+                [
+                    new QuestEnemyState(
+                        QuestEnemyInstanceId.New(),
+                        firstEnemyId,
+                        firstPlacement.Position,
+                        currentHp: 1,
+                        currentMp: 0,
+                        isDead: false)
+                ]),
+            new QuestTurnState(1, DateTimeOffset.UtcNow.AddSeconds(30)),
+            new QuestTrapCollection(),
+            new QuestRewardAccumulator(),
+            lastTurnResults: null,
+            chatMessages: [],
+            startedAt: DateTimeOffset.UtcNow,
+            mirrorEnemyPlan: plan);
+    }
+
+    private static MirrorEnemySnapshot CreateMirrorEnemySnapshot(QuestEnemyDefinitionId definitionId, string name, int maxHp)
+    {
+        return new MirrorEnemySnapshot(
+            definitionId,
+            new PlayerId(Guid.NewGuid()),
+            name,
+            "image/character/ch001_bmnpc.png",
+            Job.Warrior,
+            100,
+            0,
+            new Status(maxHp, 0, 1, 1, 1, 1, 1),
+            []);
+    }
+
+    private static QuestStageDefinition CreateMirrorStage(QuestStageId stageId)
+    {
+        return new QuestStageDefinition(
+            stageId,
+            "meikan-shrine",
+            "名鑑の祠",
+            "image/quest/mirror-shrine-battlefield.svg",
+            100,
+            minimumEntryLevel: 100,
+            1,
+            4,
+            [
+                new QuestFloorDefinition(1, FloorType.Normal, [], new QuestFloorRewardRule(0, 0)),
+                new QuestFloorDefinition(2, FloorType.Boss, [], new QuestFloorRewardRule(0, 0))
+            ],
+            equipmentRewards: [],
+            itemRewards: [],
+            isActive: true,
+            progressionType: ProgressionType.Mirror,
+            mirrorConfig: MirrorTestConfigs.Default());
+    }
+
     private static QuestRunService CreateRunService(
         FakeQuestRunRepository runRepository,
         FakeQuestRoomRepository roomRepository,

@@ -644,8 +644,12 @@ export default function Quest() {
         : null,
     [currentRun, selfParticipantId],
   )
+  // 名鑑の祠（プレイヤーが敵）では捕獲できない。
   const canCapture =
-    petsResponse != null && petsResponse.pets != null && petsResponse.pets.length < petsResponse.maxPetCount
+    currentRun?.floor.isMirror !== true &&
+    petsResponse != null &&
+    petsResponse.pets != null &&
+    petsResponse.pets.length < petsResponse.maxPetCount
   // ペット呼出はソロ限定・1クエスト1回。プレイヤーが1人だけのランをソロとみなす（マルチは2人以上で開始する）。
   const isSoloRun =
     currentRun != null && currentRun.partyMembers.filter((member) => member.type === 'Player').length === 1
@@ -1207,6 +1211,7 @@ export default function Quest() {
                           selectedStageId={selectedStageId}
                           mode={mode}
                           currentPlayerLevel={player?.level ?? null}
+                          currentPlayerImagePath={player?.imagePath ?? null}
                           minRequiredLevelInput={minRequiredLevelInput}
                           selectablePlayers={selectablePlayers}
                           allowedPlayerIds={allowedPlayerIds}

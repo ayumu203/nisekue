@@ -1,5 +1,7 @@
 using FluentAssertions;
 using server.domain.player;
+using server.domain.quest;
+using server.domain.quest.enums;
 using server.infrastructure.move;
 using server.infrastructure.player;
 using server.infrastructure.quest;
@@ -32,11 +34,12 @@ public class MasterDataIntegrityTests
             ["job_roadmap_ranks.csv"] = () => new CsvJobRoadmapRankRepository(),
             ["status_rank_thresholds.csv"] = () => new CsvStatusRankThresholdRepository(),
             ["endless_configs.csv"] = () => new CsvQuestEndlessConfigRepository(),
+            ["mirror_configs.csv"] = () => new CsvQuestMirrorConfigRepository(),
             ["endless_enemy_templates.csv"] = () => new CsvQuestEndlessEnemyTemplateRepository(),
             ["enemies.csv / enemy_moves.csv"] = () => new CsvQuestEnemyDefinitionRepository(),
             ["npc_templates.csv / npc_moves.csv / stage_npc_templates.csv"] = () => new CsvQuestNpcTemplateRepository(),
             ["stages.csv / stage_floors.csv / floor_enemy_spawns.csv / stage_*_rewards.csv"] =
-                () => new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository()),
+                () => new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository(), new CsvQuestMirrorConfigRepository()),
             ["training_enemies.csv"] = () => new CsvTrainingEnemyRepository(),
             ["treasure_maps.csv"] = () => new CsvTreasureMapRepository(),
             ["reward_pools.csv / reward_entries.csv"] = () => new CsvTreasureMapRewardPoolRepository(),
@@ -61,7 +64,7 @@ public class MasterDataIntegrityTests
     [Fact]
     public async Task StageDefinitions_WithCurrentResources_ReferenceExistingEnemiesItemsAndEquipments()
     {
-        var stages = await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository()).GetAllAsync();
+        var stages = await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository(), new CsvQuestMirrorConfigRepository()).GetAllAsync();
         var enemyIds = (await new CsvQuestEnemyDefinitionRepository().GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
         var itemIds = (await new CsvItemRepository().GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
         var equipmentIds = (await new CsvEquipmentRepository().GetAllAsync()).Select(x => x.Id.Value).ToHashSet();
@@ -90,6 +93,39 @@ public class MasterDataIntegrityTests
         missingEnemies.Should().BeEmpty("floor_enemy_spawns.csv の敵は enemies.csv に存在すること");
         missingItems.Should().BeEmpty("stage_item_rewards.csv のアイテムは item_master.csv に存在すること");
         missingEquipments.Should().BeEmpty("stage_equipment_rewards.csv の装備は equipment_master.csv に存在すること");
+    }
+
+    [Fact]
+    public async Task MirrorStages_WithCurrentResources_HaveFloorsWithoutEnemySpawns()
+    {
+        var mirrorStages = (await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository(), new CsvQuestMirrorConfigRepository()).GetAllAsync())
+            .Where(stage => stage.IsMirror)
+            .ToList();
+
+        var invalidStages = mirrorStages
+            .Where(stage =>
+                stage.Floors.Count == 0 ||
+                stage.Floors.Any(floor => floor.Placements.Count > 0) ||
+                stage.Floors.All(floor => floor.FloorType != FloorType.Normal))
+            .Select(stage => $"stages.csv: id={stage.Id.Value}")
+            .ToList();
+
+        invalidStages.Should().BeEmpty("名鑑の祠（Mirror）は stage_floors.csv にフロアを持ち、floor_enemy_spawns.csv の敵は持たないこと");
+    }
+
+    [Fact]
+    public async Task EnemyDefinitionIds_WithCurrentResources_DoNotOverlapMirrorEnemyIds()
+    {
+        var overlapping = (await new CsvQuestEnemyDefinitionRepository().GetAllAsync())
+            .Where(enemy => enemy.Id.Value >= MirrorEnemyPlanBuilder.FirstDefinitionId)
+            .Select(enemy => $"enemies.csv: id={enemy.Id.Value}")
+            .ToList();
+        var overlappingEndless = (await new CsvQuestEndlessEnemyTemplateRepository().GetAllAsync())
+            .Where(template => template.Id.Value >= MirrorEnemyPlanBuilder.FirstDefinitionId)
+            .Select(template => $"endless_enemy_templates.csv: template_id={template.Id.Value}")
+            .ToList();
+
+        overlapping.Concat(overlappingEndless).Should().BeEmpty("名鑑の祠の仮の敵ID（1,000,001〜）と重ならないこと");
     }
 
     [Fact]
@@ -154,7 +190,7 @@ public class MasterDataIntegrityTests
             .Select(item => item.MapUnlockFlag!.Value)
             .ToHashSet();
 
-        var unreachableStages = (await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository()).GetAllAsync())
+        var unreachableStages = (await new CsvQuestStageRepository(new CsvQuestEndlessConfigRepository(), new CsvQuestMirrorConfigRepository()).GetAllAsync())
             .Where(stage => stage.RequiredMapUnlockFlag is not null && !grantedFlags.Contains(stage.RequiredMapUnlockFlag.Value))
             .Select(stage => $"stages.csv: id={stage.Id.Value}, required_map_unlock_flag={stage.RequiredMapUnlockFlag}")
             .ToList();

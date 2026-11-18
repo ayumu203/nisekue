@@ -17,7 +17,8 @@ public class QuestRoomService(
     IPlayerPetRepository playerPetRepository,
     QuestNpcAssignmentService questNpcAssignmentService,
     QuestSnapshotFactory questSnapshotFactory,
-    QuestRunFactory questRunFactory)
+    QuestRunFactory questRunFactory,
+    QuestMirrorEnemyPlanService? questMirrorEnemyPlanService = null)
 {
     private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
 
@@ -36,6 +37,11 @@ public class QuestRoomService(
         if (!stage.IsActive)
         {
             throw new InvalidOperationException("無効化されたステージではルームを作成できません。");
+        }
+
+        if (stage.IsMirror && mode != QuestRoomMode.Solo)
+        {
+            throw new InvalidOperationException("このステージはソロでのみ挑戦できます。");
         }
 
         if (!QuestStageEntryPolicy.MeetsMinimumLevel(player, stage))
@@ -82,6 +88,11 @@ public class QuestRoomService(
 
         var stage = await questStageRepository.GetAsync(room.StageId)
             ?? throw new KeyNotFoundException("ステージが見つかりません。");
+        if (stage.IsMirror)
+        {
+            throw new InvalidOperationException("このステージはソロでのみ挑戦できます。");
+        }
+
         if (!QuestStageEntryPolicy.MeetsMinimumLevel(player, stage))
         {
             throw new InvalidOperationException(
@@ -279,11 +290,24 @@ public class QuestRoomService(
 
         var enemyDefinitions = (await questEnemyDefinitionRepository.GetAllAsync()).ToDictionary(x => x.Id);
         var snapshots = questSnapshotFactory.Create(activeParticipants, players, snapshotNpcs, playerEquipments, equipments, petsByPlayerId, enemyDefinitions);
-        var run = await questRunFactory.Create(room, stage, snapshots, DateTimeOffset.UtcNow);
+        var mirrorEnemyPlan = stage.IsMirror
+            ? await CreateMirrorEnemyPlanAsync(stage, room.OwnerId)
+            : null;
+        var run = await questRunFactory.Create(room, stage, snapshots, DateTimeOffset.UtcNow, mirrorEnemyPlan);
 
         await questRoomRepository.SaveAsync(room);
         await questRunRepository.SaveAsync(run);
         return run;
+    }
+
+    private Task<MirrorEnemyPlan> CreateMirrorEnemyPlanAsync(QuestStageDefinition stage, PlayerId ownerId)
+    {
+        if (questMirrorEnemyPlanService is null)
+        {
+            throw new InvalidOperationException("名鑑の祠の敵を組み立てるサービスが設定されていません。");
+        }
+
+        return questMirrorEnemyPlanService.CreateAsync(stage, ownerId);
     }
 
     private static void EnsureQuestCooldownExpired(Player player, DateTimeOffset now)

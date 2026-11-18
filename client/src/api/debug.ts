@@ -22,7 +22,10 @@ import type {
   GetDebugStatusResponse,
 } from '@/schema/debug'
 
-/** デバッグ用 API の共通処理。body を渡すと JSON で送る。 */
+/**
+ * デバッグ用 API の共通処理。body を渡すと JSON で送る。
+ * デバッグ画面は一般ユーザーには見えないので、失敗時は「操作名（HTTP ステータス）」とサーバーのメッセージを並べて、原因が分かるようにする。
+ */
 export async function callDebugApi<TSchema extends z.ZodType>(
   endpoint: { path: string; method: string; responseSchema: TSchema },
   accessToken: string,
@@ -31,22 +34,37 @@ export async function callDebugApi<TSchema extends z.ZodType>(
 ): Promise<z.infer<TSchema>> {
   const apiBaseUrl = resolveApiBaseUrl()
 
-  const response = await fetchSafely(`${apiBaseUrl}${endpoint.path}`, {
-    method: endpoint.method,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-    },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  })
+  let response: Response
+  try {
+    response = await fetchSafely(`${apiBaseUrl}${endpoint.path}`, {
+      method: endpoint.method,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    })
+  } catch (error) {
+    throw new Error(joinDebugErrorMessage(fallbackMessage, error instanceof Error ? error.message : String(error)))
+  }
 
   const json: unknown = await response.json().catch(() => null)
 
   if (!response.ok) {
-    throw new Error(extractErrorMessage(json, fallbackMessage))
+    const heading = `${fallbackMessage}（HTTP ${response.status}）`
+    throw new Error(joinDebugErrorMessage(heading, extractErrorMessage(json, '')))
   }
 
-  return endpoint.responseSchema.parse(json)
+  const parsed = endpoint.responseSchema.safeParse(json)
+  if (!parsed.success) {
+    throw new Error(joinDebugErrorMessage(`${fallbackMessage}（レスポンスの形式が不正です）`, parsed.error.message))
+  }
+
+  return parsed.data
+}
+
+function joinDebugErrorMessage(heading: string, detail: string): string {
+  return detail ? `${heading}\n${detail}` : heading
 }
 
 export async function getDebugStatus(accessToken: string): Promise<GetDebugStatusResponse> {

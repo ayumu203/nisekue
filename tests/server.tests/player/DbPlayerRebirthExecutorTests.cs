@@ -89,6 +89,59 @@ public class DbPlayerRebirthExecutorTests
         histories[1].MaxHp.Should().Be(100);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_WhenStaleHistoriesRemain_ReplacesThemAndRebirths()
+    {
+        var databaseName = $"rebirth-executor-{Guid.NewGuid()}";
+        var playerId = Guid.NewGuid();
+
+        await SeedPlayersAsync(
+            databaseName,
+            CreatePlayerEntity(playerId, "Hero", level: 100, gold: 150000, maxHp: 120, maxMp: 80, strength: 30, defense: 28, intelligence: 42, luck: 18, speed: 25));
+
+        // デバッグのテンプレート取り込みなどで転生回数だけ 0 に戻り、履歴（転生回数 1・2）が残った状態
+        await using (var prepContext = CreateDbContext(databaseName))
+        {
+            prepContext.PlayerRebirthStatusHistories.AddRange(
+                CreateHistoryEntity(playerId, rebirthCount: 1, maxHp: 999),
+                CreateHistoryEntity(playerId, rebirthCount: 2, maxHp: 888));
+            await prepContext.SaveChangesAsync();
+        }
+
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var executor = new DbPlayerRebirthExecutor(
+            new TestDbContextFactory(databaseName),
+            new PlayerForUpdateLockService(),
+            cache);
+
+        var result = await executor.ExecuteAsync(new PlayerId(playerId), _ => new Status(maxHp: 35, maxMp: 24, strength: 9, defense: 8, intelligence: 12, luck: 5, speed: 7));
+
+        result.RebirthCount.Should().Be(1);
+
+        await using var verifyContext = CreateDbContext(databaseName);
+        var history = verifyContext.PlayerRebirthStatusHistories.Where(x => x.PlayerId == playerId).Should().ContainSingle().Subject;
+        history.RebirthCount.Should().Be(1);
+        history.MaxHp.Should().Be(120);
+    }
+
+    private static PlayerRebirthStatusHistoryEntity CreateHistoryEntity(Guid playerId, int rebirthCount, int maxHp)
+    {
+        return new PlayerRebirthStatusHistoryEntity
+        {
+            Id = Guid.NewGuid(),
+            PlayerId = playerId,
+            RebirthCount = rebirthCount,
+            MaxHp = maxHp,
+            MaxMp = 1,
+            Strength = 1,
+            Defense = 1,
+            Intelligence = 1,
+            Luck = 1,
+            Speed = 1,
+            RebirthedAt = DateTimeOffset.UtcNow
+        };
+    }
+
     private static async Task SeedPlayersAsync(string databaseName, params PlayerEntity[] players)
     {
         await using var dbContext = CreateDbContext(databaseName);

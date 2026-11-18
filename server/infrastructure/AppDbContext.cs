@@ -560,6 +560,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRun.Property(x => x.ChatMessagesJson).HasColumnName("chat_messages_json").HasColumnType("jsonb").IsRequired();
         questRun.Property(x => x.PetSummonUsed).HasColumnName("pet_summon_used").IsRequired();
         questRun.Property(x => x.PetDeploymentJson).HasColumnName("pet_deployment_json").HasColumnType("jsonb");
+        questRun.Property(x => x.MirrorEnemyPlanJson).HasColumnName("mirror_enemy_plan_json").HasColumnType("jsonb");
         questRun.Property(x => x.StartedAt).HasColumnName("started_at").IsRequired();
         questRun.Property(x => x.EndedAt).HasColumnName("ended_at");
         questRun.Property(x => x.Version).HasColumnName("version").IsRequired().IsConcurrencyToken();
@@ -626,6 +627,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         questRunEnemy.Property(x => x.CurrentMp).HasColumnName("current_mp").IsRequired();
         questRunEnemy.Property(x => x.IsDead).HasColumnName("is_dead").IsRequired();
         questRunEnemy.Property(x => x.IsCaptured).HasColumnName("is_captured").HasDefaultValue(false).IsRequired();
+        questRunEnemy.Property(x => x.ReviveUsedCount).HasColumnName("revive_used_count").HasDefaultValue(0).IsRequired();
         questRunEnemy.Property(x => x.ActiveEffectsJson).HasColumnName("active_effects_json").HasColumnType("jsonb").IsRequired();
         questRunEnemy.Property(x => x.DerivedParametersJson).HasColumnName("derived_parameters_json").HasColumnType("jsonb").IsRequired();
 

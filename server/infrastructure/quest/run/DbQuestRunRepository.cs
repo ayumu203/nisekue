@@ -10,7 +10,10 @@ using server.domain.quest.enums;
 
 namespace server.infrastructure.quest.run;
 
-public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFactory) : IQuestRunRepository
+// stageRepository は、DB に持っていない「今のフロアがボスフロアか」をステージ定義から復元するために使う。
+public class DbQuestRunRepository(
+    IDbContextFactory<AppDbContext> dbContextFactory,
+    IQuestStageRepository? stageRepository = null) : IQuestRunRepository
 {
     private const int SaveChatRetryCount = 3;
 
@@ -162,15 +165,21 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             .Where(x => runIds.Contains(x.RunId))
             .ToDictionaryAsync(x => x.RunId, x => x);
 
-        return runEntities.Select(entity => MapToDomain(
+        var runs = new List<QuestRun>(runEntities.Count);
+        foreach (var entity in runEntities)
+        {
+            runs.Add(MapToDomain(
                 entity,
                 snapshotsByRunId.GetValueOrDefault(entity.Id) ?? [],
                 partyMemberByRunId.GetValueOrDefault(entity.Id) ?? [],
                 enemiesByRunId.GetValueOrDefault(entity.Id) ?? [],
                 turnCommandsByRunId.GetValueOrDefault(entity.Id) ?? [],
                 trapsByRunId.GetValueOrDefault(entity.Id) ?? [],
-                rewardsByRunId.GetValueOrDefault(entity.Id)))
-            .ToArray();
+                rewardsByRunId.GetValueOrDefault(entity.Id),
+                await ResolveIsBossFloorAsync(entity)));
+        }
+
+        return runs;
     }
 
     public async Task SaveAsync(QuestRun run)
@@ -528,6 +537,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         ChatMessagesJson = QuestJsonSerializer.SerializeChatMessages(run.ChatMessages),
         PetSummonUsed = run.PetSummonUsed,
         PetDeploymentJson = QuestJsonSerializer.SerializePetDeployment(run.PetDeployment),
+        MirrorEnemyPlanJson = QuestJsonSerializer.SerializeMirrorEnemyPlan(run.MirrorEnemyPlan),
         StartedAt = run.StartedAt,
         EndedAt = run.EndedAt,
         Version = run.Version,
@@ -583,6 +593,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             CurrentMp = enemy.CurrentMp,
             IsDead = enemy.IsDead,
             IsCaptured = enemy.IsCaptured,
+            ReviveUsedCount = enemy.ReviveUsedCount,
             ActiveEffectsJson = effectsJson,
             DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder()
         };
@@ -599,6 +610,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         entity.CurrentMp = enemy.CurrentMp;
         entity.IsDead = enemy.IsDead;
         entity.IsCaptured = enemy.IsCaptured;
+        entity.ReviveUsedCount = enemy.ReviveUsedCount;
         entity.ActiveEffectsJson = effectsJson;
         entity.DerivedParametersJson = QuestJsonSerializer.SerializeDerivedParametersPlaceholder();
     }
@@ -626,7 +638,18 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         IsTriggered = trap.IsTriggered,
     };
 
-    private static async Task<QuestRun> LoadAsync(AppDbContext dbContext, QuestRunEntity runEntity)
+    private async Task<bool> ResolveIsBossFloorAsync(QuestRunEntity runEntity)
+    {
+        if (stageRepository is null)
+        {
+            return false;
+        }
+
+        var stage = await stageRepository.GetAsync(new QuestStageId(runEntity.StageId));
+        return stage?.IsBossFloor(runEntity.CurrentFloorNo) ?? false;
+    }
+
+    private async Task<QuestRun> LoadAsync(AppDbContext dbContext, QuestRunEntity runEntity)
     {
         var runId = runEntity.Id;
         var partyMemberEntities = await dbContext.QuestRunPartyMembers
@@ -660,7 +683,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             enemyEntities,
             turnCommandEntities,
             trapEntities,
-            rewardEntity);
+            rewardEntity,
+            await ResolveIsBossFloorAsync(runEntity));
     }
 
     private static QuestRun MapToDomain(
@@ -670,7 +694,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         IReadOnlyCollection<QuestRunEnemyEntity> enemyEntities,
         IReadOnlyCollection<QuestTurnCommandEntity> turnCommandEntities,
         IReadOnlyCollection<QuestFloorTrapEntity> trapEntities,
-        QuestRewardSummaryEntity? rewardEntity)
+        QuestRewardSummaryEntity? rewardEntity,
+        bool isBossFloor)
     {
         var snapshots = snapshotEntities.Select(MapSnapshot).ToArray();
         var partyMembers = partyMemberEntities.Select(MapPartyMember).ToArray();
@@ -681,13 +706,20 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         var chatMessages = QuestJsonSerializer.DeserializeChatMessages(runEntity.ChatMessagesJson);
 
         var rewardState = DeserializeRewardState(rewardEntity?.SkippedRewardPlayerIdsJson);
+        var mirrorEnemyPlan = QuestJsonSerializer.DeserializeMirrorEnemyPlan(runEntity.MirrorEnemyPlanJson);
+
+        // 名鑑の祠はラン開始時の計画がボスフロアを決める。ステージ定義より計画を優先する。
+        if (mirrorEnemyPlan?.Floors.FirstOrDefault(x => x.FloorNo == runEntity.CurrentFloorNo) is { } mirrorFloor)
+        {
+            isBossFloor = mirrorFloor.IsBoss;
+        }
 
         return new QuestRun(
             new QuestRunId(runEntity.Id),
             new QuestRoomId(runEntity.RoomId),
             new QuestStageId(runEntity.StageId),
             snapshots,
-            new QuestFloorState(runEntity.CurrentFloorNo, false, []),
+            new QuestFloorState(runEntity.CurrentFloorNo, isBossFloor, []),
             new QuestBattleState(partyMembers, enemies),
             new QuestTurnState(runEntity.CurrentTurnNo, runEntity.ActionDeadlineAt, turnCommands, runEntity.LastResolvedTurnNo),
             new QuestTrapCollection(traps),
@@ -705,7 +737,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             runEntity.EndedAt,
             runEntity.Version,
             runEntity.PetSummonUsed,
-            QuestJsonSerializer.DeserializePetDeployment(runEntity.PetDeploymentJson));
+            QuestJsonSerializer.DeserializePetDeployment(runEntity.PetDeploymentJson),
+            mirrorEnemyPlan);
     }
 
     private static QuestRunPartyMemberState MapPartyMember(QuestRunPartyMemberEntity entity)
@@ -776,7 +809,8 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             entity.IsDead,
             ailments,
             buffs,
-            entity.IsCaptured);
+            entity.IsCaptured,
+            entity.ReviveUsedCount);
     }
 
     private static QuestSubmittedCommand MapTurnCommand(QuestTurnCommandEntity entity)
@@ -865,6 +899,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
             x.ChatMessagesJson,
             x.PetSummonUsed,
             x.PetDeploymentJson,
+            x.MirrorEnemyPlanJson,
             x.StartedAt,
             x.EndedAt,
             x.Version);
@@ -884,6 +919,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         ChatMessagesJson = columns.ChatMessagesJson,
         PetSummonUsed = columns.PetSummonUsed,
         PetDeploymentJson = columns.PetDeploymentJson,
+        MirrorEnemyPlanJson = columns.MirrorEnemyPlanJson,
         StartedAt = columns.StartedAt,
         EndedAt = columns.EndedAt,
         Version = columns.Version
@@ -901,6 +937,7 @@ public class DbQuestRunRepository(IDbContextFactory<AppDbContext> dbContextFacto
         string ChatMessagesJson,
         bool PetSummonUsed,
         string? PetDeploymentJson,
+        string? MirrorEnemyPlanJson,
         DateTimeOffset StartedAt,
         DateTimeOffset? EndedAt,
         int Version);

@@ -168,6 +168,7 @@ builder.Services.AddSingleton<IJobMoveLearningRuleRepository, CsvJobMoveLearning
 builder.Services.AddSingleton<IQuestStageRepository, CsvQuestStageRepository>();
 builder.Services.AddSingleton<IQuestEnemyDefinitionRepository, CsvQuestEnemyDefinitionRepository>();
 builder.Services.AddSingleton<IQuestEndlessConfigRepository, CsvQuestEndlessConfigRepository>();
+builder.Services.AddSingleton<IQuestMirrorConfigRepository, CsvQuestMirrorConfigRepository>();
 builder.Services.AddSingleton<IQuestEndlessEnemyTemplateRepository, CsvQuestEndlessEnemyTemplateRepository>();
 builder.Services.AddSingleton<IQuestNpcTemplateRepository, CsvQuestNpcTemplateRepository>();
 builder.Services.AddScoped<IQuestRoomRepository, DbQuestRoomRepository>();
@@ -190,6 +191,8 @@ builder.Services.AddScoped<QuestRunFactory>();
 builder.Services.AddSingleton<QuestEndlessFloorGenerator>();
 builder.Services.AddScoped<QuestNpcAssignmentService>();
 builder.Services.AddScoped<QuestPetActionService>();
+builder.Services.AddScoped<IMirrorCandidateRepository, DbMirrorCandidateRepository>();
+builder.Services.AddScoped<QuestMirrorEnemyPlanService>();
 builder.Services.AddScoped<QuestRoomService>();
 builder.Services.AddScoped<QuestRunService>();
 builder.Services.AddScoped<PetService>();

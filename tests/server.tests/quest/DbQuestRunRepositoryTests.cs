@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using server.domain.battle;
 using server.domain.battle.enums;
+using server.domain.move;
 using server.domain.player;
 using server.domain.quest;
 using server.domain.quest.enums;
@@ -149,7 +150,273 @@ public class DbQuestRunRepositoryTests
         (await repository.GetRoomIdAsync(QuestRunId.New())).Should().BeNull();
     }
 
-    private static QuestRun CreateRun(IReadOnlyList<QuestPetSnapshot>? pets = null)
+    [Theory]
+    [InlineData(1, false)]
+    [InlineData(2, true)]
+    public async Task GetForResolutionAsync_WithStaticStage_RestoresBossFloorFromStageDefinition(int floorNo, bool expected)
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var stage = CreateStaticStage();
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection), new FakeQuestStageRepository(stage));
+        var run = CreateRun(stageId: stage.Id, floorNo: floorNo);
+        await repository.SaveAsync(run);
+
+        var resolutionRun = await repository.GetForResolutionAsync(run.Id);
+        var fullRun = await repository.GetAsync(run.Id);
+
+        resolutionRun!.FloorState.IsBossFloor.Should().Be(expected);
+        fullRun!.FloorState.IsBossFloor.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(9, false)]
+    [InlineData(10, true)]
+    public async Task GetForResolutionAsync_WithEndlessStage_RestoresBossFloorFromBossInterval(int floorNo, bool expected)
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var stage = CreateEndlessStage();
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection), new FakeQuestStageRepository(stage));
+        var run = CreateRun(stageId: stage.Id, floorNo: floorNo);
+        await repository.SaveAsync(run);
+
+        var loaded = await repository.GetForResolutionAsync(run.Id);
+
+        loaded!.FloorState.IsBossFloor.Should().Be(expected);
+    }
+
+    [Fact]
+    public async Task ListExpiredAsync_WhenCurrentFloorIsBoss_RestoresBossFloor()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var stage = CreateStaticStage();
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection), new FakeQuestStageRepository(stage));
+        var run = CreateRun(stageId: stage.Id, floorNo: 2, deadlineAt: DateTimeOffset.UtcNow.AddSeconds(-1));
+        await repository.SaveAsync(run);
+
+        var expired = await repository.ListExpiredAsync(DateTimeOffset.UtcNow);
+
+        expired.Should().ContainSingle().Which.FloorState.IsBossFloor.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetForResolutionAsync_WhenStageIsUnknown_TreatsFloorAsNormal()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection), new FakeQuestStageRepository(CreateStaticStage()));
+        var run = CreateRun(stageId: new QuestStageId(999), floorNo: 2);
+        await repository.SaveAsync(run);
+
+        var loaded = await repository.GetForResolutionAsync(run.Id);
+
+        loaded!.FloorState.IsBossFloor.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SaveAsync_WithMirrorEnemyPlan_RestoresPlanOnLoad()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection));
+        var sourcePlayerId = new PlayerId(Guid.NewGuid());
+        var definitionId = new QuestEnemyDefinitionId(1_000_001);
+        var plan = new MirrorEnemyPlan(
+            [
+                new MirrorEnemySnapshot(
+                    definitionId,
+                    sourcePlayerId,
+                    "Top",
+                    "image/character/ch001_bmnpc.png",
+                    Job.Mage,
+                    100,
+                    3,
+                    new Status(500, 60, 70, 80, 90, 10, 20),
+                    [new MoveId(101), new MoveId(102)])
+            ],
+            [
+                new MirrorFloorPlan(
+                    1,
+                    isBoss: false,
+                    [new QuestEnemyPlacement(1, definitionId, new BattlePosition(BattleRow.Back, BattleColumn.Right))]),
+                new MirrorFloorPlan(
+                    2,
+                    isBoss: true,
+                    [new QuestEnemyPlacement(1, definitionId, new BattlePosition(BattleRow.Back, BattleColumn.Left))])
+            ]);
+        var run = CreateRun(mirrorEnemyPlan: plan);
+        await repository.SaveAsync(run);
+
+        var loaded = await repository.GetForResolutionAsync(run.Id);
+
+        loaded.Should().NotBeNull();
+        var loadedPlan = loaded!.MirrorEnemyPlan;
+        loadedPlan.Should().NotBeNull();
+        var enemy = loadedPlan!.Enemies.Should().ContainSingle().Subject;
+        enemy.DefinitionId.Should().Be(definitionId);
+        enemy.SourcePlayerId.Should().Be(sourcePlayerId);
+        enemy.Name.Should().Be("Top");
+        enemy.Job.Should().Be(Job.Mage);
+        enemy.Level.Should().Be(100);
+        enemy.RebirthCount.Should().Be(3);
+        enemy.Status.MaxHp.Should().Be(500);
+        enemy.Status.Speed.Should().Be(20);
+        enemy.MoveIds.Select(x => x.Id).Should().Equal(101, 102);
+        loadedPlan.Floors.Should().HaveCount(2);
+        loadedPlan.GetFloor(2).IsBoss.Should().BeTrue();
+        loadedPlan.GetFloor(1).Placements.Single().Position.Should().Be(new BattlePosition(BattleRow.Back, BattleColumn.Right));
+    }
+
+    [Fact]
+    public async Task SaveAsync_WithoutMirrorEnemyPlan_LoadsNullPlan()
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection));
+        var run = CreateRun();
+        await repository.SaveAsync(run);
+
+        var loaded = await repository.GetAsync(run.Id);
+
+        loaded!.MirrorEnemyPlan.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(1, false)]
+    [InlineData(2, true)]
+    public async Task GetForResolutionAsync_WithMirrorEnemyPlan_RestoresBossFloorFromPlan(int floorNo, bool expected)
+    {
+        await using var connection = new SqliteConnection("DataSource=:memory:");
+        await connection.OpenAsync();
+        await using (var seedContext = TestHelpers.CreateSqliteDbContext(connection))
+        {
+            await seedContext.Database.EnsureCreatedAsync();
+        }
+
+        // ステージ定義はフロア2をボスにしていない。名鑑の祠はラン開始時の計画を正とする。
+        var stage = CreateStaticStage(bossFloorNo: 1);
+        var repository = new DbQuestRunRepository(new TestHelpers.SqliteDbContextFactory(connection), new FakeQuestStageRepository(stage));
+        var definitionId = new QuestEnemyDefinitionId(1_000_001);
+        var plan = new MirrorEnemyPlan(
+            [
+                new MirrorEnemySnapshot(
+                    definitionId,
+                    new PlayerId(Guid.NewGuid()),
+                    "Top",
+                    "image/character/ch001_bmnpc.png",
+                    Job.Mage,
+                    100,
+                    0,
+                    new Status(500, 60, 70, 80, 90, 10, 20),
+                    [new MoveId(101)])
+            ],
+            [
+                new MirrorFloorPlan(
+                    1,
+                    isBoss: false,
+                    [new QuestEnemyPlacement(1, definitionId, new BattlePosition(BattleRow.Back, BattleColumn.Right))]),
+                new MirrorFloorPlan(
+                    2,
+                    isBoss: true,
+                    [new QuestEnemyPlacement(1, definitionId, new BattlePosition(BattleRow.Back, BattleColumn.Left))])
+            ]);
+        var run = CreateRun(stageId: stage.Id, floorNo: floorNo, mirrorEnemyPlan: plan);
+        await repository.SaveAsync(run);
+
+        var loaded = await repository.GetForResolutionAsync(run.Id);
+
+        loaded!.FloorState.IsBossFloor.Should().Be(expected);
+    }
+
+    private static QuestStageDefinition CreateStaticStage(int bossFloorNo = 2)
+    {
+        return new QuestStageDefinition(
+            new QuestStageId(5),
+            "boss-test",
+            "Boss Test",
+            "image/quest/test-battlefield.svg",
+            1,
+            minimumEntryLevel: null,
+            1,
+            6,
+            [
+                new QuestFloorDefinition(1, bossFloorNo == 1 ? FloorType.Boss : FloorType.Normal, [], new QuestFloorRewardRule(0, 0)),
+                new QuestFloorDefinition(2, bossFloorNo == 2 ? FloorType.Boss : FloorType.Normal, [], new QuestFloorRewardRule(0, 0))
+            ],
+            equipmentRewards: [],
+            itemRewards: [],
+            isActive: true);
+    }
+
+    private static QuestStageDefinition CreateEndlessStage()
+    {
+        return new QuestStageDefinition(
+            new QuestStageId(13),
+            "endless-test",
+            "Endless Test",
+            "image/quest/test-battlefield.svg",
+            1,
+            minimumEntryLevel: null,
+            1,
+            1,
+            [],
+            equipmentRewards: [],
+            itemRewards: [],
+            isActive: true,
+            progressionType: ProgressionType.Endless,
+            endlessConfig: new QuestEndlessConfig(0.08, 1.6, 100, 10, 1.5m, 3.0m, 5, 10, 1, 3, 100m, 750m));
+    }
+
+    private sealed class FakeQuestStageRepository(QuestStageDefinition stage) : IQuestStageRepository
+    {
+        public Task<QuestStageDefinition?> GetAsync(QuestStageId id)
+            => Task.FromResult(stage.Id == id ? stage : null);
+
+        public Task<QuestStageDefinition?> GetByStageCodeAsync(string stageCode)
+            => Task.FromResult(stage.StageCode == stageCode ? stage : null);
+
+        public Task<IReadOnlyList<QuestStageDefinition>> GetAllAsync()
+            => Task.FromResult<IReadOnlyList<QuestStageDefinition>>([stage]);
+    }
+
+    private static QuestRun CreateRun(
+        IReadOnlyList<QuestPetSnapshot>? pets = null,
+        QuestStageId? stageId = null,
+        int floorNo = 1,
+        DateTimeOffset? deadlineAt = null,
+        MirrorEnemyPlan? mirrorEnemyPlan = null)
     {
         var participantId = QuestParticipantId.New();
         var snapshot = new QuestRunPartyMemberSnapshot(
@@ -170,9 +437,9 @@ public class DbQuestRunRepositoryTests
         return new QuestRun(
             QuestRunId.New(),
             QuestRoomId.New(),
-            new QuestStageId(1),
+            stageId ?? new QuestStageId(1),
             [snapshot],
-            new QuestFloorState(1, false, []),
+            new QuestFloorState(floorNo, false, []),
             new QuestBattleState(
                 [
                     new QuestRunPartyMemberState(participantId, 20, 5, false, 1, ActionMode.Manual)
@@ -186,11 +453,12 @@ public class DbQuestRunRepositoryTests
                         0,
                         false)
                 ]),
-            new QuestTurnState(1, DateTimeOffset.UtcNow.AddSeconds(30)),
+            new QuestTurnState(1, deadlineAt ?? DateTimeOffset.UtcNow.AddSeconds(30)),
             new QuestTrapCollection(),
             new QuestRewardAccumulator(),
             lastTurnResults: null,
             chatMessages: [],
-            startedAt: DateTimeOffset.UtcNow);
+            startedAt: DateTimeOffset.UtcNow,
+            mirrorEnemyPlan: mirrorEnemyPlan);
     }
 }

@@ -242,6 +242,7 @@ public class QuestResponseMapper(
                 currentFloorNo = run.FloorState.CurrentFloorNo,
                 isBossFloor = run.FloorState.IsBossFloor,
                 isEndless = stage?.IsEndless ?? false,
+                isMirror = stage?.IsMirror ?? false,
                 themeNo = stage?.EndlessConfig is { } endlessFloorConfig
                     ? endlessFloorGenerator.ResolveThemeNo(endlessFloorConfig, run.FloorState.CurrentFloorNo)
                     : (int?)null,
@@ -554,6 +555,18 @@ public class QuestResponseMapper(
         QuestStageDefinition? stage)
     {
         var baseDefinitions = await GetEnemyDefinitionMapAsync();
+        if (stage?.IsMirror == true && run.MirrorEnemyPlan is not null)
+        {
+            // 名鑑の祠の敵（プレイヤー）は計画の仮IDで引く。ペット表示用に静的定義も残す。
+            var mirrorMerged = new Dictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>(baseDefinitions);
+            foreach (var (id, definition) in run.MirrorEnemyPlan.BuildEnemyDefinitions())
+            {
+                mirrorMerged[id] = definition;
+            }
+
+            return mirrorMerged;
+        }
+
         if (stage?.EndlessConfig is not { } config)
         {
             return baseDefinitions;

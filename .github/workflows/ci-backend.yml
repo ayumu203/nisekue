@@ -47,9 +47,12 @@ jobs:
 
   # テスト用 CSV とスプレッドシートの形が一致しているか、PR のコードでスプレッドシートを読めるかを確認する。
   # コードやテスト用 CSV の列を変えたのにスプレッドシートを直し忘れた、をマージ前に検出するため。
+  # マージ先の main はステージングに出るので、ステージング用スプレッドシートと照合する（dev environment の Variable）。
+  # 本番用スプレッドシートとのずれは、本番へのデプロイ時の取り込み（masterdata-import）で止まる。
   masterdata:
     name: Master data (spreadsheet vs fixtures)
     runs-on: ubuntu-latest
+    environment: dev
 
     steps:
       - name: Checkout
@@ -73,7 +76,7 @@ jobs:
           MASTERDATA_SPREADSHEET_ID: ${{ vars.MASTERDATA_SPREADSHEET_ID }}
         run: |
           if [ -z "${GOOGLE_SERVICE_ACCOUNT_JSON}" ] || [ -z "${MASTERDATA_SPREADSHEET_ID}" ]; then
-            echo "::error::Secret GOOGLE_SERVICE_ACCOUNT_JSON と Variable MASTERDATA_SPREADSHEET_ID（リポジトリ単位）を設定してください。"
+            echo "::error::Secret GOOGLE_SERVICE_ACCOUNT_JSON と Variable MASTERDATA_SPREADSHEET_ID（dev environment）を設定してください。"
             exit 1
           fi
           pnpm masterdata:sync

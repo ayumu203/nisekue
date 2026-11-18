@@ -9,10 +9,11 @@ using server.domain.quest.enums;
 
 namespace server.application.quest;
 
-public class QuestBattleFactory
+public class QuestBattleFactory(MirrorEnemyActionPolicy? mirrorEnemyActionPolicy = null)
 {
     private readonly QuestAllyNpcActionPolicy allyNpcActionPolicy = new();
     private readonly QuestEnemyActionPolicy enemyActionPolicy = new();
+    private readonly MirrorEnemyActionPolicy mirrorEnemyActionPolicy = mirrorEnemyActionPolicy ?? new();
 
     public BattleActorInput[] CreateActorInputs(
         QuestRun run,
@@ -95,7 +96,8 @@ public class QuestBattleFactory
     public async Task<(BattleActionInput[] Actions, Move[] Moves)> CreateTurnInputsAsync(
         QuestRun run,
         IMoveRepository moveRepository,
-        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? enemyDefinitions = null)
+        IReadOnlyDictionary<QuestEnemyDefinitionId, QuestEnemyDefinition>? enemyDefinitions = null,
+        QuestMirrorConfig? mirrorConfig = null)
     {
         ArgumentNullException.ThrowIfNull(run);
         ArgumentNullException.ThrowIfNull(moveRepository);
@@ -140,6 +142,22 @@ public class QuestBattleFactory
             foreach (var moveId in definition.MoveIds)
             {
                 availableMoves.Add(await GetMoveAsync(moveId, moveRepository, movesById));
+            }
+
+            // 名鑑の祠の敵（プレイヤー）は職業から行動を決める。
+            var mirrorSnapshot = run.MirrorEnemyPlan?.FindEnemy(enemy.EnemyDefinitionId);
+            if (mirrorSnapshot is not null && enemyDefinitions is not null)
+            {
+                var config = mirrorConfig
+                    ?? throw new InvalidOperationException("名鑑の祠の敵の行動には調整値（mirror_configs）が必要です。");
+                var decision = mirrorEnemyActionPolicy.SelectAction(run, enemy, mirrorSnapshot, availableMoves, enemyDefinitions, config);
+                if (decision.IsRevive)
+                {
+                    enemy.RecordReviveUsed();
+                }
+
+                enemyActions.Add(decision.Action);
+                continue;
             }
 
             enemyActions.Add(enemyActionPolicy.SelectAction(run, enemy, definition, availableMoves, enemyDefinitions));

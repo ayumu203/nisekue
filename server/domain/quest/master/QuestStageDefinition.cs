@@ -17,7 +17,8 @@ public class QuestStageDefinition(
     bool isActive,
     int? requiredMapUnlockFlag = null,
     ProgressionType progressionType = ProgressionType.Static,
-    QuestEndlessConfig? endlessConfig = null)
+    QuestEndlessConfig? endlessConfig = null,
+    QuestMirrorConfig? mirrorConfig = null)
 {
     private readonly QuestFloorDefinition[] floors = floors?.OrderBy(x => x.FloorNo).ToArray()
         ?? throw new ArgumentNullException(nameof(floors));
@@ -40,8 +41,28 @@ public class QuestStageDefinition(
     public ProgressionType ProgressionType { get; } = progressionType;
     public QuestEndlessConfig? EndlessConfig { get; } = ValidateEndlessConfig(progressionType, endlessConfig);
 
+    /// <summary>名鑑の祠の調整値（mirror_configs.csv）。Mirror のときだけ持つ。</summary>
+    public QuestMirrorConfig? MirrorConfig { get; } = ValidateMirrorConfig(progressionType, mirrorConfig);
+
     /// <summary>エンドレス（手続き的生成）ステージか。</summary>
     public bool IsEndless => ProgressionType == ProgressionType.Endless;
+
+    /// <summary>プレイヤーを敵として出すステージ（名鑑の祠）か。</summary>
+    public bool IsMirror => ProgressionType == ProgressionType.Mirror;
+
+    /// <summary>
+    /// 指定したフロア番号がボスフロアか。エンドレスは boss_interval の倍数、
+    /// それ以外は stage_floors の floor_type で決まる。
+    /// </summary>
+    public bool IsBossFloor(int floorNo)
+    {
+        if (EndlessConfig is not null)
+        {
+            return EndlessConfig.IsBossFloor(floorNo);
+        }
+
+        return floors.Any(x => x.FloorNo == floorNo && x.FloorType == FloorType.Boss);
+    }
 
     private static string ValidateText(string value, string paramName)
     {
@@ -62,6 +83,16 @@ public class QuestStageDefinition(
         }
 
         return endlessConfig;
+    }
+
+    private static QuestMirrorConfig? ValidateMirrorConfig(ProgressionType progressionType, QuestMirrorConfig? mirrorConfig)
+    {
+        if (progressionType == ProgressionType.Mirror && mirrorConfig is null)
+        {
+            throw new ArgumentNullException(nameof(mirrorConfig), "Mirror ステージには mirrorConfig が必須です。");
+        }
+
+        return mirrorConfig;
     }
 
     private static int ValidateNonNegative(int value, string paramName)

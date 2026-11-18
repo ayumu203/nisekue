@@ -19,7 +19,12 @@ export default function DebugSection({ title, description, message, children }: 
         </Typography>
         {description && <Typography variant="body2">{description}</Typography>}
         {children}
-        {message && <Alert severity={message.severity}>{message.text}</Alert>}
+        {message && (
+          // エラーの詳細（例外の種類・内側の例外）を改行で並べて表示する
+          <Alert severity={message.severity} sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {message.text}
+          </Alert>
+        )}
       </Stack>
     </Paper>
   )

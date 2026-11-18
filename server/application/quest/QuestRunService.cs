@@ -60,6 +60,7 @@ public class QuestRunService(
 
         if (command.ActionKind == ActionKind.Capture)
         {
+            await EnsureCaptureAllowedAsync(run);
             await EnsurePetCapacityAsync(run, participantId);
         }
 
@@ -88,6 +89,17 @@ public class QuestRunService(
         if (room.Mode != QuestRoomMode.Solo)
         {
             throw new InvalidOperationException("ペットの呼出はソロクエストでのみ使えます。");
+        }
+    }
+
+    // 名鑑の祠ではプレイヤー由来の敵を捕獲できない。
+    private async Task EnsureCaptureAllowedAsync(QuestRun run)
+    {
+        var stage = await questStageRepository.GetAsync(run.StageId)
+            ?? throw new KeyNotFoundException("ステージ定義が見つかりません。");
+        if (stage.IsMirror)
+        {
+            throw new InvalidOperationException("このステージでは捕獲できません。");
         }
     }
 
@@ -220,12 +232,15 @@ public class QuestRunService(
         IReadOnlyList<QuestEndlessEnemyTemplate> endlessTemplates = stage.IsEndless
             ? await questEndlessEnemyTemplateRepository.GetAllAsync()
             : [];
+        // 名鑑の祠はラン開始時に確定した計画から敵定義を作る。
         var enemyDefinitions = stage.IsEndless
             ? BuildEndlessFloorDefinitions(stage.EndlessConfig!, endlessTemplates, run.BattleState.Enemies, previousFloorNo)
-            : (await questEnemyDefinitionRepository.GetAllAsync()).ToDictionary(x => x.Id);
+            : stage.IsMirror
+                ? GetMirrorEnemyPlan(run).BuildEnemyDefinitions()
+                : (await questEnemyDefinitionRepository.GetAllAsync()).ToDictionary(x => x.Id);
 
-        // 捕獲はエンドレスでは無効（exp/gold のみ）。
-        var captureResult = stage.IsEndless
+        // 捕獲はエンドレス・名鑑の祠では無効（エンドレスは exp/gold のみ）。
+        var captureResult = stage.IsEndless || stage.IsMirror
             ? QuestCaptureProcessingResult.Empty
             : await ProcessCaptureCommandsAsync(run, enemyDefinitions);
 
@@ -235,7 +250,7 @@ public class QuestRunService(
         // 出撃中はプレイヤー側を戦闘から外し、ペットを味方として入れる（QuestBattleFactory 側で除外）。
         var fieldContext = questBattleFactory.CreateBattleFieldContext(run);
         var actors = questBattleFactory.CreateActorInputs(run, enemyDefinitions);
-        var (actions, moves) = await questBattleFactory.CreateTurnInputsAsync(run, moveRepository, enemyDefinitions);
+        var (actions, moves) = await questBattleFactory.CreateTurnInputsAsync(run, moveRepository, enemyDefinitions, stage.MirrorConfig);
 
         var petSummons = await CreateDeployedPetInputsAsync(run);
         if (petSummons.Actors.Length > 0)
@@ -277,6 +292,17 @@ public class QuestRunService(
                 var generated = endlessFloorGenerator.GenerateFloor(stage.EndlessConfig!, endlessTemplates, nextFloorNo, Random.Shared);
                 nextFloor = BuildEndlessFloorDefinitionFromGenerated(stage.EndlessConfig!, generated);
                 nextEnemyStates = CreateEndlessEnemyStates(generated);
+            }
+            else if (stage.IsMirror)
+            {
+                var plan = GetMirrorEnemyPlan(run);
+                var nextFloorPlan = plan.GetFloor(nextFloorNo);
+                nextFloor = new QuestFloorDefinition(
+                    nextFloorPlan.FloorNo,
+                    nextFloorPlan.IsBoss ? FloorType.Boss : FloorType.Normal,
+                    nextFloorPlan.Placements,
+                    new QuestFloorRewardRule(0m, 0m));
+                nextEnemyStates = QuestRunFactory.CreateMirrorEnemyStates(plan, nextFloorPlan);
             }
             else
             {
@@ -937,6 +963,12 @@ public class QuestRunService(
                 x.ScaledDefinition.Status.MaxMp,
                 isDead: false))
             .ToArray();
+    }
+
+    private static MirrorEnemyPlan GetMirrorEnemyPlan(QuestRun run)
+    {
+        return run.MirrorEnemyPlan
+            ?? throw new InvalidOperationException($"名鑑の祠のランに敵の計画がありません。 runId={run.Id.Value}");
     }
 
     private async Task<QuestEnemyState[]> CreateEnemyStatesAsync(QuestFloorDefinition floor)

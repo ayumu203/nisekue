@@ -1321,6 +1321,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_dead");
 
+                    b.Property<int>("ReviveUsedCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("revive_used_count");
+
                     b.HasKey("RunId", "EnemyInstanceId");
 
                     b.ToTable("quest_run_enemies", "internal");
@@ -1361,6 +1367,10 @@ namespace server.infrastructure.migrations
                     b.Property<string>("LastTurnResultsJson")
                         .HasColumnType("jsonb")
                         .HasColumnName("last_turn_results_json");
+
+                    b.Property<string>("MirrorEnemyPlanJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("mirror_enemy_plan_json");
 
                     b.Property<string>("PetDeploymentJson")
                         .HasColumnType("jsonb")
