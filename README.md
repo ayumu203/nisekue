@@ -23,6 +23,12 @@
 
 - データベースから集計したプレイヤーがどのくらい遊んでくれたかなどのデータが[こちら](https://ayumu203.github.io/nisekue-report/)にあります。
 
+## ゲーム画像
+
+- 画像はこのゲームを紹介していただいている、ポチゲーポータル様のものを利用しています。
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/9e617fc1-f924-4ebb-8887-3d84fbd4bffe" />
+
+
 ## アーキテクチャ構成
 <img width="600" height="567" alt="image" src="https://github.com/user-attachments/assets/ce3b1499-7e55-4907-a0bb-af48a8ca1828" />
 
