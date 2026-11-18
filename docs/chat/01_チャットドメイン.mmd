@@ -24,7 +24,17 @@ classDiagram
             +ChatText Body
             +DateTimeOffset CreatedAt
             +bool IsAlerted
+            +CanBeDeletedBy(requesterId: PlayerId) : bool
         }
+
+        class ChatMessageDeleteResult {
+            <<Enumeration>>
+            Deleted
+            NotFound
+            Forbidden
+        }
+
+        note for ChatMessage "削除は論理削除（is_deleted = true）。本文は DB に残す。\n削除できるのは投稿者本人のみ（ルーム主・システムメッセージは不可）。\n削除済みのメッセージはリポジトリの取得時に除外され、集約には載らない。"
 
         class ChatText {
             <<Value Object>>
@@ -35,6 +45,9 @@ classDiagram
         class IChatRoomRepository {
             +Task~ChatRoom~ GetChatRoomAsync(ownerId: PlayerId)
             +Task SaveAsync(room: ChatRoom)
+            +Task MarkMessagesAlertedAsync(ownerId: PlayerId, chatIds: IReadOnlyCollection~int~)
+            +Task~ChatMessage?~ FindMessageAsync(ownerId: PlayerId, chatId: int)
+            +Task~bool~ DeleteMessageAsync(ownerId: PlayerId, chatId: int, senderId: PlayerId)
         }
 
         class ChatRoomView {
@@ -63,6 +76,7 @@ classDiagram
             +Task~ChatRoomView~ PostMessageAsync(ownerId: PlayerId, senderId: PlayerId, text: string)
             +Task PostSystemMessageAsync(ownerId: PlayerId, text: string)
             +Task MarkMessagesAlertedAsync(ownerId: PlayerId, chatIds: IEnumerable~int~)
+            +Task~ChatMessageDeleteResult~ DeleteMessageAsync(ownerId: PlayerId, chatId: int, requesterId: PlayerId)
         }
 
         note for ChatService "匿名ログイン中のユーザーは ChatRoom への投稿不可。\n閲覧のみ許可し、投稿要求はエンドポイントで拒否する。"
@@ -82,8 +96,11 @@ classDiagram
         }
 
         class IGlobalChatRoomRepository {
-            +Task~GlobalChatRoom~ GetAsync()
+            +Task~GlobalChatRoom~ GetAsync(page: int)
+            +Task~int~ GetTotalCountAsync()
             +Task SaveAsync(room: GlobalChatRoom)
+            +Task~ChatMessage?~ FindMessageAsync(chatId: int)
+            +Task~bool~ DeleteMessageAsync(chatId: int, senderId: PlayerId)
         }
 
         class GlobalChatRoomView {
@@ -107,6 +124,7 @@ classDiagram
             <<Application Service>>
             +Task~GlobalChatRoomView~ GetAsync()
             +Task~GlobalChatRoomView~ PostMessageAsync(senderId: PlayerId, text: string)
+            +Task~ChatMessageDeleteResult~ DeleteMessageAsync(chatId: int, requesterId: PlayerId)
         }
 
         note for GlobalChatService "匿名ログイン中のユーザーは投稿不可。\n通知（is_alerted）機能はなし。"

@@ -27,6 +27,23 @@ public class GlobalChatService(IGlobalChatRoomRepository globalChatRoomRepositor
         return await GetAsync();
     }
 
+    public async Task<ChatMessageDeleteResult> DeleteMessageAsync(int chatId, PlayerId requesterId)
+    {
+        var message = await globalChatRoomRepository.FindMessageAsync(chatId);
+        if (message is null)
+        {
+            return ChatMessageDeleteResult.NotFound;
+        }
+
+        if (!message.CanBeDeletedBy(requesterId))
+        {
+            return ChatMessageDeleteResult.Forbidden;
+        }
+
+        var deleted = await globalChatRoomRepository.DeleteMessageAsync(chatId, requesterId);
+        return deleted ? ChatMessageDeleteResult.Deleted : ChatMessageDeleteResult.NotFound;
+    }
+
     private async Task<GlobalChatRoomView> BuildViewAsync(GlobalChatRoom room, int totalCount)
     {
         var senderIds = room.Messages

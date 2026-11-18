@@ -363,6 +363,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasColumnName("is_alerted")
             .HasDefaultValue(false)
             .IsRequired();
+        chatMessage.Property(x => x.IsDeleted)
+            .HasColumnName("is_deleted")
+            .HasDefaultValue(false)
+            .IsRequired();
 
         var chatMessageAlert = modelBuilder.Entity<ChatMessageAlertEntity>();
         chatMessageAlert.ToTable("chat_message_alerts", "internal");
@@ -415,6 +419,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         globalChatMessage.Property(x => x.CreatedAt)
             .HasColumnName("created_at")
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
+            .IsRequired();
+        globalChatMessage.Property(x => x.IsDeleted)
+            .HasColumnName("is_deleted")
+            .HasDefaultValue(false)
             .IsRequired();
 
         var thread = modelBuilder.Entity<ThreadEntity>();

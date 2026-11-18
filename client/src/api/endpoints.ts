@@ -49,6 +49,10 @@ import {
   jobRoadmapResponseSchema,
 } from '@/schema/player'
 import {
+  deleteChatMessageRequestSchema,
+  deleteChatMessageResponseSchema,
+  deleteGlobalChatMessageRequestSchema,
+  deleteGlobalChatMessageResponseSchema,
   getChatRoomRequestSchema,
   getChatRoomResponseSchema,
   markChatMessagesAlertedRequestSchema,
@@ -150,6 +154,10 @@ export type {
   JobRoadmapNode,
 } from '@/schema/player'
 export type {
+  DeleteChatMessageRequest,
+  DeleteChatMessageResponse,
+  DeleteGlobalChatMessageRequest,
+  DeleteGlobalChatMessageResponse,
   GetChatRoomRequest,
   GetChatRoomResponse,
   MarkChatMessagesAlertedRequest,
@@ -352,6 +360,12 @@ export const endpoints = {
       requestSchema: markChatMessagesAlertedRequestSchema,
       responseSchema: markChatMessagesAlertedResponseSchema,
     },
+    deleteMessage: {
+      path: (chatId: number) => `/chat/room/messages/${chatId}`,
+      method: 'DELETE',
+      requestSchema: deleteChatMessageRequestSchema,
+      responseSchema: deleteChatMessageResponseSchema,
+    },
   },
   globalChatRoom: {
     get: {
@@ -365,6 +379,12 @@ export const endpoints = {
       method: 'POST',
       requestSchema: postGlobalChatMessageRequestSchema,
       responseSchema: postGlobalChatMessageResponseSchema,
+    },
+    deleteMessage: {
+      path: (chatId: number) => `/chat/global/messages/${chatId}`,
+      method: 'DELETE',
+      requestSchema: deleteGlobalChatMessageRequestSchema,
+      responseSchema: deleteGlobalChatMessageResponseSchema,
     },
   },
   thread: {

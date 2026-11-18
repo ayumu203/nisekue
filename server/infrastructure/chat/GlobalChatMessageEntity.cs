@@ -8,11 +8,13 @@ public class GlobalChatMessageEntity(
     ChatMessageSenderType senderType,
     PlayerId? senderId,
     string message,
-    DateTimeOffset createdAt)
+    DateTimeOffset createdAt,
+    bool isDeleted)
 {
     public int ChatId { get; } = chatId;
     public ChatMessageSenderType SenderType { get; } = senderType;
     public PlayerId? SenderId { get; } = senderId;
     public string Message { get; } = message;
     public DateTimeOffset CreatedAt { get; } = createdAt;
+    public bool IsDeleted { get; } = isDeleted;
 }

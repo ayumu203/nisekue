@@ -39,6 +39,7 @@ erDiagram
         varchar(200) message "NOT NULL"
         timestamptz created_at "NOT NULL, DEFAULT CURRENT_TIMESTAMP"
         boolean is_alerted "NOT NULL, DEFAULT FALSE"
+        boolean is_deleted "NOT NULL, DEFAULT FALSE, 投稿者本人による論理削除。TRUE の行は取得しない"
     }
     THREADS {
         uuid id PK "internal.threads.id"
@@ -344,6 +345,7 @@ erDiagram
         uuid sender_id FK "internal.players.id, NULL when system"
         varchar(200) message "NOT NULL"
         timestamptz created_at "NOT NULL, DEFAULT CURRENT_TIMESTAMP"
+        boolean is_deleted "NOT NULL, DEFAULT FALSE, 投稿者本人による論理削除。TRUE の行は取得・件数に含めない"
     }
 
     PLAYERS ||--|| CHAT_ROOMS : owns

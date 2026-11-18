@@ -95,6 +95,23 @@ public class ChatService(
         }
     }
 
+    public async Task<ChatMessageDeleteResult> DeleteMessageAsync(PlayerId ownerId, int chatId, PlayerId requesterId)
+    {
+        var message = await chatRoomRepository.FindMessageAsync(ownerId, chatId);
+        if (message is null)
+        {
+            return ChatMessageDeleteResult.NotFound;
+        }
+
+        if (!message.CanBeDeletedBy(requesterId))
+        {
+            return ChatMessageDeleteResult.Forbidden;
+        }
+
+        var deleted = await chatRoomRepository.DeleteMessageAsync(ownerId, chatId, requesterId);
+        return deleted ? ChatMessageDeleteResult.Deleted : ChatMessageDeleteResult.NotFound;
+    }
+
     public Task<int> MarkMessagesAlertedAsync(PlayerId ownerId, IReadOnlyCollection<int> chatIds)
     {
         return chatIds.Count == 0
