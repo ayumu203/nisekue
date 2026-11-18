@@ -2,6 +2,10 @@ import { endpoints } from '@/api/endpoints'
 import { fetchSafely } from '@/api/http'
 import { extractErrorMessage, resolveApiBaseUrl } from '@/api/util'
 import type {
+  DeleteChatMessageRequest,
+  DeleteChatMessageResponse,
+  DeleteGlobalChatMessageRequest,
+  DeleteGlobalChatMessageResponse,
   GetChatRoomRequest,
   GetChatRoomResponse,
   MarkChatMessagesAlertedRequest,
@@ -136,4 +140,52 @@ export async function markChatMessagesAlerted(
   }
 
   return endpoints.chatRoom.markAlerts.responseSchema.parse(json)
+}
+
+export async function deleteChatMessage(
+  input: DeleteChatMessageRequest,
+  accessToken: string,
+): Promise<DeleteChatMessageResponse> {
+  const payload = endpoints.chatRoom.deleteMessage.requestSchema.parse(input)
+  const apiBaseUrl = resolveApiBaseUrl()
+  const url = new URL(`${apiBaseUrl}${endpoints.chatRoom.deleteMessage.path(payload.chatId)}`, window.location.origin)
+  url.searchParams.set('ownerId', payload.ownerId)
+
+  const response = await fetchSafely(url.toString(), {
+    method: endpoints.chatRoom.deleteMessage.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'メッセージの削除に失敗しました'))
+  }
+
+  return endpoints.chatRoom.deleteMessage.responseSchema.parse(json)
+}
+
+export async function deleteGlobalChatMessage(
+  input: DeleteGlobalChatMessageRequest,
+  accessToken: string,
+): Promise<DeleteGlobalChatMessageResponse> {
+  const payload = endpoints.globalChatRoom.deleteMessage.requestSchema.parse(input)
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.globalChatRoom.deleteMessage.path(payload.chatId)}`, {
+    method: endpoints.globalChatRoom.deleteMessage.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '全体チャットのメッセージ削除に失敗しました'))
+  }
+
+  return endpoints.globalChatRoom.deleteMessage.responseSchema.parse(json)
 }

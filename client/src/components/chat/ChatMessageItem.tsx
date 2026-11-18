@@ -1,13 +1,16 @@
-import { Avatar, Box, Stack, Typography } from '@mui/material'
+import CloseIcon from '@mui/icons-material/Close'
+import { Avatar, Box, IconButton, Stack, Typography } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
 import type { GetChatRoomResponse } from '@/schema/chat'
 import { resolveCharacterAssetPath } from '@/lib/assets'
+import locale from '../../../locale/chat/Chat.json'
 
 type ChatMessage = GetChatRoomResponse['messages'][number]
 
 type Props = {
   message: ChatMessage
   isOwnMessage: boolean
+  onDelete?: () => void
 }
 
 function formatTime(value: string): string {
@@ -24,9 +27,10 @@ function formatTime(value: string): string {
   }).format(date)
 }
 
-function ChatMessageItem({ message, isOwnMessage }: Props) {
+function ChatMessageItem({ message, isOwnMessage, onDelete }: Props) {
   const avatarSrc = resolveCharacterAssetPath(message.imagePath)
   const visitPlayerPath = !isOwnMessage && message.senderId ? `/players/${message.senderId}/visit` : null
+  const canDelete = isOwnMessage && message.senderType === 'Player' && onDelete !== undefined
 
   return (
     <Stack direction="row" spacing={1} alignItems="flex-end" justifyContent={isOwnMessage ? 'flex-end' : 'flex-start'}>
@@ -89,6 +93,17 @@ function ChatMessageItem({ message, isOwnMessage }: Props) {
           {formatTime(message.createdAt)}
         </Typography>
       </Stack>
+      {canDelete ? (
+        <IconButton
+          size="small"
+          aria-label={locale.deleteMessage}
+          title={locale.deleteMessage}
+          onClick={onDelete}
+          sx={{ alignSelf: 'flex-start', p: 0.25, color: 'text.secondary' }}
+        >
+          <CloseIcon sx={{ fontSize: 16 }} />
+        </IconButton>
+      ) : null}
       {isOwnMessage ? (
         <Avatar
           src={avatarSrc ?? undefined}
