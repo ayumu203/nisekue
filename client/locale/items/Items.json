@@ -75,5 +75,5 @@
   "noSearchResults": "条件に一致する項目はありません",
   "useConfirmTitle": "アイテムを使用しますか？",
   "useConfirmMessage": "「{{name}}」を使用します。この操作は取り消せません。",
-  "useConfirmAction": "使用する"
+  "useConfirmAction": "使用"
 }

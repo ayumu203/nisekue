@@ -9,6 +9,6 @@
   "deleteConfirmTitle": "このメッセージを削除しますか？",
   "deleteConfirmBody": "一度削除した内容を戻すことは出来ません。",
   "deleteCancel": "キャンセル",
-  "deleteConfirm": "削除する",
+  "deleteConfirm": "削除",
   "deleteFailed": "メッセージの削除に失敗しました"
 }
