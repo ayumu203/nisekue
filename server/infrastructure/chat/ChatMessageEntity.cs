@@ -10,7 +10,8 @@ public class ChatMessageEntity(
     PlayerId? senderId,
     string message,
     DateTimeOffset createdAt,
-    bool isAlerted)
+    bool isAlerted,
+    bool isDeleted)
 {
     public PlayerId OwnerId { get; } = ownerId;
     public int ChatId { get; } = chatId;
@@ -19,4 +20,5 @@ public class ChatMessageEntity(
     public string Message { get; } = message;
     public DateTimeOffset CreatedAt { get; } = createdAt;
     public bool IsAlerted { get; } = isAlerted;
+    public bool IsDeleted { get; } = isDeleted;
 }

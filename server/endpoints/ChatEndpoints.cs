@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using server.application.chat;
+using server.domain.chat;
 using server.domain.player;
 using server.shared.constants.chat;
 
@@ -113,6 +114,22 @@ internal static class ChatEndpoints
             return Results.Ok(new { updatedCount });
         }).RequireAuthorization();
 
+        app.MapDelete("/chat/room/messages/{chatId:int}", async (
+            ClaimsPrincipal user,
+            int chatId,
+            Guid ownerId,
+            ChatService chatService) =>
+        {
+            var currentPlayerId = EndpointHelpers.TryGetPlayerId(user);
+            if (currentPlayerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            var result = await chatService.DeleteMessageAsync(new PlayerId(ownerId), chatId, currentPlayerId.Value);
+            return ToDeleteResult(result);
+        }).RequireAuthorization();
+
         app.MapGet("/chat/global", async (int? page, GlobalChatService globalChatService) =>
         {
             var currentPage = Math.Max(1, page ?? 1);
@@ -182,6 +199,30 @@ internal static class ChatEndpoints
             }
         }).RequireAuthorization();
 
+        app.MapDelete("/chat/global/messages/{chatId:int}", async (
+            ClaimsPrincipal user,
+            int chatId,
+            GlobalChatService globalChatService) =>
+        {
+            var currentPlayerId = EndpointHelpers.TryGetPlayerId(user);
+            if (currentPlayerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            var result = await globalChatService.DeleteMessageAsync(chatId, currentPlayerId.Value);
+            return ToDeleteResult(result);
+        }).RequireAuthorization();
+
         return app;
     }
+
+    private static IResult ToDeleteResult(ChatMessageDeleteResult result) => result switch
+    {
+        ChatMessageDeleteResult.Deleted => Results.NoContent(),
+        ChatMessageDeleteResult.Forbidden => Results.Json(
+            new { message = "自分の発言以外は削除できません。" },
+            statusCode: StatusCodes.Status403Forbidden),
+        _ => Results.NotFound(new { message = "メッセージが見つかりません。" }),
+    };
 }

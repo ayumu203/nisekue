@@ -19,6 +19,13 @@ public class ChatMessage(
     public DateTimeOffset CreatedAt { get; } = createdAt;
     public bool IsAlerted { get; } = isAlerted;
 
+    /// <summary>
+    /// 指定したプレイヤーがこのメッセージを削除できるかを返す。
+    /// 削除できるのは投稿者本人のみで、システムメッセージは誰も削除できない。
+    /// </summary>
+    public bool CanBeDeletedBy(PlayerId requesterId) =>
+        SenderType == ChatMessageSenderType.Player && SenderId == requesterId;
+
     private static int ValidateChatId(int chatId)
     {
         if (chatId <= 0)

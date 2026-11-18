@@ -24,6 +24,7 @@ public class DbGlobalChatRoomRepository(IDbContextFactory<AppDbContext> dbContex
         var skip = (page - 1) * ChatConstants.PageSize;
         var messageEntities = await dbContext.GlobalChatMessages
             .AsNoTracking()
+            .Where(x => !x.IsDeleted)
             .OrderByDescending(x => x.ChatId)
             .Skip(skip)
             .Take(ChatConstants.PageSize)
@@ -37,7 +38,7 @@ public class DbGlobalChatRoomRepository(IDbContextFactory<AppDbContext> dbContex
     public async Task<int> GetTotalCountAsync()
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        return await dbContext.GlobalChatMessages.AsNoTracking().CountAsync();
+        return await dbContext.GlobalChatMessages.AsNoTracking().CountAsync(x => !x.IsDeleted);
     }
 
     public async Task SaveAsync(GlobalChatRoom room)
@@ -96,6 +97,33 @@ public class DbGlobalChatRoomRepository(IDbContextFactory<AppDbContext> dbContex
         {
             throw new InvalidOperationException("全体チャットルーム情報の保存に失敗しました。", ex);
         }
+    }
+
+    public async Task<ChatMessage?> FindMessageAsync(int chatId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var entity = await dbContext.GlobalChatMessages
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x => x.ChatId == chatId && !x.IsDeleted);
+
+        return entity is null ? null : MapToDomain(entity);
+    }
+
+    public async Task<bool> DeleteMessageAsync(int chatId, PlayerId senderId)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var senderIdValue = senderId.Value;
+
+        // 投稿者本人かつ未削除の行だけを更新する（同時削除・権限の再確認を兼ねる）
+        var updated = await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+            UPDATE internal.global_chat_messages
+            SET is_deleted = true
+            WHERE chat_id = {chatId}
+              AND sender_type = {(int)ChatMessageSenderType.Player}
+              AND sender_id = {senderIdValue}
+              AND is_deleted = false");
+
+        return updated > 0;
     }
 
     private static async Task<int?> LockRoomAndGetLastChatIdAsync(AppDbContext dbContext, Guid roomId)
