@@ -23,7 +23,7 @@ namespace server.infrastructure.chat
 
             var messageEntities = await dbContext.ChatMessages
                 .AsNoTracking()
-                .Where(x => x.OwnerId == ownerId)
+                .Where(x => x.OwnerId == ownerId && !x.IsDeleted)
                 .OrderByDescending(x => x.ChatId)
                 .Take(ChatConstants.MessageLimit)
                 .OrderBy(x => x.ChatId)
@@ -143,6 +143,46 @@ namespace server.infrastructure.chat
                 ON CONFLICT (owner_id, chat_id) DO UPDATE
                     SET is_alerted = true
                     WHERE chat_message_alerts.is_alerted = false");
+        }
+
+        public async Task<ChatMessage?> FindMessageAsync(PlayerId ownerId, int chatId)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var entity = await dbContext.ChatMessages
+                .AsNoTracking()
+                .SingleOrDefaultAsync(x => x.OwnerId == ownerId && x.ChatId == chatId && !x.IsDeleted);
+
+            if (entity is null)
+            {
+                return null;
+            }
+
+            var isAlerted = await dbContext.ChatMessageAlerts
+                .AsNoTracking()
+                .Where(x => x.OwnerId == ownerId && x.ChatId == chatId)
+                .Select(x => x.IsAlerted)
+                .SingleOrDefaultAsync();
+
+            return MapToDomain(entity, new Dictionary<int, bool> { [chatId] = isAlerted });
+        }
+
+        public async Task<bool> DeleteMessageAsync(PlayerId ownerId, int chatId, PlayerId senderId)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var ownerIdValue = ownerId.Value;
+            var senderIdValue = senderId.Value;
+
+            // 投稿者本人かつ未削除の行だけを更新する（同時削除・権限の再確認を兼ねる）
+            var updated = await dbContext.Database.ExecuteSqlInterpolatedAsync($@"
+                UPDATE internal.chat_messages
+                SET is_deleted = true
+                WHERE owner_id = {ownerIdValue}
+                  AND chat_id = {chatId}
+                  AND sender_type = {(int)ChatMessageSenderType.Player}
+                  AND sender_id = {senderIdValue}
+                  AND is_deleted = false");
+
+            return updated > 0;
         }
 
         private static async Task<int?> LockRoomAndGetLastChatIdAsync(AppDbContext dbContext, Guid ownerId)

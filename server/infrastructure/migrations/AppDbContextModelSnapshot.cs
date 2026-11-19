@@ -99,6 +99,12 @@ namespace server.infrastructure.migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_alerted");
 
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
+
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -144,6 +150,12 @@ namespace server.infrastructure.migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
 
                     b.Property<string>("Message")
                         .IsRequired()

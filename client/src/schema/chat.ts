@@ -38,6 +38,14 @@ export const markChatMessagesAlertedResponseSchema = z.object({
   updatedCount: z.number().int().min(0),
 })
 
+export const deleteChatMessageRequestSchema = z.object({
+  ownerId: playerIdSchema,
+  chatId: z.number().int().min(1),
+})
+
+// 削除 API は 204 No Content を返す
+export const deleteChatMessageResponseSchema = z.null()
+
 export const globalChatMessageSchema = z.object({
   chatId: z.number().int().min(1, 'chatIdは1以上である必要があります'),
   senderType: z.enum(['Player', 'System']).default('Player'),
@@ -64,12 +72,22 @@ export const postGlobalChatMessageRequestSchema = z.object({
 
 export const postGlobalChatMessageResponseSchema = getGlobalChatRoomResponseSchema
 
+export const deleteGlobalChatMessageRequestSchema = z.object({
+  chatId: z.number().int().min(1),
+})
+
+export const deleteGlobalChatMessageResponseSchema = z.null()
+
 export type GetChatRoomRequest = z.infer<typeof getChatRoomRequestSchema>
 export type GetChatRoomResponse = z.infer<typeof getChatRoomResponseSchema>
 export type PostChatMessageRequest = z.infer<typeof postChatMessageRequestSchema>
 export type PostChatMessageResponse = z.infer<typeof postChatMessageResponseSchema>
 export type MarkChatMessagesAlertedRequest = z.infer<typeof markChatMessagesAlertedRequestSchema>
 export type MarkChatMessagesAlertedResponse = z.infer<typeof markChatMessagesAlertedResponseSchema>
+export type DeleteChatMessageRequest = z.infer<typeof deleteChatMessageRequestSchema>
+export type DeleteChatMessageResponse = z.infer<typeof deleteChatMessageResponseSchema>
+export type DeleteGlobalChatMessageRequest = z.infer<typeof deleteGlobalChatMessageRequestSchema>
+export type DeleteGlobalChatMessageResponse = z.infer<typeof deleteGlobalChatMessageResponseSchema>
 export type GetGlobalChatRoomRequest = z.infer<typeof getGlobalChatRoomRequestSchema>
 export type GetGlobalChatRoomResponse = z.infer<typeof getGlobalChatRoomResponseSchema>
 export type PostGlobalChatMessageRequest = z.infer<typeof postGlobalChatMessageRequestSchema>

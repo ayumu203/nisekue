@@ -19,6 +19,8 @@ import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import {
+  deleteChatMessage,
+  deleteGlobalChatMessage,
   getChatRoom,
   getGlobalChatRoom,
   markChatMessagesAlerted,
@@ -271,7 +273,7 @@ function Home() {
                   gearIconId={tutorialStep === 'home-player-setting' ? 'tutorial-gear-btn' : undefined}
                   onGearClick={() => {
                     if (userId && tutorialStep === 'home-player-setting') {
-                      setTutorialStep(userId, 'player-setting-random')
+                      setTutorialStep(userId, 'player-setting-name')
                     }
                   }}
                   topAction={
@@ -336,15 +338,6 @@ function Home() {
                 {locale.items}
               </Button>
               <Button
-                component={Link}
-                to="/pets"
-                variant="contained"
-                startIcon={<PetsIcon />}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-              >
-                {locale.pets}
-              </Button>
-              <Button
                 variant="contained"
                 startIcon={<TrainingGroupIcon />}
                 onClick={() => setIsTrainingGroupOpenByUser((prev) => !prev)}
@@ -393,6 +386,15 @@ function Home() {
                     sx={{ ...menuButtonSx, ...softGreenButtonSx }}
                   >
                     {locale.rebirth}
+                  </Button>
+                  <Button
+                    component={Link}
+                    to="/pets"
+                    variant="contained"
+                    startIcon={<PetsIcon />}
+                    sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                  >
+                    {locale.pets}
                   </Button>
                 </Stack>
               </Collapse>
@@ -541,7 +543,18 @@ function Home() {
                           await mutateChatRoom(updated, { revalidate: false })
                         }}
                       />
-                      <ChatMessages messages={chatRoom?.messages ?? []} currentPlayerId={player?.userId ?? ''} />
+                      <ChatMessages
+                        messages={chatRoom?.messages ?? []}
+                        currentPlayerId={player?.userId ?? ''}
+                        onDeleteMessage={async (chatId) => {
+                          if (!session?.access_token || !player?.userId) {
+                            throw new Error(locale.sessionInfoMissing)
+                          }
+
+                          await deleteChatMessage({ ownerId: player.userId, chatId }, session.access_token)
+                          await mutateChatRoom()
+                        }}
+                      />
                     </Stack>
                   )
                 ) : isGlobalChatLoading ? (
@@ -568,7 +581,18 @@ function Home() {
                         }}
                       />
                     )}
-                    <ChatMessages messages={globalChatRoom?.messages ?? []} currentPlayerId={player?.userId ?? ''} />
+                    <ChatMessages
+                      messages={globalChatRoom?.messages ?? []}
+                      currentPlayerId={player?.userId ?? ''}
+                      onDeleteMessage={async (chatId) => {
+                        if (!session?.access_token) {
+                          throw new Error(locale.sessionInfoMissing)
+                        }
+
+                        await deleteGlobalChatMessage({ chatId }, session.access_token)
+                        await mutateGlobalChatRoom()
+                      }}
+                    />
                     {(globalChatRoom?.totalCount ?? 0) > 100 && (
                       <Pagination
                         count={Math.ceil((globalChatRoom?.totalCount ?? 0) / 100)}

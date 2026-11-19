@@ -4,5 +4,11 @@
   "sendFailed": "メッセージ送信に失敗しました",
   "anonymousPostingRestricted": "匿名ログイン中は投稿できません。プレイヤー設定からアカウント連携してください。",
   "showSystemMessages": "システム通知を表示",
-  "noVisibleMessages": "表示するメッセージはありません。"
+  "noVisibleMessages": "表示するメッセージはありません。",
+  "deleteMessage": "発言を削除",
+  "deleteConfirmTitle": "このメッセージを削除しますか？",
+  "deleteConfirmBody": "一度削除した内容を戻すことは出来ません。",
+  "deleteCancel": "キャンセル",
+  "deleteConfirm": "削除",
+  "deleteFailed": "メッセージの削除に失敗しました"
 }
