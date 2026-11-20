@@ -74,7 +74,7 @@ const stageSprites: StageSprite[] = [
   // 空を飛ぶ敵。左右のアーチ窓の前に 1 体ずつ置き、高さを左右のシャンデリアにそろえる。
   // 魔王より手前・地上のキャラより奥にいるイメージなので、地上の敵より小さい 2 倍にしている
   { src: 'image/battle/Enemy2.png', left: 24.75, top: 18.4, width: 8, pixelated: true },
-  { src: 'image/battle/Enemy61.png', left: 67.25, top: 18.4, width: 8, pixelated: true },
+  { src: 'image/battle/Enemy62.png', left: 67.25, top: 18.4, width: 8, pixelated: true },
 ]
 
 const heroTitleSx = {
