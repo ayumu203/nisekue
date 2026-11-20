@@ -31,6 +31,8 @@ const WINDOW_OUTLINE_COLOR = '#6e4415'
 const WINDOW_BORDER_COLOR = '#ffffff'
 const ACCENT_COLOR = '#ffcc00'
 const ACCENT_TEXT_COLOR = '#4f392c'
+// 受付嬢の髪色に合わせた水色
+const GUIDE_NAME_COLOR = '#bfe6ff'
 const BUBBLE_COLOR = '#fffaf0'
 const BUBBLE_TEXT_COLOR = '#3d2a1e'
 const OVERLAY_COLOR = 'rgba(20, 12, 4, 0.62)'
@@ -294,7 +296,7 @@ export default function SpotlightTutorial({
                 fontWeight: 700,
                 lineHeight: 1.2,
                 letterSpacing: '0.05em',
-                color: ACCENT_COLOR,
+                color: GUIDE_NAME_COLOR,
               }}
             >
               {tutorialLocale.guideName}
