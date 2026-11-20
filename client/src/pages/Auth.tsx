@@ -92,15 +92,14 @@ const heroTaglineSx = {
   textShadow: ['-2px -2px 0 #1a0f33', '2px -2px 0 #1a0f33', '-2px 2px 0 #1a0f33', '2px 2px 0 #1a0f33'].join(', '),
 } as const
 
+// 枠を持たせず、右側（モバイルは下側）のパネル全体をフォームの面にする
 const authCardSx = {
   width: '100%',
   maxWidth: { xs: 400, md: 440 },
-  borderRadius: 2,
-  border: '2px solid #8f6b2f',
-  backgroundColor: 'rgba(22, 17, 48, 0.92)',
-  boxShadow: '0 0 0 4px rgba(217, 164, 65, 0.12), 0 18px 40px rgba(0, 0, 0, 0.45)',
-  px: { xs: 2.5, md: 4 },
-  py: { xs: 3, md: 4 },
+  border: 'none',
+  backgroundColor: 'transparent',
+  boxShadow: 'none',
+  p: 0,
 } as const
 
 const darkInputSx = {
@@ -338,8 +337,6 @@ function Auth() {
           px: { xs: 2, sm: 4 },
           py: { xs: 4, md: 6 },
           background: 'linear-gradient(180deg, #1b1538 0%, #0d0a20 100%)',
-          borderLeft: { md: '3px solid #8f6b2f' },
-          borderTop: { xs: '3px solid #8f6b2f', md: 'none' },
         }}
       >
         <Paper elevation={0} sx={authCardSx}>
