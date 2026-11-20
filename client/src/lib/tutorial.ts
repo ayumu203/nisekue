@@ -15,6 +15,9 @@ export type TutorialStep =
   | 'job-change-roadmap'
   | 'training-to-lv7'
   | 'training-quest-guide'
+  | 'home-quest'
+  | 'quest-info'
+  | 'quest-to-home'
   | 'home-move-setting'
   | 'move-setting-info'
   | 'home-treasure-map'
@@ -42,6 +45,9 @@ const TUTORIAL_STEPS: readonly TutorialStep[] = [
   'job-change-roadmap',
   'training-to-lv7',
   'training-quest-guide',
+  'home-quest',
+  'quest-info',
+  'quest-to-home',
   'home-move-setting',
   'move-setting-info',
   'home-treasure-map',

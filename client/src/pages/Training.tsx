@@ -783,7 +783,7 @@ export default function Training() {
           message={tutorialLocale.steps.trainingQuestGuide.message}
           showDismiss
           dismissLabel={tutorialLocale.steps.trainingQuestGuide.dismissLabel}
-          onDismiss={() => advanceTutorial('home-move-setting')}
+          onDismiss={() => advanceTutorial('home-quest')}
         />
       )}
       <Snackbar

@@ -5,6 +5,7 @@
     "priest": "神官",
     "mage": "魔導士",
     "adventurer": "冒険者",
+    "captain": "隊長",
     "highPriest": "大神官"
   },
   "pointerLabelTap": "Tap!",
@@ -70,6 +71,16 @@
     "trainingQuestGuide": {
       "message": "やるじゃないか！これでクエストに挑戦できるよ。\nほかの機能は受付嬢が案内してくれるからね！",
       "dismissLabel": "次へ"
+    },
+    "homeQuest": {
+      "message": "次は「クエスト」を見てみましょう！"
+    },
+    "questInfo": {
+      "message": "クエストへようこそ！\nステージを選んで出発するんだ。ソロでも行けるし、ルームを作って仲間と挑むこともできるよ。",
+      "dismissLabel": "次へ"
+    },
+    "questToHome": {
+      "message": "準備ができたら、いつでも来てね。\nまずはホームに戻ろう！"
     },
     "homeMoveSetting": {
       "message": "次は「技の設定」を見てみましょう。技の順番を並べ替えられますよ。"

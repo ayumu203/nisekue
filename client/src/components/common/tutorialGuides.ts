@@ -1,6 +1,13 @@
 import tutorialLocale from '../../../locale/tutorial/Tutorial.json'
 
-export type TutorialGuideId = 'receptionist' | 'instructor' | 'priest' | 'mage' | 'adventurer' | 'highPriest'
+export type TutorialGuideId =
+  | 'receptionist'
+  | 'instructor'
+  | 'priest'
+  | 'mage'
+  | 'adventurer'
+  | 'captain'
+  | 'highPriest'
 
 type TutorialGuide = {
   name: string
@@ -54,6 +61,14 @@ export const TUTORIAL_GUIDES: Record<TutorialGuideId, TutorialGuide> = {
     faceY: 0.38,
     zoom: 1.45,
     nameColor: '#cdeec0',
+  },
+  captain: {
+    name: tutorialLocale.guides.captain,
+    image: 'image/job/21_grandranger.png',
+    faceX: 0.49,
+    faceY: 0.33,
+    zoom: 1.5,
+    nameColor: '#dfe3f5',
   },
   highPriest: {
     name: tutorialLocale.guides.highPriest,

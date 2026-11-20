@@ -290,11 +290,17 @@ function Home() {
                 />
               )}
               <Button
+                id={tutorialStep === 'home-quest' ? 'tutorial-quest-btn' : undefined}
                 component={Link}
                 to="/quest"
                 variant="contained"
                 startIcon={<QuestIcon />}
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                onClick={() => {
+                  if (userId && tutorialStep === 'home-quest') {
+                    setTutorialStep(userId, 'quest-info')
+                  }
+                }}
               >
                 {locale.quest}
               </Button>
@@ -620,6 +626,9 @@ function Home() {
       )}
       {tutorialStep === 'training-to-lv7' && (
         <SpotlightTutorial targetId="tutorial-training-btn" message={tutorialLocale.steps.backToTraining.message} />
+      )}
+      {tutorialStep === 'home-quest' && (
+        <SpotlightTutorial targetId="tutorial-quest-btn" message={tutorialLocale.steps.homeQuest.message} />
       )}
       {tutorialStep === 'home-move-setting' && (
         <SpotlightTutorial
