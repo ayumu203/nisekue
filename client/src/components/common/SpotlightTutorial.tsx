@@ -1,6 +1,7 @@
 import { Box, Button, Typography, useMediaQuery } from '@mui/material'
 import { keyframes, useTheme } from '@mui/material/styles'
-import { useLayoutEffect, useState } from 'react'
+import { loadDefaultJapaneseParser } from 'budoux'
+import { Fragment, useLayoutEffect, useState } from 'react'
 import { useAuth } from '@/contexts/useAuth'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { resolvePublicAssetPath } from '@/lib/assets'
@@ -25,7 +26,8 @@ type SpotlightTutorialProps = {
 }
 
 // 実際の画面（歯車ボタン・外枠）の配色に合わせる
-const WINDOW_COLOR = '#6e4415'
+const WINDOW_BACKGROUND = 'linear-gradient(180deg, #a86d34 0%, #87521f 100%)'
+const WINDOW_OUTLINE_COLOR = '#6e4415'
 const WINDOW_BORDER_COLOR = '#ffffff'
 const ACCENT_COLOR = '#ffcc00'
 const ACCENT_TEXT_COLOR = '#4f392c'
@@ -54,6 +56,22 @@ const reducedMotionSx = {
     animation: 'none',
   },
 } as const
+
+const phraseParser = loadDefaultJapaneseParser()
+
+// 文節の切れ目でだけ折り返すように <wbr> を挟む（wordBreak: keep-all と組み合わせる）
+const renderPhrases = (text: string) =>
+  text.split('\n').map((line, lineIndex) => (
+    <Fragment key={lineIndex}>
+      {lineIndex > 0 && <br />}
+      {phraseParser.parse(line).map((phrase, phraseIndex) => (
+        <Fragment key={phraseIndex}>
+          {phraseIndex > 0 && <wbr />}
+          {phrase}
+        </Fragment>
+      ))}
+    </Fragment>
+  ))
 
 function useTargetRect(targetId: string | undefined, padding: number): TargetRect | null {
   const [rect, setRect] = useState<TargetRect | null>(null)
@@ -219,36 +237,17 @@ export default function SpotlightTutorial({
         }}
       >
         <Box
-          sx={{
-            position: 'absolute',
-            top: { xs: -20, sm: -24 },
-            left: 16,
-            zIndex: 1,
-            px: { xs: 2, sm: 2.5 },
-            py: 0.5,
-            backgroundColor: ACCENT_COLOR,
-            border: `3px solid ${WINDOW_BORDER_COLOR}`,
-            borderRadius: '6px',
-          }}
-        >
-          <Typography component="span" sx={{ fontSize: { xs: 16, sm: 19 }, lineHeight: 1.2, color: ACCENT_TEXT_COLOR }}>
-            {tutorialLocale.guideName}
-          </Typography>
-        </Box>
-
-        <Box
           role="dialog"
           aria-label={tutorialLocale.guideName}
           sx={{
             display: 'flex',
             gap: { xs: 1.5, sm: 2.5 },
             alignItems: 'stretch',
-            pt: { xs: 3, sm: 3.75 },
-            pb: { xs: 2, sm: 2.5 },
+            py: { xs: 2, sm: 2.5 },
             px: { xs: 2, sm: 2.5 },
-            backgroundColor: WINDOW_COLOR,
+            background: WINDOW_BACKGROUND,
             border: `3px solid ${WINDOW_BORDER_COLOR}`,
-            outline: `3px solid ${WINDOW_COLOR}`,
+            outline: `3px solid ${WINDOW_OUTLINE_COLOR}`,
             borderRadius: '8px',
           }}
         >
@@ -277,7 +276,8 @@ export default function SpotlightTutorial({
                 height: '100%',
                 objectFit: 'cover',
                 objectPosition: 'center top',
-                transform: 'scale(1.35)',
+                // 立ち絵の顔は画像の横幅の約 55% の位置にあるので、拡大後に左へずらして中央に合わせる
+                transform: 'translateX(-6%) scale(1.35)',
                 transformOrigin: '50% 0',
               }}
             />
@@ -285,15 +285,38 @@ export default function SpotlightTutorial({
 
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography
-              sx={{ color: '#ffffff', whiteSpace: 'pre-line', lineHeight: 1.7, fontSize: { xs: 16, sm: 19 } }}
+              component="p"
+              sx={{
+                display: 'inline-block',
+                mb: 0.75,
+                pb: 0.25,
+                fontSize: { xs: 15, sm: 17 },
+                fontWeight: 700,
+                lineHeight: 1.3,
+                letterSpacing: '0.08em',
+                color: ACCENT_COLOR,
+                borderBottom: `2px solid ${ACCENT_COLOR}`,
+              }}
             >
-              {message}
+              {tutorialLocale.guideName}
+            </Typography>
+            <Typography
+              sx={{
+                color: '#ffffff',
+                wordBreak: 'keep-all',
+                overflowWrap: 'anywhere',
+                lineHeight: 1.7,
+                fontSize: { xs: 16, sm: 19 },
+              }}
+            >
+              {renderPhrases(message)}
             </Typography>
             {subMessage && (
               <Typography
                 sx={{
                   color: '#fff1d6',
-                  whiteSpace: 'pre-line',
+                  wordBreak: 'keep-all',
+                  overflowWrap: 'anywhere',
                   lineHeight: 1.7,
                   fontSize: { xs: 14, sm: 16 },
                   mt: 1,
@@ -301,7 +324,7 @@ export default function SpotlightTutorial({
                   borderTop: '1px solid rgba(255, 255, 255, 0.35)',
                 }}
               >
-                {subMessage}
+                {renderPhrases(subMessage)}
               </Typography>
             )}
             {((showDismiss && onDismiss) || (canUseDebug && userId)) && (
