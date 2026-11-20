@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Alert, Box, Button, CircularProgress, Divider, Link, Paper, Stack, TextField, Typography } from '@mui/material'
 import { Navigate } from 'react-router-dom'
-import { googleButtonSx, greenOutlinedInputSx, softGoldButtonSx, softGreenButtonSx } from '@/constants/styles'
+import { googleButtonSx, softGoldButtonSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import { supabase } from '@/lib/supabase'
@@ -12,9 +12,13 @@ import locale from '../../locale/auth/Auth.json'
 type SubmitMode = 'google' | 'signIn' | 'signUp' | 'anonymous' | null
 type EmailAuthMode = 'signIn' | 'signUp'
 
-const heroBackgroundUrl = resolvePublicAssetPath('image/quest/enchanted-forest-battlefield.svg')
+// サムネ（Notion「ゲームとしては完成してきたのでプレイヤーを増やしたい」案C v18）と同じ「魔王の玉座の間」の構図。
+// 背景は tools/auth-hero/generate_throne_hall.py で生成した自作のドット絵（1200x1200）で、
+// 下側 1200x630 がサムネと同じ「ステージ」。キャラ・敵の素材は加工せず、ステージ基準の割合で重ねる。
+const heroBackgroundUrl = resolvePublicAssetPath('image/auth/throne-hall.png')
+const heroCeilingColor = '#080718'
 
-// フォーム脇に出すマスコット。左のヒーロー背景で使っているキャラは重複を避けるため除外する。
+// フォーム脇に出すマスコット。ヒーローで使っているキャラ（ch109・ch173・ch175）は重複を避けるため除外する。
 const formMascotPaths = [
   'image/character/ch110b_hero.png',
   'image/character/ch111_hero.png',
@@ -33,9 +37,7 @@ const formMascotPaths = [
   'image/character/ch132_hero.png',
   'image/character/ch171_hero.png',
   'image/character/ch172_hero.png',
-  'image/character/ch173_hero.png',
   'image/character/ch174_hero.png',
-  'image/character/ch175_hero.png',
   'image/character/ch176_hero.png',
   'image/character/ch176b_hero.png',
   'image/character/ch177_hero.png',
@@ -47,89 +49,93 @@ const formMascotPaths = [
   'image/character/ch188_hero.png',
 ] as const
 
-type MobileHeroSprite = {
+type StageSprite = {
   src: string
-  height: number
+  /** ステージ（1200x630）に対する左端・上端・幅の割合（%） */
+  left: number
+  top: number
+  width: number
   pixelated?: boolean
 }
 
-// モバイル版のみ表示する最前列のキャラクター
-const mobileHeroSprites: MobileHeroSprite[] = [
-  { src: resolvePublicAssetPath('image/battle/Enemy100.png'), height: 48, pixelated: true },
-  { src: resolvePublicAssetPath('image/character/ch109_hero.png'), height: 96 },
-  { src: resolvePublicAssetPath('image/character/ch001_bmnpc.png'), height: 84 },
-]
-
-type ScatteredHeroSprite = {
-  src: string
-  left: string
-  bottom: string
-  height: number
-  pixelated?: boolean
-}
-
-// PC版のみ表示するキャラクター。タイトル周辺(left 25〜75% × bottom 45〜70%)を避けてパネル全体に散らす
-// キャラPNGは元画像が高さ250〜315pxあるため110〜144px表示、敵ドット絵(48x48)は整数倍率で表示する
-const scatteredHeroSprites: ScatteredHeroSprite[] = [
-  { src: resolvePublicAssetPath('image/character/ch110_hero.png'), left: '8%', bottom: '80%', height: 120 },
-  { src: resolvePublicAssetPath('image/character/ch011_innpc.png'), left: '40%', bottom: '84%', height: 110 },
-  { src: resolvePublicAssetPath('image/battle/Enemy21.png'), left: '58%', bottom: '78%', height: 96, pixelated: true },
-  { src: resolvePublicAssetPath('image/character/ch118_hero.png'), left: '74%', bottom: '81%', height: 116 },
-  { src: resolvePublicAssetPath('image/character/ch020_in.png'), left: '3%', bottom: '54%', height: 116 },
-  { src: resolvePublicAssetPath('image/character/ch003_bmnpc.png'), left: '83%', bottom: '56%', height: 120 },
-  { src: resolvePublicAssetPath('image/character/ch029_sino.png'), left: '7%', bottom: '30%', height: 126 },
-  { src: resolvePublicAssetPath('image/character/ch009_innpc.png'), left: '46%', bottom: '30%', height: 122 },
-  { src: resolvePublicAssetPath('image/character/ch112_hero.png'), left: '85%', bottom: '29%', height: 130 },
-  { src: resolvePublicAssetPath('image/battle/Enemy43.png'), left: '16%', bottom: '7%', height: 96, pixelated: true },
-  { src: resolvePublicAssetPath('image/battle/Enemy1.png'), left: '40%', bottom: '10%', height: 48, pixelated: true },
-  { src: resolvePublicAssetPath('image/battle/Enemy7.png'), left: '60%', bottom: '6%', height: 96, pixelated: true },
-  { src: resolvePublicAssetPath('image/battle/Enemy100.png'), left: '80%', bottom: '8%', height: 96, pixelated: true },
+// サムネと同じ配置。敵は左、プレイヤーは右で、画面の外側ほど手前（大きく・下）、玉座に近いほど奥。
+// 敵のドット絵（48x48）は整数倍（PC 幅 1200px 時）になる幅にしている。
+const stageSprites: StageSprite[] = [
+  { src: 'image/battle/Enemy86.png', left: 44, top: 40.6, width: 12, pixelated: true },
+  { src: 'image/battle/Enemy100.png', left: 1.3, top: 61.9, width: 20, pixelated: true },
+  { src: 'image/battle/Enemy49.png', left: 21.8, top: 64.1, width: 16, pixelated: true },
+  { src: 'image/battle/Enemy66.png', left: 38.8, top: 72.4, width: 8, pixelated: true },
+  { src: 'image/character/ch175_hero.png', left: 53.3, top: 62.9, width: 12.25 },
+  { src: 'image/character/ch109_hero.png', left: 66.7, top: 63.2, width: 12.25 },
+  { src: 'image/character/ch173_hero.png', left: 84.2, top: 63.2, width: 15 },
 ]
 
 const heroTitleSx = {
-  fontSize: 'clamp(3rem, 6.5vw, 4.75rem)',
-  lineHeight: 1.1,
-  color: '#ffffff',
-  letterSpacing: '0.06em',
+  // ステージの幅に合わせて拡縮する（サムネでは幅 1200px に対して約 80px）
+  fontSize: 'max(2rem, 6.8cqw)',
+  lineHeight: 1.05,
+  color: '#fffaf0',
+  letterSpacing: '0.04em',
   textShadow: [
-    '-3px -3px 0 #2e5232',
-    '3px -3px 0 #2e5232',
-    '-3px 3px 0 #2e5232',
-    '3px 3px 0 #2e5232',
-    '6px 8px 0 rgba(46, 82, 50, 0.4)',
+    '-3px -3px 0 #1a0f33',
+    '3px -3px 0 #1a0f33',
+    '-3px 3px 0 #1a0f33',
+    '3px 3px 0 #1a0f33',
+    '0 6px 0 rgba(10, 6, 24, 0.6)',
   ].join(', '),
 } as const
 
 const heroTaglineSx = {
-  px: 2,
-  py: 0.5,
-  borderRadius: 999,
-  backgroundColor: 'rgba(255, 255, 255, 0.82)',
-  color: '#2e5232',
-  fontWeight: 700,
-} as const
-
-const heroSpriteRowSx = {
-  position: 'absolute',
-  bottom: 12,
-  left: 0,
-  right: 0,
-  display: { xs: 'flex', md: 'none' },
-  justifyContent: 'center',
-  alignItems: 'flex-end',
-  gap: 2,
-  pointerEvents: 'none',
+  fontSize: 'max(0.85rem, 2.5cqw)',
+  color: '#f2d27a',
+  letterSpacing: '0.04em',
+  textShadow: ['-2px -2px 0 #1a0f33', '2px -2px 0 #1a0f33', '-2px 2px 0 #1a0f33', '2px 2px 0 #1a0f33'].join(', '),
 } as const
 
 const authCardSx = {
   width: '100%',
-  maxWidth: { xs: 400, md: 460 },
-  borderRadius: 0,
-  border: 'none',
-  backgroundColor: 'transparent',
-  boxShadow: 'none',
-  p: 0,
+  maxWidth: { xs: 400, md: 440 },
+  borderRadius: 2,
+  border: '2px solid #8f6b2f',
+  backgroundColor: 'rgba(22, 17, 48, 0.92)',
+  boxShadow: '0 0 0 4px rgba(217, 164, 65, 0.12), 0 18px 40px rgba(0, 0, 0, 0.45)',
+  px: { xs: 2.5, md: 4 },
+  py: { xs: 3, md: 4 },
 } as const
+
+const darkInputSx = {
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    color: '#f4f0ff',
+    '& fieldset': { borderColor: '#5b4b94' },
+    '&:hover fieldset': { borderColor: '#8a76c9' },
+    '&.Mui-focused fieldset': { borderColor: '#d9a441' },
+  },
+  '& .MuiInputLabel-root': { color: '#b3a8d6' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#f2d27a' },
+} as const
+
+const purpleButtonSx = {
+  '&&': {
+    backgroundColor: '#7a5bd0',
+    backgroundImage: 'none',
+    borderColor: '#a58cf0',
+    color: '#ffffff',
+  },
+  '&&:hover': {
+    backgroundColor: '#6a4bc0',
+    backgroundImage: 'none',
+    boxShadow: 'none',
+  },
+  '&&.Mui-disabled': {
+    backgroundColor: '#4a3f73',
+    backgroundImage: 'none',
+    color: '#b3a8d6',
+  },
+} as const
+
+const mutedTextColor = '#b3a8d6'
+const dividerColor = '#3e3470'
 
 function Auth() {
   const { user, isLoading } = useAuth()
@@ -255,63 +261,69 @@ function Auth() {
         display: 'grid',
         gridTemplateColumns: { xs: '1fr', md: '1.45fr 1fr' },
         gridTemplateRows: { xs: 'auto 1fr', md: '1fr' },
+        backgroundColor: heroCeilingColor,
       }}
     >
       <Box
         sx={{
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
           overflow: 'hidden',
-          minHeight: { xs: 300, md: '100dvh' },
+          // モバイルはステージ（1200x630）より少し縦長にして天井をのぞかせる
+          aspectRatio: { xs: '1200 / 760', md: 'auto' },
+          // PC はフォームが画面より長くてもキャラが見切れないよう、画面の高さに固定する
+          position: { xs: 'relative', md: 'sticky' },
+          top: { md: 0 },
+          alignSelf: { md: 'start' },
+          height: { md: '100dvh' },
+          backgroundColor: heroCeilingColor,
           backgroundImage: `url(${heroBackgroundUrl})`,
-          backgroundSize: 'cover',
+          backgroundSize: '100% auto',
           backgroundPosition: 'center bottom',
+          backgroundRepeat: 'no-repeat',
+          imageRendering: 'pixelated',
         }}
       >
-        {scatteredHeroSprites.map((sprite) => (
-          <Box
-            key={sprite.src}
-            component="img"
-            src={sprite.src}
-            alt=""
+        <Box
+          sx={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            aspectRatio: '1200 / 630',
+            containerType: 'inline-size',
+          }}
+        >
+          <Stack
+            alignItems="center"
+            spacing={{ xs: 0.5, md: 1 }}
             sx={{
               position: 'absolute',
-              left: sprite.left,
-              bottom: sprite.bottom,
-              height: sprite.height,
-              imageRendering: sprite.pixelated ? 'pixelated' : 'auto',
-              display: { xs: 'none', md: 'block' },
-              pointerEvents: 'none',
+              left: 0,
+              right: 0,
+              top: '15.2%',
+              transform: 'translateY(-50%)',
+              textAlign: 'center',
             }}
-          />
-        ))}
+          >
+            <Typography component="h1" sx={heroTitleSx}>
+              {locale.heroTitle}
+            </Typography>
+            <Typography sx={heroTaglineSx}>{locale.heroTagline}</Typography>
+          </Stack>
 
-        <Stack
-          alignItems="center"
-          spacing={2}
-          sx={{ px: 3, pb: { xs: 14, md: 20 }, pt: { xs: 6, md: 0 }, textAlign: 'center' }}
-        >
-          <Typography component="h1" sx={heroTitleSx}>
-            {locale.heroTitle}
-          </Typography>
-          <Typography variant="body1" sx={heroTaglineSx}>
-            {locale.heroTagline}
-          </Typography>
-        </Stack>
-
-        <Box sx={heroSpriteRowSx}>
-          {mobileHeroSprites.map((sprite) => (
+          {stageSprites.map((sprite) => (
             <Box
               key={sprite.src}
               component="img"
-              src={sprite.src}
+              src={resolvePublicAssetPath(sprite.src)}
               alt=""
               sx={{
-                height: sprite.height,
+                position: 'absolute',
+                left: `${sprite.left}%`,
+                top: `${sprite.top}%`,
+                width: `${sprite.width}%`,
+                height: 'auto',
                 imageRendering: sprite.pixelated ? 'pixelated' : 'auto',
+                pointerEvents: 'none',
               }}
             />
           ))}
@@ -325,7 +337,9 @@ function Auth() {
           justifyContent: 'center',
           px: { xs: 2, sm: 4 },
           py: { xs: 4, md: 6 },
-          background: 'linear-gradient(180deg, #fffdf8 0%, #f5edd8 100%)',
+          background: 'linear-gradient(180deg, #1b1538 0%, #0d0a20 100%)',
+          borderLeft: { md: '3px solid #8f6b2f' },
+          borderTop: { xs: '3px solid #8f6b2f', md: 'none' },
         }}
       >
         <Paper elevation={0} sx={authCardSx}>
@@ -334,19 +348,18 @@ function Auth() {
               <Typography
                 component="h2"
                 textAlign="center"
-                fontWeight={800}
-                sx={{ fontSize: { xs: '1.7rem', md: '2.1rem' }, color: '#5c4a33', letterSpacing: '0.04em' }}
+                sx={{ fontSize: { xs: '1.7rem', md: '2rem' }, color: '#f2d27a', letterSpacing: '0.06em' }}
               >
                 {locale.cardTitle}
               </Typography>
-              {/* 主ボタンとログインボタンの色をつないだ飾り罫で、見出しとフォーム本体を区切る */}
+              {/* 垂れ幕と同じ金と紫の飾り罫で、見出しとフォーム本体を区切る */}
               <Box
                 aria-hidden
                 sx={{
                   width: 88,
                   height: 4,
                   borderRadius: 999,
-                  background: 'linear-gradient(90deg, #f2d27a 0%, #cbd98a 50%, #78c27d 100%)',
+                  background: 'linear-gradient(90deg, #7a5bd0 0%, #d9a441 50%, #7a5bd0 100%)',
                 }}
               />
             </Stack>
@@ -357,7 +370,7 @@ function Auth() {
               component="img"
               src={mascotSrc}
               alt=""
-              sx={{ height: { xs: 104, md: 132 }, alignSelf: 'center', mb: -1, pointerEvents: 'none' }}
+              sx={{ height: { xs: 104, md: 128 }, alignSelf: 'center', mb: -1, pointerEvents: 'none' }}
             />
 
             <Button
@@ -371,8 +384,8 @@ function Auth() {
               {submitMode === 'anonymous' ? locale.anonymousSubmitting : locale.anonymousSubmit}
             </Button>
 
-            <Divider sx={{ '&::before, &::after': { borderColor: '#e0d3b4' } }}>
-              <Typography variant="caption" color="text.secondary">
+            <Divider sx={{ '&::before, &::after': { borderColor: dividerColor } }}>
+              <Typography variant="caption" sx={{ color: mutedTextColor }}>
                 {locale.orDivider}
               </Typography>
             </Divider>
@@ -387,7 +400,7 @@ function Auth() {
               {submitMode === 'google' ? locale.googleSignInSubmitting : locale.googleSignIn}
             </Button>
 
-            <Divider sx={{ borderColor: '#e0d3b4' }} />
+            <Divider sx={{ borderColor: dividerColor }} />
 
             <Box component="form" onSubmit={handleEmailAuth} noValidate>
               <Stack spacing={{ xs: 1.5, md: 2 }}>
@@ -401,7 +414,7 @@ function Auth() {
                   required
                   fullWidth
                   size="medium"
-                  sx={greenOutlinedInputSx}
+                  sx={darkInputSx}
                 />
                 <TextField
                   id="auth-password"
@@ -412,14 +425,14 @@ function Auth() {
                   onChange={(event) => setPassword(event.target.value)}
                   required
                   fullWidth
-                  sx={greenOutlinedInputSx}
+                  sx={darkInputSx}
                 />
                 <Button
                   type="submit"
                   variant="contained"
                   disabled={isAnySubmitting}
                   fullWidth
-                  sx={{ ...softGreenButtonSx, py: { xs: 1, md: 1.3 } }}
+                  sx={{ ...purpleButtonSx, py: { xs: 1, md: 1.3 } }}
                 >
                   {submitMode === emailAuthMode
                     ? emailAuthMode === 'signIn'
@@ -431,7 +444,7 @@ function Auth() {
                 </Button>
                 {error ? <Alert severity="error">{error}</Alert> : null}
                 <Stack direction="row" spacing={0.75} justifyContent="center" alignItems="center" sx={{ pt: 0.5 }}>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: mutedTextColor }}>
                     {emailAuthMode === 'signIn' ? locale.signUpPrompt : locale.signInPrompt}
                   </Typography>
                   <Link
@@ -440,7 +453,7 @@ function Auth() {
                     variant="body2"
                     onClick={toggleEmailAuthMode}
                     disabled={isAnySubmitting}
-                    sx={{ color: '#4e7f42', fontWeight: 700, textDecorationColor: 'rgba(78, 127, 66, 0.5)' }}
+                    sx={{ color: '#cdb8ff', fontWeight: 700, textDecorationColor: 'rgba(205, 184, 255, 0.5)' }}
                   >
                     {emailAuthMode === 'signIn' ? locale.signUp : locale.signIn}
                   </Link>
