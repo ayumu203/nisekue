@@ -68,11 +68,8 @@ const stageSprites: StageSprite[] = [
   { src: 'image/character/ch175_hero.png', left: 53.3, top: 62.9, width: 12.25 },
   { src: 'image/character/ch109_hero.png', left: 66.7, top: 63.2, width: 12.25 },
   { src: 'image/character/ch173_hero.png', left: 84.2, top: 63.2, width: 15 },
-  // 空を飛ぶ敵。垂れ幕の下に置く（外側ほど低く小さく、内側ほど高く大きく。シャンデリアの鎖は避ける）
-  { src: 'image/battle/Enemy79.png', left: 1.4, top: 19, width: 8, pixelated: true },
-  { src: 'image/battle/Enemy2.png', left: 12.75, top: 15.9, width: 12, pixelated: true },
-  { src: 'image/battle/Enemy61.png', left: 75.25, top: 15.9, width: 12, pixelated: true },
-  { src: 'image/battle/Enemy14.png', left: 90.6, top: 19, width: 8, pixelated: true },
+  // 空を飛ぶ敵。左の窓の前に 1 体だけ置き、高さを左右のシャンデリアにそろえる
+  { src: 'image/battle/Enemy2.png', left: 22.75, top: 27, width: 12, pixelated: true },
 ]
 
 const heroTitleSx = {

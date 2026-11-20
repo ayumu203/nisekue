@@ -132,17 +132,6 @@ def draw_scene() -> Image.Image:
     for x in (sx(70), sx(225), sx(470), sx(730), sx(975), sx(1130)):
         pillar(x, 22)
 
-    # 柱の根元の紫の炎（かがり火）
-    def brazier(cx: int):
-        base = floor_y - 6
-        d.rectangle([cx - 5, base - 6, cx + 5, base - 2], fill=GOLD_DARK)
-        d.rectangle([cx - 4, base - 6, cx + 4, base - 5], fill=GOLD)
-        for i, (w, c) in enumerate([(7, (122, 60, 200)), (5, (176, 110, 255)), (3, (236, 210, 255))]):
-            d.polygon([(cx - w, base - 6), (cx, base - 22 + i * 4), (cx + w, base - 6)], fill=c)
-
-    for x in (sx(70), sx(1130)):
-        brazier(x)
-
     # 床（奥に向かって狭まる格子）
     floor_far, floor_near = (26, 21, 56), (14, 11, 32)
     fb = 6
@@ -247,8 +236,8 @@ def draw_scene() -> Image.Image:
             d.point((x, y - 2), fill=(236, 210, 255))
         d.point((cx, y + 11), fill=(159, 196, 255))
 
-    chandelier(sx(145), sy(290))
-    chandelier(sx(1055), sy(290))
+    chandelier(sx(145), sy(238))
+    chandelier(sx(1055), sy(238))
 
     # 打撃のエフェクト（青い獣の右後ろ）
     hx, hy = sx(612), sy(500)
