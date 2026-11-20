@@ -66,7 +66,7 @@ const stageSprites: StageSprite[] = [
   { src: 'image/battle/Enemy86.png', left: 44, top: 40.6, width: 12, pixelated: true },
   { src: 'image/battle/Enemy100.png', left: 1.3, top: 61.9, width: 20, pixelated: true },
   { src: 'image/battle/Enemy49.png', left: 21.8, top: 64.1, width: 16, pixelated: true },
-  { src: 'image/battle/Enemy66.png', left: 38.8, top: 72.4, width: 8, pixelated: true },
+  { src: 'image/battle/Enemy30.png', left: 38.8, top: 72.4, width: 8, pixelated: true },
   { src: 'image/character/ch175_hero.png', left: 53.3, top: 62.9, width: 12.25 },
   { src: 'image/character/ch109_hero.png', left: 66.7, top: 63.2, width: 12.25 },
   // 後衛の魔法使いは魔法陣を出しながら宙に浮いている（地上のキャラより少し上に置く）
