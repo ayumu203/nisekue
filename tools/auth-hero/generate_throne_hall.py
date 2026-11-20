@@ -282,7 +282,7 @@ def draw_scene() -> Image.Image:
     ax, ay = sx(1100), sy(475)
     for r, c in [(46, (30, 50, 90)), (39, (36, 66, 110)), (32, (44, 86, 134))]:
         d.ellipse([ax - r * 0.82, ay - r, ax + r * 0.82, ay + r], fill=c)
-    magic_circle(d, sx(980), sy(505))
+    magic_circle(d, sx(980), sy(460))
     for _ in range(18):
         x = rnd.randint(ax - 46, ax + 46)
         y = rnd.randint(ay - 70, ay + 30)
