@@ -35,6 +35,7 @@ import { innerSurfaceSx, outerPagePaperSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { beginnerGuides } from '@/lib/beginnerGuides'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import { getNextMoveTurnIndex } from '@/lib/trainingMovePlan'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
@@ -492,6 +493,25 @@ export default function Training() {
     })
   }
 
+  // 技選びのチュートリアルでは、技を選ぶたびに矢印を次のターンへ移し、MP を使い切ったら「戦闘」の案内へ進む
+  const nextTutorialMoveTurnIndex =
+    tutorialStep === 'training-move-select' && player && plannedMoveIds
+      ? getNextMoveTurnIndex(player, plannedMoveIds)
+      : null
+  const isTutorialMovePlanDone =
+    tutorialStep === 'training-move-select' &&
+    player != null &&
+    plannedMoveIds != null &&
+    nextTutorialMoveTurnIndex === null
+
+  useEffect(() => {
+    if (isTutorialMovePlanDone) {
+      advanceTutorial('training-confirm')
+    }
+    // advanceTutorial は毎回作り直されるので依存に入れない
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTutorialMovePlanDone])
+
   async function startBattle(): Promise<void> {
     if (!player || !plannedMoveIds) {
       throw new Error(locale.playerLoading)
@@ -661,8 +681,10 @@ export default function Training() {
                           lockRemainingSeconds={trainingLockRemainingSeconds}
                           onChangeMoveId={handleChangePlannedMoveId}
                           submitLabel={locale.startBattle}
-                          firstMoveSelectId={
-                            tutorialStep === 'training-move-select' ? 'tutorial-first-move-select' : undefined
+                          tutorialMoveSelect={
+                            tutorialStep === 'training-move-select' && nextTutorialMoveTurnIndex !== null
+                              ? { index: nextTutorialMoveTurnIndex, id: 'tutorial-next-move-select' }
+                              : undefined
                           }
                           submitButtonId={
                             tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined
@@ -736,7 +758,7 @@ export default function Training() {
         <SpotlightTutorial
           guide="instructor"
           targetId="tutorial-move-plan-form"
-          pointerTargetId="tutorial-first-move-select"
+          pointerTargetId="tutorial-next-move-select"
           message={tutorialLocale.steps.trainingMoveSelect.message}
           showDismiss
           onDismiss={() => advanceTutorial('training-confirm')}
