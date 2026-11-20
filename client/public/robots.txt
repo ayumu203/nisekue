@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://game.arm203.org/sitemap.xml
