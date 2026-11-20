@@ -30,7 +30,7 @@ const WINDOW_BORDER_COLOR = '#ffffff'
 const ACCENT_COLOR = '#ffcc00'
 const ACCENT_TEXT_COLOR = '#4f392c'
 const OVERLAY_COLOR = 'rgba(20, 12, 4, 0.62)'
-const GUIDE_IMAGE_PATH = 'image/battle/character_daitenshi_01_02_gold.png'
+const GUIDE_IMAGE_PATH = 'image/job/11_watermage.png'
 const POINTER_HEIGHT = 44
 const POINTER_GAP = 6
 
@@ -42,11 +42,6 @@ const pointDown = keyframes`
 const pointUp = keyframes`
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
-`
-
-const float = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
 `
 
 const blink = keyframes`
@@ -152,7 +147,7 @@ export default function SpotlightTutorial({
     ? Math.min(Math.max(targetRect.left + targetRect.width / 2, 40), Math.max(viewportWidth - 40, 40))
     : 0
 
-  const portraitSize = isMobile ? { width: 72, height: 62, image: 66 } : { width: 92, height: 78, image: 86 }
+  const portraitSize = isMobile ? { width: 76, minHeight: 92 } : { width: 100, minHeight: 116 }
 
   return (
     <Box
@@ -247,7 +242,7 @@ export default function SpotlightTutorial({
           sx={{
             display: 'flex',
             gap: 1.5,
-            alignItems: 'flex-start',
+            alignItems: 'stretch',
             pt: 2.75,
             pb: 2,
             px: 2,
@@ -261,16 +256,13 @@ export default function SpotlightTutorial({
             sx={{
               flexShrink: 0,
               width: portraitSize.width,
-              height: portraitSize.height,
+              minHeight: portraitSize.minHeight,
+              position: 'relative',
               boxSizing: 'border-box',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              overflow: 'hidden',
               backgroundColor: '#fff7e8',
               border: `2px solid ${WINDOW_BORDER_COLOR}`,
               borderRadius: '6px',
-              animation: `${float} 1.6s ease-in-out infinite`,
-              ...reducedMotionSx,
             }}
           >
             <Box
@@ -278,7 +270,16 @@ export default function SpotlightTutorial({
               src={resolvePublicAssetPath(GUIDE_IMAGE_PATH)}
               alt=""
               aria-hidden="true"
-              sx={{ width: portraitSize.image, height: 'auto', imageRendering: 'pixelated' }}
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center top',
+                transform: 'scale(1.35)',
+                transformOrigin: '50% 0',
+              }}
             />
           </Box>
 
