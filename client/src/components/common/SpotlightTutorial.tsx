@@ -147,7 +147,7 @@ export default function SpotlightTutorial({
     ? Math.min(Math.max(targetRect.left + targetRect.width / 2, 40), Math.max(viewportWidth - 40, 40))
     : 0
 
-  const portraitSize = isMobile ? { width: 76, minHeight: 92 } : { width: 100, minHeight: 116 }
+  const portraitSize = isMobile ? { width: 88, minHeight: 112 } : { width: 140, minHeight: 168 }
 
   return (
     <Box
@@ -213,7 +213,7 @@ export default function SpotlightTutorial({
           left: '50%',
           transform: 'translateX(-50%)',
           width: 'calc(100% - 24px)',
-          maxWidth: 560,
+          maxWidth: 760,
           ...(isTargetInLowerHalf ? { top: 28 } : { bottom: 20 }),
           pointerEvents: 'auto',
         }}
@@ -221,17 +221,17 @@ export default function SpotlightTutorial({
         <Box
           sx={{
             position: 'absolute',
-            top: -18,
+            top: { xs: -20, sm: -24 },
             left: 16,
             zIndex: 1,
-            px: 1.75,
+            px: { xs: 2, sm: 2.5 },
             py: 0.5,
             backgroundColor: ACCENT_COLOR,
             border: `3px solid ${WINDOW_BORDER_COLOR}`,
             borderRadius: '6px',
           }}
         >
-          <Typography component="span" sx={{ fontSize: 14, lineHeight: 1.2, color: ACCENT_TEXT_COLOR }}>
+          <Typography component="span" sx={{ fontSize: { xs: 16, sm: 19 }, lineHeight: 1.2, color: ACCENT_TEXT_COLOR }}>
             {tutorialLocale.guideName}
           </Typography>
         </Box>
@@ -241,11 +241,11 @@ export default function SpotlightTutorial({
           aria-label={tutorialLocale.guideName}
           sx={{
             display: 'flex',
-            gap: 1.5,
+            gap: { xs: 1.5, sm: 2.5 },
             alignItems: 'stretch',
-            pt: 2.75,
-            pb: 2,
-            px: 2,
+            pt: { xs: 3, sm: 3.75 },
+            pb: { xs: 2, sm: 2.5 },
+            px: { xs: 2, sm: 2.5 },
             backgroundColor: WINDOW_COLOR,
             border: `3px solid ${WINDOW_BORDER_COLOR}`,
             outline: `3px solid ${WINDOW_COLOR}`,
@@ -285,7 +285,7 @@ export default function SpotlightTutorial({
 
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography
-              sx={{ color: '#ffffff', whiteSpace: 'pre-line', lineHeight: 1.7, fontSize: { xs: 15, sm: 16 } }}
+              sx={{ color: '#ffffff', whiteSpace: 'pre-line', lineHeight: 1.7, fontSize: { xs: 16, sm: 19 } }}
             >
               {message}
             </Typography>
@@ -295,7 +295,7 @@ export default function SpotlightTutorial({
                   color: '#fff1d6',
                   whiteSpace: 'pre-line',
                   lineHeight: 1.7,
-                  fontSize: 14,
+                  fontSize: { xs: 14, sm: 16 },
                   mt: 1,
                   pt: 1,
                   borderTop: '1px solid rgba(255, 255, 255, 0.35)',
@@ -307,7 +307,12 @@ export default function SpotlightTutorial({
             {((showDismiss && onDismiss) || (canUseDebug && userId)) && (
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, mt: 1.5 }}>
                 {canUseDebug && userId && (
-                  <Button size="small" variant="text" onClick={handleSkip} sx={{ color: '#fff1d6' }}>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={handleSkip}
+                    sx={{ color: '#fff1d6', fontSize: { xs: 13, sm: 15 } }}
+                  >
                     {tutorialLocale.debugSkip}
                   </Button>
                 )}
@@ -323,6 +328,8 @@ export default function SpotlightTutorial({
                         borderColor: WINDOW_BORDER_COLOR,
                         color: ACCENT_TEXT_COLOR,
                         boxShadow: 'none',
+                        fontSize: { xs: 14, sm: 16 },
+                        px: { xs: 2, sm: 2.5 },
                       },
                       '&&:hover': {
                         backgroundColor: '#f2c200',
