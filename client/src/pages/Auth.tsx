@@ -154,9 +154,10 @@ const purpleButtonSx = {
   },
 } as const
 
-// テーマの contained ボタンには 2px の縁があるが、このページの暗い背景では縁が浮いて見えるため外す
+// テーマの contained ボタンには 2px の縁があるが、このページの暗い背景では縁が浮いて見えるため外す。
+// 角は入力欄とそろえて四角くする（テーマの既定は丸）
 const noBorderButtonSx = {
-  '&&&': { border: 'none' },
+  '&&&': { border: 'none', borderRadius: '8px' },
 } as const
 
 const dividerColor = 'rgba(205, 184, 255, 0.4)'
