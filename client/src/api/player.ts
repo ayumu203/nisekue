@@ -22,6 +22,7 @@ import type {
   SendPlayerGiftResponse,
   RebirthPlayerResponse,
   RebirthStatusHistoryResponse,
+  RestartPlayerResponse,
   UnlockJobRoadmapRequest,
   UnlockJobRoadmapResponse,
   JobRoadmapListResponse,
@@ -297,6 +298,25 @@ export async function rebirthPlayer(accessToken: string): Promise<RebirthPlayerR
   }
 
   return endpoints.player.rebirth.responseSchema.parse(json)
+}
+
+export async function restartPlayer(accessToken: string): Promise<RestartPlayerResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.restart.path}`, {
+    method: endpoints.player.restart.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, 'やり直しに失敗しました'))
+  }
+
+  return endpoints.player.restart.responseSchema.parse(json)
 }
 
 export async function getRebirthHistory(accessToken: string): Promise<RebirthStatusHistoryResponse> {

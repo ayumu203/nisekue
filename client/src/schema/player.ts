@@ -221,6 +221,10 @@ export const getPlayerResponseSchema = z
     level: z.number().int().min(1, 'レベルは1以上である必要があります'),
     maxLevel: z.number().int().min(1).optional(),
     isMaxLevel: z.boolean().optional(),
+    rebirthCount: z.number().int().min(0).optional(),
+    rebirthRequiredLevel: z.number().int().min(1).optional(),
+    rebirthGoldCost: z.number().int().min(0).optional(),
+    restartGoldCost: z.number().int().min(0).optional(),
     exp: z.number().int().min(0, '経験値は0以上である必要があります'),
     requiredExpForNextLevel: z.number().int().min(0, '次レベル必要経験値は0以上である必要があります').optional(),
     jobLevel: z.number().int().min(1, '職業レベルは1以上である必要があります'),
@@ -353,6 +357,14 @@ export const sendPlayerGiftResponseSchema = z.object({
   message: z.string().min(1, 'レスポンスメッセージが空です'),
 })
 
+export const restartPlayerResponseSchema = z.object({
+  message: z.string().min(1, 'レスポンスメッセージが空です'),
+  userId: playerIdSchema,
+  rebirthCount: z.number().int().min(0),
+  level: z.number().int().min(1),
+  gold: z.number().int().min(0),
+})
+
 export const rebirthPlayerResponseSchema = z.object({
   message: z.string().min(1, 'レスポンスメッセージが空です'),
   userId: playerIdSchema,
@@ -394,6 +406,7 @@ export type UpdatePlayerMoveSetResponse = z.infer<typeof updatePlayerMoveSetResp
 export type SendPlayerGiftRequest = z.infer<typeof sendPlayerGiftRequestSchema>
 export type SendPlayerGiftResponse = z.infer<typeof sendPlayerGiftResponseSchema>
 export type RebirthPlayerResponse = z.infer<typeof rebirthPlayerResponseSchema>
+export type RestartPlayerResponse = z.infer<typeof restartPlayerResponseSchema>
 export type RebirthStatusHistoryEntry = z.infer<typeof rebirthStatusHistoryEntrySchema>
 export type RebirthStatusHistoryResponse = z.infer<typeof rebirthStatusHistoryResponseSchema>
 

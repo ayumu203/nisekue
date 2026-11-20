@@ -35,7 +35,7 @@ public class Player(
     public DateTimeOffset? PetBattleCooldownUntil { get; private set; } = petBattleCooldownUntil;
     public Job Job { get; private set; } = job;
     public int RebirthCount { get; private set; } = ValidateNonNegative(rebirthCount, nameof(rebirthCount));
-    public int Level { get; private set; } = ValidatePlayerLevel(level);
+    public int Level { get; private set; } = ValidatePlayerLevel(level, rebirthCount);
     public int Exp { get; private set; } = exp;
     public int JobLevel { get; private set; } = ValidateLevel(jobLevel);
     public int Gold { get; private set; } = ValidateNonNegative(gold, nameof(gold));
@@ -47,7 +47,11 @@ public class Player(
     public long RoadmapUnlockFlags { get; private set; } = ValidateNonNegativeLong(roadmapUnlockFlags, nameof(roadmapUnlockFlags));
     public int EndlessBestFloor { get; private set; } = ValidateNonNegative(endlessBestFloor, nameof(endlessBestFloor));
 
-    public bool IsMaxLevel => Level >= PlayerConstants.MaxLevel;
+    /// <summary>レベル上限。転生するたびに上がる。</summary>
+    public int MaxLevel => PlayerConstants.GetMaxLevel(RebirthCount);
+    public bool IsMaxLevel => Level >= MaxLevel;
+    /// <summary>次の転生に必要な Gold。</summary>
+    public int RebirthGoldCost => PlayerConstants.GetRebirthGoldCost(RebirthCount);
 
     public void UpdateName(string name)
     {
@@ -152,16 +156,17 @@ public class Player(
         return level;
     }
 
-    private static int ValidatePlayerLevel(int level)
+    private static int ValidatePlayerLevel(int level, int rebirthCount)
     {
         if (level < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(level), "レベルは1以上である必要があります。");
         }
 
-        if (level > PlayerConstants.MaxLevel)
+        var maxLevel = PlayerConstants.GetMaxLevel(rebirthCount);
+        if (level > maxLevel)
         {
-            throw new ArgumentOutOfRangeException(nameof(level), $"レベルは{PlayerConstants.MaxLevel}以下である必要があります。");
+            throw new ArgumentOutOfRangeException(nameof(level), $"レベルは{maxLevel}以下である必要があります。");
         }
 
         return level;
@@ -271,6 +276,32 @@ public class Player(
         MoveSet = initialMoveSet;
         masteredJobs.Clear();
         RoadmapUnlockFlags = DefaultRoadmapUnlockFlags;
+        RebirthCount = 0;
+    }
+
+    /// <summary>
+    /// 初期状態からやり直す（転生で詰んだときの保険）。RestartGoldCost の Gold を消費する。
+    /// レベル・経験値・ジョブ・職業レベル・ステータス・スキル・マスター済みジョブ・転生回数を作成直後に戻す。
+    /// ロードマップ解放（Gold で購入したもの）・名前・画像・残りの Gold・クールダウン・経験値倍率・マップ解放・エンドレス最高到達フロアは変えない。
+    /// </summary>
+    public void Restart(Status initialStatus, MoveSet initialMoveSet)
+    {
+        ArgumentNullException.ThrowIfNull(initialStatus);
+        ArgumentNullException.ThrowIfNull(initialMoveSet);
+
+        if (Gold < PlayerConstants.RestartGoldCost)
+        {
+            throw new InvalidOperationException($"やり直しには{PlayerConstants.RestartGoldCost} Goldが必要です。");
+        }
+
+        Gold -= PlayerConstants.RestartGoldCost;
+        Level = 1;
+        Exp = 0;
+        Job = Job.Apprentice;
+        JobLevel = 1;
+        Status = initialStatus;
+        MoveSet = initialMoveSet;
+        masteredJobs.Clear();
         RebirthCount = 0;
     }
 
@@ -396,12 +427,13 @@ public class Player(
                 throw new InvalidOperationException($"転生にはレベル{PlayerConstants.RebirthRequiredLevel}以上が必要です。");
             }
 
-            if (Gold < PlayerConstants.RebirthGoldCost)
+            var goldCost = RebirthGoldCost;
+            if (Gold < goldCost)
             {
-                throw new InvalidOperationException($"転生には{PlayerConstants.RebirthGoldCost} Goldが必要です。");
+                throw new InvalidOperationException($"転生には{goldCost} Goldが必要です。");
             }
 
-            Gold -= PlayerConstants.RebirthGoldCost;
+            Gold -= goldCost;
         }
 
         RebirthCount++;
