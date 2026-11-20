@@ -144,7 +144,7 @@ export default function SpotlightTutorial({
   message,
   subMessage,
   showDismiss = false,
-  dismissLabel = 'わかった！',
+  dismissLabel = '次へ',
   onDismiss,
   padding = 12,
   guide = 'receptionist',

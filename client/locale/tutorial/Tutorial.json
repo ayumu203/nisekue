@@ -25,7 +25,7 @@
     },
     "playerSettingAccount": {
       "message": "メールアドレス・パスワードの設定やGoogle連携は、こちらからできます。\nアカウントを設定しておくと、データを保存できるので安心ですよ。",
-      "dismissLabel": "わかった！"
+      "dismissLabel": "次へ"
     },
     "playerSettingToHome": {
       "message": "設定はこれで完了です！ホームに戻りましょう。"
@@ -53,7 +53,7 @@
     },
     "jobChangeInfo": {
       "message": "転職をご希望ですね。\n転職すると、そのジョブ固有の技を覚えられます。おすすめは盾兵と魔法使いですよ。",
-      "dismissLabel": "OK!"
+      "dismissLabel": "次へ"
     },
     "jobChangeRoadmap": {
       "message": "「ロードマップ」タブで、転職の条件を確かめられます。"
@@ -69,14 +69,14 @@
     },
     "trainingQuestGuide": {
       "message": "やるじゃないか！これでクエストに挑戦できるよ。\nほかの機能は受付嬢が案内してくれるからね！",
-      "dismissLabel": "OK!"
+      "dismissLabel": "次へ"
     },
     "homeMoveSetting": {
       "message": "次は「技の設定」を見てみましょう。技の順番を並べ替えられますよ。"
     },
     "moveSettingInfo": {
       "message": "ここでは技の順番を並べ替えられるわ。\n戦闘で使いたい技を、好きな順に並べておきなさい。",
-      "dismissLabel": "わかった！"
+      "dismissLabel": "次へ"
     },
     "moveSettingToHome": {
       "message": "並べ終わったら、ホームに戻りなさい。"
@@ -86,7 +86,7 @@
     },
     "treasureMapInfo": {
       "message": "お、宝の地図に興味あり？\n地図を選んで探索に出すと、時間が経つと報酬がもらえるよ。レア度が高い地図ほど、お宝も豪華なんだ！",
-      "dismissLabel": "わかった！"
+      "dismissLabel": "次へ"
     },
     "treasureMapToHome": {
       "message": "よし、ホームに戻ろっか！"
@@ -97,7 +97,7 @@
     },
     "rebirthGuide": {
       "message": "レベル100への到達、見事です。\n「転生」の道が開かれました。転生するとレベルはリセットされますが、ステータスの一部を引き継ぎ、さらに強くなれるでしょう。",
-      "dismissLabel": "わかった！"
+      "dismissLabel": "次へ"
     }
   },
   "debugSkip": "スキップ（デバッグ）"

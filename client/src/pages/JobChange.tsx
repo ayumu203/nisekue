@@ -221,6 +221,8 @@ export default function JobChange() {
           guide="priest"
           targetId="tutorial-roadmap-tab"
           message={tutorialLocale.steps.jobChangeRoadmap.message}
+          showDismiss
+          onDismiss={() => advanceTutorial('training-to-lv7')}
         />
       )}
     </Container>
