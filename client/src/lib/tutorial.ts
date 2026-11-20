@@ -27,6 +27,7 @@ export type TutorialStep =
 
 const KEY_PREFIX = 'nisekue:tutorial'
 const REBIRTH_SHOWN_KEY_SUFFIX = 'rebirth-shown'
+const SURVEY_SHOWN_KEY_SUFFIX = 'survey-shown'
 const DEFAULT_TUTORIAL_STEP: TutorialStep = 'home-player-setting'
 const TUTORIAL_STEPS: readonly TutorialStep[] = [
   'home-player-setting',
@@ -137,7 +138,7 @@ export function completeTutorial(userId: string): void {
   setRebirthTutorialShown(userId)
 }
 
-/** チュートリアルを最初からやり直す（転生のチュートリアルも未表示に戻す）。デバッグ機能用。 */
+/** チュートリアルを最初からやり直す（転生のチュートリアルとアンケートの案内も未表示に戻す）。デバッグ機能用。 */
 export function resetTutorial(userId: string): void {
   setTutorialStep(userId, DEFAULT_TUTORIAL_STEP)
   if (typeof window === 'undefined') {
@@ -146,7 +147,37 @@ export function resetTutorial(userId: string): void {
 
   try {
     window.localStorage.removeItem(getRebirthShownKey(userId))
+    window.localStorage.removeItem(getSurveyShownKey(userId))
   } catch {
     // localStorage が利用できない環境でも継続する
+  }
+}
+
+function getSurveyShownKey(userId: string): string {
+  return `${KEY_PREFIX}:${userId}:${SURVEY_SHOWN_KEY_SUFFIX}`
+}
+
+// Lv10 で出すアンケートの案内を、このブラウザで一度出したか
+export function isSurveyGuideShown(userId: string): boolean {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  try {
+    return window.localStorage.getItem(getSurveyShownKey(userId)) === 'true'
+  } catch {
+    return false
+  }
+}
+
+export function setSurveyGuideShown(userId: string): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(getSurveyShownKey(userId), 'true')
+  } catch {
+    // 保存できなくても案内を閉じる動作は続ける
   }
 }
