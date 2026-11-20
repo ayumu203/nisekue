@@ -15,8 +15,6 @@ type DebugLevelSectionProps = {
   onChanged: () => Promise<void>
 }
 
-const MAX_LEVEL = 100
-
 function describeResult(result: DebugLevelUpResponse): string {
   const parts = [locale.level.done.replace('{level}', String(result.level))]
   if (result.newlyLearnedMoveIds.length > 0) {
@@ -28,8 +26,11 @@ function describeResult(result: DebugLevelUpResponse): string {
   return parts.join(' ')
 }
 
+const DEFAULT_MAX_LEVEL = 100
+
 export default function DebugLevelSection({ player, accessToken, onChanged }: DebugLevelSectionProps) {
-  const [targetLevel, setTargetLevel] = useState(String(Math.min(player.level + 1, MAX_LEVEL)))
+  const maxLevel = player.maxLevel ?? DEFAULT_MAX_LEVEL
+  const [targetLevel, setTargetLevel] = useState(String(Math.min(player.level + 1, maxLevel)))
   const { isRunning, message, run } = useDebugAction()
 
   async function levelUpTo(level: number): Promise<void> {
@@ -60,7 +61,7 @@ export default function DebugLevelSection({ player, accessToken, onChanged }: De
           size="small"
           value={targetLevel}
           onChange={(event) => setTargetLevel(event.target.value)}
-          slotProps={{ htmlInput: { min: player.level, max: MAX_LEVEL, step: 1 } }}
+          slotProps={{ htmlInput: { min: player.level, max: maxLevel, step: 1 } }}
           sx={{ ...greenOutlinedInputSx, width: 160 }}
         />
         <Button
@@ -74,10 +75,10 @@ export default function DebugLevelSection({ player, accessToken, onChanged }: De
         <Button
           variant="contained"
           sx={softGoldButtonSx}
-          onClick={() => void levelUpTo(MAX_LEVEL)}
-          disabled={isRunning || player.level >= MAX_LEVEL}
+          onClick={() => void levelUpTo(maxLevel)}
+          disabled={isRunning || player.level >= maxLevel}
         >
-          {locale.level.max}
+          {locale.level.max.replace('{level}', String(maxLevel))}
         </Button>
       </Stack>
     </DebugSection>

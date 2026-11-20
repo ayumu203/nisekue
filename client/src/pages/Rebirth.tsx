@@ -1,7 +1,7 @@
 import { Alert, Box, Button, Chip, CircularProgress, Container, Divider, Paper, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import useSWR from 'swr'
-import { createPlayer, getPlayer, getRebirthHistory, rebirthPlayer } from '@/api/player'
+import { createPlayer, getPlayer, getRebirthHistory, rebirthPlayer, restartPlayer } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { SummaryStat } from '@/components/rebirth/SummaryStat'
 import {
@@ -17,8 +17,11 @@ import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-rebirth/Rebirth.json'
 import { formatDateTime } from '@/components/quest/questFormat'
 
-const REQUIRED_LEVEL = 100
-const REQUIRED_GOLD = 100000
+const DEFAULT_REQUIRED_LEVEL = 100
+const DEFAULT_REQUIRED_GOLD = 100000
+const DEFAULT_RESTART_GOLD = 100000
+const DEFAULT_MAX_LEVEL = 100
+const MAX_LEVEL_INCREASE_PER_REBIRTH = 2
 
 const statKeys = [
   { key: 'maxHp', label: locale.labels.maxHp },
@@ -48,6 +51,9 @@ export default function Rebirth() {
     speed: number
   } | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [restartError, setRestartError] = useState<string | null>(null)
+  const [restartMessage, setRestartMessage] = useState<string | null>(null)
+  const [isRestarting, setIsRestarting] = useState(false)
 
   const playerSWRKey = session?.user.id ? (['rebirth', session.user.id] as const) : null
   const {
@@ -87,7 +93,12 @@ export default function Rebirth() {
     return getRebirthHistory(session.access_token)
   })
 
-  const canRebirth = (player?.level ?? 0) >= REQUIRED_LEVEL && (player?.gold ?? 0) >= REQUIRED_GOLD
+  const requiredLevel = player?.rebirthRequiredLevel ?? DEFAULT_REQUIRED_LEVEL
+  const requiredGold = player?.rebirthGoldCost ?? DEFAULT_REQUIRED_GOLD
+  const restartGold = player?.restartGoldCost ?? DEFAULT_RESTART_GOLD
+  const maxLevel = player?.maxLevel ?? DEFAULT_MAX_LEVEL
+  const canRebirth = (player?.level ?? 0) >= requiredLevel && (player?.gold ?? 0) >= requiredGold
+  const canRestart = (player?.gold ?? 0) >= restartGold
   const characterImageSrc =
     player?.imagePath && player.imagePath !== failedImagePath ? resolveCharacterAssetPath(player.imagePath) : null
 
@@ -110,6 +121,32 @@ export default function Rebirth() {
       setSubmitError(error instanceof Error ? error.message : locale.executeFailed)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleRestart(): Promise<void> {
+    if (!session?.access_token) {
+      setRestartError(locale.sessionMissing)
+      return
+    }
+
+    if (!window.confirm(locale.restart.confirm.replace('{{gold}}', String(restartGold)))) {
+      return
+    }
+
+    setRestartError(null)
+    setRestartMessage(null)
+    setResultStatus(null)
+    setIsRestarting(true)
+
+    try {
+      await restartPlayer(session.access_token)
+      setRestartMessage(locale.restart.done)
+      await mutatePlayer()
+    } catch (error) {
+      setRestartError(error instanceof Error ? error.message : locale.restart.failed)
+    } finally {
+      setIsRestarting(false)
     }
   }
 
@@ -178,26 +215,35 @@ export default function Rebirth() {
                     </Typography>
                     <Stack spacing={1} flexWrap="wrap" useFlexGap>
                       <Chip
-                        color={player.level >= REQUIRED_LEVEL ? 'success' : 'default'}
-                        label={locale.requirementLevel.replace('{{level}}', String(player.level))}
+                        color={player.level >= requiredLevel ? 'success' : 'default'}
+                        label={locale.requirementLevel
+                          .replace('{{level}}', String(player.level))
+                          .replace('{{required}}', String(requiredLevel))}
                         sx={{
-                          bgcolor: player.level >= REQUIRED_LEVEL ? '#edf9ff' : '#f6f9fc',
+                          bgcolor: player.level >= requiredLevel ? '#edf9ff' : '#f6f9fc',
                           border: '1px solid',
-                          borderColor: player.level >= REQUIRED_LEVEL ? '#a8ddff' : '#d8e6f2',
-                          color: player.level >= REQUIRED_LEVEL ? '#20618f' : '#5f7080',
+                          borderColor: player.level >= requiredLevel ? '#a8ddff' : '#d8e6f2',
+                          color: player.level >= requiredLevel ? '#20618f' : '#5f7080',
                         }}
                       />
                       <Chip
-                        color={player.gold >= REQUIRED_GOLD ? 'success' : 'default'}
-                        label={locale.requirementGold.replace('{{gold}}', String(player.gold))}
+                        color={player.gold >= requiredGold ? 'success' : 'default'}
+                        label={locale.requirementGold
+                          .replace('{{gold}}', String(player.gold))
+                          .replace('{{required}}', String(requiredGold))}
                         sx={{
-                          bgcolor: player.gold >= REQUIRED_GOLD ? '#fffbe9' : '#f6f9fc',
+                          bgcolor: player.gold >= requiredGold ? '#fffbe9' : '#f6f9fc',
                           border: '1px solid',
-                          borderColor: player.gold >= REQUIRED_GOLD ? '#f0db7f' : '#d8e6f2',
-                          color: player.gold >= REQUIRED_GOLD ? '#8a6a00' : '#5f7080',
+                          borderColor: player.gold >= requiredGold ? '#f0db7f' : '#d8e6f2',
+                          color: player.gold >= requiredGold ? '#8a6a00' : '#5f7080',
                         }}
                       />
                     </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                      {locale.maxLevelNote
+                        .replace('{{current}}', String(maxLevel))
+                        .replace('{{next}}', String(maxLevel + MAX_LEVEL_INCREASE_PER_REBIRTH))}
+                    </Typography>
                   </Stack>
 
                   <Stack
@@ -530,6 +576,33 @@ export default function Rebirth() {
                       ))}
                     </Stack>
                   )}
+                </Stack>
+              </Paper>
+
+              <Paper variant="outlined" sx={{ ...rebirthSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+                <Stack spacing={1.5}>
+                  <Typography variant="h6">{locale.restart.title}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {locale.restart.description.replace('{{gold}}', String(restartGold))}
+                  </Typography>
+                  {restartError ? <Alert severity="error">{restartError}</Alert> : null}
+                  {restartMessage ? <Alert severity="success">{restartMessage}</Alert> : null}
+                  <Box>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      disabled={!canRestart || isRestarting}
+                      onClick={() => {
+                        void handleRestart()
+                      }}
+                    >
+                      {isRestarting
+                        ? locale.restart.executing
+                        : canRestart
+                          ? locale.restart.button
+                          : locale.restart.lockedButton}
+                    </Button>
+                  </Box>
                 </Stack>
               </Paper>
             </Stack>

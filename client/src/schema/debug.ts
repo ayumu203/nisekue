@@ -84,11 +84,7 @@ export type DebugGrantEquipmentRequest = z.infer<typeof debugGrantEquipmentReque
 export const debugGrantEquipmentResponseSchema = z.object({ count: z.number().int().min(0) })
 
 export const debugLevelUpRequestSchema = z.object({
-  level: z
-    .number()
-    .int()
-    .min(1, 'レベルは1〜100の整数を入力してください')
-    .max(100, 'レベルは1〜100の整数を入力してください'),
+  level: z.number().int().min(1, 'レベルは1以上の整数を入力してください'),
 })
 
 export type DebugLevelUpRequest = z.infer<typeof debugLevelUpRequestSchema>

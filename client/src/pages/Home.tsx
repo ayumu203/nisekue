@@ -125,7 +125,11 @@ function Home() {
     }
   })
   const showRebirthTutorial =
-    !isRebirthTutorialDismissed && !!userId && !!player && player.level >= 100 && !isRebirthTutorialShown(userId)
+    !isRebirthTutorialDismissed &&
+    !!userId &&
+    !!player &&
+    player.level >= (player.rebirthRequiredLevel ?? 100) &&
+    !isRebirthTutorialShown(userId)
   const isTrainingGroupOpen =
     tutorialStep === 'home-job-change' ||
     tutorialStep === 'home-move-setting' ||
