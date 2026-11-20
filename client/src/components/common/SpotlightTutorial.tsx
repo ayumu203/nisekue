@@ -35,6 +35,19 @@ const ACCENT_TEXT_COLOR = '#4f392c'
 const GUIDE_NAME_COLOR = '#bfe6ff'
 const BUBBLE_COLOR = '#fffaf0'
 const BUBBLE_TEXT_COLOR = '#3d2a1e'
+// 背景が明るくても暗くても読めるように、ラベルを茶色で縁取る
+const POINTER_LABEL_OUTLINE = [
+  [-2, 0],
+  [2, 0],
+  [0, -2],
+  [0, 2],
+  [-2, -2],
+  [2, 2],
+  [-2, 2],
+  [2, -2],
+]
+  .map(([x, y]) => `${x}px ${y}px 0 ${WINDOW_OUTLINE_COLOR}`)
+  .join(', ')
 const OVERLAY_COLOR = 'rgba(20, 12, 4, 0.62)'
 const GUIDE_IMAGE_PATH = 'image/job/11_watermage.png'
 const POINTER_HEIGHT = 44
@@ -222,7 +235,14 @@ export default function SpotlightTutorial({
               <PointerArrow direction={pointerDirection} />
               <Typography
                 component="span"
-                sx={{ fontSize: 15, fontWeight: 700, lineHeight: 1, color: ACCENT_COLOR, whiteSpace: 'nowrap' }}
+                sx={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  color: '#ffffff',
+                  textShadow: POINTER_LABEL_OUTLINE,
+                  whiteSpace: 'nowrap',
+                }}
               >
                 {isTouchDevice ? tutorialLocale.pointerLabelTap : tutorialLocale.pointerLabelClick}
               </Typography>
