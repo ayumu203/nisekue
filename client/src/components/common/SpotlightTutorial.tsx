@@ -26,11 +26,13 @@ type SpotlightTutorialProps = {
 }
 
 // 実際の画面（歯車ボタン・外枠）の配色に合わせる
-const WINDOW_BACKGROUND = 'linear-gradient(180deg, #a86d34 0%, #87521f 100%)'
+const WINDOW_COLOR = '#93602c'
 const WINDOW_OUTLINE_COLOR = '#6e4415'
 const WINDOW_BORDER_COLOR = '#ffffff'
 const ACCENT_COLOR = '#ffcc00'
 const ACCENT_TEXT_COLOR = '#4f392c'
+const BUBBLE_COLOR = '#fffaf0'
+const BUBBLE_TEXT_COLOR = '#3d2a1e'
 const OVERLAY_COLOR = 'rgba(20, 12, 4, 0.62)'
 const GUIDE_IMAGE_PATH = 'image/job/11_watermage.png'
 const POINTER_HEIGHT = 44
@@ -165,7 +167,7 @@ export default function SpotlightTutorial({
     ? Math.min(Math.max(targetRect.left + targetRect.width / 2, 40), Math.max(viewportWidth - 40, 40))
     : 0
 
-  const portraitSize = isMobile ? { width: 88, minHeight: 112 } : { width: 140, minHeight: 168 }
+  const portraitSize = isMobile ? { width: 76, minHeight: 112 } : { width: 140, minHeight: 168 }
 
   return (
     <Box
@@ -245,7 +247,7 @@ export default function SpotlightTutorial({
             alignItems: 'stretch',
             py: { xs: 2, sm: 2.5 },
             px: { xs: 2, sm: 2.5 },
-            background: WINDOW_BACKGROUND,
+            backgroundColor: WINDOW_COLOR,
             border: `3px solid ${WINDOW_BORDER_COLOR}`,
             outline: `3px solid ${WINDOW_OUTLINE_COLOR}`,
             borderRadius: '8px',
@@ -287,46 +289,63 @@ export default function SpotlightTutorial({
             <Typography
               component="p"
               sx={{
-                display: 'inline-block',
                 mb: 0.75,
-                pb: 0.25,
-                fontSize: { xs: 15, sm: 17 },
+                fontSize: { xs: 19, sm: 23 },
                 fontWeight: 700,
-                lineHeight: 1.3,
-                letterSpacing: '0.08em',
+                lineHeight: 1.2,
+                letterSpacing: '0.05em',
                 color: ACCENT_COLOR,
-                borderBottom: `2px solid ${ACCENT_COLOR}`,
               }}
             >
               {tutorialLocale.guideName}
             </Typography>
-            <Typography
+            <Box
               sx={{
-                color: '#ffffff',
-                wordBreak: 'keep-all',
-                overflowWrap: 'anywhere',
-                lineHeight: 1.7,
-                fontSize: { xs: 16, sm: 19 },
+                position: 'relative',
+                px: { xs: 1.25, sm: 2.25 },
+                py: { xs: 1, sm: 1.5 },
+                backgroundColor: BUBBLE_COLOR,
+                borderRadius: '14px',
+                // 立ち絵の方を向いた吹き出しのしっぽ
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: { xs: 14, sm: 18 },
+                  left: -11,
+                  borderStyle: 'solid',
+                  borderWidth: '8px 12px 8px 0',
+                  borderColor: `transparent ${BUBBLE_COLOR} transparent transparent`,
+                },
               }}
             >
-              {renderPhrases(message)}
-            </Typography>
-            {subMessage && (
               <Typography
                 sx={{
-                  color: '#fff1d6',
+                  color: BUBBLE_TEXT_COLOR,
                   wordBreak: 'keep-all',
                   overflowWrap: 'anywhere',
                   lineHeight: 1.7,
-                  fontSize: { xs: 14, sm: 16 },
-                  mt: 1,
-                  pt: 1,
-                  borderTop: '1px solid rgba(255, 255, 255, 0.35)',
+                  fontSize: { xs: 15, sm: 19 },
                 }}
               >
-                {renderPhrases(subMessage)}
+                {renderPhrases(message)}
               </Typography>
-            )}
+              {subMessage && (
+                <Typography
+                  sx={{
+                    color: '#6b5444',
+                    wordBreak: 'keep-all',
+                    overflowWrap: 'anywhere',
+                    lineHeight: 1.7,
+                    fontSize: { xs: 14, sm: 16 },
+                    mt: 1,
+                    pt: 1,
+                    borderTop: '1px dashed rgba(61, 42, 30, 0.3)',
+                  }}
+                >
+                  {renderPhrases(subMessage)}
+                </Typography>
+              )}
+            </Box>
             {((showDismiss && onDismiss) || (canUseDebug && userId)) && (
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, mt: 1.5 }}>
                 {canUseDebug && userId && (
