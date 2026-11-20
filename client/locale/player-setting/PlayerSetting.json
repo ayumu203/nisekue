@@ -30,7 +30,7 @@
   "saved": "プレイヤー情報を更新しました。",
   "partialSaveFailed": "一部のプレイヤー情報のみ更新しました。",
   "accountLinkTitle": "アカウント連携",
-  "accountLinkDescription": "匿名で始めたデータを、メールアドレスとパスワードのあるアカウントに切り替えられます。",
+  "accountLinkDescription": "オタメシプレイで始めたデータを、メールアドレスとパスワードのあるアカウントに切り替えられます。",
   "accountLinkedDescription": "このアカウントはメール認証に切り替えられます。",
   "accountCurrentEmail": "現在のメールアドレス: {email}",
   "accountEmailLabel": "メールアドレス",
