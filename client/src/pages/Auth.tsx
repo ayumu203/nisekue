@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Alert, Box, Button, CircularProgress, Divider, Link, Paper, Stack, TextField, Typography } from '@mui/material'
-import { keyframes } from '@mui/material/styles'
 import { Navigate } from 'react-router-dom'
 import { googleButtonSx, softGoldButtonSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
@@ -57,20 +56,9 @@ type StageSprite = {
   top: number
   width: number
   pixelated?: boolean
-  /** 宙に浮かせ、ゆっくり上下させる（足元に影を出す） */
+  /** 宙に浮いているキャラ（足元の床に影を出す） */
   floating?: boolean
 }
-
-// 浮いているキャラの上下の揺れと、それに合わせて伸び縮みする足元の影
-const floatBob = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6%); }
-`
-const floatShadow = keyframes`
-  0%, 100% { transform: scale(1); opacity: 0.55; }
-  50% { transform: scale(0.8); opacity: 0.35; }
-`
-const floatDuration = '3.2s'
 
 // サムネと同じ配置。敵は左、プレイヤーは右で、画面の外側ほど手前（大きく・下）、玉座に近いほど奥。
 // 敵のドット絵（48x48）は整数倍（PC 幅 1200px 時）になる幅にしている。
@@ -369,9 +357,8 @@ function Auth() {
                   height: '3%',
                   borderRadius: '50%',
                   background: 'radial-gradient(ellipse at center, rgba(8, 6, 20, 0.9) 0%, rgba(8, 6, 20, 0) 70%)',
-                  animation: `${floatShadow} ${floatDuration} ease-in-out infinite`,
+                  opacity: 0.5,
                   pointerEvents: 'none',
-                  '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
                 }}
               />
             ))}
@@ -389,10 +376,6 @@ function Auth() {
                 height: 'auto',
                 imageRendering: sprite.pixelated ? 'pixelated' : 'auto',
                 pointerEvents: 'none',
-                ...(sprite.floating && {
-                  animation: `${floatBob} ${floatDuration} ease-in-out infinite`,
-                  '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
-                }),
               }}
             />
           ))}
