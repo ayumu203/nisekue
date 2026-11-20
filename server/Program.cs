@@ -89,7 +89,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
 
-            if (!string.IsNullOrWhiteSpace(accessToken) && path.StartsWithSegments("/quest-hubs/runs"))
+            if (!string.IsNullOrWhiteSpace(accessToken) && (path.StartsWithSegments("/quest-hubs/runs") || path.StartsWithSegments("/player-hubs/presence")))
             {
                 context.Token = accessToken;
             }
@@ -211,6 +211,7 @@ builder.Services.AddScoped<PlayerJobService>();
 builder.Services.AddScoped<JobRoadmapService>();
 builder.Services.AddScoped<PlayerMoveSetService>();
 builder.Services.AddScoped<PlayerMoveSetSanitizer>();
+builder.Services.AddSingleton<PlayerPresenceTracker>();
 builder.Services.AddScoped<PlayerRebirthService>();
 builder.Services.AddScoped<MarketPurchaseService>();
 builder.Services.AddScoped<MarketListingCleanupService>();
