@@ -236,8 +236,8 @@ def draw_scene() -> Image.Image:
             d.point((x, y - 2), fill=(236, 210, 255))
         d.point((cx, y + 11), fill=(159, 196, 255))
 
-    chandelier(sx(145), sy(238))
-    chandelier(sx(1055), sy(238))
+    chandelier(sx(145), sy(160))
+    chandelier(sx(1055), sy(160))
 
     # 打撃のエフェクト（青い獣の右後ろ）
     hx, hy = sx(612), sy(500)

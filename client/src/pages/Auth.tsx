@@ -68,8 +68,9 @@ const stageSprites: StageSprite[] = [
   { src: 'image/character/ch175_hero.png', left: 53.3, top: 62.9, width: 12.25 },
   { src: 'image/character/ch109_hero.png', left: 66.7, top: 63.2, width: 12.25 },
   { src: 'image/character/ch173_hero.png', left: 84.2, top: 63.2, width: 15 },
-  // 空を飛ぶ敵。左の窓の前に 1 体だけ置き、高さを左右のシャンデリアにそろえる
-  { src: 'image/battle/Enemy2.png', left: 22.75, top: 27, width: 12, pixelated: true },
+  // 空を飛ぶ敵。左右のアーチ窓の前に 1 体ずつ置き、高さを左右のシャンデリアにそろえる
+  { src: 'image/battle/Enemy2.png', left: 22.75, top: 14.6, width: 12, pixelated: true },
+  { src: 'image/battle/Enemy61.png', left: 65.25, top: 14.6, width: 12, pixelated: true },
 ]
 
 const heroTitleSx = {
@@ -282,8 +283,29 @@ function Auth() {
           backgroundPosition: 'center bottom',
           backgroundRepeat: 'no-repeat',
           imageRendering: 'pixelated',
+          containerType: 'inline-size',
         }}
       >
+        <Stack
+          alignItems="center"
+          spacing={{ xs: 0.5, md: 1 }}
+          sx={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            // 画面の上辺と玉座の上端（ステージの上から 192/630）の中間。
+            // 玉座の上端はヒーローの下端から 438/1200 × 横幅 の位置にある
+            top: 'calc((100% - 36.5cqw) / 2)',
+            zIndex: 1,
+            transform: 'translateY(-50%)',
+            textAlign: 'center',
+          }}
+        >
+          <Typography component="h1" sx={heroTitleSx}>
+            {locale.heroTitle}
+          </Typography>
+          <Typography sx={heroTaglineSx}>{locale.heroTagline}</Typography>
+        </Stack>
         <Box
           sx={{
             position: 'absolute',
@@ -294,24 +316,6 @@ function Auth() {
             containerType: 'inline-size',
           }}
         >
-          <Stack
-            alignItems="center"
-            spacing={{ xs: 0.5, md: 1 }}
-            sx={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              top: '15.2%',
-              transform: 'translateY(-50%)',
-              textAlign: 'center',
-            }}
-          >
-            <Typography component="h1" sx={heroTitleSx}>
-              {locale.heroTitle}
-            </Typography>
-            <Typography sx={heroTaglineSx}>{locale.heroTagline}</Typography>
-          </Stack>
-
           {stageSprites.map((sprite) => (
             <Box
               key={sprite.src}
