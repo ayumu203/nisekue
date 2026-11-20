@@ -15,6 +15,8 @@ internal static class PlayerEndpoints
 {
     internal static WebApplication MapPlayerEndpoints(this WebApplication app)
     {
+        app.MapHub<PlayerPresenceHub>("/player-hubs/presence").RequireAuthorization();
+
         app.MapGet("/players", async (
             ClaimsPrincipal user,
             int? page,
@@ -74,8 +76,7 @@ internal static class PlayerEndpoints
             EquipmentStatusResolver equipmentStatusResolver,
             StatusRankEvaluator statusRankEvaluator,
             CombatIndexCalculator combatIndexCalculator,
-            CombatIndexRankEvaluator combatIndexRankEvaluator,
-            PlayerActivityService playerActivityService) =>
+            CombatIndexRankEvaluator combatIndexRankEvaluator) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -99,8 +100,6 @@ internal static class PlayerEndpoints
                 await playerRepository.SaveAsync(player);
             }
 
-            await playerActivityService.RecordAsync(playerId.Value.Value, DateTimeOffset.UtcNow);
-
             var playerEquipments = await playerEquipmentRepository.GetByPlayerAsync(player.Id);
             var equipments = await equipmentRepository.GetAllAsync();
             return Results.Ok(ToPlayerResponse(
@@ -113,20 +112,6 @@ internal static class PlayerEndpoints
                 statusRankEvaluator,
                 combatIndexCalculator,
                 combatIndexRankEvaluator));
-        }).RequireAuthorization();
-
-        app.MapPost("/player/heartbeat", async (
-            ClaimsPrincipal user,
-            PlayerActivityService playerActivityService) =>
-        {
-            var playerId = EndpointHelpers.TryGetPlayerId(user);
-            if (playerId is null)
-            {
-                return Results.Unauthorized();
-            }
-
-            await playerActivityService.RecordAsync(playerId.Value.Value, DateTimeOffset.UtcNow);
-            return Results.NoContent();
         }).RequireAuthorization();
 
         app.MapGet("/players/{playerId:guid}", async (

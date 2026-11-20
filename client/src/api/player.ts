@@ -47,22 +47,6 @@ export async function getPlayer(accessToken: string): Promise<GetPlayerResponse>
   return endpoints.player.get.responseSchema.parse(json)
 }
 
-export async function sendPlayerHeartbeat(accessToken: string): Promise<void> {
-  const apiBaseUrl = resolveApiBaseUrl()
-
-  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.heartbeat.path}`, {
-    method: endpoints.player.heartbeat.method,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  })
-
-  if (!response.ok) {
-    const json: unknown = await response.json().catch(() => null)
-    throw new Error(extractErrorMessage(json, 'アクティブ状態の送信に失敗しました'))
-  }
-}
-
 export async function getPlayerById(playerId: string, accessToken: string): Promise<GetPlayerResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
 

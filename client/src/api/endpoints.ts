@@ -314,9 +314,8 @@ export const endpoints = {
       requestSchema: sendPlayerGiftRequestSchema,
       responseSchema: sendPlayerGiftResponseSchema,
     },
-    heartbeat: {
-      path: '/player/heartbeat',
-      method: 'POST',
+    presenceHub: {
+      path: '/player-hubs/presence',
     },
     rebirth: {
       path: '/player/rebirth',
