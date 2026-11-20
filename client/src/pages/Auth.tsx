@@ -16,7 +16,7 @@ type EmailAuthMode = 'signIn' | 'signUp'
 // 背景は tools/auth-hero/generate_throne_hall.py で生成した自作のドット絵（1200x1200）で、
 // 下側 1200x630 がサムネと同じ「ステージ」。キャラ・敵の素材は加工せず、ステージ基準の割合で重ねる。
 const heroBackgroundUrl = resolvePublicAssetPath('image/auth/throne-hall.png')
-const heroCeilingColor = '#080718'
+const heroCeilingColor = '#120d2c'
 
 // フォーム脇に出すマスコット。ヒーローで使っているキャラ（ch109・ch173・ch175）は重複を避けるため除外する。
 const formMascotPaths = [
@@ -258,7 +258,8 @@ function Auth() {
       sx={{
         minHeight: '100dvh',
         display: 'grid',
-        gridTemplateColumns: { xs: '1fr', md: '1.45fr 1fr' },
+        // PC はフォームを固定幅にして、残りをすべてゲームの絵に使う（絵が広いほどキャラも大きくなる）
+        gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 460px', lg: 'minmax(0, 1fr) 520px' },
         gridTemplateRows: { xs: 'auto 1fr', md: '1fr' },
         backgroundColor: heroCeilingColor,
       }}

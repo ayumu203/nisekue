@@ -57,7 +57,7 @@ def draw_scene() -> Image.Image:
     floor_y = sy(430)
 
     # 空間全体のグラデーション（ドット絵らしく 10 段の帯で塗る）
-    top, bottom = (8, 7, 24), (36, 28, 74)
+    top, bottom = (18, 13, 44), (36, 28, 74)
     bands = 10
     for i in range(bands):
         y0 = round(floor_y * i / bands)
@@ -87,6 +87,58 @@ def draw_scene() -> Image.Image:
     arch_window(sx(345), 60, sy(70), floor_y - 1)
     arch_window(sx(855), 60, sy(70), floor_y - 1)
     arch_window(sx(600), 70, sy(-10), floor_y - 1)
+
+    # 天井（PC の縦長画面で見える部分）：柱をつなぐ尖頭アーチ、リブ、玉座の真上のバラ窓
+    pillar_xs = [sx(70), sx(225), sx(470), sx(730), sx(975), sx(1130)]
+    stone, stone_light, stone_dark = (52, 43, 104), (70, 59, 132), (30, 25, 66)
+    arch_base = sy(-150)
+
+    def pointed_arch(x0: int, x1: int, base: int, rise: int, color, width: int):
+        mid = (x0 + x1) / 2
+        pts = []
+        for k in range(0, 21):
+            t = k / 20
+            # 左右それぞれ円弧に近い曲線で、頂点がとがるようにする
+            x = x0 + (mid - x0) * t
+            y = base - rise * math.sin(t * math.pi / 2)
+            pts.append((x, y))
+        right = [(2 * mid - x, y) for x, y in reversed(pts)]
+        d.line(pts + right, fill=color, width=width)
+
+    # 奥の天井の格子（リブ）
+    rib = (30, 24, 64)
+    for x in range(-200, W + 200, 40):
+        d.line([W // 2, arch_base - 120, x, arch_base - 10], fill=rib)
+    for k in range(4):
+        y = arch_base - 30 - k * 26
+        d.line([0, y, W, y], fill=rib)
+
+    for x0, x1 in zip([-60] + pillar_xs, pillar_xs + [W + 60]):
+        rise = max(18, (x1 - x0) * 0.55)
+        pointed_arch(x0, x1, arch_base, rise, stone_dark, 9)
+        pointed_arch(x0, x1, arch_base, rise, stone, 6)
+        pointed_arch(x0, x1, arch_base - 2, rise, stone_light, 1)
+
+    # バラ窓（玉座の真上）
+    rx, ry, rr = W // 2, arch_base - 40, 34
+    d.ellipse([rx - rr - 5, ry - rr - 5, rx + rr + 5, ry + rr + 5], fill=stone_dark)
+    d.ellipse([rx - rr - 3, ry - rr - 3, rx + rr + 3, ry + rr + 3], fill=GOLD_DARK)
+    d.ellipse([rx - rr, ry - rr, rx + rr, ry + rr], fill=(40, 22, 86))
+    glass = [(110, 60, 190), (70, 90, 200), (150, 70, 200), (60, 60, 150)]
+    for k in range(12):
+        a0 = 2 * math.pi * k / 12
+        a1 = 2 * math.pi * (k + 1) / 12
+        poly = [(rx, ry)] + [
+            (rx + math.cos(a0 + (a1 - a0) * t / 4) * (rr - 2), ry + math.sin(a0 + (a1 - a0) * t / 4) * (rr - 2))
+            for t in range(5)
+        ]
+        d.polygon(poly, fill=glass[k % 4])
+    for k in range(12):
+        a = 2 * math.pi * k / 12
+        d.line([rx, ry, rx + math.cos(a) * rr, ry + math.sin(a) * rr], fill=GOLD, width=1)
+    for r in (rr, rr * 0.62, rr * 0.3):
+        d.ellipse([rx - r, ry - r, rx + r, ry + r], outline=GOLD)
+    d.ellipse([rx - 4, ry - 4, rx + 4, ry + 4], fill=(236, 210, 255))
 
     # 柱
     def pillar(cx: int, w: int):
