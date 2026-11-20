@@ -117,8 +117,9 @@ const darkInputSx = {
   '& .MuiOutlinedInput-root': {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     color: '#f4f0ff',
-    '& fieldset': { borderColor: '#5b4b94' },
-    '&:hover fieldset': { borderColor: '#8a76c9' },
+    // 紫の枠は背景から浮いて見えるため、白を薄く乗せた控えめな枠にする
+    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.18)' },
+    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.35)' },
     '&.Mui-focused fieldset': { borderColor: '#d9a441' },
     // ブラウザの自動入力で入力欄が黄色くなり、暗い背景から浮くのを防ぐ。
     // 未対応の疑似クラスがあるとルールごと無視されるため、:-webkit-autofill と :autofill は別々に書く
