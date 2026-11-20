@@ -15,6 +15,8 @@ internal static class PlayerEndpoints
 {
     internal static WebApplication MapPlayerEndpoints(this WebApplication app)
     {
+        app.MapHub<PlayerPresenceHub>("/player-hubs/presence").RequireAuthorization();
+
         app.MapGet("/players", async (
             ClaimsPrincipal user,
             int? page,
@@ -74,8 +76,7 @@ internal static class PlayerEndpoints
             EquipmentStatusResolver equipmentStatusResolver,
             StatusRankEvaluator statusRankEvaluator,
             CombatIndexCalculator combatIndexCalculator,
-            CombatIndexRankEvaluator combatIndexRankEvaluator,
-            AppDbContext db) =>
+            CombatIndexRankEvaluator combatIndexRankEvaluator) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -98,12 +99,6 @@ internal static class PlayerEndpoints
             {
                 await playerRepository.SaveAsync(player);
             }
-
-            var now = DateTimeOffset.UtcNow;
-            var lastActiveThreshold = now.AddMinutes(-5);
-            await db.Players
-                .Where(p => p.Id == playerId.Value.Value && (p.LastActiveAt == null || p.LastActiveAt < lastActiveThreshold))
-                .ExecuteUpdateAsync(s => s.SetProperty(p => p.LastActiveAt, now));
 
             var playerEquipments = await playerEquipmentRepository.GetByPlayerAsync(player.Id);
             var equipments = await equipmentRepository.GetAllAsync();

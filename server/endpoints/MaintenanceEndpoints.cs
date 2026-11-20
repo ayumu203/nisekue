@@ -1,10 +1,8 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
 using server.application.maintenance;
 using server.application.player;
-using server.infrastructure;
 
 namespace server.endpoints;
 
@@ -14,10 +12,10 @@ internal static class MaintenanceEndpoints
 
     internal static WebApplication MapMaintenanceEndpoints(this WebApplication app)
     {
-        app.MapGet("/internal/active-player/count", async (
+        app.MapGet("/internal/active-player/count", (
             HttpRequest request,
             IConfiguration configuration,
-            IDbContextFactory<AppDbContext> dbContextFactory) =>
+            PlayerPresenceTracker playerPresenceTracker) =>
         {
             var expectedToken = configuration["Maintenance:MarketCleanupToken"];
             if (string.IsNullOrWhiteSpace(expectedToken))
@@ -33,11 +31,7 @@ internal static class MaintenanceEndpoints
                 return Results.Unauthorized();
             }
 
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            var threshold = DateTimeOffset.UtcNow.AddMinutes(-5);
-            var count = await dbContext.Players
-                .CountAsync(p => p.LastActiveAt != null && p.LastActiveAt >= threshold);
-
+            var count = playerPresenceTracker.CountOnlinePlayers();
             return Results.Ok(new { count });
         }).ExcludeFromDescription();
 
