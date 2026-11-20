@@ -6,6 +6,7 @@ import { SWRConfig } from 'swr'
 import './index.css'
 import App from '@/App'
 import { AuthProvider } from '@/contexts/AuthProvider'
+import { initAnalytics } from '@/lib/analytics'
 
 function getRouterBasename(): string | undefined {
   const normalizedBaseUrl = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
@@ -28,6 +29,7 @@ function restoreGithubPagesPath(): void {
 }
 
 restoreGithubPagesPath()
+initAnalytics()
 
 const theme = createTheme({
   palette: {

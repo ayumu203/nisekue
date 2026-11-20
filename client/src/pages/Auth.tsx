@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Alert, Box, Button, CircularProgress, Divider, Link, Paper, Stack, TextField, Typography } from '@mui/material'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Link as RouterLink } from 'react-router-dom'
 import { googleButtonSx, softGoldButtonSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { resolvePublicAssetPath } from '@/lib/assets'
@@ -463,6 +463,15 @@ function Auth() {
                     {emailAuthMode === 'signIn' ? locale.signUp : locale.signIn}
                   </Link>
                 </Stack>
+                <Typography variant="caption" textAlign="center" sx={{ color: mutedTextColor }}>
+                  <Link
+                    component={RouterLink}
+                    to="/privacy"
+                    sx={{ color: mutedTextColor, textDecorationColor: 'rgba(179, 168, 214, 0.5)' }}
+                  >
+                    {locale.privacyPolicy}
+                  </Link>
+                </Typography>
               </Stack>
             </Box>
           </Stack>
