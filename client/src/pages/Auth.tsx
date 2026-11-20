@@ -99,7 +99,7 @@ const heroTaglineSx = {
 // 枠を持たせず、右側（モバイルは下側）のパネル全体をフォームの面にする
 const authCardSx = {
   width: '100%',
-  maxWidth: { xs: 400, md: 440 },
+  maxWidth: { xs: 400, md: 460 },
   border: 'none',
   backgroundColor: 'transparent',
   boxShadow: 'none',
@@ -113,6 +113,12 @@ const darkInputSx = {
     '& fieldset': { borderColor: '#5b4b94' },
     '&:hover fieldset': { borderColor: '#8a76c9' },
     '&.Mui-focused fieldset': { borderColor: '#d9a441' },
+    // ブラウザの自動入力で入力欄が黄色くなり、暗い背景から浮くのを防ぐ
+    '& input:-webkit-autofill': {
+      WebkitBoxShadow: '0 0 0 100px #231c45 inset',
+      WebkitTextFillColor: '#f4f0ff',
+      caretColor: '#f4f0ff',
+    },
   },
   '& .MuiInputLabel-root': { color: '#b3a8d6' },
   '& .MuiInputLabel-root.Mui-focused': { color: '#f2d27a' },
@@ -348,12 +354,17 @@ function Auth() {
         }}
       >
         <Paper elevation={0} sx={authCardSx}>
-          <Stack spacing={{ xs: 3, md: 3.5 }}>
+          {/* PC は画面の高さに合わせて余白・マスコット・ボタンを大きくし、パネル全体を使う */}
+          <Stack sx={{ gap: { xs: 3, md: 'clamp(20px, 3.6vh, 48px)' } }}>
             <Stack alignItems="center" spacing={1.25}>
               <Typography
                 component="h2"
                 textAlign="center"
-                sx={{ fontSize: { xs: '1.7rem', md: '2rem' }, color: '#f2d27a', letterSpacing: '0.06em' }}
+                sx={{
+                  fontSize: { xs: '1.7rem', md: 'clamp(2rem, 3.8vh, 2.8rem)' },
+                  color: '#f2d27a',
+                  letterSpacing: '0.06em',
+                }}
               >
                 {locale.cardTitle}
               </Typography>
@@ -375,7 +386,12 @@ function Auth() {
               component="img"
               src={mascotSrc}
               alt=""
-              sx={{ height: { xs: 104, md: 128 }, alignSelf: 'center', mb: -1, pointerEvents: 'none' }}
+              sx={{
+                height: { xs: 104, md: 'clamp(128px, 19vh, 240px)' },
+                alignSelf: 'center',
+                mb: -1,
+                pointerEvents: 'none',
+              }}
             />
 
             <Button
@@ -384,7 +400,7 @@ function Auth() {
               size="large"
               disabled={isAnySubmitting}
               onClick={handleAnonymousSignIn}
-              sx={{ ...softGoldButtonSx, py: { xs: 1.4, md: 1.8 }, fontSize: { md: '1.05rem' } }}
+              sx={{ ...softGoldButtonSx, py: { xs: 1.4, md: 'clamp(14px, 2.2vh, 24px)' }, fontSize: { md: '1.15rem' } }}
             >
               {submitMode === 'anonymous' ? locale.anonymousSubmitting : locale.anonymousSubmit}
             </Button>
@@ -399,7 +415,7 @@ function Auth() {
               variant="contained"
               disabled={isAnySubmitting}
               onClick={handleGoogleSignIn}
-              sx={{ ...googleButtonSx, py: { xs: 1, md: 1.3 } }}
+              sx={{ ...googleButtonSx, py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' }, fontSize: { md: '1.05rem' } }}
               startIcon={<GoogleColorIcon />}
             >
               {submitMode === 'google' ? locale.googleSignInSubmitting : locale.googleSignIn}
@@ -408,7 +424,7 @@ function Auth() {
             <Divider sx={{ borderColor: dividerColor }} />
 
             <Box component="form" onSubmit={handleEmailAuth} noValidate>
-              <Stack spacing={{ xs: 1.5, md: 2 }}>
+              <Stack sx={{ gap: { xs: 1.5, md: 'clamp(12px, 2vh, 24px)' } }}>
                 <TextField
                   id="auth-email"
                   label={locale.emailLabel}
@@ -437,7 +453,7 @@ function Auth() {
                   variant="contained"
                   disabled={isAnySubmitting}
                   fullWidth
-                  sx={{ ...purpleButtonSx, py: { xs: 1, md: 1.3 } }}
+                  sx={{ ...purpleButtonSx, py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' }, fontSize: { md: '1.05rem' } }}
                 >
                   {submitMode === emailAuthMode
                     ? emailAuthMode === 'signIn'
