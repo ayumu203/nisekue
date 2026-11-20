@@ -6,6 +6,7 @@ import Home from '@/pages/Home'
 import Players from '@/pages/Players'
 import Training from '@/pages/Training'
 import Thanks from '@/pages/Thanks'
+import PrivacyPolicy from '@/pages/PrivacyPolicy'
 import PlayerSetting from '@/pages/PlayerSetting'
 import PlayerImageList from '@/pages/PlayerImageList'
 import MoveSetting from '@/pages/MoveSetting'
@@ -65,6 +66,7 @@ function App() {
         <Route path="/rebirth" element={user ? <Rebirth /> : <Navigate to="/auth" replace />} />
         <Route path="/debug" element={user ? <Debug /> : <Navigate to="/auth" replace />} />
         <Route path="/thanks" element={<Thanks />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="*" element={<Navigate to={user ? '/' : '/auth'} replace />} />
       </Routes>
     </div>
