@@ -278,7 +278,8 @@ def draw_scene() -> Image.Image:
         d.line([hx + math.cos(ang) * 11, hy + math.sin(ang) * 11, hx + math.cos(ang) * 16, hy + math.sin(ang) * 16], fill=(255, 230, 150))
 
     # 後衛の子（ch173）の水色のオーラと魔法陣
-    ax, ay = sx(1100), sy(520)
+    # ch173 は宙に浮かせて地上のキャラより 45px（ステージ座標）上にいるので、オーラもその分上げる
+    ax, ay = sx(1100), sy(475)
     for r, c in [(46, (30, 50, 90)), (39, (36, 66, 110)), (32, (44, 86, 134))]:
         d.ellipse([ax - r * 0.82, ay - r, ax + r * 0.82, ay + r], fill=c)
     magic_circle(d, sx(980), sy(505))
