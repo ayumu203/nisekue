@@ -36,6 +36,7 @@ import type {
   BattleColumn,
   BattleRow,
   CreateQuestRoomRequest,
+  GetQuestStagesResponse,
   QuestActionKind,
   QuestRoomDetailResponse,
   QuestRunDetailResponse,
@@ -45,6 +46,12 @@ import type { PlayerSummary } from '@/schema/player'
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
 const questSessionStorageKeyPrefix = 'nisekue:quest-session'
+// ステージ一覧の並び順（一般ステージ → チャレンジ → エンドレス）。
+const STAGE_GROUP_ORDER: Record<GetQuestStagesResponse[number]['progressionType'], number> = {
+  Static: 0,
+  Mirror: 1,
+  Endless: 2,
+}
 
 type PersistedQuestSession = {
   roomId: string | null
@@ -205,11 +212,11 @@ export default function Quest() {
       [...(stages ?? [])]
         .filter((stage) => stage.isActive)
         .sort((left, right) => {
-          // エンドレスステージは一覧の最後に固定。
-          const leftEndless = left.progressionType === 'Endless' ? 1 : 0
-          const rightEndless = right.progressionType === 'Endless' ? 1 : 0
-          if (leftEndless !== rightEndless) {
-            return leftEndless - rightEndless
+          // 一般ステージ → チャレンジ（名鑑の祠）→ エンドレスの順に、推奨レベルに関わらず並べる。
+          const leftGroup = STAGE_GROUP_ORDER[left.progressionType]
+          const rightGroup = STAGE_GROUP_ORDER[right.progressionType]
+          if (leftGroup !== rightGroup) {
+            return leftGroup - rightGroup
           }
 
           return left.recommendedLevel - right.recommendedLevel
