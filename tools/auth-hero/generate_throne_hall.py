@@ -49,6 +49,32 @@ def lerp(a, b, t):
     return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 
+def magic_circle(d: ImageDraw.ImageDraw, mx: int, my: int) -> None:
+    """ch173 が手の先に出している魔法陣。二重の円の間にルーン（点）を並べ、内側に六芒星を描く。
+    乱数は使わない（使うと後ろの星・ほこりの配置が変わってしまうため）。"""
+    outer, inner = 13, 9
+    line_c, bright_c, rune_c = (110, 200, 255), (190, 240, 255), (255, 255, 255)
+    # 円の内側をうっすら光らせる
+    d.ellipse([mx - outer, my - outer, mx + outer, my + outer], fill=(28, 58, 104))
+    d.ellipse([mx - outer, my - outer, mx + outer, my + outer], outline=line_c, width=1)
+    d.ellipse([mx - inner, my - inner, mx + inner, my + inner], outline=line_c, width=1)
+    # 二重円の間のルーン（等間隔の点）
+    rr = (outer + inner) / 2
+    for k in range(12):
+        ang = math.pi * 2 * k / 12 + math.pi / 12
+        d.point((round(mx + math.cos(ang) * rr), round(my + math.sin(ang) * rr)), fill=bright_c)
+    # 六芒星（上向き・下向きの三角形）
+    tri_r = inner - 1
+    for base in (-math.pi / 2, math.pi / 2):
+        pts = [
+            (round(mx + math.cos(base + math.pi * 2 * k / 3) * tri_r), round(my + math.sin(base + math.pi * 2 * k / 3) * tri_r))
+            for k in range(3)
+        ]
+        d.line(pts + [pts[0]], fill=bright_c, width=1)
+    # 中心の光
+    d.rectangle([mx - 1, my - 1, mx + 1, my + 1], fill=rune_c)
+
+
 def draw_scene() -> Image.Image:
     im = Image.new("RGB", (W, H))
     d = ImageDraw.Draw(im)
@@ -255,10 +281,7 @@ def draw_scene() -> Image.Image:
     ax, ay = sx(1100), sy(520)
     for r, c in [(46, (30, 50, 90)), (39, (36, 66, 110)), (32, (44, 86, 134))]:
         d.ellipse([ax - r * 0.82, ay - r, ax + r * 0.82, ay + r], fill=c)
-    mx, my = sx(980), sy(505)
-    d.ellipse([mx - 8, my - 8, mx + 8, my + 8], outline=(130, 220, 255), width=1)
-    d.ellipse([mx - 5, my - 5, mx + 5, my + 5], outline=(190, 240, 255), width=1)
-    d.rectangle([mx - 1, my - 1, mx + 1, my + 1], fill=(255, 255, 255))
+    magic_circle(d, sx(980), sy(505))
     for _ in range(18):
         x = rnd.randint(ax - 46, ax + 46)
         y = rnd.randint(ay - 70, ay + 30)
