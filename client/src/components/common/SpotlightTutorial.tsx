@@ -152,6 +152,8 @@ export default function SpotlightTutorial({
 
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  // 画面幅ではなく入力方法で判定する（タブレットや狭いウィンドウの PC でも正しい表記になるように）
+  const isTouchDevice = useMediaQuery('(pointer: coarse)')
   const hasSpotlight = targetId != null && targetRect != null
 
   // 指し先が画面の下半分にあるときは、ウィンドウを上に出して指し先を隠さない
@@ -220,9 +222,9 @@ export default function SpotlightTutorial({
               <PointerArrow direction={pointerDirection} />
               <Typography
                 component="span"
-                sx={{ fontSize: 15, lineHeight: 1, color: ACCENT_COLOR, whiteSpace: 'nowrap' }}
+                sx={{ fontSize: 15, fontWeight: 700, lineHeight: 1, color: ACCENT_COLOR, whiteSpace: 'nowrap' }}
               >
-                {tutorialLocale.pointerLabel}
+                {isTouchDevice ? tutorialLocale.pointerLabelTap : tutorialLocale.pointerLabelClick}
               </Typography>
             </Box>
           </Box>

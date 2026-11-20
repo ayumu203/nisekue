@@ -1,6 +1,7 @@
 {
   "guideName": "受付嬢",
-  "pointerLabel": "ここ！",
+  "pointerLabelTap": "Tap!",
+  "pointerLabelClick": "Click!",
   "steps": {
     "homePlayerSetting": {
       "message": "キャラメークをしましょう！\n歯車アイコンから設定ページへ移動できます。"
