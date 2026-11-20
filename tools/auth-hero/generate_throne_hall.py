@@ -9,7 +9,7 @@
 座標系：
   - 完成画像は 1200 x 1200。下側 1200 x 630 がサムネと同じ「ステージ」で、
     画面側のキャラ配置（client/src/pages/Auth.tsx）はこのステージ基準の割合で書いている。
-  - 上側 570px は縦長の画面用に足した天井部分（柱と天井のアーチ。PC ではここに空を飛ぶ敵を重ねる）。
+  - 上側 570px は縦長の画面用に足した天井部分（柱・天井のアーチ・垂れ幕の上側）。
 
 使い方：
   python3 tools/auth-hero/generate_throne_hall.py
@@ -226,9 +226,9 @@ def draw_scene() -> Image.Image:
         d.rectangle([cx - 1, ey + r + 3, cx + 1, ey + r + 7], fill=GOLD)
 
     for x in (sx(65), sx(225)):
-        banner(x, 26, sy(20), sy(330))
+        banner(x, 26, sy(-230), sy(80))
     for x in (sx(975), sx(1135)):
-        banner(x, 26, sy(20), sy(330))
+        banner(x, 26, sy(-230), sy(80))
 
     # シャンデリア（旗と旗の間）
     def chandelier(cx: int, y: int):
@@ -247,8 +247,8 @@ def draw_scene() -> Image.Image:
             d.point((x, y - 2), fill=(236, 210, 255))
         d.point((cx, y + 11), fill=(159, 196, 255))
 
-    chandelier(sx(145), sy(200))
-    chandelier(sx(1055), sy(200))
+    chandelier(sx(145), sy(290))
+    chandelier(sx(1055), sy(290))
 
     # 打撃のエフェクト（青い獣の右後ろ）
     hx, hy = sx(612), sy(500)
