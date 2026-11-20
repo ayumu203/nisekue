@@ -51,11 +51,13 @@ const formMascotPaths = [
 
 type StageSprite = {
   src: string
-  /** ステージ（1200x630）に対する左端・上端・幅の割合（%） */
+  /** ステージ（1200x630）に対する左端・上端・幅の割合（%）。上端はマイナスでステージより上（天井側） */
   left: number
   top: number
   width: number
   pixelated?: boolean
+  /** PC のみ表示（天井側に置く空を飛ぶ敵。スマホは天井がほとんど映らないため出さない） */
+  pcOnly?: boolean
 }
 
 // サムネと同じ配置。敵は左、プレイヤーは右で、画面の外側ほど手前（大きく・下）、玉座に近いほど奥。
@@ -68,6 +70,11 @@ const stageSprites: StageSprite[] = [
   { src: 'image/character/ch175_hero.png', left: 53.3, top: 62.9, width: 12.25 },
   { src: 'image/character/ch109_hero.png', left: 66.7, top: 63.2, width: 12.25 },
   { src: 'image/character/ch173_hero.png', left: 84.2, top: 63.2, width: 15 },
+  // 空を飛ぶ敵（PC のみ）。シャンデリアの鎖を避け、外側ほど低く小さく、内側ほど高く大きく置く
+  { src: 'image/battle/Enemy2.png', left: 14.2, top: -39.7, width: 12, pixelated: true, pcOnly: true },
+  { src: 'image/battle/Enemy79.png', left: 1.7, top: -20.6, width: 8, pixelated: true, pcOnly: true },
+  { src: 'image/battle/Enemy61.png', left: 73.8, top: -39.7, width: 12, pixelated: true, pcOnly: true },
+  { src: 'image/battle/Enemy14.png', left: 90.3, top: -20.6, width: 8, pixelated: true, pcOnly: true },
 ]
 
 const heroTitleSx = {
@@ -323,6 +330,7 @@ function Auth() {
                 width: `${sprite.width}%`,
                 height: 'auto',
                 imageRendering: sprite.pixelated ? 'pixelated' : 'auto',
+                display: sprite.pcOnly ? { xs: 'none', md: 'block' } : 'block',
                 pointerEvents: 'none',
               }}
             />

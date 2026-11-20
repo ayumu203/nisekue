@@ -9,7 +9,7 @@
 座標系：
   - 完成画像は 1200 x 1200。下側 1200 x 630 がサムネと同じ「ステージ」で、
     画面側のキャラ配置（client/src/pages/Auth.tsx）はこのステージ基準の割合で書いている。
-  - 上側 570px は縦長の画面用に足した天井部分（垂れ幕の吊り紐・柱が上まで続く）。
+  - 上側 570px は縦長の画面用に足した天井部分（柱と天井のアーチ。PC ではここに空を飛ぶ敵を重ねる）。
 
 使い方：
   python3 tools/auth-hero/generate_throne_hall.py
@@ -88,7 +88,7 @@ def draw_scene() -> Image.Image:
     arch_window(sx(855), 60, sy(70), floor_y - 1)
     arch_window(sx(600), 70, sy(-10), floor_y - 1)
 
-    # 天井（PC の縦長画面で見える部分）：柱をつなぐ尖頭アーチ、リブ、玉座の真上のバラ窓
+    # 天井（PC の縦長画面で見える部分）：柱をつなぐ尖頭アーチ、リブ
     pillar_xs = [sx(70), sx(225), sx(470), sx(730), sx(975), sx(1130)]
     stone, stone_light, stone_dark = (52, 43, 104), (70, 59, 132), (30, 25, 66)
     arch_base = sy(-150)
@@ -118,27 +118,6 @@ def draw_scene() -> Image.Image:
         pointed_arch(x0, x1, arch_base, rise, stone_dark, 9)
         pointed_arch(x0, x1, arch_base, rise, stone, 6)
         pointed_arch(x0, x1, arch_base - 2, rise, stone_light, 1)
-
-    # バラ窓（玉座の真上）
-    rx, ry, rr = W // 2, arch_base - 40, 34
-    d.ellipse([rx - rr - 5, ry - rr - 5, rx + rr + 5, ry + rr + 5], fill=stone_dark)
-    d.ellipse([rx - rr - 3, ry - rr - 3, rx + rr + 3, ry + rr + 3], fill=GOLD_DARK)
-    d.ellipse([rx - rr, ry - rr, rx + rr, ry + rr], fill=(40, 22, 86))
-    glass = [(110, 60, 190), (70, 90, 200), (150, 70, 200), (60, 60, 150)]
-    for k in range(12):
-        a0 = 2 * math.pi * k / 12
-        a1 = 2 * math.pi * (k + 1) / 12
-        poly = [(rx, ry)] + [
-            (rx + math.cos(a0 + (a1 - a0) * t / 4) * (rr - 2), ry + math.sin(a0 + (a1 - a0) * t / 4) * (rr - 2))
-            for t in range(5)
-        ]
-        d.polygon(poly, fill=glass[k % 4])
-    for k in range(12):
-        a = 2 * math.pi * k / 12
-        d.line([rx, ry, rx + math.cos(a) * rr, ry + math.sin(a) * rr], fill=GOLD, width=1)
-    for r in (rr, rr * 0.62, rr * 0.3):
-        d.ellipse([rx - r, ry - r, rx + r, ry + r], outline=GOLD)
-    d.ellipse([rx - 4, ry - 4, rx + 4, ry + 4], fill=(236, 210, 255))
 
     # 柱
     def pillar(cx: int, w: int):
@@ -229,10 +208,6 @@ def draw_scene() -> Image.Image:
 
     # 垂れ幕（魔王軍の紋章入り）
     def banner(cx: int, w: int, top_y: int, bottom_y: int):
-        for side in (-1, 1):
-            x = cx + side * (w // 2 - 2)
-            for yy in range(0, top_y, 2):
-                d.point((x, yy), fill=GOLD_DARK)
         d.rectangle([cx - w // 2 - 3, top_y - 2, cx + w // 2 + 3, top_y + 1], fill=GOLD)
         tip = 8
         poly = [(cx - w // 2, top_y), (cx + w // 2, top_y), (cx + w // 2, bottom_y - tip), (cx, bottom_y), (cx - w // 2, bottom_y - tip)]
@@ -251,9 +226,9 @@ def draw_scene() -> Image.Image:
         d.rectangle([cx - 1, ey + r + 3, cx + 1, ey + r + 7], fill=GOLD)
 
     for x in (sx(65), sx(225)):
-        banner(x, 26, sy(-140), sy(330))
+        banner(x, 26, sy(20), sy(330))
     for x in (sx(975), sx(1135)):
-        banner(x, 26, sy(-140), sy(330))
+        banner(x, 26, sy(20), sy(330))
 
     # シャンデリア（旗と旗の間）
     def chandelier(cx: int, y: int):
