@@ -37,7 +37,7 @@
       "message": "よく来たね！まずは戦いたい相手を選びな！"
     },
     "trainingMoveSelect": {
-      "message": "次は使う技を選ぶんだよ！"
+      "message": "MPを使い切るように技を選びな！\n選び終わったら「次へ」を押すんだよ。"
     },
     "trainingConfirm": {
       "message": "準備ができたら「戦闘」を押して特訓開始だ！"

@@ -490,10 +490,6 @@ export default function Training() {
       next[turnIndex] = moveId
       return next
     })
-
-    if (tutorialStep === 'training-move-select' && moveId !== null) {
-      advanceTutorial('training-confirm')
-    }
   }
 
   async function startBattle(): Promise<void> {
@@ -665,6 +661,9 @@ export default function Training() {
                           lockRemainingSeconds={trainingLockRemainingSeconds}
                           onChangeMoveId={handleChangePlannedMoveId}
                           submitLabel={locale.startBattle}
+                          firstMoveSelectId={
+                            tutorialStep === 'training-move-select' ? 'tutorial-first-move-select' : undefined
+                          }
                           submitButtonId={
                             tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined
                           }
@@ -737,7 +736,10 @@ export default function Training() {
         <SpotlightTutorial
           guide="instructor"
           targetId="tutorial-move-plan-form"
+          pointerTargetId="tutorial-first-move-select"
           message={tutorialLocale.steps.trainingMoveSelect.message}
+          showDismiss
+          onDismiss={() => advanceTutorial('training-confirm')}
         />
       )}
       {tutorialStep === 'training-confirm' && (

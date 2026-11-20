@@ -18,6 +18,8 @@ type TargetRect = {
 
 type SpotlightTutorialProps = {
   targetId?: string
+  // 矢印で指す要素。指定がなければ targetId を指す
+  pointerTargetId?: string
   message: string
   subMessage?: string
   showDismiss?: boolean
@@ -148,10 +150,12 @@ export default function SpotlightTutorial({
   onDismiss,
   padding = 12,
   guide = 'receptionist',
+  pointerTargetId,
 }: SpotlightTutorialProps) {
   const guideInfo = TUTORIAL_GUIDES[guide]
   const portraitPlacement = getGuidePortraitPlacement(guideInfo)
   const targetRect = useTargetRect(targetId, padding)
+  const pointerTargetRect = useTargetRect(pointerTargetId, 4)
   const { session } = useAuth()
   const { canUseDebug } = useDebugStatus()
   const userId = session?.user.id ?? null
@@ -172,19 +176,21 @@ export default function SpotlightTutorial({
   const isTouchDevice = useMediaQuery('(pointer: coarse)')
   const hasSpotlight = targetId != null && targetRect != null
 
-  // 指し先が画面の下半分にあるときは、ウィンドウを上に出して指し先を隠さない
+  // 指し先が画面の下半分にあるときは、ウィンドウを上に出して指し先を隠さない（矢印の指し先があればそちらを優先）
   const viewportHeight = typeof window === 'undefined' ? 0 : window.innerHeight
   const viewportWidth = typeof window === 'undefined' ? 0 : window.innerWidth
   const targetCenterY = hasSpotlight ? targetRect.top + targetRect.height / 2 : 0
   const isTargetInLowerHalf = hasSpotlight && targetCenterY > viewportHeight / 2
-  const pointerDirection: 'up' | 'down' = isTargetInLowerHalf ? 'down' : 'up'
-  const pointerTop = hasSpotlight
-    ? isTargetInLowerHalf
-      ? targetRect.top - POINTER_GAP - POINTER_HEIGHT
-      : targetRect.top + targetRect.height + POINTER_GAP
+  const pointerRect = pointerTargetRect ?? targetRect
+  const pointerCenterY = pointerRect ? pointerRect.top + pointerRect.height / 2 : 0
+  const pointerDirection: 'up' | 'down' = pointerRect && pointerCenterY > viewportHeight / 2 ? 'down' : 'up'
+  const pointerTop = pointerRect
+    ? pointerDirection === 'down'
+      ? pointerRect.top - POINTER_GAP - POINTER_HEIGHT
+      : pointerRect.top + pointerRect.height + POINTER_GAP
     : 0
-  const pointerCenterX = hasSpotlight
-    ? Math.min(Math.max(targetRect.left + targetRect.width / 2, 40), Math.max(viewportWidth - 40, 40))
+  const pointerCenterX = pointerRect
+    ? Math.min(Math.max(pointerRect.left + pointerRect.width / 2, 40), Math.max(viewportWidth - 40, 40))
     : 0
 
   const portraitSize = isMobile ? { width: 76, minHeight: 112 } : { width: 140, minHeight: 168 }
@@ -261,7 +267,7 @@ export default function SpotlightTutorial({
           transform: 'translateX(-50%)',
           width: 'calc(100% - 24px)',
           maxWidth: 760,
-          ...(isTargetInLowerHalf ? { top: 28 } : { bottom: 20 }),
+          ...((pointerTargetRect ? pointerDirection === 'down' : isTargetInLowerHalf) ? { top: 28 } : { bottom: 20 }),
           pointerEvents: 'auto',
         }}
       >
