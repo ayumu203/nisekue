@@ -68,9 +68,10 @@ const stageSprites: StageSprite[] = [
   { src: 'image/character/ch175_hero.png', left: 53.3, top: 62.9, width: 12.25 },
   { src: 'image/character/ch109_hero.png', left: 66.7, top: 63.2, width: 12.25 },
   { src: 'image/character/ch173_hero.png', left: 84.2, top: 63.2, width: 15 },
-  // 空を飛ぶ敵。左右のアーチ窓の前に 1 体ずつ置き、高さを左右のシャンデリアにそろえる
-  { src: 'image/battle/Enemy2.png', left: 22.75, top: 14.6, width: 12, pixelated: true },
-  { src: 'image/battle/Enemy61.png', left: 65.25, top: 14.6, width: 12, pixelated: true },
+  // 空を飛ぶ敵。左右のアーチ窓の前に 1 体ずつ置き、高さを左右のシャンデリアにそろえる。
+  // 魔王より手前・地上のキャラより奥にいるイメージなので、地上の敵より小さい 2 倍にしている
+  { src: 'image/battle/Enemy2.png', left: 24.75, top: 18.4, width: 8, pixelated: true },
+  { src: 'image/battle/Enemy61.png', left: 67.25, top: 18.4, width: 8, pixelated: true },
 ]
 
 const heroTitleSx = {
