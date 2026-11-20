@@ -567,10 +567,20 @@ export default function PlayerSetting() {
         />
       )}
       {tutorialStep === 'player-setting-random' && (
-        <SpotlightTutorial targetId="tutorial-random-btn" message={tutorialLocale.steps.playerSettingRandom.message} />
+        <SpotlightTutorial
+          targetId="tutorial-random-btn"
+          message={tutorialLocale.steps.playerSettingRandom.message}
+          showDismiss
+          onDismiss={() => advanceTutorial('player-setting-save')}
+        />
       )}
       {tutorialStep === 'player-setting-save' && (
-        <SpotlightTutorial targetId="tutorial-save-btn" message={tutorialLocale.steps.playerSettingSave.message} />
+        <SpotlightTutorial
+          targetId="tutorial-save-btn"
+          message={tutorialLocale.steps.playerSettingSave.message}
+          showDismiss
+          onDismiss={() => advanceTutorial('player-setting-account')}
+        />
       )}
       {tutorialStep === 'player-setting-account' && (
         <SpotlightTutorial

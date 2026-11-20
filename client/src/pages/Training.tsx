@@ -720,27 +720,42 @@ export default function Training() {
         </Stack>
       </Paper>
       {tutorialStep === 'home-job-change' && (
-        <SpotlightTutorial targetId="tutorial-home-btn" message={tutorialLocale.steps.homeJobChange.message} />
+        <SpotlightTutorial
+          guide="instructor"
+          targetId="tutorial-home-btn"
+          message={tutorialLocale.steps.trainingToJobChange.message}
+        />
       )}
       {tutorialStep === 'training-fight' && (
-        <SpotlightTutorial targetId="tutorial-fight-card" message={tutorialLocale.steps.trainingFight.message} />
+        <SpotlightTutorial
+          guide="instructor"
+          targetId="tutorial-fight-card"
+          message={tutorialLocale.steps.trainingFight.message}
+        />
       )}
       {tutorialStep === 'training-move-select' && (
         <SpotlightTutorial
+          guide="instructor"
           targetId="tutorial-move-plan-form"
           message={tutorialLocale.steps.trainingMoveSelect.message}
         />
       )}
       {tutorialStep === 'training-confirm' && (
         <SpotlightTutorial
+          guide="instructor"
           targetId="tutorial-start-training-btn"
           message={tutorialLocale.steps.trainingConfirm.message}
         />
       )}
-      {tutorialStep === 'training-to-lv5' && <SpotlightTutorial message={tutorialLocale.steps.trainingToLv5.message} />}
-      {tutorialStep === 'training-to-lv7' && <SpotlightTutorial message={tutorialLocale.steps.trainingToLv7.message} />}
+      {tutorialStep === 'training-to-lv5' && (
+        <SpotlightTutorial guide="instructor" message={tutorialLocale.steps.trainingToLv5.message} />
+      )}
+      {tutorialStep === 'training-to-lv7' && (
+        <SpotlightTutorial guide="instructor" message={tutorialLocale.steps.trainingToLv7.message} />
+      )}
       {tutorialStep === 'training-quest-guide' && (
         <SpotlightTutorial
+          guide="instructor"
           message={tutorialLocale.steps.trainingQuestGuide.message}
           showDismiss
           dismissLabel={tutorialLocale.steps.trainingQuestGuide.dismissLabel}

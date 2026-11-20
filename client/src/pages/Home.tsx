@@ -643,6 +643,7 @@ function Home() {
       )}
       {showRebirthTutorial && (
         <SpotlightTutorial
+          guide="highPriest"
           targetId="tutorial-rebirth-btn"
           message={tutorialLocale.steps.rebirthGuide.message}
           showDismiss
