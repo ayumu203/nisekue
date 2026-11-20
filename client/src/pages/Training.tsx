@@ -723,7 +723,7 @@ export default function Training() {
         <SpotlightTutorial
           guide="instructor"
           targetId="tutorial-home-btn"
-          message={tutorialLocale.steps.homeJobChange.message}
+          message={tutorialLocale.steps.trainingToJobChange.message}
         />
       )}
       {tutorialStep === 'training-fight' && (

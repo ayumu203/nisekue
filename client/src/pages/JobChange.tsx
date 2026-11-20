@@ -204,7 +204,7 @@ export default function JobChange() {
         <SpotlightTutorial
           guide="priest"
           targetId="tutorial-home-btn"
-          message={tutorialLocale.steps.backToTraining.message}
+          message={tutorialLocale.steps.jobChangeToTraining.message}
         />
       )}
       {tutorialStep === 'job-change-info' && (

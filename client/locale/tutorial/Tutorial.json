@@ -14,83 +14,89 @@
       "message": "キャラメークをしましょう！\n歯車アイコンから設定ページへ移動できます。"
     },
     "playerSettingName": {
-      "message": "プレイヤー名を好きな名前に変えてみよう！\n入力できたら「次へ」を押してね。",
+      "message": "まずはプレイヤー名を決めましょう！\n入力できたら「次へ」を押してくださいね。",
       "dismissLabel": "次へ"
     },
     "playerSettingRandom": {
-      "message": "「ランダムで選ぶ」を押してキャラクター画像を変えてみよう！"
+      "message": "「ランダムで選ぶ」を押すと、キャラクター画像が変わりますよ。"
     },
     "playerSettingSave": {
-      "message": "気に入ったら「保存する」を押して確定しよう！"
+      "message": "気に入ったら「保存する」を押して決定してください！"
     },
     "playerSettingAccount": {
-      "message": "メールアドレス・パスワードの設定やGoogle連携がここからできます。\nアカウントを設定しておくと、データを保存することができます。",
+      "message": "メールアドレス・パスワードの設定やGoogle連携は、こちらからできます。\nアカウントを設定しておくと、データを保存できるので安心ですよ。",
       "dismissLabel": "わかった！"
     },
     "playerSettingToHome": {
-      "message": "設定完了！ホームに戻りましょう。"
+      "message": "設定はこれで完了です！ホームに戻りましょう。"
     },
     "homeTraining": {
       "message": "まずは訓練場で戦ってみましょう！"
     },
     "trainingFight": {
-      "message": "戦いたい敵を選んでみよう！"
+      "message": "よく来たね！まずは戦いたい相手を選びな！"
     },
     "trainingMoveSelect": {
-      "message": "技を選んで戦おう！"
+      "message": "次は使う技を選ぶんだよ！"
     },
     "trainingConfirm": {
-      "message": "「戦闘」を押して特訓を始めよう！"
+      "message": "準備ができたら「戦闘」を押して特訓開始だ！"
     },
     "trainingToLv5": {
-      "message": "レベル5まで敵と戦ってみよう！"
+      "message": "まずはレベル5まで鍛えてきな！"
+    },
+    "trainingToJobChange": {
+      "message": "いい調子だね！次は転職してきな。ホームから行けるよ！"
     },
     "homeJobChange": {
-      "message": "次は転職してみましょう！\n"
+      "message": "次は転職してみましょう！"
     },
     "jobChangeInfo": {
-      "message": "転職をすることでジョブ固有の技を覚えることができます！\nおすすめは盾兵と魔法使いです。",
+      "message": "転職をご希望ですね。\n転職すると、そのジョブ固有の技を覚えられます。おすすめは盾兵と魔法使いですよ。",
       "dismissLabel": "OK!"
     },
     "jobChangeRoadmap": {
-      "message": "「ロードマップ」タブで転職条件を確認できます！"
+      "message": "「ロードマップ」タブで、転職の条件を確かめられます。"
+    },
+    "jobChangeToTraining": {
+      "message": "転職が済んだら、訓練場で新しい力を試してみてください。"
     },
     "backToTraining": {
-      "message": "転職をしたら訓練場へ戻りましょう！"
+      "message": "転職が済んだら、訓練場へ戻りましょう！"
     },
     "trainingToLv7": {
-      "message": "次はレベル7を目指しましょう！"
+      "message": "次はレベル7を目指すよ！"
     },
     "trainingQuestGuide": {
-      "message": "クエストに挑戦できるようになりました。\nまた他の機能についても紹介していきます！",
+      "message": "やるじゃないか！これでクエストに挑戦できるよ。\nほかの機能は受付嬢が案内してくれるからね！",
       "dismissLabel": "OK!"
     },
     "homeMoveSetting": {
-      "message": "技の並び替えができる「技の設定」を見てみましょう！"
+      "message": "次は「技の設定」を見てみましょう。技の順番を並べ替えられますよ。"
     },
     "moveSettingInfo": {
-      "message": "ここで技の順番を並び替えられます。\n戦闘で使いたい技を好きな順に並べましょう！",
+      "message": "ここでは技の順番を並べ替えられるわ。\n戦闘で使いたい技を、好きな順に並べておきなさい。",
       "dismissLabel": "わかった！"
     },
     "moveSettingToHome": {
-      "message": "ホームに戻りましょう！"
+      "message": "並べ終わったら、ホームに戻りなさい。"
     },
     "homeTreasureMap": {
       "message": "次は「宝の地図」を見てみましょう！"
     },
     "treasureMapInfo": {
-      "message": "地図を選んで探索を開始すると、時間経過で報酬がもらえます。\nレア度が高い地図ほど豪華な報酬が手に入ります！",
+      "message": "お、宝の地図に興味あり？\n地図を選んで探索に出すと、時間が経つと報酬がもらえるよ。レア度が高い地図ほど、お宝も豪華なんだ！",
       "dismissLabel": "わかった！"
     },
     "treasureMapToHome": {
-      "message": "ホームに戻りましょう！"
+      "message": "よし、ホームに戻ろっか！"
     },
     "tutorialComplete": {
       "message": "チュートリアル完了です。\nみなさんの良いポチゲーライフを応援しています！！！\nゲーム運営者より",
       "dismissLabel": "ありがとう!"
     },
     "rebirthGuide": {
-      "message": "レベル100に到達しました！\n「転生」が解放されました。転生するとレベルがリセットされますが、ステータスの一部が引き継がれてより強くなれます！",
+      "message": "レベル100への到達、見事です。\n「転生」の道が開かれました。転生するとレベルはリセットされますが、ステータスの一部を引き継ぎ、さらに強くなれるでしょう。",
       "dismissLabel": "わかった！"
     }
   },
