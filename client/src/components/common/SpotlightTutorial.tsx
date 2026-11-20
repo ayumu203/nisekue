@@ -7,6 +7,7 @@ import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import { completeTutorial } from '@/lib/tutorial'
 import tutorialLocale from '../../../locale/tutorial/Tutorial.json'
+import { getGuidePortraitPlacement, TUTORIAL_GUIDES, type TutorialGuideId } from './tutorialGuides'
 
 type TargetRect = {
   top: number
@@ -23,6 +24,8 @@ type SpotlightTutorialProps = {
   dismissLabel?: string
   onDismiss?: () => void
   padding?: number
+  // 話しているキャラ。指定がなければ受付嬢
+  guide?: TutorialGuideId
 }
 
 // 実際の画面（歯車ボタン・外枠）の配色に合わせる
@@ -31,8 +34,6 @@ const WINDOW_OUTLINE_COLOR = '#6e4415'
 const WINDOW_BORDER_COLOR = '#ffffff'
 const ACCENT_COLOR = '#ffcc00'
 const ACCENT_TEXT_COLOR = '#4f392c'
-// 受付嬢の髪色に合わせた水色
-const GUIDE_NAME_COLOR = '#bfe6ff'
 const BUBBLE_COLOR = '#fffaf0'
 const BUBBLE_TEXT_COLOR = '#3d2a1e'
 // 背景が明るくても暗くても読めるように、ラベルを茶色で縁取る
@@ -49,7 +50,6 @@ const POINTER_LABEL_OUTLINE = [
   .map(([x, y]) => `${x}px ${y}px 0 ${WINDOW_OUTLINE_COLOR}`)
   .join(', ')
 const OVERLAY_COLOR = 'rgba(20, 12, 4, 0.62)'
-const GUIDE_IMAGE_PATH = 'image/job/11_watermage.png'
 const POINTER_HEIGHT = 44
 const POINTER_GAP = 6
 
@@ -147,7 +147,10 @@ export default function SpotlightTutorial({
   dismissLabel = 'わかった！',
   onDismiss,
   padding = 12,
+  guide = 'receptionist',
 }: SpotlightTutorialProps) {
+  const guideInfo = TUTORIAL_GUIDES[guide]
+  const portraitPlacement = getGuidePortraitPlacement(guideInfo)
   const targetRect = useTargetRect(targetId, padding)
   const { session } = useAuth()
   const { canUseDebug } = useDebugStatus()
@@ -264,7 +267,7 @@ export default function SpotlightTutorial({
       >
         <Box
           role="dialog"
-          aria-label={tutorialLocale.guideName}
+          aria-label={guideInfo.name}
           sx={{
             display: 'flex',
             gap: { xs: 1.5, sm: 2.5 },
@@ -292,19 +295,17 @@ export default function SpotlightTutorial({
           >
             <Box
               component="img"
-              src={resolvePublicAssetPath(GUIDE_IMAGE_PATH)}
+              src={resolvePublicAssetPath(guideInfo.image)}
               alt=""
               aria-hidden="true"
               sx={{
                 position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                objectPosition: 'center top',
-                // 立ち絵の顔は画像の横幅の約 55% の位置にあるので、拡大後に左へずらして中央に合わせる
-                transform: 'translateX(-6%) scale(1.35)',
-                transformOrigin: '50% 0',
+                top: 0,
+                left: `${portraitPlacement.left * 100}%`,
+                width: `${guideInfo.zoom * 100}%`,
+                maxWidth: 'none',
+                // margin の % は親の横幅が基準なので、顔の高さを枠の横幅に対する割合で合わせられる
+                mt: `${portraitPlacement.top * 100}%`,
               }}
             />
           </Box>
@@ -318,10 +319,10 @@ export default function SpotlightTutorial({
                 fontWeight: 700,
                 lineHeight: 1.2,
                 letterSpacing: '0.05em',
-                color: GUIDE_NAME_COLOR,
+                color: guideInfo.nameColor,
               }}
             >
-              {tutorialLocale.guideName}
+              {guideInfo.name}
             </Typography>
             <Box
               sx={{

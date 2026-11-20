@@ -959,6 +959,7 @@ export default function TreasureMap() {
       </Paper>
       {tutorialStep === 'treasure-map-info' && (
         <SpotlightTutorial
+          guide="adventurer"
           message={tutorialLocale.steps.treasureMapInfo.message}
           showDismiss
           dismissLabel={tutorialLocale.steps.treasureMapInfo.dismissLabel}
@@ -967,6 +968,7 @@ export default function TreasureMap() {
       )}
       {tutorialStep === 'treasure-map-to-home' && (
         <SpotlightTutorial
+          guide="adventurer"
           targetId="tutorial-home-btn-treasure"
           message={tutorialLocale.steps.treasureMapToHome.message}
         />

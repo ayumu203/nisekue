@@ -1,5 +1,12 @@
 {
-  "guideName": "受付嬢",
+  "guides": {
+    "receptionist": "受付嬢",
+    "instructor": "教官",
+    "priest": "神官",
+    "mage": "魔導士",
+    "adventurer": "冒険者",
+    "highPriest": "大神官"
+  },
   "pointerLabelTap": "Tap!",
   "pointerLabelClick": "Click!",
   "steps": {
