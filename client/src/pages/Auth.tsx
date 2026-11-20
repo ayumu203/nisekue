@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Alert, Box, Button, CircularProgress, Divider, Link, Paper, Stack, TextField, Typography } from '@mui/material'
+import { keyframes } from '@mui/material/styles'
 import { Navigate } from 'react-router-dom'
 import { googleButtonSx, softGoldButtonSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
@@ -56,7 +57,20 @@ type StageSprite = {
   top: number
   width: number
   pixelated?: boolean
+  /** 宙に浮かせ、ゆっくり上下させる（足元に影を出す） */
+  floating?: boolean
 }
+
+// 浮いているキャラの上下の揺れと、それに合わせて伸び縮みする足元の影
+const floatBob = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6%); }
+`
+const floatShadow = keyframes`
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50% { transform: scale(0.8); opacity: 0.35; }
+`
+const floatDuration = '3.2s'
 
 // サムネと同じ配置。敵は左、プレイヤーは右で、画面の外側ほど手前（大きく・下）、玉座に近いほど奥。
 // 敵のドット絵（48x48）は整数倍（PC 幅 1200px 時）になる幅にしている。
@@ -67,7 +81,8 @@ const stageSprites: StageSprite[] = [
   { src: 'image/battle/Enemy66.png', left: 38.8, top: 72.4, width: 8, pixelated: true },
   { src: 'image/character/ch175_hero.png', left: 53.3, top: 62.9, width: 12.25 },
   { src: 'image/character/ch109_hero.png', left: 66.7, top: 63.2, width: 12.25 },
-  { src: 'image/character/ch173_hero.png', left: 84.2, top: 63.2, width: 15 },
+  // 後衛の魔法使いは魔法陣を出しながら宙に浮いている（地上のキャラより少し上に置く）
+  { src: 'image/character/ch173_hero.png', left: 84.2, top: 56, width: 15, floating: true },
   // 空を飛ぶ敵。左右のアーチ窓の前に 1 体ずつ置き、高さを左右のシャンデリアにそろえる。
   // 魔王より手前・地上のキャラより奥にいるイメージなので、地上の敵より小さい 2 倍にしている
   { src: 'image/battle/Enemy2.png', left: 24.75, top: 18.4, width: 8, pixelated: true },
@@ -339,6 +354,27 @@ function Auth() {
             containerType: 'inline-size',
           }}
         >
+          {stageSprites
+            .filter((sprite) => sprite.floating)
+            .map((sprite) => (
+              <Box
+                key={`${sprite.src}-shadow`}
+                aria-hidden
+                sx={{
+                  position: 'absolute',
+                  // 地上のキャラと同じ高さ（ステージの下端付近）の床に影を落とす
+                  left: `${sprite.left + sprite.width * 0.25}%`,
+                  top: '95.5%',
+                  width: `${sprite.width * 0.5}%`,
+                  height: '3%',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(ellipse at center, rgba(8, 6, 20, 0.9) 0%, rgba(8, 6, 20, 0) 70%)',
+                  animation: `${floatShadow} ${floatDuration} ease-in-out infinite`,
+                  pointerEvents: 'none',
+                  '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+                }}
+              />
+            ))}
           {stageSprites.map((sprite) => (
             <Box
               key={sprite.src}
@@ -353,6 +389,10 @@ function Auth() {
                 height: 'auto',
                 imageRendering: sprite.pixelated ? 'pixelated' : 'auto',
                 pointerEvents: 'none',
+                ...(sprite.floating && {
+                  animation: `${floatBob} ${floatDuration} ease-in-out infinite`,
+                  '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+                }),
               }}
             />
           ))}
