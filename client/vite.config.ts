@@ -1,15 +1,32 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import path from 'node:path'
 
 const appBasePath = process.env.VITE_APP_BASE_PATH ?? '/'
+// ステージングのビルドだけで true にする（deploy-frontend-dev.yml）。検索エンジンに載せないための設定。
+const noindex = process.env.VITE_NOINDEX === 'true'
+const productionSiteUrl = 'https://game.arm203.org/'
+
+// noindex のときは robots メタタグを、それ以外は本番 URL の canonical を index.html に入れる。
+function seoHeadTags(): Plugin {
+  return {
+    name: 'seo-head-tags',
+    transformIndexHtml() {
+      return [
+        noindex
+          ? { tag: 'meta', attrs: { name: 'robots', content: 'noindex, nofollow' }, injectTo: 'head' }
+          : { tag: 'link', attrs: { rel: 'canonical', href: productionSiteUrl }, injectTo: 'head' },
+      ]
+    },
+  }
+}
 // Codespaces など、ブラウザからローカル Supabase (:54321) に直接届かない環境でのみ設定する。
 // 設定時は /supabase をローカル Supabase へプロキシする（.devcontainer/start.sh 参照）。
 const supabaseProxyTarget = process.env.SUPABASE_PROXY_TARGET
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), seoHeadTags()],
   base: appBasePath,
   resolve: {
     alias: {
