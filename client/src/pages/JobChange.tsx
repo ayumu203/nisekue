@@ -200,7 +200,7 @@ export default function JobChange() {
           )}
         </Stack>
       </Paper>
-      {tutorialStep === 'training-to-lv7' && successMessage && (
+      {tutorialStep === 'training-to-lv7' && (
         <SpotlightTutorial
           guide="priest"
           targetId="tutorial-home-btn"
