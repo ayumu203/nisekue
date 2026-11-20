@@ -314,6 +314,10 @@ export const endpoints = {
       requestSchema: sendPlayerGiftRequestSchema,
       responseSchema: sendPlayerGiftResponseSchema,
     },
+    heartbeat: {
+      path: '/player/heartbeat',
+      method: 'POST',
+    },
     rebirth: {
       path: '/player/rebirth',
       method: 'POST',

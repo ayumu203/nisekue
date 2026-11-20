@@ -22,6 +22,7 @@ import Ranking from '@/pages/Ranking'
 import Debug from '@/pages/Debug'
 import { useAuth } from '@/contexts/useAuth'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
+import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat'
 
 function App() {
   const { isLoading, user } = useAuth()
@@ -34,6 +35,7 @@ function App() {
     maxAttempts: 1,
     trigger: location.key,
   })
+  useActivityHeartbeat()
 
   if (isLoading) {
     return null

@@ -34,7 +34,7 @@ internal static class MaintenanceEndpoints
             }
 
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            var threshold = DateTimeOffset.UtcNow.AddMinutes(-5);
+            var threshold = DateTimeOffset.UtcNow - PlayerActivityService.ActiveWindow;
             var count = await dbContext.Players
                 .CountAsync(p => p.LastActiveAt != null && p.LastActiveAt >= threshold);
 

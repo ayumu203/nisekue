@@ -75,7 +75,7 @@ internal static class PlayerEndpoints
             StatusRankEvaluator statusRankEvaluator,
             CombatIndexCalculator combatIndexCalculator,
             CombatIndexRankEvaluator combatIndexRankEvaluator,
-            AppDbContext db) =>
+            PlayerActivityService playerActivityService) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -99,11 +99,7 @@ internal static class PlayerEndpoints
                 await playerRepository.SaveAsync(player);
             }
 
-            var now = DateTimeOffset.UtcNow;
-            var lastActiveThreshold = now.AddMinutes(-5);
-            await db.Players
-                .Where(p => p.Id == playerId.Value.Value && (p.LastActiveAt == null || p.LastActiveAt < lastActiveThreshold))
-                .ExecuteUpdateAsync(s => s.SetProperty(p => p.LastActiveAt, now));
+            await playerActivityService.RecordAsync(playerId.Value.Value, DateTimeOffset.UtcNow);
 
             var playerEquipments = await playerEquipmentRepository.GetByPlayerAsync(player.Id);
             var equipments = await equipmentRepository.GetAllAsync();
@@ -117,6 +113,20 @@ internal static class PlayerEndpoints
                 statusRankEvaluator,
                 combatIndexCalculator,
                 combatIndexRankEvaluator));
+        }).RequireAuthorization();
+
+        app.MapPost("/player/heartbeat", async (
+            ClaimsPrincipal user,
+            PlayerActivityService playerActivityService) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            await playerActivityService.RecordAsync(playerId.Value.Value, DateTimeOffset.UtcNow);
+            return Results.NoContent();
         }).RequireAuthorization();
 
         app.MapGet("/players/{playerId:guid}", async (

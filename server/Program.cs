@@ -211,6 +211,7 @@ builder.Services.AddScoped<PlayerJobService>();
 builder.Services.AddScoped<JobRoadmapService>();
 builder.Services.AddScoped<PlayerMoveSetService>();
 builder.Services.AddScoped<PlayerMoveSetSanitizer>();
+builder.Services.AddScoped<PlayerActivityService>();
 builder.Services.AddScoped<PlayerRebirthService>();
 builder.Services.AddScoped<MarketPurchaseService>();
 builder.Services.AddScoped<MarketListingCleanupService>();
