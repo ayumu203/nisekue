@@ -419,7 +419,7 @@ function Auth() {
                 ...softGoldButtonSx,
                 ...noBorderButtonSx,
                 py: { xs: 1.4, md: 'clamp(14px, 2.2vh, 24px)' },
-                fontSize: { xs: '1.3rem', md: 'clamp(1.5rem, 2.9vh, 1.8rem)' },
+                fontSize: { xs: '1.2rem', md: 'clamp(1.35rem, 2.6vh, 1.6rem)' },
               }}
             >
               {submitMode === 'anonymous' ? locale.anonymousSubmitting : locale.anonymousSubmit}
@@ -435,7 +435,7 @@ function Auth() {
                 ...googleButtonSx,
                 ...noBorderButtonSx,
                 py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' },
-                fontSize: { xs: '1.15rem', md: 'clamp(1.35rem, 2.5vh, 1.6rem)' },
+                fontSize: { xs: '1.1rem', md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
               }}
               startIcon={<GoogleColorIcon />}
             >
@@ -486,7 +486,7 @@ function Auth() {
                     ...purpleButtonSx,
                     ...noBorderButtonSx,
                     py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' },
-                    fontSize: { xs: '1.15rem', md: 'clamp(1.35rem, 2.5vh, 1.6rem)' },
+                    fontSize: { xs: '1.1rem', md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
                   }}
                 >
                   {submitMode === emailAuthMode
