@@ -436,6 +436,9 @@ function Auth() {
                 ...noBorderButtonSx,
                 py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' },
                 fontSize: { xs: '1.1rem', md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
+                // MUI はアイコンを 20px 固定にするため、文字の大きさに合わせて拡縮させる
+                '& .MuiButton-startIcon > *:nth-of-type(1)': { fontSize: '1.2em' },
+                '& .MuiButton-startIcon': { mr: '0.5em' },
               }}
               startIcon={<GoogleColorIcon />}
             >
