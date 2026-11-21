@@ -97,34 +97,43 @@ type QuestBattleStatusPanelProps = {
   }
 }
 
+// 立ち位置は画面の中央を軸に左右対称。奥の列ほど上・内側に置く。
+// 戦場背景（image/quest/*-battlefield.png）は下から 44% あたりまでが地面になっている。
 const allyPositions: Record<BattleRow, Record<BattleColumn, { left: string; bottom: string }>> = {
   Front: {
-    Left: { left: '28%', bottom: '16%' },
-    Right: { left: '49%', bottom: '16%' },
+    Left: { left: '24%', bottom: '16%' },
+    Right: { left: '40%', bottom: '16%' },
   },
   Middle: {
-    Left: { left: '20%', bottom: '31%' },
-    Right: { left: '41%', bottom: '31%' },
+    Left: { left: '17%', bottom: '27%' },
+    Right: { left: '33%', bottom: '27%' },
   },
   Back: {
-    Left: { left: '12%', bottom: '46%' },
-    Right: { left: '33%', bottom: '46%' },
+    Left: { left: '10%', bottom: '38%' },
+    Right: { left: '26%', bottom: '38%' },
   },
 }
 
 const enemyPositions: Record<BattleRow, Record<BattleColumn, { left: string; bottom: string }>> = {
   Front: {
-    Left: { left: '67%', bottom: '16%' },
-    Right: { left: '83%', bottom: '16%' },
+    Left: { left: '60%', bottom: '16%' },
+    Right: { left: '76%', bottom: '16%' },
   },
   Middle: {
-    Left: { left: '73%', bottom: '31%' },
-    Right: { left: '89%', bottom: '31%' },
+    Left: { left: '67%', bottom: '27%' },
+    Right: { left: '83%', bottom: '27%' },
   },
   Back: {
-    Left: { left: '79%', bottom: '46%' },
-    Right: { left: '95%', bottom: '46%' },
+    Left: { left: '74%', bottom: '38%' },
+    Right: { left: '90%', bottom: '38%' },
   },
+}
+
+// 奥の列ほど少し小さく見せて遠近感を出す
+const battleRowScale: Record<BattleRow, number> = {
+  Front: 1,
+  Middle: 0.92,
+  Back: 0.85,
 }
 
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
@@ -213,6 +222,7 @@ type BattleSpriteProps = {
   onClick?: () => void
   left: string
   bottom: string
+  scale?: number
   chatMessage?: QuestChatMessageView | null
 }
 
@@ -228,6 +238,7 @@ function BattleSprite({
   onClick,
   left,
   bottom,
+  scale = 1,
   chatMessage,
 }: BattleSpriteProps) {
   const spriteSrc = isAlly ? resolveCharacterAssetPath(imagePath) : imagePath ? resolvePublicAssetPath(imagePath) : null
@@ -240,7 +251,8 @@ function BattleSprite({
         left,
         bottom,
         width: isAlly ? { xs: 84, sm: 96, md: 110 } : { xs: 58, sm: 66, md: 76 },
-        transform: 'translateX(-50%)',
+        transform: `translateX(-50%) scale(${scale})`,
+        transformOrigin: '50% 100%',
         zIndex: 2,
         cursor: onClick ? 'pointer' : 'default',
         opacity: targetState === 'blocked' ? 0.72 : 1,
@@ -856,6 +868,7 @@ export default function QuestBattleStatusPanel({
                 isAlly={false}
                 left={position.left}
                 bottom={position.bottom}
+                scale={battleRowScale[pet.position.row]}
               />
             )
           })}
@@ -894,6 +907,7 @@ export default function QuestBattleStatusPanel({
                 }
                 left={position.left}
                 bottom={position.bottom}
+                scale={battleRowScale[member.position.row]}
                 chatMessage={allyChatMap.get(member.participantId) ?? null}
               />
             )
@@ -934,6 +948,7 @@ export default function QuestBattleStatusPanel({
                 }
                 left={position.left}
                 bottom={position.bottom}
+                scale={battleRowScale[enemy.position.row]}
               />
             )
           })}
