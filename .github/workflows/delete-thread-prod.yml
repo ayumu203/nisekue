@@ -1,0 +1,45 @@
+name: 'Delete Thread [本番]'
+
+on:
+  workflow_dispatch:
+    inputs:
+      thread_id:
+        description: '削除するスレッドのID（通報フォームに記録された ID、またはスレッド詳細の URL の末尾）'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    environment: prod
+
+    steps:
+      - name: Delete thread
+        env:
+          API_BASE_URL: ${{ vars.VITE_API_BASE_URL || secrets.VITE_API_BASE_URL }}
+          MARKET_CLEANUP_TOKEN: ${{ secrets.MARKET_CLEANUP_TOKEN }}
+          ID: ${{ inputs.thread_id }}
+        run: |
+          if [ -z "$API_BASE_URL" ] || [ -z "$MARKET_CLEANUP_TOKEN" ]; then
+            echo "VITE_API_BASE_URL or MARKET_CLEANUP_TOKEN is not configured."
+            exit 1
+          fi
+
+          if ! [[ "$ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
+            echo "スレッドIDの形式が正しくありません（UUID を指定してください）: $ID"
+            exit 1
+          fi
+
+          # 失敗時も API のエラーメッセージをログに出すため、bash -e で止まる前に表示する
+          if ! response=$(curl --fail-with-body --silent --show-error \
+            -X DELETE "${API_BASE_URL%/}/internal/threads/$ID" \
+            -H "X-Maintenance-Token: $MARKET_CLEANUP_TOKEN" \
+            -H "Accept: application/json"); then
+            echo "$response"
+            exit 1
+          fi
+
+          echo "$response"
