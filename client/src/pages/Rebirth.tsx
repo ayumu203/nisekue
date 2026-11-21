@@ -215,6 +215,17 @@ export default function Rebirth() {
                       <RequirementMeter current={player.level} required={requiredLevel} prefix="Lv." tone="blue" />
                       <RequirementMeter current={player.gold} required={requiredGold} suffix="Gold" tone="gold" />
                     </Stack>
+                    <Box sx={{ flexGrow: 1 }} />
+                    <Button
+                      variant="contained"
+                      disabled={!canRebirth || isSubmitting}
+                      onClick={() => {
+                        void handleRebirth()
+                      }}
+                      sx={rebirthPrimaryButtonSx}
+                    >
+                      {isSubmitting ? locale.executing : canRebirth ? locale.executeButton : locale.lockedButton}
+                    </Button>
                   </Stack>
 
                   <Stack
@@ -362,16 +373,6 @@ export default function Rebirth() {
                         </Stack>
                       ) : null}
                     </Stack>
-                    <Button
-                      variant="contained"
-                      disabled={!canRebirth || isSubmitting}
-                      onClick={() => {
-                        void handleRebirth()
-                      }}
-                      sx={rebirthPrimaryButtonSx}
-                    >
-                      {isSubmitting ? locale.executing : canRebirth ? locale.executeButton : locale.lockedButton}
-                    </Button>
                   </Stack>
                 </Box>
               </Paper>
