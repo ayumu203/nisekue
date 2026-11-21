@@ -136,7 +136,11 @@ function Home() {
     }
   })
   const showRebirthTutorial =
-    !isRebirthTutorialDismissed && !!userId && !!player && player.level >= 100 && !isRebirthTutorialShown(userId)
+    !isRebirthTutorialDismissed &&
+    !!userId &&
+    !!player &&
+    player.level >= (player.rebirthRequiredLevel ?? 100) &&
+    !isRebirthTutorialShown(userId)
   // Lv10 以上でチュートリアルを終えたプレイヤーに、アンケートを一度だけ案内する（転生の案内が出ているときは出さない）
   const showSurveyGuide =
     !isSurveyGuideDismissed &&

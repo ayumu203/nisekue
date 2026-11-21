@@ -265,7 +265,7 @@ internal static class TreasureMapEndpoints
         var now = DateTimeOffset.UtcNow;
 
         // ここは Player 集約を経由せず PlayerEntity を直接更新するため、レベル上限の判定を明示的に行う。
-        if (reward.ExperiencePoints > 0 && player.Level < PlayerConstants.MaxLevel)
+        if (reward.ExperiencePoints > 0 && player.Level < PlayerConstants.GetMaxLevel(player.RebirthCount))
         {
             player.Exp = (int)Math.Min((long)player.Exp + reward.ExperiencePoints, int.MaxValue);
         }

@@ -43,6 +43,7 @@ import {
   sendPlayerGiftResponseSchema,
   rebirthPlayerResponseSchema,
   rebirthStatusHistoryResponseSchema,
+  resetPlayerDataResponseSchema,
   unlockJobRoadmapRequestSchema,
   unlockJobRoadmapResponseSchema,
   jobRoadmapListResponseSchema,
@@ -146,6 +147,7 @@ export type {
   SendPlayerGiftRequest,
   SendPlayerGiftResponse,
   RebirthPlayerResponse,
+  ResetPlayerDataResponse,
   UnlockJobRoadmapRequest,
   UnlockJobRoadmapResponse,
   JobRoadmapListEntry,
@@ -321,6 +323,11 @@ export const endpoints = {
       path: '/player/rebirth',
       method: 'POST',
       responseSchema: rebirthPlayerResponseSchema,
+    },
+    dataReset: {
+      path: '/player/data-reset',
+      method: 'POST',
+      responseSchema: resetPlayerDataResponseSchema,
     },
     rebirthHistory: {
       path: '/player/rebirth-history',
