@@ -1,4 +1,4 @@
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
+import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import { Box, LinearProgress, Stack, Typography } from '@mui/material'
 
 type RequirementMeterProps = {
@@ -17,12 +17,14 @@ const toneColors = {
     metBorder: '#a8ddff',
     metBg: 'rgba(237, 249, 255, 0.95)',
     metText: '#20618f',
+    icon: '#5fb6f5',
   },
   gold: {
     bar: 'linear-gradient(90deg, #ffe58a 0%, #f0c43c 100%)',
     metBorder: '#f0db7f',
     metBg: 'rgba(255, 251, 233, 0.95)',
     metText: '#8a6a00',
+    icon: '#e0b52a',
   },
 } as const
 
@@ -67,10 +69,7 @@ export function RequirementMeter({ current, required, prefix = '', suffix = '', 
             </Box>
           ) : null}
         </Typography>
-        <CheckCircleRoundedIcon
-          fontSize="small"
-          sx={{ color: isMet ? '#47b881' : '#d3dde7', transition: 'color 0.2s ease' }}
-        />
+        {isMet ? <AutoAwesomeRoundedIcon fontSize="small" sx={{ color: colors.icon }} /> : null}
       </Stack>
       <LinearProgress
         variant="determinate"
