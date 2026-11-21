@@ -435,13 +435,19 @@ export default function PlayerSetting() {
                             const randomImageNo = Math.floor(Math.random() * PLAYER_IMAGE_COUNT) + 1
                             setImageNoInput(String(randomImageNo))
                             if (tutorialStep === 'player-setting-random') {
-                              advanceTutorial('player-setting-save')
+                              advanceTutorial('player-setting-image-list')
                             }
                           }}
                         >
                           {locale.randomSelect}
                         </Button>
-                        <Button component={Link} to="/player-images" variant="contained" sx={mutedGreenButtonSx}>
+                        <Button
+                          id={tutorialStep === 'player-setting-image-list' ? 'tutorial-image-list-btn' : undefined}
+                          component={Link}
+                          to="/player-images"
+                          variant="contained"
+                          sx={mutedGreenButtonSx}
+                        >
                           {locale.openImageList}
                         </Button>
                       </Stack>
@@ -567,10 +573,28 @@ export default function PlayerSetting() {
         />
       )}
       {tutorialStep === 'player-setting-random' && (
-        <SpotlightTutorial targetId="tutorial-random-btn" message={tutorialLocale.steps.playerSettingRandom.message} />
+        <SpotlightTutorial
+          targetId="tutorial-random-btn"
+          message={tutorialLocale.steps.playerSettingRandom.message}
+          showDismiss
+          onDismiss={() => advanceTutorial('player-setting-image-list')}
+        />
+      )}
+      {tutorialStep === 'player-setting-image-list' && (
+        <SpotlightTutorial
+          targetId="tutorial-image-list-btn"
+          message={tutorialLocale.steps.playerSettingImageList.message}
+          showDismiss
+          onDismiss={() => advanceTutorial('player-setting-save')}
+        />
       )}
       {tutorialStep === 'player-setting-save' && (
-        <SpotlightTutorial targetId="tutorial-save-btn" message={tutorialLocale.steps.playerSettingSave.message} />
+        <SpotlightTutorial
+          targetId="tutorial-save-btn"
+          message={tutorialLocale.steps.playerSettingSave.message}
+          showDismiss
+          onDismiss={() => advanceTutorial('player-setting-account')}
+        />
       )}
       {tutorialStep === 'player-setting-account' && (
         <SpotlightTutorial

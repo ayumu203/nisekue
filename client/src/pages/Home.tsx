@@ -70,9 +70,19 @@ import {
 import { announcementTabLabel } from '@/lib/announcements'
 import { hasUnreadAnnouncement, markAnnouncementsSeen } from '@/lib/announcementStorage'
 import { beginnerGuides } from '@/lib/beginnerGuides'
-import { getTutorialStep, isRebirthTutorialShown, setRebirthTutorialShown, setTutorialStep } from '@/lib/tutorial'
+import {
+  getTutorialStep,
+  isRebirthTutorialShown,
+  isSurveyGuideShown,
+  setRebirthTutorialShown,
+  setSurveyGuideShown,
+  setTutorialStep,
+} from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
+
+// アンケートを案内するレベル
+const SURVEY_GUIDE_LEVEL = 10
 
 function Home() {
   const { session, isLoading, isAnonymous } = useAuth()
@@ -80,6 +90,7 @@ function Home() {
   const userId = session?.user.id ?? null
   const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
   const [isRebirthTutorialDismissed, setIsRebirthTutorialDismissed] = useState(false)
+  const [isSurveyGuideDismissed, setIsSurveyGuideDismissed] = useState(false)
 
   function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
     if (!userId) {
@@ -126,6 +137,23 @@ function Home() {
   })
   const showRebirthTutorial =
     !isRebirthTutorialDismissed && !!userId && !!player && player.level >= 100 && !isRebirthTutorialShown(userId)
+  // Lv10 以上でチュートリアルを終えたプレイヤーに、アンケートを一度だけ案内する（転生の案内が出ているときは出さない）
+  const showSurveyGuide =
+    !isSurveyGuideDismissed &&
+    !showRebirthTutorial &&
+    !!userId &&
+    !!player &&
+    player.level >= SURVEY_GUIDE_LEVEL &&
+    tutorialStep === 'completed' &&
+    !isSurveyGuideShown(userId)
+
+  function dismissSurveyGuide(): void {
+    if (userId) {
+      setSurveyGuideShown(userId)
+    }
+    setIsSurveyGuideDismissed(true)
+  }
+
   const isTrainingGroupOpen =
     tutorialStep === 'home-job-change' ||
     tutorialStep === 'home-move-setting' ||
@@ -290,11 +318,17 @@ function Home() {
                 />
               )}
               <Button
+                id={tutorialStep === 'home-quest' ? 'tutorial-quest-btn' : undefined}
                 component={Link}
                 to="/quest"
                 variant="contained"
                 startIcon={<QuestIcon />}
                 sx={{ ...menuButtonSx, ...softGreenButtonSx }}
+                onClick={() => {
+                  if (userId && tutorialStep === 'home-quest') {
+                    setTutorialStep(userId, 'quest-info')
+                  }
+                }}
               >
                 {locale.quest}
               </Button>
@@ -445,7 +479,7 @@ function Home() {
               >
                 {locale.others}
               </Button>
-              <Collapse in={isOthersGroupOpen}>
+              <Collapse in={isOthersGroupOpen || showSurveyGuide}>
                 <Stack spacing={1} sx={{ pl: 1, pr: 1, pt: 1 }}>
                   <Button
                     component={Link}
@@ -457,6 +491,12 @@ function Home() {
                     {locale.specialThanks}
                   </Button>
                   <Button
+                    id={showSurveyGuide ? 'tutorial-survey-btn' : undefined}
+                    onClick={() => {
+                      if (showSurveyGuide) {
+                        dismissSurveyGuide()
+                      }
+                    }}
                     component="a"
                     href="https://docs.google.com/forms/d/e/1FAIpQLScQGhSmvuy99jOyKKvHIYtKcbZOGpYucamzrza5CRKezS054A/viewform?usp=dialog"
                     target="_blank"
@@ -621,6 +661,9 @@ function Home() {
       {tutorialStep === 'training-to-lv7' && (
         <SpotlightTutorial targetId="tutorial-training-btn" message={tutorialLocale.steps.backToTraining.message} />
       )}
+      {tutorialStep === 'home-quest' && (
+        <SpotlightTutorial targetId="tutorial-quest-btn" message={tutorialLocale.steps.homeQuest.message} />
+      )}
       {tutorialStep === 'home-move-setting' && (
         <SpotlightTutorial
           targetId="tutorial-move-setting-btn"
@@ -641,8 +684,18 @@ function Home() {
           onDismiss={() => advanceTutorial('completed')}
         />
       )}
+      {showSurveyGuide && (
+        <SpotlightTutorial
+          targetId="tutorial-survey-btn"
+          message={tutorialLocale.steps.surveyGuide.message}
+          showDismiss
+          dismissLabel={tutorialLocale.steps.surveyGuide.dismissLabel}
+          onDismiss={dismissSurveyGuide}
+        />
+      )}
       {showRebirthTutorial && (
         <SpotlightTutorial
+          guide="highPriest"
           targetId="tutorial-rebirth-btn"
           message={tutorialLocale.steps.rebirthGuide.message}
           showDismiss
