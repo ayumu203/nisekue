@@ -35,6 +35,7 @@ import { innerSurfaceSx, outerPagePaperSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { beginnerGuides } from '@/lib/beginnerGuides'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import { getNextMoveTurnIndex } from '@/lib/trainingMovePlan'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
@@ -490,11 +491,26 @@ export default function Training() {
       next[turnIndex] = moveId
       return next
     })
+  }
 
-    if (tutorialStep === 'training-move-select' && moveId !== null) {
+  // 技選びのチュートリアルでは、技を選ぶたびに矢印を次のターンへ移し、MP を使い切ったら「戦闘」の案内へ進む
+  const nextTutorialMoveTurnIndex =
+    tutorialStep === 'training-move-select' && player && plannedMoveIds
+      ? getNextMoveTurnIndex(player, plannedMoveIds)
+      : null
+  const isTutorialMovePlanDone =
+    tutorialStep === 'training-move-select' &&
+    player != null &&
+    plannedMoveIds != null &&
+    nextTutorialMoveTurnIndex === null
+
+  useEffect(() => {
+    if (isTutorialMovePlanDone) {
       advanceTutorial('training-confirm')
     }
-  }
+    // advanceTutorial は毎回作り直されるので依存に入れない
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTutorialMovePlanDone])
 
   async function startBattle(): Promise<void> {
     if (!player || !plannedMoveIds) {
@@ -665,6 +681,11 @@ export default function Training() {
                           lockRemainingSeconds={trainingLockRemainingSeconds}
                           onChangeMoveId={handleChangePlannedMoveId}
                           submitLabel={locale.startBattle}
+                          tutorialMoveSelect={
+                            tutorialStep === 'training-move-select' && nextTutorialMoveTurnIndex !== null
+                              ? { index: nextTutorialMoveTurnIndex, id: 'tutorial-next-move-select' }
+                              : undefined
+                          }
                           submitButtonId={
                             tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined
                           }
@@ -720,31 +741,49 @@ export default function Training() {
         </Stack>
       </Paper>
       {tutorialStep === 'home-job-change' && (
-        <SpotlightTutorial targetId="tutorial-home-btn" message={tutorialLocale.steps.homeJobChange.message} />
+        <SpotlightTutorial
+          guide="instructor"
+          targetId="tutorial-home-btn"
+          message={tutorialLocale.steps.trainingToJobChange.message}
+        />
       )}
       {tutorialStep === 'training-fight' && (
-        <SpotlightTutorial targetId="tutorial-fight-card" message={tutorialLocale.steps.trainingFight.message} />
+        <SpotlightTutorial
+          guide="instructor"
+          targetId="tutorial-fight-card"
+          message={tutorialLocale.steps.trainingFight.message}
+        />
       )}
       {tutorialStep === 'training-move-select' && (
         <SpotlightTutorial
+          guide="instructor"
           targetId="tutorial-move-plan-form"
+          pointerTargetId="tutorial-next-move-select"
           message={tutorialLocale.steps.trainingMoveSelect.message}
+          showDismiss
+          onDismiss={() => advanceTutorial('training-confirm')}
         />
       )}
       {tutorialStep === 'training-confirm' && (
         <SpotlightTutorial
+          guide="instructor"
           targetId="tutorial-start-training-btn"
           message={tutorialLocale.steps.trainingConfirm.message}
         />
       )}
-      {tutorialStep === 'training-to-lv5' && <SpotlightTutorial message={tutorialLocale.steps.trainingToLv5.message} />}
-      {tutorialStep === 'training-to-lv7' && <SpotlightTutorial message={tutorialLocale.steps.trainingToLv7.message} />}
+      {tutorialStep === 'training-to-lv5' && (
+        <SpotlightTutorial guide="instructor" message={tutorialLocale.steps.trainingToLv5.message} />
+      )}
+      {tutorialStep === 'training-to-lv7' && (
+        <SpotlightTutorial guide="instructor" message={tutorialLocale.steps.trainingToLv7.message} />
+      )}
       {tutorialStep === 'training-quest-guide' && (
         <SpotlightTutorial
+          guide="instructor"
           message={tutorialLocale.steps.trainingQuestGuide.message}
           showDismiss
           dismissLabel={tutorialLocale.steps.trainingQuestGuide.dismissLabel}
-          onDismiss={() => advanceTutorial('home-move-setting')}
+          onDismiss={() => advanceTutorial('home-quest')}
         />
       )}
       <Snackbar

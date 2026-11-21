@@ -16,6 +16,8 @@ type TrainingMovePlanFormProps = {
   showFighterHeader?: boolean
   submitLabel?: string
   submitButtonId?: string
+  // チュートリアルの矢印で指す技の選択欄（何ターン目か と 付ける id）
+  tutorialMoveSelect?: { index: number; id: string }
   showSubmitButton?: boolean
   onSubmit: () => Promise<void> | void
 }
@@ -111,6 +113,7 @@ export default function TrainingMovePlanForm({
   showFighterHeader = true,
   submitLabel,
   submitButtonId,
+  tutorialMoveSelect,
   showSubmitButton = true,
   onSubmit,
 }: TrainingMovePlanFormProps) {
@@ -199,7 +202,11 @@ export default function TrainingMovePlanForm({
             <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#fff0c8' }}>
               {locale.turnLabel.replace('{{turn}}', String(index + 1))}
             </Typography>
-            <FormControl fullWidth sx={{ minWidth: 0, maxWidth: '100%' }}>
+            <FormControl
+              id={tutorialMoveSelect?.index === index ? tutorialMoveSelect.id : undefined}
+              fullWidth
+              sx={{ minWidth: 0, maxWidth: '100%' }}
+            >
               <Select
                 size="small"
                 value={turn.moveId === null ? 'normal-attack' : String(turn.moveId)}

@@ -22,6 +22,9 @@ import {
 } from '@/api/quest'
 import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
+import SpotlightTutorial from '@/components/common/SpotlightTutorial'
+import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import QuestRoomCreateSection from '@/components/quest/QuestRoomCreateSection'
 import QuestRoomLobbySection from '@/components/quest/QuestRoomLobbySection'
 import QuestMultiRoomList from '@/components/quest/QuestMultiRoomList'
@@ -36,6 +39,7 @@ import type {
   BattleColumn,
   BattleRow,
   CreateQuestRoomRequest,
+  GetQuestStagesResponse,
   QuestActionKind,
   QuestRoomDetailResponse,
   QuestRunDetailResponse,
@@ -45,6 +49,12 @@ import type { PlayerSummary } from '@/schema/player'
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
 const questSessionStorageKeyPrefix = 'nisekue:quest-session'
+// ステージ一覧の並び順（一般ステージ → チャレンジ → エンドレス）。
+const STAGE_GROUP_ORDER: Record<GetQuestStagesResponse[number]['progressionType'], number> = {
+  Static: 0,
+  Mirror: 1,
+  Endless: 2,
+}
 
 type PersistedQuestSession = {
   roomId: string | null
@@ -95,6 +105,31 @@ function clearPersistedQuestSession(userId: string): void {
 
 export default function Quest() {
   const { session, isLoading, isAnonymous } = useAuth()
+  const tutorialUserId = session?.user.id ?? null
+  const [tutorialStep, setTutorialStepState] = useState(() => (tutorialUserId ? getTutorialStep(tutorialUserId) : null))
+
+  useEffect(() => {
+    if (!tutorialUserId) {
+      return
+    }
+
+    const step = getTutorialStep(tutorialUserId)
+    if (step === 'home-quest') {
+      setTutorialStep(tutorialUserId, 'quest-info')
+      setTutorialStepState('quest-info')
+    } else {
+      setTutorialStepState(step)
+    }
+  }, [tutorialUserId])
+
+  function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
+    if (!tutorialUserId) {
+      return
+    }
+
+    setTutorialStep(tutorialUserId, next)
+    setTutorialStepState(next)
+  }
   const { mutate: mutateCache } = useSWRConfig()
   const [selectedStageId, setSelectedStageId] = useState<number | ''>('')
   const [mode, setMode] = useState<CreateQuestRoomRequest['mode']>('Solo')
@@ -205,11 +240,11 @@ export default function Quest() {
       [...(stages ?? [])]
         .filter((stage) => stage.isActive)
         .sort((left, right) => {
-          // エンドレスステージは一覧の最後に固定。
-          const leftEndless = left.progressionType === 'Endless' ? 1 : 0
-          const rightEndless = right.progressionType === 'Endless' ? 1 : 0
-          if (leftEndless !== rightEndless) {
-            return leftEndless - rightEndless
+          // 一般ステージ → チャレンジ（名鑑の祠）→ エンドレスの順に、推奨レベルに関わらず並べる。
+          const leftGroup = STAGE_GROUP_ORDER[left.progressionType]
+          const rightGroup = STAGE_GROUP_ORDER[right.progressionType]
+          if (leftGroup !== rightGroup) {
+            return leftGroup - rightGroup
           }
 
           return left.recommendedLevel - right.recommendedLevel
@@ -1092,7 +1127,15 @@ export default function Quest() {
         <Stack spacing={{ xs: 1.25, sm: 2 }}>
           <Box sx={{ display: 'grid', gap: { xs: 1.5, sm: 3 }, alignItems: 'start' }}>
             <Box sx={{ px: 0.5, pb: 1 }}>
-              <HomeNavIconButton ariaLabel={locale.backToHome} />
+              <HomeNavIconButton
+                id={tutorialStep === 'quest-to-home' ? 'tutorial-home-btn-quest' : undefined}
+                ariaLabel={locale.backToHome}
+                onClick={() => {
+                  if (tutorialStep === 'quest-to-home') {
+                    advanceTutorial('home-move-setting')
+                  }
+                }}
+              />
             </Box>
 
             <Paper
@@ -1309,6 +1352,22 @@ export default function Quest() {
           </Box>
         </Stack>
       </Paper>
+      {tutorialStep === 'quest-info' && (
+        <SpotlightTutorial
+          guide="captain"
+          message={tutorialLocale.steps.questInfo.message}
+          showDismiss
+          dismissLabel={tutorialLocale.steps.questInfo.dismissLabel}
+          onDismiss={() => advanceTutorial('quest-to-home')}
+        />
+      )}
+      {tutorialStep === 'quest-to-home' && (
+        <SpotlightTutorial
+          guide="captain"
+          targetId="tutorial-home-btn-quest"
+          message={tutorialLocale.steps.questToHome.message}
+        />
+      )}
     </Container>
   )
 }
