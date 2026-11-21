@@ -25,7 +25,7 @@ erDiagram
         timestamptz pet_battle_cooldown_until "NULL"
         int exp_multiplier_flags "NOT NULL, DEFAULT 0"
         int endless_best_floor "NOT NULL, DEFAULT 0, エンドレスモード最高到達フロア"
-        varchar(20) role "NULL, admin のときデバッグ機能を利用可。Supabase から手動で設定し、API からは変更しない"
+        varchar(20) role "NULL, admin: デバッグ機能とスレッド画像投稿を利用可（Supabase から手動設定）, poster: スレッド画像投稿を利用可（管理者用ワークフローで設定）"
     }
     CHAT_ROOMS {
         uuid owner_id PK, FK "internal.players.id"
@@ -49,6 +49,8 @@ erDiagram
         timestamptz created_at "NOT NULL"
         timestamptz updated_at "NOT NULL"
         timestamptz last_replied_at "NULL"
+        varchar(200) image_key "NULL, R2 上の画像キー threads/{player_id}/{guid}.{png|jpg}"
+        boolean image_is_sensitive "NOT NULL, DEFAULT FALSE"
     }
     THREAD_REPLIES {
         uuid id PK "internal.thread_replies.id"

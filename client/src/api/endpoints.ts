@@ -71,6 +71,7 @@ import {
   createThreadResponseSchema,
   deleteThreadResponseSchema,
   getThreadAlertsResponseSchema,
+  getThreadImagePermissionResponseSchema,
   getThreadsRequestSchema,
   getThreadsResponseSchema,
   markThreadRepliesAlertedRequestSchema,
@@ -180,6 +181,8 @@ export type {
   CreateThreadReplyRequest,
   CreateThreadReplyResponse,
   DeleteThreadResponse,
+  GetThreadImagePermissionResponse,
+  ThreadImageAttachment,
 } from '@/schema/thread'
 export type {
   TrainingEnemy,
@@ -407,6 +410,11 @@ export const endpoints = {
       method: 'POST',
       requestSchema: createThreadRequestSchema,
       responseSchema: createThreadResponseSchema,
+    },
+    imagePermission: {
+      path: '/threads/image-permission',
+      method: 'GET',
+      responseSchema: getThreadImagePermissionResponseSchema,
     },
     reply: {
       path: (threadId: string) => `/threads/${threadId}/replies`,

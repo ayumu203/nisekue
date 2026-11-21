@@ -26,6 +26,7 @@ using server.endpoints;
 using server.infrastructure;
 using server.infrastructure.announcement;
 using server.infrastructure.chat;
+using server.infrastructure.chat.images;
 using server.infrastructure.move;
 using server.infrastructure.pet;
 using server.infrastructure.player;
@@ -222,6 +223,29 @@ builder.Services.AddScoped<RankingReadService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<GlobalChatService>();
 builder.Services.AddScoped<ThreadService>();
+
+// スレッド画像の保存先。R2 が設定されていれば R2、ローカル用の設定があればディスク、どちらもなければ画像の投稿を受け付けない
+var threadImageStorageSettings = ThreadImageStorageSettings.FromConfiguration(builder.Configuration);
+var useLocalThreadImageStorage = !threadImageStorageSettings.IsR2Configured && threadImageStorageSettings.UseLocal;
+builder.Services.AddSingleton(threadImageStorageSettings);
+builder.Services.AddSingleton<IThreadImageProcessor, SkiaThreadImageProcessor>();
+if (threadImageStorageSettings.IsR2Configured)
+{
+    builder.Services.AddSingleton(TimeProvider.System);
+    builder.Services.AddHttpClient<IThreadImageStorage, R2ThreadImageStorage>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
+}
+else if (useLocalThreadImageStorage)
+{
+    builder.Services.AddSingleton<LocalThreadImageStorage>();
+    builder.Services.AddSingleton<IThreadImageStorage>(sp => sp.GetRequiredService<LocalThreadImageStorage>());
+}
+else
+{
+    builder.Services.AddSingleton<IThreadImageStorage, UnavailableThreadImageStorage>();
+}
 builder.Services.AddScoped<TrainingService>();
 if (rankingEnabled)
 {
@@ -245,11 +269,16 @@ app.MapPetEndpoints();
 app.MapPetBattleEndpoints();
 app.MapChatEndpoints();
 app.MapThreadEndpoints();
+if (useLocalThreadImageStorage)
+{
+    app.MapLocalThreadImageEndpoint();
+}
 app.MapTrainingEndpoints();
 app.MapTreasureMapEndpoints();
 app.MapRankingEndpoints();
 app.MapAnnouncementEndpoints();
 app.MapMaintenanceEndpoints();
+app.MapModerationEndpoints();
 app.MapDebugEndpoints();
 
 app.Run();

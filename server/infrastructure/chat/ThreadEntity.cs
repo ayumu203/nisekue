@@ -9,7 +9,9 @@ public class ThreadEntity(
     string body,
     DateTimeOffset createdAt,
     DateTimeOffset updatedAt,
-    DateTimeOffset? lastRepliedAt)
+    DateTimeOffset? lastRepliedAt,
+    string? imageKey,
+    bool imageIsSensitive)
 {
     public ThreadId Id { get; } = id;
     public Guid AuthorPlayerId { get; } = authorPlayerId;
@@ -18,4 +20,6 @@ public class ThreadEntity(
     public DateTimeOffset CreatedAt { get; } = createdAt;
     public DateTimeOffset UpdatedAt { get; } = updatedAt;
     public DateTimeOffset? LastRepliedAt { get; } = lastRepliedAt;
+    public string? ImageKey { get; } = imageKey;
+    public bool ImageIsSensitive { get; } = imageIsSensitive;
 }

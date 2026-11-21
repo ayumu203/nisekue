@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using server.application.chat;
 using server.domain.player;
@@ -29,6 +31,32 @@ internal static class EndpointHelpers
             || JsonClaimContainsAnonymousProvider(user, "app_metadata")
             || JsonClaimContainsAnonymousProvider(user, "user_metadata");
     }
+
+    internal const string MaintenanceTokenHeaderName = "X-Maintenance-Token";
+
+    /// <summary>
+    /// /internal/* 用。X-Maintenance-Token が Maintenance:MarketCleanupToken と一致しなければエラーの結果を返す。
+    /// </summary>
+    internal static IResult? ValidateMaintenanceToken(HttpRequest request, IConfiguration configuration)
+    {
+        var expectedToken = configuration["Maintenance:MarketCleanupToken"];
+        if (string.IsNullOrWhiteSpace(expectedToken))
+        {
+            return Results.Problem(
+                detail: "Maintenance:MarketCleanupToken が設定されていません。",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        var providedToken = request.Headers[MaintenanceTokenHeaderName].ToString();
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(providedToken),
+            Encoding.UTF8.GetBytes(expectedToken))
+            ? null
+            : Results.Unauthorized();
+    }
+
+    internal static IResult Forbidden(string message) =>
+        Results.Json(new { message }, options: null, contentType: null, statusCode: StatusCodes.Status403Forbidden);
 
     internal static IResult AnonymousPostingForbidden() =>
         Results.Json(
@@ -170,6 +198,8 @@ internal static class EndpointHelpers
         authorPlayerId = thread.AuthorPlayerId,
         authorName = thread.AuthorName,
         authorImagePath = thread.AuthorImagePath,
+        imageUrl = thread.ImageUrl,
+        imageIsSensitive = thread.ImageIsSensitive,
         replies = thread.Replies.Select(reply => new
         {
             id = reply.Id,
@@ -189,6 +219,7 @@ internal static class EndpointHelpers
         createdAt = thread.CreatedAt,
         lastRepliedAt = thread.LastRepliedAt,
         replyCount = thread.ReplyCount,
+        hasImage = thread.HasImage,
         authorPlayerId = thread.AuthorPlayerId,
         authorName = thread.AuthorName,
         authorImagePath = thread.AuthorImagePath

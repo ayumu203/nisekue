@@ -1,0 +1,56 @@
+name: 'Set Player Role [ステージング]'
+
+on:
+  workflow_dispatch:
+    inputs:
+      player_id:
+        description: 'プレイヤーID（申請フォームに記録された ID）'
+        required: true
+        type: string
+      role:
+        description: 'poster: 画像投稿の権限を付与 / none: 権限を解除（admin は変更できない）'
+        required: true
+        type: choice
+        default: poster
+        options:
+          - poster
+          - none
+
+permissions:
+  contents: read
+
+jobs:
+  set-role:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Set player role
+        env:
+          API_BASE_URL: ${{ vars.VITE_API_BASE_URL || secrets.VITE_API_BASE_URL }}
+          MARKET_CLEANUP_TOKEN: ${{ secrets.MARKET_CLEANUP_TOKEN }}
+          ID: ${{ inputs.player_id }}
+          ROLE: ${{ inputs.role }}
+        run: |
+          if [ -z "$API_BASE_URL" ] || [ -z "$MARKET_CLEANUP_TOKEN" ]; then
+            echo "VITE_API_BASE_URL or MARKET_CLEANUP_TOKEN is not configured."
+            exit 1
+          fi
+
+          if ! [[ "$ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
+            echo "プレイヤーIDの形式が正しくありません（UUID を指定してください）: $ID"
+            exit 1
+          fi
+
+          # 失敗時も API のエラーメッセージをログに出すため、bash -e で止まる前に表示する
+          if ! response=$(curl --fail-with-body --silent --show-error \
+            -X PUT "${API_BASE_URL%/}/internal/players/$ID/role" \
+            -H "X-Maintenance-Token: $MARKET_CLEANUP_TOKEN" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d "{\"role\":\"$ROLE\"}"); then
+            echo "$response"
+            exit 1
+          fi
+
+          echo "$response"

@@ -59,6 +59,9 @@ jobs:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || secrets.VITE_API_BASE_URL }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
+          # スレッドの通報用・画像投稿の申請用 Google Form の事前入力 URL（未設定ならリンクを出さない）
+          VITE_THREAD_REPORT_FORM_URL: ${{ vars.VITE_THREAD_REPORT_FORM_URL }}
+          VITE_POSTER_APPLY_FORM_URL: ${{ vars.VITE_POSTER_APPLY_FORM_URL }}
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact

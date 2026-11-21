@@ -3,22 +3,28 @@ import {
   Avatar,
   Box,
   Button,
+  Chip,
   CircularProgress,
+  Link as MuiLink,
   Pagination,
   Paper,
   Stack,
   TextField,
   Typography,
 } from '@mui/material'
+import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import useSWR from 'swr'
-import { createThread, getThreads } from '@/api/thread'
+import { createThread, getThreadImagePermission, getThreads } from '@/api/thread'
 import ThreadBoardSurface from '@/components/common/ThreadBoardSurface'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import ThreadPageShell from '@/components/common/ThreadPageShell'
+import ThreadImagePicker from '@/components/thread/ThreadImagePicker'
 import { useAuth } from '@/contexts/useAuth'
 import { resolveCharacterAssetPath } from '@/lib/assets'
+import { buildPosterApplyFormUrl } from '@/lib/threadForms'
+import type { ThreadImageAttachment } from '@/schema/thread'
 import locale from '../../locale/threads/Threads.json'
 
 const boardSx = {
@@ -91,6 +97,7 @@ export default function Threads() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
+  const [image, setImage] = useState<ThreadImageAttachment | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const page = Math.max(1, Number(searchParams.get('page') ?? '1') || 1)
@@ -108,6 +115,17 @@ export default function Threads() {
 
     return getThreads({ page }, session.access_token)
   })
+
+  // オタメシプレイ中はそもそも投稿できないので取りに行かない
+  const imagePermissionKey = session?.access_token && !isAnonymous ? (['threads', 'image-permission'] as const) : null
+  const { data: imagePermission } = useSWR(imagePermissionKey, async () => {
+    if (!session?.access_token) {
+      throw new Error(locale.sessionMissing)
+    }
+
+    return getThreadImagePermission(session.access_token)
+  })
+  const posterApplyFormUrl = session?.user?.id ? buildPosterApplyFormUrl(session.user.id) : null
 
   if (isLoading) {
     return (
@@ -200,6 +218,32 @@ export default function Threads() {
               <Typography variant="caption" sx={{ color: 'rgba(79, 57, 44, 0.7)' }}>
                 {locale.form.helper.replace('{title}', String(title.length)).replace('{body}', String(body.length))}
               </Typography>
+              {imagePermission?.canPostImage ? (
+                imagePermission.isImageUploadAvailable ? (
+                  <ThreadImagePicker
+                    value={image}
+                    onChange={setImage}
+                    maxBytes={imagePermission.maxImageBytes}
+                    disabled={isSubmitting}
+                  />
+                ) : (
+                  <Typography variant="caption" sx={{ color: 'rgba(79, 57, 44, 0.7)' }}>
+                    {locale.form.image.unavailable}
+                  </Typography>
+                )
+              ) : imagePermission && posterApplyFormUrl ? (
+                <Typography variant="caption" sx={{ color: 'rgba(79, 57, 44, 0.7)' }}>
+                  {locale.form.image.applyDescription}{' '}
+                  <MuiLink
+                    href={posterApplyFormUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ color: '#295d63' }}
+                  >
+                    {locale.form.image.applyLink}
+                  </MuiLink>
+                </Typography>
+              ) : null}
               <Button
                 variant="contained"
                 disabled={isAnonymous || isSubmitting}
@@ -218,9 +262,10 @@ export default function Threads() {
                   setIsSubmitting(true)
                   setSubmitError(null)
                   try {
-                    const created = await createThread({ title, body }, session.access_token)
+                    const created = await createThread({ title, body }, session.access_token, image)
                     setTitle('')
                     setBody('')
+                    setImage(null)
                     await mutate()
                     navigate(`/threads/${created.id}`)
                   } catch (submitError) {
@@ -314,9 +359,19 @@ export default function Threads() {
                                 >
                                   {thread.title}
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: 'rgba(79, 57, 44, 0.72)' }}>
-                                  {locale.author.replace('{name}', thread.authorName)}
-                                </Typography>
+                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                  <Typography variant="body2" sx={{ color: 'rgba(79, 57, 44, 0.72)' }}>
+                                    {locale.author.replace('{name}', thread.authorName)}
+                                  </Typography>
+                                  {thread.hasImage ? (
+                                    <Chip
+                                      size="small"
+                                      icon={<ImageOutlinedIcon />}
+                                      label={locale.hasImage}
+                                      sx={{ height: 22, backgroundColor: '#c7a57b', color: '#4f392c' }}
+                                    />
+                                  ) : null}
+                                </Stack>
                               </Box>
                             </Stack>
 

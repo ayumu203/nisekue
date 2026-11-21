@@ -10,4 +10,5 @@ public sealed record ThreadListItem(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     DateTimeOffset? LastRepliedAt,
-    int ReplyCount);
+    int ReplyCount,
+    bool HasImage = false);

@@ -10,4 +10,6 @@ public sealed record ThreadDetailView(
     Guid AuthorPlayerId,
     string AuthorName,
     string? AuthorImagePath,
-    IReadOnlyList<ThreadReplyView> Replies);
+    IReadOnlyList<ThreadReplyView> Replies,
+    string? ImageUrl = null,
+    bool ImageIsSensitive = false);

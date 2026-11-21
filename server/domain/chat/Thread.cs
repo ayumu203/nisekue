@@ -14,6 +14,9 @@ public class Thread
     public DateTimeOffset CreatedAt { get; }
     public DateTimeOffset UpdatedAt { get; private set; }
     public DateTimeOffset? LastRepliedAt { get; private set; }
+
+    /// <summary>本文に付けた画像（1枚まで）。画像がなければ null。</summary>
+    public ThreadImage? Image { get; }
     public IReadOnlyList<ThreadReply> Replies => _replies;
 
     public Thread(
@@ -24,7 +27,8 @@ public class Thread
         DateTimeOffset createdAt,
         DateTimeOffset updatedAt,
         DateTimeOffset? lastRepliedAt,
-        IEnumerable<ThreadReply>? replies = null)
+        IEnumerable<ThreadReply>? replies = null,
+        ThreadImage? image = null)
     {
         Id = id;
         AuthorPlayerId = authorPlayerId;
@@ -33,11 +37,12 @@ public class Thread
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
         LastRepliedAt = lastRepliedAt;
+        Image = image;
 
         RestoreReplies(replies ?? []);
     }
 
-    public static Thread Create(PlayerId authorPlayerId, string title, string body)
+    public static Thread Create(PlayerId authorPlayerId, string title, string body, ThreadImage? image = null)
     {
         var now = DateTimeOffset.UtcNow;
         return new Thread(
@@ -47,7 +52,8 @@ public class Thread
             new ThreadBody(body),
             now,
             now,
-            null);
+            null,
+            image: image);
     }
 
     public void AddReply(ThreadReplyId replyId, PlayerId authorPlayerId, ThreadReplyBody body)
