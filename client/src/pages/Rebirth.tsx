@@ -235,10 +235,16 @@ export default function Rebirth() {
                           color: player.gold >= requiredGold ? '#8a6a00' : '#5f7080',
                         }}
                       />
+                      <Chip
+                        label={locale.maxLevelNote.replace('{{current}}', String(maxLevel))}
+                        sx={{
+                          bgcolor: '#f6f9fc',
+                          border: '1px solid',
+                          borderColor: '#d8e6f2',
+                          color: '#5f7080',
+                        }}
+                      />
                     </Stack>
-                    <Typography variant="body2" color="text.secondary">
-                      {locale.maxLevelNote.replace('{{current}}', String(maxLevel))}
-                    </Typography>
                   </Stack>
 
                   <Stack
