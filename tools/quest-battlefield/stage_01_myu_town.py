@@ -1,3 +1,6 @@
+"""ミュータウン：昼間の素朴な田舎の村。
+遠くの山と、畑のパッチワークの丘、丘の上の風車。左右に木の家と藁ぶき屋根の家、真ん中を土の道が奥へ続く。
+"""
 import math, random, sys
 from pathlib import Path
 from PIL import ImageDraw
@@ -7,197 +10,214 @@ from px import *
 img = new()
 d = ImageDraw.Draw(img)
 HZ = 168  # 地面の始まり
+rnd = random.Random(1)
 
-# 空：夕焼け
-vgrad(img, (0, 0, W, HZ), [(0, '#1d1640'), (0.35, '#4a2a68'), (0.62, '#a8476e'), (0.85, '#ec8a5c'), (1, '#ffc477')], steps=14)
-stars(img, 40, (0, 0, W, 50), seed=4)
-
-# 夕日
-glow(img, 200, 150, 90, '#ffb35a', 110, 6, ry=60)
-d.ellipse([172, 122, 228, 178], fill=hexc('#ffd88a'))
-d.ellipse([178, 128, 222, 172], fill=hexc('#ffe9b3'))
-
-# 雲（細長い帯）
-for (x, y, w) in [(20, 62, 90), (280, 52, 100), (130, 96, 60), (300, 104, 80)]:
-    d.rounded_rectangle([x, y, x + w, y + 5], 2, fill=hexc('#c25f78', 200))
-    d.line([(x + 4, y + 5), (x + w - 6, y + 5)], fill=hexc('#ffb07a', 180))
-
-# 空に逆さまに浮かぶ町
-lay = layer(); dl = ImageDraw.Draw(lay)
-rnd = random.Random(7)
-# 浮島の地面（下向きのギザギザ）
-top = [(x, 10 + 4 * math.sin(x * 0.05) + rnd.randint(0, 2)) for x in range(96, 308, 4)]
-poly(dl, [(96, 0), (308, 0)] + top[::-1], hexc('#2b2450'))
-for x, y in top:
-    if rnd.random() < 0.5:
-        dl.polygon([(x, y), (x + 4, y), (x + 2, y + rnd.randint(3, 8))], fill=hexc('#2b2450'))
-dl.line(top, fill=hexc('#5a4a86'))
-# 逆さの家
-hx = 108
-while hx < 292:
-    w = rnd.choice([16, 20, 24]); h = rnd.choice([12, 16, 20])
-    y0 = 12
-    dl.rectangle([hx, y0, hx + w, y0 + h], fill=hexc('#3c3466'))
-    poly(dl, [(hx - 3, y0 + h), (hx + w + 3, y0 + h), (hx + w / 2, y0 + h + 10)], fill=hexc(rnd.choice(['#5b3a6e', '#4a4a7e', '#6a3d5a'])))
-    for wx in range(hx + 3, hx + w - 3, 6):
-        if rnd.random() < 0.7:
-            dl.rectangle([wx, y0 + 4, wx + 2, y0 + 6], fill=hexc('#ffd27a'))
-    # 逆さの煙突
-    if rnd.random() < 0.5:
-        dl.rectangle([hx + 3, y0 - 2, hx + 6, y0], fill=hexc('#3c3466'))
-    hx += w + rnd.randint(4, 10)
-# 逆さの木
-for tx in [100, 200, 300]:
-    dl.rectangle([tx, 12, tx + 1, 20], fill=hexc('#3a2a40'))
-    dl.ellipse([tx - 5, 18, tx + 6, 30], fill=hexc('#2e4a5a'))
-lay.putalpha(lay.getchannel('A').point(lambda a: int(a * 0.9)))
-img.alpha_composite(lay)
-glow(img, 200, 24, 110, '#ffd27a', 35, 4, ry=18)
-
-# 遠くの丘と時計塔
-hill = wobble_line(150, 4, 0.03, 1.0)
-fill_below(d, hill, hexc('#5a2f58'), bottom=HZ)
-d.rectangle([190, 76, 210, 150], fill=hexc('#4a2a50'))
-poly(d, [(186, 78), (214, 78), (200, 52)], hexc('#3a1f40'))
-d.rectangle([198, 46, 201, 54], fill=hexc('#3a1f40'))
-d.ellipse([192, 84, 208, 100], fill=hexc('#ffe2a0'))
-d.ellipse([194, 86, 206, 98], fill=hexc('#fff3cf'))
-d.line([(200, 92), (200, 87)], fill=hexc('#4a2a50')); d.line([(200, 92), (204, 92)], fill=hexc('#4a2a50'))
-glow(img, 200, 92, 16, '#ffe2a0', 90, 3)
-for wy in range(108, 146, 10):
-    d.rectangle([198, wy, 202, wy + 5], fill=hexc('#ffc96a'))
+# 空：昼の青空
+vgrad(img, (0, 0, W, HZ), [(0, '#3f8ee8'), (0.5, '#7cc0f8'), (0.85, '#bfe6ff'), (1, '#e6f6ff')], steps=12)
 d = ImageDraw.Draw(img)
 
+# 太陽（右上）
+glow(img, 352, 30, 46, '#fff6c8', 110, 5)
+d = ImageDraw.Draw(img)
+d.ellipse([340, 18, 364, 42], fill=hexc('#fffbe6'))
 
-def house(d, x, base, w, h, wall, roof, lit=0.6, rnd=None, chimney=True):
+
+# もこもこの雲
+def cloud(cx, cy, s):
+    parts = [(-18, 2, 12), (-6, -6, 14), (8, -4, 13), (20, 3, 10), (2, 4, 14)]
+    for (dx, dy, r) in parts:
+        d.ellipse([cx + (dx - r) * s, cy + (dy - r * 0.8) * s, cx + (dx + r) * s, cy + (dy + r * 0.8) * s], fill=hexc('#d8ecfc'))
+    for (dx, dy, r) in parts:
+        d.ellipse([cx + (dx - r + 1) * s, cy + (dy - r * 0.8 - 2) * s, cx + (dx + r - 1) * s, cy + (dy + r * 0.8 - 4) * s], fill=hexc('#ffffff'))
+
+
+for (cx, cy, s) in [(60, 34, 1.1), (190, 22, 0.8), (290, 56, 0.9), (120, 76, 0.6), (380, 90, 0.55)]:
+    cloud(cx, cy, s)
+
+# 鳥
+for (bx, by) in [(150, 46), (160, 40), (170, 48), (240, 30)]:
+    d.line([(bx - 3, by - 1), (bx, by + 1), (bx + 3, by - 1)], fill=hexc('#3a4a6a'))
+
+# 遠くの山（2 層）
+far = [(x, 112 - 18 * math.sin(x * 0.012 + 0.6) - 10 * math.sin(x * 0.037 + 2)) for x in range(0, W + 1, 2)]
+fill_below(d, far, hexc('#9cc4d8'), bottom=HZ)
+mid = [(x, 126 - 10 * math.sin(x * 0.02 + 1.8) - 5 * math.sin(x * 0.05)) for x in range(0, W + 1, 2)]
+fill_below(d, mid, hexc('#7aae9a'), bottom=HZ)
+
+# 畑のパッチワークの丘
+hill = [(x, 140 - 12 * math.sin(x * 0.016 + 0.2)) for x in range(0, W + 1, 2)]
+fill_below(d, hill, hexc('#8cc46a'), bottom=HZ)
+field_cols = ['#e8cf6a', '#a8d46a', '#c89a5a', '#7ab85a', '#f0dc8a']
+for k, x0 in enumerate(range(-10, W, 34)):
+    col = field_cols[k % len(field_cols)]
+    y_top = 140 - 12 * math.sin((x0 + 17) * 0.016 + 0.2) + 4
+    poly(d, [(x0, y_top + 2), (x0 + 32, y_top), (x0 + 36, y_top + 14), (x0 + 2, y_top + 16)], hexc(col))
+    for j in range(3):
+        d.line([(x0 + 2, y_top + 4 + j * 4), (x0 + 33, y_top + 2 + j * 4)], fill=hexc('#6a9a4a' if col != '#c89a5a' else '#a87a42'))
+# 生け垣
+for x in range(0, W, 34):
+    y = 140 - 12 * math.sin((x + 17) * 0.016 + 0.2) + 3
+    d.line([(x - 10, y + 17), (x + 26, y + 15)], fill=hexc('#4a8a44'), width=2)
+
+# 丘の上の風車（中央奥）
+MX, MB = 214, 142
+poly(d, [(MX - 9, MB), (MX + 9, MB), (MX + 6, MB - 30), (MX - 6, MB - 30)], hexc('#f0e6d4'))
+poly(d, [(MX + 2, MB), (MX + 9, MB), (MX + 6, MB - 30), (MX + 1, MB - 30)], hexc('#d4c4a8'))
+poly(d, [(MX - 8, MB - 30), (MX + 8, MB - 30), (MX, MB - 40)], hexc('#b0563e'))
+d.rectangle([MX - 2, MB - 8, MX + 2, MB], fill=hexc('#7a5a3a'))
+d.rectangle([MX - 2, MB - 22, MX + 1, MB - 18], fill=hexc('#6ab0e0'))
+HUB = (MX, MB - 32)
+for k in range(4):
+    a = k * math.pi / 2 + 0.35
+    ex, ey = HUB[0] + 24 * math.cos(a), HUB[1] + 24 * math.sin(a)
+    d.line([HUB, (ex, ey)], fill=hexc('#6a4a30'))
+    px_, py_ = -math.sin(a), math.cos(a)
+    poly(d, [(HUB[0] + 6 * math.cos(a), HUB[1] + 6 * math.sin(a)), (ex, ey), (ex + 5 * px_, ey + 5 * py_), (HUB[0] + 6 * math.cos(a) + 5 * px_, HUB[1] + 6 * math.sin(a) + 5 * py_)], hexc('#f8f2e4'))
+d.ellipse([HUB[0] - 2, HUB[1] - 2, HUB[0] + 2, HUB[1] + 2], fill=hexc('#5a3a24'))
+
+# 遠くの木
+for (tx, ty, r) in [(150, 140, 6), (166, 138, 5), (260, 138, 6), (280, 140, 5), (300, 136, 7)]:
+    d.rectangle([tx - 1, ty, tx + 1, ty + 6], fill=hexc('#6a4a30'))
+    d.ellipse([tx - r, ty - r - 2, tx + r, ty + r - 2], fill=hexc('#4a9a4a'))
+    d.ellipse([tx - r + 2, ty - r - 3, tx + r - 3, ty + r - 6], fill=hexc('#6ab85a'))
+
+
+# 家
+def house(x, base, w, h, wall, roof, kind, door=True):
+    # 壁
     d.rectangle([x, base - h, x + w, base], fill=hexc(wall))
-    poly(d, [(x - 3, base - h), (x + w + 3, base - h), (x + w / 2, base - h - w * 0.55)], hexc(roof))
-    d.line([(x - 3, base - h), (x + w / 2, base - h - w * 0.55)], fill=hexc('#ffd0a0', 120))
-    for wy in range(base - h + 4, base - 4, 7):
-        for wx in range(x + 3, x + w - 3, 6):
-            if rnd.random() < lit:
-                d.rectangle([wx, wy, wx + 2, wy + 3], fill=hexc('#ffd27a'))
-            else:
-                d.rectangle([wx, wy, wx + 2, wy + 3], fill=hexc('#2a1e3a'))
-    if chimney and rnd.random() < 0.6:
-        cx = x + w - 6
-        d.rectangle([cx, base - h - w * 0.4, cx + 3, base - h - 4], fill=hexc(wall))
+    if kind == 'wood':
+        for yy in range(base - h + 3, base, 4):
+            d.line([(x, yy), (x + w, yy)], fill=hexc('#a8784a'))
+    else:
+        for (sx, sy) in [(x + 3, base - h + 5), (x + w - 7, base - 8)]:
+            d.rectangle([sx, sy, sx + 3, sy + 2], fill=hexc('#d8c8a8'))
+    # 屋根（上向き）
+    rh = int(w * 0.55)
+    if kind == 'thatch':
+        poly(d, [(x - 5, base - h + 2), (x + w + 5, base - h + 2), (x + w / 2, base - h - rh)], hexc('#d8b060'))
+        for k in range(1, 5):
+            t = k / 5
+            yy = base - h - rh + (rh + 2) * t
+            half = (w / 2 + 5) * t
+            d.line([(x + w / 2 - half, yy), (x + w / 2 + half, yy)], fill=hexc('#b08a3e'))
+        d.line([(x - 5, base - h + 2), (x + w + 5, base - h + 2)], fill=hexc('#9a7432'))
+    else:
+        poly(d, [(x - 4, base - h), (x + w + 4, base - h), (x + w / 2, base - h - rh)], hexc(roof))
+        for k in range(1, 4):
+            t = k / 4
+            yy = base - h - rh + rh * t
+            half = (w / 2 + 4) * t
+            d.line([(x + w / 2 - half, yy), (x + w / 2 + half, yy)], fill=lerp(hexc(roof), (0, 0, 0, 255), 0.25))
+        d.line([(x - 4, base - h), (x + w / 2, base - h - rh)], fill=lerp(hexc(roof), (255, 255, 255, 255), 0.35))
+    # 窓と扉
+    wy = base - h + 5
+    d.rectangle([x + 4, wy, x + 9, wy + 5], fill=hexc('#5a3a24'))
+    d.rectangle([x + 5, wy + 1, x + 8, wy + 4], fill=hexc('#9ad4f4'))
+    d.line([(x + 4, wy + 6), (x + 9, wy + 6)], fill=hexc('#ff8a9a'))
+    if door:
+        d.rectangle([x + w - 11, base - 10, x + w - 5, base], fill=hexc('#7a4a2a'))
+        d.point((x + w - 6, base - 5), fill=hexc('#ffd27a'))
+    # 煙突と煙
+    if kind != 'thatch':
+        cx = x + w - 8
+        d.rectangle([cx, base - h - rh + 6, cx + 4, base - h - rh + 14], fill=hexc('#8a7a6a'))
         for i in range(3):
-            r = 1 + i
-            sx, sy = cx + 1 + i * 3, base - h - w * 0.4 - 4 - i * 6
-            d.ellipse([sx - r, sy - r, sx + r, sy + r], fill=hexc('#b69aae', 110 - i * 30))
+            r = 2 + i
+            d.ellipse([cx + 2 - r + i * 3, base - h - rh + 2 - i * 6 - r, cx + 2 + r + i * 3, base - h - rh + 2 - i * 6 + r], fill=lerp(hexc('#ffffff'), hexc('#bfe6ff'), i * 0.3))
 
 
-rnd = random.Random(11)
-# 奥の家並み（左右の坂）
-for side in (0, 1):
-    for row, (base0, slope, wall, roof_cols, lit) in enumerate([
-        (128, 0.18, '#5a3560', ['#4a2850', '#552c4a'], 0.5),
-        (146, 0.12, '#7a4a6a', ['#8a3d4a', '#3f5a6e', '#6a4a3a'], 0.6),
-        (168, 0.06, '#a8706e', ['#b44a3e', '#2f6a74', '#7a5a3e', '#8a4a6e'], 0.7)]):
-        x = 0 if side == 0 else 400
-        limit = 150 - row * 6
-        while (x < limit) if side == 0 else (x > 400 - limit):
-            w = rnd.choice([18, 22, 26])
-            hx = x if side == 0 else x - w
-            dist = hx if side == 0 else 400 - hx - w
-            base = int(base0 + dist * slope * (1 if row < 2 else 0.5)) if row < 2 else base0
-            if row == 2:
-                base = 168
-            h = rnd.choice([18, 22, 28]) + row * 4
-            house(d, hx, base, w, h, wall, rnd.choice(roof_cols), lit, rnd)
-            x = x + w + rnd.randint(2, 6) if side == 0 else x - w - rnd.randint(2, 6)
+# 奥の家並み
+house(4, 160, 24, 16, '#e8d8b8', '#c0583e', 'plaster', door=False)
+house(98, 158, 22, 14, '#e8d8b8', '#4a7ab0', 'plaster', door=False)
+house(300, 158, 22, 14, '#c89a6a', '#b0563e', 'wood', door=False)
+house(372, 160, 26, 16, '#e8d8b8', '#5a8a5a', 'plaster', door=False)
+# 手前の家（左右）
+house(26, 172, 40, 28, '#c89a6a', None, 'thatch')
+house(74, 170, 30, 22, '#e8d8b8', '#c0583e', 'plaster')
+house(300, 170, 32, 24, '#e8d8b8', '#4a7ab0', 'plaster')
+house(344, 172, 42, 30, '#c89a6a', None, 'thatch')
 
-# 洗濯物とガーランド
-for (x0, y0, x1, y1, kind) in [(14, 118, 70, 122, 'g'), (60, 132, 118, 128, 'l'), (290, 126, 352, 132, 'l'), (330, 112, 392, 118, 'g')]:
-    pts = [(x0 + (x1 - x0) * t / 20, y0 + (y1 - y0) * t / 20 + 5 * math.sin(math.pi * t / 20)) for t in range(21)]
-    d.line(pts, fill=hexc('#2a1e2e'))
-    for i, (px_, py_) in enumerate(pts[1:-1:2]):
-        if kind == 'g':
-            c = ['#ff6a6a', '#ffd25a', '#6ad0ff', '#9aff8a'][i % 4]
-            poly(d, [(px_ - 2, py_), (px_ + 2, py_), (px_, py_ + 4)], hexc(c))
-        else:
-            c = ['#f4f0e8', '#ffb0b0', '#b0d8ff'][i % 3]
-            d.rectangle([px_ - 2, py_, px_ + 2, py_ + 5], fill=hexc(c))
+# 手前の木
+for (tx, base, r) in [(126, 172, 13), (276, 172, 12), (2, 170, 12), (398, 168, 11)]:
+    d.rectangle([tx - 2, base - 16, tx + 2, base], fill=hexc('#6a4a30'))
+    d.ellipse([tx - r, base - 16 - r * 1.6, tx + r, base - 16 + r * 0.3], fill=hexc('#3e8a40'))
+    d.ellipse([tx - r + 3, base - 16 - r * 1.6 + 1, tx + r - 4, base - 16 - r * 0.2], fill=hexc('#5aaa4e'))
+    for _ in range(6):
+        d.point((tx + rnd.randint(-r + 3, r - 3), base - 16 - rnd.randint(4, int(r * 1.4))), fill=hexc('#8ad06a'))
 
-# 電柱と電線（火花）
-for px_ in (34, 366):
-    d.rectangle([px_, 88, px_ + 2, 172], fill=hexc('#2a1a2a'))
-    d.rectangle([px_ - 8, 92, px_ + 10, 93], fill=hexc('#2a1a2a'))
-    d.rectangle([px_ - 6, 100, px_ + 8, 101], fill=hexc('#2a1a2a'))
-for (y_a, y_b, sag) in [(92, 92, 26), (100, 100, 30)]:
-    pts = [(35 + 331 * t / 60, y_a + sag * math.sin(math.pi * t / 60)) for t in range(61)]
-    d.line(pts, fill=hexc('#1e1424'))
-for (sx, sy) in [(120, 115), (262, 118), (196, 122)]:
-    glow(img, sx, sy, 8, '#9ae6ff', 160, 3)
-    d = ImageDraw.Draw(img)
-    for dx, dy in [(0, 0), (-2, -1), (2, 1), (1, -2), (-1, 2), (3, -1)]:
-        d.point((sx + dx, sy + dy), fill=hexc('#ffffff'))
+# 木の柵（地面の奥の縁）
+for x in range(130, 272, 6):
+    d.rectangle([x, 162, x + 1, 172], fill=hexc('#a8784a'))
+d.line([(130, 165), (272, 165)], fill=hexc('#8a6038'))
+d.line([(130, 169), (272, 169)], fill=hexc('#8a6038'))
 
-# 地面：石畳
-brick_floor(img, HZ, H, '#b0705e', '#6e3c44', light='#e8a07a', seed=5, base_w=9, vary=('#8a4a5a', 0.6))
+# 地面：草地と、奥へ続く土の道
+vgrad(img, (0, HZ, W, H), [(0, '#8ac862'), (0.5, '#6aac4e'), (1, '#4e9040')], steps=8)
 d = ImageDraw.Draw(img)
-# 夕日の照り返し
-glow(img, 200, HZ + 4, 160, '#ffc477', 70, 5, ry=18)
-# 地面の影のグラデ（手前を少し暗く）
-shade = layer(); ds = ImageDraw.Draw(shade)
-for y in range(HZ, H):
+VX = 200
+poly(d, [(VX - 10, HZ), (VX + 10, HZ), (VX + 150, H), (VX - 150, H)], hexc('#d8b480'))
+poly(d, [(VX - 6, HZ), (VX + 6, HZ), (VX + 110, H), (VX - 110, H)], hexc('#e6c896'))
+# 道の轍と小石
+for side in (-1, 1):
+    d.line([(VX + side * 3, HZ), (VX + side * 60, H)], fill=hexc('#c8a070'))
+for _ in range(60):
+    t = rnd.random()
+    y = HZ + (H - HZ) * t
+    half = 10 + 140 * t
+    x = VX + rnd.uniform(-half, half)
+    d.point((x, y), fill=hexc(rnd.choice(['#b8905e', '#f4dcb0', '#a8805a'])))
+# 草むら
+for _ in range(260):
+    y = rnd.randint(HZ + 2, H)
     t = (y - HZ) / (H - HZ)
-    ds.line([(0, y), (W, y)], fill=(40, 16, 40, int(110 * t)))
-img.alpha_composite(shade)
-d = ImageDraw.Draw(img)
+    x = rnd.randint(0, W)
+    if abs(x - VX) < 12 + 150 * t:
+        continue
+    hh = 2 + int(t * 4)
+    d.line([(x, y), (x + rnd.choice([-1, 0, 1]), y - hh)], fill=hexc(rnd.choice(['#4e9a40', '#7aba58', '#a8d878'])))
+# 花
+for _ in range(50):
+    y = rnd.randint(HZ + 6, H)
+    t = (y - HZ) / (H - HZ)
+    x = rnd.randint(0, W)
+    if abs(x - VX) < 14 + 150 * t:
+        continue
+    c = rnd.choice(['#ffffff', '#ffe066', '#ff9ab0', '#c8a0ff'])
+    d.point((x, y), fill=hexc(c))
+    if t > 0.5:
+        d.point((x + 1, y), fill=hexc(c))
 
+# 干し草の山（左右の奥）
+for (hx, hy) in [(150, 186), (252, 184)]:
+    d.pieslice([hx - 12, hy - 14, hx + 12, hy + 8], 180, 360, fill=hexc('#e8c862'))
+    d.rectangle([hx - 12, hy - 3, hx + 12, hy], fill=hexc('#e8c862'))
+    for k in range(4):
+        d.line([(hx - 9 + k * 6, hy - 10), (hx - 11 + k * 6, hy)], fill=hexc('#c8a040'))
 
-# 水たまり（夕焼けを映す）
-for (px_, py_, rw) in [(96, 214, 26), (300, 236, 34), (210, 196, 18)]:
-    d.ellipse([px_ - rw, py_ - rw * 0.22, px_ + rw, py_ + rw * 0.22], fill=hexc('#5a3058'))
-    d.ellipse([px_ - rw + 3, py_ - rw * 0.22 + 1, px_ + rw - 3, py_ + rw * 0.22 - 1], fill=hexc('#d9786a'))
-    d.line([(px_ - rw * 0.5, py_ - 1), (px_ + rw * 0.2, py_ - 1)], fill=hexc('#ffd08a'))
-    d.line([(px_ - rw * 0.1, py_ + 1), (px_ + rw * 0.5, py_ + 1)], fill=hexc('#ffe0a8'))
-# 手前の街灯（画面の外側に）
-for lx in (12, 386):
-    d.rectangle([lx, 186, lx + 2, 300], fill=hexc('#24182a'))
-    d.rectangle([lx - 4, 296, lx + 6, 300], fill=hexc('#24182a'))
-    d.rectangle([lx - 4, 176, lx + 6, 188], fill=hexc('#24182a'))
-    d.rectangle([lx - 2, 178, lx + 4, 186], fill=hexc('#ffe2a0'))
-    glow(img, lx + 1, 182, 22, '#ffd27a', 110, 4)
-    d = ImageDraw.Draw(img)
-# 手前の花壇（左右の下端）
-for (fx0, fx1) in [(0, 70), (330, 400)]:
-    d.rectangle([fx0, 282, fx1, 300], fill=hexc('#5a3a36'))
-    d.line([(fx0, 282), (fx1, 282)], fill=hexc('#8a5a4a'))
-    rnd2 = random.Random(fx0 + 3)
-    for x in range(fx0 + 2, fx1 - 1, 3):
-        hh = rnd2.randint(4, 9)
-        d.line([(x, 282), (x, 282 - hh)], fill=hexc('#3a6a4a'))
-        d.rectangle([x - 1, 282 - hh - 2, x + 1, 282 - hh], fill=hexc(rnd2.choice(['#ff7a8a', '#ffd25a', '#ffffff', '#c88aff'])))
+# 手前（下端）：木の立て札と樽
+d.rectangle([20, 262, 23, 296], fill=hexc('#7a5232'))
+d.rectangle([6, 258, 50, 272], fill=hexc('#a8784a'))
+d.rectangle([7, 259, 49, 271], fill=hexc('#c8986a'))
+for k in range(3):
+    d.line([(12 + k * 4, 262), (14 + k * 4, 268)], fill=hexc('#6a4a2a'))
+for (bx, by) in [(370, 276), (388, 280)]:
+    d.ellipse([bx - 9, by - 16, bx + 9, by + 14], fill=hexc('#9a6a3a'))
+    d.rectangle([bx - 9, by - 8, bx + 9, by + 8], fill=hexc('#9a6a3a'))
+    d.line([(bx - 9, by - 6), (bx + 9, by - 6)], fill=hexc('#5a5a5a'), width=2)
+    d.line([(bx - 9, by + 6), (bx + 9, by + 6)], fill=hexc('#5a5a5a'), width=2)
+    d.ellipse([bx - 8, by - 18, bx + 8, by - 12], fill=hexc('#b88a52'))
+# 下端の花の茂み
+for (fx0, fx1) in [(56, 120), (280, 350)]:
+    for x in range(fx0, fx1, 3):
+        hh = rnd.randint(4, 10)
+        d.line([(x, 298), (x, 298 - hh)], fill=hexc('#3a7a3a'))
+        d.rectangle([x - 1, 298 - hh - 2, x + 1, 298 - hh], fill=hexc(rnd.choice(['#ff9ab0', '#ffe066', '#ffffff', '#c8a0ff'])))
 
-# 端の自販機と郵便ポスト（目が光る家電たち）
-d.rectangle([2, 128, 24, 172], fill=hexc('#3b6aa8')); d.rectangle([4, 132, 22, 150], fill=hexc('#a8e0ff'))
-for i in range(3):
-    d.rectangle([6 + i * 6, 134, 9 + i * 6, 140], fill=hexc(['#ff6a6a', '#ffd25a', '#6aff9a'][i]))
-d.rectangle([6, 160, 20, 166], fill=hexc('#1a2a4a'))
-for ex in (9, 16):
-    d.rectangle([ex, 143, ex + 2, 145], fill=hexc('#ff3355'))
-glow(img, 13, 144, 9, '#ff3355', 120, 3)
-d = ImageDraw.Draw(img)
-d.rectangle([380, 140, 394, 172], fill=hexc('#c8323a')); d.ellipse([378, 132, 396, 148], fill=hexc('#c8323a'))
-d.rectangle([382, 146, 392, 148], fill=hexc('#3a0a10'))
-for ex in (383, 389):
-    d.rectangle([ex, 152, ex + 2, 154], fill=hexc('#ffee55'))
-glow(img, 387, 153, 9, '#ffee55', 110, 3)
-d = ImageDraw.Draw(img)
-
-# 手前（金のラインより下）：光るマンホールと落ち葉
-d.ellipse([186, 276, 214, 288], fill=hexc('#4a2a30'))
-d.ellipse([189, 278, 211, 286], fill=hexc('#6a3a3a'))
-for i in range(4):
-    d.line([(192 + i * 5, 279), (192 + i * 5, 285)], fill=hexc('#ffb35a'))
-glow(img, 200, 282, 26, '#ffb35a', 70, 3, ry=8)
-d = ImageDraw.Draw(img)
-rnd = random.Random(21)
-for _ in range(30):
-    x, y = rnd.randint(0, W), rnd.randint(HZ + 20, H)
-    d.point((x, y), fill=hexc(rnd.choice(['#e8a040', '#c85a3a', '#f0c060'])))
+# ちょうちょ
+for (bx, by, c) in [(110, 200, '#ffe066'), (290, 214, '#ffffff'), (60, 236, '#ff9ab0')]:
+    d.point((bx - 1, by), fill=hexc(c)); d.point((bx + 1, by), fill=hexc(c))
+    d.point((bx - 1, by - 1), fill=hexc(c)); d.point((bx + 1, by - 1), fill=hexc(c))
+    d.point((bx, by), fill=hexc('#3a2a1a'))
 
 finish(img, OUT_DIR / 'myu-town-battlefield.png')

@@ -250,7 +250,8 @@ function BattleSprite({
         position: 'absolute',
         left,
         bottom,
-        width: isAlly ? { xs: 84, sm: 96, md: 110 } : { xs: 58, sm: 66, md: 76 },
+        // 敵（48px のドット絵）は味方と同じくらいの大きさで見えるよう、画像の枠の高さいっぱいまで広げる
+        width: isAlly ? { xs: 84, sm: 96, md: 110 } : { xs: 84, sm: 106, md: 120 },
         transform: `translateX(-50%) scale(${scale})`,
         transformOrigin: '50% 100%',
         zIndex: 2,
@@ -372,6 +373,8 @@ function BattleSprite({
               objectPosition: 'center bottom',
               display: 'block',
               transform: isAlly ? 'scaleX(-1)' : 'none',
+              // 敵のドット絵は拡大してもぼやけないようにする
+              imageRendering: isAlly ? 'auto' : 'pixelated',
               filter: isDead ? 'grayscale(1)' : 'none',
               opacity: isDead ? 0.78 : 1,
               outline: isSelected ? '3px solid #ffffff' : 'none',
