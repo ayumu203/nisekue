@@ -1,3 +1,7 @@
+"""黄金の里：夕暮れのエルフの黄金の都。
+浮島の上の白い石の宮殿と金の尖塔。島の端からは細い滝が落ち、まわりに小さな浮き岩。
+左右の手前には白い大理石のエルフの像（槍と盾の守護兵、弓を引く射手）。地面は金の模様が入った白い石の道に、金色の落ち葉。
+"""
 import math, random, sys
 from pathlib import Path
 from PIL import ImageDraw
@@ -6,129 +10,308 @@ from px import *
 
 img = new()
 HZ = 170
-vgrad(img, (0, 0, W, HZ), [(0, '#2a1a4a'), (0.35, '#7a2e5a'), (0.65, '#e0603a'), (0.9, '#ffb84a'), (1, '#ffe08a')], steps=14)
+rnd = random.Random(10)
+vgrad(img, (0, 0, W, HZ), [(0, '#2e2250'), (0.35, '#7a4a6a'), (0.65, '#d88a5a'), (0.9, '#ffcc78'), (1, '#ffe6a8')], steps=14)
+stars(img, 30, (0, 0, W, 40), colors=('#ffe9b0', '#ffffff'), seed=2)
 d = ImageDraw.Draw(img)
-rnd = random.Random(6)
 
-# 打ち上げ花火
-for (fx, fy, r, cols) in [(70, 40, 26, ('#ffd25a', '#ff8a3a')), (330, 30, 22, ('#ff6aa8', '#ffd8f0')), (250, 70, 14, ('#8affd8', '#ffffff'))]:
-    glow(img, fx, fy, r * 1.4, cols[0], 60, 3)
+GOLD, GOLD_D, GOLD_DD, GOLD_L, GOLD_LL = '#e8b040', '#b87a24', '#7a4a1a', '#ffd870', '#fff4c0'
+
+# 夕日と、たなびく雲
+glow(img, 200, 150, 110, '#ffd27a', 100, 6, ry=60)
+d = ImageDraw.Draw(img)
+for (x, y, w) in [(30, 70, 80), (280, 60, 100), (150, 96, 60), (330, 100, 50)]:
+    d.rounded_rectangle([x, y, x + w, y + 4], 2, fill=hexc('#c8706a'))
+    d.line([(x + 4, y + 4), (x + w - 6, y + 4)], fill=hexc('#ffb07a'))
+
+# 遠くの山
+far = [(x, 124 - 14 * math.sin(x * 0.015 + 0.8) - 5 * math.sin(x * 0.05)) for x in range(0, W + 1, 2)]
+fill_below(d, far, hexc('#9a6a82'), bottom=HZ)
+
+
+# 岩の崖（層になった岩肌と、上に緑の茂み）
+def cliff(pts):
+    poly(d, pts, hexc('#6a4a5e'))
+    xs = [p[0] for p in pts]
+    x0, x1 = min(xs), max(xs)
+    for y in range(60, HZ, 6):
+        for x in range(int(x0), int(x1)):
+            if rnd.random() < 0.02:
+                d.line([(x, y), (x + rnd.randint(4, 10), y)], fill=hexc('#584054'))
+    for i in range(len(pts) - 1):
+        (xa, ya), (xb, yb) = pts[i], pts[i + 1]
+        if ya < HZ - 2 and yb < HZ - 2:
+            d.line([(xa, ya), (xb, yb)], fill=hexc('#a8788a'))
+    for (x, y) in pts:
+        if y < HZ - 10:
+            for _ in range(3):
+                bx, by = x + rnd.randint(-6, 6), y - rnd.randint(0, 3)
+                r = rnd.randint(3, 6)
+                d.ellipse([bx - r, by - r * 0.7, bx + r, by + r * 0.5], fill=hexc('#3e6a3a'))
+                d.ellipse([bx - r + 1, by - r * 0.7 - 1, bx + r - 2, by], fill=hexc('#5a8a48'))
+                d.point((bx - 1, by - r * 0.5), fill=hexc('#8ab868'))
+
+
+cliff([(0, 64), (24, 60), (48, 66), (70, 74), (86, 92), (96, 120), (102, HZ), (0, HZ)])
+cliff([(400, 60), (374, 56), (350, 64), (330, 72), (314, 92), (304, 120), (298, HZ), (400, HZ)])
+
+
+# 滝：崖の縁から流れ落ち、滝つぼに霧
+def waterfall(x0, top, w):
+    poly(d, [(x0 - w / 2, top), (x0 + w / 2, top), (x0 + w / 2 + 2, top + 6), (x0 - w / 2 - 2, top + 6)], hexc('#cfe8fa'))
+    for x in range(int(x0 - w / 2 - 2), int(x0 + w / 2 + 3)):
+        base_col = '#9ac8ec' if (x % 3 == 0) else ('#c8e4fa' if x % 3 == 1 else '#e8f6ff')
+        d.line([(x, top + 6), (x, HZ)], fill=hexc(base_col))
+    for _ in range(int(w * 6)):
+        x = rnd.uniform(x0 - w / 2, x0 + w / 2)
+        y = rnd.randint(top + 6, HZ - 6)
+        d.line([(x, y), (x, y + rnd.randint(3, 8))], fill=hexc('#ffffff'))
+    d.line([(x0 - w / 2 - 2, top + 6), (x0 + w / 2 + 2, top + 6)], fill=hexc('#ffffff'))
+    for i in range(6):
+        r = 6 + i * 2
+        cx = x0 + rnd.randint(-8, 8)
+        d.ellipse([cx - r, HZ - 8 - r * 0.4, cx + r, HZ - 8 + r * 0.4], fill=hexc('#eef8ff'))
+    glow(img, x0, HZ - 8, w * 2.5, '#e8f6ff', 100, 3, ry=10)
+
+
+
+
+# 白い石の宮殿と金の尖塔（別レイヤーに描いて、浮島ごと上へずらす）
+LIFT = 54
+pal = layer()
+d = ImageDraw.Draw(pal)
+
+
+def spire(x, base, w, h, cap_h, banner=None):
+    d.rectangle([x - w, base - h, x + w, base], fill=hexc('#f4ecdc'))
+    d.rectangle([x - w, base - h, x - w + 2, base], fill=hexc('#ffffff'))
+    d.rectangle([x + w - 2, base - h, x + w, base], fill=hexc('#d8c8a8'))
+    for yy in (base - h + 4, base - h * 0.5):
+        d.line([(x - w, yy), (x + w, yy)], fill=hexc(GOLD))
+    poly(d, [(x - w - 3, base - h), (x + w + 3, base - h), (x, base - h - cap_h)], hexc(GOLD))
+    poly(d, [(x, base - h), (x + w + 3, base - h), (x, base - h - cap_h)], hexc(GOLD_D))
+    d.line([(x - w - 3, base - h), (x, base - h - cap_h)], fill=hexc(GOLD_L))
+    d.rectangle([x - w - 2, base - h, x + w + 2, base - h + 2], fill=hexc(GOLD))
+    d.line([(x, base - h - cap_h), (x, base - h - cap_h - 5)], fill=hexc(GOLD_L))
+    for wy in range(int(base - h + 9), int(base - 6), 15):
+        d.rounded_rectangle([x - 2, wy, x + 2, wy + 9], 2, fill=hexc('#ffe08a'))
+    if banner:
+        bx, by = x, base - h - cap_h - 5
+        poly(d, [(bx, by), (bx + 10 * banner, by + 2), (bx + 7 * banner, by + 4), (bx + 10 * banner, by + 6), (bx, by + 5)], hexc('#3a6ad8'))
+
+
+d.rectangle([112, 140, 288, 146], fill=hexc('#e0d4bc'))
+for x in range(116, 286, 8):
+    d.arc([x, 140, x + 8, 154], 180, 360, fill=hexc('#c8b898'))
+spire(150, 152, 5, 28, 14, banner=-1)
+spire(250, 152, 5, 28, 14, banner=1)
+spire(174, 150, 7, 42, 18)
+spire(226, 150, 7, 42, 18)
+# 中央の大きな塔とドーム
+d.rectangle([186, 90, 214, 150], fill=hexc('#f4ecdc'))
+d.rectangle([186, 90, 189, 150], fill=hexc('#ffffff'))
+d.rectangle([211, 90, 214, 150], fill=hexc('#d8c8a8'))
+d.pieslice([182, 70, 218, 110], 180, 360, fill=hexc(GOLD))
+d.pieslice([200, 70, 218, 110], 270, 360, fill=hexc(GOLD_D))
+d.arc([182, 70, 218, 110], 200, 250, fill=hexc(GOLD_LL))
+for k in range(1, 4):
+    d.arc([182 + k * 5, 70, 218 - k * 5, 110], 180, 360, fill=hexc(GOLD_D))
+d.rectangle([199, 60, 201, 72], fill=hexc(GOLD))
+d.ellipse([197, 56, 203, 62], fill=hexc(GOLD_LL))
+glow(pal, 200, 59, 10, '#fff0a0', 160, 3)
+d = ImageDraw.Draw(pal)
+d.rounded_rectangle([194, 98, 206, 118], 6, fill=hexc('#ffe08a'))
+d.line([(200, 98), (200, 118)], fill=hexc(GOLD_D))
+d.line([(194, 108), (206, 108)], fill=hexc(GOLD_D))
+for wy in (122,):
+    d.rounded_rectangle([197, wy, 203, wy + 9], 3, fill=hexc('#ffe08a'))
+# 正面の回廊
+d.rectangle([132, 130, 268, 160], fill=hexc('#f0e6d2'))
+d.rectangle([128, 126, 272, 130], fill=hexc(GOLD))
+d.line([(128, 126), (272, 126)], fill=hexc(GOLD_L))
+for x in range(138, 264, 12):
+    d.rectangle([x - 2, 130, x, 160], fill=hexc('#ffffff'))
+    d.rounded_rectangle([x + 1, 136, x + 9, 160], 4, fill=hexc('#c8a878'))
+    d.rounded_rectangle([x + 2, 138, x + 8, 160], 3, fill=hexc('#ffd27a'))
+for k in range(4):
+    d.rectangle([180 - k * 6, 160 + k * 3, 220 + k * 6, 163 + k * 3], fill=hexc('#e8dcc4'))
+    d.line([(180 - k * 6, 160 + k * 3), (220 + k * 6, 160 + k * 3)], fill=hexc('#fff6e0'))
+glow(pal, 200, 148, 80, '#ffd27a', 50, 3, ry=18)
+d = ImageDraw.Draw(pal)
+
+
+
+# 浮島：宮殿の下に逆さの岩の塊。まわりに小さな浮き岩。正面から地面まで階段がのびる
+d = ImageDraw.Draw(img)
+glow(img, 200, 150, 70, '#ffe08a', 80, 5, ry=22)
+d = ImageDraw.Draw(img)
+TOP = 160 - LIFT + 4
+isl = [(104, TOP), (296, TOP), (288, TOP + 8), (272, TOP + 18), (250, TOP + 26), (226, TOP + 34), (206, TOP + 40), (190, TOP + 36), (166, TOP + 28), (138, TOP + 18), (114, TOP + 8)]
+poly(d, isl, hexc('#a87a6a'))
+poly(d, [(200, TOP), (296, TOP), (288, TOP + 8), (272, TOP + 18), (250, TOP + 26), (226, TOP + 34), (206, TOP + 40)], hexc('#7a5458'))
+d.rectangle([104, TOP - 2, 296, TOP + 3], fill=hexc('#8aa84a'))
+d.line([(104, TOP - 2), (296, TOP - 2)], fill=hexc('#b8d06a'))
+# 島の端から落ちる細い滝
+for (wx, wy) in [(112, TOP + 2), (288, TOP + 2)]:
+    for x in range(wx - 2, wx + 3):
+        d.line([(x, wy), (x + (1 if x % 2 else 0), HZ)], fill=hexc('#d8ecff' if x % 2 else '#ffffff'))
+    for i in range(5):
+        r = 4 + i * 2
+        d.ellipse([wx - r, HZ - 6 - r * 0.4, wx + r, HZ - 6 + r * 0.4], fill=hexc('#eef8ff'))
+# 小さな浮き岩
+for (rx, ry, rw) in [(84, 112, 10), (318, 104, 12), (96, 86, 6), (306, 136, 7), (236, 150, 6), (160, 154, 5), (130, 136, 4), (272, 128, 4)]:
+    poly(d, [(rx - rw, ry), (rx + rw, ry), (rx + rw * 0.4, ry + rw * 0.9), (rx - rw * 0.3, ry + rw * 0.7)], hexc('#a87a6a'))
+    poly(d, [(rx, ry), (rx + rw, ry), (rx + rw * 0.4, ry + rw * 0.9)], hexc('#7a5458'))
+    d.line([(rx - rw, ry - 1), (rx + rw, ry - 1)], fill=hexc('#8aa84a'))
+img.alpha_composite(pal.crop((0, LIFT, W, H + LIFT)))
+d = ImageDraw.Draw(img)
+
+# 浮島の正面の階段から地面の道までつながる大階段（宮殿の正面の階段の最下段に重ねて、すき間を作らない）
+ST_TOP = 169 - LIFT
+HALF_TOP, HALF_BOTTOM = 38, 42
+for y in range(ST_TOP, HZ + 1, 3):
+    t = (y - ST_TOP) / (HZ - ST_TOP)
+    half = HALF_TOP + (HALF_BOTTOM - HALF_TOP) * t
+    d.rectangle([200 - half, y, 200 + half, y + 3], fill=hexc('#e8dcc4'))
+    d.line([(200 - half, y), (200 + half, y)], fill=hexc('#fff6e0'))
+    d.line([(200 - half, y + 3), (200 + half, y + 3)], fill=hexc('#c8b48c'))
+# 両脇の白い手すり
+for side in (-1, 1):
+    pts = [(200 + side * (HALF_TOP + 2), ST_TOP), (200 + side * (HALF_BOTTOM + 2), HZ)]
+    d.line(pts, fill=hexc('#f4ecdc' if side < 0 else '#d8c8a8'), width=3)
+    d.line([(p[0], p[1] - 2) for p in pts], fill=hexc(GOLD))
+
+# 白い大理石のエルフの像（台座つき）。左は槍と盾の守護兵、右は弓を引く射手
+MARBLE, MARBLE_D, MARBLE_DD = '#ece6da', '#bdb3a4', '#8a8074'
+
+
+def pedestal(x, base, w, h):
+    d.rectangle([x - w, base - h, x + w, base], fill=hexc(MARBLE_D))
+    d.rectangle([x - w, base - h, x - w + 3, base], fill=hexc(MARBLE))
+    d.rectangle([x - w - 3, base - h - 3, x + w + 3, base - h], fill=hexc(MARBLE))
+    d.line([(x - w - 3, base - h), (x + w + 3, base - h)], fill=hexc(GOLD))
+    d.rectangle([x - w - 3, base - 3, x + w + 3, base], fill=hexc(MARBLE_DD))
+    d.ellipse([x - 3, base - h + 4, x + 3, base - h + 10], outline=hexc(GOLD))
+    return base - h - 3
+
+
+def elf_guard(x, base, facing):
+    f = facing
+    top = pedestal(x, base, 12, 18)
+    # マント
+    poly(d, [(x - 8, top), (x + 8, top), (x + 6, top - 34), (x - 6, top - 34)], hexc(MARBLE_D))
+    # ローブと胴
+    poly(d, [(x - 7, top), (x + 7, top), (x + 4, top - 22), (x - 4, top - 22)], hexc(MARBLE))
+    d.line([(x, top - 20), (x, top)], fill=hexc(MARBLE_D))
+    poly(d, [(x - 5, top - 22), (x + 5, top - 22), (x + 5, top - 36), (x - 5, top - 36)], hexc(MARBLE))
+    d.line([(x - 5, top - 26), (x + 5, top - 26)], fill=hexc(GOLD))
+    # 頭と長い髪、とがった耳
+    d.ellipse([x - 4, top - 46, x + 4, top - 37], fill=hexc(MARBLE))
+    poly(d, [(x - 4, top - 42), (x - 6, top - 32), (x - 2, top - 38)], hexc(MARBLE_D))
+    poly(d, [(x + 3 * f, top - 42), (x + 9 * f, top - 45), (x + 4 * f, top - 39)], hexc(MARBLE))
+    d.arc([x - 5, top - 49, x + 5, top - 41], 200, 340, fill=hexc(GOLD))
+    # 槍（金の穂先）
+    sx = x + 9 * f
+    d.line([(sx, top), (sx, top - 62)], fill=hexc(MARBLE_DD), width=2)
+    poly(d, [(sx - 3, top - 62), (sx + 3, top - 62), (sx, top - 72)], hexc(GOLD))
+    d.line([(x + 4 * f, top - 32), (sx, top - 34)], fill=hexc(MARBLE), width=3)
+    # 盾
+    shx = x - 8 * f
+    poly(d, [(shx - 6, top - 32), (shx + 6, top - 32), (shx + 6, top - 18), (shx, top - 12), (shx - 6, top - 18)], hexc(MARBLE))
+    poly(d, [(shx - 4, top - 30), (shx + 4, top - 30), (shx + 4, top - 19), (shx, top - 15), (shx - 4, top - 19)], hexc(GOLD))
+    d.point((shx, top - 24), fill=hexc(GOLD_LL))
+
+
+def elf_archer(x, base, facing):
+    f = facing
+    top = pedestal(x, base, 12, 18)
+    poly(d, [(x - 8, top), (x + 8, top), (x + 5, top - 34), (x - 5, top - 34)], hexc(MARBLE_D))
+    poly(d, [(x - 7, top), (x + 7, top), (x + 4, top - 22), (x - 4, top - 22)], hexc(MARBLE))
+    d.line([(x, top - 20), (x, top)], fill=hexc(MARBLE_D))
+    poly(d, [(x - 5, top - 22), (x + 5, top - 22), (x + 5, top - 36), (x - 5, top - 36)], hexc(MARBLE))
+    d.line([(x - 5, top - 26), (x + 5, top - 26)], fill=hexc(GOLD))
+    d.ellipse([x - 4, top - 46, x + 4, top - 37], fill=hexc(MARBLE))
+    poly(d, [(x + 4, top - 42), (x + 6, top - 30), (x + 2, top - 38)], hexc(MARBLE_D))
+    poly(d, [(x + 3 * f, top - 42), (x + 9 * f, top - 45), (x + 4 * f, top - 39)], hexc(MARBLE))
+    d.arc([x - 5, top - 49, x + 5, top - 41], 200, 340, fill=hexc(GOLD))
+    # 弓（金）と引いた弦、矢
+    bx = x + 12 * f
+    if f > 0:
+        d.arc([bx - 8, top - 52, bx + 4, top - 18], 270, 90, fill=hexc(GOLD), width=2)
+    else:
+        d.arc([bx - 4, top - 52, bx + 8, top - 18], 90, 270, fill=hexc(GOLD), width=2)
+    d.line([(bx, top - 51), (x - 2 * f, top - 35), (bx, top - 19)], fill=hexc(GOLD_LL))
+    d.line([(x - 2 * f, top - 35), (bx + 8 * f, top - 35)], fill=hexc(MARBLE_DD))
+    poly(d, [(bx + 8 * f, top - 37), (bx + 8 * f, top - 33), (bx + 12 * f, top - 35)], hexc(GOLD))
+    d.line([(x + 3 * f, top - 33), (bx, top - 35)], fill=hexc(MARBLE), width=3)
+    d.line([(x - 3 * f, top - 33), (x - 2 * f, top - 35)], fill=hexc(MARBLE), width=3)
+
+
+for (x, base, kind, f) in [(28, 186, 'guard', 1), (372, 186, 'archer', -1)]:
+    glow(img, x, base - 50, 34, '#ffe08a', 50, 3)
     d = ImageDraw.Draw(img)
-    for k in range(20):
-        a = k / 20 * 2 * math.pi
-        for j in range(3, r, 3):
-            d.point((fx + j * math.cos(a), fy + j * math.sin(a) + j * j * 0.008), fill=hexc(cols[(j // 3) % 2]))
+    (elf_guard if kind == 'guard' else elf_archer)(x, base, f)
 
-# 山と、山に巻きつく黄金竜の像
-poly(d, [(110, HZ), (170, 70), (200, 56), (232, 70), (300, HZ)], hexc('#4a2a3a'))
-poly(d, [(110, HZ), (170, 70), (200, 56), (196, HZ)], hexc('#5a3444'))
-body = [(200 + 52 * math.cos(t * 0.9 + 0.5) * (1 - t * 0.06), 150 - t * 11) for t in [i * 0.2 for i in range(46)]]
-for i, (x, y) in enumerate(body):
-    r = 5 - i * 0.06
-    d.ellipse([x - r, y - r * 0.8, x + r, y + r * 0.8], fill=hexc('#d8a030'))
-    d.point((x - 1, y - r * 0.6), fill=hexc('#ffe08a'))
-    if i % 3 == 0:
-        poly(d, [(x, y - r), (x + 2, y - r - 4), (x + 3, y - r)], hexc('#ffe08a'))
-hx, hy = body[-1]
-poly(d, [(hx - 6, hy - 4), (hx + 14, hy - 8), (hx + 18, hy - 2), (hx + 10, hy + 4), (hx - 6, hy + 4)], hexc('#e8b040'))
-poly(d, [(hx, hy - 4), (hx - 6, hy - 16), (hx + 4, hy - 6)], hexc('#ffe08a'))
-poly(d, [(hx + 6, hy - 6), (hx + 6, hy - 18), (hx + 10, hy - 7)], hexc('#ffe08a'))
-d.point((hx + 10, hy - 3), fill=hexc('#ff3a3a'))
-glow(img, hx + 10, hy - 3, 6, '#ff3a3a', 160, 2)
-glow(img, 200, 100, 70, '#ffd25a', 50, 4)
+# 光る球の灯り（細い柱に、葉の形の飾り）
+def lamp(lx, base, h):
+    d.rectangle([lx - 1, base - h, lx + 1, base], fill=hexc('#e8dcc8'))
+    d.rectangle([lx - 3, base - 2, lx + 3, base], fill=hexc('#c8b898'))
+    poly(d, [(lx, base - h + 2), (lx - 6, base - h - 4), (lx - 2, base - h + 4)], hexc(GOLD))
+    poly(d, [(lx, base - h + 2), (lx + 6, base - h - 4), (lx + 2, base - h + 4)], hexc(GOLD))
+    glow(img, lx, base - h - 5, 12, '#fff0a0', 150, 3)
+    dd = ImageDraw.Draw(img)
+    dd.ellipse([lx - 3, base - h - 8, lx + 3, base - h - 2], fill=hexc('#fffbe0'))
+    return dd
+
+
+for (lx, base, h) in [(56, 182, 40), (344, 182, 40), (140, 172, 22), (260, 172, 22)]:
+    d = lamp(lx, base, h)
+
+# 地面：金の模様が入った白い石の道と、両脇の草
+vgrad(img, (0, HZ, W, H), [(0, '#b0a24e'), (0.5, '#8a8a3e'), (1, '#5e6a30')], steps=8)
 d = ImageDraw.Draw(img)
-
-# 金色の天守閣（中央）
-def tier(cx, y, w, h, roofw):
-    d.rectangle([cx - w, y - h, cx + w, y], fill=hexc('#f0e0c0'))
-    for wx in range(int(cx - w + 3), int(cx + w - 2), 5):
-        d.rectangle([wx, y - h + 3, wx + 2, y - 3], fill=hexc('#ffd27a'))
-    poly(d, [(cx - roofw, y - h), (cx + roofw, y - h), (cx + w - 2, y - h - 7), (cx - w + 2, y - h - 7)], hexc('#d8a030'))
-    poly(d, [(cx - roofw, y - h), (cx - roofw - 4, y - h - 4), (cx - roofw + 4, y - h - 1)], hexc('#ffe08a'))
-    poly(d, [(cx + roofw, y - h), (cx + roofw + 4, y - h - 4), (cx + roofw - 4, y - h - 1)], hexc('#ffe08a'))
-    d.line([(cx - roofw, y - h), (cx + roofw, y - h)], fill=hexc('#ffe08a'))
-CX = 200
-d.rectangle([CX - 40, 150, CX + 40, HZ], fill=hexc('#6a5a5a'))
-for y in range(152, HZ, 4):
-    for x in range(CX - 40 + (y // 4 % 2) * 4, CX + 40, 8):
-        d.rectangle([x, y, x + 6, y + 2], fill=hexc('#8a7a72'))
-tier(CX, 150, 30, 16, 40)
-tier(CX, 127, 22, 12, 30)
-tier(CX, 108, 15, 10, 22)
-d.rectangle([CX - 2, 82, CX + 2, 92], fill=hexc('#d8a030'))
-poly(d, [(CX - 6, 92), (CX + 6, 92), (CX, 84)], hexc('#ffe08a'))
-glow(img, CX, 120, 50, '#ffd27a', 60, 3)
+VX = 200
+poly(d, [(VX - 40, HZ), (VX + 40, HZ), (VX + 230, H), (VX - 230, H)], hexc('#e8dcc4'))
+y = HZ; h = 3; i = 0
+while y < H:
+    t = (y - HZ) / (H - HZ)
+    half = 40 + 190 * t
+    d.line([(VX - half, y), (VX + half, y)], fill=hexc('#c8b48c'))
+    bw = 10 + 20 * t
+    x = VX - half + (i % 2) * bw / 2
+    while x < VX + half:
+        d.line([(x, y), (x, y + h)], fill=hexc('#c8b48c'))
+        x += bw
+    y += h; h = h * 1.18 + 0.4; i += 1
+for k in range(5):
+    t = k / 5 + 0.08
+    y = HZ + (H - HZ) * t
+    s = 4 + 12 * t
+    poly(d, [(VX, y - s * 0.6), (VX + s, y), (VX, y + s * 0.6), (VX - s, y)], hexc(GOLD))
+    poly(d, [(VX, y - s * 0.3), (VX + s * 0.5, y), (VX, y + s * 0.3), (VX - s * 0.5, y)], hexc(GOLD_L))
+d.line([(VX - 40, HZ), (VX - 230, H)], fill=hexc(GOLD), width=2)
+d.line([(VX + 40, HZ), (VX + 230, H)], fill=hexc(GOLD), width=2)
+glow(img, 200, HZ + 10, 200, '#ffd27a', 60, 5, ry=22)
 d = ImageDraw.Draw(img)
-
-# 城下町の屋根（左右）
-for side in (0, 1):
-    for row, (base, col) in enumerate([(150, '#4a2a3a'), (162, '#6a3a3a'), (170, '#8a4a3a')]):
-        x = 0 if side == 0 else W
-        while (x < 150 - row * 10) if side == 0 else (x > 250 + row * 10):
-            w = rnd.randint(16, 26)
-            hx0 = x if side == 0 else x - w
-            d.rectangle([hx0, base - 10, hx0 + w, base], fill=hexc('#e8d8b8' if row == 2 else '#a88a7a'))
-            poly(d, [(hx0 - 3, base - 10), (hx0 + w + 3, base - 10), (hx0 + w - 3, base - 18), (hx0 + 3, base - 18)], hexc(col if row < 2 else '#c88a30'))
-            if row == 2:
-                d.rectangle([hx0 + 4, base - 7, hx0 + w - 4, base - 3], fill=hexc('#ffd27a'))
-            x = x + w + 2 if side == 0 else x - w - 2
-
-# 連なる鳥居（中央へ続く参道）
-for i, (s, y) in enumerate([(1.0, 172), (0.8, 168), (0.62, 164)]):
-    for side in (-1, 1):
-        pass
-TORII = [(200, 172, 1.0)]
-def torii(cx, base, s):
-    c = '#d8402a'
-    d.rectangle([cx - 30 * s, base - 46 * s, cx - 25 * s, base], fill=hexc(c))
-    d.rectangle([cx + 25 * s, base - 46 * s, cx + 30 * s, base], fill=hexc(c))
-    d.rectangle([cx - 38 * s, base - 50 * s, cx + 38 * s, base - 45 * s], fill=hexc('#2a1a1a'))
-    d.rectangle([cx - 34 * s, base - 40 * s, cx + 34 * s, base - 37 * s], fill=hexc(c))
-    d.rectangle([cx - 3 * s, base - 46 * s, cx + 3 * s, base - 37 * s], fill=hexc('#d8a030'))
-for (x, s) in [(40, 1.3), (360, 1.3)]:
-    torii(x, HZ + 30, s)
-
-# 提灯の列
-for (x0, y0, x1, y1) in [(0, 84, 140, 112), (260, 112, 400, 84)]:
-    pts = [(x0 + (x1 - x0) * t / 30, y0 + (y1 - y0) * t / 30 + 10 * math.sin(math.pi * t / 30)) for t in range(31)]
-    d.line(pts, fill=hexc('#2a1a1a'))
-    for (px_, py_) in pts[2:-1:3]:
-        glow(img, px_, py_ + 5, 9, '#ff8a3a', 110, 3)
-        d = ImageDraw.Draw(img)
-        d.rectangle([px_ - 3, py_ + 1, px_ + 3, py_ + 9], fill=hexc('#ff5a3a'))
-        d.line([(px_ - 3, py_ + 5), (px_ + 3, py_ + 5)], fill=hexc('#ffd27a'))
-        d.line([(px_ - 3, py_ + 1), (px_ + 3, py_ + 1)], fill=hexc('#2a1a1a'))
-
-# 金色の葉の木（左右奥）
-for (tx, ty) in [(130, 150), (272, 150)]:
-    d.rectangle([tx - 1, ty - 14, tx + 1, ty + 6], fill=hexc('#4a2a1a'))
-    for _ in range(40):
-        a = rnd.uniform(0, 2 * math.pi); r = rnd.uniform(0, 12)
-        d.point((tx + r * math.cos(a), ty - 18 + r * 0.7 * math.sin(a)), fill=hexc(rnd.choice(['#ffd25a', '#e8a030', '#fff0a0'])))
-
-# 地面：金箔が散る石畳の大通り
-brick_floor(img, HZ, H, '#8a6a5a', '#4a3434', light='#d8b088', seed=8, base_w=12, vary=('#a07a62', 0.6))
-d = ImageDraw.Draw(img)
-glow(img, 200, HZ + 4, 190, '#ffd27a', 70, 5, ry=20)
-d = ImageDraw.Draw(img)
-# のぼり旗（城の左右・奥）
-for (x, col) in [(150, '#d8402a'), (160, '#2a6ad8'), (240, '#2a6ad8'), (250, '#d8402a')]:
-    d.line([(x, 146), (x, 172)], fill=hexc('#3a2a1a'))
-    d.rectangle([x + 1, 147, x + 5, 166], fill=hexc(col))
-    d.point((x + 3, 147), fill=hexc('#ffd25a'))
-    for y in range(152, 164, 4):
-        d.point((x + 3, y), fill=hexc('#ffffff'))
-# 金箔
+for _ in range(200):
+    y = rnd.randint(HZ + 2, H)
+    t = (y - HZ) / (H - HZ)
+    x = rnd.randint(0, W)
+    if abs(x - VX) < 40 + 190 * t + 2:
+        continue
+    d.line([(x, y), (x, y - 2 - int(t * 4))], fill=hexc(rnd.choice(['#6a7a30', '#a8a04a', '#c8b858'])))
 for _ in range(120):
-    x = rnd.randint(0, W); y = rnd.randint(40, H)
-    d.rectangle([x, y, x + rnd.randint(0, 1), y], fill=hexc(rnd.choice(['#ffd25a', '#fff0a0', '#e8a030'])))
-# 手前の石灯籠（下端）
-for x in (14, 386):
-    d.rectangle([x - 3, 268, x + 3, 300], fill=hexc('#7a6a62'))
-    d.rectangle([x - 8, 256, x + 8, 268], fill=hexc('#8a7a72'))
-    d.rectangle([x - 4, 259, x + 4, 265], fill=hexc('#ffd27a'))
-    poly(d, [(x - 11, 256), (x + 11, 256), (x, 246)], hexc('#6a5a52'))
-    glow(img, x, 262, 16, '#ffd27a', 110, 3)
-    d = ImageDraw.Draw(img)
+    x, y = rnd.randint(0, W), rnd.randint(30, H)
+    c = rnd.choice([GOLD_L, GOLD, GOLD_LL])
+    d.point((x, y), fill=hexc(c))
+    if rnd.random() < 0.4:
+        d.point((x + 1, y), fill=hexc(c))
+# 手前（下端）：金の装飾の入った白い石の欄干の端
+for (x0, x1) in [(0, 64), (336, 400)]:
+    d.rectangle([x0, 276, x1, 282], fill=hexc('#f4ecdc'))
+    d.line([(x0, 276), (x1, 276)], fill=hexc(GOLD))
+    for x in range(x0 + 4, x1, 10):
+        d.rounded_rectangle([x, 282, x + 5, 298], 2, fill=hexc('#e8dcc8'))
+    d.rectangle([x0, 296, x1, 300], fill=hexc('#d8c8a8'))
 
-finish(img, OUT_DIR / 'ougon-no-sato-battlefield.png')
+finish(img, OUT_DIR / 'ougon-no-sato-battlefield.png', colors=128)

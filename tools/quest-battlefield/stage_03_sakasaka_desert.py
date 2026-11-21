@@ -23,17 +23,6 @@ fill_above(d, dune_top, hexc('#c8845a'))
 dune_top2 = [(x, 20 + 8 * math.sin(x * 0.025 + 2) + 5 * math.sin(x * 0.07)) for x in range(0, W + 1, 2)]
 fill_above(d, dune_top2, hexc('#a8664e'))
 d.line(dune_top, fill=hexc('#f0b080'))
-# 逆さのピラミッド（空にぶら下がる）
-for (px_, top_y, w, h) in [(250, 30, 70, 56), (150, 36, 40, 30)]:
-    poly(d, [(px_ - w / 2, top_y), (px_ + w / 2, top_y), (px_, top_y + h)], hexc('#d89a64'))
-    poly(d, [(px_, top_y), (px_ + w / 2, top_y), (px_, top_y + h)], hexc('#a86a48'))
-    for k in range(1, 6):
-        yy = top_y + h * k / 6
-        ww = w / 2 * (1 - k / 6)
-        d.line([(px_ - ww, yy), (px_ + ww, yy)], fill=hexc('#8a5038'))
-    glow(img, px_, top_y + h, 10, '#ffe0a0', 90, 3)
-    d = ImageDraw.Draw(img)
-
 # 砂の滝（空から地面へ）
 SX = 336
 for y in range(int(dune_top[SX // 2][1]), HZ + 4):
@@ -50,6 +39,16 @@ for _ in range(80):
 # 遠くの砂丘
 far = wobble_line(150, 6, 0.02, 0.5)
 fill_below(d, far, hexc('#b8705a'), bottom=HZ + 2)
+# 地平線のピラミッド（普通の向き）
+for (px_, base, w, h) in [(170, 152, 66, 44), (222, 154, 40, 26), (132, 155, 30, 18)]:
+    poly(d, [(px_ - w / 2, base), (px_ + w / 2, base), (px_, base - h)], hexc('#d89a64'))
+    poly(d, [(px_, base - h), (px_ + w / 2, base), (px_, base)], hexc('#a86a48'))
+    for k in range(1, 6):
+        yy = base - h * k / 6
+        ww = w / 2 * (1 - k / 6)
+        d.line([(px_ - ww, yy), (px_ + ww, yy)], fill=hexc('#8a5038'))
+    glow(img, px_, base - h, 8, '#ffe0a0', 110, 3)
+    d = ImageDraw.Draw(img)
 mid = wobble_line(158, 5, 0.03, 2.5)
 fill_below(d, mid, hexc('#d08a62'), bottom=HZ + 2)
 

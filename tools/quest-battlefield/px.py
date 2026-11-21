@@ -141,7 +141,7 @@ def brick_floor(img, y0, y1, base, line, light=None, vanish=(W // 2, None), base
             xa = vx + (n + off) * bw
             xb = xa + bw
             vc, va = vary
-            if va and rnd.random() < 0.5:
+            if va and rnd.random() < 0.5 and yb - ya >= 2 and int(xb) - int(xa) >= 2:
                 c = lerp(hexc(base), hexc(vc), rnd.random() * va)
                 d.rectangle([int(xa) + 1, ya + 1, int(xb) - 1, yb - 1], fill=c)
             d.line([(int(xa), ya), (int(xa), yb)], fill=hexc(line))
