@@ -20,5 +20,12 @@
     "helper": "{count}/250 文字",
     "submit": "返信を送信",
     "submitting": "送信中..."
-  }
+  },
+  "image": {
+    "alt": "スレッドの画像",
+    "sensitiveNotice": "センシティブな内容を含む可能性があります",
+    "sensitiveReveal": "タップして表示",
+    "openOriginal": "画像を別のタブで開く"
+  },
+  "reportLink": "このスレッドを通報する"
 }

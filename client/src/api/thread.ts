@@ -8,11 +8,13 @@ import type {
   CreateThreadResponse,
   DeleteThreadResponse,
   GetThreadAlertsResponse,
+  GetThreadImagePermissionResponse,
   GetThreadsRequest,
   GetThreadsResponse,
   MarkThreadRepliesAlertedRequest,
   MarkThreadRepliesAlertedResponse,
   ThreadDetail,
+  ThreadImageAttachment,
 } from '@/schema/thread'
 
 export async function getThreads(input: GetThreadsRequest, accessToken: string): Promise<GetThreadsResponse> {
@@ -56,28 +58,63 @@ export async function getThreadDetail(threadId: string, accessToken: string): Pr
   return endpoints.thread.get.responseSchema.parse(json)
 }
 
-export async function createThread(input: CreateThreadRequest, accessToken: string): Promise<CreateThreadResponse> {
+export async function createThread(
+  input: CreateThreadRequest,
+  accessToken: string,
+  image?: ThreadImageAttachment | null,
+): Promise<CreateThreadResponse> {
   const parsedPayload = endpoints.thread.create.requestSchema.safeParse(input)
   if (!parsedPayload.success) {
     throw new Error(parsedPayload.error.issues[0]?.message ?? '入力内容が不正です')
   }
   const payload = parsedPayload.data
   const apiBaseUrl = resolveApiBaseUrl()
+
+  // 画像があるときは multipart/form-data で送る（Content-Type はブラウザに付けてもらう）
+  let body: BodyInit
+  const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` }
+  if (image) {
+    const formData = new FormData()
+    formData.append('title', payload.title)
+    formData.append('body', payload.body)
+    formData.append('image', image.file)
+    formData.append('imageIsSensitive', String(image.isSensitive))
+    body = formData
+  } else {
+    headers['Content-Type'] = 'application/json'
+    body = JSON.stringify(payload)
+  }
+
   const response = await fetchSafely(`${apiBaseUrl}${endpoints.thread.create.path}`, {
     method: endpoints.thread.create.method,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(payload),
+    headers,
+    body,
   })
 
   const json: unknown = await response.json().catch(() => null)
   if (!response.ok) {
-    throw new Error(extractErrorMessage(json, 'スレッド作成に失敗しました'))
+    const fallback = response.status === 413 ? '画像のサイズが大きすぎます' : 'スレッド作成に失敗しました'
+    throw new Error(extractErrorMessage(json, fallback))
   }
 
   return endpoints.thread.create.responseSchema.parse(json)
+}
+
+export async function getThreadImagePermission(accessToken: string): Promise<GetThreadImagePermissionResponse> {
+  const apiBaseUrl = resolveApiBaseUrl()
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.thread.imagePermission.path}`, {
+    method: endpoints.thread.imagePermission.method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const json: unknown = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(json, '画像投稿の権限の取得に失敗しました'))
+  }
+
+  return endpoints.thread.imagePermission.responseSchema.parse(json)
 }
 
 export async function createThreadReply(
