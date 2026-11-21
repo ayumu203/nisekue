@@ -10,7 +10,9 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "Supabase__ProjectUrl": "http://127.0.0.1:54321/",
         "Supabase__JwtAudience": "authenticated",
-        "Debug__AlwaysEnabled": "true"
+        "Debug__AlwaysEnabled": "true",
+        "ThreadImageStorage__UseLocal": "true",
+        "ThreadImageStorage__PublicBaseUrl": "/api/thread-images"
       }
     },
     "https": {
@@ -22,7 +24,9 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "Supabase__ProjectUrl": "http://127.0.0.1:54321/",
         "Supabase__JwtAudience": "authenticated",
-        "Debug__AlwaysEnabled": "true"
+        "Debug__AlwaysEnabled": "true",
+        "ThreadImageStorage__UseLocal": "true",
+        "ThreadImageStorage__PublicBaseUrl": "/api/thread-images"
       }
     }
   }

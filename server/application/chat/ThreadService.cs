@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using server.domain.chat;
 using server.domain.player;
 using server.shared.constants.chat;
@@ -5,7 +6,13 @@ using DomainThread = server.domain.chat.Thread;
 
 namespace server.application.chat;
 
-public class ThreadService(IThreadRepository threadRepository, IPlayerRepository playerRepository)
+public class ThreadService(
+    IThreadRepository threadRepository,
+    IPlayerRepository playerRepository,
+    IPlayerRoleRepository playerRoleRepository,
+    IThreadImageProcessor imageProcessor,
+    IThreadImageStorage imageStorage,
+    ILogger<ThreadService> logger)
 {
     public async Task<ThreadListPageView> GetPageAsync(int page)
     {
@@ -25,7 +32,8 @@ public class ThreadService(IThreadRepository threadRepository, IPlayerRepository
                     item.ReplyCount,
                     item.AuthorPlayerId.Value,
                     profile.Name,
-                    profile.ImagePath);
+                    profile.ImagePath,
+                    item.HasImage);
             })
             .ToArray();
 
@@ -43,7 +51,11 @@ public class ThreadService(IThreadRepository threadRepository, IPlayerRepository
         return await BuildDetailAsync(thread);
     }
 
-    public async Task<ThreadDetailView> CreateAsync(PlayerId authorPlayerId, string title, string body)
+    public async Task<ThreadDetailView> CreateAsync(
+        PlayerId authorPlayerId,
+        string title,
+        string body,
+        ThreadImageUpload? imageUpload = null)
     {
         var author = await playerRepository.GetPlayerAsync(authorPlayerId);
         if (author is null)
@@ -51,8 +63,34 @@ public class ThreadService(IThreadRepository threadRepository, IPlayerRepository
             throw new InvalidOperationException("投稿者のプレイヤーが見つかりません。");
         }
 
-        var thread = DomainThread.Create(authorPlayerId, title, body);
-        await threadRepository.CreateAsync(thread, ThreadConstants.MaxThreadsPerPlayer);
+        // 画像を保存してから本文の検証で弾かれないよう、先に本文を検証する
+        _ = new ThreadTitle(title);
+        _ = new ThreadBody(body);
+
+        var image = imageUpload is null
+            ? null
+            : await StoreImageAsync(authorPlayerId, imageUpload);
+
+        var thread = DomainThread.Create(authorPlayerId, title, body, image);
+        IReadOnlyList<string> overflowImageKeys;
+        try
+        {
+            overflowImageKeys = await threadRepository.CreateAsync(thread, ThreadConstants.MaxThreadsPerPlayer);
+        }
+        catch
+        {
+            if (image is not null)
+            {
+                await DeleteImageQuietlyAsync(image.Key);
+            }
+
+            throw;
+        }
+
+        foreach (var key in overflowImageKeys)
+        {
+            await DeleteImageQuietlyAsync(key);
+        }
 
         var persisted = await threadRepository.FindByIdAsync(thread.Id);
         if (persisted is null)
@@ -90,7 +128,40 @@ public class ThreadService(IThreadRepository threadRepository, IPlayerRepository
             throw new UnauthorizedAccessException("スレッドの削除権限がありません。");
         }
 
-        await threadRepository.DeleteAsync(threadId);
+        var imageKey = await threadRepository.DeleteAsync(threadId);
+        if (imageKey is not null)
+        {
+            await DeleteImageQuietlyAsync(imageKey);
+        }
+    }
+
+    /// <summary>管理者用ワークフローからの削除。投稿者に関係なく削除する。</summary>
+    public async Task DeleteByAdminAsync(ThreadId threadId)
+    {
+        var imageKey = await threadRepository.DeleteAsync(threadId);
+        if (imageKey is not null)
+        {
+            await DeleteImageQuietlyAsync(imageKey);
+        }
+    }
+
+    /// <summary>管理者用ワークフローから、画像のセンシティブ設定を付け外しする。</summary>
+    public async Task SetImageSensitiveAsync(ThreadId threadId, bool isSensitive)
+    {
+        if (await threadRepository.SetImageSensitiveAsync(threadId, isSensitive))
+        {
+            return;
+        }
+
+        var thread = await threadRepository.FindByIdAsync(threadId)
+            ?? throw new KeyNotFoundException("対象スレッドが見つかりません。");
+
+        if (thread.Image is null)
+        {
+            throw new InvalidOperationException("このスレッドには画像が付いていません。");
+        }
+
+        throw new InvalidOperationException("センシティブ設定の更新に失敗しました。");
     }
 
     public async Task<IReadOnlyList<ThreadAlertSummaryView>> GetAlertSummariesAsync(PlayerId authorPlayerId)
@@ -155,7 +226,41 @@ public class ThreadService(IThreadRepository threadRepository, IPlayerRepository
             thread.AuthorPlayerId.Value,
             authorProfile.Name,
             authorProfile.ImagePath,
-            replies);
+            replies,
+            thread.Image is null ? null : imageStorage.GetPublicUrl(thread.Image.Key),
+            thread.Image?.IsSensitive ?? false);
+    }
+
+    private async Task<ThreadImage> StoreImageAsync(PlayerId authorPlayerId, ThreadImageUpload upload)
+    {
+        var role = await playerRoleRepository.FindRoleAsync(authorPlayerId);
+        if (!PlayerRolePolicy.CanPostThreadImage(role))
+        {
+            throw new UnauthorizedAccessException("画像を投稿する権限がありません。");
+        }
+
+        if (!imageStorage.IsAvailable)
+        {
+            throw new ThreadImageUnavailableException();
+        }
+
+        var processed = imageProcessor.Process(upload.Content);
+        var key = ThreadImage.CreateKey(authorPlayerId, processed.Format);
+        await imageStorage.SaveAsync(key, processed.Content, processed.Format.ToContentType());
+        return new ThreadImage(key, upload.IsSensitive);
+    }
+
+    /// <summary>画像の削除に失敗してもスレッドの操作自体は成功させる（ログだけ残す）。</summary>
+    private async Task DeleteImageQuietlyAsync(string key)
+    {
+        try
+        {
+            await imageStorage.DeleteAsync(key);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "スレッド画像の削除に失敗しました: {ImageKey}", key);
+        }
     }
 
     private async Task<Dictionary<PlayerId, (string Name, string? ImagePath)>> LoadProfilesAsync(IEnumerable<PlayerId> playerIds)

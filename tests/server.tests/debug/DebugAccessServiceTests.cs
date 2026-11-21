@@ -49,5 +49,7 @@ public class DebugAccessServiceTests
     private sealed class FixedRoleRepository(PlayerRole? role) : IPlayerRoleRepository
     {
         public Task<PlayerRole?> FindRoleAsync(PlayerId id) => Task.FromResult(role);
+
+        public Task<bool> SetRoleAsync(PlayerId id, PlayerRole? newRole) => Task.FromResult(true);
     }
 }

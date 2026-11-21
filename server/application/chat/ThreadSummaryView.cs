@@ -9,4 +9,5 @@ public sealed record ThreadSummaryView(
     int ReplyCount,
     Guid AuthorPlayerId,
     string AuthorName,
-    string? AuthorImagePath);
+    string? AuthorImagePath,
+    bool HasImage = false);
