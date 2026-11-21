@@ -704,7 +704,7 @@ internal static class PlayerEndpoints
                     level = player.Level,
                     exp = player.Exp,
                     requiredExpForNextLevel = player.RequiredExpForNextLevel(),
-                    maxLevel = PlayerConstants.MaxLevel,
+                    maxLevel = player.MaxLevel,
                     isMaxLevel = player.IsMaxLevel,
                     jobLevel = player.JobLevel,
                     gold = player.Gold,
@@ -721,6 +721,39 @@ internal static class PlayerEndpoints
                             speed = player.Status.Speed
                         }
                     }
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { message = ex.Message, userId = playerId.Value.Value });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
+        }).RequireAuthorization();
+
+        app.MapPost("/player/data-reset", async (
+            ClaimsPrincipal user,
+            PlayerDataResetService playerDataResetService) =>
+        {
+            var playerId = EndpointHelpers.TryGetPlayerId(user);
+            if (playerId is null)
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                var player = await playerDataResetService.ResetDataAsync(playerId.Value);
+
+                return Results.Ok(new
+                {
+                    message = "データリセットしました。",
+                    userId = player.Id.Value,
+                    rebirthCount = player.RebirthCount,
+                    level = player.Level,
+                    gold = player.Gold
                 });
             }
             catch (KeyNotFoundException ex)
@@ -981,8 +1014,14 @@ internal static class PlayerEndpoints
                 .ToArray(),
             level = player.Level,
             exp = player.Exp,
+            requiredExpForNextLevel = player.RequiredExpForNextLevel(),
+            maxLevel = player.MaxLevel,
+            isMaxLevel = player.IsMaxLevel,
             jobLevel = player.JobLevel,
             gold = player.Gold,
+            rebirthRequiredLevel = PlayerConstants.RebirthRequiredLevel,
+            rebirthGoldCost = player.RebirthGoldCost,
+            dataResetGoldCost = PlayerConstants.DataResetGoldCost,
             status = new
             {
                 baseValues = new

@@ -200,11 +200,16 @@ export default function JobChange() {
           )}
         </Stack>
       </Paper>
-      {tutorialStep === 'training-to-lv7' && successMessage && (
-        <SpotlightTutorial targetId="tutorial-home-btn" message={tutorialLocale.steps.backToTraining.message} />
+      {tutorialStep === 'training-to-lv7' && (
+        <SpotlightTutorial
+          guide="priest"
+          targetId="tutorial-home-btn"
+          message={tutorialLocale.steps.jobChangeToTraining.message}
+        />
       )}
       {tutorialStep === 'job-change-info' && (
         <SpotlightTutorial
+          guide="priest"
           message={tutorialLocale.steps.jobChangeInfo.message}
           showDismiss
           dismissLabel={tutorialLocale.steps.jobChangeInfo.dismissLabel}
@@ -212,7 +217,13 @@ export default function JobChange() {
         />
       )}
       {tutorialStep === 'job-change-roadmap' && (
-        <SpotlightTutorial targetId="tutorial-roadmap-tab" message={tutorialLocale.steps.jobChangeRoadmap.message} />
+        <SpotlightTutorial
+          guide="priest"
+          targetId="tutorial-roadmap-tab"
+          message={tutorialLocale.steps.jobChangeRoadmap.message}
+          showDismiss
+          onDismiss={() => advanceTutorial('training-to-lv7')}
+        />
       )}
     </Container>
   )

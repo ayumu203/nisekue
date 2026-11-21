@@ -1,7 +1,6 @@
 using server.application.player;
 using server.domain.move;
 using server.domain.player;
-using server.shared.constants.player;
 
 namespace server.application.debug;
 
@@ -78,13 +77,18 @@ public class DebugPlayerService(
     /// </summary>
     public Task<DebugLevelUpResult> LevelUpToAsync(PlayerId playerId, int targetLevel)
     {
-        if (targetLevel is < 1 or > PlayerConstants.MaxLevel)
+        if (targetLevel < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(targetLevel), $"レベルは1以上{PlayerConstants.MaxLevel}以下である必要があります。");
+            throw new ArgumentOutOfRangeException(nameof(targetLevel), "レベルは1以上である必要があります。");
         }
 
         return playerMutationService.MutateAsync(playerId, player =>
         {
+            if (targetLevel > player.MaxLevel)
+            {
+                throw new ArgumentOutOfRangeException(nameof(targetLevel), $"レベルは1以上{player.MaxLevel}以下である必要があります。");
+            }
+
             if (targetLevel < player.Level)
             {
                 throw new ArgumentOutOfRangeException(nameof(targetLevel), $"レベルは下げられません（現在 {player.Level}）。");

@@ -1,10 +1,13 @@
-import { Box, Button, Paper, Typography, useMediaQuery } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
-import { useLayoutEffect, useState } from 'react'
+import { Box, Button, Typography, useMediaQuery } from '@mui/material'
+import { keyframes, useTheme } from '@mui/material/styles'
+import { loadDefaultJapaneseParser } from 'budoux'
+import { Fragment, useLayoutEffect, useState } from 'react'
 import { useAuth } from '@/contexts/useAuth'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
+import { resolvePublicAssetPath } from '@/lib/assets'
 import { completeTutorial } from '@/lib/tutorial'
 import tutorialLocale from '../../../locale/tutorial/Tutorial.json'
+import { getGuidePortraitPlacement, TUTORIAL_GUIDES, type TutorialGuideId } from './tutorialGuides'
 
 type TargetRect = {
   top: number
@@ -15,13 +18,79 @@ type TargetRect = {
 
 type SpotlightTutorialProps = {
   targetId?: string
+  // 矢印で指す要素。指定がなければ targetId を指す
+  pointerTargetId?: string
   message: string
   subMessage?: string
   showDismiss?: boolean
   dismissLabel?: string
   onDismiss?: () => void
   padding?: number
+  // 話しているキャラ。指定がなければ受付嬢
+  guide?: TutorialGuideId
 }
+
+// 実際の画面（歯車ボタン・外枠）の配色に合わせる
+const WINDOW_COLOR = '#93602c'
+const WINDOW_OUTLINE_COLOR = '#6e4415'
+const WINDOW_BORDER_COLOR = '#ffffff'
+const ACCENT_COLOR = '#ffcc00'
+const ACCENT_TEXT_COLOR = '#4f392c'
+const BUBBLE_COLOR = '#fffaf0'
+const BUBBLE_TEXT_COLOR = '#3d2a1e'
+// 背景が明るくても暗くても読めるように、ラベルを茶色で縁取る
+const POINTER_LABEL_OUTLINE = [
+  [-2, 0],
+  [2, 0],
+  [0, -2],
+  [0, 2],
+  [-2, -2],
+  [2, 2],
+  [-2, 2],
+  [2, -2],
+]
+  .map(([x, y]) => `${x}px ${y}px 0 ${WINDOW_OUTLINE_COLOR}`)
+  .join(', ')
+const OVERLAY_COLOR = 'rgba(20, 12, 4, 0.62)'
+const POINTER_HEIGHT = 44
+const POINTER_GAP = 6
+
+const pointDown = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+`
+
+const pointUp = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+`
+
+const blink = keyframes`
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+`
+
+const reducedMotionSx = {
+  '@media (prefers-reduced-motion: reduce)': {
+    animation: 'none',
+  },
+} as const
+
+const phraseParser = loadDefaultJapaneseParser()
+
+// 文節の切れ目でだけ折り返すように <wbr> を挟む（wordBreak: keep-all と組み合わせる）
+const renderPhrases = (text: string) =>
+  text.split('\n').map((line, lineIndex) => (
+    <Fragment key={lineIndex}>
+      {lineIndex > 0 && <br />}
+      {phraseParser.parse(line).map((phrase, phraseIndex) => (
+        <Fragment key={phraseIndex}>
+          {phraseIndex > 0 && <wbr />}
+          {phrase}
+        </Fragment>
+      ))}
+    </Fragment>
+  ))
 
 function useTargetRect(targetId: string | undefined, padding: number): TargetRect | null {
   const [rect, setRect] = useState<TargetRect | null>(null)
@@ -62,16 +131,31 @@ function useTargetRect(targetId: string | undefined, padding: number): TargetRec
   return targetId ? rect : null
 }
 
+function PointerArrow({ direction }: { direction: 'up' | 'down' }) {
+  const path = direction === 'up' ? 'M14 1 L27 21 L1 21 Z' : 'M1 1 L27 1 L14 21 Z'
+
+  return (
+    <svg aria-hidden="true" width="28" height="22" viewBox="0 0 28 22">
+      <path d={path} fill={ACCENT_COLOR} stroke={WINDOW_BORDER_COLOR} strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export default function SpotlightTutorial({
   targetId,
   message,
   subMessage,
   showDismiss = false,
-  dismissLabel = 'わかった！',
+  dismissLabel = '次へ',
   onDismiss,
   padding = 12,
+  guide = 'receptionist',
+  pointerTargetId,
 }: SpotlightTutorialProps) {
+  const guideInfo = TUTORIAL_GUIDES[guide]
+  const portraitPlacement = getGuidePortraitPlacement(guideInfo)
   const targetRect = useTargetRect(targetId, padding)
+  const pointerTargetRect = useTargetRect(pointerTargetId, 4)
   const { session } = useAuth()
   const { canUseDebug } = useDebugStatus()
   const userId = session?.user.id ?? null
@@ -88,7 +172,28 @@ export default function SpotlightTutorial({
 
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  // 画面幅ではなく入力方法で判定する（タブレットや狭いウィンドウの PC でも正しい表記になるように）
+  const isTouchDevice = useMediaQuery('(pointer: coarse)')
   const hasSpotlight = targetId != null && targetRect != null
+
+  // 指し先が画面の下半分にあるときは、ウィンドウを上に出して指し先を隠さない（矢印の指し先があればそちらを優先）
+  const viewportHeight = typeof window === 'undefined' ? 0 : window.innerHeight
+  const viewportWidth = typeof window === 'undefined' ? 0 : window.innerWidth
+  const targetCenterY = hasSpotlight ? targetRect.top + targetRect.height / 2 : 0
+  const isTargetInLowerHalf = hasSpotlight && targetCenterY > viewportHeight / 2
+  const pointerRect = pointerTargetRect ?? targetRect
+  const pointerCenterY = pointerRect ? pointerRect.top + pointerRect.height / 2 : 0
+  const pointerDirection: 'up' | 'down' = pointerRect && pointerCenterY > viewportHeight / 2 ? 'down' : 'up'
+  const pointerTop = pointerRect
+    ? pointerDirection === 'down'
+      ? pointerRect.top - POINTER_GAP - POINTER_HEIGHT
+      : pointerRect.top + pointerRect.height + POINTER_GAP
+    : 0
+  const pointerCenterX = pointerRect
+    ? Math.min(Math.max(pointerRect.left + pointerRect.width / 2, 40), Math.max(viewportWidth - 40, 40))
+    : 0
+
+  const portraitSize = isMobile ? { width: 76, minHeight: 112 } : { width: 140, minHeight: 168 }
 
   return (
     <Box
@@ -100,80 +205,226 @@ export default function SpotlightTutorial({
       }}
     >
       {hasSpotlight && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: targetRect.top,
-            left: targetRect.left,
-            width: targetRect.width,
-            height: targetRect.height,
-            borderRadius: 2,
-            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.68)',
-            pointerEvents: 'none',
-          }}
-        />
+        <>
+          <Box
+            sx={{
+              position: 'absolute',
+              top: targetRect.top,
+              left: targetRect.left,
+              width: targetRect.width,
+              height: targetRect.height,
+              borderRadius: 2,
+              boxShadow: `0 0 0 9999px ${OVERLAY_COLOR}`,
+              border: `3px solid ${ACCENT_COLOR}`,
+              boxSizing: 'border-box',
+              pointerEvents: 'none',
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              top: pointerTop,
+              left: pointerCenterX,
+              transform: 'translateX(-50%)',
+              pointerEvents: 'none',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: pointerDirection === 'up' ? 'column' : 'column-reverse',
+                alignItems: 'center',
+                gap: '2px',
+                height: POINTER_HEIGHT,
+                justifyContent: pointerDirection === 'up' ? 'flex-start' : 'flex-end',
+                animation: `${pointerDirection === 'up' ? pointUp : pointDown} 0.9s ease-in-out infinite`,
+                ...reducedMotionSx,
+              }}
+            >
+              <PointerArrow direction={pointerDirection} />
+              <Typography
+                component="span"
+                sx={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  color: '#ffffff',
+                  textShadow: POINTER_LABEL_OUTLINE,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {isTouchDevice ? tutorialLocale.pointerLabelTap : tutorialLocale.pointerLabelClick}
+              </Typography>
+            </Box>
+          </Box>
+        </>
       )}
 
-      <Paper
-        elevation={8}
+      <Box
         sx={{
           position: 'absolute',
-          ...(isMobile
-            ? { bottom: 16, left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)' }
-            : { top: 16, right: 16 }),
-          maxWidth: 300,
-          p: 2,
-          borderRadius: 3,
-          backgroundColor: '#fff9ef',
-          border: '1px solid #e8d49c',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 'calc(100% - 24px)',
+          maxWidth: 760,
+          ...((pointerTargetRect ? pointerDirection === 'down' : isTargetInLowerHalf) ? { top: 28 } : { bottom: 20 }),
           pointerEvents: 'auto',
         }}
       >
-        <Typography variant="body2" fontWeight={700} sx={{ color: '#3a2c0f', whiteSpace: 'pre-line', lineHeight: 1.7 }}>
-          {message}
-        </Typography>
-        {subMessage && (
-          <Typography
-            variant="body2"
+        <Box
+          role="dialog"
+          aria-label={guideInfo.name}
+          sx={{
+            display: 'flex',
+            gap: { xs: 1.5, sm: 2.5 },
+            alignItems: 'stretch',
+            py: { xs: 2, sm: 2.5 },
+            px: { xs: 2, sm: 2.5 },
+            backgroundColor: WINDOW_COLOR,
+            border: `3px solid ${WINDOW_BORDER_COLOR}`,
+            outline: `3px solid ${WINDOW_OUTLINE_COLOR}`,
+            borderRadius: '8px',
+          }}
+        >
+          <Box
             sx={{
-              color: '#5c4a1e',
-              whiteSpace: 'pre-line',
-              lineHeight: 1.7,
-              mt: 1,
-              pt: 1,
-              borderTop: '1px solid #e8d49c',
+              flexShrink: 0,
+              width: portraitSize.width,
+              minHeight: portraitSize.minHeight,
+              position: 'relative',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              backgroundColor: '#fff7e8',
+              border: `2px solid ${WINDOW_BORDER_COLOR}`,
+              borderRadius: '6px',
             }}
           >
-            {subMessage}
-          </Typography>
-        )}
-        {showDismiss && onDismiss && (
-          <Button
-            size="small"
-            variant="contained"
-            onClick={onDismiss}
-            sx={{
-              mt: 1.5,
-              borderRadius: 999,
-              fontWeight: 800,
-              backgroundColor: '#b65f49',
-              color: '#fff5ef',
-              boxShadow: 'none',
-              '&:hover': {
-                backgroundColor: '#c96a52',
-                boxShadow: 'none',
-              },
-            }}
-          >
-            {dismissLabel}
-          </Button>
-        )}
-        {canUseDebug && userId && (
-          <Button size="small" variant="text" onClick={handleSkip} sx={{ mt: 1.5, ml: 1, color: '#8a6d3b' }}>
-            {tutorialLocale.debugSkip}
-          </Button>
-        )}
-      </Paper>
+            <Box
+              component="img"
+              src={resolvePublicAssetPath(guideInfo.image)}
+              alt=""
+              aria-hidden="true"
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: `${portraitPlacement.left * 100}%`,
+                width: `${guideInfo.zoom * 100}%`,
+                maxWidth: 'none',
+                // margin の % は親の横幅が基準なので、顔の高さを枠の横幅に対する割合で合わせられる
+                mt: `${portraitPlacement.top * 100}%`,
+              }}
+            />
+          </Box>
+
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Typography
+              component="p"
+              sx={{
+                mb: 0.75,
+                fontSize: { xs: 19, sm: 23 },
+                fontWeight: 700,
+                lineHeight: 1.2,
+                letterSpacing: '0.05em',
+                color: guideInfo.nameColor,
+              }}
+            >
+              {guideInfo.name}
+            </Typography>
+            <Box
+              sx={{
+                position: 'relative',
+                px: { xs: 1.25, sm: 2.25 },
+                py: { xs: 1, sm: 1.5 },
+                backgroundColor: BUBBLE_COLOR,
+                borderRadius: '14px',
+                // 立ち絵の方を向いた吹き出しのしっぽ
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: { xs: 14, sm: 18 },
+                  left: -11,
+                  borderStyle: 'solid',
+                  borderWidth: '8px 12px 8px 0',
+                  borderColor: `transparent ${BUBBLE_COLOR} transparent transparent`,
+                },
+              }}
+            >
+              <Typography
+                sx={{
+                  color: BUBBLE_TEXT_COLOR,
+                  wordBreak: 'keep-all',
+                  overflowWrap: 'anywhere',
+                  lineHeight: 1.7,
+                  fontSize: { xs: 15, sm: 19 },
+                }}
+              >
+                {renderPhrases(message)}
+              </Typography>
+              {subMessage && (
+                <Typography
+                  sx={{
+                    color: '#6b5444',
+                    wordBreak: 'keep-all',
+                    overflowWrap: 'anywhere',
+                    lineHeight: 1.7,
+                    fontSize: { xs: 14, sm: 16 },
+                    mt: 1,
+                    pt: 1,
+                    borderTop: '1px dashed rgba(61, 42, 30, 0.3)',
+                  }}
+                >
+                  {renderPhrases(subMessage)}
+                </Typography>
+              )}
+            </Box>
+            {((showDismiss && onDismiss) || (canUseDebug && userId)) && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, mt: 1.5 }}>
+                {canUseDebug && userId && (
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={handleSkip}
+                    sx={{ color: '#fff1d6', fontSize: { xs: 13, sm: 15 } }}
+                  >
+                    {tutorialLocale.debugSkip}
+                  </Button>
+                )}
+                {showDismiss && onDismiss && (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    onClick={onDismiss}
+                    sx={{
+                      '&&': {
+                        borderRadius: 999,
+                        backgroundColor: ACCENT_COLOR,
+                        borderColor: WINDOW_BORDER_COLOR,
+                        color: ACCENT_TEXT_COLOR,
+                        boxShadow: 'none',
+                        fontSize: { xs: 14, sm: 16 },
+                        px: { xs: 2, sm: 2.5 },
+                      },
+                      '&&:hover': {
+                        backgroundColor: '#f2c200',
+                        boxShadow: 'none',
+                      },
+                    }}
+                  >
+                    {dismissLabel}
+                    <Box
+                      component="span"
+                      aria-hidden="true"
+                      sx={{ ml: 0.75, animation: `${blink} 1s steps(1) infinite`, ...reducedMotionSx }}
+                    >
+                      ▼
+                    </Box>
+                  </Button>
+                )}
+              </Box>
+            )}
+          </Box>
+        </Box>
+      </Box>
     </Box>
   )
 }

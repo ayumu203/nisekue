@@ -9,8 +9,6 @@
   "masteredJobsTitle": "マスター済みジョブ",
   "masteredJobsEmpty": "まだありません",
   "requirementTitle": "転生条件",
-  "requirementLevel": "レベル: Lv.{{level}} / 100",
-  "requirementGold": "Gold: {{gold}} / 100000",
   "inheritTitle": "引き継ぎ内容",
   "statusPreviewTitle": "引き継ぎステータス",
   "statusResultTitle": "転生後のステータス",
@@ -42,5 +40,15 @@
     "intelligence": "知力",
     "luck": "運",
     "speed": "素早さ"
+  },
+  "dataReset": {
+    "title": "データリセットをする",
+    "description": "{{gold}} G を払って、データリセットをします。レベル・ステータス・スキル・マスター済みジョブ・転生回数がゲーム開始時の状態に戻ります。ロードマップの解放・アイテム・装備・ペットはそのままです。",
+    "button": "データリセット",
+    "lockedButton": "Gold が足りません",
+    "executing": "データリセット中...",
+    "confirm": "{{gold}} G を払ってデータリセットをします。レベル・ステータス・スキル・マスター済みジョブ・転生回数は元に戻せません。よろしいですか？",
+    "done": "データリセットしました。",
+    "failed": "データリセットに失敗しました"
   }
 }

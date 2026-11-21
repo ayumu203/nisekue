@@ -119,6 +119,7 @@ export default function MoveSetting() {
       </Paper>
       {tutorialStep === 'move-setting-info' && (
         <SpotlightTutorial
+          guide="mage"
           targetId="tutorial-move-item-box"
           message={tutorialLocale.steps.moveSettingInfo.message}
           showDismiss
@@ -127,7 +128,11 @@ export default function MoveSetting() {
         />
       )}
       {tutorialStep === 'home-treasure-map' && (
-        <SpotlightTutorial targetId="tutorial-home-btn-move" message={tutorialLocale.steps.moveSettingToHome.message} />
+        <SpotlightTutorial
+          guide="mage"
+          targetId="tutorial-home-btn-move"
+          message={tutorialLocale.steps.moveSettingToHome.message}
+        />
       )}
     </Container>
   )

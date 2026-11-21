@@ -560,6 +560,127 @@ public class PlayerTests
         player.Level.Should().Be(2);
     }
 
+    [Theory]
+    [InlineData(0, 100)]
+    [InlineData(1, 102)]
+    [InlineData(5, 110)]
+    public void MaxLevel_ByRebirthCount_Increases2PerRebirth(int rebirthCount, int expected)
+    {
+        var player = CreatePlayer(level: 1, rebirthCount: rebirthCount);
+
+        player.MaxLevel.Should().Be(expected);
+    }
+
+    [Fact]
+    public void Constructor_RebirthedPlayerAboveBaseMaxLevel_Succeeds()
+    {
+        var player = CreatePlayer(level: 102, rebirthCount: 1);
+
+        player.Level.Should().Be(102);
+        player.IsMaxLevel.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Constructor_LevelAbovePlayerMaxLevel_Throws()
+    {
+        var act = () => CreatePlayer(level: 103, rebirthCount: 1);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void LevelUp_RebirthedOnceWithLargeExp_LevelCapsAt102()
+    {
+        var player = CreatePlayer(level: 99, exp: 1_000_000, rebirthCount: 1);
+
+        player.LevelUp(CreateJobProfile(Job.Apprentice), CreateLearningRule(Job.Apprentice));
+
+        player.Level.Should().Be(102);
+        player.Exp.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(0, 100000)]
+    [InlineData(1, 200000)]
+    [InlineData(4, 500000)]
+    public void RebirthGoldCost_ByRebirthCount_Is100000TimesNextRebirth(int rebirthCount, int expected)
+    {
+        var player = CreatePlayer(level: 1, rebirthCount: rebirthCount);
+
+        player.RebirthGoldCost.Should().Be(expected);
+    }
+
+    [Fact]
+    public void Rebirth_SecondRebirthWithoutEnoughGold_Throws()
+    {
+        var player = CreatePlayer(level: 100, gold: 199999, rebirthCount: 1);
+
+        var act = () => player.Rebirth(CreateInheritedStatus());
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*転生には200000 Goldが必要です*");
+    }
+
+    [Fact]
+    public void Rebirth_SecondRebirthAtLevel100_SpendsScaledGold()
+    {
+        var player = CreatePlayer(level: 100, gold: 250000, rebirthCount: 1);
+
+        player.Rebirth(CreateInheritedStatus());
+
+        player.RebirthCount.Should().Be(2);
+        player.Gold.Should().Be(50000);
+        player.MaxLevel.Should().Be(104);
+    }
+
+    [Fact]
+    public void ResetData_WhenEnoughGold_ResetsProgressAndKeepsRoadmap()
+    {
+        var moveSet = new MoveSet();
+        moveSet.SetSlot(0, new MoveId(421));
+        var player = CreatePlayer(
+            level: 50,
+            exp: 30,
+            jobLevel: 20,
+            gold: 150000,
+            job: Job.Mage,
+            status: new Status(120, 80, 30, 28, 42, 18, 25),
+            moveSet: moveSet,
+            masteredJobs: new HashSet<Job> { Job.Warrior },
+            rebirthCount: 3);
+        player.UnlockRoadmap(Job.Warrior);
+        var roadmapFlags = player.RoadmapUnlockFlags;
+        var initialStatus = PlayerInitialState.CreateStatus();
+        var initialMoveSet = PlayerInitialState.CreateMoveSet();
+
+        player.ResetData(initialStatus, initialMoveSet);
+
+        player.Gold.Should().Be(50000);
+        player.Level.Should().Be(1);
+        player.Exp.Should().Be(0);
+        player.Job.Should().Be(Job.Apprentice);
+        player.JobLevel.Should().Be(1);
+        player.Status.Should().BeSameAs(initialStatus);
+        player.MoveSet.Should().BeSameAs(initialMoveSet);
+        player.MasteredJobs.Should().BeEmpty();
+        player.RebirthCount.Should().Be(0);
+        player.RoadmapUnlockFlags.Should().Be(roadmapFlags);
+    }
+
+    [Fact]
+    public void ResetData_WhenGoldIsInsufficient_ThrowsAndKeepsProgress()
+    {
+        var player = CreatePlayer(level: 50, gold: 99999, rebirthCount: 2);
+
+        var act = () => player.ResetData(PlayerInitialState.CreateStatus(), PlayerInitialState.CreateMoveSet());
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*データリセットには100000 Goldが必要です*");
+        player.Level.Should().Be(50);
+        player.RebirthCount.Should().Be(2);
+        player.Gold.Should().Be(99999);
+    }
+
     private static Player CreatePlayer(
         int level,
         int exp = 0,

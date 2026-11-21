@@ -7,7 +7,9 @@
     },
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts",
-      "pnpmVersion": "latest"
+      // CI（pnpm/action-setup の version: 10）に合わせて固定する。latest だと新しいメジャーの仕様変更で
+      // post-create.sh が失敗し、start.sh（postStartCommand）まで実行されなくなる
+      "pnpmVersion": "10.28.0"
     },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
