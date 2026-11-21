@@ -213,7 +213,7 @@ builder.Services.AddScoped<PlayerMoveSetService>();
 builder.Services.AddScoped<PlayerMoveSetSanitizer>();
 builder.Services.AddSingleton<PlayerPresenceTracker>();
 builder.Services.AddScoped<PlayerRebirthService>();
-builder.Services.AddScoped<PlayerRestartService>();
+builder.Services.AddScoped<PlayerDataResetService>();
 builder.Services.AddScoped<MarketPurchaseService>();
 builder.Services.AddScoped<MarketListingCleanupService>();
 builder.Services.AddScoped<DevelopmentDataCleanupService>();

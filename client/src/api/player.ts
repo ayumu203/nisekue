@@ -22,7 +22,7 @@ import type {
   SendPlayerGiftResponse,
   RebirthPlayerResponse,
   RebirthStatusHistoryResponse,
-  RestartPlayerResponse,
+  ResetPlayerDataResponse,
   UnlockJobRoadmapRequest,
   UnlockJobRoadmapResponse,
   JobRoadmapListResponse,
@@ -300,11 +300,11 @@ export async function rebirthPlayer(accessToken: string): Promise<RebirthPlayerR
   return endpoints.player.rebirth.responseSchema.parse(json)
 }
 
-export async function restartPlayer(accessToken: string): Promise<RestartPlayerResponse> {
+export async function resetPlayerData(accessToken: string): Promise<ResetPlayerDataResponse> {
   const apiBaseUrl = resolveApiBaseUrl()
 
-  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.restart.path}`, {
-    method: endpoints.player.restart.method,
+  const response = await fetchSafely(`${apiBaseUrl}${endpoints.player.dataReset.path}`, {
+    method: endpoints.player.dataReset.method,
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -313,10 +313,10 @@ export async function restartPlayer(accessToken: string): Promise<RestartPlayerR
   const json: unknown = await response.json().catch(() => null)
 
   if (!response.ok) {
-    throw new Error(extractErrorMessage(json, 'やり直しに失敗しました'))
+    throw new Error(extractErrorMessage(json, 'データリセットに失敗しました'))
   }
 
-  return endpoints.player.restart.responseSchema.parse(json)
+  return endpoints.player.dataReset.responseSchema.parse(json)
 }
 
 export async function getRebirthHistory(accessToken: string): Promise<RebirthStatusHistoryResponse> {

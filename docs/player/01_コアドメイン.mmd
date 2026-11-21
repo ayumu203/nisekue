@@ -40,7 +40,7 @@ classDiagram
             +Rebirth(inheritedStatus: Status, ignoreRequirements: bool = false) void
             +MarkJobAsMastered(job: Job) bool
             +ResetProgress(initialStatus: Status, initialMoveSet: MoveSet) void
-            +Restart(initialStatus: Status, initialMoveSet: MoveSet) void
+            +ResetData(initialStatus: Status, initialMoveSet: MoveSet) void
             -CanChangeJob(nextProfile: JobProfile) bool
             -MarkCurrentJobAsMastered(jobProfile: JobProfile) bool
             -SynchronizeLearnableMoves(jobProfile: JobProfile, learningRule: JobMoveLearningRule) IReadOnlyList~MoveId~
@@ -384,7 +384,7 @@ classDiagram
 
         note for Player "ResetProgress はデバッグ機能用。\nレベル・経験値・ジョブ・職業レベル・ステータス・スキル・マスター済みジョブ・ロードマップ・転生回数を作成直後に戻す。\n名前・ゴールド・フラグ類は変えない"
 
-        note for Player "MaxLevel = 100 + 2 × 転生回数。\nRebirthGoldCost（次の転生に必要な Gold）= 100,000 × (転生回数 + 1)。\nRestart は Gold 100,000 を払って初期状態からやり直す（転生で詰んだときの保険）。\nレベル・経験値・ジョブ・職業レベル・ステータス・スキル・マスター済みジョブ・転生回数を作成直後に戻す。\nロードマップ解放・名前・残りの Gold・フラグ類は変えない"
+        note for Player "MaxLevel = 100 + 2 × 転生回数。\nRebirthGoldCost（次の転生に必要な Gold）= 100,000 × (転生回数 + 1)。\nResetData は Gold 100,000 を払ってデータリセットする（転生で詰んだときの保険）。\nレベル・経験値・ジョブ・職業レベル・ステータス・スキル・マスター済みジョブ・転生回数を作成直後に戻す。\nロードマップ解放・名前・残りの Gold・フラグ類は変えない"
 
         note for IPlayerRoleRepository "role は internal.players.role に保持する。\nゲームの API からは変更せず、Supabase から手動で設定する。\n未設定(null)は一般プレイヤー"
 

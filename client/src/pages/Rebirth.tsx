@@ -1,7 +1,7 @@
 import { Alert, Box, Button, Chip, CircularProgress, Container, Divider, Paper, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import useSWR from 'swr'
-import { createPlayer, getPlayer, getRebirthHistory, rebirthPlayer, restartPlayer } from '@/api/player'
+import { createPlayer, getPlayer, getRebirthHistory, rebirthPlayer, resetPlayerData } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { SummaryStat } from '@/components/rebirth/SummaryStat'
 import {
@@ -19,9 +19,8 @@ import { formatDateTime } from '@/components/quest/questFormat'
 
 const DEFAULT_REQUIRED_LEVEL = 100
 const DEFAULT_REQUIRED_GOLD = 100000
-const DEFAULT_RESTART_GOLD = 100000
+const DEFAULT_DATA_RESET_GOLD = 100000
 const DEFAULT_MAX_LEVEL = 100
-const MAX_LEVEL_INCREASE_PER_REBIRTH = 2
 
 const statKeys = [
   { key: 'maxHp', label: locale.labels.maxHp },
@@ -51,9 +50,9 @@ export default function Rebirth() {
     speed: number
   } | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [restartError, setRestartError] = useState<string | null>(null)
-  const [restartMessage, setRestartMessage] = useState<string | null>(null)
-  const [isRestarting, setIsRestarting] = useState(false)
+  const [dataResetError, setDataResetError] = useState<string | null>(null)
+  const [dataResetMessage, setDataResetMessage] = useState<string | null>(null)
+  const [isResettingData, setIsResettingData] = useState(false)
 
   const playerSWRKey = session?.user.id ? (['rebirth', session.user.id] as const) : null
   const {
@@ -95,10 +94,10 @@ export default function Rebirth() {
 
   const requiredLevel = player?.rebirthRequiredLevel ?? DEFAULT_REQUIRED_LEVEL
   const requiredGold = player?.rebirthGoldCost ?? DEFAULT_REQUIRED_GOLD
-  const restartGold = player?.restartGoldCost ?? DEFAULT_RESTART_GOLD
+  const dataResetGold = player?.dataResetGoldCost ?? DEFAULT_DATA_RESET_GOLD
   const maxLevel = player?.maxLevel ?? DEFAULT_MAX_LEVEL
   const canRebirth = (player?.level ?? 0) >= requiredLevel && (player?.gold ?? 0) >= requiredGold
-  const canRestart = (player?.gold ?? 0) >= restartGold
+  const canResetData = (player?.gold ?? 0) >= dataResetGold
   const characterImageSrc =
     player?.imagePath && player.imagePath !== failedImagePath ? resolveCharacterAssetPath(player.imagePath) : null
 
@@ -124,29 +123,29 @@ export default function Rebirth() {
     }
   }
 
-  async function handleRestart(): Promise<void> {
+  async function handleDataReset(): Promise<void> {
     if (!session?.access_token) {
-      setRestartError(locale.sessionMissing)
+      setDataResetError(locale.sessionMissing)
       return
     }
 
-    if (!window.confirm(locale.restart.confirm.replace('{{gold}}', String(restartGold)))) {
+    if (!window.confirm(locale.dataReset.confirm.replace('{{gold}}', String(dataResetGold)))) {
       return
     }
 
-    setRestartError(null)
-    setRestartMessage(null)
+    setDataResetError(null)
+    setDataResetMessage(null)
     setResultStatus(null)
-    setIsRestarting(true)
+    setIsResettingData(true)
 
     try {
-      await restartPlayer(session.access_token)
-      setRestartMessage(locale.restart.done)
+      await resetPlayerData(session.access_token)
+      setDataResetMessage(locale.dataReset.done)
       await mutatePlayer()
     } catch (error) {
-      setRestartError(error instanceof Error ? error.message : locale.restart.failed)
+      setDataResetError(error instanceof Error ? error.message : locale.dataReset.failed)
     } finally {
-      setIsRestarting(false)
+      setIsResettingData(false)
     }
   }
 
@@ -216,9 +215,7 @@ export default function Rebirth() {
                     <Stack spacing={1} flexWrap="wrap" useFlexGap>
                       <Chip
                         color={player.level >= requiredLevel ? 'success' : 'default'}
-                        label={locale.requirementLevel
-                          .replace('{{level}}', String(player.level))
-                          .replace('{{required}}', String(requiredLevel))}
+                        label={locale.requirementLevel.replace('{{level}}', String(player.level))}
                         sx={{
                           bgcolor: player.level >= requiredLevel ? '#edf9ff' : '#f6f9fc',
                           border: '1px solid',
@@ -240,9 +237,7 @@ export default function Rebirth() {
                       />
                     </Stack>
                     <Typography variant="body2" color="text.secondary">
-                      {locale.maxLevelNote
-                        .replace('{{current}}', String(maxLevel))
-                        .replace('{{next}}', String(maxLevel + MAX_LEVEL_INCREASE_PER_REBIRTH))}
+                      {locale.maxLevelNote.replace('{{current}}', String(maxLevel))}
                     </Typography>
                   </Stack>
 
@@ -581,26 +576,26 @@ export default function Rebirth() {
 
               <Paper variant="outlined" sx={{ ...rebirthSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
                 <Stack spacing={1.5}>
-                  <Typography variant="h6">{locale.restart.title}</Typography>
+                  <Typography variant="h6">{locale.dataReset.title}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {locale.restart.description.replace('{{gold}}', String(restartGold))}
+                    {locale.dataReset.description.replace('{{gold}}', String(dataResetGold))}
                   </Typography>
-                  {restartError ? <Alert severity="error">{restartError}</Alert> : null}
-                  {restartMessage ? <Alert severity="success">{restartMessage}</Alert> : null}
+                  {dataResetError ? <Alert severity="error">{dataResetError}</Alert> : null}
+                  {dataResetMessage ? <Alert severity="success">{dataResetMessage}</Alert> : null}
                   <Box>
                     <Button
                       variant="outlined"
                       color="error"
-                      disabled={!canRestart || isRestarting}
+                      disabled={!canResetData || isResettingData}
                       onClick={() => {
-                        void handleRestart()
+                        void handleDataReset()
                       }}
                     >
-                      {isRestarting
-                        ? locale.restart.executing
-                        : canRestart
-                          ? locale.restart.button
-                          : locale.restart.lockedButton}
+                      {isResettingData
+                        ? locale.dataReset.executing
+                        : canResetData
+                          ? locale.dataReset.button
+                          : locale.dataReset.lockedButton}
                     </Button>
                   </Box>
                 </Stack>

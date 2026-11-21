@@ -280,21 +280,21 @@ public class Player(
     }
 
     /// <summary>
-    /// 初期状態からやり直す（転生で詰んだときの保険）。RestartGoldCost の Gold を消費する。
+    /// データリセット（転生で詰んだときの保険）。DataResetGoldCost の Gold を消費する。
     /// レベル・経験値・ジョブ・職業レベル・ステータス・スキル・マスター済みジョブ・転生回数を作成直後に戻す。
     /// ロードマップ解放（Gold で購入したもの）・名前・画像・残りの Gold・クールダウン・経験値倍率・マップ解放・エンドレス最高到達フロアは変えない。
     /// </summary>
-    public void Restart(Status initialStatus, MoveSet initialMoveSet)
+    public void ResetData(Status initialStatus, MoveSet initialMoveSet)
     {
         ArgumentNullException.ThrowIfNull(initialStatus);
         ArgumentNullException.ThrowIfNull(initialMoveSet);
 
-        if (Gold < PlayerConstants.RestartGoldCost)
+        if (Gold < PlayerConstants.DataResetGoldCost)
         {
-            throw new InvalidOperationException($"やり直しには{PlayerConstants.RestartGoldCost} Goldが必要です。");
+            throw new InvalidOperationException($"データリセットには{PlayerConstants.DataResetGoldCost} Goldが必要です。");
         }
 
-        Gold -= PlayerConstants.RestartGoldCost;
+        Gold -= PlayerConstants.DataResetGoldCost;
         Level = 1;
         Exp = 0;
         Job = Job.Apprentice;

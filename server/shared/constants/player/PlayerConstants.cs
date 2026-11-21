@@ -12,8 +12,8 @@ public static class PlayerConstants
     public const int RebirthRequiredLevel = 100;
     /// <summary>1回目の転生に必要な Gold。n 回目の転生には n 倍が必要。</summary>
     public const int RebirthBaseGoldCost = 100000;
-    /// <summary>初期状態からやり直すのに必要な Gold。</summary>
-    public const int RestartGoldCost = 100000;
+    /// <summary>データリセットに必要な Gold。</summary>
+    public const int DataResetGoldCost = 100000;
     /// <summary>転生1回あたりに加算されるレベルアップ成長ボーナス（%）。</summary>
     public const int RebirthGrowthBonusPercent = 10;
     public const int RebirthInheritanceRateMin = 25;

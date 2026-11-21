@@ -733,9 +733,9 @@ internal static class PlayerEndpoints
             }
         }).RequireAuthorization();
 
-        app.MapPost("/player/restart", async (
+        app.MapPost("/player/data-reset", async (
             ClaimsPrincipal user,
-            PlayerRestartService playerRestartService) =>
+            PlayerDataResetService playerDataResetService) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
@@ -745,11 +745,11 @@ internal static class PlayerEndpoints
 
             try
             {
-                var player = await playerRestartService.RestartAsync(playerId.Value);
+                var player = await playerDataResetService.ResetDataAsync(playerId.Value);
 
                 return Results.Ok(new
                 {
-                    message = "初期状態からやり直しました。",
+                    message = "データリセットしました。",
                     userId = player.Id.Value,
                     rebirthCount = player.RebirthCount,
                     level = player.Level,
@@ -1021,7 +1021,7 @@ internal static class PlayerEndpoints
             gold = player.Gold,
             rebirthRequiredLevel = PlayerConstants.RebirthRequiredLevel,
             rebirthGoldCost = player.RebirthGoldCost,
-            restartGoldCost = PlayerConstants.RestartGoldCost,
+            dataResetGoldCost = PlayerConstants.DataResetGoldCost,
             status = new
             {
                 baseValues = new

@@ -634,7 +634,7 @@ public class PlayerTests
     }
 
     [Fact]
-    public void Restart_WhenEnoughGold_ResetsProgressAndKeepsRoadmap()
+    public void ResetData_WhenEnoughGold_ResetsProgressAndKeepsRoadmap()
     {
         var moveSet = new MoveSet();
         moveSet.SetSlot(0, new MoveId(421));
@@ -653,7 +653,7 @@ public class PlayerTests
         var initialStatus = PlayerInitialState.CreateStatus();
         var initialMoveSet = PlayerInitialState.CreateMoveSet();
 
-        player.Restart(initialStatus, initialMoveSet);
+        player.ResetData(initialStatus, initialMoveSet);
 
         player.Gold.Should().Be(50000);
         player.Level.Should().Be(1);
@@ -668,14 +668,14 @@ public class PlayerTests
     }
 
     [Fact]
-    public void Restart_WhenGoldIsInsufficient_ThrowsAndKeepsProgress()
+    public void ResetData_WhenGoldIsInsufficient_ThrowsAndKeepsProgress()
     {
         var player = CreatePlayer(level: 50, gold: 99999, rebirthCount: 2);
 
-        var act = () => player.Restart(PlayerInitialState.CreateStatus(), PlayerInitialState.CreateMoveSet());
+        var act = () => player.ResetData(PlayerInitialState.CreateStatus(), PlayerInitialState.CreateMoveSet());
 
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*やり直しには100000 Goldが必要です*");
+            .WithMessage("*データリセットには100000 Goldが必要です*");
         player.Level.Should().Be(50);
         player.RebirthCount.Should().Be(2);
         player.Gold.Should().Be(99999);

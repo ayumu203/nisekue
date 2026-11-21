@@ -9,9 +9,9 @@
   "masteredJobsTitle": "マスター済みジョブ",
   "masteredJobsEmpty": "まだありません",
   "requirementTitle": "転生条件",
-  "requirementLevel": "レベル: Lv.{{level}} / {{required}}",
+  "requirementLevel": "レベル: Lv.{{level}} / 100",
   "requirementGold": "Gold: {{gold}} / {{required}}",
-  "maxLevelNote": "レベル上限: Lv.{{current}}（転生すると Lv.{{next}}）",
+  "maxLevelNote": "レベル上限: Lv.{{current}}",
   "inheritTitle": "引き継ぎ内容",
   "statusPreviewTitle": "引き継ぎステータス",
   "statusResultTitle": "転生後のステータス",
@@ -44,14 +44,14 @@
     "luck": "運",
     "speed": "素早さ"
   },
-  "restart": {
-    "title": "初期状態からやり直す",
-    "description": "{{gold}} G を払って、作成直後の状態からやり直します。レベル・ステータス・スキル・マスター済みジョブ・転生回数が初期状態に戻ります。ロードマップの解放・アイテム・装備・ペットはそのままです。",
-    "button": "やり直す",
+  "dataReset": {
+    "title": "データリセットをする",
+    "description": "{{gold}} G を払って、データリセットをします。レベル・ステータス・スキル・マスター済みジョブ・転生回数がゲーム開始時の状態に戻ります。ロードマップの解放・アイテム・装備・ペットはそのままです。",
+    "button": "データリセット",
     "lockedButton": "Gold が足りません",
-    "executing": "やり直し中...",
-    "confirm": "{{gold}} G を払って初期状態からやり直します。レベル・ステータス・スキル・マスター済みジョブ・転生回数は元に戻せません。よろしいですか？",
-    "done": "初期状態からやり直しました。",
-    "failed": "やり直しに失敗しました"
+    "executing": "データリセット中...",
+    "confirm": "{{gold}} G を払ってデータリセットをします。レベル・ステータス・スキル・マスター済みジョブ・転生回数は元に戻せません。よろしいですか？",
+    "done": "データリセットしました。",
+    "failed": "データリセットに失敗しました"
   }
 }
