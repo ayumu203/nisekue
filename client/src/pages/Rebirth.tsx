@@ -3,6 +3,7 @@ import { useState } from 'react'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, getRebirthHistory, rebirthPlayer, resetPlayerData } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
+import { RequirementMeter } from '@/components/rebirth/RequirementMeter'
 import { SummaryStat } from '@/components/rebirth/SummaryStat'
 import {
   rebirthPagePaperSx,
@@ -209,41 +210,30 @@ export default function Rebirth() {
                           'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(255,232,137,0.9), rgba(227,216,165,0.3))',
                       }}
                     />
-                    <Typography variant="h6" sx={templeSectionTitleSx}>
-                      {locale.requirementTitle}
-                    </Typography>
-                    <Stack spacing={1} flexWrap="wrap" useFlexGap>
-                      <Chip
-                        color={player.level >= requiredLevel ? 'success' : 'default'}
-                        label={locale.requirementLevel.replace('{{level}}', String(player.level))}
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                      <Typography variant="h6" sx={templeSectionTitleSx}>
+                        {locale.requirementTitle}
+                      </Typography>
+                      <Box
                         sx={{
-                          bgcolor: player.level >= requiredLevel ? '#edf9ff' : '#f6f9fc',
-                          border: '1px solid',
-                          borderColor: player.level >= requiredLevel ? '#a8ddff' : '#d8e6f2',
-                          color: player.level >= requiredLevel ? '#20618f' : '#5f7080',
+                          px: 1.25,
+                          py: 0.25,
+                          borderRadius: 999,
+                          border: '1px solid #e8dcab',
+                          bgcolor: 'rgba(255, 250, 230, 0.9)',
+                          color: '#8a6a00',
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.04em',
+                          whiteSpace: 'nowrap',
                         }}
-                      />
-                      <Chip
-                        color={player.gold >= requiredGold ? 'success' : 'default'}
-                        label={locale.requirementGold
-                          .replace('{{gold}}', String(player.gold))
-                          .replace('{{required}}', String(requiredGold))}
-                        sx={{
-                          bgcolor: player.gold >= requiredGold ? '#fffbe9' : '#f6f9fc',
-                          border: '1px solid',
-                          borderColor: player.gold >= requiredGold ? '#f0db7f' : '#d8e6f2',
-                          color: player.gold >= requiredGold ? '#8a6a00' : '#5f7080',
-                        }}
-                      />
-                      <Chip
-                        label={locale.maxLevelNote.replace('{{current}}', String(maxLevel))}
-                        sx={{
-                          bgcolor: '#f6f9fc',
-                          border: '1px solid',
-                          borderColor: '#d8e6f2',
-                          color: '#5f7080',
-                        }}
-                      />
+                      >
+                        {locale.maxLevelNote.replace('{{current}}', String(maxLevel))}
+                      </Box>
+                    </Stack>
+                    <Stack spacing={1}>
+                      <RequirementMeter current={player.level} required={requiredLevel} prefix="Lv." tone="blue" />
+                      <RequirementMeter current={player.gold} required={requiredGold} suffix="Gold" tone="gold" />
                     </Stack>
                   </Stack>
 
