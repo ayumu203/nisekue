@@ -56,6 +56,8 @@ type StageSprite = {
   top: number
   width: number
   pixelated?: boolean
+  /** 宙に浮いているキャラ（足元の床に影を出す） */
+  floating?: boolean
 }
 
 // サムネと同じ配置。敵は左、プレイヤーは右で、画面の外側ほど手前（大きく・下）、玉座に近いほど奥。
@@ -64,14 +66,15 @@ const stageSprites: StageSprite[] = [
   { src: 'image/battle/Enemy86.png', left: 44, top: 40.6, width: 12, pixelated: true },
   { src: 'image/battle/Enemy100.png', left: 1.3, top: 61.9, width: 20, pixelated: true },
   { src: 'image/battle/Enemy49.png', left: 21.8, top: 64.1, width: 16, pixelated: true },
-  { src: 'image/battle/Enemy66.png', left: 38.8, top: 72.4, width: 8, pixelated: true },
+  { src: 'image/battle/Enemy30.png', left: 38.8, top: 72.4, width: 8, pixelated: true },
   { src: 'image/character/ch175_hero.png', left: 53.3, top: 62.9, width: 12.25 },
   { src: 'image/character/ch109_hero.png', left: 66.7, top: 63.2, width: 12.25 },
-  { src: 'image/character/ch173_hero.png', left: 84.2, top: 63.2, width: 15 },
+  // 後衛の魔法使いは魔法陣を出しながら宙に浮いている（地上のキャラより少し上に置く）
+  { src: 'image/character/ch173_hero.png', left: 84.2, top: 56, width: 15, floating: true },
   // 空を飛ぶ敵。左右のアーチ窓の前に 1 体ずつ置き、高さを左右のシャンデリアにそろえる。
   // 魔王より手前・地上のキャラより奥にいるイメージなので、地上の敵より小さい 2 倍にしている
   { src: 'image/battle/Enemy2.png', left: 24.75, top: 18.4, width: 8, pixelated: true },
-  { src: 'image/battle/Enemy61.png', left: 67.25, top: 18.4, width: 8, pixelated: true },
+  { src: 'image/battle/Enemy62.png', left: 67.25, top: 18.4, width: 8, pixelated: true },
 ]
 
 const heroTitleSx = {
@@ -106,45 +109,61 @@ const authCardSx = {
   p: 0,
 } as const
 
+const autofillOverrideSx = {
+  WebkitBoxShadow: '0 0 0 100px #231c45 inset',
+  boxShadow: '0 0 0 100px #231c45 inset',
+  WebkitTextFillColor: '#f4f0ff',
+  caretColor: '#f4f0ff',
+} as const
+
 const darkInputSx = {
   '& .MuiOutlinedInput-root': {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     color: '#f4f0ff',
-    '& fieldset': { borderColor: '#5b4b94' },
-    '&:hover fieldset': { borderColor: '#8a76c9' },
+    // 紫の枠は背景から浮いて見えるため、白を薄く乗せた控えめな枠にする
+    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.18)' },
+    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.35)' },
     '&.Mui-focused fieldset': { borderColor: '#d9a441' },
-    // ブラウザの自動入力で入力欄が黄色くなり、暗い背景から浮くのを防ぐ
-    '& input:-webkit-autofill': {
-      WebkitBoxShadow: '0 0 0 100px #231c45 inset',
-      WebkitTextFillColor: '#f4f0ff',
-      caretColor: '#f4f0ff',
-    },
+    // ブラウザの自動入力で入力欄が黄色くなり、暗い背景から浮くのを防ぐ。
+    // 未対応の疑似クラスがあるとルールごと無視されるため、:-webkit-autofill と :autofill は別々に書く
+    '& input:-webkit-autofill': autofillOverrideSx,
+    '& input:autofill': autofillOverrideSx,
   },
-  '& .MuiInputLabel-root': { color: '#b3a8d6' },
-  '& .MuiInputLabel-root.Mui-focused': { color: '#f2d27a' },
+} as const
+
+// ラベルは枠の上に重ねず、入力欄の上に置く（自動入力で欄の色が変わってもラベルとかぶらない）
+const fieldLabelSx = {
+  display: 'block',
+  mb: 0.75,
+  fontSize: '0.9rem',
+  color: '#e6dfff',
 } as const
 
 const purpleButtonSx = {
   '&&': {
-    backgroundColor: '#7a5bd0',
+    backgroundColor: '#4f2fa8',
     backgroundImage: 'none',
-    borderColor: '#a58cf0',
     color: '#ffffff',
   },
   '&&:hover': {
-    backgroundColor: '#6a4bc0',
+    backgroundColor: '#41248f',
     backgroundImage: 'none',
     boxShadow: 'none',
   },
   '&&.Mui-disabled': {
-    backgroundColor: '#4a3f73',
+    backgroundColor: '#3a2f63',
     backgroundImage: 'none',
     color: '#b3a8d6',
   },
 } as const
 
-const mutedTextColor = '#b3a8d6'
-const dividerColor = '#3e3470'
+// テーマの contained ボタンには 2px の縁があるが、このページの暗い背景では縁が浮いて見えるため外す。
+// 角は入力欄とそろえて四角くする（テーマの既定は丸）
+const noBorderButtonSx = {
+  '&&&': { border: 'none', borderRadius: '8px' },
+} as const
+
+const dividerColor = 'rgba(205, 184, 255, 0.4)'
 
 function Auth() {
   const { user, isLoading } = useAuth()
@@ -323,6 +342,26 @@ function Auth() {
             containerType: 'inline-size',
           }}
         >
+          {stageSprites
+            .filter((sprite) => sprite.floating)
+            .map((sprite) => (
+              <Box
+                key={`${sprite.src}-shadow`}
+                aria-hidden
+                sx={{
+                  position: 'absolute',
+                  // 地上のキャラと同じ高さ（ステージの下端付近）の床に影を落とす
+                  left: `${sprite.left + sprite.width * 0.25}%`,
+                  top: '95.5%',
+                  width: `${sprite.width * 0.5}%`,
+                  height: '3%',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(ellipse at center, rgba(8, 6, 20, 0.9) 0%, rgba(8, 6, 20, 0) 70%)',
+                  opacity: 0.5,
+                  pointerEvents: 'none',
+                }}
+              />
+            ))}
           {stageSprites.map((sprite) => (
             <Box
               key={sprite.src}
@@ -400,22 +439,31 @@ function Auth() {
               size="large"
               disabled={isAnySubmitting}
               onClick={handleAnonymousSignIn}
-              sx={{ ...softGoldButtonSx, py: { xs: 1.4, md: 'clamp(14px, 2.2vh, 24px)' }, fontSize: { md: '1.15rem' } }}
+              sx={{
+                ...softGoldButtonSx,
+                ...noBorderButtonSx,
+                py: { xs: 1.4, md: 'clamp(14px, 2.2vh, 24px)' },
+                fontSize: { xs: '1.2rem', md: 'clamp(1.35rem, 2.6vh, 1.6rem)' },
+              }}
             >
               {submitMode === 'anonymous' ? locale.anonymousSubmitting : locale.anonymousSubmit}
             </Button>
 
-            <Divider sx={{ '&::before, &::after': { borderColor: dividerColor } }}>
-              <Typography variant="caption" sx={{ color: mutedTextColor }}>
-                {locale.orDivider}
-              </Typography>
-            </Divider>
+            <Divider sx={{ borderColor: dividerColor }} />
 
             <Button
               variant="contained"
               disabled={isAnySubmitting}
               onClick={handleGoogleSignIn}
-              sx={{ ...googleButtonSx, py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' }, fontSize: { md: '1.05rem' } }}
+              sx={{
+                ...googleButtonSx,
+                ...noBorderButtonSx,
+                py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' },
+                fontSize: { xs: '1.1rem', md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
+                // MUI はアイコンを 20px 固定にするため、文字の大きさに合わせて拡縮させる
+                '& .MuiButton-startIcon > *:nth-of-type(1)': { fontSize: '1.2em' },
+                '& .MuiButton-startIcon': { mr: '0.5em' },
+              }}
               startIcon={<GoogleColorIcon />}
             >
               {submitMode === 'google' ? locale.googleSignInSubmitting : locale.googleSignIn}
@@ -425,35 +473,48 @@ function Auth() {
 
             <Box component="form" onSubmit={handleEmailAuth} noValidate>
               <Stack sx={{ gap: { xs: 1.5, md: 'clamp(12px, 2vh, 24px)' } }}>
-                <TextField
-                  id="auth-email"
-                  label={locale.emailLabel}
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                  fullWidth
-                  size="medium"
-                  sx={darkInputSx}
-                />
-                <TextField
-                  id="auth-password"
-                  label={locale.passwordLabel}
-                  type="password"
-                  autoComplete={emailAuthMode === 'signIn' ? 'current-password' : 'new-password'}
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                  fullWidth
-                  sx={darkInputSx}
-                />
+                <Box>
+                  <Typography component="label" htmlFor="auth-email" sx={fieldLabelSx}>
+                    {locale.emailLabel}
+                  </Typography>
+                  <TextField
+                    id="auth-email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                    fullWidth
+                    size="medium"
+                    sx={darkInputSx}
+                  />
+                </Box>
+                <Box>
+                  <Typography component="label" htmlFor="auth-password" sx={fieldLabelSx}>
+                    {locale.passwordLabel}
+                  </Typography>
+                  <TextField
+                    id="auth-password"
+                    type="password"
+                    autoComplete={emailAuthMode === 'signIn' ? 'current-password' : 'new-password'}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    fullWidth
+                    sx={darkInputSx}
+                  />
+                </Box>
                 <Button
                   type="submit"
                   variant="contained"
                   disabled={isAnySubmitting}
                   fullWidth
-                  sx={{ ...purpleButtonSx, py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' }, fontSize: { md: '1.05rem' } }}
+                  sx={{
+                    ...purpleButtonSx,
+                    ...noBorderButtonSx,
+                    py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' },
+                    fontSize: { xs: '1.1rem', md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
+                  }}
                 >
                   {submitMode === emailAuthMode
                     ? emailAuthMode === 'signIn'
@@ -465,7 +526,7 @@ function Auth() {
                 </Button>
                 {error ? <Alert severity="error">{error}</Alert> : null}
                 <Stack direction="row" spacing={0.75} justifyContent="center" alignItems="center" sx={{ pt: 0.5 }}>
-                  <Typography variant="body2" sx={{ color: mutedTextColor }}>
+                  <Typography variant="body2" sx={{ color: '#ffffff' }}>
                     {emailAuthMode === 'signIn' ? locale.signUpPrompt : locale.signInPrompt}
                   </Typography>
                   <Link
@@ -474,7 +535,7 @@ function Auth() {
                     variant="body2"
                     onClick={toggleEmailAuthMode}
                     disabled={isAnySubmitting}
-                    sx={{ color: '#cdb8ff', fontWeight: 700, textDecorationColor: 'rgba(205, 184, 255, 0.5)' }}
+                    sx={{ color: '#ffffff', fontWeight: 700, textDecorationColor: 'rgba(255, 255, 255, 0.6)' }}
                   >
                     {emailAuthMode === 'signIn' ? locale.signUp : locale.signIn}
                   </Link>
