@@ -2,6 +2,7 @@ export type TutorialStep =
   | 'home-player-setting'
   | 'player-setting-name'
   | 'player-setting-random'
+  | 'player-setting-image-list'
   | 'player-setting-save'
   | 'player-setting-account'
   | 'player-setting-to-home'
@@ -33,6 +34,7 @@ const TUTORIAL_STEPS: readonly TutorialStep[] = [
   'home-player-setting',
   'player-setting-name',
   'player-setting-random',
+  'player-setting-image-list',
   'player-setting-save',
   'player-setting-account',
   'player-setting-to-home',
