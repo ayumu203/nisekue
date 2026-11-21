@@ -9,7 +9,6 @@
   "masteredJobsTitle": "マスター済みジョブ",
   "masteredJobsEmpty": "まだありません",
   "requirementTitle": "転生条件",
-  "maxLevelNote": "Limit: {{current}}",
   "inheritTitle": "引き継ぎ内容",
   "statusPreviewTitle": "引き継ぎステータス",
   "statusResultTitle": "転生後のステータス",

@@ -21,7 +21,6 @@ import { formatDateTime } from '@/components/quest/questFormat'
 const DEFAULT_REQUIRED_LEVEL = 100
 const DEFAULT_REQUIRED_GOLD = 100000
 const DEFAULT_DATA_RESET_GOLD = 100000
-const DEFAULT_MAX_LEVEL = 100
 
 const statKeys = [
   { key: 'maxHp', label: locale.labels.maxHp },
@@ -96,7 +95,6 @@ export default function Rebirth() {
   const requiredLevel = player?.rebirthRequiredLevel ?? DEFAULT_REQUIRED_LEVEL
   const requiredGold = player?.rebirthGoldCost ?? DEFAULT_REQUIRED_GOLD
   const dataResetGold = player?.dataResetGoldCost ?? DEFAULT_DATA_RESET_GOLD
-  const maxLevel = player?.maxLevel ?? DEFAULT_MAX_LEVEL
   const canRebirth = (player?.level ?? 0) >= requiredLevel && (player?.gold ?? 0) >= requiredGold
   const canResetData = (player?.gold ?? 0) >= dataResetGold
   const characterImageSrc =
@@ -210,27 +208,9 @@ export default function Rebirth() {
                           'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(255,232,137,0.9), rgba(227,216,165,0.3))',
                       }}
                     />
-                    <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-                      <Typography variant="h6" sx={templeSectionTitleSx}>
-                        {locale.requirementTitle}
-                      </Typography>
-                      <Box
-                        sx={{
-                          px: 1.25,
-                          py: 0.25,
-                          borderRadius: 999,
-                          border: '1px solid #e8dcab',
-                          bgcolor: 'rgba(255, 250, 230, 0.9)',
-                          color: '#8a6a00',
-                          fontSize: '0.8rem',
-                          fontWeight: 700,
-                          letterSpacing: '0.04em',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {locale.maxLevelNote.replace('{{current}}', String(maxLevel))}
-                      </Box>
-                    </Stack>
+                    <Typography variant="h6" sx={templeSectionTitleSx}>
+                      {locale.requirementTitle}
+                    </Typography>
                     <Stack spacing={1}>
                       <RequirementMeter current={player.level} required={requiredLevel} prefix="Lv." tone="blue" />
                       <RequirementMeter current={player.gold} required={requiredGold} suffix="Gold" tone="gold" />
