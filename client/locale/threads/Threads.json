@@ -21,6 +21,21 @@
     "body": "本文",
     "helper": "タイトル {title}/50 文字・本文 {body}/500 文字",
     "submit": "スレッドを作成",
-    "submitting": "作成中..."
-  }
+    "submitting": "作成中...",
+    "image": {
+      "select": "画像を添付",
+      "change": "画像を変更",
+      "remove": "画像を外す",
+      "helper": "png / jpeg、{size}MBまで。投稿時に縮小されます",
+      "sensitive": "センシティブな画像として投稿する（タップするまで表示されません）",
+      "previewAlt": "添付する画像のプレビュー",
+      "invalidType": "画像は png または jpeg のみ添付できます",
+      "tooLarge": "画像は{size}MBまでです",
+      "readFailed": "画像を読み込めませんでした",
+      "unavailable": "現在、画像の投稿はできません",
+      "applyDescription": "画像付きで投稿するには申請が必要です（レベル100以上または転生1回以上）",
+      "applyLink": "画像投稿を申請する"
+    }
+  },
+  "hasImage": "画像あり"
 }

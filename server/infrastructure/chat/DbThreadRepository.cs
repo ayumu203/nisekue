@@ -10,7 +10,7 @@ namespace server.infrastructure.chat;
 
 public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory) : IThreadRepository
 {
-    public async Task CreateAsync(DomainThread thread, int maxThreadCount)
+    public async Task<IReadOnlyList<string>> CreateAsync(DomainThread thread, int maxThreadCount)
     {
         ArgumentNullException.ThrowIfNull(thread);
 
@@ -30,6 +30,7 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
                 .Select(x => x.Id)
                 .ToListAsync();
 
+            var deletedImageKeys = new List<string>();
             var overflowCount = threadIds.Count - maxThreadCount;
             if (overflowCount > 0)
             {
@@ -38,11 +39,15 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
                     .Where(x => deleteIds.Contains(x.Id))
                     .ToListAsync();
 
+                deletedImageKeys.AddRange(threadsToDelete
+                    .Select(x => x.ImageKey)
+                    .OfType<string>());
                 dbContext.Threads.RemoveRange(threadsToDelete);
                 await dbContext.SaveChangesAsync();
             }
 
             await tx.CommitAsync();
+            return deletedImageKeys;
         }
         catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.SerializationFailure)
         {
@@ -128,7 +133,7 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
         }
     }
 
-    public async Task DeleteAsync(ThreadId threadId)
+    public async Task<string?> DeleteAsync(ThreadId threadId)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         await using var tx = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable);
@@ -148,14 +153,26 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
                 throw new KeyNotFoundException("対象スレッドが見つかりません。");
             }
 
+            var imageKey = threadEntity.ImageKey;
             dbContext.Threads.Remove(threadEntity);
             await dbContext.SaveChangesAsync();
             await tx.CommitAsync();
+            return imageKey;
         }
         catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.SerializationFailure)
         {
             throw new InvalidOperationException("スレッド削除時に競合が発生しました。再試行してください。", ex);
         }
+    }
+
+    public async Task<bool> SetImageSensitiveAsync(ThreadId threadId, bool isSensitive)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        var affected = await dbContext.Threads
+            .Where(x => x.Id == threadId && x.ImageKey != null)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.ImageIsSensitive, isSensitive));
+
+        return affected > 0;
     }
 
     public async Task<IReadOnlyList<ThreadAlertSummary>> GetAlertSummariesAsync(PlayerId authorPlayerId)
@@ -243,7 +260,8 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
                 x.CreatedAt,
                 x.UpdatedAt,
                 x.LastRepliedAt,
-                dbContext.ThreadReplies.Count(reply => reply.ThreadId == x.Id)))
+                dbContext.ThreadReplies.Count(reply => reply.ThreadId == x.Id),
+                x.ImageKey != null))
             .ToListAsync();
 
         return new ThreadPageResult(items, query.Page, query.PageSize, totalCount);
@@ -257,7 +275,9 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
             thread.Body.Value,
             thread.CreatedAt,
             thread.UpdatedAt,
-            thread.LastRepliedAt);
+            thread.LastRepliedAt,
+            thread.Image?.Key,
+            thread.Image?.IsSensitive ?? false);
 
     private static ThreadReplyEntity MapToEntity(ThreadId threadId, ThreadReply reply) =>
         new(
@@ -282,7 +302,8 @@ public class DbThreadRepository(IDbContextFactory<AppDbContext> dbContextFactory
                 new PlayerId(reply.AuthorPlayerId),
                 new ThreadReplyBody(reply.Body),
                 reply.CreatedAt,
-                reply.IsAuthorAlerted)));
+                reply.IsAuthorAlerted)),
+            entity.ImageKey is null ? null : new ThreadImage(entity.ImageKey, entity.ImageIsSensitive));
 
     private static async Task LockPlayerAsync(AppDbContext dbContext, Guid playerId)
     {

@@ -1,4 +1,15 @@
-import { Alert, Avatar, Box, Button, CircularProgress, Paper, Stack, TextField, Typography } from '@mui/material'
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  CircularProgress,
+  Link as MuiLink,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import useSWR from 'swr'
@@ -6,8 +17,10 @@ import { createThreadReply, deleteThread, getThreadDetail } from '@/api/thread'
 import ThreadBoardSurface from '@/components/common/ThreadBoardSurface'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import ThreadPageShell from '@/components/common/ThreadPageShell'
+import ThreadImageView from '@/components/thread/ThreadImageView'
 import { useAuth } from '@/contexts/useAuth'
 import { resolveCharacterAssetPath } from '@/lib/assets'
+import { buildThreadReportFormUrl } from '@/lib/threadForms'
 import locale from '../../locale/threads/ThreadDetail.json'
 
 const boardSx = {
@@ -112,6 +125,7 @@ export default function ThreadDetail() {
     return getThreadDetail(threadId, session.access_token)
   })
 
+  const reportFormUrl = threadId ? buildThreadReportFormUrl(threadId) : null
   const canDelete = Boolean(session?.user?.id && data?.authorPlayerId && session.user.id === data.authorPlayerId)
 
   const handleDelete = async () => {
@@ -246,12 +260,34 @@ export default function ThreadDetail() {
               variant="outlined"
               sx={{ borderRadius: 3, p: { xs: 2, sm: 2.5 }, backgroundColor: '#d9c6aa', borderColor: '#94704c' }}
             >
-              <Typography
-                variant="body1"
-                sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#432f22', lineHeight: 1.85 }}
-              >
-                {data.body}
-              </Typography>
+              <Stack spacing={2}>
+                <Typography
+                  variant="body1"
+                  sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#432f22', lineHeight: 1.85 }}
+                >
+                  {data.body}
+                </Typography>
+                {data.imageUrl ? (
+                  <ThreadImageView
+                    key={`${data.imageUrl}:${String(data.imageIsSensitive)}`}
+                    imageUrl={data.imageUrl}
+                    isSensitive={data.imageIsSensitive}
+                  />
+                ) : null}
+                {reportFormUrl ? (
+                  <Box sx={{ textAlign: 'right' }}>
+                    <MuiLink
+                      href={reportFormUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="caption"
+                      sx={{ color: 'rgba(79, 57, 44, 0.72)' }}
+                    >
+                      {locale.reportLink}
+                    </MuiLink>
+                  </Box>
+                ) : null}
+              </Stack>
             </Paper>
 
             <Paper

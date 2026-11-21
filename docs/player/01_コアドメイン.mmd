@@ -360,10 +360,18 @@ classDiagram
         class PlayerRole {
             <<Enumeration>>
             Admin
+            Poster
+        }
+
+        class PlayerRolePolicy {
+            <<static>>
+            +CanPostThreadImage(role: PlayerRole?) bool
+            +IsEligibleForPoster(player: Player) bool
         }
 
         class IPlayerRoleRepository {
             +Task~PlayerRole?~ FindRoleAsync(id: PlayerId)
+            +Task~bool~ SetRoleAsync(id: PlayerId, role: PlayerRole?)
         }
 
         note for Player "MarkJobAsMastered はデバッグ機能用。\n職業レベルやスキルは変えず、マスター済みの記録だけを付ける"
@@ -379,7 +387,9 @@ classDiagram
 
         note for Player "ResetProgress はデバッグ機能用。\nレベル・経験値・ジョブ・職業レベル・ステータス・スキル・マスター済みジョブ・ロードマップ・転生回数を作成直後に戻す。\n名前・ゴールド・フラグ類は変えない"
 
-        note for IPlayerRoleRepository "role は internal.players.role に保持する。\nゲームの API からは変更せず、Supabase から手動で設定する。\n未設定(null)は一般プレイヤー"
+        note for IPlayerRoleRepository "role は internal.players.role に保持する（admin / poster）。\nゲームの API からは変更しない。admin は Supabase から手動で設定し、\nposter は管理者用ワークフロー（/internal/players/{id}/role）で付け外しする。\n未設定(null)は一般プレイヤー"
+
+        note for PlayerRolePolicy "スレッドへの画像投稿は Admin / Poster のみ。\nPoster を付与できるのはレベル100以上または転生1回以上のプレイヤー"
 
         note for IPlayerRepository "GetPvpOpponentsAsync / GetPvpOpponentsPageAsync\nは Level昇順 -> Name昇順 -> Id昇順で返す"
 

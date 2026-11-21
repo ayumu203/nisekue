@@ -453,6 +453,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired();
         thread.Property(x => x.LastRepliedAt)
             .HasColumnName("last_replied_at");
+        thread.Property(x => x.ImageKey)
+            .HasColumnName("image_key")
+            .HasMaxLength(ThreadConstants.ImageKeyMaxLength);
+        thread.Property(x => x.ImageIsSensitive)
+            .HasColumnName("image_is_sensitive")
+            .HasDefaultValue(false)
+            .IsRequired();
         thread.HasIndex(x => x.AuthorPlayerId);
         thread.HasIndex(x => x.CreatedAt);
         thread

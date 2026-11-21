@@ -139,11 +139,45 @@ classDiagram
             +DateTimeOffset CreatedAt
             +DateTimeOffset UpdatedAt
             +DateTimeOffset? LastRepliedAt
+            +ThreadImage? Image
             -List~ThreadReply~ _replies
             +IReadOnlyList~ThreadReply~ Replies
-            +Thread(id: ThreadId, authorPlayerId: PlayerId, title: ThreadTitle, body: ThreadBody, createdAt: DateTimeOffset, updatedAt: DateTimeOffset, lastRepliedAt: DateTimeOffset?, replies: IEnumerable~ThreadReply~)
+            +Thread(id: ThreadId, authorPlayerId: PlayerId, title: ThreadTitle, body: ThreadBody, createdAt: DateTimeOffset, updatedAt: DateTimeOffset, lastRepliedAt: DateTimeOffset?, replies: IEnumerable~ThreadReply~, image: ThreadImage?)
             +AddReply(replyId: ThreadReplyId, authorPlayerId: PlayerId, body: ThreadReplyBody) : void
         }
+
+        class ThreadImage {
+            <<Value Object>>
+            +string Key
+            +bool IsSensitive
+            +CreateKey(authorPlayerId: PlayerId, format: ThreadImageFormat) string
+        }
+
+        class ThreadImageFormat {
+            <<Enumeration>>
+            Png
+            Jpeg
+        }
+
+        class ThreadImageFormatDetector {
+            <<static>>
+            +Detect(header: ReadOnlySpan~byte~) ThreadImageFormat?
+        }
+
+        class IThreadImageProcessor {
+            +Process(content: byte[]) ProcessedThreadImage
+        }
+
+        class IThreadImageStorage {
+            +bool IsAvailable
+            +Task SaveAsync(key: string, content: byte[], contentType: string)
+            +Task DeleteAsync(key: string)
+            +GetPublicUrl(key: string) string
+        }
+
+        note for ThreadImage "スレッド本文に付けられる画像は1枚まで（返信には付けられない）。\n投稿できるのは PlayerRole が Admin / Poster のプレイヤーのみ。\nIsSensitive は投稿者が投稿時に、管理者が管理者用ワークフローで設定する。\nセンシティブな画像はタップするまで表示しない（閲覧前の確認であり、アクセス制限ではない）"
+        note for IThreadImageProcessor "png / jpeg のみ受け付ける（中身で判定し、SVG などは拒否）。\nSkiaSharp で一度デコードして再エンコードし、長辺1280pxへの縮小と EXIF などのメタデータ削除を行う。\n形式は元のまま（png は png、jpeg は jpeg）"
+        note for IThreadImageStorage "Cloudflare R2（公開バケット＋カスタムドメイン）に保存する。\nR2 の認証情報はサーバーだけが持ち、クライアントには渡さない。\n削除時は Cloudflare のキャッシュもパージする。\nローカルでは設定 ThreadImageStorage:UseLocal でディスクに保存する"
 
         class ThreadReply {
             <<Entity>>
@@ -190,6 +224,7 @@ classDiagram
             +DateTimeOffset CreatedAt
             +DateTimeOffset? LastRepliedAt
             +int ReplyCount
+            +bool HasImage
             +string AuthorName
             +string? AuthorImagePath
         }
@@ -204,6 +239,8 @@ classDiagram
             +DateTimeOffset? LastRepliedAt
             +string AuthorName
             +string? AuthorImagePath
+            +string? ImageUrl
+            +bool ImageIsSensitive
             +IReadOnlyList~ThreadReplyView~ Replies
         }
 
@@ -241,17 +278,24 @@ classDiagram
         }
 
         class IThreadRepository {
-            +Task CreateAsync(thread: Thread, maxThreadCount: int)
+            +Task~IReadOnlyList~string~~ CreateAsync(thread: Thread, maxThreadCount: int)
             +Task~Thread?~ FindByIdAsync(threadId: ThreadId)
             +Task SaveAsync(thread: Thread, maxReplyCount: int)
             +Task~ThreadListPage~ GetPageAsync(query: ThreadQuery)
+            +Task~string?~ DeleteAsync(threadId: ThreadId)
+            +Task~bool~ SetImageSensitiveAsync(threadId: ThreadId, isSensitive: bool)
         }
+
+        note for IThreadRepository "CreateAsync は作成上限を超えて自動削除したスレッドの画像キーを返す。\nDeleteAsync は削除したスレッドの画像キーを返す。\n呼び出し側（ThreadService）が R2 の画像を消す"
 
         class ThreadService {
             <<Application Service>>
             +Task~ThreadListPage~ GetPageAsync(page: int)
             +Task~ThreadDetailView?~ GetByIdAsync(threadId: ThreadId)
-            +Task~ThreadDetailView~ CreateAsync(authorPlayerId: PlayerId, title: string, body: string)
+            +Task~ThreadDetailView~ CreateAsync(authorPlayerId: PlayerId, title: string, body: string, image: ThreadImageUpload?)
+            +Task DeleteAsync(threadId: ThreadId, requestorId: PlayerId)
+            +Task DeleteByAdminAsync(threadId: ThreadId)
+            +Task SetImageSensitiveAsync(threadId: ThreadId, isSensitive: bool)
             +Task~ThreadDetailView~ AddReplyAsync(threadId: ThreadId, authorPlayerId: PlayerId, body: string)
             +Task~IReadOnlyList~ThreadAlertSummaryView~~ GetAlertSummariesAsync(authorPlayerId: PlayerId)
             +Task MarkRepliesAlertedAsync(replyIds: IEnumerable~ThreadReplyId~)
@@ -278,6 +322,10 @@ classDiagram
     Thread *-- ThreadId : has
     Thread *-- ThreadTitle : has
     Thread *-- ThreadBody : has
+    Thread *-- ThreadImage : 0..1
+    ThreadImage ..> ThreadImageFormat : has
+    ThreadService ..> IThreadImageProcessor : use
+    ThreadService ..> IThreadImageStorage : use
     ThreadReply *-- ThreadReplyId : has
     ThreadReply *-- ThreadReplyBody : has
     IThreadRepository ..> Thread : stores/loads

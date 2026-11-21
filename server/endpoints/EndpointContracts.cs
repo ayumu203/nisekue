@@ -23,6 +23,8 @@ public record PostGlobalChatMessageRequest(string Text);
 public record MarkChatMessagesAlertedRequest(Guid OwnerId, IReadOnlyList<int> ChatIds);
 public record CreateThreadRequest(string Title, string Body);
 public record CreateThreadReplyRequest(string Body);
+public record SetPlayerRoleRequest(string? Role);
+public record SetThreadImageSensitiveRequest(bool IsSensitive);
 public record MarkThreadRepliesAlertedRequest(IReadOnlyList<Guid> ReplyIds);
 public record ExecuteTrainingRequest(int EnemyId, IReadOnlyList<int?> MoveIds);
 public record ExecutePvpTrainingRequest(Guid OpponentPlayerId, IReadOnlyList<int?> MoveIds);

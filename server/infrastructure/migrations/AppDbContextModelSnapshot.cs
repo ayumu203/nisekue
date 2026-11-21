@@ -212,6 +212,17 @@ namespace server.infrastructure.migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<bool>("ImageIsSensitive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("image_is_sensitive");
+
+                    b.Property<string>("ImageKey")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("image_key");
+
                     b.Property<DateTimeOffset?>("LastRepliedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_replied_at");
