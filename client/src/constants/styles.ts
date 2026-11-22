@@ -174,8 +174,12 @@ export const innerSurfaceSx = {
 /** ゲーム画面の外枠（画面全体）の背景色 */
 export const gamePageBackground = '#ffcc00'
 
-/** 黄色の背景の上で、メニュー・ステータス・チャットを区切る線の色 */
-export const gameDividerColor = '#d3a93a'
+/** ホームの場所ごとの背景色（線の代わりに黄色の濃さで区切る） */
+export const homeAreaColors = {
+  header: '#e6a800',
+  side: '#f5bd00',
+  chat: '#ffd633',
+} as const
 
 export const twoColumnContentGridSx = {
   display: 'grid',

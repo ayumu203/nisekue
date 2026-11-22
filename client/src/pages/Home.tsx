@@ -38,7 +38,7 @@ import Status from '@/components/home/Status'
 import HomeHeaderMenu from '@/components/home/HomeHeaderMenu'
 import HomeMenuList from '@/components/home/HomeMenuList'
 import { buildHomeMenu, getTutorialOpenGroup, type HomeMenuGroupKey } from '@/components/home/homeMenu'
-import { gameDividerColor, gameTabSx, gameTabsSx, twoColumnContentGridSx } from '@/constants/styles'
+import { gameTabSx, gameTabsSx, homeAreaColors, twoColumnContentGridSx } from '@/constants/styles'
 import { announcementTabLabel } from '@/lib/announcements'
 import { hasUnreadAnnouncement, markAnnouncementsSeen } from '@/lib/announcementStorage'
 import {
@@ -281,23 +281,28 @@ function Home() {
   }
 
   return (
-    <GamePageShell>
-      <Stack spacing={{ xs: 1.5, sm: 2 }}>
+    // 区切りは線ではなく、場所ごとに黄色の濃さを変えて出す（ヘッダー＝濃い、ステータス＝中、チャット＝明るい）
+    <GamePageShell padded={false}>
+      <Stack sx={{ flex: 1 }}>
         {isDesktop && (
-          <HomeHeaderMenu
-            primary={homeMenu.primary}
-            groups={homeMenu.groups}
-            openGroup={openMenuGroup}
-            lockedGroup={tutorialOpenGroup}
-            onToggleGroup={toggleMenuGroup}
-            onCloseGroup={() => setOpenMenuGroup(null)}
-            gearIconId={gearIconId}
-            onGearClick={handleGearClick}
-          />
+          <Box sx={{ backgroundColor: homeAreaColors.header, px: { sm: 3, md: 4 }, py: 2 }}>
+            <HomeHeaderMenu
+              primary={homeMenu.primary}
+              groups={homeMenu.groups}
+              openGroup={openMenuGroup}
+              lockedGroup={tutorialOpenGroup}
+              onToggleGroup={toggleMenuGroup}
+              onCloseGroup={() => setOpenMenuGroup(null)}
+              gearIconId={gearIconId}
+              onGearClick={handleGearClick}
+            />
+          </Box>
         )}
-        {/* スマホではメニューとチャットのあいだを広めに空ける */}
-        <Box sx={{ ...twoColumnContentGridSx, gap: { xs: 3, sm: 3 } }}>
-          <Stack spacing={2}>
+        <Box sx={{ ...twoColumnContentGridSx, gap: 0, alignItems: 'stretch', flex: 1 }}>
+          <Stack
+            spacing={2}
+            sx={{ backgroundColor: homeAreaColors.side, px: { xs: 1.5, sm: 3, md: 4 }, py: { xs: 2, sm: 3 } }}
+          >
             {isPlayerLoading ? (
               <Stack direction="row" spacing={1} alignItems="center">
                 <CircularProgress size={16} />
@@ -329,16 +334,13 @@ function Home() {
             {!isDesktop && signOutError ? <Alert severity="error">{signOutError}</Alert> : null}
           </Stack>
 
-          {/* 枠では包まず、タブの下に線を引いてタブと中身をつなげる。
-              ステータスとのあいだにも区切り線を引く（PC は縦線、スマホは横線） */}
+          {/* 枠では包まず、タブの下に線を引いてタブと中身をつなげる */}
           <Box
             sx={{
               minWidth: 0,
-              alignSelf: 'stretch',
-              borderTop: { xs: `2px solid ${gameDividerColor}`, sm: 'none' },
-              borderLeft: { xs: 'none', sm: `2px solid ${gameDividerColor}` },
-              pt: { xs: 3, sm: 0 },
-              pl: { xs: 0, sm: 3 },
+              backgroundColor: homeAreaColors.chat,
+              px: { xs: 1.5, sm: 3, md: 4 },
+              py: { xs: 2, sm: 3 },
             }}
           >
             <Tabs
