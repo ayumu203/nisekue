@@ -237,13 +237,20 @@ export default function Status({
         <Stack spacing={2}>
           {isCompact ? (
             // 横長表示：左にキャラ画像、右に名前・Lv・HP/MP
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={1.5} alignItems="flex-start">
               {characterImage}
               <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
-                <Stack direction="row" alignItems="flex-start" spacing={0.75}>
+                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minHeight: 36 }}>
                   <Typography
                     fontWeight={800}
-                    sx={{ flex: 1, minWidth: 0, fontSize: '1rem', lineHeight: 1.3, overflowWrap: 'anywhere' }}
+                    sx={{
+                      flex: 1,
+                      minWidth: 0,
+                      // 長い名前（最大 20 文字）は少し小さくして、2 行に収める
+                      fontSize: (player?.userName?.length ?? 0) > 12 ? '1.05rem' : '1.2rem',
+                      lineHeight: 1.3,
+                      overflowWrap: 'anywhere',
+                    }}
                   >
                     {player?.userName ?? locale.notSet}
                   </Typography>
