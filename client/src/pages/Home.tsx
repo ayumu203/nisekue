@@ -2,9 +2,7 @@ import {
   Alert,
   Badge,
   Box,
-  Button,
   CircularProgress,
-  Collapse,
   Container,
   Pagination,
   Paper,
@@ -13,9 +11,10 @@ import {
   Tab,
   Tabs,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
 import {
@@ -30,46 +29,20 @@ import {
 import { getThreadAlerts, markThreadRepliesAlerted } from '@/api/thread'
 import { useAuth } from '@/contexts/useAuth'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
+import { useSignOut } from '@/hooks/useSignOut'
 import { useAnnouncements } from '@/hooks/useAnnouncements'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/home/Home.json'
 import ChatMessages from '@/components/chat/ChatMessages'
 import ChatForm from '@/components/chat/ChatForm'
-import BeginnerGuide from '@/components/common/BeginnerGuide'
 import AnnouncementList from '@/components/common/AnnouncementList'
 import Status from '@/components/home/Status'
-import {
-  DebugIcon,
-  ItemsIcon,
-  JobChangeIcon,
-  MoveSettingIcon,
-  PetsIcon,
-  QuestIcon,
-  RebirthIcon,
-  RankingIcon,
-  OthersGroupIcon,
-  ReportIcon,
-  SpecialThanksIcon,
-  SurveyIcon,
-  ThreadsIcon,
-  TrainingGroupIcon,
-  TrainingIcon,
-  TreasureMapIcon,
-  VisitPlayersIcon,
-  SocialGroupIcon,
-} from '@/components/home/HomeIcons'
-import {
-  gameTabSx,
-  gameTabsSx,
-  innerSurfaceSx,
-  menuButtonSx,
-  outerPagePaperSx,
-  softGreenButtonSx,
-  twoColumnContentGridSx,
-} from '@/constants/styles'
+import HomeHeaderMenu from '@/components/home/HomeHeaderMenu'
+import HomeMenuList from '@/components/home/HomeMenuList'
+import { buildHomeMenu, getTutorialOpenGroup, type HomeMenuGroupKey } from '@/components/home/homeMenu'
+import { gameTabSx, gameTabsSx, innerSurfaceSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
 import { announcementTabLabel } from '@/lib/announcements'
 import { hasUnreadAnnouncement, markAnnouncementsSeen } from '@/lib/announcementStorage'
-import { beginnerGuides } from '@/lib/beginnerGuides'
 import {
   getTutorialStep,
   isRebirthTutorialShown,
@@ -80,6 +53,12 @@ import {
 } from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
+
+// チャットのタブ。PC では文字の長さに合わせた幅にする
+const chatTabSx = {
+  ...gameTabSx,
+  px: { xs: 0.5, sm: 3 },
+} as const
 
 // アンケートを案内するレベル
 const SURVEY_GUIDE_LEVEL = 10
@@ -102,10 +81,13 @@ function Home() {
   }
   const [chatTab, setChatTab] = useState<'personal' | 'global' | 'announcement'>('personal')
   const [globalChatPage, setGlobalChatPage] = useState(1)
-  const [isTrainingGroupOpenByUser, setIsTrainingGroupOpenByUser] = useState(false)
-  const [isSocialGroupOpen, setIsSocialGroupOpen] = useState(false)
-  const [isOthersGroupOpen, setIsOthersGroupOpen] = useState(false)
+  // メニューで開いているグループ（強化・交流・その他のうち 1 つだけ）
+  const [openMenuGroup, setOpenMenuGroup] = useState<HomeMenuGroupKey | null>(null)
+  const theme = useTheme()
+  // 最初の描画から正しい側を出す（チュートリアルのスポットライトが最初に測った要素を使い続けるため）
+  const isDesktop = useMediaQuery(theme.breakpoints.up('sm'), { noSsr: true })
   const { canUseDebug } = useDebugStatus()
+  const { signOut, isSigningOut, signOutError } = useSignOut()
   const { latestAnnouncementDate } = useAnnouncements()
   const handledChatIdsRef = useRef<Set<number>>(new Set())
   const handledReplyIdsRef = useRef<Set<string>>(new Set())
@@ -158,12 +140,23 @@ function Home() {
     setIsSurveyGuideDismissed(true)
   }
 
-  const isTrainingGroupOpen =
-    tutorialStep === 'home-job-change' ||
-    tutorialStep === 'home-move-setting' ||
-    tutorialStep === 'home-treasure-map' ||
-    showRebirthTutorial ||
-    isTrainingGroupOpenByUser
+  const tutorialOpenGroup = getTutorialOpenGroup(tutorialStep, showRebirthTutorial, showSurveyGuide)
+  const homeMenu = buildHomeMenu({
+    userId,
+    tutorialStep,
+    showRebirthTutorial,
+    showSurveyGuide,
+    onSurveyClick: dismissSurveyGuide,
+    canUseDebug,
+    signOut: isDesktop ? undefined : { onClick: () => void signOut(), disabled: isSigningOut },
+  })
+  const toggleMenuGroup = (key: HomeMenuGroupKey) => setOpenMenuGroup((current) => (current === key ? null : key))
+  const gearIconId = tutorialStep === 'home-player-setting' ? 'tutorial-gear-btn' : undefined
+  const handleGearClick = () => {
+    if (userId && tutorialStep === 'home-player-setting') {
+      setTutorialStep(userId, 'player-setting-name')
+    }
+  }
 
   const chatSWRKey = session?.access_token && player?.userId ? (['chat-room', player.userId] as const) : null
   const {
@@ -289,8 +282,21 @@ function Home() {
     <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Box sx={twoColumnContentGridSx}>
-            <Stack spacing={{ xs: 1.5, sm: 2 }}>
+          {isDesktop && (
+            <HomeHeaderMenu
+              primary={homeMenu.primary}
+              groups={homeMenu.groups}
+              openGroup={openMenuGroup}
+              lockedGroup={tutorialOpenGroup}
+              onToggleGroup={toggleMenuGroup}
+              onCloseGroup={() => setOpenMenuGroup(null)}
+              gearIconId={gearIconId}
+              onGearClick={handleGearClick}
+            />
+          )}
+          {/* スマホではメニューとチャットのあいだを広めに空ける */}
+          <Box sx={{ ...twoColumnContentGridSx, gap: { xs: 3, sm: 3 } }}>
+            <Stack spacing={2}>
               {isPlayerLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <CircularProgress size={16} />
@@ -302,258 +308,52 @@ function Home() {
                 <Status
                   player={player}
                   actionAlign="start"
-                  gearIconId={tutorialStep === 'home-player-setting' ? 'tutorial-gear-btn' : undefined}
-                  onGearClick={() => {
-                    if (userId && tutorialStep === 'home-player-setting') {
-                      setTutorialStep(userId, 'player-setting-name')
-                    }
-                  }}
-                  topAction={
-                    <BeginnerGuide
-                      userId={session?.user.id}
-                      guide={beginnerGuides.home}
-                      triggerSx={{
-                        minHeight: 44,
-                        px: 2,
-                        fontWeight: 700,
-                      }}
-                    />
-                  }
+                  showCollapseToggle={false}
+                  layout={isDesktop ? 'default' : 'compact'}
+                  showDesktopActions={false}
+                  gearIconId={isDesktop ? undefined : gearIconId}
+                  onGearClick={handleGearClick}
                 />
               )}
-              <Button
-                id={tutorialStep === 'home-quest' ? 'tutorial-quest-btn' : undefined}
-                component={Link}
-                to="/quest"
-                variant="contained"
-                startIcon={<QuestIcon />}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                onClick={() => {
-                  if (userId && tutorialStep === 'home-quest') {
-                    setTutorialStep(userId, 'quest-info')
-                  }
-                }}
-              >
-                {locale.quest}
-              </Button>
-              <Button
-                id="tutorial-training-btn"
-                component={Link}
-                to="/training"
-                variant="contained"
-                startIcon={<TrainingIcon />}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                onClick={() => {
-                  if (userId && tutorialStep === 'home-training') {
-                    setTutorialStep(userId, 'training-fight')
-                  }
-                }}
-              >
-                {locale.training}
-              </Button>
-              <Button
-                id={tutorialStep === 'home-treasure-map' ? 'tutorial-treasure-map-btn' : undefined}
-                component={Link}
-                to="/treasure-map"
-                variant="contained"
-                startIcon={<TreasureMapIcon />}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                onClick={() => {
-                  if (userId && tutorialStep === 'home-treasure-map') {
-                    setTutorialStep(userId, 'treasure-map-info')
-                  }
-                }}
-              >
-                {locale.treasureMap}
-              </Button>
-              <Button
-                component={Link}
-                to="/items"
-                variant="contained"
-                startIcon={<ItemsIcon />}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-              >
-                {locale.items}
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<TrainingGroupIcon />}
-                onClick={() => setIsTrainingGroupOpenByUser((prev) => !prev)}
-                sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-              >
-                {locale.trainingGroup}
-              </Button>
-              <Collapse in={isTrainingGroupOpen}>
-                <Stack spacing={1} sx={{ pl: 1, pr: 1, pt: 1 }}>
-                  <Button
-                    id={tutorialStep === 'home-move-setting' ? 'tutorial-move-setting-btn' : undefined}
-                    component={Link}
-                    to="/move-setting"
-                    variant="contained"
-                    startIcon={<MoveSettingIcon />}
-                    sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                    onClick={() => {
-                      if (userId && tutorialStep === 'home-move-setting') {
-                        setTutorialStep(userId, 'move-setting-info')
-                      }
-                    }}
-                  >
-                    {locale.moveSetting}
-                  </Button>
-                  <Button
-                    id="tutorial-job-change-btn"
-                    component={Link}
-                    to="/job-change"
-                    variant="contained"
-                    startIcon={<JobChangeIcon />}
-                    sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                    onClick={() => {
-                      if (userId && tutorialStep === 'home-job-change') {
-                        setTutorialStep(userId, 'job-change-info')
-                      }
-                    }}
-                  >
-                    {locale.jobChange}
-                  </Button>
-                  <Button
-                    id={showRebirthTutorial ? 'tutorial-rebirth-btn' : undefined}
-                    component={Link}
-                    to="/rebirth"
-                    variant="contained"
-                    startIcon={<RebirthIcon />}
-                    sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                  >
-                    {locale.rebirth}
-                  </Button>
-                  <Button
-                    component={Link}
-                    to="/pets"
-                    variant="contained"
-                    startIcon={<PetsIcon />}
-                    sx={{ ...menuButtonSx, ...softGreenButtonSx }}
-                  >
-                    {locale.pets}
-                  </Button>
-                </Stack>
-              </Collapse>
-              <Button
-                variant="outlined"
-                startIcon={<SocialGroupIcon />}
-                onClick={() => setIsSocialGroupOpen((prev) => !prev)}
-                sx={menuButtonSx}
-              >
-                {locale.socialGroup}
-              </Button>
-              <Collapse in={isSocialGroupOpen}>
-                <Stack spacing={1} sx={{ pl: 1, pr: 1, pt: 1 }}>
-                  <Button
-                    component={Link}
-                    to="/players"
-                    variant="outlined"
-                    startIcon={<VisitPlayersIcon />}
-                    sx={menuButtonSx}
-                  >
-                    {locale.visitPlayers}
-                  </Button>
-                  <Button
-                    component={Link}
-                    to="/threads"
-                    variant="outlined"
-                    startIcon={<ThreadsIcon />}
-                    sx={menuButtonSx}
-                  >
-                    {locale.threads}
-                  </Button>
-                  <Button
-                    component={Link}
-                    to="/ranking"
-                    variant="outlined"
-                    startIcon={<RankingIcon />}
-                    sx={menuButtonSx}
-                  >
-                    {locale.ranking}
-                  </Button>
-                </Stack>
-              </Collapse>
-              <Button
-                variant="outlined"
-                startIcon={<OthersGroupIcon />}
-                onClick={() => setIsOthersGroupOpen((prev) => !prev)}
-                sx={menuButtonSx}
-              >
-                {locale.others}
-              </Button>
-              <Collapse in={isOthersGroupOpen || showSurveyGuide}>
-                <Stack spacing={1} sx={{ pl: 1, pr: 1, pt: 1 }}>
-                  <Button
-                    component={Link}
-                    to="/thanks"
-                    variant="outlined"
-                    startIcon={<SpecialThanksIcon />}
-                    sx={menuButtonSx}
-                  >
-                    {locale.specialThanks}
-                  </Button>
-                  <Button
-                    id={showSurveyGuide ? 'tutorial-survey-btn' : undefined}
-                    onClick={() => {
-                      if (showSurveyGuide) {
-                        dismissSurveyGuide()
-                      }
-                    }}
-                    component="a"
-                    href="https://docs.google.com/forms/d/e/1FAIpQLScQGhSmvuy99jOyKKvHIYtKcbZOGpYucamzrza5CRKezS054A/viewform?usp=dialog"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    variant="outlined"
-                    startIcon={<SurveyIcon />}
-                    sx={menuButtonSx}
-                  >
-                    {locale.survey}
-                  </Button>
-                  <Button
-                    component="a"
-                    href="https://docs.google.com/forms/d/e/1FAIpQLSduEn4lqqHBp4zuaXKehG3w4DQBXWmp2GdkMNU1tqO5_VAQUw/viewform?usp=publish-editor"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    variant="outlined"
-                    startIcon={<ReportIcon />}
-                    sx={menuButtonSx}
-                  >
-                    {locale.report}
-                  </Button>
-                  {canUseDebug && (
-                    <Button component={Link} to="/debug" variant="outlined" startIcon={<DebugIcon />} sx={menuButtonSx}>
-                      {locale.debug}
-                    </Button>
-                  )}
-                </Stack>
-              </Collapse>
+              {!isDesktop && (
+                <HomeMenuList
+                  primary={homeMenu.primary}
+                  groups={homeMenu.groups}
+                  openGroup={openMenuGroup}
+                  lockedGroup={tutorialOpenGroup}
+                  onToggleGroup={toggleMenuGroup}
+                />
+              )}
+              {!isDesktop && signOutError ? <Alert severity="error">{signOutError}</Alert> : null}
             </Stack>
 
-            <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 }, mt: '48px' }}>
-              <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                <Tabs
-                  value={chatTab}
-                  onChange={(_, value: 'personal' | 'global' | 'announcement') => {
-                    setChatTab(value)
-                  }}
-                  variant="fullWidth"
-                  sx={gameTabsSx}
-                  slotProps={{ indicator: { sx: { display: 'none' } } }}
-                >
-                  <Tab label={locale.chatTabPersonal} value="personal" sx={gameTabSx} />
-                  <Tab label={locale.chatTabGlobal} value="global" sx={gameTabSx} />
-                  <Tab
-                    label={
-                      <Badge variant="dot" color="error" invisible={!hasUnreadAnnouncements} sx={{ pr: 0.5 }}>
-                        {announcementTabLabel}
-                      </Badge>
-                    }
-                    value="announcement"
-                    sx={gameTabSx}
-                  />
-                </Tabs>
+            {/* タブを枠の外に出して、選んでいるタブと枠をつなげる */}
+            <Box sx={{ minWidth: 0 }}>
+              <Tabs
+                value={chatTab}
+                onChange={(_, value: 'personal' | 'global' | 'announcement') => {
+                  setChatTab(value)
+                }}
+                variant={isDesktop ? 'standard' : 'fullWidth'}
+                sx={gameTabsSx}
+                slotProps={{ indicator: { sx: { display: 'none' } } }}
+              >
+                <Tab label={locale.chatTabPersonal} value="personal" sx={chatTabSx} />
+                <Tab label={locale.chatTabGlobal} value="global" sx={chatTabSx} />
+                <Tab
+                  label={
+                    <Badge variant="dot" color="error" invisible={!hasUnreadAnnouncements} sx={{ pr: 0.5 }}>
+                      {announcementTabLabel}
+                    </Badge>
+                  }
+                  value="announcement"
+                  sx={chatTabSx}
+                />
+              </Tabs>
+              <Paper
+                variant="outlined"
+                sx={{ ...innerSurfaceSx, borderRadius: 3, borderTopLeftRadius: 0, p: { xs: 2, sm: 2.5 } }}
+              >
                 {chatTab === 'announcement' ? (
                   <AnnouncementList />
                 ) : chatTab === 'personal' ? (
@@ -648,8 +448,8 @@ function Home() {
                     )}
                   </Stack>
                 )}
-              </Stack>
-            </Paper>
+              </Paper>
+            </Box>
           </Box>
         </Stack>
       </Paper>
