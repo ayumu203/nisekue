@@ -217,6 +217,8 @@ type BattleSpriteProps = {
   maxHp: number | null | undefined
   isDead: boolean
   isAlly: boolean
+  // 右側に並ぶ敵は左右反転して、味方と向かい合わせる
+  isEnemy?: boolean
   isSelected?: boolean
   targetState?: 'preview' | 'affected' | 'reachable' | 'blocked' | 'none'
   onClick?: () => void
@@ -233,6 +235,7 @@ function BattleSprite({
   maxHp,
   isDead,
   isAlly,
+  isEnemy = false,
   isSelected = false,
   targetState = 'none',
   onClick,
@@ -372,7 +375,7 @@ function BattleSprite({
               objectFit: 'contain',
               objectPosition: 'center bottom',
               display: 'block',
-              transform: isAlly ? 'scaleX(-1)' : 'none',
+              transform: isAlly || isEnemy ? 'scaleX(-1)' : 'none',
               // 敵のドット絵は拡大してもぼやけないようにする
               imageRendering: isAlly ? 'auto' : 'pixelated',
               filter: isDead ? 'grayscale(1)' : 'none',
@@ -929,6 +932,7 @@ export default function QuestBattleStatusPanel({
                 maxHp={enemy.maxHp}
                 isDead={enemy.isDead}
                 isAlly={false}
+                isEnemy
                 isSelected={targetKey === anchorTargetKey}
                 targetState={
                   !isEnemyTargetingAction
