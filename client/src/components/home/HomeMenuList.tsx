@@ -82,8 +82,8 @@ export default function HomeMenuList({ primary, groups, openGroup, lockedGroup, 
   }
 
   return (
-    <Stack spacing={1.5}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
+    <Stack spacing={2}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
         {primary.map((item) => (
           <Button
             key={item.key}
@@ -99,7 +99,7 @@ export default function HomeMenuList({ primary, groups, openGroup, lockedGroup, 
         ))}
       </Box>
       <Stack spacing={1}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.5 }}>
           {groups.map((group) => {
             const isOpen = visibleGroup?.key === group.key
 

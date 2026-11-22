@@ -294,8 +294,9 @@ function Home() {
               onGearClick={handleGearClick}
             />
           )}
-          <Box sx={twoColumnContentGridSx}>
-            <Stack spacing={{ xs: 1.5, sm: 2 }}>
+          {/* スマホではメニューとチャットのあいだを広めに空ける */}
+          <Box sx={{ ...twoColumnContentGridSx, gap: { xs: 3, sm: 3 } }}>
+            <Stack spacing={2}>
               {isPlayerLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <CircularProgress size={16} />
