@@ -241,15 +241,18 @@ export default function Status({
               {characterImage}
               <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
                 <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minHeight: 36 }}>
+                  {/* 右の設定ボタンと同じ幅の空きを左に置いて、名前を真ん中に寄せる */}
+                  <Box sx={{ width: 36, flex: 'none' }} />
                   <Typography
                     fontWeight={800}
                     sx={{
                       flex: 1,
                       minWidth: 0,
                       // 長い名前（最大 20 文字）は少し小さくして、2 行に収める
-                      fontSize: (player?.userName?.length ?? 0) > 12 ? '1.05rem' : '1.2rem',
+                      fontSize: (player?.userName?.length ?? 0) > 12 ? '0.95rem' : '1.2rem',
                       lineHeight: 1.3,
                       overflowWrap: 'anywhere',
+                      textAlign: 'center',
                     }}
                   >
                     {player?.userName ?? locale.notSet}
@@ -292,6 +295,7 @@ export default function Status({
                     normalized={item.normalized}
                     rank={item.rank}
                     compact
+                    plain
                   />
                 ))}
               </Stack>
