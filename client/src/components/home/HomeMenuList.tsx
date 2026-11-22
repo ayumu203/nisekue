@@ -24,7 +24,7 @@ function ChevronIcon({ up, ...props }: SvgIconProps & { up: boolean }) {
 
 const tileSx = {
   ...softGreenButtonSx,
-  minHeight: 64,
+  minHeight: 52,
   borderRadius: '14px',
   fontSize: '0.95rem',
   fontWeight: 700,
