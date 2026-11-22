@@ -38,7 +38,7 @@ import Status from '@/components/home/Status'
 import HomeHeaderMenu from '@/components/home/HomeHeaderMenu'
 import HomeMenuList from '@/components/home/HomeMenuList'
 import { buildHomeMenu, getTutorialOpenGroup, type HomeMenuGroupKey } from '@/components/home/homeMenu'
-import { gameTabSx, gameTabsSx, twoColumnContentGridSx } from '@/constants/styles'
+import { gameDividerColor, gameTabSx, gameTabsSx, twoColumnContentGridSx } from '@/constants/styles'
 import { announcementTabLabel } from '@/lib/announcements'
 import { hasUnreadAnnouncement, markAnnouncementsSeen } from '@/lib/announcementStorage'
 import {
@@ -329,8 +329,18 @@ function Home() {
             {!isDesktop && signOutError ? <Alert severity="error">{signOutError}</Alert> : null}
           </Stack>
 
-          {/* 枠では包まず、タブの下に線を引いてタブと中身をつなげる */}
-          <Box sx={{ minWidth: 0 }}>
+          {/* 枠では包まず、タブの下に線を引いてタブと中身をつなげる。
+              ステータスとのあいだにも区切り線を引く（PC は縦線、スマホは横線） */}
+          <Box
+            sx={{
+              minWidth: 0,
+              alignSelf: 'stretch',
+              borderTop: { xs: `2px solid ${gameDividerColor}`, sm: 'none' },
+              borderLeft: { xs: 'none', sm: `2px solid ${gameDividerColor}` },
+              pt: { xs: 3, sm: 0 },
+              pl: { xs: 0, sm: 3 },
+            }}
+          >
             <Tabs
               value={chatTab}
               onChange={(_, value: 'personal' | 'global' | 'announcement') => {
