@@ -282,11 +282,10 @@ export default function Status({
                     <Typography variant="body2" color="text.secondary" noWrap sx={{ minWidth: 0 }}>
                       {currentJobLevelLabel}
                     </Typography>
-                    <Box sx={{ ...greenBadgeSx, flex: 'none' }}>
-                      <Typography variant="subtitle2" sx={greenBadgeTextSx}>
-                        {locale.labels.level}: {player?.level ?? locale.unknownValue}
-                      </Typography>
-                    </Box>
+                    {/* 横長表示ではチップにせず、文字だけで出す */}
+                    <Typography variant="subtitle2" fontWeight={700} sx={{ flex: 'none' }}>
+                      Lv. {player?.level ?? locale.unknownValue}
+                    </Typography>
                   </Stack>
                   {resourceItems.map((item) => (
                     <StatusStatRow
