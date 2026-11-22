@@ -237,7 +237,7 @@ export default function Status({
         <Stack spacing={2}>
           {isCompact ? (
             // 横長表示：左にキャラ画像、右に名前・Lv・HP/MP
-            <Stack direction="row" spacing={1.5} alignItems="flex-start">
+            <Stack direction="row" spacing={1.5} alignItems="center">
               {characterImage}
               <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
                 <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minHeight: 36 }}>
