@@ -28,8 +28,10 @@ type StatusProps = {
   actionAlign?: 'start' | 'end'
   gearIconId?: string
   onGearClick?: () => void
-  // ステータス欄を畳むボタン（−/+）を出すか。PC のホームでは出さない
+  // ステータス欄を畳むボタン（−/+）を出すか。ホームでは出さない
   showCollapseToggle?: boolean
+  // compact：キャラ画像を小さくして横に並べる（スマホのホーム用）
+  layout?: 'default' | 'compact'
 }
 
 function toNormalized(value: number | undefined, maxValue: number): number {
@@ -95,7 +97,9 @@ export default function Status({
   gearIconId,
   onGearClick,
   showCollapseToggle = true,
+  layout = 'default',
 }: StatusProps) {
+  const isCompact = layout === 'compact'
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(true)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
@@ -180,99 +184,135 @@ export default function Status({
       ? `${player?.job.displayName ?? locale.unknownValue} Lv.${player.jobLevel}`
       : (player?.job.displayName ?? locale.unknownValue)
 
+  const characterImage = (
+    <Box
+      sx={{
+        ...(isCompact
+          ? { width: 96, height: 112, flex: 'none' }
+          : { width: '100%', maxWidth: 237, aspectRatio: '338 / 350', alignSelf: 'center' }),
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        backgroundImage: `url(${characterBackgroundSrc})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        overflow: 'hidden',
+      }}
+    >
+      {characterImageSrc ? (
+        <Box
+          component="img"
+          src={characterImageSrc}
+          alt={player?.userName ? `${player.userName} character` : 'player character'}
+          onError={() => setFailedImagePath(player?.imagePath ?? null)}
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            objectPosition: 'center bottom',
+            display: 'block',
+          }}
+        />
+      ) : (
+        <Stack alignItems="center" justifyContent="center" sx={{ width: '100%', height: '100%', px: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            {locale.notSet}
+          </Typography>
+        </Stack>
+      )}
+    </Box>
+  )
+
   const statusPaper = (
     <Paper
       variant="outlined"
       sx={{
         ...innerSurfaceSx,
         borderRadius: 3,
-        p: 2.5,
+        p: isCompact ? 1.5 : 2.5,
       }}
     >
       <Stack spacing={2}>
         <Stack spacing={2}>
-          <Box
-            sx={{
-              width: '100%',
-              maxWidth: 237,
-              aspectRatio: '338 / 350',
-              alignSelf: 'center',
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: 'divider',
-              backgroundImage: `url(${characterBackgroundSrc})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              overflow: 'hidden',
-            }}
-          >
-            {characterImageSrc ? (
-              <Box
-                component="img"
-                src={characterImageSrc}
-                alt={player?.userName ? `${player.userName} character` : 'player character'}
-                onError={() => setFailedImagePath(player?.imagePath ?? null)}
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  objectPosition: 'center bottom',
-                  display: 'block',
-                }}
-              />
-            ) : (
-              <Stack alignItems="center" justifyContent="center" sx={{ width: '100%', height: '100%', px: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  {locale.notSet}
-                </Typography>
-              </Stack>
-            )}
-          </Box>
-
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1.5}
-            alignItems={{ xs: 'flex-start', sm: 'center' }}
-            justifyContent="space-between"
-          >
-            {compactTrainingMobile ? null : (
-              <Box>
-                <Typography variant="h6" fontWeight={700}>
+          {isCompact ? (
+            // 横長表示：左にキャラ画像、右に名前・Lv・HP/MP
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              {characterImage}
+              <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
+                <Typography fontWeight={800} sx={{ fontSize: '1rem', lineHeight: 1.3, overflowWrap: 'anywhere' }}>
                   {player?.userName ?? locale.notSet}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {currentJobLevelLabel}
-                </Typography>
-              </Box>
-            )}
-            <Box sx={greenBadgeSx}>
-              <Typography variant="subtitle2" sx={greenBadgeTextSx}>
-                {locale.labels.level}: {player?.level ?? locale.unknownValue}
-              </Typography>
-            </Box>
-          </Stack>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                  <Typography variant="body2" color="text.secondary" noWrap sx={{ minWidth: 0 }}>
+                    {currentJobLevelLabel}
+                  </Typography>
+                  <Box sx={{ ...greenBadgeSx, flex: 'none' }}>
+                    <Typography variant="subtitle2" sx={greenBadgeTextSx}>
+                      {locale.labels.level}: {player?.level ?? locale.unknownValue}
+                    </Typography>
+                  </Box>
+                </Stack>
+                {resourceItems.map((item) => (
+                  <StatusStatRow
+                    key={item.key}
+                    label={item.label}
+                    value={item.value}
+                    normalized={item.normalized}
+                    rank={item.rank}
+                    compact
+                  />
+                ))}
+              </Stack>
+            </Stack>
+          ) : (
+            <>
+              {characterImage}
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={1.5}
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                justifyContent="space-between"
+              >
+                {compactTrainingMobile ? null : (
+                  <Box>
+                    <Typography variant="h6" fontWeight={700}>
+                      {player?.userName ?? locale.notSet}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {currentJobLevelLabel}
+                    </Typography>
+                  </Box>
+                )}
+                <Box sx={greenBadgeSx}>
+                  <Typography variant="subtitle2" sx={greenBadgeTextSx}>
+                    {locale.labels.level}: {player?.level ?? locale.unknownValue}
+                  </Typography>
+                </Box>
+              </Stack>
 
-          <Box>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-                gap: 1.5,
-              }}
-            >
-              {resourceItems.map((item) => (
-                <StatusStatRow
-                  key={item.key}
-                  label={item.label}
-                  value={item.value}
-                  normalized={item.normalized}
-                  rank={item.rank}
-                  compact
-                />
-              ))}
-            </Box>
-          </Box>
+              <Box>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                    gap: 1.5,
+                  }}
+                >
+                  {resourceItems.map((item) => (
+                    <StatusStatRow
+                      key={item.key}
+                      label={item.label}
+                      value={item.value}
+                      normalized={item.normalized}
+                      rank={item.rank}
+                      compact
+                    />
+                  ))}
+                </Box>
+              </Box>
+            </>
+          )}
 
           {compactTrainingMobile ? (
             <Stack spacing={1.25}>

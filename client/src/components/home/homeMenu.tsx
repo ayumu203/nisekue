@@ -46,8 +46,6 @@ export type HomeMenuGroup = {
   key: HomeMenuGroupKey
   label: string
   icon: ReactNode
-  // スマホの縦並びメニューで、塗りのボタンにするか枠線のボタンにするか
-  variant: 'contained' | 'outlined'
   items: HomeMenuItem[]
 }
 
@@ -130,7 +128,6 @@ export function buildHomeMenu({
       key: 'enhance',
       label: locale.trainingGroup,
       icon: <TrainingGroupIcon />,
-      variant: 'contained',
       items: [
         {
           key: 'moveSetting',
@@ -162,14 +159,13 @@ export function buildHomeMenu({
       key: 'social',
       label: locale.socialGroup,
       icon: <SocialGroupIcon />,
-      variant: 'outlined',
       items: [
         { key: 'visitPlayers', label: locale.visitPlayers, icon: <VisitPlayersIcon />, to: '/players' },
         { key: 'threads', label: locale.threads, icon: <ThreadsIcon />, to: '/threads' },
         { key: 'ranking', label: locale.ranking, icon: <RankingIcon />, to: '/ranking' },
       ],
     },
-    { key: 'others', label: locale.others, icon: <OthersGroupIcon />, variant: 'outlined', items: othersItems },
+    { key: 'others', label: locale.others, icon: <OthersGroupIcon />, items: othersItems },
   ]
 
   return { primary, groups }

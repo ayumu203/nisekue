@@ -80,10 +80,8 @@ function Home() {
   }
   const [chatTab, setChatTab] = useState<'personal' | 'global' | 'announcement'>('personal')
   const [globalChatPage, setGlobalChatPage] = useState(1)
-  // PC のヘッダーメニューで開いているグループ（1 つだけ）
-  const [openHeaderGroup, setOpenHeaderGroup] = useState<HomeMenuGroupKey | null>(null)
-  // スマホの縦並びメニューで開いているグループ（複数開ける）
-  const [openListGroups, setOpenListGroups] = useState<Set<HomeMenuGroupKey>>(() => new Set())
+  // メニューで開いているグループ（強化・交流・その他のうち 1 つだけ）
+  const [openMenuGroup, setOpenMenuGroup] = useState<HomeMenuGroupKey | null>(null)
   const theme = useTheme()
   // 最初の描画から正しい側を出す（チュートリアルのスポットライトが最初に測った要素を使い続けるため）
   const isDesktop = useMediaQuery(theme.breakpoints.up('sm'), { noSsr: true })
@@ -149,10 +147,7 @@ function Home() {
     onSurveyClick: dismissSurveyGuide,
     canUseDebug,
   })
-  const visibleListGroups = new Set(openListGroups)
-  if (tutorialOpenGroup) {
-    visibleListGroups.add(tutorialOpenGroup)
-  }
+  const toggleMenuGroup = (key: HomeMenuGroupKey) => setOpenMenuGroup((current) => (current === key ? null : key))
   const gearIconId = tutorialStep === 'home-player-setting' ? 'tutorial-gear-btn' : undefined
   const handleGearClick = () => {
     if (userId && tutorialStep === 'home-player-setting') {
@@ -288,10 +283,10 @@ function Home() {
             <HomeHeaderMenu
               primary={homeMenu.primary}
               groups={homeMenu.groups}
-              openGroup={openHeaderGroup}
+              openGroup={openMenuGroup}
               lockedGroup={tutorialOpenGroup}
-              onToggleGroup={(key) => setOpenHeaderGroup((current) => (current === key ? null : key))}
-              onCloseGroup={() => setOpenHeaderGroup(null)}
+              onToggleGroup={toggleMenuGroup}
+              onCloseGroup={() => setOpenMenuGroup(null)}
               gearIconId={gearIconId}
               onGearClick={handleGearClick}
             />
@@ -309,7 +304,8 @@ function Home() {
                 <Status
                   player={player}
                   actionAlign="start"
-                  showCollapseToggle={!isDesktop}
+                  showCollapseToggle={false}
+                  layout={isDesktop ? 'default' : 'compact'}
                   showDesktopActions={!isDesktop}
                   gearIconId={isDesktop ? undefined : gearIconId}
                   onGearClick={handleGearClick}
@@ -319,18 +315,9 @@ function Home() {
                 <HomeMenuList
                   primary={homeMenu.primary}
                   groups={homeMenu.groups}
-                  openGroups={visibleListGroups}
-                  onToggleGroup={(key) =>
-                    setOpenListGroups((current) => {
-                      const next = new Set(current)
-                      if (next.has(key)) {
-                        next.delete(key)
-                      } else {
-                        next.add(key)
-                      }
-                      return next
-                    })
-                  }
+                  openGroup={openMenuGroup}
+                  lockedGroup={tutorialOpenGroup}
+                  onToggleGroup={toggleMenuGroup}
                 />
               )}
             </Stack>
