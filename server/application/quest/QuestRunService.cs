@@ -39,7 +39,7 @@ public class QuestRunService(
     Func<int, int>? petRollProvider = null)
 {
     private static readonly TimeSpan TurnDeadline = TimeSpan.FromSeconds(60);
-    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
+    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan QuestCompletionTreasureMapAdvance = TimeSpan.FromMinutes(5);
     private const int ItemCapacity = 20;
     private readonly Func<int, int> _rewardRollProvider = rewardRollProvider ?? (maxInclusive => Random.Shared.Next(1, maxInclusive + 1));
