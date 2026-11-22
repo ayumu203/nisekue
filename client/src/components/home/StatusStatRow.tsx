@@ -9,6 +9,8 @@ type StatusStatRowProps = {
   hideGauge?: boolean
   rank?: string
   compact?: boolean
+  // 枠線と背景なしで表示する（スマホのホームの横長ステータス用）
+  plain?: boolean
 }
 
 export default function StatusStatRow({
@@ -18,22 +20,27 @@ export default function StatusStatRow({
   hideGauge = false,
   rank,
   compact = false,
+  plain = false,
 }: StatusStatRowProps) {
   const rankColor = resolveRankColor(rank)
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 0.6 }}>
       <Box
-        sx={{
-          flex: 1,
-          p: 1.5,
-          borderRadius: 1.5,
-          border: '1px solid',
-          borderColor: 'divider',
-          backgroundColor: 'background.paper',
-        }}
+        sx={
+          plain
+            ? { flex: 1 }
+            : {
+                flex: 1,
+                p: 1.5,
+                borderRadius: 1.5,
+                border: '1px solid',
+                borderColor: 'divider',
+                backgroundColor: 'background.paper',
+              }
+        }
       >
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: plain ? 0.5 : 1 }}>
           <Typography variant="body2" color="text.secondary">
             {label}
           </Typography>
