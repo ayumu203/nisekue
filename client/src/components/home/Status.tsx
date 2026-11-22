@@ -32,6 +32,8 @@ type StatusProps = {
   showCollapseToggle?: boolean
   // compact：キャラ画像を小さくして横に並べる（スマホのホーム用）
   layout?: 'default' | 'compact'
+  // card：クリーム色の枠で包む／plain：枠なしで背景にそのまま置く（ホーム用）
+  surface?: 'card' | 'plain'
 }
 
 function toNormalized(value: number | undefined, maxValue: number): number {
@@ -98,6 +100,7 @@ export default function Status({
   onGearClick,
   showCollapseToggle = true,
   layout = 'default',
+  surface = 'card',
 }: StatusProps) {
   const isCompact = layout === 'compact'
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
@@ -227,11 +230,11 @@ export default function Status({
   const statusPaper = (
     <Paper
       variant="outlined"
-      sx={{
-        ...innerSurfaceSx,
-        borderRadius: 3,
-        p: isCompact ? 1.5 : 2.5,
-      }}
+      sx={
+        surface === 'plain'
+          ? { backgroundColor: 'transparent', border: 'none', borderRadius: 0, p: 0 }
+          : { ...innerSurfaceSx, borderRadius: 3, p: isCompact ? 1.5 : 2.5 }
+      }
     >
       <Stack spacing={2}>
         <Stack spacing={2}>

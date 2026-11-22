@@ -1,17 +1,18 @@
-import { Alert, Box, Chip, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, Chip, CircularProgress, Paper, Stack, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { createPlayer, getPlayer, updatePlayerJob } from '@/api/player'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import JobChangeTab from '@/components/player-job/JobChangeTab'
 import JobRoadmapTab from '@/components/player-job/JobRoadmapTab'
-import { innerSurfaceSx, outerPagePaperSx } from '@/constants/styles'
+import { innerSurfaceSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import locale from '../../locale/player-job/JobChange.json'
+import GamePageShell from '@/components/common/GamePageShell'
 
 export default function JobChange() {
   const { session, isLoading } = useAuth()
@@ -109,97 +110,91 @@ export default function JobChange() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <HomeNavIconButton
-              id={tutorialStep === 'training-to-lv7' ? 'tutorial-home-btn' : undefined}
-              ariaLabel={locale.backToHome}
-            />
-            <Box
-              role="tablist"
-              sx={{
-                display: 'flex',
-                border: '2px solid #8f6b2f',
-                borderRadius: 1.5,
-                overflow: 'hidden',
-              }}
-            >
-              {[locale.title, locale.roadmapTab].map((label, i) => (
-                <Box
-                  key={i}
-                  id={i === 1 && tutorialStep === 'job-change-roadmap' ? 'tutorial-roadmap-tab' : undefined}
-                  role="tab"
-                  aria-selected={tabIndex === i}
-                  tabIndex={0}
-                  onClick={() => {
-                    setTabIndex(i)
-                    if (i === 1 && tutorialStep === 'job-change-roadmap') {
-                      advanceTutorial('training-to-lv7')
-                    }
-                  }}
-                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setTabIndex(i)}
-                  sx={{
-                    px: { xs: 2, sm: 3 },
-                    py: 0.75,
-                    cursor: 'pointer',
-                    fontWeight: 900,
-                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                    userSelect: 'none',
-                    borderRight: i === 0 ? '2px solid #8f6b2f' : 'none',
-                    background: tabIndex === i ? 'linear-gradient(90deg, #e8c84a 0%, #f2d27a 100%)' : '#f5efd8',
-                    color: tabIndex === i ? '#4a2e0a' : '#8a7a5a',
-                    transition: 'background 0.1s, color 0.1s',
-                    '&:hover': tabIndex !== i ? { background: '#ede4c5', color: '#6a5a3a' } : {},
-                  }}
-                >
-                  {tabIndex === i ? `▶ ${label}` : label}
-                </Box>
-              ))}
-            </Box>
-          </Stack>
-
-          {isPlayerLoading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={16} />
-              <Typography variant="body2">{locale.loadingPlayer}</Typography>
-            </Stack>
-          ) : playerError ? (
-            <Alert severity="warning">{playerError.message}</Alert>
-          ) : !player ? (
-            <Alert severity="warning">{locale.loadingPlayer}</Alert>
-          ) : (
-            <Stack spacing={2}>
-              {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
-              {submitError ? <Alert severity="error">{submitError}</Alert> : null}
-              {learnedMoveNames.length > 0 ? (
-                <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2 }}>
-                  <Stack spacing={1}>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      {locale.learnedMoves}
-                    </Typography>
-                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                      {learnedMoveNames.map((moveName) => (
-                        <Chip key={moveName} label={moveName} color="info" variant="outlined" />
-                      ))}
-                    </Stack>
-                  </Stack>
-                </Paper>
-              ) : null}
-
-              {tabIndex === 0 && (
-                <JobChangeTab
-                  player={player}
-                  isSubmittingJobValue={isSubmittingJobValue}
-                  onJobChange={handleChangeJob}
-                />
-              )}
-              {tabIndex === 1 && <JobRoadmapTab />}
-            </Stack>
-          )}
+    <GamePageShell>
+      <Stack spacing={{ xs: 1.5, sm: 2 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <HomeNavIconButton
+            id={tutorialStep === 'training-to-lv7' ? 'tutorial-home-btn' : undefined}
+            ariaLabel={locale.backToHome}
+          />
+          <Box
+            role="tablist"
+            sx={{
+              display: 'flex',
+              border: '2px solid #8f6b2f',
+              borderRadius: 1.5,
+              overflow: 'hidden',
+            }}
+          >
+            {[locale.title, locale.roadmapTab].map((label, i) => (
+              <Box
+                key={i}
+                id={i === 1 && tutorialStep === 'job-change-roadmap' ? 'tutorial-roadmap-tab' : undefined}
+                role="tab"
+                aria-selected={tabIndex === i}
+                tabIndex={0}
+                onClick={() => {
+                  setTabIndex(i)
+                  if (i === 1 && tutorialStep === 'job-change-roadmap') {
+                    advanceTutorial('training-to-lv7')
+                  }
+                }}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setTabIndex(i)}
+                sx={{
+                  px: { xs: 2, sm: 3 },
+                  py: 0.75,
+                  cursor: 'pointer',
+                  fontWeight: 900,
+                  fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                  userSelect: 'none',
+                  borderRight: i === 0 ? '2px solid #8f6b2f' : 'none',
+                  background: tabIndex === i ? 'linear-gradient(90deg, #e8c84a 0%, #f2d27a 100%)' : '#f5efd8',
+                  color: tabIndex === i ? '#4a2e0a' : '#8a7a5a',
+                  transition: 'background 0.1s, color 0.1s',
+                  '&:hover': tabIndex !== i ? { background: '#ede4c5', color: '#6a5a3a' } : {},
+                }}
+              >
+                {tabIndex === i ? `▶ ${label}` : label}
+              </Box>
+            ))}
+          </Box>
         </Stack>
-      </Paper>
+
+        {isPlayerLoading ? (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={16} />
+            <Typography variant="body2">{locale.loadingPlayer}</Typography>
+          </Stack>
+        ) : playerError ? (
+          <Alert severity="warning">{playerError.message}</Alert>
+        ) : !player ? (
+          <Alert severity="warning">{locale.loadingPlayer}</Alert>
+        ) : (
+          <Stack spacing={2}>
+            {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
+            {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+            {learnedMoveNames.length > 0 ? (
+              <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: 2 }}>
+                <Stack spacing={1}>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    {locale.learnedMoves}
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    {learnedMoveNames.map((moveName) => (
+                      <Chip key={moveName} label={moveName} color="info" variant="outlined" />
+                    ))}
+                  </Stack>
+                </Stack>
+              </Paper>
+            ) : null}
+
+            {tabIndex === 0 && (
+              <JobChangeTab player={player} isSubmittingJobValue={isSubmittingJobValue} onJobChange={handleChangeJob} />
+            )}
+            {tabIndex === 1 && <JobRoadmapTab />}
+          </Stack>
+        )}
+      </Stack>
       {tutorialStep === 'training-to-lv7' && (
         <SpotlightTutorial
           guide="priest"
@@ -225,6 +220,6 @@ export default function JobChange() {
           onDismiss={() => advanceTutorial('training-to-lv7')}
         />
       )}
-    </Container>
+    </GamePageShell>
   )
 }

@@ -1,4 +1,4 @@
-import { Alert, CircularProgress, Container, Paper, Stack, Tab, Tabs, Typography } from '@mui/material'
+import { Alert, CircularProgress, Stack, Tab, Tabs, Typography } from '@mui/material'
 import { useState } from 'react'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import DebugGoldSection from '@/components/debug/DebugGoldSection'
@@ -12,11 +12,12 @@ import DebugStatusSection from '@/components/debug/DebugStatusSection'
 import DebugTutorialSection from '@/components/debug/DebugTutorialSection'
 import DebugTemplateSection from '@/components/debug/DebugTemplateSection'
 import DebugWaitSection from '@/components/debug/DebugWaitSection'
-import { gameTabSx, gameTabsSx, outerPagePaperSx } from '@/constants/styles'
+import { gameTabSx, gameTabsSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { useDebugPlayer } from '@/hooks/useDebugPlayer'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import locale from '../../locale/debug/Debug.json'
+import GamePageShell from '@/components/common/GamePageShell'
 
 function Loading({ text }: { text: string }) {
   return (
@@ -96,25 +97,23 @@ export default function Debug() {
   const { canUseDebug, isLoading } = useDebugStatus()
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={{ xs: 1.5, sm: 2.5 }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <HomeNavIconButton ariaLabel={locale.backToHome} />
-            <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
-              {locale.title}
-            </Typography>
-          </Stack>
-
-          {isLoading ? (
-            <Loading text={locale.loading} />
-          ) : !canUseDebug ? (
-            <Alert severity="error">{locale.forbidden}</Alert>
-          ) : (
-            <DebugContent />
-          )}
+    <GamePageShell>
+      <Stack spacing={{ xs: 1.5, sm: 2.5 }}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <HomeNavIconButton ariaLabel={locale.backToHome} />
+          <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
+            {locale.title}
+          </Typography>
         </Stack>
-      </Paper>
-    </Container>
+
+        {isLoading ? (
+          <Loading text={locale.loading} />
+        ) : !canUseDebug ? (
+          <Alert severity="error">{locale.forbidden}</Alert>
+        ) : (
+          <DebugContent />
+        )}
+      </Stack>
+    </GamePageShell>
   )
 }

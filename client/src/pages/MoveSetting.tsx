@@ -1,4 +1,4 @@
-import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, CircularProgress, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
@@ -6,13 +6,13 @@ import BeginnerGuide from '@/components/common/BeginnerGuide'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import MoveItemBox from '@/components/moveSetting/MoveItemBox'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
-import { outerPagePaperSx } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import locale from '../../locale/player-setting/PlayerSetting.json'
+import GamePageShell from '@/components/common/GamePageShell'
 
 export default function MoveSetting() {
   const { session, isLoading } = useAuth()
@@ -70,53 +70,51 @@ export default function MoveSetting() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
-            <HomeNavIconButton
-              id={tutorialStep === 'home-treasure-map' ? 'tutorial-home-btn-move' : undefined}
-              ariaLabel={locale.backToHome}
-              onClick={() => {
-                if (userId && tutorialStep === 'home-treasure-map') {
-                  setTutorialStep(userId, 'home-treasure-map')
-                }
-              }}
-            />
-            <BeginnerGuide
-              userId={session?.user.id}
-              guide={beginnerGuides.moveSetting}
-              triggerSx={{
-                minHeight: 44,
-                height: 44,
-                px: 1.5,
-                alignSelf: 'center',
-              }}
-            />
-          </Stack>
-
-          {isPlayerLoading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={16} />
-              <Typography variant="body2">{locale.loadingPlayer}</Typography>
-            </Stack>
-          ) : playerError ? (
-            <Alert severity="warning">{playerError.message}</Alert>
-          ) : !player ? (
-            <Alert severity="warning">{locale.loadingPlayer}</Alert>
-          ) : (
-            <Box id={tutorialStep === 'move-setting-info' ? 'tutorial-move-item-box' : undefined}>
-              <MoveItemBox
-                player={player}
-                accessToken={session?.access_token ?? ''}
-                onSaved={async () => {
-                  await mutatePlayer()
-                }}
-              />
-            </Box>
-          )}
+    <GamePageShell>
+      <Stack spacing={{ xs: 1.5, sm: 2 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
+          <HomeNavIconButton
+            id={tutorialStep === 'home-treasure-map' ? 'tutorial-home-btn-move' : undefined}
+            ariaLabel={locale.backToHome}
+            onClick={() => {
+              if (userId && tutorialStep === 'home-treasure-map') {
+                setTutorialStep(userId, 'home-treasure-map')
+              }
+            }}
+          />
+          <BeginnerGuide
+            userId={session?.user.id}
+            guide={beginnerGuides.moveSetting}
+            triggerSx={{
+              minHeight: 44,
+              height: 44,
+              px: 1.5,
+              alignSelf: 'center',
+            }}
+          />
         </Stack>
-      </Paper>
+
+        {isPlayerLoading ? (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={16} />
+            <Typography variant="body2">{locale.loadingPlayer}</Typography>
+          </Stack>
+        ) : playerError ? (
+          <Alert severity="warning">{playerError.message}</Alert>
+        ) : !player ? (
+          <Alert severity="warning">{locale.loadingPlayer}</Alert>
+        ) : (
+          <Box id={tutorialStep === 'move-setting-info' ? 'tutorial-move-item-box' : undefined}>
+            <MoveItemBox
+              player={player}
+              accessToken={session?.access_token ?? ''}
+              onSaved={async () => {
+                await mutatePlayer()
+              }}
+            />
+          </Box>
+        )}
+      </Stack>
       {tutorialStep === 'move-setting-info' && (
         <SpotlightTutorial
           guide="mage"
@@ -134,6 +132,6 @@ export default function MoveSetting() {
           message={tutorialLocale.steps.moveSettingToHome.message}
         />
       )}
-    </Container>
+    </GamePageShell>
   )
 }

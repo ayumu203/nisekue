@@ -1,4 +1,4 @@
-import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, CircularProgress, Paper, Stack, TextField, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
@@ -14,7 +14,6 @@ import {
   greenOutlinedInputSx,
   innerSurfaceSx,
   mutedGreenButtonSx,
-  outerPagePaperSx,
   softGreenButtonSx,
 } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
@@ -24,6 +23,7 @@ import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import { PLAYER_IMAGE_COUNT, resolvePlayerImageFileName, resolvePlayerImageNo } from '@/lib/playerImages'
 import locale from '../../locale/player-setting/PlayerSetting.json'
+import GamePageShell from '@/components/common/GamePageShell'
 
 export default function PlayerSetting() {
   const { session, isLoading } = useAuth()
@@ -295,274 +295,261 @@ export default function PlayerSetting() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: '1%' }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Stack direction="row" justifyContent="flex-start">
-            <HomeNavIconButton
-              id={tutorialStep === 'player-setting-to-home' ? 'tutorial-home-btn-setting' : undefined}
-              ariaLabel={locale.backToHome}
-              onClick={() => {
-                if (userId && tutorialStep === 'player-setting-to-home') {
-                  setTutorialStep(userId, 'home-training')
-                }
-              }}
-            />
-          </Stack>
+    <GamePageShell>
+      <Stack spacing={{ xs: 1.5, sm: 2 }}>
+        <Stack direction="row" justifyContent="flex-start">
+          <HomeNavIconButton
+            id={tutorialStep === 'player-setting-to-home' ? 'tutorial-home-btn-setting' : undefined}
+            ariaLabel={locale.backToHome}
+            onClick={() => {
+              if (userId && tutorialStep === 'player-setting-to-home') {
+                setTutorialStep(userId, 'home-training')
+              }
+            }}
+          />
+        </Stack>
 
-          {isPlayerLoading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={16} />
-              <Typography variant="body2">{locale.loadingPlayer}</Typography>
-            </Stack>
-          ) : playerError ? (
-            <Alert severity="warning">{playerError.message}</Alert>
-          ) : (
-            <Stack spacing={{ xs: 1.5, sm: 2 }}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  ...innerSurfaceSx,
-                  borderRadius: 3,
-                  p: { xs: 2, sm: 2.5 },
-                  backgroundColor: '#44644a',
-                  borderColor: '#b8ab7a',
-                  color: '#fff8ea',
-                }}
-              >
-                <Box component="form" onSubmit={handleSubmit}>
-                  <Stack spacing={2}>
-                    <Stack spacing={0.25}>
-                      <Typography
-                        variant="overline"
-                        sx={{ letterSpacing: '0.18em', color: 'rgba(243, 238, 220, 0.72)' }}
-                      >
-                        {locale.titleRuby}
-                      </Typography>
-                      <Typography variant="h4" fontWeight={900} color="#fff8ea">
-                        {locale.title}
-                      </Typography>
-                    </Stack>
-                    <Stack
-                      spacing={0.75}
-                      id={tutorialStep === 'player-setting-name' ? 'tutorial-name-field' : undefined}
+        {isPlayerLoading ? (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={16} />
+            <Typography variant="body2">{locale.loadingPlayer}</Typography>
+          </Stack>
+        ) : playerError ? (
+          <Alert severity="warning">{playerError.message}</Alert>
+        ) : (
+          <Stack spacing={{ xs: 1.5, sm: 2 }}>
+            <Paper
+              variant="outlined"
+              sx={{
+                ...innerSurfaceSx,
+                borderRadius: 3,
+                p: { xs: 2, sm: 2.5 },
+                backgroundColor: '#44644a',
+                borderColor: '#b8ab7a',
+                color: '#fff8ea',
+              }}
+            >
+              <Box component="form" onSubmit={handleSubmit}>
+                <Stack spacing={2}>
+                  <Stack spacing={0.25}>
+                    <Typography variant="overline" sx={{ letterSpacing: '0.18em', color: 'rgba(243, 238, 220, 0.72)' }}>
+                      {locale.titleRuby}
+                    </Typography>
+                    <Typography variant="h4" fontWeight={900} color="#fff8ea">
+                      {locale.title}
+                    </Typography>
+                  </Stack>
+                  <Stack spacing={0.75} id={tutorialStep === 'player-setting-name' ? 'tutorial-name-field' : undefined}>
+                    <Typography id="player-name-label" variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                      {locale.playerNameLabel}
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      placeholder={locale.playerNamePlaceholder}
+                      value={userName}
+                      onChange={(event) => {
+                        setUserName(event.target.value)
+                      }}
+                      inputProps={{
+                        'aria-labelledby': 'player-name-label',
+                      }}
+                      sx={settingInputSx}
+                    />
+                  </Stack>
+                  <Stack spacing={1.5}>
+                    <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                      {locale.playerImageLabel}
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: '100%',
+                        maxWidth: 237,
+                        aspectRatio: '338 / 350',
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: 'rgba(255,255,255,0.72)',
+                        overflow: 'hidden',
+                        alignSelf: 'center',
+                      }}
                     >
-                      <Typography id="player-name-label" variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
-                        {locale.playerNameLabel}
+                      {previewImagePath ? (
+                        <Box
+                          component="img"
+                          src={previewImagePath}
+                          alt={locale.playerImagePreviewAlt}
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain',
+                            objectPosition: 'center bottom',
+                            display: 'block',
+                          }}
+                        />
+                      ) : (
+                        <Box sx={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', px: 2 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                    <Stack spacing={0.75}>
+                      <Typography
+                        id="player-image-no-label"
+                        variant="subtitle1"
+                        sx={{ color: 'rgba(243, 238, 220, 0.9)' }}
+                      >
+                        {locale.playerImageNoLabel}
                       </Typography>
                       <TextField
                         fullWidth
-                        placeholder={locale.playerNamePlaceholder}
-                        value={userName}
+                        type="number"
+                        value={imageNoInput}
                         onChange={(event) => {
-                          setUserName(event.target.value)
+                          setImageNoInput(event.target.value)
                         }}
                         inputProps={{
-                          'aria-labelledby': 'player-name-label',
+                          min: 1,
+                          max: PLAYER_IMAGE_COUNT,
+                          'aria-labelledby': 'player-image-no-label',
+                        }}
+                        helperText={locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
+                        sx={settingInputSx}
+                      />
+                    </Stack>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                      <Button
+                        id={tutorialStep === 'player-setting-random' ? 'tutorial-random-btn' : undefined}
+                        type="button"
+                        variant="contained"
+                        sx={mutedGreenButtonSx}
+                        onClick={() => {
+                          const randomImageNo = Math.floor(Math.random() * PLAYER_IMAGE_COUNT) + 1
+                          setImageNoInput(String(randomImageNo))
+                          if (tutorialStep === 'player-setting-random') {
+                            advanceTutorial('player-setting-image-list')
+                          }
+                        }}
+                      >
+                        {locale.randomSelect}
+                      </Button>
+                      <Button
+                        id={tutorialStep === 'player-setting-image-list' ? 'tutorial-image-list-btn' : undefined}
+                        component={Link}
+                        to="/player-images"
+                        variant="contained"
+                        sx={mutedGreenButtonSx}
+                      >
+                        {locale.openImageList}
+                      </Button>
+                    </Stack>
+                  </Stack>
+                  {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
+                  {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
+                  <Button
+                    id={tutorialStep === 'player-setting-save' ? 'tutorial-save-btn' : undefined}
+                    type="submit"
+                    variant="contained"
+                    disabled={isSubmitting}
+                    sx={softGreenButtonSx}
+                  >
+                    {isSubmitting ? locale.saving : locale.submitButton}
+                  </Button>
+                </Stack>
+              </Box>
+            </Paper>
+
+            <Paper
+              id="tutorial-account-section"
+              variant="outlined"
+              sx={{
+                ...innerSurfaceSx,
+                borderRadius: 3,
+                p: { xs: 2, sm: 2.5 },
+                backgroundColor: '#44644a',
+                borderColor: '#b8ab7a',
+                color: '#fff8ea',
+              }}
+            >
+              <Stack spacing={2}>
+                <Stack spacing={0.5}>
+                  <Typography variant="h5" fontWeight={800} color="#fff8ea">
+                    {locale.accountLinkTitle}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
+                    {anonymousIdentity ? locale.accountLinkDescription : locale.accountLinkedDescription}
+                  </Typography>
+                  {accountEmail ? (
+                    <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.72)' }}>
+                      {locale.accountCurrentEmail.replace('{email}', accountEmail)}
+                    </Typography>
+                  ) : null}
+                </Stack>
+
+                {anonymousIdentity ? (
+                  <Button
+                    type="button"
+                    variant="contained"
+                    disabled={accountAction !== null}
+                    onClick={handleGoogleLink}
+                    sx={googleButtonSx}
+                    startIcon={<GoogleColorIcon />}
+                  >
+                    {accountAction === 'google' ? locale.googleLinkSubmitting : locale.googleLinkSubmit}
+                  </Button>
+                ) : null}
+
+                <Box component="form" onSubmit={handleAccountSubmit} noValidate>
+                  <Stack spacing={2}>
+                    <Stack spacing={0.75}>
+                      <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                        {locale.accountEmailLabel}
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        type="email"
+                        placeholder={locale.accountEmailPlaceholder}
+                        value={accountEmailInput}
+                        onChange={(event) => {
+                          setAccountEmailInput(event.target.value)
                         }}
                         sx={settingInputSx}
                       />
                     </Stack>
-                    <Stack spacing={1.5}>
+
+                    <Stack spacing={0.75}>
                       <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
-                        {locale.playerImageLabel}
+                        {locale.setPasswordLabel}
                       </Typography>
-                      <Box
-                        sx={{
-                          width: '100%',
-                          maxWidth: 237,
-                          aspectRatio: '338 / 350',
-                          borderRadius: 2,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          bgcolor: 'rgba(255,255,255,0.72)',
-                          overflow: 'hidden',
-                          alignSelf: 'center',
+                      <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
+                        {locale.setAccountDescription}
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        type="password"
+                        placeholder={locale.setPasswordPlaceholder}
+                        value={accountPasswordInput}
+                        onChange={(event) => {
+                          setAccountPasswordInput(event.target.value)
                         }}
-                      >
-                        {previewImagePath ? (
-                          <Box
-                            component="img"
-                            src={previewImagePath}
-                            alt={locale.playerImagePreviewAlt}
-                            sx={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'contain',
-                              objectPosition: 'center bottom',
-                              display: 'block',
-                            }}
-                          />
-                        ) : (
-                          <Box sx={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', px: 2 }}>
-                            <Typography variant="body2" color="text.secondary">
-                              {locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
-                      <Stack spacing={0.75}>
-                        <Typography
-                          id="player-image-no-label"
-                          variant="subtitle1"
-                          sx={{ color: 'rgba(243, 238, 220, 0.9)' }}
-                        >
-                          {locale.playerImageNoLabel}
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          type="number"
-                          value={imageNoInput}
-                          onChange={(event) => {
-                            setImageNoInput(event.target.value)
-                          }}
-                          inputProps={{
-                            min: 1,
-                            max: PLAYER_IMAGE_COUNT,
-                            'aria-labelledby': 'player-image-no-label',
-                          }}
-                          helperText={locale.imageNoRange.replace('{{max}}', String(PLAYER_IMAGE_COUNT))}
-                          sx={settingInputSx}
-                        />
-                      </Stack>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                        <Button
-                          id={tutorialStep === 'player-setting-random' ? 'tutorial-random-btn' : undefined}
-                          type="button"
-                          variant="contained"
-                          sx={mutedGreenButtonSx}
-                          onClick={() => {
-                            const randomImageNo = Math.floor(Math.random() * PLAYER_IMAGE_COUNT) + 1
-                            setImageNoInput(String(randomImageNo))
-                            if (tutorialStep === 'player-setting-random') {
-                              advanceTutorial('player-setting-image-list')
-                            }
-                          }}
-                        >
-                          {locale.randomSelect}
-                        </Button>
-                        <Button
-                          id={tutorialStep === 'player-setting-image-list' ? 'tutorial-image-list-btn' : undefined}
-                          component={Link}
-                          to="/player-images"
-                          variant="contained"
-                          sx={mutedGreenButtonSx}
-                        >
-                          {locale.openImageList}
-                        </Button>
-                      </Stack>
+                        sx={settingInputSx}
+                      />
                     </Stack>
-                    {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
-                    {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
-                    <Button
-                      id={tutorialStep === 'player-setting-save' ? 'tutorial-save-btn' : undefined}
-                      type="submit"
-                      variant="contained"
-                      disabled={isSubmitting}
-                      sx={softGreenButtonSx}
-                    >
-                      {isSubmitting ? locale.saving : locale.submitButton}
+
+                    <Button type="submit" variant="contained" disabled={accountAction !== null} sx={softGreenButtonSx}>
+                      {accountAction === 'account' ? locale.setAccountSubmitting : locale.setAccountSubmit}
                     </Button>
                   </Stack>
                 </Box>
-              </Paper>
 
-              <Paper
-                id="tutorial-account-section"
-                variant="outlined"
-                sx={{
-                  ...innerSurfaceSx,
-                  borderRadius: 3,
-                  p: { xs: 2, sm: 2.5 },
-                  backgroundColor: '#44644a',
-                  borderColor: '#b8ab7a',
-                  color: '#fff8ea',
-                }}
-              >
-                <Stack spacing={2}>
-                  <Stack spacing={0.5}>
-                    <Typography variant="h5" fontWeight={800} color="#fff8ea">
-                      {locale.accountLinkTitle}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
-                      {anonymousIdentity ? locale.accountLinkDescription : locale.accountLinkedDescription}
-                    </Typography>
-                    {accountEmail ? (
-                      <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.72)' }}>
-                        {locale.accountCurrentEmail.replace('{email}', accountEmail)}
-                      </Typography>
-                    ) : null}
-                  </Stack>
-
-                  {anonymousIdentity ? (
-                    <Button
-                      type="button"
-                      variant="contained"
-                      disabled={accountAction !== null}
-                      onClick={handleGoogleLink}
-                      sx={googleButtonSx}
-                      startIcon={<GoogleColorIcon />}
-                    >
-                      {accountAction === 'google' ? locale.googleLinkSubmitting : locale.googleLinkSubmit}
-                    </Button>
-                  ) : null}
-
-                  <Box component="form" onSubmit={handleAccountSubmit} noValidate>
-                    <Stack spacing={2}>
-                      <Stack spacing={0.75}>
-                        <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
-                          {locale.accountEmailLabel}
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          type="email"
-                          placeholder={locale.accountEmailPlaceholder}
-                          value={accountEmailInput}
-                          onChange={(event) => {
-                            setAccountEmailInput(event.target.value)
-                          }}
-                          sx={settingInputSx}
-                        />
-                      </Stack>
-
-                      <Stack spacing={0.75}>
-                        <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
-                          {locale.setPasswordLabel}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
-                          {locale.setAccountDescription}
-                        </Typography>
-                        <TextField
-                          fullWidth
-                          type="password"
-                          placeholder={locale.setPasswordPlaceholder}
-                          value={accountPasswordInput}
-                          onChange={(event) => {
-                            setAccountPasswordInput(event.target.value)
-                          }}
-                          sx={settingInputSx}
-                        />
-                      </Stack>
-
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        disabled={accountAction !== null}
-                        sx={softGreenButtonSx}
-                      >
-                        {accountAction === 'account' ? locale.setAccountSubmitting : locale.setAccountSubmit}
-                      </Button>
-                    </Stack>
-                  </Box>
-
-                  {accountError ? <Alert severity="warning">{accountError}</Alert> : null}
-                  {accountSuccess ? <Alert severity="success">{accountSuccess}</Alert> : null}
-                </Stack>
-              </Paper>
-            </Stack>
-          )}
-        </Stack>
-      </Paper>
+                {accountError ? <Alert severity="warning">{accountError}</Alert> : null}
+                {accountSuccess ? <Alert severity="success">{accountSuccess}</Alert> : null}
+              </Stack>
+            </Paper>
+          </Stack>
+        )}
+      </Stack>
       {tutorialStep === 'player-setting-name' && (
         <SpotlightTutorial
           targetId="tutorial-name-field"
@@ -611,6 +598,6 @@ export default function PlayerSetting() {
           message={tutorialLocale.steps.playerSettingToHome.message}
         />
       )}
-    </Container>
+    </GamePageShell>
   )
 }

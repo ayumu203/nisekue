@@ -171,13 +171,8 @@ export const innerSurfaceSx = {
   borderColor: '#e7d9b6',
 } as const
 
-export const outerPagePaperSx = {
-  backgroundColor: '#ffcc00',
-  border: '1px solid',
-  borderColor: '#d3a93a',
-  borderRadius: { xs: 3, sm: 4 },
-  p: '2%',
-} as const
+/** ゲーム画面の外枠（画面全体）の背景色 */
+export const gamePageBackground = '#ffcc00'
 
 export const twoColumnContentGridSx = {
   display: 'grid',

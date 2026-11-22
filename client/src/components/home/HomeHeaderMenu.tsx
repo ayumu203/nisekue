@@ -1,8 +1,8 @@
-import { Alert, Box, Button, ClickAwayListener, IconButton, Paper, SvgIcon, type SvgIconProps } from '@mui/material'
+import { Alert, Box, Button, ClickAwayListener, IconButton, SvgIcon, type SvgIconProps } from '@mui/material'
 import { Link } from 'react-router-dom'
 import type { HomeMenuGroup, HomeMenuGroupKey, HomeMenuItem } from '@/components/home/homeMenu'
 import { GearIcon, SignOutIcon } from '@/components/home/StatusIcons'
-import { innerSurfaceSx, softGreenButtonSx, topNavigationIconButtonSx } from '@/constants/styles'
+import { softGreenButtonSx, topNavigationIconButtonSx } from '@/constants/styles'
 import { useSignOut } from '@/hooks/useSignOut'
 
 type HomeHeaderMenuProps = {
@@ -74,13 +74,9 @@ export default function HomeHeaderMenu({
 
   return (
     <Box>
-      <Paper
-        variant="outlined"
+      {/* 枠で包まず、背景の上にボタンを直接並べる */}
+      <Box
         sx={{
-          ...innerSurfaceSx,
-          borderRadius: 3,
-          px: 1.5,
-          py: 1.25,
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
@@ -202,7 +198,7 @@ export default function HomeHeaderMenu({
             <SignOutIcon />
           </IconButton>
         </Box>
-      </Paper>
+      </Box>
       {signOutError ? (
         <Alert severity="error" sx={{ mt: 1 }}>
           {signOutError}

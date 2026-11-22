@@ -4,7 +4,6 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Container,
   Dialog,
   DialogActions,
   DialogContent,
@@ -44,12 +43,12 @@ import { itemInnerPanelSx, inputSx, tabsPaperSx, tabsSx } from '@/components/ite
 import { normalizeText, parsePositiveInteger } from '@/components/items/itemUtils'
 import { MarketCard } from '@/components/items/MarketCard'
 import { useAuth } from '@/contexts/useAuth'
-import { outerPagePaperSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { beginnerGuides } from '@/lib/beginnerGuides'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/items/Items.json'
 import type { InventoryItemView, ItemEquipmentView, ItemStackView, MarketListingView } from '@/schema/item'
+import GamePageShell from '@/components/common/GamePageShell'
 
 const PAGE_SIZE = 30
 
@@ -368,366 +367,364 @@ export default function Items() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 6 } }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={2.5}>
-          <PageFrame>
-            <ControlFrame>
-              <Stack spacing={1.5}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
-                  <HomeNavIconButton ariaLabel={locale.backToHome} />
-                  <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.items} inverted />
-                </Stack>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}>
-                    ITEM CONTROL
-                  </Typography>
-                  <Typography variant="h4" fontWeight={900} color="#ffffff">
-                    {locale.title}
-                  </Typography>
-                </Box>
+    <GamePageShell>
+      <Stack spacing={2.5}>
+        <PageFrame>
+          <ControlFrame>
+            <Stack spacing={1.5}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
+                <HomeNavIconButton ariaLabel={locale.backToHome} />
+                <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.items} inverted />
               </Stack>
-            </ControlFrame>
-
-            {feedback ? (
-              <Box ref={feedback.type === 'error' ? errorAlertRef : undefined}>
-                <Alert severity={feedback.type}>{feedback.message}</Alert>
-              </Box>
-            ) : null}
-            {itemsError ? <Alert severity="warning">{itemsError.message}</Alert> : null}
-            {marketError ? <Alert severity="warning">{marketError.message}</Alert> : null}
-            {myListingsError ? <Alert severity="warning">{myListingsError.message}</Alert> : null}
-
-            <Dialog open={synthesizeTarget !== null} onClose={() => setSynthesizeTarget(null)} maxWidth="xs" fullWidth>
-              <DialogTitle>合成素材の選択</DialogTitle>
-              <DialogContent>
-                {synthesizeSources.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    合成素材として使用できる装備がありません。
-                  </Typography>
-                ) : (
-                  <RadioGroup
-                    value={selectedSourceId ?? ''}
-                    onChange={(event) => setSelectedSourceId(event.target.value)}
-                  >
-                    {synthesizeSources.map((source) => (
-                      <FormControlLabel
-                        key={source.playerEquipmentId}
-                        value={source.playerEquipmentId}
-                        control={<Radio />}
-                        label={`${source.name}${source.plusValue > 0 ? ` (+${source.plusValue})` : ''}`}
-                      />
-                    ))}
-                  </RadioGroup>
-                )}
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setSynthesizeTarget(null)} disabled={busyKey !== null}>
-                  キャンセル
-                </Button>
-                <Button
-                  onClick={() => void handleSynthesizeConfirm()}
-                  disabled={busyKey !== null || selectedSourceId === null || synthesizeSources.length === 0}
-                  variant="contained"
-                >
-                  合成
-                </Button>
-              </DialogActions>
-            </Dialog>
-
-            <Dialog open={pendingUseItem !== null} onClose={() => setPendingUseItem(null)} maxWidth="xs" fullWidth>
-              <DialogTitle>{locale.useConfirmTitle}</DialogTitle>
-              <DialogContent>
-                <Typography variant="body2">
-                  {locale.useConfirmMessage.replace('{{name}}', pendingUseItem?.name ?? '')}
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}>
+                  ITEM CONTROL
                 </Typography>
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setPendingUseItem(null)} disabled={busyKey !== null}>
-                  {locale.actionCancel}
-                </Button>
-                <Button
-                  onClick={() => pendingUseItem && void handleUseItemConfirmed(pendingUseItem)}
-                  disabled={busyKey !== null}
-                  variant="contained"
+                <Typography variant="h4" fontWeight={900} color="#ffffff">
+                  {locale.title}
+                </Typography>
+              </Box>
+            </Stack>
+          </ControlFrame>
+
+          {feedback ? (
+            <Box ref={feedback.type === 'error' ? errorAlertRef : undefined}>
+              <Alert severity={feedback.type}>{feedback.message}</Alert>
+            </Box>
+          ) : null}
+          {itemsError ? <Alert severity="warning">{itemsError.message}</Alert> : null}
+          {marketError ? <Alert severity="warning">{marketError.message}</Alert> : null}
+          {myListingsError ? <Alert severity="warning">{myListingsError.message}</Alert> : null}
+
+          <Dialog open={synthesizeTarget !== null} onClose={() => setSynthesizeTarget(null)} maxWidth="xs" fullWidth>
+            <DialogTitle>合成素材の選択</DialogTitle>
+            <DialogContent>
+              {synthesizeSources.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  合成素材として使用できる装備がありません。
+                </Typography>
+              ) : (
+                <RadioGroup
+                  value={selectedSourceId ?? ''}
+                  onChange={(event) => setSelectedSourceId(event.target.value)}
                 >
-                  {locale.useConfirmAction}
-                </Button>
-              </DialogActions>
-            </Dialog>
+                  {synthesizeSources.map((source) => (
+                    <FormControlLabel
+                      key={source.playerEquipmentId}
+                      value={source.playerEquipmentId}
+                      control={<Radio />}
+                      label={`${source.name}${source.plusValue > 0 ? ` (+${source.plusValue})` : ''}`}
+                    />
+                  ))}
+                </RadioGroup>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setSynthesizeTarget(null)} disabled={busyKey !== null}>
+                キャンセル
+              </Button>
+              <Button
+                onClick={() => void handleSynthesizeConfirm()}
+                disabled={busyKey !== null || selectedSourceId === null || synthesizeSources.length === 0}
+                variant="contained"
+              >
+                合成
+              </Button>
+            </DialogActions>
+          </Dialog>
 
-            <ControlFrame>
-              <Stack spacing={2}>
-                <ItemSummary usedSlots={items?.usedSlots} capacity={items?.capacity} gold={items?.gold} />
+          <Dialog open={pendingUseItem !== null} onClose={() => setPendingUseItem(null)} maxWidth="xs" fullWidth>
+            <DialogTitle>{locale.useConfirmTitle}</DialogTitle>
+            <DialogContent>
+              <Typography variant="body2">
+                {locale.useConfirmMessage.replace('{{name}}', pendingUseItem?.name ?? '')}
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setPendingUseItem(null)} disabled={busyKey !== null}>
+                {locale.actionCancel}
+              </Button>
+              <Button
+                onClick={() => pendingUseItem && void handleUseItemConfirmed(pendingUseItem)}
+                disabled={busyKey !== null}
+                variant="contained"
+              >
+                {locale.useConfirmAction}
+              </Button>
+            </DialogActions>
+          </Dialog>
 
-                <Paper variant="outlined" sx={tabsPaperSx}>
-                  <Tabs
-                    value={primaryTab}
-                    onChange={(_, value: PrimaryTab) => setPrimaryTab(value)}
-                    variant="fullWidth"
-                    sx={tabsSx}
-                  >
-                    <Tab value="items" label={locale.itemsTab} />
-                    <Tab value="market" label={locale.marketTab} />
-                  </Tabs>
-                </Paper>
-              </Stack>
-            </ControlFrame>
+          <ControlFrame>
+            <Stack spacing={2}>
+              <ItemSummary usedSlots={items?.usedSlots} capacity={items?.capacity} gold={items?.gold} />
 
-            {primaryTab === 'items' ? (
-              <Stack spacing={2}>
-                <SectionFrame title={locale.equippedTitle}>
-                  <Stack spacing={2}>
-                    {isItemsLoading ? (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <CircularProgress size={16} />
-                        <Typography variant="body2">{locale.loading}</Typography>
-                      </Stack>
-                    ) : equippedItems.length > 0 ? (
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-                          gap: 1.5,
-                        }}
-                      >
-                        {equippedItems.map((item) => (
+              <Paper variant="outlined" sx={tabsPaperSx}>
+                <Tabs
+                  value={primaryTab}
+                  onChange={(_, value: PrimaryTab) => setPrimaryTab(value)}
+                  variant="fullWidth"
+                  sx={tabsSx}
+                >
+                  <Tab value="items" label={locale.itemsTab} />
+                  <Tab value="market" label={locale.marketTab} />
+                </Tabs>
+              </Paper>
+            </Stack>
+          </ControlFrame>
+
+          {primaryTab === 'items' ? (
+            <Stack spacing={2}>
+              <SectionFrame title={locale.equippedTitle}>
+                <Stack spacing={2}>
+                  {isItemsLoading ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CircularProgress size={16} />
+                      <Typography variant="body2">{locale.loading}</Typography>
+                    </Stack>
+                  ) : equippedItems.length > 0 ? (
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                        gap: 1.5,
+                      }}
+                    >
+                      {equippedItems.map((item) => (
+                        <EquipmentCard
+                          key={item.playerEquipmentId}
+                          item={item}
+                          quantityValue="1"
+                          unitPriceValue="10"
+                          onQuantityChange={() => undefined}
+                          onUnitPriceChange={() => undefined}
+                          onSynthesize={() => undefined}
+                          onDelete={() => undefined}
+                          onList={() => undefined}
+                          onStartListing={() => undefined}
+                          onCancelListing={() => undefined}
+                          actionDisabled
+                          showActions={false}
+                        />
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2">{locale.emptyEquipped}</Typography>
+                  )}
+                </Stack>
+              </SectionFrame>
+
+              <SectionFrame title={locale.inventoryEquipmentsTitle}>
+                <Stack spacing={2}>
+                  {isItemsLoading ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CircularProgress size={16} />
+                      <Typography variant="body2">{locale.loading}</Typography>
+                    </Stack>
+                  ) : inventoryEquipments.length > 0 ? (
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: {
+                          xs: 'repeat(2, minmax(0, 1fr))',
+                          sm: 'repeat(3, minmax(0, 1fr))',
+                          xl: 'repeat(4, minmax(0, 1fr))',
+                        },
+                        gap: 1.25,
+                      }}
+                    >
+                      {inventoryEquipments.map((item) => {
+                        const key = item.playerEquipmentId
+                        return (
                           <EquipmentCard
-                            key={item.playerEquipmentId}
+                            key={key}
                             item={item}
-                            quantityValue="1"
-                            unitPriceValue="10"
-                            onQuantityChange={() => undefined}
-                            onUnitPriceChange={() => undefined}
-                            onSynthesize={() => undefined}
-                            onDelete={() => undefined}
-                            onList={() => undefined}
-                            onStartListing={() => undefined}
-                            onCancelListing={() => undefined}
-                            actionDisabled
-                            showActions={false}
+                            quantityValue={quantities[key] ?? '1'}
+                            unitPriceValue={unitPrices[`price:${key}`] ?? '10'}
+                            onQuantityChange={(value) => setQuantityValue(key, value)}
+                            onUnitPriceChange={(value) => setUnitPriceValue(`price:${key}`, value)}
+                            onSynthesize={() => void handleSynthesize(item)}
+                            onDelete={() => void handleDeleteEquipment(item)}
+                            onList={() => void handleListInventoryItem(item)}
+                            onStartListing={() => setListingEditorKey(key)}
+                            onCancelListing={() => setListingEditorKey(null)}
+                            onEquip={() => void handleEquip(item)}
+                            actionDisabled={busyKey !== null}
+                            isListingMode={listingEditorKey === key}
                           />
-                        ))}
-                      </Box>
-                    ) : (
-                      <Typography variant="body2">{locale.emptyEquipped}</Typography>
-                    )}
-                  </Stack>
-                </SectionFrame>
+                        )
+                      })}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2">{locale.emptyInventory}</Typography>
+                  )}
+                </Stack>
+              </SectionFrame>
 
-                <SectionFrame title={locale.inventoryEquipmentsTitle}>
-                  <Stack spacing={2}>
-                    {isItemsLoading ? (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <CircularProgress size={16} />
-                        <Typography variant="body2">{locale.loading}</Typography>
-                      </Stack>
-                    ) : inventoryEquipments.length > 0 ? (
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: {
-                            xs: 'repeat(2, minmax(0, 1fr))',
-                            sm: 'repeat(3, minmax(0, 1fr))',
-                            xl: 'repeat(4, minmax(0, 1fr))',
-                          },
-                          gap: 1.25,
+              <SectionFrame title={locale.inventoryConsumablesTitle}>
+                <Stack spacing={2}>
+                  {isItemsLoading ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CircularProgress size={16} />
+                      <Typography variant="body2">{locale.loading}</Typography>
+                    </Stack>
+                  ) : inventoryConsumables.length > 0 ? (
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: {
+                          xs: 'repeat(2, minmax(0, 1fr))',
+                          sm: 'repeat(3, minmax(0, 1fr))',
+                          xl: 'repeat(4, minmax(0, 1fr))',
+                        },
+                        gap: 1.25,
+                      }}
+                    >
+                      {inventoryConsumables.map((item) => {
+                        const key = item.itemStackId
+                        return (
+                          <ConsumableCard
+                            key={key}
+                            item={item}
+                            quantityValue={quantities[key] ?? '1'}
+                            unitPriceValue={unitPrices[`price:${key}`] ?? '10'}
+                            onQuantityChange={(value) => setQuantityValue(key, value)}
+                            onUnitPriceChange={(value) => setUnitPriceValue(`price:${key}`, value)}
+                            onUse={() => void handleUseItem(item)}
+                            onDelete={() => void handleDeleteItem(item)}
+                            onList={() => void handleListInventoryItem(item)}
+                            onStartListing={() => setListingEditorKey(key)}
+                            onCancelListing={() => setListingEditorKey(null)}
+                            actionDisabled={busyKey !== null}
+                            isListingMode={listingEditorKey === key}
+                          />
+                        )
+                      })}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2">{locale.emptyInventory}</Typography>
+                  )}
+                </Stack>
+              </SectionFrame>
+            </Stack>
+          ) : (
+            <Stack spacing={2}>
+              <ControlFrame>
+                <Stack spacing={2}>
+                  <Paper variant="outlined" sx={{ ...itemInnerPanelSx, p: 2, borderRadius: 3 }}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+                      <TextField
+                        label={locale.searchLabel}
+                        placeholder={locale.searchPlaceholderMarket}
+                        value={marketSearch}
+                        onChange={(event) => {
+                          setMarketSearch(event.target.value)
+                          setMarketPage(1)
+                          setMyMarketPage(1)
                         }}
-                      >
-                        {inventoryEquipments.map((item) => {
-                          const key = item.playerEquipmentId
-                          return (
-                            <EquipmentCard
-                              key={key}
-                              item={item}
-                              quantityValue={quantities[key] ?? '1'}
-                              unitPriceValue={unitPrices[`price:${key}`] ?? '10'}
-                              onQuantityChange={(value) => setQuantityValue(key, value)}
-                              onUnitPriceChange={(value) => setUnitPriceValue(`price:${key}`, value)}
-                              onSynthesize={() => void handleSynthesize(item)}
-                              onDelete={() => void handleDeleteEquipment(item)}
-                              onList={() => void handleListInventoryItem(item)}
-                              onStartListing={() => setListingEditorKey(key)}
-                              onCancelListing={() => setListingEditorKey(null)}
-                              onEquip={() => void handleEquip(item)}
-                              actionDisabled={busyKey !== null}
-                              isListingMode={listingEditorKey === key}
-                            />
-                          )
-                        })}
-                      </Box>
-                    ) : (
-                      <Typography variant="body2">{locale.emptyInventory}</Typography>
-                    )}
-                  </Stack>
-                </SectionFrame>
-
-                <SectionFrame title={locale.inventoryConsumablesTitle}>
-                  <Stack spacing={2}>
-                    {isItemsLoading ? (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <CircularProgress size={16} />
-                        <Typography variant="body2">{locale.loading}</Typography>
-                      </Stack>
-                    ) : inventoryConsumables.length > 0 ? (
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: {
-                            xs: 'repeat(2, minmax(0, 1fr))',
-                            sm: 'repeat(3, minmax(0, 1fr))',
-                            xl: 'repeat(4, minmax(0, 1fr))',
-                          },
-                          gap: 1.25,
-                        }}
-                      >
-                        {inventoryConsumables.map((item) => {
-                          const key = item.itemStackId
-                          return (
-                            <ConsumableCard
-                              key={key}
-                              item={item}
-                              quantityValue={quantities[key] ?? '1'}
-                              unitPriceValue={unitPrices[`price:${key}`] ?? '10'}
-                              onQuantityChange={(value) => setQuantityValue(key, value)}
-                              onUnitPriceChange={(value) => setUnitPriceValue(`price:${key}`, value)}
-                              onUse={() => void handleUseItem(item)}
-                              onDelete={() => void handleDeleteItem(item)}
-                              onList={() => void handleListInventoryItem(item)}
-                              onStartListing={() => setListingEditorKey(key)}
-                              onCancelListing={() => setListingEditorKey(null)}
-                              actionDisabled={busyKey !== null}
-                              isListingMode={listingEditorKey === key}
-                            />
-                          )
-                        })}
-                      </Box>
-                    ) : (
-                      <Typography variant="body2">{locale.emptyInventory}</Typography>
-                    )}
-                  </Stack>
-                </SectionFrame>
-              </Stack>
-            ) : (
-              <Stack spacing={2}>
-                <ControlFrame>
-                  <Stack spacing={2}>
-                    <Paper variant="outlined" sx={{ ...itemInnerPanelSx, p: 2, borderRadius: 3 }}>
-                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-                        <TextField
-                          label={locale.searchLabel}
-                          placeholder={locale.searchPlaceholderMarket}
-                          value={marketSearch}
-                          onChange={(event) => {
-                            setMarketSearch(event.target.value)
+                        fullWidth
+                        sx={inputSx}
+                      />
+                    </Stack>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                      {(
+                        [
+                          ['all', locale.categoryAll],
+                          ['Weapon', locale.categoryWeapon],
+                          ['Armor', locale.categoryArmor],
+                          ['Item', locale.categoryItem],
+                          ['Map', locale.categoryMap],
+                        ] as const
+                      ).map(([value, label]) => (
+                        <Chip
+                          key={value}
+                          label={label}
+                          color={marketCategory === value ? 'primary' : 'default'}
+                          variant={marketCategory === value ? 'filled' : 'outlined'}
+                          onClick={() => {
+                            setMarketCategory(value)
                             setMarketPage(1)
                             setMyMarketPage(1)
                           }}
-                          fullWidth
-                          sx={inputSx}
                         />
-                      </Stack>
-                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        {(
-                          [
-                            ['all', locale.categoryAll],
-                            ['Weapon', locale.categoryWeapon],
-                            ['Armor', locale.categoryArmor],
-                            ['Item', locale.categoryItem],
-                            ['Map', locale.categoryMap],
-                          ] as const
-                        ).map(([value, label]) => (
-                          <Chip
-                            key={value}
-                            label={label}
-                            color={marketCategory === value ? 'primary' : 'default'}
-                            variant={marketCategory === value ? 'filled' : 'outlined'}
-                            onClick={() => {
-                              setMarketCategory(value)
-                              setMarketPage(1)
-                              setMyMarketPage(1)
-                            }}
-                          />
-                        ))}
-                      </Stack>
-                    </Paper>
+                      ))}
+                    </Stack>
+                  </Paper>
 
-                    <Paper variant="outlined" sx={tabsPaperSx}>
-                      <Tabs
-                        value={marketTab}
-                        onChange={(_, value: MarketTab) => {
-                          setMarketTab(value)
-                        }}
-                        variant="fullWidth"
-                        sx={tabsSx}
-                      >
-                        <Tab value="public" label={locale.publicMarketTab} />
-                        <Tab value="mine" label={locale.myListingsTab} />
-                      </Tabs>
-                    </Paper>
-                  </Stack>
-                </ControlFrame>
+                  <Paper variant="outlined" sx={tabsPaperSx}>
+                    <Tabs
+                      value={marketTab}
+                      onChange={(_, value: MarketTab) => {
+                        setMarketTab(value)
+                      }}
+                      variant="fullWidth"
+                      sx={tabsSx}
+                    >
+                      <Tab value="public" label={locale.publicMarketTab} />
+                      <Tab value="mine" label={locale.myListingsTab} />
+                    </Tabs>
+                  </Paper>
+                </Stack>
+              </ControlFrame>
 
-                <SectionFrame title={marketTab === 'public' ? locale.marketTitle : locale.myListingsTitle}>
-                  <Stack spacing={2}>
-                    {(marketTab === 'public' ? isMarketLoading : isMyListingsLoading) ? (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <CircularProgress size={16} />
-                        <Typography variant="body2">{locale.marketLoading}</Typography>
-                      </Stack>
-                    ) : pagedMarketListings.length > 0 ? (
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: {
-                            xs: 'repeat(2, minmax(0, 1fr))',
-                            sm: 'repeat(3, minmax(0, 1fr))',
-                            xl: 'repeat(4, minmax(0, 1fr))',
-                          },
-                          gap: 1.25,
-                        }}
-                      >
-                        {pagedMarketListings.map((listing) => (
-                          <MarketCard
-                            key={listing.listingId}
-                            listing={listing}
-                            quantityValue={quantities[`purchase:${listing.listingId}`] ?? '1'}
-                            onQuantityChange={(value) => setQuantityValue(`purchase:${listing.listingId}`, value)}
-                            onPurchase={marketTab === 'public' ? () => void handlePurchase(listing) : undefined}
-                            actionDisabled={busyKey !== null}
-                            showSeller={marketTab === 'public'}
-                          />
-                        ))}
-                      </Box>
-                    ) : (
-                      <Typography variant="body2">
-                        {normalizedMarketSearch ? locale.noSearchResults : locale.emptyMarket}
-                      </Typography>
-                    )}
-
-                    {currentMarketListings.length > PAGE_SIZE ? (
-                      <Stack alignItems="center">
-                        <Pagination
-                          page={visibleMarketPage}
-                          count={marketPageCount}
-                          color="primary"
-                          onChange={(_, nextPage) => {
-                            if (marketTab === 'public') {
-                              setMarketPage(nextPage)
-                            } else {
-                              setMyMarketPage(nextPage)
-                            }
-                          }}
+              <SectionFrame title={marketTab === 'public' ? locale.marketTitle : locale.myListingsTitle}>
+                <Stack spacing={2}>
+                  {(marketTab === 'public' ? isMarketLoading : isMyListingsLoading) ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CircularProgress size={16} />
+                      <Typography variant="body2">{locale.marketLoading}</Typography>
+                    </Stack>
+                  ) : pagedMarketListings.length > 0 ? (
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: {
+                          xs: 'repeat(2, minmax(0, 1fr))',
+                          sm: 'repeat(3, minmax(0, 1fr))',
+                          xl: 'repeat(4, minmax(0, 1fr))',
+                        },
+                        gap: 1.25,
+                      }}
+                    >
+                      {pagedMarketListings.map((listing) => (
+                        <MarketCard
+                          key={listing.listingId}
+                          listing={listing}
+                          quantityValue={quantities[`purchase:${listing.listingId}`] ?? '1'}
+                          onQuantityChange={(value) => setQuantityValue(`purchase:${listing.listingId}`, value)}
+                          onPurchase={marketTab === 'public' ? () => void handlePurchase(listing) : undefined}
+                          actionDisabled={busyKey !== null}
+                          showSeller={marketTab === 'public'}
                         />
-                      </Stack>
-                    ) : null}
-                  </Stack>
-                </SectionFrame>
-              </Stack>
-            )}
-          </PageFrame>
-        </Stack>
-      </Paper>
-    </Container>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2">
+                      {normalizedMarketSearch ? locale.noSearchResults : locale.emptyMarket}
+                    </Typography>
+                  )}
+
+                  {currentMarketListings.length > PAGE_SIZE ? (
+                    <Stack alignItems="center">
+                      <Pagination
+                        page={visibleMarketPage}
+                        count={marketPageCount}
+                        color="primary"
+                        onChange={(_, nextPage) => {
+                          if (marketTab === 'public') {
+                            setMarketPage(nextPage)
+                          } else {
+                            setMyMarketPage(nextPage)
+                          }
+                        }}
+                      />
+                    </Stack>
+                  ) : null}
+                </Stack>
+              </SectionFrame>
+            </Stack>
+          )}
+        </PageFrame>
+      </Stack>
+    </GamePageShell>
   )
 }

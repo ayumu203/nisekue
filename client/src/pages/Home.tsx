@@ -3,9 +3,7 @@ import {
   Badge,
   Box,
   CircularProgress,
-  Container,
   Pagination,
-  Paper,
   Snackbar,
   Stack,
   Tab,
@@ -40,7 +38,7 @@ import Status from '@/components/home/Status'
 import HomeHeaderMenu from '@/components/home/HomeHeaderMenu'
 import HomeMenuList from '@/components/home/HomeMenuList'
 import { buildHomeMenu, getTutorialOpenGroup, type HomeMenuGroupKey } from '@/components/home/homeMenu'
-import { gameTabSx, gameTabsSx, innerSurfaceSx, outerPagePaperSx, twoColumnContentGridSx } from '@/constants/styles'
+import { gameTabSx, gameTabsSx, twoColumnContentGridSx } from '@/constants/styles'
 import { announcementTabLabel } from '@/lib/announcements'
 import { hasUnreadAnnouncement, markAnnouncementsSeen } from '@/lib/announcementStorage'
 import {
@@ -53,8 +51,12 @@ import {
 } from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
+import GamePageShell from '@/components/common/GamePageShell'
 
 // チャットのタブ。PC では文字の長さに合わせた幅にする
+// タブの下に引く線の色（選択中のタブと同じ濃い緑）
+const chatTabLineColor = '#2f8b3f'
+
 const chatTabSx = {
   ...gameTabSx,
   px: { xs: 0.5, sm: 3 },
@@ -279,180 +281,176 @@ function Home() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          {isDesktop && (
-            <HomeHeaderMenu
-              primary={homeMenu.primary}
-              groups={homeMenu.groups}
-              openGroup={openMenuGroup}
-              lockedGroup={tutorialOpenGroup}
-              onToggleGroup={toggleMenuGroup}
-              onCloseGroup={() => setOpenMenuGroup(null)}
-              gearIconId={gearIconId}
-              onGearClick={handleGearClick}
-            />
-          )}
-          {/* スマホではメニューとチャットのあいだを広めに空ける */}
-          <Box sx={{ ...twoColumnContentGridSx, gap: { xs: 3, sm: 3 } }}>
-            <Stack spacing={2}>
-              {isPlayerLoading ? (
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <CircularProgress size={16} />
-                  <Typography variant="body2">{locale.playerLoading}</Typography>
-                </Stack>
-              ) : playerError ? (
-                <Alert severity="warning">{playerError.message}</Alert>
-              ) : (
-                <Status
-                  player={player}
-                  actionAlign="start"
-                  showCollapseToggle={false}
-                  layout={isDesktop ? 'default' : 'compact'}
-                  showDesktopActions={false}
-                  gearIconId={isDesktop ? undefined : gearIconId}
-                  onGearClick={handleGearClick}
-                />
-              )}
-              {!isDesktop && (
-                <HomeMenuList
-                  primary={homeMenu.primary}
-                  groups={homeMenu.groups}
-                  openGroup={openMenuGroup}
-                  lockedGroup={tutorialOpenGroup}
-                  onToggleGroup={toggleMenuGroup}
-                />
-              )}
-              {!isDesktop && signOutError ? <Alert severity="error">{signOutError}</Alert> : null}
-            </Stack>
+    <GamePageShell>
+      <Stack spacing={{ xs: 1.5, sm: 2 }}>
+        {isDesktop && (
+          <HomeHeaderMenu
+            primary={homeMenu.primary}
+            groups={homeMenu.groups}
+            openGroup={openMenuGroup}
+            lockedGroup={tutorialOpenGroup}
+            onToggleGroup={toggleMenuGroup}
+            onCloseGroup={() => setOpenMenuGroup(null)}
+            gearIconId={gearIconId}
+            onGearClick={handleGearClick}
+          />
+        )}
+        {/* スマホではメニューとチャットのあいだを広めに空ける */}
+        <Box sx={{ ...twoColumnContentGridSx, gap: { xs: 3, sm: 3 } }}>
+          <Stack spacing={2}>
+            {isPlayerLoading ? (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <CircularProgress size={16} />
+                <Typography variant="body2">{locale.playerLoading}</Typography>
+              </Stack>
+            ) : playerError ? (
+              <Alert severity="warning">{playerError.message}</Alert>
+            ) : (
+              <Status
+                player={player}
+                actionAlign="start"
+                showCollapseToggle={false}
+                surface="plain"
+                layout={isDesktop ? 'default' : 'compact'}
+                showDesktopActions={false}
+                gearIconId={isDesktop ? undefined : gearIconId}
+                onGearClick={handleGearClick}
+              />
+            )}
+            {!isDesktop && (
+              <HomeMenuList
+                primary={homeMenu.primary}
+                groups={homeMenu.groups}
+                openGroup={openMenuGroup}
+                lockedGroup={tutorialOpenGroup}
+                onToggleGroup={toggleMenuGroup}
+              />
+            )}
+            {!isDesktop && signOutError ? <Alert severity="error">{signOutError}</Alert> : null}
+          </Stack>
 
-            {/* タブを枠の外に出して、選んでいるタブと枠をつなげる */}
-            <Box sx={{ minWidth: 0 }}>
-              <Tabs
-                value={chatTab}
-                onChange={(_, value: 'personal' | 'global' | 'announcement') => {
-                  setChatTab(value)
-                }}
-                variant={isDesktop ? 'standard' : 'fullWidth'}
-                sx={gameTabsSx}
-                slotProps={{ indicator: { sx: { display: 'none' } } }}
-              >
-                <Tab label={locale.chatTabPersonal} value="personal" sx={chatTabSx} />
-                <Tab label={locale.chatTabGlobal} value="global" sx={chatTabSx} />
-                <Tab
-                  label={
-                    <Badge variant="dot" color="error" invisible={!hasUnreadAnnouncements} sx={{ pr: 0.5 }}>
-                      {announcementTabLabel}
-                    </Badge>
-                  }
-                  value="announcement"
-                  sx={chatTabSx}
-                />
-              </Tabs>
-              <Paper
-                variant="outlined"
-                sx={{ ...innerSurfaceSx, borderRadius: 3, borderTopLeftRadius: 0, p: { xs: 2, sm: 2.5 } }}
-              >
-                {chatTab === 'announcement' ? (
-                  <AnnouncementList />
-                ) : chatTab === 'personal' ? (
-                  isChatLoading ? (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <CircularProgress size={16} />
-                      <Typography variant="body2">{locale.chatLoading}</Typography>
-                    </Stack>
-                  ) : chatError ? (
-                    <Alert severity="warning">{chatError.message}</Alert>
-                  ) : !player ? (
-                    <Alert severity="warning">{locale.chatFetchInfoMissing}</Alert>
-                  ) : (
-                    <Stack spacing={2}>
-                      <ChatForm
-                        isSubmitting={isChatValidating}
-                        disabled={isAnonymous}
-                        disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
-                        onSubmit={async (text) => {
-                          if (!session?.access_token || !player?.userId) {
-                            throw new Error(locale.sessionInfoMissing)
-                          }
-
-                          const updated = await postChatMessage(
-                            {
-                              ownerId: player.userId,
-                              text,
-                            },
-                            session.access_token,
-                          )
-                          await mutateChatRoom(updated, { revalidate: false })
-                        }}
-                      />
-                      <ChatMessages
-                        messages={chatRoom?.messages ?? []}
-                        currentPlayerId={player?.userId ?? ''}
-                        onDeleteMessage={async (chatId) => {
-                          if (!session?.access_token || !player?.userId) {
-                            throw new Error(locale.sessionInfoMissing)
-                          }
-
-                          await deleteChatMessage({ ownerId: player.userId, chatId }, session.access_token)
-                          await mutateChatRoom()
-                        }}
-                      />
-                    </Stack>
-                  )
-                ) : isGlobalChatLoading ? (
+          {/* 枠では包まず、タブの下に線を引いてタブと中身をつなげる */}
+          <Box sx={{ minWidth: 0 }}>
+            <Tabs
+              value={chatTab}
+              onChange={(_, value: 'personal' | 'global' | 'announcement') => {
+                setChatTab(value)
+              }}
+              variant={isDesktop ? 'standard' : 'fullWidth'}
+              sx={{ ...gameTabsSx, borderBottom: `3px solid ${chatTabLineColor}` }}
+              slotProps={{ indicator: { sx: { display: 'none' } } }}
+            >
+              <Tab label={locale.chatTabPersonal} value="personal" sx={chatTabSx} />
+              <Tab label={locale.chatTabGlobal} value="global" sx={chatTabSx} />
+              <Tab
+                label={
+                  <Badge variant="dot" color="error" invisible={!hasUnreadAnnouncements} sx={{ pr: 0.5 }}>
+                    {announcementTabLabel}
+                  </Badge>
+                }
+                value="announcement"
+                sx={chatTabSx}
+              />
+            </Tabs>
+            <Box sx={{ pt: { xs: 2, sm: 2.5 } }}>
+              {chatTab === 'announcement' ? (
+                <AnnouncementList />
+              ) : chatTab === 'personal' ? (
+                isChatLoading ? (
                   <Stack direction="row" spacing={1} alignItems="center">
                     <CircularProgress size={16} />
-                    <Typography variant="body2">{locale.globalChatLoading}</Typography>
+                    <Typography variant="body2">{locale.chatLoading}</Typography>
                   </Stack>
-                ) : globalChatError ? (
-                  <Alert severity="warning">{globalChatError.message}</Alert>
+                ) : chatError ? (
+                  <Alert severity="warning">{chatError.message}</Alert>
+                ) : !player ? (
+                  <Alert severity="warning">{locale.chatFetchInfoMissing}</Alert>
                 ) : (
                   <Stack spacing={2}>
-                    {globalChatPage === 1 && (
-                      <ChatForm
-                        isSubmitting={isGlobalChatValidating}
-                        disabled={isAnonymous}
-                        disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
-                        onSubmit={async (text) => {
-                          if (!session?.access_token) {
-                            throw new Error(locale.sessionInfoMissing)
-                          }
+                    <ChatForm
+                      isSubmitting={isChatValidating}
+                      disabled={isAnonymous}
+                      disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
+                      onSubmit={async (text) => {
+                        if (!session?.access_token || !player?.userId) {
+                          throw new Error(locale.sessionInfoMissing)
+                        }
 
-                          const updated = await postGlobalChatMessage({ text }, session.access_token)
-                          await mutateGlobalChatRoom(updated, { revalidate: false })
-                        }}
-                      />
-                    )}
+                        const updated = await postChatMessage(
+                          {
+                            ownerId: player.userId,
+                            text,
+                          },
+                          session.access_token,
+                        )
+                        await mutateChatRoom(updated, { revalidate: false })
+                      }}
+                    />
                     <ChatMessages
-                      messages={globalChatRoom?.messages ?? []}
+                      messages={chatRoom?.messages ?? []}
                       currentPlayerId={player?.userId ?? ''}
                       onDeleteMessage={async (chatId) => {
+                        if (!session?.access_token || !player?.userId) {
+                          throw new Error(locale.sessionInfoMissing)
+                        }
+
+                        await deleteChatMessage({ ownerId: player.userId, chatId }, session.access_token)
+                        await mutateChatRoom()
+                      }}
+                    />
+                  </Stack>
+                )
+              ) : isGlobalChatLoading ? (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CircularProgress size={16} />
+                  <Typography variant="body2">{locale.globalChatLoading}</Typography>
+                </Stack>
+              ) : globalChatError ? (
+                <Alert severity="warning">{globalChatError.message}</Alert>
+              ) : (
+                <Stack spacing={2}>
+                  {globalChatPage === 1 && (
+                    <ChatForm
+                      isSubmitting={isGlobalChatValidating}
+                      disabled={isAnonymous}
+                      disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
+                      onSubmit={async (text) => {
                         if (!session?.access_token) {
                           throw new Error(locale.sessionInfoMissing)
                         }
 
-                        await deleteGlobalChatMessage({ chatId }, session.access_token)
-                        await mutateGlobalChatRoom()
+                        const updated = await postGlobalChatMessage({ text }, session.access_token)
+                        await mutateGlobalChatRoom(updated, { revalidate: false })
                       }}
                     />
-                    {(globalChatRoom?.totalCount ?? 0) > 100 && (
-                      <Pagination
-                        count={Math.ceil((globalChatRoom?.totalCount ?? 0) / 100)}
-                        page={globalChatPage}
-                        onChange={(_, page) => setGlobalChatPage(page)}
-                        size="small"
-                        sx={{ alignSelf: 'center' }}
-                      />
-                    )}
-                  </Stack>
-                )}
-              </Paper>
+                  )}
+                  <ChatMessages
+                    messages={globalChatRoom?.messages ?? []}
+                    currentPlayerId={player?.userId ?? ''}
+                    onDeleteMessage={async (chatId) => {
+                      if (!session?.access_token) {
+                        throw new Error(locale.sessionInfoMissing)
+                      }
+
+                      await deleteGlobalChatMessage({ chatId }, session.access_token)
+                      await mutateGlobalChatRoom()
+                    }}
+                  />
+                  {(globalChatRoom?.totalCount ?? 0) > 100 && (
+                    <Pagination
+                      count={Math.ceil((globalChatRoom?.totalCount ?? 0) / 100)}
+                      page={globalChatPage}
+                      onChange={(_, page) => setGlobalChatPage(page)}
+                      size="small"
+                      sx={{ alignSelf: 'center' }}
+                    />
+                  )}
+                </Stack>
+              )}
             </Box>
           </Box>
-        </Stack>
-      </Paper>
+        </Box>
+      </Stack>
       {tutorialStep === 'home-player-setting' && (
         <SpotlightTutorial targetId="tutorial-gear-btn" message={tutorialLocale.steps.homePlayerSetting.message} />
       )}
@@ -533,7 +531,7 @@ function Home() {
           {toastQueue[0] ?? ''}
         </Alert>
       </Snackbar>
-    </Container>
+    </GamePageShell>
   )
 }
 

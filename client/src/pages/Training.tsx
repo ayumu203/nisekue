@@ -2,7 +2,6 @@ import {
   Alert,
   Box,
   CircularProgress,
-  Container,
   Paper,
   Snackbar,
   Stack,
@@ -31,7 +30,7 @@ import TrainingMovePlanForm from '@/components/training/TrainingMovePlanForm'
 import TrainingOpponentSelect from '@/components/training/TrainingOpponentSelect'
 import { normalizeCharacterPath } from '@/lib/assets'
 import { useAuth } from '@/contexts/useAuth'
-import { innerSurfaceSx, outerPagePaperSx } from '@/constants/styles'
+import { innerSurfaceSx } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { beginnerGuides } from '@/lib/beginnerGuides'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
@@ -42,6 +41,7 @@ import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import type { GetPlayerResponse, PlayerSummary } from '@/schema/player'
+import GamePageShell from '@/components/common/GamePageShell'
 
 type TrainingMode = 'npc' | 'player'
 
@@ -536,210 +536,200 @@ export default function Training() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper
-        elevation={2}
-        sx={{
-          ...outerPagePaperSx,
-          background: 'linear-gradient(180deg, rgba(157, 69, 52, 0.98) 0%, rgba(100, 40, 34, 0.96) 100%)',
-        }}
-      >
-        <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          {isPlayerLoading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={16} />
-              <Typography variant="body2">{locale.playerLoading}</Typography>
+    <GamePageShell background="linear-gradient(180deg, rgba(157, 69, 52, 0.98) 0%, rgba(100, 40, 34, 0.96) 100%)">
+      <Stack spacing={{ xs: 1.5, sm: 2 }}>
+        {isPlayerLoading ? (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={16} />
+            <Typography variant="body2">{locale.playerLoading}</Typography>
+          </Stack>
+        ) : playerError ? (
+          <Alert severity="warning">{playerError.message}</Alert>
+        ) : null}
+        <Box sx={{ px: 0.5 }}>
+          <HomeNavIconButton
+            id={tutorialStep === 'home-job-change' ? 'tutorial-home-btn' : undefined}
+            ariaLabel={locale.backToHome}
+          />
+        </Box>
+        <Paper
+          id="training-main"
+          ref={trainingPanelRef}
+          variant="outlined"
+          sx={{
+            ...innerSurfaceSx,
+            borderRadius: 3,
+            p: { xs: 2, sm: 2.5 },
+            color: '#f5f0df',
+            backgroundColor: '#2d1d1e',
+            borderColor: 'rgba(214, 146, 112, 0.55)',
+          }}
+        >
+          <Stack spacing={{ xs: 1.5, sm: 2 }}>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="flex-end"
+              spacing={1.5}
+              sx={{
+                px: { xs: 0.4, sm: 0.75 },
+                pb: 1.25,
+                borderBottom: '1px solid rgba(214, 146, 112, 0.24)',
+              }}
+            >
+              <Stack spacing={0.6} sx={{ minWidth: 0 }}>
+                <Typography
+                  variant="overline"
+                  sx={{ color: 'rgba(248, 221, 207, 0.72)', letterSpacing: '0.18em', lineHeight: 1.2 }}
+                >
+                  TRAINING GROUND
+                </Typography>
+                <Typography variant="h5" fontWeight={900} sx={{ color: '#fff7dd', lineHeight: 1.15 }}>
+                  訓練場
+                </Typography>
+              </Stack>
+              <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.training} inverted />
             </Stack>
-          ) : playerError ? (
-            <Alert severity="warning">{playerError.message}</Alert>
-          ) : null}
-          <Box sx={{ px: 0.5 }}>
-            <HomeNavIconButton
-              id={tutorialStep === 'home-job-change' ? 'tutorial-home-btn' : undefined}
-              ariaLabel={locale.backToHome}
-            />
-          </Box>
-          <Paper
-            id="training-main"
-            ref={trainingPanelRef}
-            variant="outlined"
-            sx={{
-              ...innerSurfaceSx,
-              borderRadius: 3,
-              p: { xs: 2, sm: 2.5 },
-              color: '#f5f0df',
-              backgroundColor: '#2d1d1e',
-              borderColor: 'rgba(214, 146, 112, 0.55)',
-            }}
-          >
-            <Stack spacing={{ xs: 1.5, sm: 2 }}>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="flex-end"
-                spacing={1.5}
+
+            <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
+              <ToggleButtonGroup
+                value={mode}
+                exclusive
+                onChange={(_e, next: TrainingMode | null) => {
+                  if (next === null) return
+                  setMode(next)
+                  setSelectedEnemy(null)
+                  setSelectedOpponent(null)
+                  setTrainingResult(null)
+                  setTrainingError(null)
+                }}
+                size="small"
                 sx={{
-                  px: { xs: 0.4, sm: 0.75 },
-                  pb: 1.25,
-                  borderBottom: '1px solid rgba(214, 146, 112, 0.24)',
+                  '& .MuiToggleButton-root': {
+                    color: 'rgba(248, 221, 207, 0.7)',
+                    borderColor: 'rgba(214, 146, 112, 0.4)',
+                    fontWeight: 700,
+                    px: 2,
+                  },
+                  '& .Mui-selected': {
+                    color: '#fff5ef !important',
+                    backgroundColor: 'rgba(182, 95, 73, 0.35) !important',
+                  },
                 }}
               >
-                <Stack spacing={0.6} sx={{ minWidth: 0 }}>
-                  <Typography
-                    variant="overline"
-                    sx={{ color: 'rgba(248, 221, 207, 0.72)', letterSpacing: '0.18em', lineHeight: 1.2 }}
-                  >
-                    TRAINING GROUND
-                  </Typography>
-                  <Typography variant="h5" fontWeight={900} sx={{ color: '#fff7dd', lineHeight: 1.15 }}>
-                    訓練場
-                  </Typography>
-                </Stack>
-                <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.training} inverted />
-              </Stack>
+                <ToggleButton value="npc">{locale.modeNpc}</ToggleButton>
+                <ToggleButton value="player">{locale.modePlayer}</ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
 
-              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
-                <ToggleButtonGroup
-                  value={mode}
-                  exclusive
-                  onChange={(_e, next: TrainingMode | null) => {
-                    if (next === null) return
-                    setMode(next)
-                    setSelectedEnemy(null)
-                    setSelectedOpponent(null)
-                    setTrainingResult(null)
-                    setTrainingError(null)
-                  }}
-                  size="small"
-                  sx={{
-                    '& .MuiToggleButton-root': {
-                      color: 'rgba(248, 221, 207, 0.7)',
-                      borderColor: 'rgba(214, 146, 112, 0.4)',
-                      fontWeight: 700,
-                      px: 2,
-                    },
-                    '& .Mui-selected': {
-                      color: '#fff5ef !important',
-                      backgroundColor: 'rgba(182, 95, 73, 0.35) !important',
-                    },
-                  }}
-                >
-                  <ToggleButton value="npc">{locale.modeNpc}</ToggleButton>
-                  <ToggleButton value="player">{locale.modePlayer}</ToggleButton>
-                </ToggleButtonGroup>
-              </Stack>
+            {(() => {
+              const displayEnemy =
+                selectedEnemy ?? (selectedOpponent ? playerSummaryToDisplayEnemy(selectedOpponent) : null)
+              return (
+                <>
+                  {displayEnemy && trainingResult && player ? (
+                    <Box ref={battleResultRef}>
+                      <TrainingBattleResult
+                        player={{
+                          name: player.userName ?? locale.anonymousPlayer,
+                          imagePath: player.imagePath
+                            ? normalizeCharacterPath(player.imagePath)
+                            : DEFAULT_CHARACTER_PATH,
+                          level: player.level,
+                        }}
+                        enemy={displayEnemy}
+                        result={trainingResult}
+                        usedMoveNames={resolveMoveNames(player, lastSubmittedMoveIds)}
+                        playerExp={playerExp}
+                        nextLevelRequiredExp={nextLevelRequiredExp}
+                        movePlanSlot={
+                          player && plannedMoveIds ? (
+                            <TrainingMovePlanForm
+                              enemy={displayEnemy}
+                              player={player}
+                              moveIds={plannedMoveIds}
+                              isActionDisabled={isTrainingActionDisabled}
+                              lockRemainingSeconds={trainingLockRemainingSeconds}
+                              onChangeMoveId={handleChangePlannedMoveId}
+                              showFighterHeader={false}
+                              submitLabel={locale.startBattle}
+                              onSubmit={startBattle}
+                            />
+                          ) : null
+                        }
+                      />
+                    </Box>
+                  ) : null}
 
-              {(() => {
-                const displayEnemy =
-                  selectedEnemy ?? (selectedOpponent ? playerSummaryToDisplayEnemy(selectedOpponent) : null)
-                return (
-                  <>
-                    {displayEnemy && trainingResult && player ? (
-                      <Box ref={battleResultRef}>
-                        <TrainingBattleResult
-                          player={{
-                            name: player.userName ?? locale.anonymousPlayer,
-                            imagePath: player.imagePath
-                              ? normalizeCharacterPath(player.imagePath)
-                              : DEFAULT_CHARACTER_PATH,
-                            level: player.level,
-                          }}
-                          enemy={displayEnemy}
-                          result={trainingResult}
-                          usedMoveNames={resolveMoveNames(player, lastSubmittedMoveIds)}
-                          playerExp={playerExp}
-                          nextLevelRequiredExp={nextLevelRequiredExp}
-                          movePlanSlot={
-                            player && plannedMoveIds ? (
-                              <TrainingMovePlanForm
-                                enemy={displayEnemy}
-                                player={player}
-                                moveIds={plannedMoveIds}
-                                isActionDisabled={isTrainingActionDisabled}
-                                lockRemainingSeconds={trainingLockRemainingSeconds}
-                                onChangeMoveId={handleChangePlannedMoveId}
-                                showFighterHeader={false}
-                                submitLabel={locale.startBattle}
-                                onSubmit={startBattle}
-                              />
-                            ) : null
-                          }
-                        />
-                      </Box>
-                    ) : null}
+                  {displayEnemy && player && plannedMoveIds && !trainingResult ? (
+                    <Box
+                      ref={trainingMovePlanRef}
+                      id={tutorialStep === 'training-move-select' ? 'tutorial-move-plan-form' : undefined}
+                    >
+                      <TrainingMovePlanForm
+                        enemy={displayEnemy}
+                        player={player}
+                        moveIds={plannedMoveIds}
+                        isActionDisabled={isTrainingActionDisabled}
+                        lockRemainingSeconds={trainingLockRemainingSeconds}
+                        onChangeMoveId={handleChangePlannedMoveId}
+                        submitLabel={locale.startBattle}
+                        tutorialMoveSelect={
+                          tutorialStep === 'training-move-select' && nextTutorialMoveTurnIndex !== null
+                            ? { index: nextTutorialMoveTurnIndex, id: 'tutorial-next-move-select' }
+                            : undefined
+                        }
+                        submitButtonId={tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined}
+                        onSubmit={startBattle}
+                      />
+                    </Box>
+                  ) : null}
+                </>
+              )
+            })()}
 
-                    {displayEnemy && player && plannedMoveIds && !trainingResult ? (
-                      <Box
-                        ref={trainingMovePlanRef}
-                        id={tutorialStep === 'training-move-select' ? 'tutorial-move-plan-form' : undefined}
-                      >
-                        <TrainingMovePlanForm
-                          enemy={displayEnemy}
-                          player={player}
-                          moveIds={plannedMoveIds}
-                          isActionDisabled={isTrainingActionDisabled}
-                          lockRemainingSeconds={trainingLockRemainingSeconds}
-                          onChangeMoveId={handleChangePlannedMoveId}
-                          submitLabel={locale.startBattle}
-                          tutorialMoveSelect={
-                            tutorialStep === 'training-move-select' && nextTutorialMoveTurnIndex !== null
-                              ? { index: nextTutorialMoveTurnIndex, id: 'tutorial-next-move-select' }
-                              : undefined
-                          }
-                          submitButtonId={
-                            tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined
-                          }
-                          onSubmit={startBattle}
-                        />
-                      </Box>
-                    ) : null}
-                  </>
-                )
-              })()}
-
-              {mode === 'npc' ? (
-                isTrainingEnemiesLoading ? (
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <CircularProgress size={16} />
-                    <Typography variant="body2">{locale.enemiesLoading}</Typography>
-                  </Stack>
-                ) : trainingEnemiesError ? (
-                  <Alert severity="warning">{trainingEnemiesError.message}</Alert>
-                ) : (
-                  <TrainingEnemySelect
-                    enemies={trainingEnemies ?? []}
-                    selectedEnemyId={selectedEnemy?.id ?? null}
-                    isSelectionDisabled={isTrainingSubmitting}
-                    tutorialHighlightFirstCard={tutorialStep === 'training-fight'}
-                    onSelect={handleSelectEnemy}
-                  />
-                )
-              ) : isPlayerListLoading ? (
+            {mode === 'npc' ? (
+              isTrainingEnemiesLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <CircularProgress size={16} />
-                  <Typography variant="body2">{locale.opponentsLoading}</Typography>
+                  <Typography variant="body2">{locale.enemiesLoading}</Typography>
                 </Stack>
-              ) : playerListError ? (
-                <Alert severity="warning">{playerListError.message}</Alert>
+              ) : trainingEnemiesError ? (
+                <Alert severity="warning">{trainingEnemiesError.message}</Alert>
               ) : (
-                <TrainingOpponentSelect
-                  opponents={(playerListPage?.items ?? [])
-                    .filter((p) => p.userId !== session?.user.id)
-                    .sort((a, b) => a.level - b.level)}
-                  selectedOpponentId={selectedOpponent?.userId ?? null}
+                <TrainingEnemySelect
+                  enemies={trainingEnemies ?? []}
+                  selectedEnemyId={selectedEnemy?.id ?? null}
                   isSelectionDisabled={isTrainingSubmitting}
-                  page={opponentsPage}
-                  pageCount={opponentsPageCount}
-                  onPageChange={setOpponentsPage}
-                  onSelect={handleSelectOpponent}
+                  tutorialHighlightFirstCard={tutorialStep === 'training-fight'}
+                  onSelect={handleSelectEnemy}
                 />
-              )}
+              )
+            ) : isPlayerListLoading ? (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <CircularProgress size={16} />
+                <Typography variant="body2">{locale.opponentsLoading}</Typography>
+              </Stack>
+            ) : playerListError ? (
+              <Alert severity="warning">{playerListError.message}</Alert>
+            ) : (
+              <TrainingOpponentSelect
+                opponents={(playerListPage?.items ?? [])
+                  .filter((p) => p.userId !== session?.user.id)
+                  .sort((a, b) => a.level - b.level)}
+                selectedOpponentId={selectedOpponent?.userId ?? null}
+                isSelectionDisabled={isTrainingSubmitting}
+                page={opponentsPage}
+                pageCount={opponentsPageCount}
+                onPageChange={setOpponentsPage}
+                onSelect={handleSelectOpponent}
+              />
+            )}
 
-              {trainingError ? <Alert severity="warning">{trainingError}</Alert> : null}
-            </Stack>
-          </Paper>
-        </Stack>
-      </Paper>
+            {trainingError ? <Alert severity="warning">{trainingError}</Alert> : null}
+          </Stack>
+        </Paper>
+      </Stack>
       {tutorialStep === 'home-job-change' && (
         <SpotlightTutorial
           guide="instructor"
@@ -813,6 +803,6 @@ export default function Training() {
           {newEnemiesMessage ?? lastNewEnemiesMessageRef.current ?? ''}
         </Alert>
       </Snackbar>
-    </Container>
+    </GamePageShell>
   )
 }
