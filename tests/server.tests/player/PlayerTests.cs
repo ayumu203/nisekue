@@ -1,6 +1,7 @@
 using FluentAssertions;
 using server.domain.move;
 using server.domain.player;
+using server.shared.constants.player;
 using Xunit;
 
 namespace server.tests;
@@ -117,6 +118,31 @@ public class PlayerTests
         player.Status.Strength.Should().Be(beforeStatus.Strength + 2);
         player.Status.Defense.Should().Be(beforeStatus.Defense + 1);
         player.Status.Speed.Should().Be(beforeStatus.Speed + 1);
+    }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(5, 5)]
+    [InlineData(6, 5)]
+    [InlineData(20, 5)]
+    public void GetRebirthGrowthBonusRebirthCount_ByRebirthCount_CapsAtMax(int rebirthCount, int expected)
+    {
+        PlayerConstants.GetRebirthGrowthBonusRebirthCount(rebirthCount).Should().Be(expected);
+    }
+
+    [Fact]
+    public void LevelUp_WhenRebirthCountExceedsBonusCap_GrowsSameAsCap()
+    {
+        var cappedPlayer = CreatePlayer(level: 50, exp: 500, job: Job.Warrior, rebirthCount: 5);
+        var overCapPlayer = CreatePlayer(level: 50, exp: 500, job: Job.Warrior, rebirthCount: 10);
+        var cappedBefore = cappedPlayer.Status;
+        var overCapBefore = overCapPlayer.Status;
+
+        cappedPlayer.LevelUp(CreateJobProfile(Job.Warrior), CreateLearningRule(Job.Warrior));
+        overCapPlayer.LevelUp(CreateJobProfile(Job.Warrior), CreateLearningRule(Job.Warrior));
+
+        (overCapPlayer.Status.MaxHp - overCapBefore.MaxHp).Should().Be(cappedPlayer.Status.MaxHp - cappedBefore.MaxHp);
+        (overCapPlayer.Status.Strength - overCapBefore.Strength).Should().Be(cappedPlayer.Status.Strength - cappedBefore.Strength);
     }
 
     [Fact]

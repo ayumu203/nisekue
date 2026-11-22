@@ -496,7 +496,8 @@ public class Player(
         return newlyLearnedMoveIds;
     }
 
-    // 転生ごとの 1% 成長ボーナスを累積差分で配り、整数成長でも無駄にならないようにする。
+    // 転生ごとの成長ボーナス（RebirthGrowthBonusPercent、転生回数は RebirthGrowthBonusMaxRebirthCount まで）を
+    // 累積差分で配り、整数成長でも無駄にならないようにする。
     private int CalculateGrowthIncrease(int baseGrowth, int previousLevel, int currentLevel)
     {
         return ClampedAdd(baseGrowth, CalculateRebirthGrowthBonusDelta(baseGrowth, previousLevel, currentLevel));
@@ -522,7 +523,7 @@ public class Player(
         }
 
         return (int)Math.Min(
-            (long)baseGrowth * gainedLevels * RebirthCount * PlayerConstants.RebirthGrowthBonusPercent / 100,
+            (long)baseGrowth * gainedLevels * PlayerConstants.GetRebirthGrowthBonusRebirthCount(RebirthCount) * PlayerConstants.RebirthGrowthBonusPercent / 100,
             int.MaxValue);
     }
 
