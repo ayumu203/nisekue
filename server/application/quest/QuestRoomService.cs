@@ -20,7 +20,7 @@ public class QuestRoomService(
     QuestRunFactory questRunFactory,
     QuestMirrorEnemyPlanService? questMirrorEnemyPlanService = null)
 {
-    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(3);
+    private static readonly TimeSpan QuestCooldown = TimeSpan.FromMinutes(1);
 
     public async Task<QuestRoom> CreateRoomAsync(
         PlayerId ownerId,
