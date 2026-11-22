@@ -28,7 +28,7 @@ type StatusProps = {
   actionAlign?: 'start' | 'end'
   gearIconId?: string
   onGearClick?: () => void
-  // ステータス欄を畳むボタン（−/+）を出すか。ホームでは出さない
+  // ステータス欄を畳むボタン（−/+）を出すか。PC のホームでは出さない
   showCollapseToggle?: boolean
 }
 

@@ -309,7 +309,7 @@ function Home() {
                 <Status
                   player={player}
                   actionAlign="start"
-                  showCollapseToggle={false}
+                  showCollapseToggle={!isDesktop}
                   showDesktopActions={!isDesktop}
                   gearIconId={isDesktop ? undefined : gearIconId}
                   onGearClick={handleGearClick}
