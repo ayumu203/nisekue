@@ -29,6 +29,7 @@ import {
 import { getThreadAlerts, markThreadRepliesAlerted } from '@/api/thread'
 import { useAuth } from '@/contexts/useAuth'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
+import { useSignOut } from '@/hooks/useSignOut'
 import { useAnnouncements } from '@/hooks/useAnnouncements'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/home/Home.json'
@@ -86,6 +87,7 @@ function Home() {
   // 最初の描画から正しい側を出す（チュートリアルのスポットライトが最初に測った要素を使い続けるため）
   const isDesktop = useMediaQuery(theme.breakpoints.up('sm'), { noSsr: true })
   const { canUseDebug } = useDebugStatus()
+  const { signOut, isSigningOut, signOutError } = useSignOut()
   const { latestAnnouncementDate } = useAnnouncements()
   const handledChatIdsRef = useRef<Set<number>>(new Set())
   const handledReplyIdsRef = useRef<Set<string>>(new Set())
@@ -146,6 +148,7 @@ function Home() {
     showSurveyGuide,
     onSurveyClick: dismissSurveyGuide,
     canUseDebug,
+    signOut: isDesktop ? undefined : { onClick: () => void signOut(), disabled: isSigningOut },
   })
   const toggleMenuGroup = (key: HomeMenuGroupKey) => setOpenMenuGroup((current) => (current === key ? null : key))
   const gearIconId = tutorialStep === 'home-player-setting' ? 'tutorial-gear-btn' : undefined
@@ -306,7 +309,7 @@ function Home() {
                   actionAlign="start"
                   showCollapseToggle={false}
                   layout={isDesktop ? 'default' : 'compact'}
-                  showDesktopActions={!isDesktop}
+                  showDesktopActions={false}
                   gearIconId={isDesktop ? undefined : gearIconId}
                   onGearClick={handleGearClick}
                 />
@@ -320,6 +323,7 @@ function Home() {
                   onToggleGroup={toggleMenuGroup}
                 />
               )}
+              {!isDesktop && signOutError ? <Alert severity="error">{signOutError}</Alert> : null}
             </Stack>
 
             {/* タブを枠の外に出して、選んでいるタブと枠をつなげる */}

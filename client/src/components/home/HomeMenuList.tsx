@@ -61,9 +61,15 @@ const cellSx = {
 } as const
 
 function itemLinkProps(item: HomeMenuItem) {
-  return item.to
-    ? { component: Link, to: item.to }
-    : { component: 'a', href: item.href, target: '_blank', rel: 'noopener noreferrer' }
+  if (item.to) {
+    return { component: Link, to: item.to }
+  }
+
+  if (item.href) {
+    return { component: 'a', href: item.href, target: '_blank', rel: 'noopener noreferrer' }
+  }
+
+  return { disabled: item.disabled }
 }
 
 // スマホのホームで使うメニュー。よく使う 4 つは 2×2 のタイル、残りはグループごとに開いて 2 列のマス目で出す
@@ -131,7 +137,13 @@ export default function HomeMenuList({ primary, groups, openGroup, lockedGroup, 
           >
             {cells.map((item, index) =>
               item ? (
-                <Button key={item.key} {...itemLinkProps(item)} id={item.id} onClick={item.onClick} sx={cellSx}>
+                <Button
+                  key={item.key}
+                  {...itemLinkProps(item)}
+                  id={item.id}
+                  onClick={item.onClick}
+                  sx={item.danger ? { ...cellSx, color: '#a0461e' } : cellSx}
+                >
                   {item.label}
                 </Button>
               ) : (

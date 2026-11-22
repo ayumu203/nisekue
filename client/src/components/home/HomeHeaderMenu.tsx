@@ -47,9 +47,15 @@ const dropdownItemSx = {
 } as const
 
 function itemLinkProps(item: HomeMenuItem) {
-  return item.to
-    ? { component: Link, to: item.to }
-    : { component: 'a', href: item.href, target: '_blank', rel: 'noopener noreferrer' }
+  if (item.to) {
+    return { component: Link, to: item.to }
+  }
+
+  if (item.href) {
+    return { component: 'a', href: item.href, target: '_blank', rel: 'noopener noreferrer' }
+  }
+
+  return { disabled: item.disabled }
 }
 
 // PC のホームで使う、上部のヘッダーメニュー

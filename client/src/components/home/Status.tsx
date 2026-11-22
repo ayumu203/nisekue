@@ -240,9 +240,33 @@ export default function Status({
             <Stack direction="row" spacing={1.5} alignItems="center">
               {characterImage}
               <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
-                <Typography fontWeight={800} sx={{ fontSize: '1rem', lineHeight: 1.3, overflowWrap: 'anywhere' }}>
-                  {player?.userName ?? locale.notSet}
-                </Typography>
+                <Stack direction="row" alignItems="flex-start" spacing={0.75}>
+                  <Typography
+                    fontWeight={800}
+                    sx={{ flex: 1, minWidth: 0, fontSize: '1rem', lineHeight: 1.3, overflowWrap: 'anywhere' }}
+                  >
+                    {player?.userName ?? locale.notSet}
+                  </Typography>
+                  {/* 横長表示では、設定ボタンを名前の横に置く（ログアウトはメニューの「その他」にある） */}
+                  <IconButton
+                    id={gearIconId}
+                    component={Link}
+                    to="/player-setting"
+                    aria-label="プレイヤー設定へ移動"
+                    onClick={onGearClick}
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      flex: 'none',
+                      color: '#8a5a1f',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e2cfa6',
+                      '&:hover': { backgroundColor: '#fff4d6' },
+                    }}
+                  >
+                    <GearIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
                   <Typography variant="body2" color="text.secondary" noWrap sx={{ minWidth: 0 }}>
                     {currentJobLevelLabel}

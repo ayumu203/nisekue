@@ -20,6 +20,7 @@ import {
   TreasureMapIcon,
   VisitPlayersIcon,
 } from '@/components/home/HomeIcons'
+import { SignOutIcon } from '@/components/home/StatusIcons'
 import { setTutorialStep, type TutorialStep } from '@/lib/tutorial'
 
 const SURVEY_URL =
@@ -40,6 +41,9 @@ export type HomeMenuItem = {
   // チュートリアルのスポットライトが探す要素の id
   id?: string
   onClick?: () => void
+  // ログアウトのように、気をつけて押してほしい項目
+  danger?: boolean
+  disabled?: boolean
 }
 
 export type HomeMenuGroup = {
@@ -56,6 +60,8 @@ type BuildHomeMenuParams = {
   showSurveyGuide: boolean
   onSurveyClick: () => void
   canUseDebug: boolean
+  // 渡したときだけ「その他」にログアウトを入れる（スマホ用。PC はヘッダーにある）
+  signOut?: { onClick: () => void; disabled: boolean }
 }
 
 // ホームのメニュー。PC のヘッダーメニューとスマホの縦並びメニューで同じ定義を使う
@@ -66,6 +72,7 @@ export function buildHomeMenu({
   showSurveyGuide,
   onSurveyClick,
   canUseDebug,
+  signOut,
 }: BuildHomeMenuParams): { primary: HomeMenuItem[]; groups: HomeMenuGroup[] } {
   // 指定したステップのときだけ、クリックで次のステップへ進める
   const advanceOn = (step: TutorialStep, next: TutorialStep) => () => {
@@ -121,6 +128,17 @@ export function buildHomeMenu({
 
   if (canUseDebug) {
     othersItems.push({ key: 'debug', label: locale.debug, icon: <DebugIcon />, to: '/debug' })
+  }
+
+  if (signOut) {
+    othersItems.push({
+      key: 'signOut',
+      label: locale.signOut,
+      icon: <SignOutIcon />,
+      onClick: signOut.onClick,
+      disabled: signOut.disabled,
+      danger: true,
+    })
   }
 
   const groups: HomeMenuGroup[] = [
