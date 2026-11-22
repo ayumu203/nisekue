@@ -236,68 +236,70 @@ export default function Status({
       <Stack spacing={2}>
         <Stack spacing={2}>
           {isCompact ? (
-            // 横長表示：左にキャラ画像、右に名前・Lv・HP/MP
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              {characterImage}
-              <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
-                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minHeight: 36 }}>
-                  {/* 右の設定ボタンと同じ幅の空きを左に置いて、名前を真ん中に寄せる */}
-                  <Box sx={{ width: 36, flex: 'none' }} />
-                  <Typography
-                    fontWeight={800}
-                    sx={{
-                      flex: 1,
-                      minWidth: 0,
-                      // 長い名前（最大 20 文字）は少し小さくして、2 行に収める
-                      fontSize: (player?.userName?.length ?? 0) > 12 ? '0.95rem' : '1.2rem',
-                      lineHeight: 1.3,
-                      overflowWrap: 'anywhere',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {player?.userName ?? locale.notSet}
-                  </Typography>
-                  {/* 横長表示では、設定ボタンを名前の横に置く（ログアウトはメニューの「その他」にある） */}
-                  <IconButton
-                    id={gearIconId}
-                    component={Link}
-                    to="/player-setting"
-                    aria-label="プレイヤー設定へ移動"
-                    onClick={onGearClick}
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      flex: 'none',
-                      color: '#8a5a1f',
-                      backgroundColor: '#ffffff',
-                      border: '1px solid #e2cfa6',
-                      '&:hover': { backgroundColor: '#fff4d6' },
-                    }}
-                  >
-                    <GearIcon fontSize="small" />
-                  </IconButton>
-                </Stack>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-                  <Typography variant="body2" color="text.secondary" noWrap sx={{ minWidth: 0 }}>
-                    {currentJobLevelLabel}
-                  </Typography>
-                  <Box sx={{ ...greenBadgeSx, flex: 'none' }}>
-                    <Typography variant="subtitle2" sx={greenBadgeTextSx}>
-                      {locale.labels.level}: {player?.level ?? locale.unknownValue}
+            // 横長表示：上に名前、その下の左にキャラ画像、右に職業・Lv・HP/MP
+            <Stack spacing={1}>
+              <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minHeight: 36 }}>
+                {/* 右の設定ボタンと同じ幅の空きを左に置いて、名前を真ん中に寄せる */}
+                <Box sx={{ width: 36, flex: 'none' }} />
+                <Typography
+                  fontWeight={800}
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    // 長い名前（最大 20 文字）は少し小さくして、2 行に収める
+                    fontSize: (player?.userName?.length ?? 0) > 12 ? '1.05rem' : '1.2rem',
+                    lineHeight: 1.3,
+                    overflowWrap: 'anywhere',
+                    textAlign: 'center',
+                  }}
+                >
+                  {player?.userName ?? locale.notSet}
+                </Typography>
+                {/* 横長表示では、設定ボタンを名前の横に置く（ログアウトはメニューの「その他」にある） */}
+                <IconButton
+                  id={gearIconId}
+                  component={Link}
+                  to="/player-setting"
+                  aria-label="プレイヤー設定へ移動"
+                  onClick={onGearClick}
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    flex: 'none',
+                    color: '#8a5a1f',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2cfa6',
+                    '&:hover': { backgroundColor: '#fff4d6' },
+                  }}
+                >
+                  <GearIcon fontSize="small" />
+                </IconButton>
+              </Stack>
+              <Stack direction="row" spacing={1.5} alignItems="flex-end">
+                {characterImage}
+                <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                    <Typography variant="body2" color="text.secondary" noWrap sx={{ minWidth: 0 }}>
+                      {currentJobLevelLabel}
                     </Typography>
-                  </Box>
+                    <Box sx={{ ...greenBadgeSx, flex: 'none' }}>
+                      <Typography variant="subtitle2" sx={greenBadgeTextSx}>
+                        {locale.labels.level}: {player?.level ?? locale.unknownValue}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                  {resourceItems.map((item) => (
+                    <StatusStatRow
+                      key={item.key}
+                      label={item.label}
+                      value={item.value}
+                      normalized={item.normalized}
+                      rank={item.rank}
+                      compact
+                      plain
+                    />
+                  ))}
                 </Stack>
-                {resourceItems.map((item) => (
-                  <StatusStatRow
-                    key={item.key}
-                    label={item.label}
-                    value={item.value}
-                    normalized={item.normalized}
-                    rank={item.rank}
-                    compact
-                    plain
-                  />
-                ))}
               </Stack>
             </Stack>
           ) : (
