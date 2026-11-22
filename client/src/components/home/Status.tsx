@@ -1,25 +1,14 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import {
-  Alert,
-  Box,
-  Button,
-  Collapse,
-  IconButton,
-  Paper,
-  Stack,
-  SvgIcon,
-  Typography,
-  type SvgIconProps,
-} from '@mui/material'
+import { Alert, Box, Button, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material'
 import { Link } from 'react-router-dom'
 import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx, topNavigationIconButtonSx } from '@/constants/styles'
 import type { GetPlayerResponse } from '@/schema/player'
-import signOutLocale from '../../../locale/auth/SignOut.json'
 import locale from '../../../locale/home/Home.json'
 import StatusStatRow from '@/components/home/StatusStatRow'
+import { GearIcon, SignOutIcon } from '@/components/home/StatusIcons'
+import { useSignOut } from '@/hooks/useSignOut'
 import { resolveCharacterAssetPath, resolveStatusAssetPath } from '@/lib/assets'
-import { supabase } from '@/lib/supabase'
 
 type StatValue = number | string
 
@@ -39,6 +28,8 @@ type StatusProps = {
   actionAlign?: 'start' | 'end'
   gearIconId?: string
   onGearClick?: () => void
+  // ステータス欄を畳むボタン（−/+）を出すか。ホームでは出さない
+  showCollapseToggle?: boolean
 }
 
 function toNormalized(value: number | undefined, maxValue: number): number {
@@ -95,22 +86,6 @@ function formatEquippedItemWithPlus(
   return equipment.plusValue > 0 ? `${equipment.name} (+${equipment.plusValue})` : equipment.name
 }
 
-function SettingGearIcon(props: SvgIconProps) {
-  return (
-    <SvgIcon {...props} viewBox="0 0 24 24">
-      <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42H10.1a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.12.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.82 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.41 1.05.72 1.63.94l.36 2.54c.04.24.25.42.5.42h3.8c.25 0 .46-.18.5-.42l.36-2.54c.58-.22 1.12-.53 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7" />
-    </SvgIcon>
-  )
-}
-
-function SignOutDoorIcon(props: SvgIconProps) {
-  return (
-    <SvgIcon {...props} viewBox="0 0 24 24">
-      <path d="M6 3h9a2 2 0 0 1 2 2v4h-2V5H6v14h9v-4h2v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2m9.59 4.59L21 13l-5.41 5.41L14.17 17 17.17 14H9v-2h8.17l-3-3z" />
-    </SvgIcon>
-  )
-}
-
 export default function Status({
   player,
   compactTrainingMobile = false,
@@ -119,12 +94,12 @@ export default function Status({
   actionAlign = 'end',
   gearIconId,
   onGearClick,
+  showCollapseToggle = true,
 }: StatusProps) {
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(true)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [isSigningOut, setIsSigningOut] = useState(false)
-  const [signOutError, setSignOutError] = useState<string | null>(null)
+  const { signOut, isSigningOut, signOutError } = useSignOut()
   const equippedWeapon = player?.equipments.find(
     (equipment) => equipment.equipmentType === 'Weapon' && equipment.status === 'Equipped',
   )
@@ -204,20 +179,6 @@ export default function Status({
     : typeof player?.jobLevel === 'number'
       ? `${player?.job.displayName ?? locale.unknownValue} Lv.${player.jobLevel}`
       : (player?.job.displayName ?? locale.unknownValue)
-
-  const handleSignOut = async () => {
-    setIsSigningOut(true)
-    setSignOutError(null)
-
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      setSignOutError(error.message || signOutLocale.toastFailed)
-      setIsSigningOut(false)
-      return
-    }
-
-    setIsSigningOut(false)
-  }
 
   const statusPaper = (
     <Paper
@@ -436,10 +397,10 @@ export default function Status({
           ...topNavigationIconButtonSx,
         }}
       >
-        <SettingGearIcon />
+        <GearIcon />
       </IconButton>
       <IconButton
-        onClick={() => void handleSignOut()}
+        onClick={() => void signOut()}
         disabled={isSigningOut}
         aria-label="ログアウト"
         sx={{
@@ -451,34 +412,41 @@ export default function Status({
           },
         }}
       >
-        <SignOutDoorIcon />
+        <SignOutIcon />
       </IconButton>
-      <IconButton
-        onClick={() => setIsOpen((current) => !current)}
-        aria-label={isOpen ? locale.statusMobileToggleCloseAriaLabel : locale.statusMobileToggleOpenAriaLabel}
-        sx={{
-          ...topNavigationIconButtonSx,
-        }}
-      >
-        <Typography component="span" fontSize="1.1rem" fontWeight={900}>
-          {isOpen ? '−' : '+'}
-        </Typography>
-      </IconButton>
+      {showCollapseToggle && (
+        <IconButton
+          onClick={() => setIsOpen((current) => !current)}
+          aria-label={isOpen ? locale.statusMobileToggleCloseAriaLabel : locale.statusMobileToggleOpenAriaLabel}
+          sx={{
+            ...topNavigationIconButtonSx,
+          }}
+        >
+          <Typography component="span" fontSize="1.1rem" fontWeight={900}>
+            {isOpen ? '−' : '+'}
+          </Typography>
+        </IconButton>
+      )}
     </Box>
   )
 
+  // 上の行に出すものが何もないときは、行ごと出さない（PC のホームでは設定・ログアウトをヘッダーに出す）
+  const hasTopRow = topAction != null || showDesktopActions || showCollapseToggle
+
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 0.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 44 }}>
-          {actionAlign === 'start' ? statusActionButtons : topAction}
+      {hasTopRow && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 44 }}>
+            {actionAlign === 'start' ? statusActionButtons : topAction}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 44 }}>
+            {actionAlign === 'start' ? topAction : statusActionButtons}
+          </Box>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 44 }}>
-          {actionAlign === 'start' ? topAction : statusActionButtons}
-        </Box>
-      </Box>
+      )}
 
-      <Collapse in={isOpen}>{statusPaper}</Collapse>
+      <Collapse in={isOpen || !showCollapseToggle}>{statusPaper}</Collapse>
 
       {signOutError ? (
         <Alert severity="error" sx={{ mt: 1 }}>
