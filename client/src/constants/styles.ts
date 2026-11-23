@@ -260,6 +260,10 @@ export const panelPrimaryButtonSx = {
     color: '#ffffff',
     fontWeight: 800,
     boxShadow: 'none',
+    transition: 'none',
+  },
+  '& .MuiTouchRipple-root': {
+    display: 'none',
   },
   '&&:hover': {
     backgroundColor: '#286c32',
@@ -279,6 +283,10 @@ export const panelOutlinedButtonSx = {
     color: homePanelColors.band,
     border: `2px solid ${homePanelColors.band}`,
     fontWeight: 800,
+    transition: 'none',
+  },
+  '& .MuiTouchRipple-root': {
+    display: 'none',
   },
   '&&:hover': {
     backgroundColor: '#f1f8f1',

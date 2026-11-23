@@ -123,6 +123,10 @@ export default function QuestRoomCreateSection({
               '& .MuiPaginationItem-root': {
                 color: '#5a3a10',
                 fontWeight: 700,
+                transition: 'none',
+              },
+              '& .MuiTouchRipple-root': {
+                display: 'none',
               },
               '& .MuiPaginationItem-root.Mui-selected': {
                 color: '#ffffff',

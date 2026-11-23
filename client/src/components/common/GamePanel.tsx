@@ -62,6 +62,7 @@ export default function GamePanel({
             <ButtonBase
               key={tab.key}
               role="tab"
+              disableRipple
               aria-selected={tab.selected}
               onClick={tab.onClick}
               sx={{

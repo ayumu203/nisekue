@@ -82,6 +82,10 @@ const iconButtonSx = {
   borderColor: homePanelColors.divider,
   backgroundColor: '#ffffff',
   color: '#5a3a10',
+  transition: 'none',
+  '& .MuiTouchRipple-root': {
+    display: 'none',
+  },
 } as const
 
 export default function QuestRoomLobbySection({

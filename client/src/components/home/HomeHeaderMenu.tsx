@@ -41,6 +41,11 @@ const headerButtonSx = {
   whiteSpace: 'nowrap',
   fontWeight: 700,
   fontSize: '1rem',
+  // ホバーや押したときの色の変化・波紋のアニメーションは付けない
+  transition: 'none',
+  '& .MuiTouchRipple-root': {
+    display: 'none',
+  },
   '&:hover, &[aria-expanded="true"]': {
     backgroundColor: 'rgba(90, 58, 16, 0.08)',
   },
@@ -76,6 +81,10 @@ const dropdownItemSx = {
   color: '#3a2f1e',
   fontWeight: 700,
   whiteSpace: 'nowrap',
+  transition: 'none',
+  '& .MuiTouchRipple-root': {
+    display: 'none',
+  },
   '&:hover': {
     backgroundColor: '#fff4d6',
   },
