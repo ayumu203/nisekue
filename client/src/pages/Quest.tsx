@@ -1233,11 +1233,12 @@ export default function Quest() {
         onModeChange={setMode}
         onRestrictionsChange={handleRestrictionsChange}
         onCreateRoom={handleCreateRoom}
-        stagePageSize={isWide ? 6 : 3}
+        // PC はページ送りをやめて全ステージを並べ、箱の中でスクロールする（縦の幅を使い切る）
+        stagePageSize={isWide ? Math.max(activeStages.length, 1) : 3}
         stageColumns={isWide ? 2 : 1}
         renderLayout={({ stages, form }) =>
           renderColumns(
-            <GamePanel tabs={createTabs} {...fitPanelProps}>
+            <GamePanel tabs={createTabs} {...panelProps}>
               {stages}
             </GamePanel>,
             <GamePanel title={locale.openRestrictionsModal} {...fitPanelProps}>
