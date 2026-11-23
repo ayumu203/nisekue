@@ -61,6 +61,11 @@ const STAGE_GROUP_ORDER: Record<GetQuestStagesResponse[number]['progressionType'
   Endless: 2,
 }
 
+// PC のステージ一覧の高さの目安。カード 1 枚（間の余白込み）と、カード以外に使う高さ
+// （ヘッダー 57・上下の余白 48・帯 44・箱の内側の余白 40・ページ送り 56）
+const DESKTOP_STAGE_CARD_HEIGHT = 180
+const DESKTOP_STAGE_LIST_RESERVED_HEIGHT = 245
+
 type PersistedQuestSession = {
   roomId: string | null
   runId: string | null
@@ -142,6 +147,17 @@ export default function Quest() {
   // 2 列に並べられる幅。これより狭いときは箱を縦に積み、ページごとスクロールする
   const isWide = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true })
   const { canUseDebug } = useDebugStatus()
+  // PC の 1 ページに出すステージの数。画面の高さから、ヘッダー・余白・帯・ページ送りを引いた残りに入るだけ出す
+  const [windowHeight, setWindowHeight] = useState(() => (typeof window === 'undefined' ? 1080 : window.innerHeight))
+  useEffect(() => {
+    const handleResize = () => setWindowHeight(window.innerHeight)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+  const desktopStagePageSize = Math.max(
+    3,
+    Math.floor((windowHeight - DESKTOP_STAGE_LIST_RESERVED_HEIGHT) / DESKTOP_STAGE_CARD_HEIGHT),
+  )
   // ヘッダーメニューで開いているグループ（強化・交流・その他のうち 1 つだけ）
   const [openMenuGroup, setOpenMenuGroup] = useState<HomeMenuGroupKey | null>(null)
   const [selectedStageId, setSelectedStageId] = useState<number | ''>('')
@@ -1233,11 +1249,11 @@ export default function Quest() {
         onModeChange={setMode}
         onRestrictionsChange={handleRestrictionsChange}
         onCreateRoom={handleCreateRoom}
-        // PC はページ送りをやめて全ステージを並べ、箱の中でスクロールする（縦の幅を使い切る）
-        stagePageSize={isWide ? Math.max(activeStages.length, 1) : 3}
+        // PC は画面の高さに入るだけのステージを 1 ページに出す
+        stagePageSize={isWide ? desktopStagePageSize : 3}
         renderLayout={({ stages, form }) =>
           renderColumns(
-            <GamePanel tabs={createTabs} {...panelProps}>
+            <GamePanel tabs={createTabs} {...fitPanelProps}>
               {stages}
             </GamePanel>,
             <GamePanel title={locale.openRestrictionsModal} {...fitPanelProps}>
