@@ -37,7 +37,7 @@ const headerButtonSx = {
   color: BAR_TEXT_COLOR,
   whiteSpace: 'nowrap',
   fontWeight: 700,
-  fontSize: '0.95rem',
+  fontSize: '1rem',
   '&:hover, &[aria-expanded="true"]': {
     backgroundColor: 'rgba(90, 58, 16, 0.08)',
   },

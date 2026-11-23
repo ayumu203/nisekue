@@ -32,7 +32,7 @@ export default function HomePanel({ title, action, children, 'aria-label': ariaL
         sx={{
           position: 'relative',
           flex: 'none',
-          height: 40,
+          height: 44,
           px: 6,
           display: 'flex',
           alignItems: 'center',
@@ -41,7 +41,7 @@ export default function HomePanel({ title, action, children, 'aria-label': ariaL
           color: '#ffffff',
         }}
       >
-        <Typography component="h2" noWrap sx={{ fontSize: '0.9rem', fontWeight: 700 }}>
+        <Typography component="h2" noWrap sx={{ fontSize: '1rem', fontWeight: 700 }}>
           {title}
         </Typography>
         {action ? (

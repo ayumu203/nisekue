@@ -41,13 +41,15 @@ export default function AnnouncementList({ variant = 'card' }: AnnouncementListP
               sx={{ py: 1.75, borderBottom: `2px dotted ${homePanelColors.divider}`, '&:first-of-type': { pt: 0 } }}
             >
               <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1.25 }}>
-                <Typography sx={{ fontSize: '1rem', fontWeight: 700, lineHeight: 1.4, color: homePanelColors.band }}>
+                <Typography
+                  sx={{ fontSize: '1.0625rem', fontWeight: 700, lineHeight: 1.5, color: homePanelColors.band }}
+                >
                   {item.title}
                 </Typography>
                 <Typography
                   sx={{
                     flexShrink: 0,
-                    fontSize: '0.75rem',
+                    fontSize: '0.8125rem',
                     color: homePanelColors.label,
                     fontVariantNumeric: 'tabular-nums',
                   }}
@@ -58,7 +60,7 @@ export default function AnnouncementList({ variant = 'card' }: AnnouncementListP
               <Typography
                 sx={{
                   mt: 0.75,
-                  fontSize: '0.82rem',
+                  fontSize: '0.9375rem',
                   lineHeight: 1.7,
                   color: homePanelColors.text,
                   whiteSpace: 'pre-line',

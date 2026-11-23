@@ -426,7 +426,8 @@ function Home() {
           display: 'grid',
           gap: 3,
           // 幅が狭いうちはお知らせをステータスの下に置く
-          gridTemplateColumns: { sm: '280px minmax(0, 1fr)', lg: '360px minmax(0, 1fr) 380px' },
+          // チャットが広くなりすぎないよう、残りの幅はチャットとお知らせで 6:5 に分ける
+          gridTemplateColumns: { sm: '300px minmax(0, 1fr)', lg: '360px minmax(0, 6fr) minmax(0, 5fr)' },
           gridTemplateRows: { sm: 'minmax(0, 3fr) minmax(0, 2fr)', lg: 'minmax(0, 1fr)' },
           gridTemplateAreas: { sm: '"status chat" "news chat"', lg: '"status chat news"' },
         }}
@@ -444,7 +445,7 @@ function Home() {
               <IconButton
                 aria-label={desktopChatTab === 'personal' ? locale.chatSwitchToGlobal : locale.chatSwitchToPersonal}
                 onClick={() => setChatTab(desktopChatTab === 'personal' ? 'global' : 'personal')}
-                sx={{ width: 44, height: 40, borderRadius: 0, color: '#ffffff' }}
+                sx={{ width: 44, height: 44, borderRadius: 0, color: '#ffffff' }}
               >
                 <SwapIcon fontSize="small" />
               </IconButton>

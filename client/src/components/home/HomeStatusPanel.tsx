@@ -25,10 +25,10 @@ function StatLine({ label, value, rank }: { label: string; value: ReactNode; ran
       direction="row"
       alignItems="center"
       spacing={1.25}
-      sx={{ py: 0.875, borderBottom: `1px dotted ${homePanelColors.divider}` }}
+      sx={{ py: 1, borderBottom: `1px dotted ${homePanelColors.divider}` }}
     >
-      <Typography sx={{ flex: 1, fontSize: '0.82rem', color: homePanelColors.label }}>{label}</Typography>
-      <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: homePanelColors.text, whiteSpace: 'nowrap' }}>
+      <Typography sx={{ flex: 1, fontSize: '0.875rem', color: homePanelColors.label }}>{label}</Typography>
+      <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: homePanelColors.text, whiteSpace: 'nowrap' }}>
         {value}
       </Typography>
       {rank ? (
@@ -38,7 +38,7 @@ function StatLine({ label, value, rank }: { label: string; value: ReactNode; ran
             flex: 'none',
             minWidth: 34,
             textAlign: 'center',
-            fontSize: '0.75rem',
+            fontSize: '0.8125rem',
             fontWeight: 900,
             lineHeight: 1.5,
             border: '1.5px solid',
@@ -58,8 +58,8 @@ function StatLine({ label, value, rank }: { label: string; value: ReactNode; ran
 function SmallStat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <Stack direction="row" justifyContent="space-between" spacing={1}>
-      <Typography sx={{ fontSize: '0.82rem', color: homePanelColors.label }}>{label}</Typography>
-      <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: homePanelColors.text, whiteSpace: 'nowrap' }}>
+      <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>{label}</Typography>
+      <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: homePanelColors.text, whiteSpace: 'nowrap' }}>
         {value}
       </Typography>
     </Stack>
@@ -129,19 +129,19 @@ export default function HomeStatusPanel({ player }: HomeStatusPanelProps) {
           ) : null}
         </Box>
         <Stack sx={{ flex: 1, minWidth: 0 }} justifyContent="space-between" spacing={0.75}>
-          <Typography noWrap sx={{ fontSize: '0.82rem', color: homePanelColors.label }}>
+          <Typography noWrap sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>
             {jobLabel}
           </Typography>
           <Stack direction="row" alignItems="baseline" spacing={1}>
-            <Typography sx={{ fontSize: '0.82rem', color: homePanelColors.label }}>{locale.labels.level}</Typography>
-            <Typography sx={{ fontSize: '1.4rem', fontWeight: 800, lineHeight: 1, color: homePanelColors.text }}>
+            <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>{locale.labels.level}</Typography>
+            <Typography sx={{ fontSize: '1.75rem', fontWeight: 800, lineHeight: 1, color: homePanelColors.text }}>
               {player?.level ?? unknown}
             </Typography>
           </Stack>
           <Box>
             <Stack direction="row" justifyContent="space-between" spacing={1}>
-              <Typography sx={{ fontSize: '0.75rem', color: homePanelColors.label }}>{locale.labels.exp}</Typography>
-              <Typography sx={{ fontSize: '0.75rem', color: homePanelColors.label, whiteSpace: 'nowrap' }}>
+              <Typography sx={{ fontSize: '0.8125rem', color: homePanelColors.label }}>{locale.labels.exp}</Typography>
+              <Typography sx={{ fontSize: '0.8125rem', color: homePanelColors.label, whiteSpace: 'nowrap' }}>
                 {formatExpProgress(player?.exp, player?.requiredExpForNextLevel, unknown)}
               </Typography>
             </Stack>
