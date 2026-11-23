@@ -24,6 +24,8 @@ type GamePanelProps = {
   disablePadding?: boolean
   // 箱の高さを親に合わせ、中身が多いときは箱の中でスクロールする（PC）。false なら中身の高さに合わせる（スマホ）
   fillHeight?: boolean
+  // fillHeight のとき、中身が少なければ箱を中身の高さまで縮める（白い面が画面いっぱいに広がらないように）
+  fitContent?: boolean
 }
 
 // 上に緑の帯の見出しが付いた白い箱。PC のホームとクエストで使う
@@ -36,6 +38,7 @@ export default function GamePanel({
   shadowColor = homePanelColors.shadow,
   disablePadding = false,
   fillHeight = true,
+  fitContent = false,
 }: GamePanelProps) {
   return (
     <Box
@@ -45,7 +48,8 @@ export default function GamePanel({
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
-        height: fillHeight ? '100%' : 'auto',
+        height: fillHeight && !fitContent ? '100%' : 'auto',
+        maxHeight: fillHeight ? '100%' : 'none',
         backgroundColor: '#ffffff',
         borderRadius: '12px',
         boxShadow: `0 2px 0 ${shadowColor}`,

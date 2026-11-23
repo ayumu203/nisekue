@@ -139,7 +139,7 @@ export default function QuestRoomCreateSection({
   )
 
   const form = (
-    <Stack spacing={2} sx={{ height: '100%' }}>
+    <Stack spacing={2}>
       <Box>
         <PanelRow
           label={locale.labels.minRequiredLevel}
@@ -162,7 +162,6 @@ export default function QuestRoomCreateSection({
       >
         {locale.openRestrictionsModal}
       </Button>
-      <Box sx={{ flex: 1 }} />
       <Button
         variant="contained"
         onClick={() => void onCreateRoom()}

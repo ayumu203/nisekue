@@ -1154,6 +1154,8 @@ export default function Quest() {
   }
 
   const panelProps = { shadowColor: questPanelColors.shadow, fillHeight: isWide }
+  // ルーム作成・募集中・出発待ちの箱は中身の高さまで縮める（バトル画面とメッセージは画面の高さいっぱいに使う）
+  const fitPanelProps = { ...panelProps, fitContent: true }
   const stageName = currentRunStage?.name ?? currentRoomStage?.name ?? null
   const isRunFinished = currentRun?.status === 'Succeeded' || currentRun?.status === 'Failed'
   const isRunInProgress = currentRun?.status === 'InProgress'
@@ -1197,7 +1199,7 @@ export default function Quest() {
   const createContent = showCreateSection ? (
     mode === 'Multi' && multiEntryView === 'list' ? (
       renderColumns(
-        <GamePanel tabs={createTabs} {...panelProps}>
+        <GamePanel tabs={createTabs} {...fitPanelProps}>
           <QuestMultiRoomList
             rooms={latestRooms ?? []}
             stages={activeStages}
@@ -1208,8 +1210,9 @@ export default function Quest() {
             onJoinRoom={handleJoinRoom}
           />
         </GamePanel>,
-        null,
-        0,
+        // 「作成」と切り替えても左の箱の幅が変わらないよう、右の列は空けておく
+        <Box />,
+        440,
       )
     ) : (
       <QuestRoomCreateSection
@@ -1234,10 +1237,10 @@ export default function Quest() {
         stageColumns={isWide ? 2 : 1}
         renderLayout={({ stages, form }) =>
           renderColumns(
-            <GamePanel tabs={createTabs} {...panelProps}>
+            <GamePanel tabs={createTabs} {...fitPanelProps}>
               {stages}
             </GamePanel>,
-            <GamePanel title={locale.openRestrictionsModal} {...panelProps}>
+            <GamePanel title={locale.openRestrictionsModal} {...fitPanelProps}>
               {form}
             </GamePanel>,
             440,
@@ -1276,11 +1279,11 @@ export default function Quest() {
       onCancelRoom={handleCancelRoom}
       renderLayout={({ info, editor, editorTitle }) =>
         renderColumns(
-          <GamePanel title={stageName ?? locale.stage} {...panelProps}>
+          <GamePanel title={stageName ?? locale.stage} {...fitPanelProps}>
             {info}
           </GamePanel>,
           editor ? (
-            <GamePanel title={editorTitle} {...panelProps}>
+            <GamePanel title={editorTitle} {...fitPanelProps}>
               {editor}
             </GamePanel>
           ) : null,

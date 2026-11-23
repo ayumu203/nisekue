@@ -259,11 +259,11 @@ export const panelPrimaryButtonSx = {
     backgroundImage: 'none',
     color: '#ffffff',
     fontWeight: 800,
-    boxShadow: `0 3px 0 ${homePanelColors.bandSelected}`,
+    boxShadow: 'none',
   },
   '&&:hover': {
     backgroundColor: '#286c32',
-    boxShadow: `0 3px 0 ${homePanelColors.bandSelected}`,
+    boxShadow: 'none',
   },
   '&&.Mui-disabled': {
     backgroundColor: '#a9c9ad',
