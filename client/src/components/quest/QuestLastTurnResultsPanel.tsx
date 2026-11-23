@@ -1,5 +1,5 @@
-import { Alert, Box, Button, Paper, Stack, TextField, Typography } from '@mui/material'
-import { greenOutlinedInputSx, innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
+import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material'
+import { greenOutlinedInputSx, panelPrimaryButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { QuestRunDetailResponse } from '@/schema/quest'
 
@@ -134,7 +134,8 @@ export default function QuestLastTurnResultsPanel({
   const hasContent = currentTurnMessages.length > 0 || lastTurnMessages.length > 0 || logs.length > 0
 
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
+    // 白い箱（GamePanel）の中に置くので、外側の枠は付けない
+    <Box>
       <Stack spacing={2}>
         {chatDisabledReason ? <Alert severity="info">{chatDisabledReason}</Alert> : null}
         <Stack direction="row" spacing={1} alignItems="flex-start">
@@ -159,7 +160,7 @@ export default function QuestLastTurnResultsPanel({
             variant="contained"
             onClick={() => void onSubmitChatMessage()}
             disabled={isChatDisabled || chatMessage.trim().length === 0}
-            sx={{ minWidth: 78, minHeight: 40, ...softGreenButtonSx }}
+            sx={{ minWidth: 78, minHeight: 40, ...panelPrimaryButtonSx }}
           >
             {isChatSubmitting ? locale.chatSending : locale.chatSend}
           </Button>
@@ -238,6 +239,6 @@ export default function QuestLastTurnResultsPanel({
           </Stack>
         )}
       </Stack>
-    </Paper>
+    </Box>
   )
 }

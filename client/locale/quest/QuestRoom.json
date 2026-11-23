@@ -110,6 +110,7 @@
   "pendingCommandEmpty": "未送信",
   "submittedAtLabel": "送信時刻",
   "lastTurnResultsTitle": "直前ターン結果",
+  "messagePanelTitle": "メッセージ・前ターンの結果",
   "lastTurnResultsEmpty": "",
   "resolvedAtLabel": "解決時刻",
   "hpChangeLabel": "HP変化",
@@ -156,7 +157,7 @@
     "soloOnlyNote": "ソロ専用",
     "themeNames": ["そよかぜ草原", "ざわめき森", "みぞれ峠", "ふぶき山", "あらしの果て"]
   },
-  "waitingParticipantsLabel": "入力待ち人数",
+  "waitingParticipantsLabel": "待機中",
   "turnNo": "ターン",
   "deadline": "入力期限",
   "yes": "はい",

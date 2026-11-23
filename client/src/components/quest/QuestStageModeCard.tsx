@@ -1,5 +1,5 @@
 import { Box, Button, Card, Stack, Typography } from '@mui/material'
-import { innerSurfaceSx } from '@/constants/styles'
+import { homePanelColors, innerSurfaceSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/quest'
 import locale from '../../../locale/quest/QuestRoom.json'
@@ -49,10 +49,11 @@ export default function QuestStageModeCard({
         overflow: 'hidden',
         height: '100%',
         borderRadius: 3,
-        borderWidth: isSelected ? 2 : 1,
+        borderWidth: isSelected ? 3 : 1,
         color: '#f4f7ff',
         backgroundColor: '#243654',
-        borderColor: isSelected ? '#90b4ea' : 'rgba(152, 192, 255, 0.26)',
+        // 選んでいるステージは黄色の枠で示す
+        borderColor: isSelected ? '#ffcc00' : 'rgba(152, 192, 255, 0.26)',
         boxShadow: isSelected ? '0 10px 24px rgba(22, 39, 73, 0.22)' : 'none',
         '&::before': {
           content: '""',
@@ -159,9 +160,9 @@ export default function QuestStageModeCard({
               sx={{
                 ...modeButtonSx,
                 '&&': {
-                  backgroundColor: isSoloSelected ? '#7ab4ff' : 'rgba(240, 246, 255, 0.92)',
-                  borderColor: '#7ab4ff',
-                  color: isSoloSelected ? '#13253f' : '#365a90',
+                  backgroundColor: isSoloSelected ? homePanelColors.band : 'rgba(255, 255, 255, 0.92)',
+                  borderColor: isSoloSelected ? homePanelColors.band : '#ffffff',
+                  color: isSoloSelected ? '#ffffff' : homePanelColors.band,
                   boxShadow: 'none',
                   transition: 'none',
                 },
@@ -177,9 +178,9 @@ export default function QuestStageModeCard({
                 sx={{
                   ...modeButtonSx,
                   '&&': {
-                    backgroundColor: isMultiSelected ? '#9ed8ce' : 'rgba(239, 252, 248, 0.92)',
-                    borderColor: '#9ed8ce',
-                    color: isMultiSelected ? '#173a34' : '#2e6e64',
+                    backgroundColor: isMultiSelected ? homePanelColors.band : 'rgba(255, 255, 255, 0.92)',
+                    borderColor: isMultiSelected ? homePanelColors.band : '#ffffff',
+                    color: isMultiSelected ? '#ffffff' : homePanelColors.band,
                     boxShadow: 'none',
                     transition: 'none',
                   },

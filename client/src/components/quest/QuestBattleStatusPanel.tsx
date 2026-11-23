@@ -17,7 +17,7 @@ import {
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { useRef } from 'react'
-import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
+import { greenOutlinedInputSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import { resolveEndlessBattlefield } from '@/lib/endless'
 import type { MoveAttackRange } from '@/schema/player'
@@ -48,10 +48,6 @@ type QuestBattleStatusPanelProps = {
   selectedMoveId: number | ''
   selectedTargetRow: BattleRow | ''
   selectedTargetColumn: BattleColumn | ''
-  currentPendingCommand: {
-    actionKind: QuestActionKind
-    submittedAt: string
-  } | null
   canCapture: boolean
   canSummonPet: boolean
   canSubmitCurrentTurn: boolean
@@ -473,7 +469,6 @@ export default function QuestBattleStatusPanel({
   selectedMoveId,
   selectedTargetRow,
   selectedTargetColumn,
-  currentPendingCommand,
   canCapture,
   canSummonPet,
   canSubmitCurrentTurn,
@@ -727,8 +722,9 @@ export default function QuestBattleStatusPanel({
   )
 
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
-      <Stack spacing={2}>
+    // 白い箱（GamePanel）の中に端まで広げて置く。待機中の人数は箱の見出しに出す
+    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Stack spacing={0} sx={{ flex: 1 }}>
         {run.floor.isEndless ? (
           isEndlessCheckpointFloor ? (
             <Box
@@ -749,19 +745,14 @@ export default function QuestBattleStatusPanel({
               </Typography>
             </Box>
           ) : null
-        ) : (
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            <Chip label={`${locale.waitingParticipantsLabel}: ${run.turn.waitingParticipantIds.length}`} />
-          </Stack>
-        )}
+        ) : null}
 
         <Box
           sx={{
             position: 'relative',
             overflow: 'hidden',
-            borderRadius: 4,
+            flex: 1,
             minHeight: { xs: 500, sm: 575, md: 620 },
-            border: '1px solid #c7a96f',
             backgroundColor: '#d9e6df',
           }}
         >
@@ -820,21 +811,6 @@ export default function QuestBattleStatusPanel({
                 left: { xs: 10, sm: 16 },
                 zIndex: 4,
                 fontWeight: 700,
-              }}
-            />
-          ) : null}
-
-          {currentPendingCommand ? (
-            <Chip
-              color="success"
-              label={`${locale.pendingCommandTitle}: ${locale.actionKinds[currentPendingCommand.actionKind]}`}
-              sx={{
-                display: 'inline-flex',
-                position: 'absolute',
-                top: { xs: 58, sm: 72 },
-                right: { xs: 10, sm: 16 },
-                zIndex: 4,
-                maxWidth: { xs: 'calc(100% - 20px)', sm: 'none' },
               }}
             />
           ) : null}
@@ -1001,6 +977,6 @@ export default function QuestBattleStatusPanel({
           </Button>
         </DialogActions>
       </Dialog>
-    </Paper>
+    </Box>
   )
 }

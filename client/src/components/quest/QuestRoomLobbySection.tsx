@@ -17,15 +17,16 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select'
 import CancelIcon from '@mui/icons-material/Cancel'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestRoomFormationPreview from './QuestRoomFormationPreview'
 import {
   greenOutlinedInputSx,
-  innerSurfaceSx,
+  homePanelColors,
   menuButtonSx,
   mutedRedButtonSx,
-  softGreenButtonSx,
+  panelOutlinedButtonSx,
+  panelPrimaryButtonSx,
 } from '@/constants/styles'
 import locale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestRoomDetailResponse } from '@/schema/quest'
@@ -50,7 +51,6 @@ function PanelIcon() {
 
 type QuestRoomLobbySectionProps = {
   currentRoom: QuestRoomDetailResponse | null
-  stageLabel: string | null
   selfParticipantId: string | null
   currentPlayerLevel: number | null
   selectablePlayers: PlayerSummary[]
@@ -73,11 +73,19 @@ type QuestRoomLobbySectionProps = {
   onSaveFormation: () => void | Promise<void>
   onStartQuest: () => void | Promise<void>
   onCancelRoom: () => void | Promise<void>
+  // ルームの情報（START・配置の確認）と配置変更をどの箱に置くかは画面側で決める
+  renderLayout: (parts: { info: ReactNode; editor: ReactNode; editorTitle: string }) => ReactNode
 }
+
+const iconButtonSx = {
+  border: '1px solid',
+  borderColor: homePanelColors.divider,
+  backgroundColor: '#ffffff',
+  color: '#5a3a10',
+} as const
 
 export default function QuestRoomLobbySection({
   currentRoom,
-  stageLabel,
   selfParticipantId,
   currentPlayerLevel,
   selectablePlayers,
@@ -97,6 +105,7 @@ export default function QuestRoomLobbySection({
   onSaveFormation,
   onStartQuest,
   onCancelRoom,
+  renderLayout,
 }: QuestRoomLobbySectionProps) {
   const [isRestrictionsModalOpen, setIsRestrictionsModalOpen] = useState(false)
   const formationEditorRef = useRef<HTMLDivElement | null>(null)
@@ -147,436 +156,344 @@ export default function QuestRoomLobbySection({
     formationEditorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        ...innerSurfaceSx,
-        borderRadius: 3,
-        p: { xs: 1.5, sm: 2.5 },
-        color: '#eef4ff',
-        backgroundColor: '#1d2d4a',
-        borderColor: 'rgba(152, 192, 255, 0.34)',
-      }}
-    >
-      <Stack spacing={2}>
-        {currentRoom == null ? (
-          <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
-            {locale.createdRoomEmpty}
+  const editorTitle = isOwner ? locale.ownerPositionTitle : locale.waitingForOwnerTitle
+
+  if (currentRoom == null || isLoading) {
+    const message =
+      currentRoom == null ? (
+        <Typography variant="body2" sx={{ color: homePanelColors.label }}>
+          {locale.createdRoomEmpty}
+        </Typography>
+      ) : (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <CircularProgress size={18} />
+          <Typography variant="body2" sx={{ color: homePanelColors.label }}>
+            {locale.roomLoading}
           </Typography>
-        ) : isLoading ? (
-          <Stack direction="row" spacing={1} alignItems="center">
-            <CircularProgress size={18} />
-            <Typography variant="body2">{locale.roomLoading}</Typography>
+        </Stack>
+      )
+    return <>{renderLayout({ info: message, editor: null, editorTitle })}</>
+  }
+
+  const isRecruiting = currentRoom.status === 'Recruiting'
+
+  const info = (
+    <Stack spacing={2}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+        <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap" alignItems="center" sx={{ flex: 1 }}>
+          <Chip
+            size="small"
+            label={locale.roomStatus[currentRoom.status]}
+            sx={{
+              fontWeight: 800,
+              color: isRecruiting ? '#3a2400' : '#4d1e2a',
+              backgroundColor: isRecruiting ? '#ffcc00' : '#f0b7c0',
+            }}
+          />
+          <Typography variant="body2" sx={{ color: homePanelColors.text, fontWeight: 700 }}>
+            {locale.participantCountLabel.replace('{{count}}', String(currentRoom.participants.length))}
+          </Typography>
+        </Stack>
+        {isOwner ? (
+          <Stack direction="row" spacing={1}>
+            <Tooltip title={locale.openRestrictionsModal}>
+              <span>
+                <IconButton
+                  onClick={() => setIsRestrictionsModalOpen(true)}
+                  disabled={!isRecruiting || isUpdatingRestrictions}
+                  sx={iconButtonSx}
+                  aria-label={locale.openRestrictionsModal}
+                >
+                  <GearIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title={locale.jumpToFormationEditor}>
+              <IconButton
+                onClick={handleJumpToFormationEditor}
+                sx={iconButtonSx}
+                aria-label={locale.jumpToFormationEditor}
+              >
+                <PanelIcon />
+              </IconButton>
+            </Tooltip>
           </Stack>
-        ) : (
-          <Stack spacing={1.5}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-              <Stack spacing={0.75} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
-                <Typography variant="h5" fontWeight={900} sx={{ color: '#ffffff' }}>
-                  {stageLabel ?? `${locale.stage} ${currentRoom.stageId}`}
-                </Typography>
-                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
-                  <Chip
-                    size="small"
-                    label={locale.roomStatus[currentRoom.status]}
+        ) : null}
+      </Box>
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, columnGap: 3 }}>
+        <InfoRow
+          label={locale.labels.minRequiredLevel}
+          value={
+            currentRoom.restrictions.minRequiredLevel == null
+              ? locale.noRestriction
+              : String(currentRoom.restrictions.minRequiredLevel)
+          }
+        />
+        <InfoRow
+          label={locale.labels.allowedPlayers}
+          value={
+            currentRoom.restrictions.allowedPlayers.length === 0
+              ? locale.noRestriction
+              : currentRoom.restrictions.allowedPlayers
+                  .map((player) => player.displayName ?? player.playerId)
+                  .join(', ')
+          }
+        />
+      </Box>
+
+      {isOwner ? (
+        <Stack direction="row" spacing={1.5}>
+          <Button
+            variant="contained"
+            startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
+            onClick={() => void onStartQuest()}
+            disabled={isStartDisabled || isSavingFormation}
+            sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, flex: 2, minHeight: 52, fontSize: '1.1rem' }}
+          >
+            {isStarting ? locale.startingQuest : locale.startQuest}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<CancelIcon sx={{ fontSize: 20 }} />}
+            onClick={() => void onCancelRoom()}
+            disabled={isStarting || isCancellingRoom || !isRecruiting}
+            sx={{ ...menuButtonSx, ...mutedRedButtonSx, flex: 1, minHeight: 52, fontWeight: 800 }}
+          >
+            {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
+          </Button>
+        </Stack>
+      ) : null}
+
+      <QuestRoomFormationPreview
+        currentRoom={currentRoom}
+        selfParticipantId={selfParticipantId}
+        positionDrafts={positionDrafts}
+      />
+
+      {!isRecruiting ? (
+        <Typography variant="body2" sx={{ color: homePanelColors.label }}>
+          {locale.roomClosedMessage}
+        </Typography>
+      ) : null}
+
+      <QuestRestrictionsModal
+        open={isRestrictionsModalOpen}
+        minRequiredLevelInput={minRequiredLevelInput}
+        currentPlayerLevel={currentPlayerLevel}
+        selectablePlayers={selectablePlayers}
+        allowedPlayerIds={allowedPlayerIds}
+        isLoading={isPlayerCandidatesLoading}
+        error={playerCandidatesError}
+        disabled={!isRecruiting || isUpdatingRestrictions}
+        onClose={() => setIsRestrictionsModalOpen(false)}
+        onApply={handleRestrictionsModalApply}
+      />
+    </Stack>
+  )
+
+  const editor = (
+    <Stack spacing={1.5} ref={formationEditorRef}>
+      {!isOwner && locale.waitingForOwnerSubtitle ? (
+        <Typography variant="body2" sx={{ color: homePanelColors.label }}>
+          {locale.waitingForOwnerSubtitle}
+        </Typography>
+      ) : null}
+      {currentRoom.participants.map((participant) => {
+        const draft = positionDrafts[participant.participantId] ?? participant.position
+        const isSelf = participant.participantId === selfParticipantId
+        const jobImageSrc = participant.job?.code ? resolveJobAssetPath(participant.job.code) : null
+
+        return (
+          <Paper
+            key={participant.participantId}
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              p: 1.5,
+              color: homePanelColors.text,
+              backgroundColor: isSelf ? '#f3f8ef' : '#fffdf6',
+              borderColor: isSelf ? '#b9d9bb' : homePanelColors.divider,
+            }}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="flex-start">
+              <Box
+                sx={{
+                  width: { xs: 92, sm: 100 },
+                  minWidth: { xs: 92, sm: 100 },
+                  aspectRatio: '4 / 5',
+                  borderRadius: 2,
+                  backgroundColor: '#efe4c8',
+                  overflow: 'hidden',
+                  display: 'grid',
+                  placeItems: 'center',
+                }}
+              >
+                {participant.imagePath ? (
+                  <Box
+                    component="img"
+                    src={resolveCharacterAssetPath(participant.imagePath) ?? undefined}
+                    alt={participant.displayName}
                     sx={{
-                      fontWeight: 800,
-                      color: currentRoom.status === 'Recruiting' ? '#173a34' : '#4d1e2a',
-                      backgroundColor: currentRoom.status === 'Recruiting' ? '#9ed8ce' : '#f0b7c0',
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      objectPosition: 'center bottom',
+                      display: 'block',
                     }}
                   />
-                  <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
-                    {locale.participantCountLabel.replace('{{count}}', String(currentRoom.participants.length))}
+                ) : (
+                  <Typography variant="caption" sx={{ color: homePanelColors.label }}>
+                    {locale.noImage}
                   </Typography>
+                )}
+              </Box>
+
+              <Stack spacing={1} sx={{ flex: 1, minWidth: 0 }}>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
+                  <Typography variant="subtitle1" fontWeight={800} sx={{ color: homePanelColors.text }}>
+                    {participant.displayName}
+                  </Typography>
+                  {participant.isOwner ? (
+                    <Chip
+                      size="small"
+                      label={locale.ownerBadge}
+                      sx={{ color: '#3a2400', backgroundColor: '#ffcc00', fontWeight: 800 }}
+                    />
+                  ) : null}
+                  {isSelf ? (
+                    <Chip
+                      size="small"
+                      label={locale.selfBadge}
+                      sx={{ color: '#ffffff', backgroundColor: homePanelColors.band, fontWeight: 800 }}
+                    />
+                  ) : null}
                 </Stack>
-              </Stack>
-              {isOwner ? (
-                <Stack spacing={1} alignItems="center">
-                  <Tooltip title={locale.openRestrictionsModal}>
-                    <IconButton
-                      onClick={() => setIsRestrictionsModalOpen(true)}
-                      disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'rgba(152, 192, 255, 0.34)',
-                        backgroundColor: '#fffdfa',
-                        color: '#1d2d4a',
-                        alignSelf: 'flex-start',
-                      }}
-                      aria-label={locale.openRestrictionsModal}
+
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: 'nowrap', minWidth: 0 }}>
+                  {participant.level != null ? (
+                    <Typography
+                      variant="body2"
+                      sx={{ whiteSpace: 'nowrap', flexShrink: 0, color: homePanelColors.label }}
                     >
-                      <GearIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={locale.jumpToFormationEditor}>
-                    <IconButton
-                      onClick={handleJumpToFormationEditor}
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'rgba(152, 192, 255, 0.24)',
-                        backgroundColor: 'rgba(255, 253, 250, 0.88)',
-                        color: '#1d2d4a',
-                        alignSelf: 'flex-start',
-                      }}
-                      aria-label={locale.jumpToFormationEditor}
+                      {`${locale.levelLabel}.${participant.level}`}
+                    </Typography>
+                  ) : null}
+                  {participant.job?.displayName ? (
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      sx={{ flexWrap: 'nowrap', minWidth: 0, overflow: 'hidden' }}
                     >
-                      <PanelIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-              ) : null}
-            </Box>
-            <Stack spacing={0.5}>
-              <Typography variant="body2" sx={{ color: '#f3f8ff', fontWeight: 600 }}>
-                {currentRoom.restrictions.minRequiredLevel == null
-                  ? `${locale.labels.minRequiredLevel}: ${locale.noRestriction}`
-                  : `${locale.labels.minRequiredLevel}: ${currentRoom.restrictions.minRequiredLevel}`}
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#f3f8ff', fontWeight: 600 }}>
-                {currentRoom.restrictions.allowedPlayers.length === 0
-                  ? `${locale.labels.allowedPlayers}: ${locale.noRestriction}`
-                  : `${locale.labels.allowedPlayers}: ${currentRoom.restrictions.allowedPlayers
-                      .map((player) => player.displayName ?? player.playerId)
-                      .join(', ')}`}
-              </Typography>
-            </Stack>
-
-            {isOwner ? (
-              <Stack direction="column" spacing={1} alignItems="flex-start">
-                <Button
-                  variant="contained"
-                  startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
-                  onClick={() => void onStartQuest()}
-                  disabled={isStartDisabled || isSavingFormation}
-                  sx={{
-                    ...menuButtonSx,
-                    ...softGreenButtonSx,
-                    color: '#ffffff',
-                    backgroundColor: '#4f79b5',
-                    boxShadow: 'none',
-                    '&:hover': {
-                      backgroundColor: '#5a86c5',
-                      boxShadow: 'none',
-                    },
-                  }}
-                >
-                  {isStarting ? locale.startingQuest : locale.startQuest}
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<CancelIcon sx={{ fontSize: 20 }} />}
-                  onClick={() => void onCancelRoom()}
-                  disabled={isStarting || isCancellingRoom || currentRoom.status !== 'Recruiting'}
-                  sx={{
-                    ...menuButtonSx,
-                    ...mutedRedButtonSx,
-                    color: '#f7f1f2',
-                    borderColor: 'rgba(240, 183, 192, 0.44)',
-                    backgroundColor: 'rgba(116, 46, 61, 0.22)',
-                  }}
-                >
-                  {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
-                </Button>
-              </Stack>
-            ) : null}
-
-            <QuestRoomFormationPreview
-              currentRoom={currentRoom}
-              selfParticipantId={selfParticipantId}
-              positionDrafts={positionDrafts}
-            />
-
-            {currentRoom.status !== 'Recruiting' ? (
-              <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
-                {locale.roomClosedMessage}
-              </Typography>
-            ) : null}
-
-            <QuestRestrictionsModal
-              open={isRestrictionsModalOpen}
-              minRequiredLevelInput={minRequiredLevelInput}
-              currentPlayerLevel={currentPlayerLevel}
-              selectablePlayers={selectablePlayers}
-              allowedPlayerIds={allowedPlayerIds}
-              isLoading={isPlayerCandidatesLoading}
-              error={playerCandidatesError}
-              disabled={currentRoom.status !== 'Recruiting' || isUpdatingRestrictions}
-              onClose={() => setIsRestrictionsModalOpen(false)}
-              onApply={handleRestrictionsModalApply}
-            />
-
-            <div ref={formationEditorRef}>
-              <Typography variant="h6" fontWeight={900} sx={{ color: '#ffffff' }}>
-                {isOwner ? locale.ownerPositionTitle : locale.waitingForOwnerTitle}
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
-                {isOwner ? locale.ownerPositionSubtitle : locale.waitingForOwnerSubtitle}
-              </Typography>
-            </div>
-
-            <Stack spacing={1.5}>
-              {currentRoom.participants.map((participant) => {
-                const draft = positionDrafts[participant.participantId] ?? participant.position
-                const isSelf = participant.participantId === selfParticipantId
-                const jobImageSrc = participant.job?.code ? resolveJobAssetPath(participant.job.code) : null
-
-                return (
-                  <Paper
-                    key={participant.participantId}
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 2,
-                      p: 1.5,
-                      color: '#eef4ff',
-                      backgroundColor: isSelf ? '#24395d' : '#223452',
-                      borderColor: isSelf ? 'rgba(158, 216, 206, 0.42)' : 'rgba(152, 192, 255, 0.22)',
-                    }}
-                  >
-                    <Stack spacing={1.5}>
-                      <Stack direction="row" spacing={1.25} alignItems="flex-start">
+                      {jobImageSrc ? (
                         <Box
-                          sx={{
-                            width: { xs: 92, sm: 110 },
-                            minWidth: { xs: 92, sm: 110 },
-                            aspectRatio: '4 / 5',
-                            borderRadius: 2,
-                            border: '1px solid',
-                            borderColor: 'rgba(152, 192, 255, 0.22)',
-                            backgroundColor: '#172742',
-                            overflow: 'hidden',
-                            display: 'grid',
-                            placeItems: 'center',
-                          }}
-                        >
-                          {participant.imagePath ? (
-                            <Box
-                              component="img"
-                              src={resolveCharacterAssetPath(participant.imagePath) ?? undefined}
-                              alt={participant.displayName}
-                              sx={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'contain',
-                                objectPosition: 'center bottom',
-                                display: 'block',
-                              }}
-                            />
-                          ) : (
-                            <Typography variant="caption" sx={{ color: 'rgba(222, 236, 255, 0.64)' }}>
-                              {locale.noImage}
-                            </Typography>
-                          )}
-                        </Box>
-
-                        <Stack spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
-                          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
-                            <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#ffffff' }}>
-                              {participant.displayName}
-                            </Typography>
-                            {participant.isOwner ? (
-                              <Chip
-                                size="small"
-                                label={locale.ownerBadge}
-                                sx={{ color: '#173a34', backgroundColor: '#9ed8ce', fontWeight: 700 }}
-                              />
-                            ) : null}
-                            {isSelf ? (
-                              <Chip
-                                size="small"
-                                label={locale.selfBadge}
-                                sx={{ color: '#173252', backgroundColor: '#d8e8ff', fontWeight: 700 }}
-                              />
-                            ) : null}
-                          </Stack>
-
-                          <Stack
-                            direction="row"
-                            spacing={1.5}
-                            alignItems="center"
-                            sx={{ flexWrap: 'nowrap', minWidth: 0 }}
-                          >
-                            {participant.level != null ? (
-                              <Typography
-                                variant="body2"
-                                sx={{ whiteSpace: 'nowrap', flexShrink: 0, color: 'rgba(222, 236, 255, 0.76)' }}
-                              >
-                                {`${locale.levelLabel}.${participant.level}`}
-                              </Typography>
-                            ) : null}
-                            {participant.job?.displayName ? (
-                              <Stack
-                                direction="row"
-                                spacing={1}
-                                alignItems="center"
-                                sx={{ flexWrap: 'nowrap', minWidth: 0, overflow: 'hidden' }}
-                              >
-                                {jobImageSrc ? (
-                                  <Box
-                                    component="img"
-                                    src={jobImageSrc}
-                                    alt={participant.job.displayName}
-                                    sx={{
-                                      width: 20,
-                                      height: 20,
-                                      objectFit: 'contain',
-                                      display: 'block',
-                                      flexShrink: 0,
-                                    }}
-                                  />
-                                ) : null}
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    color: 'rgba(222, 236, 255, 0.76)',
-                                  }}
-                                >
-                                  {`${locale.jobLabel}: ${participant.job.displayName}`}
-                                </Typography>
-                              </Stack>
-                            ) : null}
-                          </Stack>
-
-                          {isOwner ? (
-                            <Stack direction="row" spacing={1.25}>
-                              <FormControl
-                                fullWidth
-                                sx={{
-                                  ...greenOutlinedInputSx,
-                                  '& .MuiInputLabel-root': {
-                                    color: 'rgba(222, 236, 255, 0.68)',
-                                  },
-                                  '& .MuiOutlinedInput-root': {
-                                    color: '#eef4ff',
-                                    backgroundColor: '#172742',
-                                    '& fieldset': {
-                                      borderColor: 'rgba(152, 192, 255, 0.28)',
-                                    },
-                                    '&:hover fieldset': {
-                                      borderColor: 'rgba(152, 192, 255, 0.46)',
-                                    },
-                                    '&.Mui-focused fieldset': {
-                                      borderColor: '#7ab4ff',
-                                    },
-                                  },
-                                  '& .MuiSvgIcon-root': {
-                                    color: 'rgba(222, 236, 255, 0.76)',
-                                  },
-                                }}
-                              >
-                                <InputLabel id={`participant-row-${participant.participantId}`}>
-                                  {locale.positionRow}
-                                </InputLabel>
-                                <Select
-                                  labelId={`participant-row-${participant.participantId}`}
-                                  value={draft.row}
-                                  label={locale.positionRow}
-                                  onChange={(event) => handleRowChange(participant.participantId, draft, event)}
-                                >
-                                  <MenuItem value="Front">{locale.rows.Front}</MenuItem>
-                                  <MenuItem value="Middle">{locale.rows.Middle}</MenuItem>
-                                  <MenuItem value="Back">{locale.rows.Back}</MenuItem>
-                                </Select>
-                              </FormControl>
-
-                              <FormControl
-                                fullWidth
-                                sx={{
-                                  ...greenOutlinedInputSx,
-                                  '& .MuiInputLabel-root': {
-                                    color: 'rgba(222, 236, 255, 0.68)',
-                                  },
-                                  '& .MuiOutlinedInput-root': {
-                                    color: '#eef4ff',
-                                    backgroundColor: '#172742',
-                                    '& fieldset': {
-                                      borderColor: 'rgba(152, 192, 255, 0.28)',
-                                    },
-                                    '&:hover fieldset': {
-                                      borderColor: 'rgba(152, 192, 255, 0.46)',
-                                    },
-                                    '&.Mui-focused fieldset': {
-                                      borderColor: '#7ab4ff',
-                                    },
-                                  },
-                                  '& .MuiSvgIcon-root': {
-                                    color: 'rgba(222, 236, 255, 0.76)',
-                                  },
-                                }}
-                              >
-                                <InputLabel id={`participant-column-${participant.participantId}`}>
-                                  {locale.positionColumn}
-                                </InputLabel>
-                                <Select
-                                  labelId={`participant-column-${participant.participantId}`}
-                                  value={draft.column}
-                                  label={locale.positionColumn}
-                                  onChange={(event) => handleColumnChange(participant.participantId, draft, event)}
-                                >
-                                  <MenuItem value="Left">{locale.columns.Left}</MenuItem>
-                                  <MenuItem value="Right">{locale.columns.Right}</MenuItem>
-                                </Select>
-                              </FormControl>
-                            </Stack>
-                          ) : (
-                            <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
-                              {`${locale.positionRow}: ${locale.rows[participant.position.row]} / ${locale.positionColumn}: ${locale.columns[participant.position.column]}`}
-                            </Typography>
-                          )}
-                        </Stack>
-                      </Stack>
+                          component="img"
+                          src={jobImageSrc}
+                          alt={participant.job.displayName}
+                          sx={{ width: 20, height: 20, objectFit: 'contain', display: 'block', flexShrink: 0 }}
+                        />
+                      ) : null}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          color: homePanelColors.label,
+                        }}
+                      >
+                        {`${locale.jobLabel}: ${participant.job.displayName}`}
+                      </Typography>
                     </Stack>
-                  </Paper>
-                )
-              })}
-            </Stack>
-            {isOwner ? (
-              <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap">
-                <Button
-                  variant="contained"
-                  onClick={() => void onSaveFormation()}
-                  disabled={isSavingFormation || isStarting || isCancellingRoom || currentRoom.status !== 'Recruiting'}
-                  sx={{
-                    ...menuButtonSx,
-                    ...softGreenButtonSx,
-                    color: '#ffffff',
-                    backgroundColor: '#4f79b5',
-                    boxShadow: 'none',
-                    '&:hover': {
-                      backgroundColor: '#5a86c5',
-                      boxShadow: 'none',
-                    },
-                  }}
-                >
-                  {isSavingFormation ? locale.updatingPosition : locale.confirmFormation}
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
-                  onClick={() => void onStartQuest()}
-                  disabled={isStartDisabled || isSavingFormation}
-                  sx={{
-                    ...menuButtonSx,
-                    ...softGreenButtonSx,
-                    color: '#ffffff',
-                    backgroundColor: '#4f79b5',
-                    boxShadow: 'none',
-                    '&:hover': {
-                      backgroundColor: '#5a86c5',
-                      boxShadow: 'none',
-                    },
-                  }}
-                >
-                  {isStarting ? locale.startingQuest : locale.startQuest}
-                </Button>
+                  ) : null}
+                </Stack>
+
+                {isOwner ? (
+                  <Stack direction="row" spacing={1.25}>
+                    <FormControl fullWidth size="small" sx={greenOutlinedInputSx}>
+                      <InputLabel id={`participant-row-${participant.participantId}`}>{locale.positionRow}</InputLabel>
+                      <Select
+                        labelId={`participant-row-${participant.participantId}`}
+                        value={draft.row}
+                        label={locale.positionRow}
+                        onChange={(event) => handleRowChange(participant.participantId, draft, event)}
+                      >
+                        <MenuItem value="Front">{locale.rows.Front}</MenuItem>
+                        <MenuItem value="Middle">{locale.rows.Middle}</MenuItem>
+                        <MenuItem value="Back">{locale.rows.Back}</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth size="small" sx={greenOutlinedInputSx}>
+                      <InputLabel id={`participant-column-${participant.participantId}`}>
+                        {locale.positionColumn}
+                      </InputLabel>
+                      <Select
+                        labelId={`participant-column-${participant.participantId}`}
+                        value={draft.column}
+                        label={locale.positionColumn}
+                        onChange={(event) => handleColumnChange(participant.participantId, draft, event)}
+                      >
+                        <MenuItem value="Left">{locale.columns.Left}</MenuItem>
+                        <MenuItem value="Right">{locale.columns.Right}</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" sx={{ color: homePanelColors.label }}>
+                    {`${locale.positionRow}: ${locale.rows[participant.position.row]} / ${locale.positionColumn}: ${locale.columns[participant.position.column]}`}
+                  </Typography>
+                )}
               </Stack>
-            ) : null}
-          </Stack>
-        )}
-      </Stack>
-    </Paper>
+            </Stack>
+          </Paper>
+        )
+      })}
+      {isOwner ? (
+        <Stack direction="row" spacing={1.5} sx={{ pt: 0.5 }}>
+          <Button
+            variant="outlined"
+            onClick={() => void onSaveFormation()}
+            disabled={isSavingFormation || isStarting || isCancellingRoom || !isRecruiting}
+            sx={{ ...menuButtonSx, ...panelOutlinedButtonSx, flex: 1, minHeight: 52 }}
+          >
+            {isSavingFormation ? locale.updatingPosition : locale.confirmFormation}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
+            onClick={() => void onStartQuest()}
+            disabled={isStartDisabled || isSavingFormation}
+            sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, flex: 1, minHeight: 52, fontSize: '1.1rem' }}
+          >
+            {isStarting ? locale.startingQuest : locale.startQuest}
+          </Button>
+        </Stack>
+      ) : null}
+    </Stack>
+  )
+
+  return <>{renderLayout({ info, editor, editorTitle })}</>
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: 2,
+        py: 1.25,
+        borderBottom: `1px dotted ${homePanelColors.divider}`,
+      }}
+    >
+      <Typography variant="body2" sx={{ color: homePanelColors.label, whiteSpace: 'nowrap' }}>
+        {label}
+      </Typography>
+      <Typography variant="body2" sx={{ color: homePanelColors.text, fontWeight: 700, textAlign: 'right' }}>
+        {value}
+      </Typography>
+    </Box>
   )
 }

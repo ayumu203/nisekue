@@ -1,5 +1,5 @@
 import { Alert, Avatar, Box, Button, Chip, CircularProgress, Paper, Stack, Typography } from '@mui/material'
-import { innerSurfaceSx, menuButtonSx, softGreenButtonSx } from '@/constants/styles'
+import { homePanelColors, innerSurfaceSx, menuButtonSx, panelPrimaryButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import type { GetQuestStagesResponse, ListQuestRoomsResponse } from '@/schema/quest'
 
@@ -175,17 +175,10 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
             disabled={isJoining || !room.isJoinable}
             sx={{
               ...menuButtonSx,
-              ...softGreenButtonSx,
+              ...panelPrimaryButtonSx,
               width: 'auto',
               minWidth: 104,
               px: 2,
-              color: '#ffffff',
-              backgroundColor: '#4f79b5',
-              boxShadow: 'none',
-              '&:hover': {
-                backgroundColor: '#5a86c5',
-                boxShadow: 'none',
-              },
             }}
           >
             {isJoining ? locale.joiningRoom : locale.joinRoom}
@@ -238,46 +231,36 @@ export default function QuestMultiRoomList({
   locale,
   onJoinRoom,
 }: QuestMultiRoomListProps) {
+  // 白い箱（GamePanel）の中に置くので、外側の枠は付けない
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        ...innerSurfaceSx,
-        borderRadius: 3,
-        p: { xs: 2, sm: 2.5 },
-        color: '#eef4ff',
-        backgroundColor: '#1d2d4a',
-        borderColor: 'rgba(152, 192, 255, 0.34)',
-      }}
-    >
-      <Stack spacing={2}>
-        <Stack spacing={0.5}></Stack>
-        {isLoading ? (
-          <Stack direction="row" spacing={1} alignItems="center">
-            <CircularProgress size={18} />
-            <Typography variant="body2">{locale.latestRoomsLoading}</Typography>
-          </Stack>
-        ) : error ? (
-          <Alert severity="warning">{error.message}</Alert>
-        ) : rooms.length === 0 ? (
-          <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.74)' }}>
-            {locale.latestRoomsEmpty}
+    <Stack spacing={2}>
+      {isLoading ? (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <CircularProgress size={18} />
+          <Typography variant="body2" sx={{ color: homePanelColors.label }}>
+            {locale.latestRoomsLoading}
           </Typography>
-        ) : (
-          <Stack spacing={1.5}>
-            {rooms.map((room) => (
-              <QuestMultiRoomCard
-                key={room.roomId}
-                room={room}
-                stages={stages}
-                isJoining={isJoiningRoomId === room.roomId}
-                locale={locale}
-                onJoinRoom={onJoinRoom}
-              />
-            ))}
-          </Stack>
-        )}
-      </Stack>
-    </Paper>
+        </Stack>
+      ) : error ? (
+        <Alert severity="warning">{error.message}</Alert>
+      ) : rooms.length === 0 ? (
+        <Typography variant="body2" sx={{ color: homePanelColors.label }}>
+          {locale.latestRoomsEmpty}
+        </Typography>
+      ) : (
+        <Stack spacing={1.5}>
+          {rooms.map((room) => (
+            <QuestMultiRoomCard
+              key={room.roomId}
+              room={room}
+              stages={stages}
+              isJoining={isJoiningRoomId === room.roomId}
+              locale={locale}
+              onJoinRoom={onJoinRoom}
+            />
+          ))}
+        </Stack>
+      )}
+    </Stack>
   )
 }
