@@ -110,7 +110,7 @@
   "pendingCommandEmpty": "未送信",
   "submittedAtLabel": "送信時刻",
   "lastTurnResultsTitle": "直前ターン結果",
-  "messagePanelTitle": "メッセージ・前ターンの結果",
+  "messagePanelTitle": "ログ",
   "lastTurnResultsEmpty": "",
   "resolvedAtLabel": "解決時刻",
   "hpChangeLabel": "HP変化",

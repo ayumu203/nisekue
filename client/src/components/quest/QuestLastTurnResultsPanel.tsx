@@ -177,9 +177,6 @@ export default function QuestLastTurnResultsPanel({
           <Stack spacing={1}>
             {currentTurnMessages.length > 0 ? (
               <Stack spacing={0.75}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5a4421' }}>
-                  {locale.currentTurnMessagesTitle}
-                </Typography>
                 <Stack spacing={0.6}>
                   {currentTurnMessages.map((message, index) => (
                     <ChatMessageItem
@@ -196,9 +193,6 @@ export default function QuestLastTurnResultsPanel({
 
             {lastTurnMessages.length > 0 ? (
               <Stack spacing={0.75}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5a4421' }}>
-                  {locale.lastTurnMessagesTitle}
-                </Typography>
                 <Stack spacing={0.6}>
                   {lastTurnMessages.map((message, index) => (
                     <ChatMessageItem

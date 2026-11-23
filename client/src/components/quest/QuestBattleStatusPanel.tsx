@@ -250,7 +250,8 @@ function BattleSprite({
         left,
         bottom,
         // 敵（48px のドット絵）は味方と同じくらいの大きさで見えるよう、画像の枠の高さいっぱいまで広げる
-        width: isAlly ? { xs: 84, sm: 96, md: 110 } : { xs: 84, sm: 106, md: 120 },
+        // PC の広い画面ではバトル画面が大きくなるので、キャラも大きくする
+        width: isAlly ? { xs: 84, sm: 96, md: 110, lg: 150, xl: 180 } : { xs: 84, sm: 106, md: 120, lg: 160, xl: 190 },
         transform: `translateX(-50%) scale(${scale})`,
         transformOrigin: '50% 100%',
         zIndex: 2,
@@ -354,7 +355,7 @@ function BattleSprite({
       <Box
         sx={{
           position: 'relative',
-          height: { xs: 94, sm: 106, md: 120 },
+          height: { xs: 94, sm: 106, md: 120, lg: 160, xl: 190 },
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
