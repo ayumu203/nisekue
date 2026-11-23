@@ -265,8 +265,9 @@ export const panelPrimaryButtonSx = {
   '& .MuiTouchRipple-root': {
     display: 'none',
   },
+  // ホバーしても色を変えない
   '&&:hover': {
-    backgroundColor: '#286c32',
+    backgroundColor: homePanelColors.band,
     boxShadow: 'none',
   },
   '&&.Mui-disabled': {
@@ -288,8 +289,9 @@ export const panelOutlinedButtonSx = {
   '& .MuiTouchRipple-root': {
     display: 'none',
   },
+  // ホバーしても色を変えない
   '&&:hover': {
-    backgroundColor: '#f1f8f1',
+    backgroundColor: '#ffffff',
   },
   '&&.Mui-disabled': {
     color: '#9fbfa3',
