@@ -52,8 +52,8 @@ export default function QuestStageModeCard({
         borderWidth: isSelected ? 3 : 1,
         color: '#f4f7ff',
         backgroundColor: '#243654',
-        // 選んでいるステージは黄色の枠で示す
-        borderColor: isSelected ? '#ffcc00' : 'rgba(152, 192, 255, 0.26)',
+        // 選んでいるステージは白の枠で示す
+        borderColor: isSelected ? '#ffffff' : 'rgba(152, 192, 255, 0.26)',
         boxShadow: isSelected ? '0 10px 24px rgba(22, 39, 73, 0.22)' : 'none',
         '&::before': {
           content: '""',
