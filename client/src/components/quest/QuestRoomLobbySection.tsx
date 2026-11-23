@@ -66,6 +66,14 @@ type QuestRoomLobbySectionProps = {
   renderLayout: (parts: { info: ReactNode; editor: ReactNode; editorTitle: string }) => ReactNode
 }
 
+// 列・位置の選択欄。上に縮んで出る「列」「位置」の文字を 13px（ホームの最小の文字）にする
+const positionSelectSx = {
+  ...greenOutlinedInputSx,
+  '& .MuiInputLabel-shrink': {
+    transform: 'translate(14px, -9px) scale(0.8125)',
+  },
+} as const
+
 const iconButtonSx = {
   border: '1px solid',
   borderColor: homePanelColors.divider,
@@ -371,7 +379,7 @@ export default function QuestRoomLobbySection({
 
                 {isOwner ? (
                   <Stack direction="row" spacing={1.25}>
-                    <FormControl fullWidth size="small" sx={greenOutlinedInputSx}>
+                    <FormControl fullWidth size="small" sx={positionSelectSx}>
                       <InputLabel id={`participant-row-${participant.participantId}`}>{locale.positionRow}</InputLabel>
                       <Select
                         labelId={`participant-row-${participant.participantId}`}
@@ -386,7 +394,7 @@ export default function QuestRoomLobbySection({
                       </Select>
                     </FormControl>
 
-                    <FormControl fullWidth size="small" sx={greenOutlinedInputSx}>
+                    <FormControl fullWidth size="small" sx={positionSelectSx}>
                       <InputLabel id={`participant-column-${participant.participantId}`}>
                         {locale.positionColumn}
                       </InputLabel>
