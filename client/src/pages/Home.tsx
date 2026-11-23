@@ -38,7 +38,7 @@ import ChatMessages from '@/components/chat/ChatMessages'
 import ChatForm from '@/components/chat/ChatForm'
 import AnnouncementList from '@/components/common/AnnouncementList'
 import Status from '@/components/home/Status'
-import HomePanel from '@/components/home/HomePanel'
+import GamePanel from '@/components/common/GamePanel'
 import HomeStatusPanel from '@/components/home/HomeStatusPanel'
 import { SwapIcon } from '@/components/home/HomeIcons'
 import HomeHeaderMenu from '@/components/home/HomeHeaderMenu'
@@ -433,12 +433,12 @@ function Home() {
         }}
       >
         <Box sx={{ gridArea: 'status', minHeight: 0 }}>
-          <HomePanel title={player?.userName ?? locale.notSet} aria-label={locale.statusPanelLabel}>
+          <GamePanel title={player?.userName ?? locale.notSet} aria-label={locale.statusPanelLabel}>
             {playerStatusContent ?? <HomeStatusPanel player={player} />}
-          </HomePanel>
+          </GamePanel>
         </Box>
         <Box sx={{ gridArea: 'chat', minHeight: 0, minWidth: 0 }}>
-          <HomePanel
+          <GamePanel
             title={desktopChatTab === 'personal' ? locale.chatTabPersonal : locale.chatTabGlobal}
             aria-label={locale.chatTitle}
             action={
@@ -452,12 +452,12 @@ function Home() {
             }
           >
             {desktopChatTab === 'personal' ? personalChatContent : globalChatContent}
-          </HomePanel>
+          </GamePanel>
         </Box>
         <Box sx={{ gridArea: 'news', minHeight: 0 }}>
-          <HomePanel title={announcementTabLabel}>
+          <GamePanel title={announcementTabLabel}>
             <AnnouncementList variant="list" />
-          </HomePanel>
+          </GamePanel>
         </Box>
       </Box>
     </Box>

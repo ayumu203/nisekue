@@ -237,8 +237,54 @@ export const homePanelColors = {
   topBand: '#ffcc00',
   ground: '#fdf3d8',
   band: '#2f7d3a',
+  // 帯を「作成｜募集中」のように分けたとき、選んでいる側の色
+  bandSelected: '#1d5626',
   shadow: '#d39a00',
   divider: '#e3d6b8',
   label: '#6b5a3e',
   text: '#3a2f1e',
+} as const
+
+// クエスト画面の色（上部の青緑の帯・地の薄い青緑・白い箱の影）。見出しの帯やボタンの緑はホームと同じ
+export const questPanelColors = {
+  topBand: '#2a7f84',
+  ground: '#eaf4f2',
+  shadow: '#bcd9d5',
+} as const
+
+// 白い箱の中の主な操作（募集開始・START・決定など）。見出しの帯と同じ緑
+export const panelPrimaryButtonSx = {
+  '&&': {
+    backgroundColor: homePanelColors.band,
+    backgroundImage: 'none',
+    color: '#ffffff',
+    fontWeight: 800,
+    boxShadow: `0 3px 0 ${homePanelColors.bandSelected}`,
+  },
+  '&&:hover': {
+    backgroundColor: '#286c32',
+    boxShadow: `0 3px 0 ${homePanelColors.bandSelected}`,
+  },
+  '&&.Mui-disabled': {
+    backgroundColor: '#a9c9ad',
+    color: '#ffffff',
+    boxShadow: 'none',
+  },
+} as const
+
+// 白い箱の中の、主な操作の横に置く操作（参加制限・この配置で決定など）
+export const panelOutlinedButtonSx = {
+  '&&': {
+    backgroundColor: '#ffffff',
+    color: homePanelColors.band,
+    border: `2px solid ${homePanelColors.band}`,
+    fontWeight: 800,
+  },
+  '&&:hover': {
+    backgroundColor: '#f1f8f1',
+  },
+  '&&.Mui-disabled': {
+    color: '#9fbfa3',
+    borderColor: '#c3dbc6',
+  },
 } as const

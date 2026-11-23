@@ -1,5 +1,13 @@
 import { SvgIcon, type SvgIconProps } from '@mui/material'
 
+export function HomeIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M12 3.5 3 10.5V21h6.5v-5.5h5V21H21V10.5zm0 2.53 7 5.44V19h-2.5v-5.5h-9V19H5v-7.53z" />
+    </SvgIcon>
+  )
+}
+
 export function TrainingIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">

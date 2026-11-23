@@ -15,6 +15,9 @@ type HomeHeaderMenuProps = {
   onCloseGroup: () => void
   gearIconId?: string
   onGearClick?: () => void
+  // 今いる画面の項目（ホーム以外の画面で使う）。その項目を帯の色で塗って示す
+  currentKey?: string
+  currentColor?: string
 }
 
 function ChevronDownIcon(props: SvgIconProps) {
@@ -49,6 +52,21 @@ const headerButtonSx = {
     fontSize: 22,
   },
 } as const
+
+// 今いる画面の項目。帯の色で塗り、文字とアイコンを白にする
+function currentHeaderButtonSx(color: string) {
+  return {
+    ...headerButtonSx,
+    color: '#ffffff',
+    backgroundColor: color,
+    '&:hover, &[aria-expanded="true"]': {
+      backgroundColor: color,
+    },
+    '& .MuiButton-startIcon': {
+      color: '#ffffff',
+    },
+  } as const
+}
 
 const dropdownItemSx = {
   justifyContent: 'flex-start',
@@ -85,6 +103,8 @@ export default function HomeHeaderMenu({
   onCloseGroup,
   gearIconId,
   onGearClick,
+  currentKey,
+  currentColor,
 }: HomeHeaderMenuProps) {
   const { signOut, isSigningOut, signOutError } = useSignOut()
   const visibleGroup = lockedGroup ?? openGroup
@@ -109,7 +129,8 @@ export default function HomeHeaderMenu({
               id={item.id}
               startIcon={item.icon}
               onClick={item.onClick}
-              sx={headerButtonSx}
+              aria-current={item.key === currentKey ? 'page' : undefined}
+              sx={item.key === currentKey && currentColor ? currentHeaderButtonSx(currentColor) : headerButtonSx}
             >
               {item.label}
             </Button>
