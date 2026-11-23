@@ -1,11 +1,13 @@
 using FluentAssertions;
 using server.application.battle;
 using server.application.player;
+using server.application.quest;
 using server.application.training;
 using server.domain.move;
 using server.domain.move.enums;
 using server.domain.player;
 using server.domain.training;
+using server.tests.quest;
 using Xunit;
 
 namespace server.tests;
@@ -51,6 +53,69 @@ public class TrainingServiceTests
         // 職業レベルはプレイヤーレベルに連動するため、レベルが上がらなければ職業レベルも上がらない。
         result.IsJobLevelUp.Should().BeFalse();
         playerRepository.SaveCalled.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ExecuteTraining_WhenInQuest_ThrowsAndDoesNotSavePlayer()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var player = new Player(
+            playerId,
+            name: "Tester",
+            level: 5,
+            exp: 0,
+            jobLevel: 1,
+            gold: 100,
+            status: new Status(maxHp: 30, maxMp: 10, strength: 12, defense: 8, intelligence: 5, luck: 2, speed: 10),
+            moveSet: CreateMoveSet(PhysicalAttackMoveId));
+        var enemy = new TrainingEnemy(
+            new TrainingEnemyId(1),
+            name: "Enemy",
+            imagePath: "/image/training/01_heishi.png",
+            level: 5,
+            status: new Status(maxHp: 20, maxMp: 0, strength: 8, defense: 3, intelligence: 2, luck: 1, speed: 5));
+        var playerRepository = new FakePlayerRepository(player);
+        var service = CreateService(
+            playerRepository,
+            new FakeTrainingEnemyRepository(enemy),
+            questInProgressGuard: new FakeQuestInProgressGuard(isInQuest: true));
+
+        var act = () => service.ExecuteTraining(playerId, enemy.Id, [PhysicalAttackMoveId]);
+
+        await act.Should().ThrowAsync<QuestInProgressException>()
+            .WithMessage(QuestInProgressMessages.Training);
+        playerRepository.SaveCalled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ExecutePvpTraining_WhenInQuest_ThrowsAndDoesNotSavePlayer()
+    {
+        var playerId = new PlayerId(Guid.NewGuid());
+        var player = new Player(
+            playerId,
+            name: "Tester",
+            level: 5,
+            exp: 0,
+            jobLevel: 1,
+            gold: 100,
+            status: new Status(maxHp: 30, maxMp: 10, strength: 12, defense: 8, intelligence: 5, luck: 2, speed: 10),
+            moveSet: CreateMoveSet(PhysicalAttackMoveId));
+        var playerRepository = new FakePlayerRepository(player);
+        var service = CreateService(
+            playerRepository,
+            new FakeTrainingEnemyRepository(new TrainingEnemy(
+                new TrainingEnemyId(1),
+                name: "Enemy",
+                imagePath: "/image/training/01_heishi.png",
+                level: 5,
+                status: new Status(maxHp: 20, maxMp: 0, strength: 8, defense: 3, intelligence: 2, luck: 1, speed: 5))),
+            questInProgressGuard: new FakeQuestInProgressGuard(isInQuest: true));
+
+        var act = () => service.ExecutePvpTraining(playerId, new PlayerId(Guid.NewGuid()), [PhysicalAttackMoveId]);
+
+        await act.Should().ThrowAsync<QuestInProgressException>()
+            .WithMessage(QuestInProgressMessages.Training);
+        playerRepository.SaveCalled.Should().BeFalse();
     }
 
     [Fact]
@@ -729,7 +794,8 @@ public class TrainingServiceTests
         IPlayerRepository playerRepository,
         ITrainingEnemyRepository enemyRepository,
         IPlayerEquipmentRepository? playerEquipmentRepository = null,
-        IEquipmentRepository? equipmentRepository = null)
+        IEquipmentRepository? equipmentRepository = null,
+        IQuestInProgressGuard? questInProgressGuard = null)
     {
         return new TrainingService(
             playerRepository,
@@ -743,13 +809,15 @@ public class TrainingServiceTests
                 playerRepository,
                 new FakeJobProfileRepository(),
                 new FakeJobMoveLearningRuleRepository(),
-                new FakeMoveRepository()),
+                new FakeMoveRepository(),
+                new FakeQuestInProgressGuard()),
             new BattleService(),
             new TrainingBattleFactory(),
             new TrainingOutcomeJudge(),
             new TrainingExpCalculator(),
             new TrainingWeaponMasteryPolicy(),
-            new EquipmentStatusResolver());
+            new EquipmentStatusResolver(),
+            questInProgressGuard ?? new FakeQuestInProgressGuard());
     }
 
     private static MoveSet CreateMoveSet(params int[] moveIds)

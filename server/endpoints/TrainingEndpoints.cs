@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using server.application.quest;
 using server.application.training;
 using server.domain.player;
 using server.domain.training;
@@ -57,6 +58,10 @@ internal static class TrainingEndpoints
                     new { message = ex.Message, retryAfterSeconds, cooldownUntil = ex.CooldownUntil },
                     statusCode: StatusCodes.Status429TooManyRequests);
             }
+            catch (QuestInProgressException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
+            }
             catch (KeyNotFoundException ex)
             {
                 return Results.NotFound(new { message = ex.Message });
@@ -96,6 +101,10 @@ internal static class TrainingEndpoints
                 return Results.Json(
                     new { message = ex.Message, retryAfterSeconds, cooldownUntil = ex.CooldownUntil },
                     statusCode: StatusCodes.Status429TooManyRequests);
+            }
+            catch (QuestInProgressException ex)
+            {
+                return Results.Conflict(new { message = ex.Message });
             }
             catch (KeyNotFoundException ex)
             {

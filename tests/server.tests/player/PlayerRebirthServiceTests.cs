@@ -1,6 +1,8 @@
 using FluentAssertions;
 using server.application.player;
+using server.application.quest;
 using server.domain.player;
+using server.tests.quest;
 using Xunit;
 
 namespace server.tests;
@@ -11,7 +13,7 @@ public class PlayerRebirthServiceTests
     public async Task RebirthAsync_DelegatesToExecutorWithGivenPlayerId()
     {
         var executor = new CapturingRebirthExecutor();
-        var service = new PlayerRebirthService(executor);
+        var service = new PlayerRebirthService(executor, new FakeQuestInProgressGuard());
         var playerId = new PlayerId(Guid.NewGuid());
 
         await service.RebirthAsync(playerId);
@@ -25,7 +27,7 @@ public class PlayerRebirthServiceTests
     public async Task RebirthAsync_WhenIgnoringRequirements_PassesFlagToExecutor()
     {
         var executor = new CapturingRebirthExecutor();
-        var service = new PlayerRebirthService(executor);
+        var service = new PlayerRebirthService(executor, new FakeQuestInProgressGuard());
 
         await service.RebirthAsync(new PlayerId(Guid.NewGuid()), ignoreRequirements: true);
 
@@ -33,10 +35,35 @@ public class PlayerRebirthServiceTests
     }
 
     [Fact]
+    public async Task RebirthAsync_WhenInQuest_ThrowsAndDoesNotRebirth()
+    {
+        var executor = new CapturingRebirthExecutor();
+        var service = new PlayerRebirthService(executor, new FakeQuestInProgressGuard(isInQuest: true));
+
+        var act = () => service.RebirthAsync(new PlayerId(Guid.NewGuid()));
+
+        await act.Should().ThrowAsync<QuestInProgressException>()
+            .WithMessage(QuestInProgressMessages.Rebirth);
+        executor.ReceivedPlayerId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RebirthAsync_WhenInQuestAndIgnoringRequirements_Rebirths()
+    {
+        var executor = new CapturingRebirthExecutor();
+        var service = new PlayerRebirthService(executor, new FakeQuestInProgressGuard(isInQuest: true));
+        var playerId = new PlayerId(Guid.NewGuid());
+
+        await service.RebirthAsync(playerId, ignoreRequirements: true);
+
+        executor.ReceivedPlayerId.Should().Be(playerId);
+    }
+
+    [Fact]
     public async Task RebirthAsync_BuildsInheritedStatusWithinExpectedRange()
     {
         var executor = new CapturingRebirthExecutor();
-        var service = new PlayerRebirthService(executor);
+        var service = new PlayerRebirthService(executor, new FakeQuestInProgressGuard());
 
         await service.RebirthAsync(new PlayerId(Guid.NewGuid()));
         var buildInheritedStatus = executor.CapturedBuildInheritedStatus!;
@@ -61,7 +88,7 @@ public class PlayerRebirthServiceTests
     public async Task RebirthAsync_BuildsInheritedMaxHpAtLeastOne()
     {
         var executor = new CapturingRebirthExecutor();
-        var service = new PlayerRebirthService(executor);
+        var service = new PlayerRebirthService(executor, new FakeQuestInProgressGuard());
 
         await service.RebirthAsync(new PlayerId(Guid.NewGuid()));
         var buildInheritedStatus = executor.CapturedBuildInheritedStatus!;

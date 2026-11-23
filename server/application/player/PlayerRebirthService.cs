@@ -1,14 +1,22 @@
+using server.application.quest;
 using server.domain.player;
 using server.shared.constants.player;
 
 namespace server.application.player;
 
 public class PlayerRebirthService(
-    IPlayerRebirthExecutor playerRebirthExecutor)
+    IPlayerRebirthExecutor playerRebirthExecutor,
+    IQuestInProgressGuard questInProgressGuard)
 {
     /// <param name="ignoreRequirements">true（デバッグ用）なら転生の条件（レベル・Gold）を確認せず、Gold も減らさない。</param>
     public async Task<Player> RebirthAsync(PlayerId playerId, bool ignoreRequirements = false)
     {
+        // デバッグ用（ignoreRequirements）はクエスト中でも許可する。
+        if (!ignoreRequirements)
+        {
+            await questInProgressGuard.EnsureNotInQuestAsync(playerId, QuestInProgressMessages.Rebirth);
+        }
+
         return await playerRebirthExecutor.ExecuteAsync(playerId, BuildInheritedStatus, ignoreRequirements);
     }
 

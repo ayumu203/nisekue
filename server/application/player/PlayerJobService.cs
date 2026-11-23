@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using server.application.quest;
 using server.domain.move;
 using server.domain.player;
 
@@ -8,7 +9,8 @@ public class PlayerJobService(
     IPlayerRepository playerRepository,
     IJobProfileRepository jobProfileRepository,
     IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
-    IMoveRepository moveRepository)
+    IMoveRepository moveRepository,
+    IQuestInProgressGuard questInProgressGuard)
 {
     private static readonly IReadOnlySet<Job> BaseJobs = new HashSet<Job>
     {
@@ -26,6 +28,8 @@ public class PlayerJobService(
         {
             throw new InvalidOperationException("そのジョブへの転職は転職アイテム使用時にのみ可能です。");
         }
+
+        await questInProgressGuard.EnsureNotInQuestAsync(playerId, QuestInProgressMessages.ChangeJob);
 
         var player = await playerRepository.GetPlayerAsync(playerId)
             ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
