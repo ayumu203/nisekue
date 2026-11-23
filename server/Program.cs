@@ -173,6 +173,7 @@ builder.Services.AddSingleton<IQuestEndlessEnemyTemplateRepository, CsvQuestEndl
 builder.Services.AddSingleton<IQuestNpcTemplateRepository, CsvQuestNpcTemplateRepository>();
 builder.Services.AddScoped<IQuestRoomRepository, DbQuestRoomRepository>();
 builder.Services.AddScoped<IQuestRunRepository, DbQuestRunRepository>();
+builder.Services.AddScoped<IQuestInProgressGuard, QuestInProgressGuard>();
 builder.Services.AddScoped<IPlayerPetRepository, DbPlayerPetRepository>();
 builder.Services.AddScoped<IPetTrainingExecutor, DbPetTrainingExecutor>();
 builder.Services.AddScoped<IPetBattleRoomRepository, DbPetBattleRoomRepository>();

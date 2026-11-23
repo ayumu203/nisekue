@@ -1,5 +1,6 @@
 using server.application.battle;
 using server.application.player;
+using server.application.quest;
 using server.domain.battle;
 using server.domain.move;
 using server.domain.player;
@@ -22,7 +23,8 @@ public class TrainingService(
     TrainingOutcomeJudge trainingOutcomeJudge,
     TrainingExpCalculator trainingExpCalculator,
     TrainingWeaponMasteryPolicy trainingWeaponMasteryPolicy,
-    EquipmentStatusResolver equipmentStatusResolver)
+    EquipmentStatusResolver equipmentStatusResolver,
+    IQuestInProgressGuard questInProgressGuard)
 {
     public async Task<TrainingEnemyView[]> GetTrainingEnemies(PlayerId playerId)
     {
@@ -48,6 +50,8 @@ public class TrainingService(
 
     public async Task<TrainingResultView> ExecuteTraining(PlayerId playerId, TrainingEnemyId enemyId, IReadOnlyList<int?> playerMoveIds)
     {
+        await questInProgressGuard.EnsureNotInQuestAsync(playerId, QuestInProgressMessages.Training);
+
         var player = await playerRepository.GetPlayerAsync(playerId)
             ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
 
@@ -101,6 +105,8 @@ public class TrainingService(
 
     public async Task<TrainingResultView> ExecutePvpTraining(PlayerId playerId, PlayerId opponentPlayerId, IReadOnlyList<int?> playerMoveIds)
     {
+        await questInProgressGuard.EnsureNotInQuestAsync(playerId, QuestInProgressMessages.Training);
+
         var player = await playerRepository.GetPlayerAsync(playerId)
             ?? throw new KeyNotFoundException("プレイヤーが見つかりません。");
 

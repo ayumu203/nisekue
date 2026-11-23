@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Mvc;
 using server.application.chat;
 using server.application.player;
+using server.application.quest;
 using server.domain;
 using server.domain.move;
 using server.domain.player;
@@ -92,12 +93,18 @@ internal static class ItemEndpoints
             ITreasureMapRepository treasureMapRepository,
             IJobProfileRepository jobProfileRepository,
             IJobMoveLearningRuleRepository jobMoveLearningRuleRepository,
-            ItemStatBoostService itemStatBoostService) =>
+            ItemStatBoostService itemStatBoostService,
+            IQuestInProgressGuard questInProgressGuard) =>
         {
             var playerId = EndpointHelpers.TryGetPlayerId(user);
             if (playerId is null)
             {
                 return Results.Unauthorized();
+            }
+
+            if (await questInProgressGuard.IsInQuestAsync(playerId.Value))
+            {
+                return Results.Conflict(new { message = QuestInProgressMessages.UseItem });
             }
 
             var stack = await playerItemStackRepository.GetAsync(new PlayerItemStackId(itemStackId));

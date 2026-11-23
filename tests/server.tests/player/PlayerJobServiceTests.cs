@@ -1,7 +1,9 @@
 using FluentAssertions;
 using server.application.player;
+using server.application.quest;
 using server.domain.move;
 using server.domain.player;
+using server.tests.quest;
 using Xunit;
 
 namespace server.tests;
@@ -25,12 +27,41 @@ public class PlayerJobServiceTests
             playerRepository,
             new FakeJobProfileRepository(),
             new FakeJobMoveLearningRuleRepository(),
-            new FakeMoveRepository());
+            new FakeMoveRepository(),
+            new FakeQuestInProgressGuard());
 
         var result = await service.ChangeJobAsync(player.Id, Job.Ranger);
 
         result.Player.Job.Should().Be(Job.Ranger);
         playerRepository.SaveCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ChangeJobAsync_WhenInQuest_ThrowsAndDoesNotChangeJob()
+    {
+        var player = new Player(
+            new PlayerId(Guid.NewGuid()),
+            "Tester",
+            level: 5,
+            exp: 0,
+            jobLevel: 1,
+            gold: 100,
+            status: new Status(30, 10, 8, 6, 4, 3, 5),
+            job: Job.Apprentice);
+        var playerRepository = new FakePlayerRepository(player);
+        var service = new PlayerJobService(
+            playerRepository,
+            new FakeJobProfileRepository(),
+            new FakeJobMoveLearningRuleRepository(),
+            new FakeMoveRepository(),
+            new FakeQuestInProgressGuard(isInQuest: true));
+
+        var act = () => service.ChangeJobAsync(player.Id, Job.Ranger);
+
+        await act.Should().ThrowAsync<QuestInProgressException>()
+            .WithMessage(QuestInProgressMessages.ChangeJob);
+        player.Job.Should().Be(Job.Apprentice);
+        playerRepository.SaveCount.Should().Be(0);
     }
 
     private sealed class FakePlayerRepository(Player player) : IPlayerRepository
