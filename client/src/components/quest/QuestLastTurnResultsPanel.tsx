@@ -97,10 +97,13 @@ function ChatMessageItem({
       </Box>
 
       <Stack spacing={0.3} sx={{ minWidth: 0 }}>
-        <Typography variant="caption" sx={{ fontWeight: 700, color: '#5a4421' }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, color: '#5a4421', fontSize: '0.8125rem' }}>
           {displayName}
         </Typography>
-        <Typography variant="body2" sx={{ color: '#322617', lineHeight: 1.45, wordBreak: 'break-word' }}>
+        <Typography
+          variant="body2"
+          sx={{ color: '#322617', lineHeight: 1.5, wordBreak: 'break-word', fontSize: { sm: '1rem' } }}
+        >
           {message}
         </Typography>
       </Stack>
@@ -221,7 +224,10 @@ export default function QuestLastTurnResultsPanel({
                       borderBottom: '1px solid #c9c2b7',
                     }}
                   >
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#3b2f1f', lineHeight: 1.5 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 600, color: '#3b2f1f', lineHeight: 1.6, fontSize: { sm: '1rem' } }}
+                    >
                       {log.segments.map((segment, segmentIndex) => (
                         <Box
                           key={`${segment.text}-${segmentIndex}`}

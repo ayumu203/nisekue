@@ -7,8 +7,6 @@ import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/qu
 import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestStageModeCard from './QuestStageModeCard'
 
-const STAGE_PAGE_SIZE = 3
-
 type QuestRoomCreateSectionProps = {
   activeStages: GetQuestStagesResponse
   selectedStageId: number | ''
@@ -27,6 +25,9 @@ type QuestRoomCreateSectionProps = {
   onModeChange: (mode: CreateQuestRoomRequest['mode']) => void
   onRestrictionsChange: (value: string, nextAllowedPlayerIds: string[]) => void
   onCreateRoom: () => void | Promise<void>
+  // 1 ページに出すステージの数と、横に並べる列の数（PC は 2 列で多めに出す）
+  stagePageSize?: number
+  stageColumns?: number
   // ステージ一覧と、参加制限・募集開始をどの箱に置くかは画面側で決める
   renderLayout: (parts: { stages: ReactNode; form: ReactNode }) => ReactNode
 }
@@ -45,7 +46,7 @@ function PanelRow({ label, value }: { label: string; value: string }) {
       <Typography variant="body2" sx={{ color: homePanelColors.label }}>
         {label}
       </Typography>
-      <Typography variant="body2" sx={{ color: homePanelColors.text, fontWeight: 700, textAlign: 'right' }}>
+      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, textAlign: 'right', fontSize: '1rem' }}>
         {value}
       </Typography>
     </Box>
@@ -70,6 +71,8 @@ export default function QuestRoomCreateSection({
   onModeChange,
   onRestrictionsChange,
   onCreateRoom,
+  stagePageSize = 3,
+  stageColumns = 1,
   renderLayout,
 }: QuestRoomCreateSectionProps) {
   const [isRestrictionsModalOpen, setIsRestrictionsModalOpen] = useState(false)
@@ -79,12 +82,12 @@ export default function QuestRoomCreateSection({
     onModeChange(nextMode)
   }
 
-  const stagePageCount = Math.max(1, Math.ceil(activeStages.length / STAGE_PAGE_SIZE))
+  const stagePageCount = Math.max(1, Math.ceil(activeStages.length / stagePageSize))
   const visibleStagePage = Math.min(stagePage, stagePageCount)
   const pagedStages = useMemo(() => {
-    const start = (visibleStagePage - 1) * STAGE_PAGE_SIZE
-    return activeStages.slice(start, start + STAGE_PAGE_SIZE)
-  }, [activeStages, visibleStagePage])
+    const start = (visibleStagePage - 1) * stagePageSize
+    return activeStages.slice(start, start + stagePageSize)
+  }, [activeStages, visibleStagePage, stagePageSize])
 
   const stages = isLoading ? (
     <Stack direction="row" spacing={1} alignItems="center">
@@ -97,7 +100,7 @@ export default function QuestRoomCreateSection({
     <Alert severity="info">{locale.stagesEmpty}</Alert>
   ) : (
     <Stack spacing={2}>
-      <Box sx={{ display: 'grid', gap: 2 }}>
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: `repeat(${stageColumns}, minmax(0, 1fr))` }}>
         {pagedStages.map((stage) => (
           <QuestStageModeCard
             key={stage.stageId}

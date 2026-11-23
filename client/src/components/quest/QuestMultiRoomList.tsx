@@ -194,13 +194,14 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
             </Avatar>
             <Typography
               variant="caption"
+              fontSize="0.8125rem"
               sx={{ maxWidth: 72, textAlign: 'center', color: 'rgba(222, 236, 255, 0.76)' }}
               noWrap
               title={room.ownerDisplayName ?? '---'}
             >
               {room.ownerDisplayName ?? '---'}
             </Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(222, 236, 255, 0.64)' }}>
+            <Typography variant="caption" sx={{ color: 'rgba(222, 236, 255, 0.64)', fontSize: '0.8125rem' }}>
               {locale.ownerBadge}
             </Typography>
           </Stack>

@@ -491,7 +491,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <Typography variant="body2" sx={{ color: homePanelColors.label, whiteSpace: 'nowrap' }}>
         {label}
       </Typography>
-      <Typography variant="body2" sx={{ color: homePanelColors.text, fontWeight: 700, textAlign: 'right' }}>
+      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, textAlign: 'right', fontSize: '1rem' }}>
         {value}
       </Typography>
     </Box>

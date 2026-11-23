@@ -1230,6 +1230,8 @@ export default function Quest() {
         onModeChange={setMode}
         onRestrictionsChange={handleRestrictionsChange}
         onCreateRoom={handleCreateRoom}
+        stagePageSize={isWide ? 6 : 3}
+        stageColumns={isWide ? 2 : 1}
         renderLayout={({ stages, form }) =>
           renderColumns(
             <GamePanel tabs={createTabs} {...panelProps}>

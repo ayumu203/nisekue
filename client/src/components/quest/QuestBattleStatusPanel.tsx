@@ -175,21 +175,21 @@ function AllyStatusCard({ member }: { member: QuestPartyMemberView }) {
           variant="caption"
           noWrap
           title={member.displayName}
-          sx={{ fontWeight: 800, color: '#503717', fontSize: { xs: '0.56rem', sm: '0.82rem' }, lineHeight: 1.1 }}
+          sx={{ fontWeight: 800, color: '#503717', fontSize: { xs: '0.56rem', sm: '1rem' }, lineHeight: 1.2 }}
         >
           {member.displayName}
         </Typography>
         <Typography
           variant="caption"
           noWrap
-          sx={{ color: '#624927', fontSize: { xs: '0.5rem', sm: '0.76rem' }, lineHeight: 1.1 }}
+          sx={{ color: '#624927', fontSize: { xs: '0.5rem', sm: '0.875rem' }, lineHeight: 1.2 }}
         >
           HP {member.currentHp}/{member.maxHp ?? '-'}
         </Typography>
         <Typography
           variant="caption"
           noWrap
-          sx={{ color: '#30506e', fontSize: { xs: '0.5rem', sm: '0.76rem' }, lineHeight: 1.1 }}
+          sx={{ color: '#30506e', fontSize: { xs: '0.5rem', sm: '0.875rem' }, lineHeight: 1.2 }}
         >
           MP {member.currentMp}/{member.maxMp ?? '-'}
         </Typography>
@@ -297,7 +297,7 @@ function BattleSprite({
               color: '#503717',
               textAlign: 'center',
               lineHeight: 1.35,
-              fontSize: { xs: '0.72rem', sm: '0.82rem' },
+              fontSize: { xs: '0.72rem', sm: '0.875rem' },
               wordBreak: 'break-word',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
@@ -326,7 +326,7 @@ function BattleSprite({
           title={name}
           textAlign="center"
           sx={{
-            fontSize: { xs: '0.62rem', sm: '0.88rem' },
+            fontSize: { xs: '0.62rem', sm: '1rem' },
             color: isDead ? 'rgba(90,90,90,0.92)' : '#3f2f16',
             textShadow: '0 1px 0 rgba(255,255,255,0.55)',
             lineHeight: isAlly ? 1.1 : { xs: 1.02, sm: 1.1 },
@@ -344,7 +344,7 @@ function BattleSprite({
           variant="caption"
           color="text.secondary"
           textAlign="center"
-          sx={{ fontSize: { xs: '0.58rem', sm: '0.84rem' }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
+          sx={{ fontSize: { xs: '0.58rem', sm: '0.875rem' }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
         >
           HP {hp}/{maxHp ?? '-'}
         </Typography>
@@ -666,7 +666,7 @@ export default function QuestBattleStatusPanel({
             px: { xs: 0.2, sm: 1.75 },
             py: { xs: 0.15, sm: 0.75 },
             fontWeight: 700,
-            fontSize: { xs: '0.52rem', sm: '0.9375rem' },
+            fontSize: { xs: '0.52rem', sm: '1rem' },
             lineHeight: { xs: 1.02, sm: 1.3 },
             textAlign: 'center',
             whiteSpace: 'normal',
@@ -712,7 +712,7 @@ export default function QuestBattleStatusPanel({
           minWidth: { xs: 64, sm: 124 },
           minHeight: { xs: 38, sm: 46 },
           ml: selectedActionKind === 'UseMove' ? 0 : { sm: 'auto' },
-          fontSize: { xs: '0.56rem', sm: '0.9375rem' },
+          fontSize: { xs: '0.56rem', sm: '1rem' },
           ...softGreenButtonSx,
         }}
       >
@@ -737,10 +737,10 @@ export default function QuestBattleStatusPanel({
                 color: '#6a4300',
               }}
             >
-              <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.8rem', sm: '0.95rem' } }}>
+              <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.8rem', sm: '1rem' } }}>
                 ★ {endlessCheckpointBannerTitle}
               </Typography>
-              <Typography sx={{ mt: 0.25, fontSize: { xs: '0.7rem', sm: '0.82rem' }, lineHeight: 1.4 }}>
+              <Typography sx={{ mt: 0.25, fontSize: { xs: '0.7rem', sm: '0.875rem' }, lineHeight: 1.5 }}>
                 {locale.endlessCheckpoint.bannerBody}
               </Typography>
             </Box>

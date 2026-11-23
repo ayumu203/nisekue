@@ -54,7 +54,11 @@ export default function QuestRoomFormationPreview({
 
                 return (
                   <Box key={column} sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: 'block', mb: 0.75, fontSize: '0.8125rem' }}
+                    >
                       {locale.columns[column]}
                     </Typography>
 
