@@ -171,7 +171,7 @@
   "labels": {
     "stageSelect": "作成するステージ",
     "modeSelect": "ルーム種別",
-    "minRequiredLevel": "最低参加レベル",
+    "minRequiredLevel": "参加制限レベル",
     "allowedPlayers": "参加可能プレイヤー",
     "actionKind": "行動",
     "move": "スキル",

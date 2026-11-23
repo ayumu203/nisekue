@@ -37,18 +37,17 @@ function PanelRow({ label, value }: { label: string; value: string }) {
     <Box
       sx={{
         display: 'flex',
-        justifyContent: 'space-between',
+        // 見出しと内容を離しすぎないよう、内容は見出しのすぐ右に置く
+        alignItems: 'baseline',
         gap: 2,
         py: 1.25,
         borderBottom: `1px dotted ${homePanelColors.divider}`,
       }}
     >
-      <Typography variant="body2" sx={{ color: homePanelColors.label }}>
+      <Typography variant="body2" sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', minWidth: 120 }}>
         {label}
       </Typography>
-      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, textAlign: 'right', fontSize: '1rem' }}>
-        {value}
-      </Typography>
+      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: '1rem' }}>{value}</Typography>
     </Box>
   )
 }

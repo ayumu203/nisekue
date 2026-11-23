@@ -17,7 +17,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select'
 import CancelIcon from '@mui/icons-material/Cancel'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import { useRef, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestRoomFormationPreview from './QuestRoomFormationPreview'
 import {
@@ -37,14 +37,6 @@ function GearIcon() {
   return (
     <SvgIcon viewBox="0 0 24 24" fontSize="small">
       <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.49-.42H10.1a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.12.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.39 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.23 1.12-.55 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z" />
-    </SvgIcon>
-  )
-}
-
-function PanelIcon() {
-  return (
-    <SvgIcon viewBox="0 0 24 24" fontSize="small">
-      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5Zm1.5-.5a.5.5 0 0 0-.5.5v3h14v-3a.5.5 0 0 0-.5-.5Zm13.5 4.5H5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5ZM7 6.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5m3 0a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5m-3 5h10v1H7zm0 3h6v1H7z" />
     </SvgIcon>
   )
 }
@@ -112,7 +104,6 @@ export default function QuestRoomLobbySection({
   renderLayout,
 }: QuestRoomLobbySectionProps) {
   const [isRestrictionsModalOpen, setIsRestrictionsModalOpen] = useState(false)
-  const formationEditorRef = useRef<HTMLDivElement | null>(null)
   const isOwner =
     currentRoom != null && selfParticipantId != null
       ? currentRoom.participants.some(
@@ -156,10 +147,6 @@ export default function QuestRoomLobbySection({
     })
   }
 
-  function handleJumpToFormationEditor(): void {
-    formationEditorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   const editorTitle = isOwner ? locale.ownerPositionTitle : locale.waitingForOwnerTitle
 
   if (currentRoom == null || isLoading) {
@@ -184,7 +171,7 @@ export default function QuestRoomLobbySection({
   const info = (
     <Stack spacing={2}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-        <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap" alignItems="center" sx={{ flex: 1 }}>
+        <Stack direction="row" spacing={1.25} alignItems="center" sx={{ flex: 1 }}>
           <Chip
             size="small"
             label={locale.roomStatus[currentRoom.status]}
@@ -194,34 +181,20 @@ export default function QuestRoomLobbySection({
               backgroundColor: isRecruiting ? '#ffcc00' : '#f0b7c0',
             }}
           />
-          <Typography variant="body2" sx={{ color: homePanelColors.text, fontWeight: 700 }}>
-            {locale.participantCountLabel.replace('{{count}}', String(currentRoom.participants.length))}
-          </Typography>
         </Stack>
         {isOwner ? (
-          <Stack direction="row" spacing={1}>
-            <Tooltip title={locale.openRestrictionsModal}>
-              <span>
-                <IconButton
-                  onClick={() => setIsRestrictionsModalOpen(true)}
-                  disabled={!isRecruiting || isUpdatingRestrictions}
-                  sx={iconButtonSx}
-                  aria-label={locale.openRestrictionsModal}
-                >
-                  <GearIcon />
-                </IconButton>
-              </span>
-            </Tooltip>
-            <Tooltip title={locale.jumpToFormationEditor}>
+          <Tooltip title={locale.openRestrictionsModal}>
+            <span>
               <IconButton
-                onClick={handleJumpToFormationEditor}
+                onClick={() => setIsRestrictionsModalOpen(true)}
+                disabled={!isRecruiting || isUpdatingRestrictions}
                 sx={iconButtonSx}
-                aria-label={locale.jumpToFormationEditor}
+                aria-label={locale.openRestrictionsModal}
               >
-                <PanelIcon />
+                <GearIcon />
               </IconButton>
-            </Tooltip>
-          </Stack>
+            </span>
+          </Tooltip>
         ) : null}
       </Box>
 
@@ -253,7 +226,7 @@ export default function QuestRoomLobbySection({
             startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
             onClick={() => void onStartQuest()}
             disabled={isStartDisabled || isSavingFormation}
-            sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, flex: 2, minHeight: 52, fontSize: '1.1rem' }}
+            sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, flex: 1, minHeight: 52 }}
           >
             {isStarting ? locale.startingQuest : locale.startQuest}
           </Button>
@@ -297,7 +270,7 @@ export default function QuestRoomLobbySection({
   )
 
   const editor = (
-    <Stack spacing={1.5} ref={formationEditorRef}>
+    <Stack spacing={1.5}>
       {!isOwner && locale.waitingForOwnerSubtitle ? (
         <Typography variant="body2" sx={{ color: homePanelColors.label }}>
           {locale.waitingForOwnerSubtitle}
@@ -469,7 +442,7 @@ export default function QuestRoomLobbySection({
             startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
             onClick={() => void onStartQuest()}
             disabled={isStartDisabled || isSavingFormation}
-            sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, flex: 1, minHeight: 52, fontSize: '1.1rem' }}
+            sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, flex: 1, minHeight: 52 }}
           >
             {isStarting ? locale.startingQuest : locale.startQuest}
           </Button>
@@ -486,18 +459,17 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     <Box
       sx={{
         display: 'flex',
-        justifyContent: 'space-between',
+        // 見出しと内容を離しすぎないよう、内容は見出しのすぐ右に置く
+        alignItems: 'baseline',
         gap: 2,
         py: 1.25,
         borderBottom: `1px dotted ${homePanelColors.divider}`,
       }}
     >
-      <Typography variant="body2" sx={{ color: homePanelColors.label, whiteSpace: 'nowrap' }}>
+      <Typography variant="body2" sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', minWidth: 120 }}>
         {label}
       </Typography>
-      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, textAlign: 'right', fontSize: '1rem' }}>
-        {value}
-      </Typography>
+      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: '1rem' }}>{value}</Typography>
     </Box>
   )
 }

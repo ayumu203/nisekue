@@ -257,6 +257,8 @@ export const panelPrimaryButtonSx = {
   '&&': {
     backgroundColor: homePanelColors.band,
     backgroundImage: 'none',
+    // 枠付きのボタンと高さ・幅をそろえるため、同じ太さの枠を同じ色で付ける
+    border: `2px solid ${homePanelColors.band}`,
     color: '#ffffff',
     fontWeight: 800,
     boxShadow: 'none',
