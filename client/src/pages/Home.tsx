@@ -90,7 +90,7 @@ function Home() {
     setTutorialStep(userId, next)
     setTutorialStepState(next)
   }
-  const [chatTab, setChatTab] = useState<'personal' | 'global' | 'announcement'>('personal')
+  const [chatTab, setChatTab] = useState<'personal' | 'global' | 'announcement'>('global')
   const [globalChatPage, setGlobalChatPage] = useState(1)
   // メニューで開いているグループ（強化・交流・その他のうち 1 つだけ）
   const [openMenuGroup, setOpenMenuGroup] = useState<HomeMenuGroupKey | null>(null)
