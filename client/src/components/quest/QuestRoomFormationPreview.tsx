@@ -7,7 +7,6 @@ import type { BattleColumn, BattleRow, QuestRoomDetailResponse } from '@/schema/
 
 type QuestRoomFormationPreviewProps = {
   currentRoom: QuestRoomDetailResponse
-  selfParticipantId: string | null
   positionDrafts: Record<string, { row: BattleRow; column: BattleColumn }>
 }
 
@@ -20,11 +19,7 @@ const rowBackground: Record<BattleRow, string> = {
 }
 
 // 隊列の確認用の表。前列・中列・後列 × 左・右のマスに、キャラの小さい画像と名前を並べる
-export default function QuestRoomFormationPreview({
-  currentRoom,
-  selfParticipantId,
-  positionDrafts,
-}: QuestRoomFormationPreviewProps) {
+export default function QuestRoomFormationPreview({ currentRoom, positionDrafts }: QuestRoomFormationPreviewProps) {
   const playerParticipants = currentRoom.participants
     .filter((participant) => participant.type === 'Player')
     .map((participant) => ({
@@ -84,7 +79,6 @@ export default function QuestRoomFormationPreview({
                 ) : (
                   members.map((participant) => {
                     const jobImageSrc = participant.job?.code ? resolveJobAssetPath(participant.job.code) : null
-                    const isSelf = participant.participantId === selfParticipantId
 
                     return (
                       <Stack key={participant.participantId} direction="row" spacing={1.25} alignItems="center">
@@ -120,14 +114,6 @@ export default function QuestRoomFormationPreview({
                             sx={{ fontSize: '1rem', fontWeight: 700, color: homePanelColors.text }}
                           >
                             {participant.displayName}
-                            {isSelf ? (
-                              <Box
-                                component="span"
-                                sx={{ ml: 1, fontSize: '0.8125rem', color: homePanelColors.band, fontWeight: 800 }}
-                              >
-                                {locale.selfBadge}
-                              </Box>
-                            ) : null}
                           </Typography>
                           <Stack direction="row" spacing={0.75} alignItems="center">
                             {participant.level != null ? (

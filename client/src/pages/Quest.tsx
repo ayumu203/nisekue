@@ -948,14 +948,15 @@ export default function Quest() {
     )
   }, [currentRoom])
 
-  async function handleSaveFormation(): Promise<void> {
+  // 列・位置を変えたらすぐに保存する（「この配置で決定」ボタンはない）
+  async function handleSaveFormation(drafts: typeof positionDrafts = positionDrafts): Promise<void> {
     if (!session?.access_token || !currentRoom) {
       setSubmitError(locale.sessionInfoMissing)
       return
     }
 
     const participantsToUpdate = currentRoom.participants.filter((participant) => {
-      const draft = positionDrafts[participant.participantId]
+      const draft = drafts[participant.participantId]
       return draft != null && (draft.row !== participant.position.row || draft.column !== participant.position.column)
     })
     if (participantsToUpdate.length === 0) {
@@ -969,7 +970,7 @@ export default function Quest() {
     try {
       let latestRoom = currentRoom
       for (const participant of participantsToUpdate) {
-        const draft = positionDrafts[participant.participantId]
+        const draft = drafts[participant.participantId]
         if (!draft) {
           continue
         }
@@ -1285,12 +1286,10 @@ export default function Quest() {
       onRestrictionsChange={handleRestrictionsChange}
       onUpdateRestrictions={handleUpdateRoomRestrictions}
       onPositionDraftChange={(participantId, nextPosition) => {
-        setPositionDrafts((current) => ({
-          ...current,
-          [participantId]: nextPosition,
-        }))
+        const nextDrafts = { ...positionDrafts, [participantId]: nextPosition }
+        setPositionDrafts(nextDrafts)
+        void handleSaveFormation(nextDrafts)
       }}
-      onSaveFormation={handleSaveFormation}
       onStartQuest={handleStartQuest}
       onCancelRoom={handleCancelRoom}
       renderLayout={({ info, editor, editorTitle }) =>

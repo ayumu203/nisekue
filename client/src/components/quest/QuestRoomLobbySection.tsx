@@ -7,7 +7,6 @@ import {
   IconButton,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   Stack,
   SvgIcon,
@@ -25,7 +24,6 @@ import {
   homePanelColors,
   menuButtonSx,
   mutedRedButtonSx,
-  panelOutlinedButtonSx,
   panelPrimaryButtonSx,
 } from '@/constants/styles'
 import locale from '../../../locale/quest/QuestRoom.json'
@@ -62,7 +60,6 @@ type QuestRoomLobbySectionProps = {
     allowedPlayerIds?: string[]
   }) => void | Promise<void>
   onPositionDraftChange: (participantId: string, nextPosition: { row: BattleRow; column: BattleColumn }) => void
-  onSaveFormation: () => void | Promise<void>
   onStartQuest: () => void | Promise<void>
   onCancelRoom: () => void | Promise<void>
   // ルームの情報（START・配置の確認）と配置変更をどの箱に置くかは画面側で決める
@@ -98,7 +95,6 @@ export default function QuestRoomLobbySection({
   onRestrictionsChange,
   onUpdateRestrictions,
   onPositionDraftChange,
-  onSaveFormation,
   onStartQuest,
   onCancelRoom,
   renderLayout,
@@ -242,11 +238,7 @@ export default function QuestRoomLobbySection({
         </Stack>
       ) : null}
 
-      <QuestRoomFormationPreview
-        currentRoom={currentRoom}
-        selfParticipantId={selfParticipantId}
-        positionDrafts={positionDrafts}
-      />
+      <QuestRoomFormationPreview currentRoom={currentRoom} positionDrafts={positionDrafts} />
 
       {!isRecruiting ? (
         <Typography variant="body2" sx={{ color: homePanelColors.label }}>
@@ -278,19 +270,17 @@ export default function QuestRoomLobbySection({
       ) : null}
       {currentRoom.participants.map((participant) => {
         const draft = positionDrafts[participant.participantId] ?? participant.position
-        const isSelf = participant.participantId === selfParticipantId
         const jobImageSrc = participant.job?.code ? resolveJobAssetPath(participant.job.code) : null
 
         return (
-          <Paper
+          // 箱にはせず、点線で区切った一覧にする
+          <Box
             key={participant.participantId}
-            variant="outlined"
             sx={{
-              borderRadius: 2,
-              p: 1.5,
+              py: 1.5,
               color: homePanelColors.text,
-              backgroundColor: isSelf ? '#f3f8ef' : '#fffdf6',
-              borderColor: isSelf ? '#b9d9bb' : homePanelColors.divider,
+              borderBottom: `1px dotted ${homePanelColors.divider}`,
+              '&:first-of-type': { pt: 0 },
             }}
           >
             <Stack direction="row" spacing={1.5} alignItems="flex-start">
@@ -336,13 +326,6 @@ export default function QuestRoomLobbySection({
                       size="small"
                       label={locale.ownerBadge}
                       sx={{ color: '#3a2400', backgroundColor: '#ffcc00', fontWeight: 800 }}
-                    />
-                  ) : null}
-                  {isSelf ? (
-                    <Chip
-                      size="small"
-                      label={locale.selfBadge}
-                      sx={{ color: '#ffffff', backgroundColor: homePanelColors.band, fontWeight: 800 }}
                     />
                   ) : null}
                 </Stack>
@@ -394,6 +377,7 @@ export default function QuestRoomLobbySection({
                         labelId={`participant-row-${participant.participantId}`}
                         value={draft.row}
                         label={locale.positionRow}
+                        disabled={isSavingFormation || !isRecruiting}
                         onChange={(event) => handleRowChange(participant.participantId, draft, event)}
                       >
                         <MenuItem value="Front">{locale.rows.Front}</MenuItem>
@@ -410,6 +394,7 @@ export default function QuestRoomLobbySection({
                         labelId={`participant-column-${participant.participantId}`}
                         value={draft.column}
                         label={locale.positionColumn}
+                        disabled={isSavingFormation || !isRecruiting}
                         onChange={(event) => handleColumnChange(participant.participantId, draft, event)}
                       >
                         <MenuItem value="Left">{locale.columns.Left}</MenuItem>
@@ -424,19 +409,11 @@ export default function QuestRoomLobbySection({
                 )}
               </Stack>
             </Stack>
-          </Paper>
+          </Box>
         )
       })}
       {isOwner ? (
         <Stack direction="row" spacing={1.5} sx={{ pt: 0.5 }}>
-          <Button
-            variant="outlined"
-            onClick={() => void onSaveFormation()}
-            disabled={isSavingFormation || isStarting || isCancellingRoom || !isRecruiting}
-            sx={{ ...menuButtonSx, ...panelOutlinedButtonSx, flex: 1, minHeight: 52 }}
-          >
-            {isSavingFormation ? locale.updatingPosition : locale.confirmFormation}
-          </Button>
           <Button
             variant="contained"
             startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
