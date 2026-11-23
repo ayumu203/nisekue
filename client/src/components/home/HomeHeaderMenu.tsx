@@ -1,8 +1,8 @@
-import { Alert, Box, Button, ClickAwayListener, IconButton, Paper, SvgIcon, type SvgIconProps } from '@mui/material'
+import { Alert, Box, Button, ClickAwayListener, IconButton, SvgIcon, type SvgIconProps } from '@mui/material'
 import { Link } from 'react-router-dom'
 import type { HomeMenuGroup, HomeMenuGroupKey, HomeMenuItem } from '@/components/home/homeMenu'
 import { GearIcon, SignOutIcon } from '@/components/home/StatusIcons'
-import { innerSurfaceSx, softGreenButtonSx, topNavigationIconButtonSx } from '@/constants/styles'
+import { topNavigationIconButtonSx } from '@/constants/styles'
 import { useSignOut } from '@/hooks/useSignOut'
 
 type HomeHeaderMenuProps = {
@@ -25,12 +25,25 @@ function ChevronDownIcon(props: SvgIconProps) {
   )
 }
 
+const BAR_TEXT_COLOR = '#5a3a10'
+const BAR_DIVIDER_COLOR = 'rgba(90, 58, 16, 0.22)'
+
+// 白いバーにくっつけて並べるメニューの項目。項目どうしは細い縦線で区切る
 const headerButtonSx = {
-  ...softGreenButtonSx,
-  minHeight: 44,
-  px: 2,
+  minHeight: 56,
+  px: 2.5,
+  borderRadius: 0,
+  borderRight: `1px solid ${BAR_DIVIDER_COLOR}`,
+  color: BAR_TEXT_COLOR,
   whiteSpace: 'nowrap',
   fontWeight: 700,
+  fontSize: '0.95rem',
+  '&:hover, &[aria-expanded="true"]': {
+    backgroundColor: 'rgba(90, 58, 16, 0.08)',
+  },
+  '& .MuiButton-startIcon': {
+    color: '#3f8f45',
+  },
 } as const
 
 const dropdownItemSx = {
@@ -74,26 +87,22 @@ export default function HomeHeaderMenu({
 
   return (
     <Box>
-      <Paper
-        variant="outlined"
+      {/* 画面の上端と左右の端にくっつけた白いバー */}
+      <Box
         sx={{
-          ...innerSurfaceSx,
-          borderRadius: 3,
-          px: 1.5,
-          py: 1.25,
+          backgroundColor: '#ffffff',
+          borderBottom: `1px solid ${BAR_DIVIDER_COLOR}`,
           display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          gap: 1,
+          alignItems: 'stretch',
+          minHeight: 56,
         }}
       >
-        <Box component="nav" sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, flex: '1 1 auto' }}>
+        <Box component="nav" sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', flex: '1 1 auto' }}>
           {primary.map((item) => (
             <Button
               key={item.key}
               {...itemLinkProps(item)}
               id={item.id}
-              variant="contained"
               startIcon={item.icon}
               onClick={item.onClick}
               sx={headerButtonSx}
@@ -114,7 +123,7 @@ export default function HomeHeaderMenu({
                 }}
               >
                 <Box
-                  sx={{ position: 'relative' }}
+                  sx={{ position: 'relative', display: 'flex' }}
                   onKeyDown={(event) => {
                     if (event.key === 'Escape' && isOpen && !lockedGroup) {
                       onCloseGroup()
@@ -122,7 +131,6 @@ export default function HomeHeaderMenu({
                   }}
                 >
                   <Button
-                    variant="contained"
                     startIcon={group.icon}
                     endIcon={<ChevronDownIcon />}
                     aria-expanded={isOpen}
@@ -141,7 +149,7 @@ export default function HomeHeaderMenu({
                     <Box
                       sx={{
                         position: 'absolute',
-                        top: 'calc(100% + 6px)',
+                        top: 'calc(100% + 4px)',
                         left: 0,
                         zIndex: 1200,
                         minWidth: 180,
@@ -176,7 +184,7 @@ export default function HomeHeaderMenu({
             )
           })}
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2 }}>
           <IconButton
             id={gearIconId}
             component={Link}
@@ -202,9 +210,9 @@ export default function HomeHeaderMenu({
             <SignOutIcon />
           </IconButton>
         </Box>
-      </Paper>
+      </Box>
       {signOutError ? (
-        <Alert severity="error" sx={{ mt: 1 }}>
+        <Alert severity="error" sx={{ mx: 4, mt: 1 }}>
           {signOutError}
         </Alert>
       ) : null}

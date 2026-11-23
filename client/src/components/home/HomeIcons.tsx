@@ -151,3 +151,12 @@ export function DebugIcon(props: SvgIconProps) {
     </SvgIcon>
   )
 }
+
+// 個人チャットと全体チャットを切り替えるボタンのアイコン（左右の矢印）
+export function SwapIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M16 3l5 5-5 5v-4H4V7h12zM8 11v4h12v2H8v4l-5-5z" />
+    </SvgIcon>
+  )
+}

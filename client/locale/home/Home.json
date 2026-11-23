@@ -58,5 +58,8 @@
     "intelligence": "知力",
     "luck": "運",
     "speed": "素早さ"
-  }
+  },
+  "chatSwitchToGlobal": "全体チャットに切り替える",
+  "chatSwitchToPersonal": "個人チャットに切り替える",
+  "statusPanelLabel": "ステータス"
 }

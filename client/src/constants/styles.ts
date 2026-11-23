@@ -231,3 +231,15 @@ export const gameTabSx = {
     color: '#ffffff',
   },
 } as const
+
+// PC のホームの色（上部のオレンジの帯・地のクリーム・白い箱）
+export const homePanelColors = {
+  topBand: '#ffcc00',
+  ground: '#fdf3d8',
+  band: '#2f7d3a',
+  border: '#ecd9a8',
+  shadow: '#d39a00',
+  divider: '#e3d6b8',
+  label: '#6b5a3e',
+  text: '#3a2f1e',
+} as const

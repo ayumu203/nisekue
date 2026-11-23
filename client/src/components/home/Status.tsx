@@ -9,6 +9,7 @@ import StatusStatRow from '@/components/home/StatusStatRow'
 import { GearIcon, SignOutIcon } from '@/components/home/StatusIcons'
 import { useSignOut } from '@/hooks/useSignOut'
 import { resolveCharacterAssetPath, resolveStatusAssetPath } from '@/lib/assets'
+import { formatEquippedItemWithPlus, formatExpProgress, formatStatusValue, toNormalized } from '@/lib/playerStatus'
 
 type StatValue = number | string
 
@@ -32,60 +33,6 @@ type StatusProps = {
   showCollapseToggle?: boolean
   // compact：キャラ画像を小さくして横に並べる（スマホのホーム用）
   layout?: 'default' | 'compact'
-}
-
-function toNormalized(value: number | undefined, maxValue: number): number {
-  if (typeof value !== 'number' || maxValue <= 0) {
-    return 0
-  }
-
-  return Math.max(0, Math.min(100, (value / maxValue) * 100))
-}
-
-function formatExpProgress(exp: number | undefined, requiredExp: number | undefined, fallback: string): string {
-  if (typeof exp !== 'number' || typeof requiredExp !== 'number') {
-    return `${fallback} / ${fallback}`
-  }
-
-  // レベル上限に達すると requiredExp は 0 になる。値としては正しいので fallback にはしない。
-  if (!Number.isFinite(exp) || !Number.isFinite(requiredExp) || requiredExp < 0) {
-    return `${fallback} / ${fallback}`
-  }
-
-  return `${exp} / ${requiredExp}`
-}
-
-function formatStatusValue(
-  baseValue: number | undefined,
-  effectiveValue: number | undefined,
-  fallback: string,
-): StatValue {
-  if (typeof baseValue !== 'number' || typeof effectiveValue !== 'number') {
-    return fallback
-  }
-
-  const diff = effectiveValue - baseValue
-  if (diff === 0) {
-    return effectiveValue
-  }
-
-  return `${effectiveValue} (${diff > 0 ? '+' : ''}${diff})`
-}
-
-function formatEquippedItemWithPlus(
-  equipment:
-    | {
-        name: string
-        plusValue: number
-      }
-    | undefined,
-  fallback: string,
-): string {
-  if (!equipment) {
-    return fallback
-  }
-
-  return equipment.plusValue > 0 ? `${equipment.name} (+${equipment.plusValue})` : equipment.name
 }
 
 export default function Status({
