@@ -44,6 +44,10 @@ const headerButtonSx = {
   '& .MuiButton-startIcon': {
     color: '#3f8f45',
   },
+  // 16px の文字に合わせてアイコンを 22px にする
+  '& .MuiButton-startIcon > *:nth-of-type(1), & .MuiButton-endIcon > *:nth-of-type(1)': {
+    fontSize: 22,
+  },
 } as const
 
 const dropdownItemSx = {

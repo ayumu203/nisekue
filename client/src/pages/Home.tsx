@@ -447,7 +447,7 @@ function Home() {
                 onClick={() => setChatTab(desktopChatTab === 'personal' ? 'global' : 'personal')}
                 sx={{ width: 44, height: 44, borderRadius: 0, color: '#ffffff' }}
               >
-                <SwapIcon fontSize="small" />
+                <SwapIcon sx={{ fontSize: 22 }} />
               </IconButton>
             }
           >
