@@ -682,23 +682,20 @@ export default function Training() {
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
       <Box ref={battleResultRef} sx={{ flex: 'none', height: { md: 'min(400px, 45%)' }, minHeight: { md: 320 } }}>
         <GamePanel
-          title={
-            <>
-              {/* スマホはヘッダーがないので、見出しの横にホームへ戻るボタンを置く */}
-              {isDesktop ? null : (
-                <IconButton
-                  id={tutorialHomeButtonId}
-                  component={Link}
-                  to="/"
-                  aria-label={locale.backToHome}
-                  size="small"
-                  sx={{ color: '#ffffff', mr: 0.75, verticalAlign: 'middle' }}
-                >
-                  <HomeIcon fontSize="small" />
-                </IconButton>
-              )}
-              {hasResult ? locale.battleResultTitle : locale.battleFieldTitle}
-            </>
+          title={hasResult ? locale.battleResultTitle : locale.battleFieldTitle}
+          // スマホはヘッダーがないので、帯の左端にホームへ戻るボタンを置く
+          startAction={
+            isDesktop ? undefined : (
+              <IconButton
+                id={tutorialHomeButtonId}
+                component={Link}
+                to="/"
+                aria-label={locale.backToHome}
+                sx={{ color: '#ffffff', width: 44, height: 44 }}
+              >
+                <HomeIcon />
+              </IconButton>
+            )
           }
           disablePadding
           {...panelProps}

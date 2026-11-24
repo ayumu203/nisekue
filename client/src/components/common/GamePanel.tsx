@@ -16,6 +16,8 @@ type GamePanelProps = {
   tabs?: GamePanelTab[]
   // 帯の右端に置く操作（チャットの切り替え・スマホのホームボタンなど）
   action?: ReactNode
+  // 帯の左端に置く操作（見出しだけの帯のとき。スマホの訓練場のホームボタンなど）
+  startAction?: ReactNode
   children: ReactNode
   'aria-label'?: string
   // 箱の下の影の色。画面ごとの地の色に合わせる
@@ -36,6 +38,7 @@ export default function GamePanel({
   title,
   tabs,
   action,
+  startAction,
   children,
   'aria-label': ariaLabel,
   shadowColor = homePanelColors.shadow,
@@ -111,6 +114,11 @@ export default function GamePanel({
             color: '#ffffff',
           }}
         >
+          {startAction ? (
+            <Box sx={{ position: 'absolute', left: 2, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
+              {startAction}
+            </Box>
+          ) : null}
           <Typography component="h2" noWrap sx={{ fontSize: '1rem', fontWeight: 700 }}>
             {title}
           </Typography>
