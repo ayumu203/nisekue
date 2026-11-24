@@ -68,7 +68,8 @@ export default function GamePanel({
                 display: 'flex',
                 alignItems: 'center',
                 backgroundColor: homePanelColors.band,
-                borderRight: '1px solid rgba(255, 255, 255, 0.35)',
+                // ホームボタンと帯の中身の区切りをはっきり見せる白い線
+                borderRight: '2px solid rgba(255, 255, 255, 0.85)',
               }}
             >
               {startAction}
@@ -126,7 +127,17 @@ export default function GamePanel({
             {title}
           </Typography>
           {startAction ? (
-            <Box sx={{ position: 'absolute', left: 2, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
+            <Box
+              sx={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                borderRight: '2px solid rgba(255, 255, 255, 0.85)',
+              }}
+            >
               {startAction}
             </Box>
           ) : null}
