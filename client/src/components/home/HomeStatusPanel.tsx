@@ -129,19 +129,19 @@ export default function HomeStatusPanel({ player }: HomeStatusPanelProps) {
           ) : null}
         </Box>
         <Stack sx={{ flex: 1, minWidth: 0 }} justifyContent="space-between" spacing={0.75}>
-          <Typography noWrap sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>
+          <Typography noWrap sx={{ fontSize: '1rem', fontWeight: 700, color: homePanelColors.text }}>
             {jobLabel}
           </Typography>
           <Stack direction="row" alignItems="baseline" spacing={1}>
             <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>{locale.labels.level}</Typography>
-            <Typography sx={{ fontSize: '1.75rem', fontWeight: 800, lineHeight: 1, color: homePanelColors.text }}>
+            <Typography sx={{ fontSize: '1.25rem', fontWeight: 800, lineHeight: 1, color: homePanelColors.text }}>
               {player?.level ?? unknown}
             </Typography>
           </Stack>
           <Box>
             <Stack direction="row" justifyContent="space-between" spacing={1}>
-              <Typography sx={{ fontSize: '0.8125rem', color: homePanelColors.label }}>{locale.labels.exp}</Typography>
-              <Typography sx={{ fontSize: '0.8125rem', color: homePanelColors.label, whiteSpace: 'nowrap' }}>
+              <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>{locale.labels.exp}</Typography>
+              <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: homePanelColors.text, whiteSpace: 'nowrap' }}>
                 {formatExpProgress(player?.exp, player?.requiredExpForNextLevel, unknown)}
               </Typography>
             </Stack>
@@ -151,7 +151,7 @@ export default function HomeStatusPanel({ player }: HomeStatusPanelProps) {
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(expPercent)}
-              sx={{ mt: 0.5, height: 6, borderRadius: 999, backgroundColor: '#efe4c8', overflow: 'hidden' }}
+              sx={{ mt: 0.5, height: 8, borderRadius: 999, backgroundColor: '#efe4c8', overflow: 'hidden' }}
             >
               <Box sx={{ width: `${expPercent}%`, height: '100%', borderRadius: 999, backgroundColor: '#e6a800' }} />
             </Box>

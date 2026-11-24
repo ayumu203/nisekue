@@ -59,7 +59,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
               <Box
                 key={column}
                 sx={{
-                  minHeight: 72,
+                  minHeight: 128,
                   borderRadius: 2,
                   border: '1px dashed',
                   borderColor: homePanelColors.divider,
@@ -81,11 +81,11 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
                     const jobImageSrc = participant.job?.code ? resolveJobAssetPath(participant.job.code) : null
 
                     return (
-                      <Stack key={participant.participantId} direction="row" spacing={1.25} alignItems="center">
+                      <Stack key={participant.participantId} direction="row" spacing={1.75} alignItems="center">
                         <Box
                           sx={{
-                            width: 48,
-                            height: 60,
+                            width: 88,
+                            height: 110,
                             flexShrink: 0,
                             borderRadius: 1.5,
                             backgroundColor: '#efe4c8',
@@ -111,7 +111,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
                           <Typography
                             noWrap
                             title={participant.displayName}
-                            sx={{ fontSize: '1rem', fontWeight: 700, color: homePanelColors.text }}
+                            sx={{ fontSize: '1.0625rem', fontWeight: 700, color: homePanelColors.text }}
                           >
                             {participant.displayName}
                           </Typography>

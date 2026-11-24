@@ -1253,14 +1253,24 @@ export default function Quest() {
         // PC は画面の高さに入るだけのステージを 1 ページに出す
         stagePageSize={isWide ? desktopStagePageSize : 3}
         renderLayout={({ stages, form }) =>
-          renderColumns(
-            <GamePanel tabs={createTabs} {...fitPanelProps}>
-              {stages}
-            </GamePanel>,
-            <GamePanel title={locale.openRestrictionsModal} {...fitPanelProps}>
-              {form}
-            </GamePanel>,
-            440,
+          // スマホ・狭い画面は箱を 1 つにまとめ、ステージ一覧のすぐ下に参加制限と募集開始を置く
+          !isWide ? (
+            <GamePanel tabs={createTabs} {...panelProps}>
+              <Stack spacing={2}>
+                {stages}
+                <Box sx={{ borderTop: '1px solid #eadfc6', pt: 1 }}>{form}</Box>
+              </Stack>
+            </GamePanel>
+          ) : (
+            renderColumns(
+              <GamePanel tabs={createTabs} {...fitPanelProps}>
+                {stages}
+              </GamePanel>,
+              <GamePanel title={locale.openRestrictionsModal} {...fitPanelProps}>
+                {form}
+              </GamePanel>,
+              440,
+            )
           )
         }
       />

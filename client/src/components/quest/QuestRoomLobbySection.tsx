@@ -23,7 +23,7 @@ import {
   greenOutlinedInputSx,
   homePanelColors,
   menuButtonSx,
-  mutedRedButtonSx,
+  panelCancelButtonSx,
   panelPrimaryButtonSx,
 } from '@/constants/styles'
 import locale from '../../../locale/quest/QuestRoom.json'
@@ -223,29 +223,6 @@ export default function QuestRoomLobbySection({
         />
       </Box>
 
-      {isOwner ? (
-        <Stack direction="row" spacing={1.5}>
-          <Button
-            variant="contained"
-            startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
-            onClick={() => void onStartQuest()}
-            disabled={isStartDisabled || isSavingFormation}
-            sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, flex: 1, minHeight: 52 }}
-          >
-            {isStarting ? locale.startingQuest : locale.startQuest}
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<CancelIcon sx={{ fontSize: 20 }} />}
-            onClick={() => void onCancelRoom()}
-            disabled={isStarting || isCancellingRoom || !isRecruiting}
-            sx={{ ...menuButtonSx, ...mutedRedButtonSx, flex: 1, minHeight: 52, fontWeight: 800 }}
-          >
-            {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
-          </Button>
-        </Stack>
-      ) : null}
-
       <QuestRoomFormationPreview currentRoom={currentRoom} positionDrafts={positionDrafts} />
 
       {!isRecruiting ? (
@@ -342,38 +319,10 @@ export default function QuestRoomLobbySection({
                   {participant.level != null ? (
                     <Typography
                       variant="body2"
-                      sx={{ whiteSpace: 'nowrap', flexShrink: 0, color: homePanelColors.label }}
+                      sx={{ whiteSpace: 'nowrap', flexShrink: 0, color: homePanelColors.text, fontSize: '1rem' }}
                     >
                       {`${locale.levelLabel}.${participant.level}`}
                     </Typography>
-                  ) : null}
-                  {participant.job?.displayName ? (
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      alignItems="center"
-                      sx={{ flexWrap: 'nowrap', minWidth: 0, overflow: 'hidden' }}
-                    >
-                      {jobImageSrc ? (
-                        <Box
-                          component="img"
-                          src={jobImageSrc}
-                          alt={participant.job.displayName}
-                          sx={{ width: 20, height: 20, objectFit: 'contain', display: 'block', flexShrink: 0 }}
-                        />
-                      ) : null}
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          color: homePanelColors.label,
-                        }}
-                      >
-                        {`${locale.jobLabel}: ${participant.job.displayName}`}
-                      </Typography>
-                    </Stack>
                   ) : null}
                 </Stack>
 
@@ -416,6 +365,32 @@ export default function QuestRoomLobbySection({
                   </Typography>
                 )}
               </Stack>
+              {participant.job?.displayName ? (
+                // ジョブは右端に大きめのアイコンと名前で出す
+                <Stack alignItems="center" spacing={0.5} sx={{ width: 88, flexShrink: 0, alignSelf: 'center' }}>
+                  {jobImageSrc ? (
+                    <Box
+                      component="img"
+                      src={jobImageSrc}
+                      alt=""
+                      sx={{ width: 64, height: 64, objectFit: 'contain', display: 'block' }}
+                    />
+                  ) : null}
+                  <Typography
+                    sx={{
+                      maxWidth: '100%',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      color: homePanelColors.text,
+                      fontSize: '0.875rem',
+                      fontWeight: 700,
+                    }}
+                  >
+                    {participant.job.displayName}
+                  </Typography>
+                </Stack>
+              ) : null}
             </Stack>
           </Box>
         )
@@ -430,6 +405,15 @@ export default function QuestRoomLobbySection({
             sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, flex: 1, minHeight: 52 }}
           >
             {isStarting ? locale.startingQuest : locale.startQuest}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<CancelIcon sx={{ fontSize: 20 }} />}
+            onClick={() => void onCancelRoom()}
+            disabled={isStarting || isCancellingRoom || !isRecruiting}
+            sx={{ ...menuButtonSx, ...panelCancelButtonSx, flex: 1, minHeight: 52 }}
+          >
+            {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
           </Button>
         </Stack>
       ) : null}
@@ -448,10 +432,13 @@ function InfoRow({ label, value }: { label: string; value: string }) {
         alignItems: 'baseline',
         gap: 2,
         py: 1.25,
-        borderBottom: `1px dotted ${homePanelColors.divider}`,
+        borderBottom: '1px solid #eadfc6',
       }}
     >
-      <Typography variant="body2" sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', minWidth: 120 }}>
+      <Typography
+        variant="body2"
+        sx={{ color: '#5a4421', fontWeight: 700, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
+      >
         {label}
       </Typography>
       <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: '1rem' }}>{value}</Typography>

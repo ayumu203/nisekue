@@ -41,10 +41,13 @@ function PanelRow({ label, value }: { label: string; value: string }) {
         alignItems: 'baseline',
         gap: 2,
         py: 1.25,
-        borderBottom: `1px dotted ${homePanelColors.divider}`,
+        borderBottom: '1px solid #eadfc6',
       }}
     >
-      <Typography variant="body2" sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', minWidth: 120 }}>
+      <Typography
+        variant="body2"
+        sx={{ color: '#5a4421', fontWeight: 700, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
+      >
         {label}
       </Typography>
       <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: '1rem' }}>{value}</Typography>
@@ -157,22 +160,25 @@ export default function QuestRoomCreateSection({
           }
         />
       </Box>
-      <Button
-        variant="outlined"
-        onClick={() => setIsRestrictionsModalOpen(true)}
-        disabled={isLoading}
-        sx={{ ...menuButtonSx, ...panelOutlinedButtonSx }}
-      >
-        {locale.openRestrictionsModal}
-      </Button>
-      <Button
-        variant="contained"
-        onClick={() => void onCreateRoom()}
-        disabled={isCreateDisabled}
-        sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, minHeight: 56, fontSize: '1.15rem' }}
-      >
-        {isSubmitting ? locale.creatingRoom : locale.createRoom}
-      </Button>
+      {/* スマホは 2 つのボタンを横に並べて縦の長さを抑える */}
+      <Stack direction={{ xs: 'row', md: 'column' }} spacing={{ xs: 1.5, md: 2 }}>
+        <Button
+          variant="outlined"
+          onClick={() => setIsRestrictionsModalOpen(true)}
+          disabled={isLoading}
+          sx={{ ...menuButtonSx, ...panelOutlinedButtonSx }}
+        >
+          {locale.editRestrictions}
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => void onCreateRoom()}
+          disabled={isCreateDisabled}
+          sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, minHeight: { xs: 48, md: 56 }, fontSize: { md: '1.15rem' } }}
+        >
+          {isSubmitting ? locale.creatingRoom : locale.createRoom}
+        </Button>
+      </Stack>
 
       <QuestRestrictionsModal
         open={isRestrictionsModalOpen}

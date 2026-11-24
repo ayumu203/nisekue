@@ -314,3 +314,29 @@ export const panelOutlinedButtonSx = {
     borderColor: '#c3dbc6',
   },
 } as const
+
+// 白い箱の中の取り消し操作（CANCEL）。ホバーや押したときに見た目を変えない
+export const panelCancelButtonSx = {
+  '&&': {
+    backgroundColor: '#fff1ef',
+    backgroundImage: 'none',
+    border: '2px solid #d77a70',
+    color: '#9f2f24',
+    fontWeight: 800,
+    boxShadow: 'none',
+    transition: 'none',
+  },
+  '& .MuiTouchRipple-root': {
+    display: 'none',
+  },
+  '&&:hover': {
+    backgroundColor: '#fff1ef',
+    borderColor: '#d77a70',
+    boxShadow: 'none',
+  },
+  '&&.Mui-disabled': {
+    backgroundColor: '#f8ecea',
+    borderColor: '#dfb2ac',
+    color: '#bf8b84',
+  },
+} as const
