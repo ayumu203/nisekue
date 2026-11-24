@@ -27,7 +27,7 @@ import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
 import TrainingMovePlanForm from '@/components/training/TrainingMovePlanForm'
 import TrainingOpponentSelect from '@/components/training/TrainingOpponentSelect'
 import HomeHeaderMenu from '@/components/home/HomeHeaderMenu'
-import { HomeIcon } from '@/components/home/HomeIcons'
+import { HomeFilledIcon, HomeIcon } from '@/components/home/HomeIcons'
 import { buildHomeMenu, type HomeMenuGroupKey, type HomeMenuItem } from '@/components/home/homeMenu'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { normalizeCharacterPath } from '@/lib/assets'
@@ -690,7 +690,7 @@ export default function Training() {
                 aria-label={locale.backToHome}
                 sx={{ color: '#ffffff', width: 44, height: 44 }}
               >
-                <HomeIcon />
+                <HomeFilledIcon />
               </IconButton>
             )
           }

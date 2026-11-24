@@ -8,6 +8,15 @@ export function HomeIcon(props: SvgIconProps) {
   )
 }
 
+// 塗りつぶしの家。帯の上に白で置くと、輪郭だけの HomeIcon は線が二重に見えるため、帯のホームボタンはこちらを使う
+export function HomeFilledIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+    </SvgIcon>
+  )
+}
+
 export function TrainingIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
