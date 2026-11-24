@@ -1,6 +1,6 @@
 import { Alert, Box, Button, FormControl, MenuItem, Select, Stack, Typography } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
-import { normalizeCharacterPath, resolvePublicAssetPath } from '@/lib/assets'
+import { resolvePublicAssetPath } from '@/lib/assets'
 import { homePanelColors, panelPrimaryButtonSx, trainingPanelColors } from '@/constants/styles'
 import type { GetPlayerResponse, PlayerMoveSlot } from '@/schema/player'
 import type { TrainingEnemy } from '@/schema/training'
@@ -19,8 +19,6 @@ type TrainingMovePlanFormProps = {
   // 再戦までの待ち時間の進み具合（0〜1）。待っていないときは null
   lockProgress?: number | null
   onChangeMoveId: (turnIndex: number, moveId: number | null) => void
-  // versus：自分と相手を並べる（相手を選んだとき）。nextOpponent：相手を小さく出す（戦闘結果の下）
-  header?: 'versus' | 'nextOpponent'
   submitButtonId?: string
   // チュートリアルの矢印で指す技の選択欄（何ターン目か と 付ける id）
   tutorialMoveSelect?: { index: number; id: string }
@@ -35,7 +33,6 @@ type PlannedTurn = {
   warning: string | null
 }
 
-const DEFAULT_CHARACTER_PATH = 'image/character/ch001_bmnpc.png'
 const dottedDivider = `1px dotted ${homePanelColors.divider}`
 
 function getAvailableMoves(player: GetPlayerResponse): PlayerMoveSlot[] {
@@ -86,72 +83,6 @@ function buildPlannedTurns(player: GetPlayerResponse, moveIds: Array<number | nu
       warning: canUse ? null : locale.waitWarning,
     }
   })
-}
-
-function FighterSummary({
-  name,
-  imageSrc,
-  levelLabel,
-}: {
-  name: string | null
-  imageSrc: string | null
-  levelLabel: string | null
-}) {
-  return (
-    <Stack spacing={0.5} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
-      {imageSrc ? (
-        <Box
-          sx={{
-            width: { xs: 96, sm: 120 },
-            height: { xs: 96, sm: 120 },
-            borderRadius: '12px',
-            backgroundColor: '#f3ebe0',
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            overflow: 'hidden',
-          }}
-        >
-          <Box component="img" src={imageSrc} alt="" sx={{ maxWidth: '92%', maxHeight: '94%', objectFit: 'contain' }} />
-        </Box>
-      ) : (
-        <Box
-          aria-hidden="true"
-          sx={{
-            width: { xs: 96, sm: 120 },
-            height: { xs: 96, sm: 120 },
-            borderRadius: '12px',
-            border: '2px dashed #d8c9a6',
-            boxSizing: 'border-box',
-            display: 'grid',
-            placeItems: 'center',
-            color: '#a99a7c',
-            fontSize: '2rem',
-            fontWeight: 800,
-          }}
-        >
-          ?
-        </Box>
-      )}
-      <Typography
-        fontWeight={800}
-        textAlign="center"
-        sx={{
-          color: name ? homePanelColors.text : '#8a7a5e',
-          fontSize: '1.05rem',
-          lineHeight: 1.25,
-          overflowWrap: 'anywhere',
-        }}
-      >
-        {name ?? locale.notSelected}
-      </Typography>
-      {levelLabel ? (
-        <Typography variant="body2" fontWeight={700} sx={{ color: homePanelColors.label }}>
-          {levelLabel}
-        </Typography>
-      ) : null}
-    </Stack>
-  )
 }
 
 function MpMeter({ plannedMp, maxMp }: { plannedMp: number; maxMp: number }) {
@@ -314,7 +245,6 @@ export default function TrainingMovePlanForm({
   lockRemainingSeconds,
   lockProgress = null,
   onChangeMoveId,
-  header = 'versus',
   submitButtonId,
   tutorialMoveSelect,
   onSubmit,
@@ -398,78 +328,55 @@ export default function TrainingMovePlanForm({
     </Stack>
   )
 
-  if (header === 'nextOpponent') {
-    return (
-      <Stack spacing={1.75} sx={{ height: '100%' }}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1.5}
-          alignItems={{ xs: 'stretch', sm: 'center' }}
-          sx={{ pb: 1.5, borderBottom: dottedDivider }}
-        >
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-            <Box
-              sx={{
-                width: 52,
-                height: 52,
-                flex: 'none',
-                borderRadius: '10px',
-                display: 'grid',
-                placeItems: 'center',
-                backgroundColor: '#e9dfd0',
-                backgroundImage:
-                  enemyBackgroundKey !== undefined ? `url(${getTrainingBackgroundPath(enemyBackgroundKey)})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}
-            >
-              {enemyImageSrc ? (
-                <Box component="img" src={enemyImageSrc} alt="" sx={{ maxWidth: 46, maxHeight: 46 }} />
-              ) : null}
-            </Box>
-            <Stack sx={{ minWidth: 0 }}>
-              <Typography variant="caption" sx={{ color: homePanelColors.label }}>
-                {locale.nextOpponent}
-              </Typography>
-              <Typography fontWeight={800} sx={{ color: homePanelColors.text, overflowWrap: 'anywhere' }}>
-                {enemy?.name ?? locale.notSelected}{' '}
-                {enemyLevelLabel ? (
-                  <Typography component="span" variant="body2" fontWeight={700} sx={{ color: homePanelColors.label }}>
-                    {enemyLevelLabel}
-                  </Typography>
-                ) : null}
-              </Typography>
-            </Stack>
-          </Stack>
-          <Box sx={{ width: { xs: '100%', sm: 260 }, flex: 'none' }}>
-            <MpMeter plannedMp={totalMp} maxMp={maxMp} />
-          </Box>
-        </Stack>
-        {turnSlots}
-        <Box sx={{ flex: 1 }} />
-        {battleButton}
-      </Stack>
-    )
-  }
-
   return (
-    <Stack spacing={1.75}>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ pb: 1.75, borderBottom: dottedDivider }}>
-        <FighterSummary
-          name={player.userName ?? locale.anonymousPlayer}
-          imageSrc={resolvePublicAssetPath(
-            player.imagePath ? normalizeCharacterPath(player.imagePath) : DEFAULT_CHARACTER_PATH,
-          )}
-          levelLabel={locale.currentLevel.replace('{{level}}', String(player.level))}
-        />
-        <Typography variant="h6" fontWeight={900} sx={{ color: '#b65f49' }}>
-          VS
-        </Typography>
-        <FighterSummary name={enemy?.name ?? null} imageSrc={enemyImageSrc} levelLabel={enemyLevelLabel} />
+    <Stack spacing={1.75} sx={{ height: '100%' }}>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1.5}
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+        sx={{ pb: 1.5, borderBottom: dottedDivider }}
+      >
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+          <Box
+            sx={{
+              width: 52,
+              height: 52,
+              flex: 'none',
+              borderRadius: '10px',
+              display: 'grid',
+              placeItems: 'center',
+              backgroundColor: '#e9dfd0',
+              backgroundImage:
+                enemyBackgroundKey !== undefined ? `url(${getTrainingBackgroundPath(enemyBackgroundKey)})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            {enemyImageSrc ? (
+              <Box component="img" src={enemyImageSrc} alt="" sx={{ maxWidth: 46, maxHeight: 46 }} />
+            ) : null}
+          </Box>
+          <Stack sx={{ minWidth: 0 }}>
+            <Typography variant="caption" sx={{ color: homePanelColors.label }}>
+              {locale.nextOpponent}
+            </Typography>
+            <Typography fontWeight={800} sx={{ color: homePanelColors.text, overflowWrap: 'anywhere' }}>
+              {enemy?.name ?? locale.notSelected}{' '}
+              {enemyLevelLabel ? (
+                <Typography component="span" variant="body2" fontWeight={700} sx={{ color: homePanelColors.label }}>
+                  {enemyLevelLabel}
+                </Typography>
+              ) : null}
+            </Typography>
+          </Stack>
+        </Stack>
+        <Box sx={{ width: { xs: '100%', sm: 260 }, flex: 'none' }}>
+          <MpMeter plannedMp={totalMp} maxMp={maxMp} />
+        </Box>
       </Stack>
-      {battleButton}
-      <MpMeter plannedMp={totalMp} maxMp={maxMp} />
       {turnSlots}
+      <Box sx={{ flex: 1 }} />
+      {battleButton}
     </Stack>
   )
 }

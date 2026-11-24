@@ -12,7 +12,7 @@ import {
 import { createPlayer, getPlayer } from '@/api/player'
 import GamePanel from '@/components/common/GamePanel'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
-import TrainingBattleResult from '@/components/training/TrainingBattleResult'
+import TrainingBattleField from '@/components/training/TrainingBattleField'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
 import TrainingMovePlanForm from '@/components/training/TrainingMovePlanForm'
 import TrainingOpponentSelect from '@/components/training/TrainingOpponentSelect'
@@ -47,8 +47,8 @@ function playerSummaryToDisplayEnemy(opponent: PlayerSummary): TrainingEnemy {
 }
 
 const TRAINING_COOLDOWN_MS = 3000
-// PC は NPC と同じ大きさのカードを 4 列×2 段で出す
-const PVP_OPPONENTS_PAGE_SIZE = 8
+// PC は NPC と同じ小さいカードを 2 段まで出す
+const PVP_OPPONENTS_PAGE_SIZE = 16
 const PVP_OPPONENTS_PAGE_SIZE_MOBILE = 5
 
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
@@ -562,7 +562,6 @@ export default function Training() {
   }
   const displayEnemy = selectedEnemy ?? (selectedOpponent ? playerSummaryToDisplayEnemy(selectedOpponent) : null)
   const displayEnemyBackgroundKey = selectedOpponent?.userId ?? selectedEnemy?.id ?? 0
-  const showBattleResult = displayEnemy !== null && trainingResult !== null && player !== undefined
   const trainingLockProgress =
     trainingLockRemainingMs > 0 ? Math.min(1, 1 - trainingLockRemainingMs / TRAINING_COOLDOWN_MS) : null
 
@@ -580,8 +579,8 @@ export default function Training() {
     },
   }))
 
-  // 相手の一覧。戦闘結果を出している間は小さいカードで詰めて並べる
-  function renderOpponentList(compact: boolean): ReactNode {
+  // 相手の一覧（上の段に戦闘画面があるので、小さいカードで詰めて並べる）
+  function renderOpponentList(): ReactNode {
     if (mode === 'npc') {
       if (isTrainingEnemiesLoading) {
         return (
@@ -600,7 +599,7 @@ export default function Training() {
           selectedEnemyId={selectedEnemy?.id ?? null}
           isSelectionDisabled={isTrainingSubmitting}
           tutorialHighlightFirstCard={tutorialStep === 'training-fight'}
-          compact={compact}
+          compact
           onSelect={handleSelectEnemy}
         />
       )
@@ -626,24 +625,23 @@ export default function Training() {
         isSelectionDisabled={isTrainingSubmitting}
         page={opponentsPage}
         pageCount={opponentsPageCount}
-        compact={compact}
+        compact
         onPageChange={setOpponentsPage}
         onSelect={handleSelectOpponent}
       />
     )
   }
 
-  function renderMovePlan(header: 'versus' | 'nextOpponent'): ReactNode {
+  function renderMovePlan(): ReactNode {
     if (!player || !plannedMoveIds) {
       return null
     }
 
-    const isTutorialTarget = header === 'versus' && !showBattleResult
     return (
       <Box
         ref={trainingMovePlanRef}
-        id={isTutorialTarget && tutorialStep === 'training-move-select' ? 'tutorial-move-plan-form' : undefined}
-        sx={{ height: header === 'nextOpponent' ? '100%' : 'auto' }}
+        id={tutorialStep === 'training-move-select' ? 'tutorial-move-plan-form' : undefined}
+        sx={{ height: '100%' }}
       >
         <TrainingMovePlanForm
           enemy={displayEnemy}
@@ -654,89 +652,62 @@ export default function Training() {
           lockRemainingSeconds={trainingLockRemainingSeconds}
           lockProgress={trainingLockProgress}
           onChangeMoveId={handleChangePlannedMoveId}
-          header={header}
           tutorialMoveSelect={
-            isTutorialTarget && tutorialStep === 'training-move-select' && nextTutorialMoveTurnIndex !== null
+            tutorialStep === 'training-move-select' && nextTutorialMoveTurnIndex !== null
               ? { index: nextTutorialMoveTurnIndex, id: 'tutorial-next-move-select' }
               : undefined
           }
-          submitButtonId={
-            isTutorialTarget && tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined
-          }
+          submitButtonId={tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined}
           onSubmit={startBattle}
         />
       </Box>
     )
   }
 
-  const listPanel = (compact: boolean) => (
-    <GamePanel tabs={modeTabs} aria-label={locale.enemySelectTitle} {...panelProps}>
-      {renderOpponentList(compact)}
-    </GamePanel>
-  )
+  const hasResult = trainingResult !== null && displayEnemy !== null
 
-  const errorAlert = trainingError ? <Alert severity="warning">{trainingError}</Alert> : null
-
-  // 戦闘結果：上の段に全幅の戦闘画面、下の段に相手の一覧と再戦用の技選択
-  const resultContent =
-    showBattleResult && displayEnemy && trainingResult && player ? (
-      <Box
-        sx={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: { xs: 2, sm: 3 },
-        }}
-      >
-        <Box ref={battleResultRef} sx={{ flex: 'none', height: { md: 'min(400px, 45%)' }, minHeight: { md: 320 } }}>
-          <GamePanel title={locale.battleResultTitle} disablePadding {...panelProps}>
-            <TrainingBattleResult
-              player={{
-                name: player.userName ?? locale.anonymousPlayer,
-                imagePath: player.imagePath ? normalizeCharacterPath(player.imagePath) : DEFAULT_CHARACTER_PATH,
-                level: player.level,
-              }}
-              enemy={displayEnemy}
-              backgroundKey={displayEnemyBackgroundKey}
-              result={trainingResult}
-              usedMoveNames={resolveMoveNames(player, lastSubmittedMoveIds)}
-              playerExp={playerExp}
-              nextLevelRequiredExp={nextLevelRequiredExp}
-            />
-          </GamePanel>
-        </Box>
-        {errorAlert}
-        {renderColumns(
-          listPanel(true),
-          <GamePanel title={locale.movePlanTitle} {...panelProps}>
-            {renderMovePlan('nextOpponent')}
-          </GamePanel>,
-          600,
-          // スマホは再戦の技選択を一覧の上に出す
-          !isWide,
-        )}
+  // 上の段に全幅の戦闘画面（戦闘の前は自分と相手が向かい合い、戦闘のあとは HP とログを出す）、
+  // 下の段に相手の一覧と技選択。戦闘の前後で画面の作りは変えない
+  const content = player ? (
+    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
+      <Box ref={battleResultRef} sx={{ flex: 'none', height: { md: 'min(400px, 45%)' }, minHeight: { md: 320 } }}>
+        <GamePanel
+          title={hasResult ? locale.battleResultTitle : locale.battleFieldTitle}
+          disablePadding
+          {...panelProps}
+        >
+          <TrainingBattleField
+            player={{
+              name: player.userName ?? locale.anonymousPlayer,
+              imagePath: player.imagePath ? normalizeCharacterPath(player.imagePath) : DEFAULT_CHARACTER_PATH,
+              level: player.level,
+            }}
+            enemy={displayEnemy}
+            backgroundKey={displayEnemyBackgroundKey}
+            result={hasResult ? trainingResult : null}
+            usedMoveNames={resolveMoveNames(player, lastSubmittedMoveIds)}
+            playerExp={playerExp}
+            nextLevelRequiredExp={nextLevelRequiredExp}
+          />
+        </GamePanel>
       </Box>
-    ) : null
-
-  // 相手を選ぶ前・選んだあと：左に相手の一覧、右に技選択
-  const selectContent = showBattleResult ? null : (
-    <>
-      {errorAlert}
+      {trainingError ? <Alert severity="warning">{trainingError}</Alert> : null}
       {renderColumns(
-        listPanel(false),
+        <GamePanel tabs={modeTabs} aria-label={locale.enemySelectTitle} {...panelProps}>
+          {renderOpponentList()}
+        </GamePanel>,
         // スマホは相手を選ぶまで技選択を出さない
         isDesktop || displayEnemy ? (
-          <GamePanel title={locale.movePlanTitle} {...panelProps} fitContent>
-            {renderMovePlan('versus')}
+          <GamePanel title={locale.movePlanTitle} {...panelProps}>
+            {renderMovePlan()}
           </GamePanel>
         ) : null,
-        520,
-        // スマホは選んだ相手の技選択を一覧の上に出す
+        600,
+        // スマホは技選択を一覧の上に出す
         !isWide,
       )}
-    </>
-  )
+    </Box>
+  ) : null
 
   // 画面の中身。PC は横に 2 列、狭い画面は縦に積む
   function renderColumns(main: ReactNode, side: ReactNode, sideWidth: number, sideFirst = false) {
@@ -812,8 +783,7 @@ export default function Training() {
         ) : playerError ? (
           <Alert severity="warning">{playerError.message}</Alert>
         ) : null}
-        {resultContent}
-        {selectContent}
+        {content}
       </Box>
       {tutorialStep === 'home-job-change' && (
         <SpotlightTutorial
