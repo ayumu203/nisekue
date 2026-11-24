@@ -296,7 +296,7 @@ export default function TrainingBattleField({
                   <Typography
                     variant="body2"
                     fontWeight={800}
-                    sx={{ color: trainingPanelColors.label, whiteSpace: 'nowrap', minWidth: { md: 52 } }}
+                    sx={{ color: trainingPanelColors.label, whiteSpace: 'nowrap', minWidth: { md: 72 } }}
                   >
                     {locale.turnLabel.replace('{{turn}}', String(log.turn))}
                   </Typography>

@@ -80,16 +80,30 @@ function buildPlannedTurns(player: GetPlayerResponse, moveIds: Array<number | nu
   })
 }
 
-// 消費MP の合計。上限を超えたら赤
-function MpSummary({ plannedMp, maxMp }: { plannedMp: number; maxMp: number }) {
+// 消費MP のゲージと合計。上限を超えたら赤
+function MpMeter({ plannedMp, maxMp }: { plannedMp: number; maxMp: number }) {
+  const isOver = plannedMp > maxMp
+  const ratio = maxMp > 0 ? Math.min(1, plannedMp / maxMp) : 0
+
   return (
-    <Typography
-      variant="body2"
-      fontWeight={700}
-      sx={{ color: plannedMp > maxMp ? '#c62828' : trainingPanelColors.label, whiteSpace: 'nowrap' }}
-    >
-      {locale.plannedMpSummary.replace('{{plannedMp}}', String(plannedMp)).replace('{{maxMp}}', String(maxMp))}
-    </Typography>
+    <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
+      <Typography variant="body2" fontWeight={700} sx={{ color: trainingPanelColors.label, whiteSpace: 'nowrap' }}>
+        {locale.plannedMpLabel}
+      </Typography>
+      <Box
+        aria-hidden="true"
+        sx={{ flex: 1, minWidth: 60, height: 8, borderRadius: 9, backgroundColor: '#e3e7ee', overflow: 'hidden' }}
+      >
+        <Box sx={{ width: `${ratio * 100}%`, height: '100%', backgroundColor: isOver ? '#c62828' : '#4a7fc1' }} />
+      </Box>
+      <Typography
+        variant="body2"
+        fontWeight={700}
+        sx={{ color: isOver ? '#c62828' : trainingPanelColors.text, whiteSpace: 'nowrap' }}
+      >
+        {locale.plannedMpSummary.replace('{{plannedMp}}', String(plannedMp)).replace('{{maxMp}}', String(maxMp))}
+      </Typography>
+    </Stack>
   )
 }
 
@@ -200,7 +214,7 @@ export default function TrainingMovePlanForm({
               <Typography
                 variant="body2"
                 fontWeight={700}
-                sx={{ color: trainingPanelColors.label, width: 52, flex: 'none', opacity: hasEnemy ? 1 : 0.5 }}
+                sx={{ color: trainingPanelColors.label, width: 72, flex: 'none', opacity: hasEnemy ? 1 : 0.5 }}
               >
                 {turnLabel}
               </Typography>
@@ -310,8 +324,8 @@ export default function TrainingMovePlanForm({
             </Typography>
           </Stack>
         </Stack>
-        <Box sx={{ ml: 'auto', flex: 'none' }}>
-          <MpSummary plannedMp={totalMp} maxMp={maxMp} />
+        <Box sx={{ width: { xs: '100%', sm: 260 }, flex: { xs: 1, sm: 'none' } }}>
+          <MpMeter plannedMp={totalMp} maxMp={maxMp} />
         </Box>
       </Stack>
       {turnSlots}
