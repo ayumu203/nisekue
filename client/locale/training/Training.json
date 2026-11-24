@@ -32,7 +32,6 @@
   "learnedMoveLog": "{{move}} を覚えた！",
   "startBattle": "戦闘",
   "rematchInSeconds": "{{seconds}}s",
-  "battleResultTitle": "訓練結果",
   "battleFieldTitle": "訓練",
   "currentLevel": "Lv.{{level}}",
   "expProgress": "EXP {{current}} / {{required}}",

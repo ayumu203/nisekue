@@ -18,6 +18,8 @@ type GamePanelProps = {
   action?: ReactNode
   // 帯の左端に置く操作（見出しだけの帯のとき。スマホの訓練場のホームボタンなど）
   startAction?: ReactNode
+  // 見出しの帯を出さない（スマホで縦幅を節約したいとき）
+  hideBand?: boolean
   children: ReactNode
   'aria-label'?: string
   // 箱の下の影の色。画面ごとの地の色に合わせる
@@ -39,6 +41,7 @@ export default function GamePanel({
   tabs,
   action,
   startAction,
+  hideBand = false,
   children,
   'aria-label': ariaLabel,
   shadowColor = homePanelColors.shadow,
@@ -64,7 +67,7 @@ export default function GamePanel({
         overflow: 'hidden',
       }}
     >
-      {tabs ? (
+      {hideBand ? null : tabs ? (
         <Box role="tablist" sx={{ flex: 'none', height: 44, display: 'flex' }}>
           {tabs.map((tab, index) => (
             <ButtonBase

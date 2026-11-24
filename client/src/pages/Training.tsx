@@ -682,7 +682,7 @@ export default function Training() {
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
       <Box ref={battleResultRef} sx={{ flex: 'none', height: { md: 'min(400px, 45%)' }, minHeight: { md: 320 } }}>
         <GamePanel
-          title={hasResult ? locale.battleResultTitle : locale.battleFieldTitle}
+          title={locale.battleFieldTitle}
           // スマホはヘッダーがないので、帯の左端にホームへ戻るボタンを置く
           startAction={
             isDesktop ? undefined : (
@@ -722,7 +722,8 @@ export default function Training() {
         </GamePanel>,
         // スマホは相手を選ぶまで技選択を出さない
         isDesktop || displayEnemy ? (
-          <GamePanel title={locale.movePlanTitle} {...panelProps}>
+          // スマホは見出しの帯を出さず、縦幅を節約する
+          <GamePanel title={locale.movePlanTitle} hideBand={!isDesktop} {...panelProps}>
             {renderMovePlan()}
           </GamePanel>
         ) : null,
