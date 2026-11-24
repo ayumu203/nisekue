@@ -1,9 +1,9 @@
 import {
   Alert,
   Box,
-  ButtonBase,
   Chip,
   CircularProgress,
+  IconButton,
   Stack,
   Typography,
   useMediaQuery,
@@ -32,6 +32,7 @@ import {
 } from '@/api/quest'
 import { Link } from 'react-router-dom'
 import GamePanel from '@/components/common/GamePanel'
+import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
@@ -1180,6 +1181,21 @@ export default function Quest() {
     onClick: handleHomeClick,
   }
 
+  // スマホはヘッダーがないので、ホームへ戻るボタンを最初の箱の帯の右端に置く（訓練場と同じ）
+  const mobileHomeButton = isDesktop ? null : (
+    <IconButton
+      id={tutorialHomeButtonId}
+      component={Link}
+      to="/"
+      onClick={handleHomeClick}
+      aria-label={locale.backToHome}
+      disableRipple
+      sx={{ color: '#ffffff', width: 44, height: 44 }}
+    >
+      <HomeIcon />
+    </IconButton>
+  )
+
   const panelProps = { shadowColor: questPanelColors.shadow, fillHeight: isWide }
   // ルーム作成・募集中・出発待ちの箱は中身の高さまで縮める（バトル画面とメッセージは画面の高さいっぱいに使う）
   const fitPanelProps = { ...panelProps, fitContent: true }
@@ -1226,7 +1242,7 @@ export default function Quest() {
   const createContent = showCreateSection ? (
     mode === 'Multi' && multiEntryView === 'list' ? (
       renderColumns(
-        <GamePanel tabs={createTabs} {...fitPanelProps}>
+        <GamePanel tabs={createTabs} action={mobileHomeButton} {...fitPanelProps}>
           <QuestMultiRoomList
             rooms={latestRooms ?? []}
             stages={activeStages}
@@ -1261,11 +1277,14 @@ export default function Quest() {
         onRestrictionsChange={handleRestrictionsChange}
         onCreateRoom={handleCreateRoom}
         // PC は画面の高さに入るだけのステージを 1 ページに出す
-        stagePageSize={isWide ? desktopStagePageSize : 3}
+        // スマホは訓練場と同じく小さいカードを 2 列に並べる
+        stagePageSize={isWide ? desktopStagePageSize : isDesktop ? 3 : 4}
+        stageColumns={isDesktop ? 1 : 2}
+        compactCards={!isDesktop}
         renderLayout={({ stages, form }) =>
           // スマホ・狭い画面は箱を 1 つにまとめ、ステージ一覧のすぐ下に参加制限と募集開始を置く
           !isWide ? (
-            <GamePanel tabs={createTabs} {...panelProps}>
+            <GamePanel tabs={createTabs} action={mobileHomeButton} {...panelProps}>
               <Stack spacing={2}>
                 {stages}
                 <Box sx={{ borderTop: '1px solid #eadfc6', pt: 1 }}>{form}</Box>
@@ -1314,7 +1333,7 @@ export default function Quest() {
       onCancelRoom={handleCancelRoom}
       renderLayout={({ info, editor, editorTitle }) =>
         renderColumns(
-          <GamePanel title={stageName ?? locale.stage} {...fitPanelProps}>
+          <GamePanel title={stageName ?? locale.stage} action={mobileHomeButton} {...fitPanelProps}>
             {info}
           </GamePanel>,
           editor ? (
@@ -1332,6 +1351,11 @@ export default function Quest() {
     showRunSection && currentRun ? (
       isRunFinished ? (
         <Box sx={{ width: '100%', maxWidth: 960, mx: 'auto' }}>
+          {isDesktop ? null : (
+            <Box sx={{ mb: 1.5 }}>
+              <HomeNavIconButton id={tutorialHomeButtonId} ariaLabel={locale.backToHome} onClick={handleHomeClick} />
+            </Box>
+          )}
           <QuestRunResultPanel
             run={currentRun}
             endlessBestFloor={player?.endlessBestFloor}
@@ -1344,13 +1368,16 @@ export default function Quest() {
           <GamePanel
             title={stageName ?? locale.stage}
             action={
-              currentRun.floor.isEndless ? null : (
-                <Chip
-                  size="small"
-                  label={`${locale.waitingParticipantsLabel}: ${currentRun.turn.waitingParticipantIds.length}`}
-                  sx={{ mr: 1.5, color: '#ffffff', fontWeight: 700, backgroundColor: 'rgba(255, 255, 255, 0.22)' }}
-                />
-              )
+              <Stack direction="row" alignItems="center">
+                {currentRun.floor.isEndless ? null : (
+                  <Chip
+                    size="small"
+                    label={`${locale.waitingParticipantsLabel}: ${currentRun.turn.waitingParticipantIds.length}`}
+                    sx={{ mr: 1.5, color: '#ffffff', fontWeight: 700, backgroundColor: 'rgba(255, 255, 255, 0.22)' }}
+                  />
+                )}
+                {mobileHomeButton}
+              </Stack>
             }
             disablePadding
             {...panelProps}
@@ -1439,53 +1466,6 @@ export default function Quest() {
           currentColor={questPanelColors.topBand}
         />
       ) : null}
-      {isDesktop ? null : (
-        // スマホは PC のヘッダーと同じ白いバーに「ホーム」と今いる「クエスト」を並べる
-        <Box
-          component="nav"
-          sx={{
-            display: 'flex',
-            alignItems: 'stretch',
-            minHeight: 48,
-            backgroundColor: '#ffffff',
-            boxShadow: `0 2px 0 ${questPanelColors.shadow}`,
-          }}
-        >
-          <ButtonBase
-            id={tutorialHomeButtonId}
-            component={Link}
-            to="/"
-            onClick={handleHomeClick}
-            disableRipple
-            sx={{
-              px: 2,
-              gap: 1,
-              color: '#5a3a10',
-              fontFamily: 'inherit',
-              fontSize: '1rem',
-              fontWeight: 700,
-              borderRight: '1px solid rgba(90, 58, 16, 0.22)',
-            }}
-          >
-            <HomeIcon sx={{ fontSize: 22, color: '#3f8f45' }} />
-            {locale.backToHome}
-          </ButtonBase>
-          <Box
-            aria-current="page"
-            sx={{
-              px: 2,
-              display: 'flex',
-              alignItems: 'center',
-              color: '#ffffff',
-              backgroundColor: questPanelColors.topBand,
-              fontSize: '1rem',
-              fontWeight: 700,
-            }}
-          >
-            {homeMenu.primary.find((item) => item.key === 'quest')?.label ?? ''}
-          </Box>
-        </Box>
-      )}
       <Box
         id="quest-main"
         ref={questMainRef}
