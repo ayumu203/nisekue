@@ -237,7 +237,6 @@ export const homePanelColors = {
   topBand: '#ffcc00',
   ground: '#fdf3d8',
   band: '#2f7d3a',
-  shadow: '#d39a00',
   divider: '#e3d6b8',
   label: '#6b5a3e',
   text: '#3a2f1e',

@@ -24,7 +24,6 @@ export default function HomePanel({ title, action, children, 'aria-label': ariaL
         height: '100%',
         backgroundColor: '#ffffff',
         borderRadius: '12px',
-        boxShadow: `0 2px 0 ${homePanelColors.shadow}`,
         overflow: 'hidden',
       }}
     >
