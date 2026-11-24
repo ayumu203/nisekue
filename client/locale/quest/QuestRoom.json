@@ -111,6 +111,7 @@
   "submittedAtLabel": "送信時刻",
   "lastTurnResultsTitle": "直前ターン結果",
   "messagePanelTitle": "ログ",
+  "editRestrictions": "参加制限を変更",
   "lastTurnResultsEmpty": "",
   "resolvedAtLabel": "解決時刻",
   "hpChangeLabel": "HP変化",

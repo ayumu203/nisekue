@@ -432,12 +432,12 @@ function InfoRow({ label, value }: { label: string; value: string }) {
         alignItems: 'baseline',
         gap: 2,
         py: 1.25,
-        borderBottom: `1px dotted ${homePanelColors.divider}`,
+        borderBottom: '1px solid #eadfc6',
       }}
     >
       <Typography
         variant="body2"
-        sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
+        sx={{ color: '#5a4421', fontWeight: 700, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
       >
         {label}
       </Typography>
