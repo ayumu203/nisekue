@@ -1198,7 +1198,7 @@ export default function Quest() {
   const createContent = showCreateSection ? (
     mode === 'Multi' && multiEntryView === 'list' ? (
       renderColumns(
-        <GamePanel tabs={createTabs} leading={mobileHomeButton} {...fitPanelProps}>
+        <GamePanel tabs={createTabs} startAction={mobileHomeButton} {...fitPanelProps}>
           <QuestMultiRoomList
             rooms={latestRooms ?? []}
             stages={activeStages}
@@ -1239,7 +1239,7 @@ export default function Quest() {
         renderLayout={({ stages, form }) =>
           // スマホ・狭い画面は箱を 1 つにまとめ、ステージ一覧のすぐ下に参加制限と募集開始を置く
           !isWide ? (
-            <GamePanel tabs={createTabs} leading={mobileHomeButton} {...panelProps}>
+            <GamePanel tabs={createTabs} startAction={mobileHomeButton} {...panelProps}>
               <Stack spacing={2}>
                 {stages}
                 <Box sx={{ borderTop: '1px solid #eadfc6', pt: 1 }}>{form}</Box>
@@ -1279,7 +1279,7 @@ export default function Quest() {
       onCancelRoom={handleCancelRoom}
       renderLayout={({ info, editor, editorTitle }) =>
         renderColumns(
-          <GamePanel title={stageName ?? locale.stage} leading={mobileHomeButton} {...fitPanelProps}>
+          <GamePanel title={stageName ?? locale.stage} startAction={mobileHomeButton} {...fitPanelProps}>
             {info}
           </GamePanel>,
           editor ? (
@@ -1324,7 +1324,7 @@ export default function Quest() {
                 )}
               </Stack>
             }
-            leading={mobileHomeButton}
+            startAction={mobileHomeButton}
             disablePadding
             {...panelProps}
           >

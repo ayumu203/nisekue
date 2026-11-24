@@ -16,8 +16,8 @@ type GamePanelProps = {
   tabs?: GamePanelTab[]
   // 帯の右端に置く操作（チャットの切り替え・スマホのホームボタンなど）
   action?: ReactNode
-  // 帯の左端に置く操作（スマホのホームボタン）
-  leading?: ReactNode
+  // 帯の左端に置く操作（スマホのホームボタンなど。見出しの帯でも、切り替えの帯でも使える）
+  startAction?: ReactNode
   children: ReactNode
   'aria-label'?: string
   // 箱の下の影の色。画面ごとの地の色に合わせる
@@ -35,7 +35,7 @@ export default function GamePanel({
   title,
   tabs,
   action,
-  leading,
+  startAction,
   children,
   'aria-label': ariaLabel,
   shadowColor = homePanelColors.shadow,
@@ -61,7 +61,7 @@ export default function GamePanel({
     >
       {tabs ? (
         <Box role="tablist" sx={{ flex: 'none', height: 44, display: 'flex' }}>
-          {leading ? (
+          {startAction ? (
             <Box
               sx={{
                 flex: 'none',
@@ -71,7 +71,7 @@ export default function GamePanel({
                 borderRight: '1px solid rgba(255, 255, 255, 0.35)',
               }}
             >
-              {leading}
+              {startAction}
             </Box>
           ) : null}
           {tabs.map((tab, index) => (
@@ -88,7 +88,7 @@ export default function GamePanel({
                 fontWeight: 700,
                 color: tab.selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
                 backgroundColor: tab.selected ? homePanelColors.bandSelected : homePanelColors.band,
-                borderLeft: index === 0 || leading ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+                borderLeft: index === 0 || startAction ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
               }}
             >
               {tab.label}
@@ -125,9 +125,9 @@ export default function GamePanel({
           <Typography component="h2" noWrap sx={{ fontSize: '1rem', fontWeight: 700 }}>
             {title}
           </Typography>
-          {leading ? (
+          {startAction ? (
             <Box sx={{ position: 'absolute', left: 2, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
-              {leading}
+              {startAction}
             </Box>
           ) : null}
           {action ? (
