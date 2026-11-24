@@ -336,17 +336,7 @@ export default function QuestRoomLobbySection({
                           component="img"
                           src={jobImageSrc}
                           alt={participant.job.displayName}
-                          sx={{
-                            width: 28,
-                            height: 28,
-                            p: 0.25,
-                            boxSizing: 'border-box',
-                            objectFit: 'contain',
-                            display: 'block',
-                            flexShrink: 0,
-                            borderRadius: '50%',
-                            backgroundColor: '#efe4c8',
-                          }}
+                          sx={{ width: 36, height: 36, objectFit: 'contain', display: 'block', flexShrink: 0 }}
                         />
                       ) : null}
                       <Typography
