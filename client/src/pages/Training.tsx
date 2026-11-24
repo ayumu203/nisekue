@@ -1,8 +1,8 @@
 import {
   Alert,
   Box,
-  ButtonBase,
   CircularProgress,
+  IconButton,
   Snackbar,
   Stack,
   Typography,
@@ -762,50 +762,21 @@ export default function Training() {
           currentColor={trainingPanelColors.topBand}
         />
       ) : (
-        // スマホは PC のヘッダーと同じ白いバーに「ホーム」と今いる「訓練場」を並べる（クエストと同じ）
-        <Box
-          component="nav"
-          sx={{
-            display: 'flex',
-            alignItems: 'stretch',
-            minHeight: 48,
-            backgroundColor: '#ffffff',
-            boxShadow: `0 2px 0 ${trainingPanelColors.shadow}`,
-          }}
-        >
-          <ButtonBase
+        // スマホは帯の上に、ホームへ戻るボタンと「訓練場」の見出しを並べる
+        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ px: 1, pt: 1 }}>
+          <IconButton
             id={tutorialHomeButtonId}
             component={Link}
             to="/"
-            disableRipple
-            sx={{
-              px: 2,
-              gap: 1,
-              color: '#5a3a10',
-              fontFamily: 'inherit',
-              fontSize: '1rem',
-              fontWeight: 700,
-              borderRight: '1px solid rgba(90, 58, 16, 0.22)',
-            }}
+            aria-label={locale.backToHome}
+            sx={{ color: '#ffffff', width: 44, height: 44 }}
           >
-            <HomeIcon sx={{ fontSize: 22, color: '#3f8f45' }} />
-            {locale.backToHome}
-          </ButtonBase>
-          <Box
-            aria-current="page"
-            sx={{
-              px: 2,
-              display: 'flex',
-              alignItems: 'center',
-              color: '#ffffff',
-              backgroundColor: trainingPanelColors.topBand,
-              fontSize: '1rem',
-              fontWeight: 700,
-            }}
-          >
+            <HomeIcon />
+          </IconButton>
+          <Typography component="h1" sx={{ color: '#ffffff', fontSize: '1.25rem', fontWeight: 800 }}>
             {homeMenu.primary.find((item) => item.key === 'training')?.label ?? ''}
-          </Box>
-        </Box>
+          </Typography>
+        </Stack>
       )}
       <Box
         id="training-main"
