@@ -554,7 +554,12 @@ export default function Training() {
     id: tutorialHomeButtonId,
   }
 
-  const panelProps = { shadowColor: trainingPanelColors.shadow, fillHeight: isWide }
+  const panelProps = {
+    shadowColor: trainingPanelColors.shadow,
+    fillHeight: isWide,
+    bandColor: trainingPanelColors.band,
+    bandSelectedColor: trainingPanelColors.bandSelected,
+  }
   const displayEnemy = selectedEnemy ?? (selectedOpponent ? playerSummaryToDisplayEnemy(selectedOpponent) : null)
   const displayEnemyBackgroundKey = selectedOpponent?.userId ?? selectedEnemy?.id ?? 0
   const showBattleResult = displayEnemy !== null && trainingResult !== null && player !== undefined

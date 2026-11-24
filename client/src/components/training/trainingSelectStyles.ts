@@ -1,4 +1,4 @@
-import { homePanelColors } from '@/constants/styles'
+import { trainingPanelColors } from '@/constants/styles'
 import { resolvePublicAssetPath } from '@/lib/assets'
 
 // 相手カードと戦闘画面の背景。クエストのステージと同じ背景画像を使う
@@ -34,7 +34,7 @@ export function getTrainingBackgroundPath(key: string | number): string {
   return resolvePublicAssetPath(trainingBackgroundPaths[hashKey(key) % trainingBackgroundPaths.length])
 }
 
-// 相手カード（白地）。選んでいるカードは緑の枠と薄い緑の地で示す
+// 相手カード（白地）。選んでいるカードは藍の枠と薄い藍の地で示す
 export function trainingSelectCardSx(isSelected: boolean, isDisabled: boolean) {
   return {
     position: 'relative',
@@ -44,9 +44,9 @@ export function trainingSelectCardSx(isSelected: boolean, isDisabled: boolean) {
     overflow: 'hidden',
     borderRadius: '12px',
     cursor: isDisabled ? 'default' : 'pointer',
-    backgroundColor: isSelected ? '#eef6ee' : '#fffdf8',
+    backgroundColor: isSelected ? trainingPanelColors.selectedSurface : '#fffdf8',
     boxShadow: '0 1px 0 #e6d6c4',
-    outline: isSelected ? `3px solid ${homePanelColors.band}` : 'none',
+    outline: isSelected ? `3px solid ${trainingPanelColors.band}` : 'none',
     outlineOffset: -3,
   } as const
 }
@@ -63,7 +63,7 @@ export const trainingSelectRadioSx = {
     backgroundColor: '#ffffff',
   },
   '&.Mui-checked': {
-    color: homePanelColors.band,
+    color: trainingPanelColors.band,
   },
   '&.Mui-disabled': {
     color: '#d8ccb4',

@@ -1,6 +1,6 @@
 import { Box, Pagination, Stack, Typography } from '@mui/material'
 import { useRef } from 'react'
-import { homePanelColors } from '@/constants/styles'
+import { homePanelColors, trainingPanelColors } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { PlayerSummary } from '@/schema/player'
 import locale from '../../../locale/training/Training.json'
@@ -79,8 +79,8 @@ export default function TrainingOpponentSelect({
               },
               '& .MuiPaginationItem-root.Mui-selected, & .MuiPaginationItem-root.Mui-selected:hover': {
                 color: '#ffffff',
-                backgroundColor: homePanelColors.band,
-                borderColor: homePanelColors.band,
+                backgroundColor: trainingPanelColors.band,
+                borderColor: trainingPanelColors.band,
               },
               '& .MuiPaginationItem-ellipsis': {
                 border: 'none',

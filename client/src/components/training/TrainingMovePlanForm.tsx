@@ -1,7 +1,7 @@
 import { Alert, Box, Button, FormControl, MenuItem, Select, Stack, Typography } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { normalizeCharacterPath, resolvePublicAssetPath } from '@/lib/assets'
-import { homePanelColors, panelPrimaryButtonSx } from '@/constants/styles'
+import { homePanelColors, panelPrimaryButtonSx, trainingPanelColors } from '@/constants/styles'
 import type { GetPlayerResponse, PlayerMoveSlot } from '@/schema/player'
 import type { TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
@@ -256,11 +256,14 @@ function BattleButton({
         fontSize: '1.375rem',
         '&&': {
           ...panelPrimaryButtonSx['&&'],
-          boxShadow: `0 4px 0 ${homePanelColors.bandSelected}`,
+          backgroundColor: trainingPanelColors.band,
+          borderColor: trainingPanelColors.band,
+          boxShadow: `0 4px 0 ${trainingPanelColors.bandSelected}`,
         },
         '&&:hover': {
           ...panelPrimaryButtonSx['&&:hover'],
-          boxShadow: `0 4px 0 ${homePanelColors.bandSelected}`,
+          backgroundColor: trainingPanelColors.band,
+          boxShadow: `0 4px 0 ${trainingPanelColors.bandSelected}`,
         },
         '&&.Mui-disabled': {
           backgroundColor: '#d9cfc0',
@@ -364,7 +367,7 @@ export default function TrainingMovePlanForm({
                   backgroundColor: '#fffdf8',
                   '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e3d6c2' },
                   '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#c9b791' },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: homePanelColors.band },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: trainingPanelColors.band },
                   '& .MuiSelect-select': { py: 1, pl: 1.5, minHeight: 44, display: 'flex', alignItems: 'center' },
                   '& .MuiSvgIcon-root': { color: homePanelColors.label },
                 }}

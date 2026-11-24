@@ -26,9 +26,12 @@ type GamePanelProps = {
   fillHeight?: boolean
   // fillHeight のとき、中身が少なければ箱を中身の高さまで縮める（白い面が画面いっぱいに広がらないように）
   fitContent?: boolean
+  // 見出しの帯の色（省略するとホームと同じ緑）。訓練場は藍
+  bandColor?: string
+  bandSelectedColor?: string
 }
 
-// 上に緑の帯の見出しが付いた白い箱。PC のホームとクエストで使う
+// 上に帯の見出しが付いた白い箱（帯はふだん緑、訓練場は藍）。PC のホーム・クエスト・訓練場で使う
 export default function GamePanel({
   title,
   tabs,
@@ -39,6 +42,8 @@ export default function GamePanel({
   disablePadding = false,
   fillHeight = true,
   fitContent = false,
+  bandColor = homePanelColors.band,
+  bandSelectedColor = homePanelColors.bandSelected,
 }: GamePanelProps) {
   return (
     <Box
@@ -71,7 +76,7 @@ export default function GamePanel({
                 fontSize: '1rem',
                 fontWeight: 700,
                 color: tab.selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
-                backgroundColor: tab.selected ? homePanelColors.bandSelected : homePanelColors.band,
+                backgroundColor: tab.selected ? bandSelectedColor : bandColor,
                 borderLeft: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
               }}
             >
@@ -89,7 +94,7 @@ export default function GamePanel({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: homePanelColors.band,
+            backgroundColor: bandColor,
             color: '#ffffff',
           }}
         >

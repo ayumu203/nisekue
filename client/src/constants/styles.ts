@@ -252,11 +252,18 @@ export const questPanelColors = {
   shadow: '#bcd9d5',
 } as const
 
-// 訓練場の色（上部の赤レンガの帯・地の薄いピンクベージュ・白い箱の影）。見出しの帯やボタンの緑はホームと同じ
+// 訓練場の色（道場：上部の木の茶色の帯・生成りの地・白い箱の影）。見出しの帯とボタンは緑ではなく藍
 export const trainingPanelColors = {
-  topBand: '#9d4534',
-  ground: '#f8eeea',
-  shadow: '#e2c6bd',
+  topBand: '#6b4423',
+  ground: '#f4efe4',
+  shadow: '#dccdb2',
+  band: '#2f4a7a',
+  // 帯を「NPC｜PLAYER」のように分けたとき、選んでいる側の色
+  bandSelected: '#1d3157',
+  // 選んでいる相手カードの地
+  selectedSurface: '#e9eef7',
+  // 押せないボタンの色
+  disabledButton: '#a3b1c9',
 } as const
 
 // 白い箱の中の主な操作（募集開始・START・決定など）。見出しの帯と同じ緑
