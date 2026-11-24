@@ -27,7 +27,6 @@ import {
   postQuestChatMessage,
   startQuestRoom,
   submitQuestCommand,
-  updateQuestRoomRestrictions,
   updateQuestRoomPosition,
 } from '@/api/quest'
 import { Link } from 'react-router-dom'
@@ -183,7 +182,6 @@ export default function Quest() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
   const [isCancellingRoom, setIsCancellingRoom] = useState(false)
-  const [isUpdatingRestrictions, setIsUpdatingRestrictions] = useState(false)
   const [selectedActionKind, setSelectedActionKind] = useState<QuestActionKind>('NormalAttack')
   const [selectedMoveId, setSelectedMoveId] = useState<number | ''>('')
   const [selectedTargetRow, setSelectedTargetRow] = useState<BattleRow | ''>('')
@@ -465,48 +463,6 @@ export default function Quest() {
       setSubmitError(error instanceof Error ? error.message : locale.joinRoomFailed)
     } finally {
       setIsJoiningRoomId(null)
-    }
-  }
-
-  async function handleUpdateRoomRestrictions(options?: {
-    minRequiredLevelInput?: string
-    allowedPlayerIds?: string[]
-  }): Promise<void> {
-    if (!session?.access_token) {
-      setSubmitError(locale.sessionInfoMissing)
-      return
-    }
-
-    if (!currentRoom) {
-      setSubmitError(locale.createRoomFirst)
-      return
-    }
-
-    setIsUpdatingRestrictions(true)
-    setSubmitError(null)
-
-    try {
-      const nextMinRequiredLevelInput = options?.minRequiredLevelInput ?? minRequiredLevelInput
-      const nextAllowedPlayerIds = options?.allowedPlayerIds ?? allowedPlayerIds
-
-      const room = await updateQuestRoomRestrictions(
-        currentRoom.roomId,
-        {
-          minRequiredLevel: nextMinRequiredLevelInput.trim() === '' ? null : Number(nextMinRequiredLevelInput),
-          allowedPlayerIds: nextAllowedPlayerIds,
-        },
-        session.access_token,
-      )
-      setIsRestrictionsDirty(false)
-      setMinRequiredLevelInput(nextMinRequiredLevelInput)
-      setAllowedPlayerIds(nextAllowedPlayerIds)
-      setCreatedRoom(room)
-      await mutateRoom(room, { revalidate: false })
-      await mutateRooms()
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.updateRestrictionsFailed)
-    } finally {
-      setIsUpdatingRestrictions(false)
     }
   }
 
@@ -1309,20 +1265,11 @@ export default function Quest() {
     <QuestRoomLobbySection
       currentRoom={currentRoom}
       selfParticipantId={selfParticipantId}
-      currentPlayerLevel={player?.level ?? null}
-      selectablePlayers={selectablePlayers}
-      minRequiredLevelInput={minRequiredLevelInput}
-      allowedPlayerIds={allowedPlayerIds}
       positionDrafts={positionDrafts}
       isLoading={isRoomLoading && liveRoom == null}
       isStarting={isStarting}
       isCancellingRoom={isCancellingRoom}
-      isUpdatingRestrictions={isUpdatingRestrictions}
-      isPlayerCandidatesLoading={isPlayerCandidatesLoading}
-      playerCandidatesError={playerCandidatesError}
       isSavingFormation={isSavingFormation}
-      onRestrictionsChange={handleRestrictionsChange}
-      onUpdateRestrictions={handleUpdateRoomRestrictions}
       onPositionDraftChange={(participantId, nextPosition) => {
         const nextDrafts = { ...positionDrafts, [participantId]: nextPosition }
         setPositionDrafts(nextDrafts)
