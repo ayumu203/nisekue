@@ -16,6 +16,8 @@ type GamePanelProps = {
   tabs?: GamePanelTab[]
   // 帯の右端に置く操作（チャットの切り替え・スマホのホームボタンなど）
   action?: ReactNode
+  // 帯の左端に置く操作（スマホのホームボタン）
+  leading?: ReactNode
   children: ReactNode
   'aria-label'?: string
   // 箱の下の影の色。画面ごとの地の色に合わせる
@@ -33,6 +35,7 @@ export default function GamePanel({
   title,
   tabs,
   action,
+  leading,
   children,
   'aria-label': ariaLabel,
   shadowColor = homePanelColors.shadow,
@@ -58,6 +61,19 @@ export default function GamePanel({
     >
       {tabs ? (
         <Box role="tablist" sx={{ flex: 'none', height: 44, display: 'flex' }}>
+          {leading ? (
+            <Box
+              sx={{
+                flex: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: homePanelColors.band,
+                borderRight: '1px solid rgba(255, 255, 255, 0.35)',
+              }}
+            >
+              {leading}
+            </Box>
+          ) : null}
           {tabs.map((tab, index) => (
             <ButtonBase
               key={tab.key}
@@ -72,7 +88,7 @@ export default function GamePanel({
                 fontWeight: 700,
                 color: tab.selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
                 backgroundColor: tab.selected ? homePanelColors.bandSelected : homePanelColors.band,
-                borderLeft: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+                borderLeft: index === 0 || leading ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
               }}
             >
               {tab.label}
@@ -109,6 +125,11 @@ export default function GamePanel({
           <Typography component="h2" noWrap sx={{ fontSize: '1rem', fontWeight: 700 }}>
             {title}
           </Typography>
+          {leading ? (
+            <Box sx={{ position: 'absolute', left: 2, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
+              {leading}
+            </Box>
+          ) : null}
           {action ? (
             <Box sx={{ position: 'absolute', right: 2, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
               {action}

@@ -1137,7 +1137,7 @@ export default function Quest() {
     onClick: handleHomeClick,
   }
 
-  // スマホはヘッダーがないので、ホームへ戻るボタンを最初の箱の帯の右端に置く（訓練場と同じ）
+  // スマホはヘッダーがないので、ホームへ戻るボタンを最初の箱の帯の左端に置く
   const mobileHomeButton = isDesktop ? null : (
     <IconButton
       id={tutorialHomeButtonId}
@@ -1198,7 +1198,7 @@ export default function Quest() {
   const createContent = showCreateSection ? (
     mode === 'Multi' && multiEntryView === 'list' ? (
       renderColumns(
-        <GamePanel tabs={createTabs} action={mobileHomeButton} {...fitPanelProps}>
+        <GamePanel tabs={createTabs} leading={mobileHomeButton} {...fitPanelProps}>
           <QuestMultiRoomList
             rooms={latestRooms ?? []}
             stages={activeStages}
@@ -1239,7 +1239,7 @@ export default function Quest() {
         renderLayout={({ stages, form }) =>
           // スマホ・狭い画面は箱を 1 つにまとめ、ステージ一覧のすぐ下に参加制限と募集開始を置く
           !isWide ? (
-            <GamePanel tabs={createTabs} action={mobileHomeButton} {...panelProps}>
+            <GamePanel tabs={createTabs} leading={mobileHomeButton} {...panelProps}>
               <Stack spacing={2}>
                 {stages}
                 <Box sx={{ borderTop: '1px solid #eadfc6', pt: 1 }}>{form}</Box>
@@ -1279,7 +1279,7 @@ export default function Quest() {
       onCancelRoom={handleCancelRoom}
       renderLayout={({ info, editor, editorTitle }) =>
         renderColumns(
-          <GamePanel title={stageName ?? locale.stage} action={mobileHomeButton} {...fitPanelProps}>
+          <GamePanel title={stageName ?? locale.stage} leading={mobileHomeButton} {...fitPanelProps}>
             {info}
           </GamePanel>,
           editor ? (
@@ -1322,9 +1322,9 @@ export default function Quest() {
                     sx={{ mr: 1.5, color: '#ffffff', fontWeight: 700, backgroundColor: 'rgba(255, 255, 255, 0.22)' }}
                   />
                 )}
-                {mobileHomeButton}
               </Stack>
             }
+            leading={mobileHomeButton}
             disablePadding
             {...panelProps}
           >
