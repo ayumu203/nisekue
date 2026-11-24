@@ -682,7 +682,24 @@ export default function Training() {
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
       <Box ref={battleResultRef} sx={{ flex: 'none', height: { md: 'min(400px, 45%)' }, minHeight: { md: 320 } }}>
         <GamePanel
-          title={hasResult ? locale.battleResultTitle : locale.battleFieldTitle}
+          title={
+            <>
+              {/* スマホはヘッダーがないので、見出しの横にホームへ戻るボタンを置く */}
+              {isDesktop ? null : (
+                <IconButton
+                  id={tutorialHomeButtonId}
+                  component={Link}
+                  to="/"
+                  aria-label={locale.backToHome}
+                  size="small"
+                  sx={{ color: '#ffffff', mr: 0.75, verticalAlign: 'middle' }}
+                >
+                  <HomeIcon fontSize="small" />
+                </IconButton>
+              )}
+              {hasResult ? locale.battleResultTitle : locale.battleFieldTitle}
+            </>
+          }
           disablePadding
           {...panelProps}
         >
@@ -761,23 +778,7 @@ export default function Training() {
           currentKey="training"
           currentColor={trainingPanelColors.topBand}
         />
-      ) : (
-        // スマホは帯の上に、ホームへ戻るボタンと「訓練場」の見出しを並べる
-        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ px: 1, pt: 1 }}>
-          <IconButton
-            id={tutorialHomeButtonId}
-            component={Link}
-            to="/"
-            aria-label={locale.backToHome}
-            sx={{ color: '#ffffff', width: 44, height: 44 }}
-          >
-            <HomeIcon />
-          </IconButton>
-          <Typography component="h1" sx={{ color: '#ffffff', fontSize: '1.25rem', fontWeight: 800 }}>
-            {homeMenu.primary.find((item) => item.key === 'training')?.label ?? ''}
-          </Typography>
-        </Stack>
-      )}
+      ) : null}
       <Box
         id="training-main"
         ref={trainingMainRef}
