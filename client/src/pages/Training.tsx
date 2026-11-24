@@ -1,8 +1,8 @@
 import {
   Alert,
   Box,
+  ButtonBase,
   CircularProgress,
-  IconButton,
   Snackbar,
   Stack,
   Typography,
@@ -683,20 +683,6 @@ export default function Training() {
       <Box ref={battleResultRef} sx={{ flex: 'none', height: { md: 'min(400px, 45%)' }, minHeight: { md: 320 } }}>
         <GamePanel
           title={hasResult ? locale.battleResultTitle : locale.battleFieldTitle}
-          // スマホはヘッダーがないので、ホームへ戻るボタンを戦闘画面の帯の右端に置く
-          action={
-            isDesktop ? undefined : (
-              <IconButton
-                id={tutorialHomeButtonId}
-                component={Link}
-                to="/"
-                aria-label={locale.backToHome}
-                sx={{ color: '#ffffff', width: 44, height: 44 }}
-              >
-                <HomeIcon />
-              </IconButton>
-            )
-          }
           disablePadding
           {...panelProps}
         >
@@ -775,7 +761,52 @@ export default function Training() {
           currentKey="training"
           currentColor={trainingPanelColors.topBand}
         />
-      ) : null}
+      ) : (
+        // スマホは PC のヘッダーと同じ白いバーに「ホーム」と今いる「訓練場」を並べる（クエストと同じ）
+        <Box
+          component="nav"
+          sx={{
+            display: 'flex',
+            alignItems: 'stretch',
+            minHeight: 48,
+            backgroundColor: '#ffffff',
+            boxShadow: `0 2px 0 ${trainingPanelColors.shadow}`,
+          }}
+        >
+          <ButtonBase
+            id={tutorialHomeButtonId}
+            component={Link}
+            to="/"
+            disableRipple
+            sx={{
+              px: 2,
+              gap: 1,
+              color: '#5a3a10',
+              fontFamily: 'inherit',
+              fontSize: '1rem',
+              fontWeight: 700,
+              borderRight: '1px solid rgba(90, 58, 16, 0.22)',
+            }}
+          >
+            <HomeIcon sx={{ fontSize: 22, color: '#3f8f45' }} />
+            {locale.backToHome}
+          </ButtonBase>
+          <Box
+            aria-current="page"
+            sx={{
+              px: 2,
+              display: 'flex',
+              alignItems: 'center',
+              color: '#ffffff',
+              backgroundColor: trainingPanelColors.topBand,
+              fontSize: '1rem',
+              fontWeight: 700,
+            }}
+          >
+            {homeMenu.primary.find((item) => item.key === 'training')?.label ?? ''}
+          </Box>
+        </Box>
+      )}
       <Box
         id="training-main"
         ref={trainingMainRef}
