@@ -16,7 +16,7 @@ type GamePanelProps = {
   tabs?: GamePanelTab[]
   // 帯の右端に置く操作（チャットの切り替え・スマホのホームボタンなど）
   action?: ReactNode
-  // 帯の左端に置く操作（見出しだけの帯のとき。スマホの訓練場のホームボタンなど）
+  // 帯の左端に置く操作（スマホのホームボタンなど。見出しの帯でも、切り替えの帯でも使える）
   startAction?: ReactNode
   // 見出しの帯を出さない（スマホで縦幅を節約したいとき）
   hideBand?: boolean
@@ -69,6 +69,19 @@ export default function GamePanel({
     >
       {hideBand ? null : tabs ? (
         <Box role="tablist" sx={{ flex: 'none', height: 44, display: 'flex' }}>
+          {startAction ? (
+            <Box
+              sx={{
+                flex: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: bandColor,
+                borderRight: '1px solid rgba(255, 255, 255, 0.35)',
+              }}
+            >
+              {startAction}
+            </Box>
+          ) : null}
           {tabs.map((tab, index) => (
             <ButtonBase
               key={tab.key}
@@ -83,7 +96,7 @@ export default function GamePanel({
                 fontWeight: 700,
                 color: tab.selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
                 backgroundColor: tab.selected ? bandSelectedColor : bandColor,
-                borderLeft: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+                borderLeft: index === 0 || startAction ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
               }}
             >
               {tab.label}
@@ -125,6 +138,11 @@ export default function GamePanel({
           <Typography component="h2" noWrap sx={{ fontSize: '1rem', fontWeight: 700 }}>
             {title}
           </Typography>
+          {startAction ? (
+            <Box sx={{ position: 'absolute', left: 2, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
+              {startAction}
+            </Box>
+          ) : null}
           {action ? (
             <Box sx={{ position: 'absolute', right: 2, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
               {action}
