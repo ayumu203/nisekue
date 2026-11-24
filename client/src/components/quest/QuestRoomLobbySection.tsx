@@ -324,36 +324,6 @@ export default function QuestRoomLobbySection({
                       {`${locale.levelLabel}.${participant.level}`}
                     </Typography>
                   ) : null}
-                  {participant.job?.displayName ? (
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      alignItems="center"
-                      sx={{ flexWrap: 'nowrap', minWidth: 0, overflow: 'hidden' }}
-                    >
-                      {jobImageSrc ? (
-                        <Box
-                          component="img"
-                          src={jobImageSrc}
-                          alt={participant.job.displayName}
-                          sx={{ width: 36, height: 36, objectFit: 'contain', display: 'block', flexShrink: 0 }}
-                        />
-                      ) : null}
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          color: homePanelColors.text,
-                          fontSize: '1rem',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {participant.job.displayName}
-                      </Typography>
-                    </Stack>
-                  ) : null}
                 </Stack>
 
                 {isOwner ? (
@@ -395,6 +365,32 @@ export default function QuestRoomLobbySection({
                   </Typography>
                 )}
               </Stack>
+              {participant.job?.displayName ? (
+                // ジョブは右端に大きめのアイコンと名前で出す
+                <Stack alignItems="center" spacing={0.5} sx={{ width: 88, flexShrink: 0, alignSelf: 'center' }}>
+                  {jobImageSrc ? (
+                    <Box
+                      component="img"
+                      src={jobImageSrc}
+                      alt=""
+                      sx={{ width: 64, height: 64, objectFit: 'contain', display: 'block' }}
+                    />
+                  ) : null}
+                  <Typography
+                    sx={{
+                      maxWidth: '100%',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      color: homePanelColors.text,
+                      fontSize: '0.875rem',
+                      fontWeight: 700,
+                    }}
+                  >
+                    {participant.job.displayName}
+                  </Typography>
+                </Stack>
+              ) : null}
             </Stack>
           </Box>
         )
