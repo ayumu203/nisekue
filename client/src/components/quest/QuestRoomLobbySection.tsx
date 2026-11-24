@@ -23,7 +23,7 @@ import {
   greenOutlinedInputSx,
   homePanelColors,
   menuButtonSx,
-  mutedRedButtonSx,
+  panelCancelButtonSx,
   panelPrimaryButtonSx,
 } from '@/constants/styles'
 import locale from '../../../locale/quest/QuestRoom.json'
@@ -319,7 +319,7 @@ export default function QuestRoomLobbySection({
                   {participant.level != null ? (
                     <Typography
                       variant="body2"
-                      sx={{ whiteSpace: 'nowrap', flexShrink: 0, color: homePanelColors.label }}
+                      sx={{ whiteSpace: 'nowrap', flexShrink: 0, color: homePanelColors.text, fontSize: '1rem' }}
                     >
                       {`${locale.levelLabel}.${participant.level}`}
                     </Typography>
@@ -336,7 +336,17 @@ export default function QuestRoomLobbySection({
                           component="img"
                           src={jobImageSrc}
                           alt={participant.job.displayName}
-                          sx={{ width: 20, height: 20, objectFit: 'contain', display: 'block', flexShrink: 0 }}
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            p: 0.25,
+                            boxSizing: 'border-box',
+                            objectFit: 'contain',
+                            display: 'block',
+                            flexShrink: 0,
+                            borderRadius: '50%',
+                            backgroundColor: '#efe4c8',
+                          }}
                         />
                       ) : null}
                       <Typography
@@ -345,10 +355,12 @@ export default function QuestRoomLobbySection({
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          color: homePanelColors.label,
+                          color: homePanelColors.text,
+                          fontSize: '1rem',
+                          fontWeight: 700,
                         }}
                       >
-                        {`${locale.jobLabel}: ${participant.job.displayName}`}
+                        {participant.job.displayName}
                       </Typography>
                     </Stack>
                   ) : null}
@@ -413,7 +425,7 @@ export default function QuestRoomLobbySection({
             startIcon={<CancelIcon sx={{ fontSize: 20 }} />}
             onClick={() => void onCancelRoom()}
             disabled={isStarting || isCancellingRoom || !isRecruiting}
-            sx={{ ...menuButtonSx, ...mutedRedButtonSx, flex: 1, minHeight: 52, fontWeight: 800 }}
+            sx={{ ...menuButtonSx, ...panelCancelButtonSx, flex: 1, minHeight: 52 }}
           >
             {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
           </Button>
