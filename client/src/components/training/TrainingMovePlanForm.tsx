@@ -331,12 +331,18 @@ export default function TrainingMovePlanForm({
   return (
     <Stack spacing={1.75} sx={{ height: '100%' }}>
       <Stack
-        direction={{ xs: 'column', sm: 'row' }}
+        direction="row"
         spacing={1.5}
-        alignItems={{ xs: 'stretch', sm: 'center' }}
-        sx={{ pb: 1.5, borderBottom: dottedDivider }}
+        alignItems="center"
+        sx={{ pb: { xs: 1, sm: 1.5 }, borderBottom: dottedDivider }}
       >
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+        {/* スマホは上の戦闘画面に相手が出ているので、対戦相手の行は出さず消費MP だけにする */}
+        <Stack
+          direction="row"
+          spacing={1.5}
+          alignItems="center"
+          sx={{ flex: 1, minWidth: 0, display: { xs: 'none', sm: 'flex' } }}
+        >
           <Box
             sx={{
               width: 52,
@@ -378,7 +384,7 @@ export default function TrainingMovePlanForm({
             </Typography>
           </Stack>
         </Stack>
-        <Box sx={{ width: { xs: '100%', sm: 260 }, flex: 'none' }}>
+        <Box sx={{ width: { xs: '100%', sm: 260 }, flex: { xs: 1, sm: 'none' } }}>
           <MpMeter plannedMp={totalMp} maxMp={maxMp} />
         </Box>
       </Stack>

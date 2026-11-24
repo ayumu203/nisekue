@@ -262,16 +262,24 @@ export default function TrainingBattleField({
             py: 1.5,
             borderRadius: '12px',
             backgroundColor: 'rgba(255, 253, 248, 0.6)',
+            // スマホはキャラと同じく中央にそろえる
+            textAlign: { xs: 'center', md: 'left' },
           }}
         >
           <Collapse in={isTurnLogOpen}>
             <Stack sx={{ pb: 1, mb: 0.5, borderBottom: '1px solid rgba(90, 70, 40, 0.25)' }}>
               {turnLogs.map((log) => (
-                <Stack key={log.turn} direction="row" spacing={1.5} sx={{ py: 0.5 }}>
+                <Stack
+                  key={log.turn}
+                  direction={{ xs: 'column', md: 'row' }}
+                  spacing={{ xs: 0.25, md: 1.5 }}
+                  alignItems={{ xs: 'center', md: 'flex-start' }}
+                  sx={{ py: 0.5 }}
+                >
                   <Typography
                     variant="body2"
                     fontWeight={800}
-                    sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', minWidth: 52 }}
+                    sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', minWidth: { md: 52 } }}
                   >
                     {locale.turnLabel.replace('{{turn}}', String(log.turn))}
                   </Typography>

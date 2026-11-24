@@ -1,4 +1,15 @@
-import { Alert, Box, CircularProgress, Snackbar, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  IconButton,
+  Snackbar,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material'
+import { Link } from 'react-router-dom'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import { PLAYER_DEDUPING_INTERVAL } from '@/constants/swr'
@@ -11,7 +22,6 @@ import {
 } from '@/api/training'
 import { createPlayer, getPlayer } from '@/api/player'
 import GamePanel from '@/components/common/GamePanel'
-import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import TrainingBattleField from '@/components/training/TrainingBattleField'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
 import TrainingMovePlanForm from '@/components/training/TrainingMovePlanForm'
@@ -673,6 +683,20 @@ export default function Training() {
       <Box ref={battleResultRef} sx={{ flex: 'none', height: { md: 'min(400px, 45%)' }, minHeight: { md: 320 } }}>
         <GamePanel
           title={hasResult ? locale.battleResultTitle : locale.battleFieldTitle}
+          // スマホはヘッダーがないので、ホームへ戻るボタンを戦闘画面の帯の右端に置く
+          action={
+            isDesktop ? undefined : (
+              <IconButton
+                id={tutorialHomeButtonId}
+                component={Link}
+                to="/"
+                aria-label={locale.backToHome}
+                sx={{ color: '#ffffff', width: 44, height: 44 }}
+              >
+                <HomeIcon />
+              </IconButton>
+            )
+          }
           disablePadding
           {...panelProps}
         >
@@ -768,11 +792,6 @@ export default function Training() {
           gap: { xs: 1.5, sm: 2 },
         }}
       >
-        {isDesktop ? null : (
-          <Box>
-            <HomeNavIconButton id={tutorialHomeButtonId} ariaLabel={locale.backToHome} />
-          </Box>
-        )}
         {isPlayerLoading ? (
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={16} sx={{ color: '#ffffff' }} />
