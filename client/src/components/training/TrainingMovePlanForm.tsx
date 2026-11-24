@@ -345,23 +345,31 @@ export default function TrainingMovePlanForm({
               borderRadius: '10px',
               display: 'grid',
               placeItems: 'center',
-              backgroundColor: '#e9dfd0',
+              boxSizing: 'border-box',
+              border: enemy ? 'none' : '2px dashed #d8c9a6',
+              backgroundColor: enemy ? '#e9dfd0' : 'transparent',
               backgroundImage:
-                enemyBackgroundKey !== undefined ? `url(${getTrainingBackgroundPath(enemyBackgroundKey)})` : 'none',
+                enemy && enemyBackgroundKey !== undefined
+                  ? `url(${getTrainingBackgroundPath(enemyBackgroundKey)})`
+                  : 'none',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
           >
             {enemyImageSrc ? (
               <Box component="img" src={enemyImageSrc} alt="" sx={{ maxWidth: 46, maxHeight: 46 }} />
-            ) : null}
+            ) : (
+              <Typography aria-hidden="true" sx={{ fontSize: '1.4rem', fontWeight: 900, color: '#a99a7c' }}>
+                ?
+              </Typography>
+            )}
           </Box>
           <Stack sx={{ minWidth: 0 }}>
             <Typography variant="caption" sx={{ color: homePanelColors.label }}>
               {locale.nextOpponent}
             </Typography>
             <Typography fontWeight={800} sx={{ color: homePanelColors.text, overflowWrap: 'anywhere' }}>
-              {enemy?.name ?? locale.notSelected}{' '}
+              {enemy ? `${enemy.name} ` : null}
               {enemyLevelLabel ? (
                 <Typography component="span" variant="body2" fontWeight={700} sx={{ color: homePanelColors.label }}>
                   {enemyLevelLabel}

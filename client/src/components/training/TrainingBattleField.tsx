@@ -152,44 +152,29 @@ function FighterSprite({
   )
 }
 
-// まだ相手を選んでいないときの相手側
+// まだ相手を選んでいないときの相手側（点線の「？」だけ。頭上の札の分だけ下げて、自分の画像と下端をそろえる）
 function EmptyFighter({ imageHeight }: { imageHeight: { xs: number; md: number } }) {
   return (
-    <Stack alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
-      <Box
-        sx={{
-          minWidth: { xs: 120, sm: 170 },
-          px: 1.75,
-          py: 0.75,
-          borderRadius: '10px',
-          backgroundColor: 'rgba(255, 255, 255, 0.55)',
-          textAlign: 'center',
-        }}
-      >
-        <Typography fontWeight={800} sx={{ color: homePanelColors.label, lineHeight: 1.3 }}>
-          {locale.notSelected}
-        </Typography>
-      </Box>
-      <Box
-        aria-hidden="true"
-        sx={{
-          height: imageHeight,
-          aspectRatio: '3 / 4',
-          boxSizing: 'border-box',
-          borderRadius: '12px',
-          border: '3px dashed rgba(255, 255, 255, 0.85)',
-          backgroundColor: 'rgba(255, 255, 255, 0.25)',
-          display: 'grid',
-          placeItems: 'center',
-          color: '#ffffff',
-          fontSize: { xs: '2rem', md: '3.5rem' },
-          fontWeight: 900,
-          textShadow: '0 2px 0 rgba(0, 0, 0, 0.3)',
-        }}
-      >
-        ?
-      </Box>
-    </Stack>
+    <Box
+      aria-hidden="true"
+      sx={{
+        justifySelf: 'center',
+        height: imageHeight,
+        aspectRatio: '3 / 4',
+        boxSizing: 'border-box',
+        borderRadius: '12px',
+        border: '3px dashed rgba(255, 255, 255, 0.85)',
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        display: 'grid',
+        placeItems: 'center',
+        color: '#ffffff',
+        fontSize: { xs: '2rem', md: '3.5rem' },
+        fontWeight: 900,
+        textShadow: '0 2px 0 rgba(0, 0, 0, 0.3)',
+      }}
+    >
+      ?
+    </Box>
   )
 }
 
