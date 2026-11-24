@@ -1277,9 +1277,8 @@ export default function Quest() {
         onRestrictionsChange={handleRestrictionsChange}
         onCreateRoom={handleCreateRoom}
         // PC は画面の高さに入るだけのステージを 1 ページに出す
-        // スマホは訓練場と同じく小さいカードを 2 列に並べる
-        stagePageSize={isWide ? desktopStagePageSize : isDesktop ? 3 : 4}
-        stageColumns={isDesktop ? 1 : 2}
+        // スマホは上に背景と敵、下の白地に名前とボタンを置いたカードを 1 列に並べる
+        stagePageSize={isWide ? desktopStagePageSize : 3}
         compactCards={!isDesktop}
         renderLayout={({ stages, form }) =>
           // スマホ・狭い画面は箱を 1 つにまとめ、ステージ一覧のすぐ下に参加制限と募集開始を置く

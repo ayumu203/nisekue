@@ -83,7 +83,7 @@ export default function QuestStageModeCard({
         <Box
           sx={{
             position: 'relative',
-            height: 104,
+            height: 120,
             flex: 'none',
             display: 'grid',
             placeItems: 'center',
@@ -97,7 +97,7 @@ export default function QuestStageModeCard({
               component="img"
               src={iconImageSrc}
               alt=""
-              sx={{ maxHeight: 84, maxWidth: '70%', objectFit: 'contain' }}
+              sx={{ maxHeight: 96, maxWidth: '70%', objectFit: 'contain' }}
             />
           ) : null}
           {badge ? (
@@ -123,11 +123,8 @@ export default function QuestStageModeCard({
           <Typography sx={{ fontWeight: 800, fontSize: '1rem', lineHeight: 1.3, color: homePanelColors.text }}>
             {stage.name}
           </Typography>
-          <Typography sx={{ fontSize: '0.8125rem', color: homePanelColors.label }}>
-            {`${locale.recommendedLevel} ${isMirror ? locale.mirror.hiddenRecommendedLevel : stage.recommendedLevel}`}
-          </Typography>
-          <Typography sx={{ fontSize: '0.8125rem', color: homePanelColors.label }}>
-            {`${locale.minRequiredLevel} ${stage.minimumEntryLevel}`}
+          <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>
+            {`${locale.recommendedLevel} ${isMirror ? locale.mirror.hiddenRecommendedLevel : stage.recommendedLevel}　${locale.minRequiredLevel} ${stage.minimumEntryLevel}`}
           </Typography>
           <Box sx={{ flex: 1 }} />
           <Stack direction="row" spacing={0.75} sx={{ pt: 0.5 }}>
