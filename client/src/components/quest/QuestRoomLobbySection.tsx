@@ -223,29 +223,6 @@ export default function QuestRoomLobbySection({
         />
       </Box>
 
-      {isOwner ? (
-        <Stack direction="row" spacing={1.5}>
-          <Button
-            variant="contained"
-            startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
-            onClick={() => void onStartQuest()}
-            disabled={isStartDisabled || isSavingFormation}
-            sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, flex: 1, minHeight: 52 }}
-          >
-            {isStarting ? locale.startingQuest : locale.startQuest}
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<CancelIcon sx={{ fontSize: 20 }} />}
-            onClick={() => void onCancelRoom()}
-            disabled={isStarting || isCancellingRoom || !isRecruiting}
-            sx={{ ...menuButtonSx, ...mutedRedButtonSx, flex: 1, minHeight: 52, fontWeight: 800 }}
-          >
-            {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
-          </Button>
-        </Stack>
-      ) : null}
-
       <QuestRoomFormationPreview currentRoom={currentRoom} positionDrafts={positionDrafts} />
 
       {!isRecruiting ? (
@@ -431,6 +408,15 @@ export default function QuestRoomLobbySection({
           >
             {isStarting ? locale.startingQuest : locale.startQuest}
           </Button>
+          <Button
+            variant="outlined"
+            startIcon={<CancelIcon sx={{ fontSize: 20 }} />}
+            onClick={() => void onCancelRoom()}
+            disabled={isStarting || isCancellingRoom || !isRecruiting}
+            sx={{ ...menuButtonSx, ...mutedRedButtonSx, flex: 1, minHeight: 52, fontWeight: 800 }}
+          >
+            {isCancellingRoom ? locale.cancellingRoom : locale.cancelRoom}
+          </Button>
         </Stack>
       ) : null}
     </Stack>
@@ -451,7 +437,10 @@ function InfoRow({ label, value }: { label: string; value: string }) {
         borderBottom: `1px dotted ${homePanelColors.divider}`,
       }}
     >
-      <Typography variant="body2" sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', minWidth: 120 }}>
+      <Typography
+        variant="body2"
+        sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
+      >
         {label}
       </Typography>
       <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: '1rem' }}>{value}</Typography>

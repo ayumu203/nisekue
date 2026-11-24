@@ -44,7 +44,10 @@ function PanelRow({ label, value }: { label: string; value: string }) {
         borderBottom: `1px dotted ${homePanelColors.divider}`,
       }}
     >
-      <Typography variant="body2" sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', minWidth: 120 }}>
+      <Typography
+        variant="body2"
+        sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
+      >
         {label}
       </Typography>
       <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: '1rem' }}>{value}</Typography>
