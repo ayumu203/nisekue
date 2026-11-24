@@ -1,4 +1,14 @@
-import { Alert, Box, Chip, CircularProgress, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import {
+  Alert,
+  Box,
+  ButtonBase,
+  Chip,
+  CircularProgress,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import useSWR, { useSWRConfig, type KeyedMutator } from 'swr'
 import { useQuestRunHub } from '@/hooks/useQuestRunHub'
@@ -20,8 +30,8 @@ import {
   updateQuestRoomRestrictions,
   updateQuestRoomPosition,
 } from '@/api/quest'
+import { Link } from 'react-router-dom'
 import GamePanel from '@/components/common/GamePanel'
-import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
@@ -1429,6 +1439,53 @@ export default function Quest() {
           currentColor={questPanelColors.topBand}
         />
       ) : null}
+      {isDesktop ? null : (
+        // スマホは PC のヘッダーと同じ白いバーに「ホーム」と今いる「クエスト」を並べる
+        <Box
+          component="nav"
+          sx={{
+            display: 'flex',
+            alignItems: 'stretch',
+            minHeight: 48,
+            backgroundColor: '#ffffff',
+            boxShadow: `0 2px 0 ${questPanelColors.shadow}`,
+          }}
+        >
+          <ButtonBase
+            id={tutorialHomeButtonId}
+            component={Link}
+            to="/"
+            onClick={handleHomeClick}
+            disableRipple
+            sx={{
+              px: 2,
+              gap: 1,
+              color: '#5a3a10',
+              fontFamily: 'inherit',
+              fontSize: '1rem',
+              fontWeight: 700,
+              borderRight: '1px solid rgba(90, 58, 16, 0.22)',
+            }}
+          >
+            <HomeIcon sx={{ fontSize: 22, color: '#3f8f45' }} />
+            {locale.backToHome}
+          </ButtonBase>
+          <Box
+            aria-current="page"
+            sx={{
+              px: 2,
+              display: 'flex',
+              alignItems: 'center',
+              color: '#ffffff',
+              backgroundColor: questPanelColors.topBand,
+              fontSize: '1rem',
+              fontWeight: 700,
+            }}
+          >
+            {homeMenu.primary.find((item) => item.key === 'quest')?.label ?? ''}
+          </Box>
+        </Box>
+      )}
       <Box
         id="quest-main"
         ref={questMainRef}
@@ -1445,11 +1502,6 @@ export default function Quest() {
           gap: { xs: 1.5, sm: 2 },
         }}
       >
-        {isDesktop ? null : (
-          <Box>
-            <HomeNavIconButton id={tutorialHomeButtonId} ariaLabel={locale.backToHome} onClick={handleHomeClick} />
-          </Box>
-        )}
         {alerts}
         {createContent}
         {waitingContent}
