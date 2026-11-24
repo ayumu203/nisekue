@@ -1,24 +1,29 @@
-import { Alert, Box, Button, FormControl, MenuItem, Paper, Select, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, FormControl, MenuItem, Select, Stack, Typography } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { normalizeCharacterPath, resolvePublicAssetPath } from '@/lib/assets'
-import { innerSurfaceSx } from '@/constants/styles'
+import { homePanelColors, panelPrimaryButtonSx } from '@/constants/styles'
 import type { GetPlayerResponse, PlayerMoveSlot } from '@/schema/player'
 import type { TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
+import { getTrainingBackgroundPath } from './trainingSelectStyles'
 
 type TrainingMovePlanFormProps = {
-  enemy: TrainingEnemy
+  // まだ相手を選んでいないときは null（技の欄と「戦闘」を押せない状態で出す）
+  enemy: TrainingEnemy | null
+  // 相手の背景を決めるキー（NPC は敵の id、PLAYER はプレイヤーの id）
+  enemyBackgroundKey?: string | number
   player: GetPlayerResponse
   moveIds: Array<number | null>
   isActionDisabled: boolean
   lockRemainingSeconds: number
+  // 再戦までの待ち時間の進み具合（0〜1）。待っていないときは null
+  lockProgress?: number | null
   onChangeMoveId: (turnIndex: number, moveId: number | null) => void
-  showFighterHeader?: boolean
-  submitLabel?: string
+  // versus：自分と相手を並べる（相手を選んだとき）。nextOpponent：相手を小さく出す（戦闘結果の下）
+  header?: 'versus' | 'nextOpponent'
   submitButtonId?: string
   // チュートリアルの矢印で指す技の選択欄（何ターン目か と 付ける id）
   tutorialMoveSelect?: { index: number; id: string }
-  showSubmitButton?: boolean
   onSubmit: () => Promise<void> | void
 }
 
@@ -26,34 +31,12 @@ type PlannedTurn = {
   moveId: number | null
   moveName: string
   mpCost: number
+  targetLabel: string
   warning: string | null
 }
 
 const DEFAULT_CHARACTER_PATH = 'image/character/ch001_bmnpc.png'
-
-function FighterSummary({ name, imagePath, levelLabel }: { name: string; imagePath: string; levelLabel: string }) {
-  return (
-    <Stack spacing={0.5} alignItems="center" sx={{ minWidth: 0 }}>
-      <Box
-        component="img"
-        src={resolvePublicAssetPath(imagePath)}
-        alt={name}
-        sx={{ width: '100%', maxWidth: 160, height: { xs: 100, sm: 130 }, objectFit: 'contain' }}
-      />
-      <Typography
-        variant="subtitle1"
-        fontWeight={800}
-        textAlign="center"
-        sx={{ color: '#fff7dd', lineHeight: 1.25, overflowWrap: 'anywhere' }}
-      >
-        {name}
-      </Typography>
-      <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.72)' }}>
-        {levelLabel}
-      </Typography>
-    </Stack>
-  )
-}
+const dottedDivider = `1px dotted ${homePanelColors.divider}`
 
 function getAvailableMoves(player: GetPlayerResponse): PlayerMoveSlot[] {
   return player.moveSlots.filter((slot) => slot.moveId !== null)
@@ -82,6 +65,7 @@ function buildPlannedTurns(player: GetPlayerResponse, moveIds: Array<number | nu
         moveId: null,
         moveName: locale.normalAttack,
         mpCost: 0,
+        targetLabel: locale.targetTypeEnemy,
         warning: null,
       }
     }
@@ -98,233 +82,302 @@ function buildPlannedTurns(player: GetPlayerResponse, moveIds: Array<number | nu
       moveId,
       moveName: move?.moveName ?? String(moveId),
       mpCost,
+      targetLabel: resolveTargetTypeLabel(move?.targetType ?? 'Enemy'),
       warning: canUse ? null : locale.waitWarning,
     }
   })
 }
 
+function FighterSummary({
+  name,
+  imageSrc,
+  levelLabel,
+}: {
+  name: string | null
+  imageSrc: string | null
+  levelLabel: string | null
+}) {
+  return (
+    <Stack spacing={0.5} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
+      {imageSrc ? (
+        <Box
+          sx={{
+            width: { xs: 96, sm: 120 },
+            height: { xs: 96, sm: 120 },
+            borderRadius: '12px',
+            backgroundColor: '#f3ebe0',
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}
+        >
+          <Box component="img" src={imageSrc} alt="" sx={{ maxWidth: '92%', maxHeight: '94%', objectFit: 'contain' }} />
+        </Box>
+      ) : (
+        <Box
+          aria-hidden="true"
+          sx={{
+            width: { xs: 96, sm: 120 },
+            height: { xs: 96, sm: 120 },
+            borderRadius: '12px',
+            border: '2px dashed #d8c9a6',
+            boxSizing: 'border-box',
+            display: 'grid',
+            placeItems: 'center',
+            color: '#a99a7c',
+            fontSize: '2rem',
+            fontWeight: 800,
+          }}
+        >
+          ?
+        </Box>
+      )}
+      <Typography
+        fontWeight={800}
+        textAlign="center"
+        sx={{
+          color: name ? homePanelColors.text : '#8a7a5e',
+          fontSize: '1.05rem',
+          lineHeight: 1.25,
+          overflowWrap: 'anywhere',
+        }}
+      >
+        {name ?? locale.notSelected}
+      </Typography>
+      {levelLabel ? (
+        <Typography variant="body2" fontWeight={700} sx={{ color: homePanelColors.label }}>
+          {levelLabel}
+        </Typography>
+      ) : null}
+    </Stack>
+  )
+}
+
+function MpMeter({ plannedMp, maxMp }: { plannedMp: number; maxMp: number }) {
+  const isOver = plannedMp > maxMp
+  const ratio = maxMp > 0 ? Math.min(1, plannedMp / maxMp) : 0
+
+  return (
+    <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
+      <Typography variant="body2" fontWeight={800} sx={{ color: homePanelColors.label, whiteSpace: 'nowrap' }}>
+        {locale.plannedMpLabel}
+      </Typography>
+      <Box
+        aria-hidden="true"
+        sx={{ flex: 1, minWidth: 60, height: 10, borderRadius: 9, backgroundColor: '#e9e2d6', overflow: 'hidden' }}
+      >
+        <Box
+          sx={{
+            width: `${ratio * 100}%`,
+            height: '100%',
+            backgroundColor: isOver ? '#c62828' : '#4a7fc1',
+          }}
+        />
+      </Box>
+      <Typography
+        fontWeight={800}
+        sx={{ color: isOver ? '#c62828' : homePanelColors.text, whiteSpace: 'nowrap', fontSize: '0.95rem' }}
+      >
+        {locale.plannedMpSummary.replace('{{plannedMp}}', String(plannedMp)).replace('{{maxMp}}', String(maxMp))}
+      </Typography>
+    </Stack>
+  )
+}
+
+function MoveSlotValue({ turnNumber, moveName, detail }: { turnNumber: number; moveName: string; detail: string }) {
+  return (
+    <Stack component="span" direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+      <Stack component="span" alignItems="center" sx={{ width: 44, flex: 'none' }}>
+        <Typography
+          component="span"
+          sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#8a4a2c', letterSpacing: '0.04em', lineHeight: 1.2 }}
+        >
+          {locale.moveSlotTurn}
+        </Typography>
+        <Typography component="span" sx={{ fontSize: '1.25rem', fontWeight: 900, color: '#8a4a2c', lineHeight: 1 }}>
+          {turnNumber}
+        </Typography>
+      </Stack>
+      <Box component="span" sx={{ width: '1px', alignSelf: 'stretch', backgroundColor: '#eadfce', flex: 'none' }} />
+      <Stack component="span" spacing={0.25} sx={{ minWidth: 0 }}>
+        <Typography
+          component="span"
+          sx={{
+            fontWeight: 800,
+            color: homePanelColors.text,
+            lineHeight: 1.25,
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere',
+          }}
+        >
+          {moveName}
+        </Typography>
+        <Typography component="span" variant="caption" sx={{ color: homePanelColors.label, lineHeight: 1.3 }}>
+          {detail}
+        </Typography>
+      </Stack>
+    </Stack>
+  )
+}
+
+function formatSlotDetail(mpCost: number, targetLabel: string): string {
+  return locale.moveSlotDetail.replace('{{cost}}', String(mpCost)).replace('{{target}}', targetLabel)
+}
+
+function BattleButton({
+  id,
+  disabled,
+  lockRemainingSeconds,
+  lockProgress,
+  onClick,
+}: {
+  id?: string
+  disabled: boolean
+  lockRemainingSeconds: number
+  lockProgress: number | null
+  onClick: () => void
+}) {
+  const isLocked = lockRemainingSeconds > 0
+
+  return (
+    <Button
+      id={id}
+      variant="contained"
+      fullWidth
+      disabled={disabled}
+      onClick={onClick}
+      sx={{
+        ...panelPrimaryButtonSx,
+        position: 'relative',
+        flex: 'none',
+        height: 60,
+        borderRadius: '12px',
+        fontSize: '1.375rem',
+        '&&': {
+          ...panelPrimaryButtonSx['&&'],
+          boxShadow: `0 4px 0 ${homePanelColors.bandSelected}`,
+        },
+        '&&:hover': {
+          ...panelPrimaryButtonSx['&&:hover'],
+          boxShadow: `0 4px 0 ${homePanelColors.bandSelected}`,
+        },
+        '&&.Mui-disabled': {
+          backgroundColor: '#d9cfc0',
+          borderColor: '#d9cfc0',
+          color: '#6b5d47',
+          boxShadow: 'none',
+        },
+      }}
+    >
+      {isLocked ? locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds)) : locale.startBattle}
+      {isLocked && lockProgress !== null ? (
+        <Box
+          component="span"
+          aria-hidden="true"
+          sx={{
+            position: 'absolute',
+            left: 16,
+            right: 16,
+            bottom: 9,
+            height: 4,
+            borderRadius: 9,
+            backgroundColor: 'rgba(255, 255, 255, 0.55)',
+            overflow: 'hidden',
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              display: 'block',
+              width: `${Math.min(1, Math.max(0, lockProgress)) * 100}%`,
+              height: '100%',
+              backgroundColor: '#8a7c66',
+              transition: 'width 250ms linear',
+            }}
+          />
+        </Box>
+      ) : null}
+    </Button>
+  )
+}
+
 export default function TrainingMovePlanForm({
   enemy,
+  enemyBackgroundKey,
   player,
   moveIds,
   isActionDisabled,
   lockRemainingSeconds,
+  lockProgress = null,
   onChangeMoveId,
-  showFighterHeader = true,
-  submitLabel,
+  header = 'versus',
   submitButtonId,
   tutorialMoveSelect,
-  showSubmitButton = true,
   onSubmit,
 }: TrainingMovePlanFormProps) {
   const availableMoves = getAvailableMoves(player)
   const plannedTurns = buildPlannedTurns(player, moveIds)
   const totalMp = plannedTurns.reduce((sum, turn) => sum + turn.mpCost, 0)
   const maxMp = player.status.maxMp
-  const isMpOver = totalMp > maxMp
-  const rematchInSeconds = locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
+  const hasEnemy = enemy !== null
+  const enemyLevelLabel = enemy ? locale.enemyLevel.replace('{{level}}', String(enemy.level)) : null
+  const enemyImageSrc = enemy ? resolvePublicAssetPath(enemy.imagePath) : null
 
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        ...innerSurfaceSx,
-        borderRadius: 3,
-        p: 2.5,
-        width: '100%',
-        minWidth: 0,
-        boxSizing: 'border-box',
-        color: '#f5f0df',
-        backgroundColor: '#261819',
-        borderColor: 'rgba(214, 146, 112, 0.34)',
-      }}
-    >
-      <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
-        {showFighterHeader ? (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
-              alignItems: 'center',
-              gap: { xs: 1, sm: 2 },
-            }}
-          >
-            <FighterSummary
-              name={player.userName ?? locale.anonymousPlayer}
-              imagePath={player.imagePath ? normalizeCharacterPath(player.imagePath) : DEFAULT_CHARACTER_PATH}
-              levelLabel={locale.currentLevel.replace('{{level}}', String(player.level))}
-            />
-            <Typography variant="h6" fontWeight={900} sx={{ color: 'rgba(243, 179, 141, 0.8)' }}>
-              VS
-            </Typography>
-            <FighterSummary
-              name={enemy.name}
-              imagePath={enemy.imagePath}
-              levelLabel={locale.enemyLevel.replace('{{level}}', String(enemy.level))}
-            />
-          </Box>
-        ) : null}
+  const battleButton = (
+    <BattleButton
+      id={submitButtonId}
+      disabled={isActionDisabled || !hasEnemy}
+      lockRemainingSeconds={lockRemainingSeconds}
+      lockProgress={lockProgress}
+      onClick={() => void onSubmit()}
+    />
+  )
 
-        {showSubmitButton ? (
-          <Button
-            id={submitButtonId}
-            variant="contained"
-            disabled={isActionDisabled}
-            onClick={onSubmit}
-            sx={{
-              borderRadius: 999,
-              py: 1.1,
-              fontWeight: 800,
-              textTransform: 'none',
-              color: '#fff5ef',
-              backgroundColor: '#b65f49',
-              boxShadow: 'none',
-              '&:hover': {
-                backgroundColor: '#c96a52',
-                boxShadow: 'none',
-              },
-              '&.Mui-disabled': {
-                color: 'rgba(255, 238, 229, 0.58)',
-                backgroundColor: 'rgba(182, 95, 73, 0.24)',
-              },
-            }}
-          >
-            {lockRemainingSeconds > 0 ? rematchInSeconds : (submitLabel ?? locale.startTraining)}
-          </Button>
-        ) : null}
-
-        <Typography variant="body2" fontWeight={700} sx={{ color: isMpOver ? '#ff8a7a' : 'rgba(245, 240, 223, 0.72)' }}>
-          {locale.plannedMpSummary.replace('{{plannedMp}}', String(totalMp)).replace('{{maxMp}}', String(maxMp))}
-        </Typography>
-
-        {plannedTurns.map((turn, index) => (
-          <Stack key={`training-turn-${index}`} spacing={0.75} sx={{ width: '100%', minWidth: 0 }}>
-            <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#fff0c8' }}>
-              {locale.turnLabel.replace('{{turn}}', String(index + 1))}
-            </Typography>
+  const turnSlots = (
+    <Stack spacing={1}>
+      {plannedTurns.map((turn, index) => {
+        const turnLabel = locale.turnLabel.replace('{{turn}}', String(index + 1))
+        return (
+          <Box key={`training-turn-${index}`}>
             <FormControl
               id={tutorialMoveSelect?.index === index ? tutorialMoveSelect.id : undefined}
               fullWidth
-              sx={{ minWidth: 0, maxWidth: '100%' }}
+              disabled={!hasEnemy}
+              sx={{ minWidth: 0, maxWidth: '100%', opacity: hasEnemy ? 1 : 0.5 }}
             >
               <Select
-                size="small"
                 value={turn.moveId === null ? 'normal-attack' : String(turn.moveId)}
-                renderValue={(value) => (
-                  <Stack
-                    component="span"
-                    spacing={0.2}
-                    sx={{
-                      display: 'block',
-                      minWidth: 0,
-                      maxWidth: '100%',
-                      overflow: 'hidden',
-                      py: 0.25,
-                    }}
-                  >
-                    {turn.moveId === null ? (
-                      <Typography
-                        component="span"
-                        sx={{
-                          display: 'block',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          color: '#fff7dd',
-                        }}
-                      >
-                        {locale.normalAttack}
-                      </Typography>
-                    ) : (
-                      <>
-                        <Typography
-                          component="span"
-                          sx={{
-                            display: 'block',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            lineHeight: 1.25,
-                            color: '#fff7dd',
-                          }}
-                        >
-                          {turn.moveName}
-                        </Typography>
-                        <Typography
-                          component="span"
-                          variant="caption"
-                          sx={{
-                            color: '#e0957f',
-                            fontWeight: 700,
-                            display: 'block',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {locale.mpCost.replace('{{cost}}', String(turn.mpCost))} /{' '}
-                          {resolveTargetTypeLabel(
-                            availableMoves.find((move) => String(move.moveId) === String(value))?.targetType ?? 'Enemy',
-                          )}
-                        </Typography>
-                      </>
-                    )}
-                  </Stack>
+                renderValue={() => (
+                  <MoveSlotValue
+                    turnNumber={index + 1}
+                    moveName={turn.moveName}
+                    detail={formatSlotDetail(turn.mpCost, turn.targetLabel)}
+                  />
                 )}
-                inputProps={{
-                  'aria-label': `${locale.turnLabel.replace('{{turn}}', String(index + 1))} ${locale.moveLabel}`,
-                }}
+                inputProps={{ 'aria-label': `${turnLabel} ${locale.moveLabel}` }}
                 onChange={(event: SelectChangeEvent<string>) =>
                   onChangeMoveId(index, event.target.value === 'normal-attack' ? null : Number(event.target.value))
                 }
                 sx={{
-                  width: '100%',
-                  minWidth: 0,
-                  maxWidth: '100%',
-                  boxSizing: 'border-box',
-                  color: '#fff7dd',
-                  backgroundColor: '#382526',
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'rgba(214, 146, 112, 0.34)',
-                  },
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'rgba(214, 146, 112, 0.58)',
-                  },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#c96a52',
-                  },
-                  '& .MuiSvgIcon-root': {
-                    color: 'rgba(245, 240, 223, 0.82)',
-                  },
-                  '& .MuiSelect-select': {
-                    minWidth: 0,
-                    maxWidth: '100%',
-                    overflow: 'hidden',
-                    whiteSpace: 'normal',
-                    pr: 4,
-                    py: 1.1,
-                  },
+                  borderRadius: '10px',
+                  backgroundColor: '#fffdf8',
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e3d6c2' },
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#c9b791' },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: homePanelColors.band },
+                  '& .MuiSelect-select': { py: 1, pl: 1.5, minHeight: 44, display: 'flex', alignItems: 'center' },
+                  '& .MuiSvgIcon-root': { color: homePanelColors.label },
                 }}
               >
-                <MenuItem value="normal-attack" sx={{ color: '#1f2326' }}>
+                <MenuItem value="normal-attack" sx={{ color: homePanelColors.text }}>
                   {locale.normalAttack}
                 </MenuItem>
                 {availableMoves.map((move) => (
-                  <MenuItem
-                    key={move.moveId}
-                    value={String(move.moveId)}
-                    sx={{
-                      color: '#1f2326',
-                      whiteSpace: 'normal',
-                      overflowWrap: 'anywhere',
-                    }}
-                  >
+                  <MenuItem key={move.moveId} value={String(move.moveId)} sx={{ color: homePanelColors.text }}>
                     <Stack spacing={0.2} sx={{ minWidth: 0 }}>
                       <Typography sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}>{move.moveName}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {locale.mpCost.replace('{{cost}}', String(move.mpCost ?? 0))} /{' '}
-                        {resolveTargetTypeLabel(move.targetType)}
+                        {formatSlotDetail(move.mpCost ?? 0, resolveTargetTypeLabel(move.targetType))}
                       </Typography>
                     </Stack>
                   </MenuItem>
@@ -332,23 +385,88 @@ export default function TrainingMovePlanForm({
               </Select>
             </FormControl>
             {turn.warning ? (
-              <Alert
-                severity="error"
-                sx={{
-                  color: '#ffe3dc',
-                  backgroundColor: 'rgba(201, 74, 58, 0.22)',
-                  border: '1px solid rgba(229, 115, 98, 0.5)',
-                  '& .MuiAlert-icon': {
-                    color: '#ff8a7a',
-                  },
-                }}
-              >
+              <Alert severity="error" sx={{ mt: 0.75, py: 0.25, fontWeight: 700 }}>
                 {turn.warning}
               </Alert>
             ) : null}
+          </Box>
+        )
+      })}
+    </Stack>
+  )
+
+  if (header === 'nextOpponent') {
+    return (
+      <Stack spacing={1.75} sx={{ height: '100%' }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1.5}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          sx={{ pb: 1.5, borderBottom: dottedDivider }}
+        >
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+            <Box
+              sx={{
+                width: 52,
+                height: 52,
+                flex: 'none',
+                borderRadius: '10px',
+                display: 'grid',
+                placeItems: 'center',
+                backgroundColor: '#e9dfd0',
+                backgroundImage:
+                  enemyBackgroundKey !== undefined ? `url(${getTrainingBackgroundPath(enemyBackgroundKey)})` : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            >
+              {enemyImageSrc ? (
+                <Box component="img" src={enemyImageSrc} alt="" sx={{ maxWidth: 46, maxHeight: 46 }} />
+              ) : null}
+            </Box>
+            <Stack sx={{ minWidth: 0 }}>
+              <Typography variant="caption" sx={{ color: homePanelColors.label }}>
+                {locale.nextOpponent}
+              </Typography>
+              <Typography fontWeight={800} sx={{ color: homePanelColors.text, overflowWrap: 'anywhere' }}>
+                {enemy?.name ?? locale.notSelected}{' '}
+                {enemyLevelLabel ? (
+                  <Typography component="span" variant="body2" fontWeight={700} sx={{ color: homePanelColors.label }}>
+                    {enemyLevelLabel}
+                  </Typography>
+                ) : null}
+              </Typography>
+            </Stack>
           </Stack>
-        ))}
+          <Box sx={{ width: { xs: '100%', sm: 260 }, flex: 'none' }}>
+            <MpMeter plannedMp={totalMp} maxMp={maxMp} />
+          </Box>
+        </Stack>
+        {turnSlots}
+        <Box sx={{ flex: 1 }} />
+        {battleButton}
       </Stack>
-    </Paper>
+    )
+  }
+
+  return (
+    <Stack spacing={1.75}>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ pb: 1.75, borderBottom: dottedDivider }}>
+        <FighterSummary
+          name={player.userName ?? locale.anonymousPlayer}
+          imageSrc={resolvePublicAssetPath(
+            player.imagePath ? normalizeCharacterPath(player.imagePath) : DEFAULT_CHARACTER_PATH,
+          )}
+          levelLabel={locale.currentLevel.replace('{{level}}', String(player.level))}
+        />
+        <Typography variant="h6" fontWeight={900} sx={{ color: '#b65f49' }}>
+          VS
+        </Typography>
+        <FighterSummary name={enemy?.name ?? null} imageSrc={enemyImageSrc} levelLabel={enemyLevelLabel} />
+      </Stack>
+      {battleButton}
+      <MpMeter plannedMp={totalMp} maxMp={maxMp} />
+      {turnSlots}
+    </Stack>
   )
 }

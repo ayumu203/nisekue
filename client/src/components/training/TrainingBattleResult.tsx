@@ -1,9 +1,10 @@
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import { Box, Chip, Collapse, IconButton, LinearProgress, Stack, Typography } from '@mui/material'
-import { useState, type ReactNode } from 'react'
+import { Box, ButtonBase, Collapse, Stack, Typography } from '@mui/material'
+import { useState } from 'react'
+import { homePanelColors } from '@/constants/styles'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
+import { getTrainingBackgroundPath } from './trainingSelectStyles'
 
 export type TrainingBattleFighter = {
   name: string
@@ -14,11 +15,12 @@ export type TrainingBattleFighter = {
 type TrainingBattleResultProps = {
   player: TrainingBattleFighter
   enemy: TrainingBattleFighter
+  // 背景を決めるキー（NPC は敵の id、PLAYER はプレイヤーの id）
+  backgroundKey: string | number
   result: ExecuteTrainingResponse
   usedMoveNames: string[]
   playerExp?: number
   nextLevelRequiredExp?: number
-  movePlanSlot?: ReactNode
 }
 
 type TurnLog = {
@@ -27,17 +29,8 @@ type TurnLog = {
   enemyAction: string | null
 }
 
-const resultLabelByOutcome: Record<ExecuteTrainingResponse['trainingResult'], string> = {
-  Win: locale.resultWin,
-  Lose: locale.resultLose,
-  Draw: locale.resultDraw,
-}
-
-const resultColorByOutcome: Record<ExecuteTrainingResponse['trainingResult'], string> = {
-  Win: '#f3d27a',
-  Lose: '#e88b7a',
-  Draw: '#d8cfc0',
-}
+const logTextColor = '#3b2f1f'
+const logDivider = '1px dotted rgba(90, 70, 40, 0.3)'
 
 function normalizeHp(current: number, max: number): number {
   if (max <= 0) {
@@ -72,248 +65,251 @@ function buildTurnLogs(
   })
 }
 
-function buildClosingMessage(
+// 結果のログ。誰が勝ったか・経験値・レベルアップ・覚えた技を 1 行ずつ出す
+function buildResultLogs(
   player: TrainingBattleFighter,
   enemy: TrainingBattleFighter,
   result: ExecuteTrainingResponse,
-): string {
-  if (result.currentEnemyHp <= 0) {
-    return locale.defeatedLog.replace('{{name}}', enemy.name)
+): string[] {
+  const logs: string[] = []
+
+  if (result.trainingResult === 'Win') {
+    logs.push(locale.winnerLog.replace('{{name}}', player.name))
+  } else if (result.trainingResult === 'Lose') {
+    logs.push(locale.winnerLog.replace('{{name}}', enemy.name))
+  } else {
+    logs.push(locale.drawLog)
   }
 
-  if (result.currentPlayerHp <= 0) {
-    return locale.defeatedLog.replace('{{name}}', player.name)
+  logs.push(locale.expGainedLog.replace('{{exp}}', String(result.exp)))
+
+  if (result.isPlayerLevelUp) {
+    logs.push(locale.playerLevelUpLog.replace('{{name}}', player.name))
   }
 
-  return locale.drawLog
+  if (result.isJobLevelUp) {
+    logs.push(locale.jobLevelUpLog.replace('{{name}}', player.name))
+  }
+
+  for (const move of result.newlyLearnedMoves) {
+    logs.push(locale.learnedMoveLog.replace('{{move}}', move.moveName))
+  }
+
+  return logs
 }
 
-function FighterPanel({
+// キャラの頭上に出す名前・レベル・HP の札（背景が見えるよう半透明）
+function FighterSprite({
   fighter,
   currentHp,
   maxHp,
   hpBarColor,
+  imageHeight,
 }: {
   fighter: TrainingBattleFighter
   currentHp: number
   maxHp: number
   hpBarColor: string
+  imageHeight: { xs: number; md: number }
 }) {
   return (
-    <Stack spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
-      <Typography
-        variant="subtitle1"
-        fontWeight={800}
-        textAlign="center"
-        sx={{ color: '#fff7dd', lineHeight: 1.25, overflowWrap: 'anywhere' }}
+    <Stack alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
+      <Box
+        sx={{
+          minWidth: { xs: 120, sm: 170 },
+          px: 1.75,
+          py: 0.75,
+          borderRadius: '10px',
+          backgroundColor: 'rgba(255, 255, 255, 0.55)',
+          textAlign: 'center',
+        }}
       >
-        {fighter.name}
-      </Typography>
-      <Typography variant="caption" sx={{ color: 'rgba(245, 240, 223, 0.72)' }}>
-        {locale.currentLevel.replace('{{level}}', String(fighter.level))}
-      </Typography>
+        <Typography fontWeight={800} sx={{ color: homePanelColors.text, lineHeight: 1.3, overflowWrap: 'anywhere' }}>
+          {fighter.name}{' '}
+          <Typography component="span" variant="body2" fontWeight={700} sx={{ color: homePanelColors.label }}>
+            {locale.currentLevel.replace('{{level}}', String(fighter.level))}
+          </Typography>
+        </Typography>
+        <Box sx={{ height: 8, borderRadius: 9, backgroundColor: '#e5d9bd', my: 0.6, overflow: 'hidden' }}>
+          <Box sx={{ width: `${normalizeHp(currentHp, maxHp)}%`, height: '100%', backgroundColor: hpBarColor }} />
+        </Box>
+        <Typography variant="body2" sx={{ color: homePanelColors.label }}>
+          HP {currentHp} / {maxHp}
+        </Typography>
+      </Box>
       <Box
         component="img"
         src={resolvePublicAssetPath(fighter.imagePath)}
         alt={fighter.name}
-        sx={{
-          width: '100%',
-          maxWidth: 180,
-          height: { xs: 110, sm: 150 },
-          objectFit: 'contain',
-          opacity: currentHp <= 0 ? 0.45 : 1,
-          filter: currentHp <= 0 ? 'grayscale(0.8)' : 'none',
-        }}
+        sx={{ height: imageHeight, maxWidth: '100%', objectFit: 'contain' }}
       />
-      <Stack spacing={0.4} sx={{ width: '100%', maxWidth: 220 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="baseline" spacing={1}>
-          <Typography variant="caption" fontWeight={800} sx={{ color: '#fff0c8' }}>
-            HP
-          </Typography>
-          <Typography variant="caption" fontWeight={700} sx={{ color: '#fff7dd' }}>
-            {currentHp} / {maxHp}
-          </Typography>
-        </Stack>
-        <LinearProgress
-          variant="determinate"
-          value={normalizeHp(currentHp, maxHp)}
-          sx={{
-            height: 8,
-            borderRadius: 999,
-            backgroundColor: 'rgba(245, 240, 223, 0.14)',
-            '& .MuiLinearProgress-bar': {
-              backgroundColor: hpBarColor,
-            },
-          }}
-        />
-      </Stack>
     </Stack>
   )
 }
 
+// 訓練の戦闘結果。クエストの戦闘画面と同じく背景の上に自分と相手を並べ、結果はログの形で出す
 export default function TrainingBattleResult({
   player,
   enemy,
+  backgroundKey,
   result,
   usedMoveNames,
   playerExp,
   nextLevelRequiredExp,
-  movePlanSlot,
 }: TrainingBattleResultProps) {
   const [isTurnLogOpen, setIsTurnLogOpen] = useState(false)
   const turnLogs = buildTurnLogs(player, enemy, result, usedMoveNames)
-  const closingMessage = buildClosingMessage(player, enemy, result)
-  const expValue = locale.expValue.replace('{{exp}}', String(result.exp))
-  const expProgressLabel =
-    typeof playerExp === 'number' && typeof nextLevelRequiredExp === 'number'
-      ? locale.expProgress
-          .replace('{{current}}', String(playerExp))
-          .replace('{{required}}', String(nextLevelRequiredExp))
-      : null
-  const levelUpLabel =
-    result.isPlayerLevelUp && result.isJobLevelUp
-      ? locale.playerAndJobLevelUp
-      : result.isPlayerLevelUp
-        ? locale.playerLevelUp
-        : result.isJobLevelUp
-          ? locale.levelUp
-          : null
+  const resultLogs = buildResultLogs(player, enemy, result)
+  const hasExpProgress = typeof playerExp === 'number' && typeof nextLevelRequiredExp === 'number'
+  const expRatio = hasExpProgress && nextLevelRequiredExp > 0 ? Math.min(1, playerExp / nextLevelRequiredExp) : 0
 
   return (
-    <Stack spacing={2} sx={{ color: '#f5f0df' }}>
+    <Box
+      sx={{
+        // GamePanel の中身（縦並びの flex）いっぱいに広げる
+        flex: 1,
+        minHeight: 0,
+        boxSizing: 'border-box',
+        display: 'grid',
+        gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 1fr) auto minmax(0, 1fr) 440px' },
+        alignItems: 'end',
+        gap: { xs: 2, md: 3 },
+        px: { xs: 2, md: 8 },
+        py: { xs: 2, md: 3 },
+        backgroundColor: '#e9dfd0',
+        backgroundImage: `url(${getTrainingBackgroundPath(backgroundKey)})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       <Box
         sx={{
-          display: 'grid',
+          gridColumn: { xs: '1', md: 'auto' },
+          display: { xs: 'grid', md: 'contents' },
           gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
-          alignItems: 'center',
-          gap: { xs: 1, sm: 2 },
+          alignItems: 'end',
+          gap: 1,
         }}
       >
-        <FighterPanel
+        <FighterSprite
           fighter={player}
           currentHp={result.currentPlayerHp}
           maxHp={result.maxPlayerHp}
-          hpBarColor="#78c27d"
+          hpBarColor="#3f9f4a"
+          imageHeight={{ xs: 120, md: 230 }}
         />
-        <Typography variant="h6" fontWeight={900} sx={{ color: 'rgba(243, 179, 141, 0.8)' }}>
+        <Typography
+          sx={{
+            alignSelf: 'center',
+            fontSize: { xs: '1.75rem', md: '2.5rem' },
+            fontWeight: 900,
+            color: '#ffffff',
+            textShadow: '0 2px 0 rgba(0, 0, 0, 0.4)',
+          }}
+        >
           VS
         </Typography>
-        <FighterPanel
+        <FighterSprite
           fighter={enemy}
           currentHp={result.currentEnemyHp}
           maxHp={result.maxEnemyHp}
           hpBarColor="#b65f49"
+          imageHeight={{ xs: 96, md: 184 }}
         />
       </Box>
-
-      <Typography variant="body1" fontWeight={700} textAlign="center" sx={{ color: '#fff7dd' }}>
-        {closingMessage}
-      </Typography>
-
-      <Stack spacing={1} alignItems="center">
-        <Typography variant="h5" fontWeight={900} sx={{ color: resultColorByOutcome[result.trainingResult] }}>
-          {resultLabelByOutcome[result.trainingResult]}
-        </Typography>
-        <Typography variant="body2" fontWeight={800} sx={{ color: '#fff7dd' }}>
-          {locale.currentLevel.replace('{{level}}', String(player.level))}
-          {expProgressLabel ? ` / ${expProgressLabel}` : ''}
-        </Typography>
-        <Typography variant="h6" fontWeight={900} sx={{ color: '#f3b38d' }}>
-          {expValue}
-        </Typography>
-        <IconButton
-          size="small"
-          onClick={() => setIsTurnLogOpen((current) => !current)}
-          aria-expanded={isTurnLogOpen}
-          aria-label={isTurnLogOpen ? locale.hideTurnLog : locale.showTurnLog}
-          sx={{ color: 'rgba(245, 240, 223, 0.72)' }}
-        >
-          <ExpandMoreIcon
-            fontSize="small"
-            sx={{ transform: isTurnLogOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms ease' }}
-          />
-        </IconButton>
-        <Collapse in={isTurnLogOpen} sx={{ width: '100%' }}>
-          <Stack spacing={0.75} sx={{ pt: 0.5 }}>
+      <Box
+        sx={{
+          alignSelf: 'center',
+          maxHeight: '100%',
+          overflowY: 'auto',
+          boxSizing: 'border-box',
+          px: 2.75,
+          py: 1.5,
+          borderRadius: '12px',
+          backgroundColor: 'rgba(255, 253, 248, 0.6)',
+        }}
+      >
+        <Collapse in={isTurnLogOpen}>
+          <Stack sx={{ pb: 1, mb: 0.5, borderBottom: '1px solid rgba(90, 70, 40, 0.25)' }}>
             {turnLogs.map((log) => (
-              <Box
-                key={log.turn}
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: 'minmax(0, 1fr) auto minmax(0, 1fr)' },
-                  gridTemplateAreas: { xs: '"turn" "player" "enemy"', sm: '"player turn enemy"' },
-                  alignItems: 'center',
-                  columnGap: 1,
-                  rowGap: 0.25,
-                  textAlign: { xs: 'center', sm: 'initial' },
-                }}
-              >
+              <Stack key={log.turn} direction="row" spacing={1.5} sx={{ py: 0.5 }}>
                 <Typography
                   variant="body2"
-                  sx={{
-                    gridArea: 'player',
-                    textAlign: { xs: 'center', sm: 'right' },
-                    color: '#fff7dd',
-                    overflowWrap: 'anywhere',
-                  }}
-                >
-                  {log.playerAction ?? ''}
-                </Typography>
-                <Typography
-                  variant="caption"
                   fontWeight={800}
-                  sx={{ gridArea: 'turn', color: '#f3b38d', whiteSpace: 'nowrap' }}
+                  sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', minWidth: 52 }}
                 >
                   {locale.turnLabel.replace('{{turn}}', String(log.turn))}
                 </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    gridArea: 'enemy',
-                    textAlign: { xs: 'center', sm: 'left' },
-                    color: '#fff7dd',
-                    overflowWrap: 'anywhere',
-                  }}
-                >
-                  {log.enemyAction ?? ''}
-                </Typography>
-              </Box>
+                <Stack sx={{ minWidth: 0 }}>
+                  {log.playerAction ? (
+                    <Typography variant="body2" sx={{ color: logTextColor }}>
+                      {log.playerAction}
+                    </Typography>
+                  ) : null}
+                  {log.enemyAction ? (
+                    <Typography variant="body2" sx={{ color: logTextColor }}>
+                      {log.enemyAction}
+                    </Typography>
+                  ) : null}
+                </Stack>
+              </Stack>
             ))}
           </Stack>
         </Collapse>
-        {levelUpLabel ? (
-          <Chip
-            label={levelUpLabel}
-            sx={{
-              fontWeight: 800,
-              color: '#1d2b20',
-              backgroundColor: '#d9e6be',
-            }}
-          />
-        ) : null}
-        {result.newlyLearnedMoves.length > 0 ? (
-          <Stack spacing={0.75} alignItems="center">
-            <Typography variant="body2" fontWeight={800} sx={{ color: '#fff0c8' }}>
-              {locale.newlyLearnedMoves}
+        <Stack>
+          {resultLogs.map((log, index) => (
+            <Typography
+              key={`${index}-${log}`}
+              sx={{
+                py: 0.85,
+                borderTop: index === 0 ? 'none' : logDivider,
+                color: logTextColor,
+                fontWeight: 600,
+                lineHeight: 1.5,
+              }}
+            >
+              {log}
             </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent="center">
-              {result.newlyLearnedMoves.map((move) => (
-                <Chip
-                  key={move.moveId}
-                  label={move.moveName}
-                  variant="outlined"
-                  sx={{
-                    color: '#f5f0df',
-                    borderColor: 'rgba(214, 146, 112, 0.38)',
-                  }}
-                />
-              ))}
-            </Stack>
+          ))}
+        </Stack>
+        {hasExpProgress ? (
+          <Stack
+            direction="row"
+            spacing={1.25}
+            alignItems="center"
+            sx={{ pt: 1.25, mt: 0.5, borderTop: '1px solid rgba(90, 70, 40, 0.25)' }}
+          >
+            <Typography variant="body2" fontWeight={800} sx={{ color: homePanelColors.label, whiteSpace: 'nowrap' }}>
+              {locale.currentLevel.replace('{{level}}', String(player.level))}
+            </Typography>
+            <Box
+              aria-hidden="true"
+              sx={{ flex: 1, height: 8, borderRadius: 9, backgroundColor: '#e9e2d6', overflow: 'hidden' }}
+            >
+              <Box sx={{ width: `${expRatio * 100}%`, height: '100%', backgroundColor: '#b9a98a' }} />
+            </Box>
+            <Typography variant="body2" fontWeight={700} sx={{ color: homePanelColors.label, whiteSpace: 'nowrap' }}>
+              {locale.expProgress
+                .replace('{{current}}', String(playerExp))
+                .replace('{{required}}', String(nextLevelRequiredExp))}
+            </Typography>
           </Stack>
         ) : null}
-      </Stack>
-
-      {movePlanSlot}
-    </Stack>
+        <ButtonBase
+          onClick={() => setIsTurnLogOpen((current) => !current)}
+          aria-expanded={isTurnLogOpen}
+          sx={{
+            mt: 1,
+            py: 0.5,
+            fontFamily: 'inherit',
+            fontSize: '0.85rem',
+            fontWeight: 800,
+            color: homePanelColors.label,
+          }}
+        >
+          {isTurnLogOpen ? `${locale.hideTurnLog} ▴` : `${locale.showTurnLog} ▾`}
+        </ButtonBase>
+      </Box>
+    </Box>
   )
 }
