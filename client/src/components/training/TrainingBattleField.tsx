@@ -31,6 +31,9 @@ type TurnLog = {
   enemyAction: string | null
 }
 
+// 自分と相手の画像を置く枠の高さ（大きいほうの画像に合わせる）
+const fighterAreaHeight = { xs: 120, md: 230 }
+
 const logTextColor = '#2b2f38'
 const logDivider = '1px dotted rgba(40, 50, 70, 0.3)'
 
@@ -145,12 +148,23 @@ function FighterSprite({
           </>
         ) : null}
       </Box>
+      {/* 画像の枠の高さは自分・相手で同じにし、画像は下端にそろえる（頭上の札の高さがずれないように） */}
       <Box
-        component="img"
-        src={resolvePublicAssetPath(fighter.imagePath)}
-        alt={fighter.name}
-        sx={{ height: imageHeight, maxWidth: '100%', objectFit: 'contain' }}
-      />
+        sx={{
+          height: fighterAreaHeight,
+          maxWidth: '100%',
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+        }}
+      >
+        <Box
+          component="img"
+          src={resolvePublicAssetPath(fighter.imagePath)}
+          alt={fighter.name}
+          sx={{ height: imageHeight, maxWidth: '100%', objectFit: 'contain' }}
+        />
+      </Box>
     </Stack>
   )
 }
