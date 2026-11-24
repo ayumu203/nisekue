@@ -11,6 +11,8 @@ type QuestStageModeCardProps = {
   isSelected: boolean
   selectedMode: CreateQuestRoomRequest['mode']
   onSelect: (stageId: number, mode: CreateQuestRoomRequest['mode']) => void
+  // スマホ用の小さいカード（訓練場の相手カードと同じ作り：上に背景と敵、下の白地に名前とボタン）
+  compact?: boolean
 }
 
 const modeButtonSx = {
@@ -27,6 +29,7 @@ export default function QuestStageModeCard({
   isSelected,
   selectedMode,
   onSelect,
+  compact = false,
 }: QuestStageModeCardProps) {
   const isEndless = stage.progressionType === 'Endless'
   // 名鑑の祠：ソロ限定・推奨レベルは伏せる・アイコンは自分
@@ -39,6 +42,102 @@ export default function QuestStageModeCard({
   const isSoloSelected = isSelected && selectedMode === 'Solo'
   const isMultiSelected = isSelected && selectedMode === 'Multi'
   const battlefieldImageSrc = resolvePublicAssetPath(stage.battlefieldImagePath)
+
+  const badge = isEndless ? locale.endless.badge : isMirror ? locale.mirror.badge : null
+  const modeButton = (mode: CreateQuestRoomRequest['mode'], selected: boolean, label: string) => (
+    <Button
+      variant={selected ? 'contained' : 'outlined'}
+      onClick={() => onSelect(stage.stageId, mode)}
+      disableRipple
+      sx={{
+        ...modeButtonSx,
+        ...(compact ? { flex: 1, minWidth: 0, minHeight: 36, px: 1, fontSize: '0.875rem' } : null),
+        '&&': {
+          backgroundColor: selected ? homePanelColors.band : compact ? '#ffffff' : 'rgba(255, 255, 255, 0.92)',
+          borderColor: compact ? homePanelColors.band : selected ? homePanelColors.band : '#ffffff',
+          color: selected ? '#ffffff' : homePanelColors.band,
+          boxShadow: 'none',
+          transition: 'none',
+        },
+      }}
+    >
+      {label}
+    </Button>
+  )
+
+  if (compact) {
+    return (
+      <Box
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          borderRadius: '12px',
+          backgroundColor: '#fffdf8',
+          boxShadow: '0 1px 0 #e6d6c4',
+          outline: isSelected ? `3px solid ${homePanelColors.band}` : 'none',
+          outlineOffset: -3,
+        }}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            height: 104,
+            flex: 'none',
+            display: 'grid',
+            placeItems: 'center',
+            backgroundImage: `url(${battlefieldImageSrc})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          {iconImageSrc ? (
+            <Box
+              component="img"
+              src={iconImageSrc}
+              alt=""
+              sx={{ maxHeight: 84, maxWidth: '70%', objectFit: 'contain' }}
+            />
+          ) : null}
+          {badge ? (
+            <Box
+              component="span"
+              sx={{
+                position: 'absolute',
+                top: 6,
+                left: 6,
+                px: 1,
+                borderRadius: 999,
+                fontSize: '0.8125rem',
+                fontWeight: 800,
+                color: isEndless ? '#1b2c4a' : '#f4f7ff',
+                backgroundColor: isEndless ? '#ffd66e' : '#6b4fa8',
+              }}
+            >
+              {badge}
+            </Box>
+          ) : null}
+        </Box>
+        <Stack spacing={0.5} sx={{ p: 1.25, flex: 1 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1rem', lineHeight: 1.3, color: homePanelColors.text }}>
+            {stage.name}
+          </Typography>
+          <Typography sx={{ fontSize: '0.8125rem', color: homePanelColors.label }}>
+            {`${locale.recommendedLevel} ${isMirror ? locale.mirror.hiddenRecommendedLevel : stage.recommendedLevel}`}
+          </Typography>
+          <Typography sx={{ fontSize: '0.8125rem', color: homePanelColors.label }}>
+            {`${locale.minRequiredLevel} ${stage.minimumEntryLevel}`}
+          </Typography>
+          <Box sx={{ flex: 1 }} />
+          <Stack direction="row" spacing={0.75} sx={{ pt: 0.5 }}>
+            {modeButton('Solo', isSoloSelected, locale.modeSolo)}
+            {isEndless || isMirror ? null : modeButton('Multi', isMultiSelected, locale.modeMulti)}
+          </Stack>
+        </Stack>
+      </Box>
+    )
+  }
 
   return (
     <Card

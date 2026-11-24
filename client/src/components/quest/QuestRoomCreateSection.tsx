@@ -28,6 +28,7 @@ type QuestRoomCreateSectionProps = {
   // 1 ページに出すステージの数と、横に並べる列の数（PC は 2 列で多めに出す）
   stagePageSize?: number
   stageColumns?: number
+  compactCards?: boolean
   // ステージ一覧と、参加制限・募集開始をどの箱に置くかは画面側で決める
   renderLayout: (parts: { stages: ReactNode; form: ReactNode }) => ReactNode
 }
@@ -75,6 +76,7 @@ export default function QuestRoomCreateSection({
   onCreateRoom,
   stagePageSize = 3,
   stageColumns = 1,
+  compactCards = false,
   renderLayout,
 }: QuestRoomCreateSectionProps) {
   const [isRestrictionsModalOpen, setIsRestrictionsModalOpen] = useState(false)
@@ -102,7 +104,13 @@ export default function QuestRoomCreateSection({
     <Alert severity="info">{locale.stagesEmpty}</Alert>
   ) : (
     <Stack spacing={2}>
-      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: `repeat(${stageColumns}, minmax(0, 1fr))` }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: compactCards ? 1.5 : 2,
+          gridTemplateColumns: `repeat(${stageColumns}, minmax(0, 1fr))`,
+        }}
+      >
         {pagedStages.map((stage) => (
           <QuestStageModeCard
             key={stage.stageId}
@@ -111,6 +119,7 @@ export default function QuestRoomCreateSection({
             isSelected={selectedStageId === stage.stageId}
             selectedMode={mode}
             onSelect={handleStageModeSelect}
+            compact={compactCards}
           />
         ))}
       </Box>

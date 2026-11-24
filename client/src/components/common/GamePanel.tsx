@@ -14,7 +14,7 @@ type GamePanelProps = {
   title?: ReactNode
   // 帯を左右に分けて並べる切り替え（「作成｜募集中」など）。渡すと見出しの代わりに出す
   tabs?: GamePanelTab[]
-  // 帯の右端に置く操作（チャットの切り替えなど）
+  // 帯の右端に置く操作（チャットの切り替え・スマホのホームボタンなど）
   action?: ReactNode
   children: ReactNode
   'aria-label'?: string
@@ -83,6 +83,19 @@ export default function GamePanel({
               {tab.label}
             </ButtonBase>
           ))}
+          {action ? (
+            <Box
+              sx={{
+                flex: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: homePanelColors.band,
+                borderLeft: '1px solid rgba(255, 255, 255, 0.35)',
+              }}
+            >
+              {action}
+            </Box>
+          ) : null}
         </Box>
       ) : (
         <Box
