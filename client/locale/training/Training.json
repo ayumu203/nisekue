@@ -22,8 +22,6 @@
   "waitWarning": "MP不足のためスキルの選択は無効になります",
   "plannedMpSummary": "MP {{plannedMp}}/{{maxMp}}",
   "nextOpponent": "訓練相手",
-  "plannedMpLabel": "消費MP",
-  "moveSlotTurn": "TURN",
   "moveSlotDetail": "MP {{cost}} ・ {{target}}",
   "winnerLog": "{{name}} の勝利！",
   "expGainedLog": "経験値を {{exp}} 獲得した！",

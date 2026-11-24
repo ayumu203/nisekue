@@ -572,8 +572,6 @@ export default function Training() {
   }
   const displayEnemy = selectedEnemy ?? (selectedOpponent ? playerSummaryToDisplayEnemy(selectedOpponent) : null)
   const displayEnemyBackgroundKey = selectedOpponent?.userId ?? selectedEnemy?.id ?? 0
-  const trainingLockProgress =
-    trainingLockRemainingMs > 0 ? Math.min(1, 1 - trainingLockRemainingMs / TRAINING_COOLDOWN_MS) : null
 
   const modeTabs = (['npc', 'player'] as const).map((key) => ({
     key,
@@ -660,7 +658,6 @@ export default function Training() {
           moveIds={plannedMoveIds}
           isActionDisabled={isTrainingActionDisabled}
           lockRemainingSeconds={trainingLockRemainingSeconds}
-          lockProgress={trainingLockProgress}
           onChangeMoveId={handleChangePlannedMoveId}
           tutorialMoveSelect={
             tutorialStep === 'training-move-select' && nextTutorialMoveTurnIndex !== null

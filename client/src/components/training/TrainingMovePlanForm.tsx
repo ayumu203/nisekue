@@ -16,8 +16,6 @@ type TrainingMovePlanFormProps = {
   moveIds: Array<number | null>
   isActionDisabled: boolean
   lockRemainingSeconds: number
-  // 再戦までの待ち時間の進み具合（0〜1）。待っていないときは null
-  lockProgress?: number | null
   onChangeMoveId: (turnIndex: number, moveId: number | null) => void
   submitButtonId?: string
   // チュートリアルの矢印で指す技の選択欄（何ターン目か と 付ける id）
@@ -29,7 +27,6 @@ type PlannedTurn = {
   moveId: number | null
   moveName: string
   mpCost: number
-  targetLabel: string
   warning: string | null
 }
 
@@ -62,7 +59,6 @@ function buildPlannedTurns(player: GetPlayerResponse, moveIds: Array<number | nu
         moveId: null,
         moveName: locale.normalAttack,
         mpCost: 0,
-        targetLabel: locale.targetTypeEnemy,
         warning: null,
       }
     }
@@ -79,75 +75,38 @@ function buildPlannedTurns(player: GetPlayerResponse, moveIds: Array<number | nu
       moveId,
       moveName: move?.moveName ?? String(moveId),
       mpCost,
-      targetLabel: resolveTargetTypeLabel(move?.targetType ?? 'Enemy'),
       warning: canUse ? null : locale.waitWarning,
     }
   })
 }
 
-function MpMeter({ plannedMp, maxMp }: { plannedMp: number; maxMp: number }) {
-  const isOver = plannedMp > maxMp
-  const ratio = maxMp > 0 ? Math.min(1, plannedMp / maxMp) : 0
-
+// 消費MP の合計。上限を超えたら赤
+function MpSummary({ plannedMp, maxMp }: { plannedMp: number; maxMp: number }) {
   return (
-    <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
-      <Typography variant="body2" fontWeight={800} sx={{ color: trainingPanelColors.label, whiteSpace: 'nowrap' }}>
-        {locale.plannedMpLabel}
-      </Typography>
-      <Box
-        aria-hidden="true"
-        sx={{ flex: 1, minWidth: 60, height: 10, borderRadius: 9, backgroundColor: '#e3e7ee', overflow: 'hidden' }}
-      >
-        <Box
-          sx={{
-            width: `${ratio * 100}%`,
-            height: '100%',
-            backgroundColor: isOver ? '#c62828' : '#4a7fc1',
-          }}
-        />
-      </Box>
-      <Typography
-        fontWeight={800}
-        sx={{ color: isOver ? '#c62828' : trainingPanelColors.text, whiteSpace: 'nowrap', fontSize: '0.95rem' }}
-      >
-        {locale.plannedMpSummary.replace('{{plannedMp}}', String(plannedMp)).replace('{{maxMp}}', String(maxMp))}
-      </Typography>
-    </Stack>
+    <Typography
+      variant="body2"
+      fontWeight={700}
+      sx={{ color: plannedMp > maxMp ? '#c62828' : trainingPanelColors.label, whiteSpace: 'nowrap' }}
+    >
+      {locale.plannedMpSummary.replace('{{plannedMp}}', String(plannedMp)).replace('{{maxMp}}', String(maxMp))}
+    </Typography>
   )
 }
 
-function MoveSlotValue({ turnNumber, moveName, detail }: { turnNumber: number; moveName: string; detail: string }) {
+function MoveSlotValue({ moveName, mpCost }: { moveName: string; mpCost: number }) {
   return (
-    <Stack component="span" direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-      <Stack component="span" alignItems="center" sx={{ width: 44, flex: 'none' }}>
-        <Typography
-          component="span"
-          sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#2f4a7a', letterSpacing: '0.04em', lineHeight: 1.2 }}
-        >
-          {locale.moveSlotTurn}
+    <Stack component="span" direction="row" spacing={1} alignItems="baseline" sx={{ minWidth: 0 }}>
+      <Typography
+        component="span"
+        sx={{ color: trainingPanelColors.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+      >
+        {moveName}
+      </Typography>
+      {mpCost > 0 ? (
+        <Typography component="span" variant="caption" sx={{ color: trainingPanelColors.label, flex: 'none' }}>
+          {locale.mpCost.replace('{{cost}}', String(mpCost))}
         </Typography>
-        <Typography component="span" sx={{ fontSize: '1.25rem', fontWeight: 900, color: '#2f4a7a', lineHeight: 1 }}>
-          {turnNumber}
-        </Typography>
-      </Stack>
-      <Box component="span" sx={{ width: '1px', alignSelf: 'stretch', backgroundColor: '#e3e7ee', flex: 'none' }} />
-      <Stack component="span" spacing={0.25} sx={{ minWidth: 0 }}>
-        <Typography
-          component="span"
-          sx={{
-            fontWeight: 800,
-            color: trainingPanelColors.text,
-            lineHeight: 1.25,
-            whiteSpace: 'normal',
-            overflowWrap: 'anywhere',
-          }}
-        >
-          {moveName}
-        </Typography>
-        <Typography component="span" variant="caption" sx={{ color: trainingPanelColors.label, lineHeight: 1.3 }}>
-          {detail}
-        </Typography>
-      </Stack>
+      ) : null}
     </Stack>
   )
 }
@@ -160,17 +119,13 @@ function BattleButton({
   id,
   disabled,
   lockRemainingSeconds,
-  lockProgress,
   onClick,
 }: {
   id?: string
   disabled: boolean
   lockRemainingSeconds: number
-  lockProgress: number | null
   onClick: () => void
 }) {
-  const isLocked = lockRemainingSeconds > 0
-
   return (
     <Button
       id={id}
@@ -180,58 +135,28 @@ function BattleButton({
       onClick={onClick}
       sx={{
         ...panelPrimaryButtonSx,
-        position: 'relative',
         flex: 'none',
-        height: 60,
-        borderRadius: '12px',
-        fontSize: '1.375rem',
+        height: 48,
+        fontSize: '1.05rem',
         '&&': {
           ...panelPrimaryButtonSx['&&'],
           backgroundColor: trainingPanelColors.band,
           borderColor: trainingPanelColors.band,
-          boxShadow: `0 4px 0 ${trainingPanelColors.bandSelected}`,
         },
         '&&:hover': {
           ...panelPrimaryButtonSx['&&:hover'],
           backgroundColor: trainingPanelColors.band,
-          boxShadow: `0 4px 0 ${trainingPanelColors.bandSelected}`,
         },
         '&&.Mui-disabled': {
-          backgroundColor: '#c3cad6',
-          borderColor: '#c3cad6',
-          color: '#4a5468',
-          boxShadow: 'none',
+          backgroundColor: trainingPanelColors.disabledButton,
+          borderColor: trainingPanelColors.disabledButton,
+          color: '#ffffff',
         },
       }}
     >
-      {isLocked ? locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds)) : locale.startBattle}
-      {isLocked && lockProgress !== null ? (
-        <Box
-          component="span"
-          aria-hidden="true"
-          sx={{
-            position: 'absolute',
-            left: 16,
-            right: 16,
-            bottom: 9,
-            height: 4,
-            borderRadius: 9,
-            backgroundColor: 'rgba(255, 255, 255, 0.72)',
-            overflow: 'hidden',
-          }}
-        >
-          <Box
-            component="span"
-            sx={{
-              display: 'block',
-              width: `${Math.min(1, Math.max(0, lockProgress)) * 100}%`,
-              height: '100%',
-              backgroundColor: '#5d6b85',
-              transition: 'width 250ms linear',
-            }}
-          />
-        </Box>
-      ) : null}
+      {lockRemainingSeconds > 0
+        ? locale.rematchInSeconds.replace('{{seconds}}', String(lockRemainingSeconds))
+        : locale.startBattle}
     </Button>
   )
 }
@@ -243,7 +168,6 @@ export default function TrainingMovePlanForm({
   moveIds,
   isActionDisabled,
   lockRemainingSeconds,
-  lockProgress = null,
   onChangeMoveId,
   submitButtonId,
   tutorialMoveSelect,
@@ -262,61 +186,63 @@ export default function TrainingMovePlanForm({
       id={submitButtonId}
       disabled={isActionDisabled || !hasEnemy}
       lockRemainingSeconds={lockRemainingSeconds}
-      lockProgress={lockProgress}
       onClick={() => void onSubmit()}
     />
   )
 
   const turnSlots = (
-    <Stack spacing={1}>
+    <Stack spacing={1.25}>
       {plannedTurns.map((turn, index) => {
         const turnLabel = locale.turnLabel.replace('{{turn}}', String(index + 1))
         return (
           <Box key={`training-turn-${index}`}>
-            <FormControl
-              id={tutorialMoveSelect?.index === index ? tutorialMoveSelect.id : undefined}
-              fullWidth
-              disabled={!hasEnemy}
-              sx={{ minWidth: 0, maxWidth: '100%', opacity: hasEnemy ? 1 : 0.5 }}
-            >
-              <Select
-                value={turn.moveId === null ? 'normal-attack' : String(turn.moveId)}
-                renderValue={() => (
-                  <MoveSlotValue
-                    turnNumber={index + 1}
-                    moveName={turn.moveName}
-                    detail={formatSlotDetail(turn.mpCost, turn.targetLabel)}
-                  />
-                )}
-                inputProps={{ 'aria-label': `${turnLabel} ${locale.moveLabel}` }}
-                onChange={(event: SelectChangeEvent<string>) =>
-                  onChangeMoveId(index, event.target.value === 'normal-attack' ? null : Number(event.target.value))
-                }
-                sx={{
-                  borderRadius: '10px',
-                  backgroundColor: '#ffffff',
-                  '& .MuiOutlinedInput-notchedOutline': { borderColor: '#d9dee7' },
-                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#b3bccb' },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: trainingPanelColors.band },
-                  '& .MuiSelect-select': { py: 1, pl: 1.5, minHeight: 44, display: 'flex', alignItems: 'center' },
-                  '& .MuiSvgIcon-root': { color: trainingPanelColors.label },
-                }}
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Typography
+                variant="body2"
+                fontWeight={700}
+                sx={{ color: trainingPanelColors.label, width: 52, flex: 'none', opacity: hasEnemy ? 1 : 0.5 }}
               >
-                <MenuItem value="normal-attack" sx={{ color: trainingPanelColors.text }}>
-                  {locale.normalAttack}
-                </MenuItem>
-                {availableMoves.map((move) => (
-                  <MenuItem key={move.moveId} value={String(move.moveId)} sx={{ color: trainingPanelColors.text }}>
-                    <Stack spacing={0.2} sx={{ minWidth: 0 }}>
-                      <Typography sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}>{move.moveName}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {formatSlotDetail(move.mpCost ?? 0, resolveTargetTypeLabel(move.targetType))}
-                      </Typography>
-                    </Stack>
+                {turnLabel}
+              </Typography>
+              <FormControl
+                id={tutorialMoveSelect?.index === index ? tutorialMoveSelect.id : undefined}
+                fullWidth
+                disabled={!hasEnemy}
+                sx={{ minWidth: 0, maxWidth: '100%', opacity: hasEnemy ? 1 : 0.5 }}
+              >
+                <Select
+                  value={turn.moveId === null ? 'normal-attack' : String(turn.moveId)}
+                  renderValue={() => <MoveSlotValue moveName={turn.moveName} mpCost={turn.mpCost} />}
+                  inputProps={{ 'aria-label': `${turnLabel} ${locale.moveLabel}` }}
+                  onChange={(event: SelectChangeEvent<string>) =>
+                    onChangeMoveId(index, event.target.value === 'normal-attack' ? null : Number(event.target.value))
+                  }
+                  sx={{
+                    borderRadius: '8px',
+                    backgroundColor: '#ffffff',
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#d9dee7' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#b3bccb' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: trainingPanelColors.band },
+                    '& .MuiSelect-select': { py: 1.1, pl: 1.5, display: 'flex', alignItems: 'center' },
+                    '& .MuiSvgIcon-root': { color: trainingPanelColors.label },
+                  }}
+                >
+                  <MenuItem value="normal-attack" sx={{ color: trainingPanelColors.text }}>
+                    {locale.normalAttack}
                   </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                  {availableMoves.map((move) => (
+                    <MenuItem key={move.moveId} value={String(move.moveId)} sx={{ color: trainingPanelColors.text }}>
+                      <Stack spacing={0.2} sx={{ minWidth: 0 }}>
+                        <Typography sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}>{move.moveName}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {formatSlotDetail(move.mpCost ?? 0, resolveTargetTypeLabel(move.targetType))}
+                        </Typography>
+                      </Stack>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
             {turn.warning ? (
               <Alert severity="error" sx={{ mt: 0.75, py: 0.25, fontWeight: 700 }}>
                 {turn.warning}
@@ -384,8 +310,8 @@ export default function TrainingMovePlanForm({
             </Typography>
           </Stack>
         </Stack>
-        <Box sx={{ width: { xs: '100%', sm: 260 }, flex: { xs: 1, sm: 'none' } }}>
-          <MpMeter plannedMp={totalMp} maxMp={maxMp} />
+        <Box sx={{ ml: 'auto', flex: 'none' }}>
+          <MpSummary plannedMp={totalMp} maxMp={maxMp} />
         </Box>
       </Stack>
       {turnSlots}
