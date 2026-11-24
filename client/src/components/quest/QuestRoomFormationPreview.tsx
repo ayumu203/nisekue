@@ -81,11 +81,18 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
                     const jobImageSrc = participant.job?.code ? resolveJobAssetPath(participant.job.code) : null
 
                     return (
-                      <Stack key={participant.participantId} direction="row" spacing={1.75} alignItems="center">
+                      // スマホはマスが狭いので、画像の下に名前を縦に並べる
+                      <Stack
+                        key={participant.participantId}
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={{ xs: 0.5, sm: 1.75 }}
+                        alignItems="center"
+                        sx={{ minWidth: 0 }}
+                      >
                         <Box
                           sx={{
-                            width: 88,
-                            height: 110,
+                            width: { xs: 64, sm: 88 },
+                            height: { xs: 80, sm: 110 },
                             flexShrink: 0,
                             borderRadius: 1.5,
                             backgroundColor: '#efe4c8',
@@ -107,15 +114,29 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
                             />
                           ) : null}
                         </Box>
-                        <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+                        <Stack
+                          spacing={0.25}
+                          alignItems={{ xs: 'center', sm: 'flex-start' }}
+                          sx={{ minWidth: 0, maxWidth: '100%' }}
+                        >
                           <Typography
                             noWrap
                             title={participant.displayName}
-                            sx={{ fontSize: '1.0625rem', fontWeight: 700, color: homePanelColors.text }}
+                            sx={{
+                              maxWidth: '100%',
+                              fontSize: { xs: '1rem', sm: '1.0625rem' },
+                              fontWeight: 700,
+                              color: homePanelColors.text,
+                            }}
                           >
                             {participant.displayName}
                           </Typography>
-                          <Stack direction="row" spacing={0.75} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={0.75}
+                            alignItems="center"
+                            sx={{ minWidth: 0, maxWidth: '100%' }}
+                          >
                             {participant.level != null ? (
                               <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>
                                 {`${locale.levelLabel}.${participant.level}`}
