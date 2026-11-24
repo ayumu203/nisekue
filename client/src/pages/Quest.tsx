@@ -31,7 +31,6 @@ import {
 } from '@/api/quest'
 import { Link } from 'react-router-dom'
 import GamePanel from '@/components/common/GamePanel'
-import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
@@ -1297,17 +1296,14 @@ export default function Quest() {
     showRunSection && currentRun ? (
       isRunFinished ? (
         <Box sx={{ width: '100%', maxWidth: 960, mx: 'auto' }}>
-          {isDesktop ? null : (
-            <Box sx={{ mb: 1.5 }}>
-              <HomeNavIconButton id={tutorialHomeButtonId} ariaLabel={locale.backToHome} onClick={handleHomeClick} />
-            </Box>
-          )}
-          <QuestRunResultPanel
-            run={currentRun}
-            endlessBestFloor={player?.endlessBestFloor}
-            onLeaveFinishedRun={handleLeaveFinishedRun}
-            locale={locale}
-          />
+          <GamePanel title={stageName ?? locale.stage} startAction={mobileHomeButton} disablePadding {...fitPanelProps}>
+            <QuestRunResultPanel
+              run={currentRun}
+              endlessBestFloor={player?.endlessBestFloor}
+              onLeaveFinishedRun={handleLeaveFinishedRun}
+              locale={locale}
+            />
+          </GamePanel>
         </Box>
       ) : isRunInProgress ? (
         renderColumns(
