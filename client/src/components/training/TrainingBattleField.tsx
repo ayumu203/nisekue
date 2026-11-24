@@ -1,6 +1,6 @@
 import { Box, ButtonBase, Collapse, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
-import { homePanelColors } from '@/constants/styles'
+import { trainingPanelColors } from '@/constants/styles'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
@@ -31,8 +31,8 @@ type TurnLog = {
   enemyAction: string | null
 }
 
-const logTextColor = '#3b2f1f'
-const logDivider = '1px dotted rgba(90, 70, 40, 0.3)'
+const logTextColor = '#2b2f38'
+const logDivider = '1px dotted rgba(40, 50, 70, 0.3)'
 
 function normalizeHp(current: number, max: number): number {
   if (max <= 0) {
@@ -121,22 +121,25 @@ function FighterSprite({
           px: 1.75,
           py: 0.75,
           borderRadius: '10px',
-          backgroundColor: 'rgba(255, 255, 255, 0.55)',
+          backgroundColor: 'rgba(255, 255, 255, 0.72)',
           textAlign: 'center',
         }}
       >
-        <Typography fontWeight={800} sx={{ color: homePanelColors.text, lineHeight: 1.3, overflowWrap: 'anywhere' }}>
+        <Typography
+          fontWeight={800}
+          sx={{ color: trainingPanelColors.text, lineHeight: 1.3, overflowWrap: 'anywhere' }}
+        >
           {fighter.name}{' '}
-          <Typography component="span" variant="body2" fontWeight={700} sx={{ color: homePanelColors.label }}>
+          <Typography component="span" variant="body2" fontWeight={700} sx={{ color: trainingPanelColors.label }}>
             {locale.currentLevel.replace('{{level}}', String(fighter.level))}
           </Typography>
         </Typography>
         {hp ? (
           <>
-            <Box sx={{ height: 8, borderRadius: 9, backgroundColor: '#e5d9bd', my: 0.6, overflow: 'hidden' }}>
+            <Box sx={{ height: 8, borderRadius: 9, backgroundColor: '#dfe3ea', my: 0.6, overflow: 'hidden' }}>
               <Box sx={{ width: `${normalizeHp(hp.current, hp.max)}%`, height: '100%', backgroundColor: hpBarColor }} />
             </Box>
-            <Typography variant="body2" sx={{ color: homePanelColors.label }}>
+            <Typography variant="body2" sx={{ color: trainingPanelColors.label }}>
               HP {hp.current} / {hp.max}
             </Typography>
           </>
@@ -208,7 +211,7 @@ export default function TrainingBattleField({
         gap: { xs: 2, md: 3 },
         px: { xs: 2, md: 8 },
         py: { xs: 2, md: 3 },
-        backgroundColor: '#e9dfd0',
+        backgroundColor: '#e3e7ee',
         backgroundImage: `url(${getTrainingBackgroundPath(backgroundKey)})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -261,13 +264,13 @@ export default function TrainingBattleField({
             px: 2.75,
             py: 1.5,
             borderRadius: '12px',
-            backgroundColor: 'rgba(255, 253, 248, 0.6)',
+            backgroundColor: 'rgba(255, 255, 255, 0.72)',
             // スマホはキャラと同じく中央にそろえる
             textAlign: { xs: 'center', md: 'left' },
           }}
         >
           <Collapse in={isTurnLogOpen}>
-            <Stack sx={{ pb: 1, mb: 0.5, borderBottom: '1px solid rgba(90, 70, 40, 0.25)' }}>
+            <Stack sx={{ pb: 1, mb: 0.5, borderBottom: '1px solid rgba(40, 50, 70, 0.25)' }}>
               {turnLogs.map((log) => (
                 <Stack
                   key={log.turn}
@@ -279,7 +282,7 @@ export default function TrainingBattleField({
                   <Typography
                     variant="body2"
                     fontWeight={800}
-                    sx={{ color: homePanelColors.label, whiteSpace: 'nowrap', minWidth: { md: 52 } }}
+                    sx={{ color: trainingPanelColors.label, whiteSpace: 'nowrap', minWidth: { md: 52 } }}
                   >
                     {locale.turnLabel.replace('{{turn}}', String(log.turn))}
                   </Typography>
@@ -320,18 +323,26 @@ export default function TrainingBattleField({
               direction="row"
               spacing={1.25}
               alignItems="center"
-              sx={{ pt: 1.25, mt: 0.5, borderTop: '1px solid rgba(90, 70, 40, 0.25)' }}
+              sx={{ pt: 1.25, mt: 0.5, borderTop: '1px solid rgba(40, 50, 70, 0.25)' }}
             >
-              <Typography variant="body2" fontWeight={800} sx={{ color: homePanelColors.label, whiteSpace: 'nowrap' }}>
+              <Typography
+                variant="body2"
+                fontWeight={800}
+                sx={{ color: trainingPanelColors.label, whiteSpace: 'nowrap' }}
+              >
                 {locale.currentLevel.replace('{{level}}', String(player.level))}
               </Typography>
               <Box
                 aria-hidden="true"
-                sx={{ flex: 1, height: 8, borderRadius: 9, backgroundColor: '#e9e2d6', overflow: 'hidden' }}
+                sx={{ flex: 1, height: 8, borderRadius: 9, backgroundColor: '#e3e7ee', overflow: 'hidden' }}
               >
-                <Box sx={{ width: `${expRatio * 100}%`, height: '100%', backgroundColor: '#b9a98a' }} />
+                <Box sx={{ width: `${expRatio * 100}%`, height: '100%', backgroundColor: '#7f8ea8' }} />
               </Box>
-              <Typography variant="body2" fontWeight={700} sx={{ color: homePanelColors.label, whiteSpace: 'nowrap' }}>
+              <Typography
+                variant="body2"
+                fontWeight={700}
+                sx={{ color: trainingPanelColors.label, whiteSpace: 'nowrap' }}
+              >
                 {locale.expProgress
                   .replace('{{current}}', String(playerExp))
                   .replace('{{required}}', String(nextLevelRequiredExp))}
@@ -347,7 +358,7 @@ export default function TrainingBattleField({
               fontFamily: 'inherit',
               fontSize: '0.85rem',
               fontWeight: 800,
-              color: homePanelColors.label,
+              color: trainingPanelColors.label,
             }}
           >
             {isTurnLogOpen ? `${locale.hideTurnLog} ▴` : `${locale.showTurnLog} ▾`}

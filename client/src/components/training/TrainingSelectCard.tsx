@@ -1,5 +1,5 @@
 import { Box, Chip, Radio, Stack, Typography } from '@mui/material'
-import { homePanelColors } from '@/constants/styles'
+import { trainingPanelColors } from '@/constants/styles'
 import {
   getTrainingBackgroundPath,
   trainingLevelChipSx,
@@ -57,7 +57,7 @@ export default function TrainingSelectCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#e9dfd0',
+          backgroundColor: '#e3e7ee',
           backgroundImage: `url(${getTrainingBackgroundPath(backgroundKey)})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -82,7 +82,7 @@ export default function TrainingSelectCard({
           fontWeight={800}
           textAlign="center"
           sx={{
-            color: homePanelColors.text,
+            color: trainingPanelColors.text,
             fontSize: compact ? '0.95rem' : '1.05rem',
             lineHeight: 1.3,
             overflowWrap: 'anywhere',
@@ -91,7 +91,7 @@ export default function TrainingSelectCard({
           {name}
         </Typography>
         {subLabel ? (
-          <Typography variant="caption" sx={{ color: homePanelColors.label }}>
+          <Typography variant="caption" sx={{ color: trainingPanelColors.label }}>
             {subLabel}
           </Typography>
         ) : null}

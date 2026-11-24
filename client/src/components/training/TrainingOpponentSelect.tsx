@@ -1,6 +1,6 @@
 import { Box, Pagination, Stack, Typography } from '@mui/material'
 import { useRef } from 'react'
-import { homePanelColors, trainingPanelColors } from '@/constants/styles'
+import { trainingPanelColors } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { PlayerSummary } from '@/schema/player'
 import locale from '../../../locale/training/Training.json'
@@ -32,7 +32,7 @@ export default function TrainingOpponentSelect({
 
   if (opponents.length === 0) {
     return (
-      <Typography variant="body2" sx={{ color: homePanelColors.label, textAlign: 'center', py: 2 }}>
+      <Typography variant="body2" sx={{ color: trainingPanelColors.label, textAlign: 'center', py: 2 }}>
         {locale.noOpponentsAvailable}
       </Typography>
     )
@@ -75,7 +75,7 @@ export default function TrainingOpponentSelect({
               '& .MuiPaginationItem-root': {
                 color: '#5a3a10',
                 fontWeight: 700,
-                border: '1px solid #d8c9a6',
+                border: '1px solid #c6cdd8',
               },
               '& .MuiPaginationItem-root.Mui-selected, & .MuiPaginationItem-root.Mui-selected:hover': {
                 color: '#ffffff',

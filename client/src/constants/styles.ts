@@ -264,6 +264,10 @@ export const trainingPanelColors = {
   selectedSurface: '#e9eef7',
   // 押せないボタンの色
   disabledButton: '#a3b1c9',
+  // 白い箱の中の文字・区切り線（茶色やベージュを使わず、藍に合わせたグレー）
+  text: '#2b2f38',
+  label: '#5a6170',
+  divider: '#dfe3ea',
 } as const
 
 // 白い箱の中の主な操作（募集開始・START・決定など）。見出しの帯と同じ緑
