@@ -4,20 +4,16 @@ import {
   Chip,
   CircularProgress,
   FormControl,
-  IconButton,
   InputLabel,
   MenuItem,
   Select,
   Stack,
-  SvgIcon,
-  Tooltip,
   Typography,
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import CancelIcon from '@mui/icons-material/Cancel'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import { useState, type ReactNode } from 'react'
-import QuestRestrictionsModal from './QuestRestrictionsModal'
+import type { ReactNode } from 'react'
 import QuestRoomFormationPreview from './QuestRoomFormationPreview'
 import {
   greenOutlinedInputSx,
@@ -28,41 +24,20 @@ import {
 } from '@/constants/styles'
 import locale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestRoomDetailResponse } from '@/schema/quest'
-import type { PlayerSummary } from '@/schema/player'
 import { resolveCharacterAssetPath, resolveJobAssetPath } from '@/lib/assets'
-
-function GearIcon() {
-  return (
-    <SvgIcon viewBox="0 0 24 24" fontSize="small">
-      <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.49-.42H10.1a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.12.55-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.39 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.23 1.12-.55 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z" />
-    </SvgIcon>
-  )
-}
 
 type QuestRoomLobbySectionProps = {
   currentRoom: QuestRoomDetailResponse | null
   selfParticipantId: string | null
-  currentPlayerLevel: number | null
-  selectablePlayers: PlayerSummary[]
-  minRequiredLevelInput: string
-  allowedPlayerIds: string[]
   positionDrafts: Record<string, { row: BattleRow; column: BattleColumn }>
   isLoading: boolean
   isStarting: boolean
   isCancellingRoom: boolean
-  isUpdatingRestrictions: boolean
-  isPlayerCandidatesLoading: boolean
-  playerCandidatesError: Error | null
   isSavingFormation: boolean
-  onRestrictionsChange: (value: string, nextAllowedPlayerIds: string[]) => void
-  onUpdateRestrictions: (options?: {
-    minRequiredLevelInput?: string
-    allowedPlayerIds?: string[]
-  }) => void | Promise<void>
   onPositionDraftChange: (participantId: string, nextPosition: { row: BattleRow; column: BattleColumn }) => void
   onStartQuest: () => void | Promise<void>
   onCancelRoom: () => void | Promise<void>
-  // ルームの情報（START・配置の確認）と配置変更をどの箱に置くかは画面側で決める
+  // 隊列の確認と配置変更（START・CANCEL）をどの箱に置くかは画面側で決める
   renderLayout: (parts: { info: ReactNode; editor: ReactNode; editorTitle: string }) => ReactNode
 }
 
@@ -74,40 +49,19 @@ const positionSelectSx = {
   },
 } as const
 
-const iconButtonSx = {
-  border: '1px solid',
-  borderColor: homePanelColors.divider,
-  backgroundColor: '#ffffff',
-  color: '#5a3a10',
-  transition: 'none',
-  '& .MuiTouchRipple-root': {
-    display: 'none',
-  },
-} as const
-
 export default function QuestRoomLobbySection({
   currentRoom,
   selfParticipantId,
-  currentPlayerLevel,
-  selectablePlayers,
-  minRequiredLevelInput,
-  allowedPlayerIds,
   positionDrafts,
   isLoading,
   isStarting,
   isCancellingRoom,
-  isUpdatingRestrictions,
-  isPlayerCandidatesLoading,
-  playerCandidatesError,
   isSavingFormation,
-  onRestrictionsChange,
-  onUpdateRestrictions,
   onPositionDraftChange,
   onStartQuest,
   onCancelRoom,
   renderLayout,
 }: QuestRoomLobbySectionProps) {
-  const [isRestrictionsModalOpen, setIsRestrictionsModalOpen] = useState(false)
   const isOwner =
     currentRoom != null && selfParticipantId != null
       ? currentRoom.participants.some(
@@ -143,14 +97,6 @@ export default function QuestRoomLobbySection({
     })
   }
 
-  const handleRestrictionsModalApply = async (nextMinRequiredLevelInput: string, nextAllowedPlayerIds: string[]) => {
-    onRestrictionsChange(nextMinRequiredLevelInput, nextAllowedPlayerIds)
-    await onUpdateRestrictions({
-      minRequiredLevelInput: nextMinRequiredLevelInput,
-      allowedPlayerIds: nextAllowedPlayerIds,
-    })
-  }
-
   const editorTitle = isOwner ? locale.ownerPositionTitle : locale.waitingForOwnerTitle
 
   if (currentRoom == null || isLoading) {
@@ -172,57 +118,9 @@ export default function QuestRoomLobbySection({
 
   const isRecruiting = currentRoom.status === 'Recruiting'
 
+  // 参加制限・募集中の表示はルーム作成の画面で済んでいるので出さず、隊列だけを出す
   const info = (
     <Stack spacing={2}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-        <Stack direction="row" spacing={1.25} alignItems="center" sx={{ flex: 1 }}>
-          <Chip
-            size="small"
-            label={locale.roomStatus[currentRoom.status]}
-            sx={{
-              fontWeight: 800,
-              color: isRecruiting ? '#3a2400' : '#4d1e2a',
-              backgroundColor: isRecruiting ? '#ffcc00' : '#f0b7c0',
-            }}
-          />
-        </Stack>
-        {isOwner ? (
-          <Tooltip title={locale.openRestrictionsModal}>
-            <span>
-              <IconButton
-                onClick={() => setIsRestrictionsModalOpen(true)}
-                disabled={!isRecruiting || isUpdatingRestrictions}
-                sx={iconButtonSx}
-                aria-label={locale.openRestrictionsModal}
-              >
-                <GearIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-        ) : null}
-      </Box>
-
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, columnGap: 3 }}>
-        <InfoRow
-          label={locale.labels.minRequiredLevel}
-          value={
-            currentRoom.restrictions.minRequiredLevel == null
-              ? locale.noRestriction
-              : String(currentRoom.restrictions.minRequiredLevel)
-          }
-        />
-        <InfoRow
-          label={locale.labels.allowedPlayers}
-          value={
-            currentRoom.restrictions.allowedPlayers.length === 0
-              ? locale.noRestriction
-              : currentRoom.restrictions.allowedPlayers
-                  .map((player) => player.displayName ?? player.playerId)
-                  .join(', ')
-          }
-        />
-      </Box>
-
       <QuestRoomFormationPreview currentRoom={currentRoom} positionDrafts={positionDrafts} />
 
       {!isRecruiting ? (
@@ -230,19 +128,6 @@ export default function QuestRoomLobbySection({
           {locale.roomClosedMessage}
         </Typography>
       ) : null}
-
-      <QuestRestrictionsModal
-        open={isRestrictionsModalOpen}
-        minRequiredLevelInput={minRequiredLevelInput}
-        currentPlayerLevel={currentPlayerLevel}
-        selectablePlayers={selectablePlayers}
-        allowedPlayerIds={allowedPlayerIds}
-        isLoading={isPlayerCandidatesLoading}
-        error={playerCandidatesError}
-        disabled={!isRecruiting || isUpdatingRestrictions}
-        onClose={() => setIsRestrictionsModalOpen(false)}
-        onApply={handleRestrictionsModalApply}
-      />
     </Stack>
   )
 
@@ -268,11 +153,11 @@ export default function QuestRoomLobbySection({
               '&:first-of-type': { pt: 0 },
             }}
           >
-            <Stack direction="row" spacing={1.5} alignItems="flex-start">
+            <Stack direction="row" spacing={{ xs: 1, sm: 1.5 }} alignItems="flex-start">
               <Box
                 sx={{
-                  width: { xs: 92, sm: 100 },
-                  minWidth: { xs: 92, sm: 100 },
+                  width: { xs: 64, sm: 100 },
+                  minWidth: { xs: 64, sm: 100 },
                   aspectRatio: '4 / 5',
                   borderRadius: 2,
                   backgroundColor: '#efe4c8',
@@ -327,7 +212,7 @@ export default function QuestRoomLobbySection({
                 </Stack>
 
                 {isOwner ? (
-                  <Stack direction="row" spacing={1.25}>
+                  <Stack direction="row" spacing={{ xs: 0.75, sm: 1.25 }}>
                     <FormControl fullWidth size="small" sx={positionSelectSx}>
                       <InputLabel id={`participant-row-${participant.participantId}`}>{locale.positionRow}</InputLabel>
                       <Select
@@ -367,13 +252,22 @@ export default function QuestRoomLobbySection({
               </Stack>
               {participant.job?.displayName ? (
                 // ジョブは右端に大きめのアイコンと名前で出す
-                <Stack alignItems="center" spacing={0.5} sx={{ width: 88, flexShrink: 0, alignSelf: 'center' }}>
+                <Stack
+                  alignItems="center"
+                  spacing={0.5}
+                  sx={{ width: { xs: 52, sm: 88 }, flexShrink: 0, alignSelf: 'center' }}
+                >
                   {jobImageSrc ? (
                     <Box
                       component="img"
                       src={jobImageSrc}
                       alt=""
-                      sx={{ width: 64, height: 64, objectFit: 'contain', display: 'block' }}
+                      sx={{
+                        width: { xs: 40, sm: 64 },
+                        height: { xs: 40, sm: 64 },
+                        objectFit: 'contain',
+                        display: 'block',
+                      }}
                     />
                   ) : null}
                   <Typography
@@ -421,27 +315,4 @@ export default function QuestRoomLobbySection({
   )
 
   return <>{renderLayout({ info, editor, editorTitle })}</>
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        // 見出しと内容を離しすぎないよう、内容は見出しのすぐ右に置く
-        alignItems: 'baseline',
-        gap: 2,
-        py: 1.25,
-        borderBottom: '1px solid #eadfc6',
-      }}
-    >
-      <Typography
-        variant="body2"
-        sx={{ color: '#5a4421', fontWeight: 700, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
-      >
-        {label}
-      </Typography>
-      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: '1rem' }}>{value}</Typography>
-    </Box>
-  )
 }

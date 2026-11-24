@@ -128,9 +128,10 @@ export default function QuestStageModeCard({
           <Typography sx={{ fontWeight: 800, fontSize: '1rem', lineHeight: 1.3, color: homePanelColors.text }}>
             {stage.name}
           </Typography>
-          <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>
-            {`${locale.recommendedLevel} ${isMirror ? locale.mirror.hiddenRecommendedLevel : stage.recommendedLevel}　${locale.minRequiredLevel} ${stage.minimumEntryLevel}`}
-          </Typography>
+          <Stack direction="row" spacing={1.5} sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>
+            <span>{`${locale.recommendedLevel} ${isMirror ? locale.mirror.hiddenRecommendedLevel : stage.recommendedLevel}`}</span>
+            <span>{`${locale.minRequiredLevel} ${stage.minimumEntryLevel}`}</span>
+          </Stack>
           <Box sx={{ flex: 1 }} />
           <Stack direction="row" spacing={0.75} sx={{ pt: 0.5 }}>
             {modeButton('Solo', isSoloSelected, locale.modeSolo)}
