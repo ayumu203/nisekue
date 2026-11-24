@@ -97,7 +97,7 @@ export default function QuestStageModeCard({
               component="img"
               src={iconImageSrc}
               alt=""
-              sx={{ maxHeight: 96, maxWidth: '70%', objectFit: 'contain' }}
+              sx={{ height: 96, maxWidth: '70%', objectFit: 'contain', imageRendering: isMirror ? 'auto' : 'pixelated' }}
             />
           ) : null}
           {badge ? (
