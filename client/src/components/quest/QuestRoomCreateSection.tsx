@@ -160,22 +160,25 @@ export default function QuestRoomCreateSection({
           }
         />
       </Box>
-      <Button
-        variant="outlined"
-        onClick={() => setIsRestrictionsModalOpen(true)}
-        disabled={isLoading}
-        sx={{ ...menuButtonSx, ...panelOutlinedButtonSx }}
-      >
-        {locale.editRestrictions}
-      </Button>
-      <Button
-        variant="contained"
-        onClick={() => void onCreateRoom()}
-        disabled={isCreateDisabled}
-        sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, minHeight: 56, fontSize: '1.15rem' }}
-      >
-        {isSubmitting ? locale.creatingRoom : locale.createRoom}
-      </Button>
+      {/* スマホは 2 つのボタンを横に並べて縦の長さを抑える */}
+      <Stack direction={{ xs: 'row', md: 'column' }} spacing={{ xs: 1.5, md: 2 }}>
+        <Button
+          variant="outlined"
+          onClick={() => setIsRestrictionsModalOpen(true)}
+          disabled={isLoading}
+          sx={{ ...menuButtonSx, ...panelOutlinedButtonSx }}
+        >
+          {locale.editRestrictions}
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => void onCreateRoom()}
+          disabled={isCreateDisabled}
+          sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, minHeight: { xs: 48, md: 56 }, fontSize: { md: '1.15rem' } }}
+        >
+          {isSubmitting ? locale.creatingRoom : locale.createRoom}
+        </Button>
+      </Stack>
 
       <QuestRestrictionsModal
         open={isRestrictionsModalOpen}
