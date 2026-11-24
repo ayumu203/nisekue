@@ -324,7 +324,7 @@ export default function TrainingBattleField({
                   py: 0.85,
                   borderTop: index === 0 ? 'none' : logDivider,
                   color: logTextColor,
-                  fontWeight: 600,
+                  fontWeight: 400,
                   lineHeight: 1.5,
                 }}
               >
