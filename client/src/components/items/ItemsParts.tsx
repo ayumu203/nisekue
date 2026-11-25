@@ -92,10 +92,24 @@ export function ItemsTabs({
   startAction?: ReactNode
 }) {
   return (
-    <Box
-      sx={{ display: 'flex', alignItems: 'flex-end', gap: { xs: 0.5, sm: 0.75 }, pl: { xs: 0, sm: 3 }, flex: 'none' }}
-    >
-      {startAction ? <Box sx={{ alignSelf: 'center', mr: 0.5 }}>{startAction}</Box> : null}
+    <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: { xs: 0, sm: 0.75 }, pl: { xs: 0, sm: 3 }, flex: 'none' }}>
+      {startAction ? (
+        // スマホのホームボタン。ほかの画面の帯と同じく、塗りの家と白い縦線で中身と区切る
+        <Box
+          sx={{
+            height: 42,
+            display: 'flex',
+            alignItems: 'center',
+            pr: 0.5,
+            mr: 0.25,
+            borderRight: '2px solid rgba(255, 255, 255, 0.85)',
+            borderRadius: '14px 0 0 0',
+            backgroundColor: colors.tabOff,
+          }}
+        >
+          {startAction}
+        </Box>
+      ) : null}
       <Box
         role="tablist"
         aria-label={locale.tabsLabel}
@@ -114,7 +128,7 @@ export function ItemsTabs({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
-                px: { xs: 1.5, sm: 3.5 },
+                px: { xs: 1.25, sm: 3.5 },
                 height: selected ? { xs: 50, sm: 60 } : { xs: 42, sm: 50 },
                 borderRadius: '14px 14px 0 0',
                 border: '3px solid',
@@ -126,10 +140,10 @@ export function ItemsTabs({
                 backgroundColor: selected ? colors.canvas : colors.tabOff,
                 color: selected ? colors.text : '#ffffff',
                 fontFamily: 'inherit',
-                fontSize: { xs: '1rem', sm: '1.1875rem' },
+                fontSize: { xs: '0.9375rem', sm: '1.1875rem' },
                 fontWeight: 800,
                 whiteSpace: 'nowrap',
-                '& .MuiSvgIcon-root': { fontSize: { xs: 20, sm: 24 } },
+                '& .MuiSvgIcon-root': { display: { xs: 'none', sm: 'inline-block' }, fontSize: 24 },
               }}
             >
               {tab.icon}

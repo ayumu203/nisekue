@@ -297,25 +297,46 @@ export function MirrorPanel({
       {changes && changes.length > 0 ? (
         <Box
           sx={{
-            mx: 2.75,
+            mx: { xs: 2, sm: 2.75 },
             mb: 2.25,
             px: 2,
             py: 1.5,
             borderRadius: '12px',
             backgroundColor: colors.brassSoft,
-            display: 'flex',
-            flexWrap: 'wrap',
-            columnGap: 3,
+            display: 'grid',
+            // 列をそろえて、どの行も能力名・数字の開始位置が同じになるようにする
+            gridTemplateColumns: {
+              xs: 'minmax(0, 1fr)',
+              sm: 'repeat(2, minmax(0, 1fr))',
+              lg: 'repeat(3, minmax(0, 1fr))',
+            },
+            columnGap: 2,
             rowGap: 0.75,
           }}
         >
           {changes.map((change) => {
             const diff = change.to - change.from
             return (
-              <Box key={change.label} component="span" sx={{ fontSize: '1.125rem', color: colors.text }}>
-                {change.label} <b>{change.from}</b> → <b>{change.to}</b>{' '}
-                <Box component="b" sx={{ fontSize: '1rem', color: diff > 0 ? colors.up : colors.down }}>
-                  {diff > 0 ? `▲ ${diff}` : `▼ ${-diff}`}
+              <Box
+                key={change.label}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: '2.8em 2.4em 1.6em 2.4em auto',
+                  alignItems: 'baseline',
+                  fontSize: '1.0625rem',
+                  color: colors.text,
+                  fontVariantNumeric: 'tabular-nums',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span>{change.label}</span>
+                <b>{change.from}</b>
+                <Box component="span" aria-hidden="true">
+                  →
+                </Box>
+                <b>{change.to}</b>
+                <Box component="b" sx={{ fontSize: '0.9375rem', color: diff > 0 ? colors.up : colors.down }}>
+                  {diff > 0 ? `▲${diff}` : `▼${-diff}`}
                 </Box>
               </Box>
             )
@@ -338,12 +359,28 @@ function DetailRow({ label, value, first }: { label: string; value: ReactNode; f
         fontSize: '1rem',
       }}
     >
-      <Box component="span" sx={{ color: colors.label }}>
+      <Box component="span" sx={{ color: colors.label, flex: 'none', whiteSpace: 'nowrap' }}>
         {label}
       </Box>
-      <Box component="b" sx={{ color: colors.text, textAlign: 'right' }}>
+      <Box component="b" sx={{ minWidth: 0, color: colors.text, textAlign: 'right' }}>
         {value}
       </Box>
+    </Box>
+  )
+}
+
+// 「MP+4 / STR+12 / DEF+3」を、1 つずつ折り返さない塊にして右寄せで並べる
+function EffectList({ text }: { text: string }) {
+  return (
+    <Box
+      component="span"
+      sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', columnGap: 1.5, rowGap: 0.25 }}
+    >
+      {text.split(' / ').map((part) => (
+        <Box key={part} component="span" sx={{ whiteSpace: 'nowrap' }}>
+          {part}
+        </Box>
+      ))}
     </Box>
   )
 }
@@ -397,12 +434,15 @@ export function ItemDetailPanel({
     item.kind === 'equipment'
       ? [
           [locale.kindLabel, item.equipmentType === 'Weapon' ? locale.categoryWeapon : locale.categoryArmor],
-          [locale.effectLabel, formatStatusBonus({ statusBonus: getEquipmentBonus(item) })],
+          [
+            locale.effectLabel,
+            <EffectList key="effect" text={formatStatusBonus({ statusBonus: getEquipmentBonus(item) })} />,
+          ],
           [locale.plusValueLabel, item.plusValue > 0 ? `+${item.plusValue}` : '0'],
         ]
       : [
           [locale.kindLabel, getEffectTypeLabel(item.effectType)],
-          [locale.effectLabel, formatEffectAmount(item)],
+          [locale.effectLabel, <EffectList key="effect" text={formatEffectAmount(item)} />],
           ...(item.requiredLevel !== null
             ? ([[locale.requiredLevel, item.requiredLevel]] as Array<[string, ReactNode]>)
             : []),

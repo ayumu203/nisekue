@@ -100,13 +100,52 @@ function ListingRow({
         <ItemIcon item={listing} size={44} />
       </Box>
       <Box component="span" sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-        <Box component="span" sx={{ fontSize: '1.125rem', fontWeight: 800, color: colors.text }}>
+        <Box
+          component="span"
+          sx={{
+            fontSize: { xs: '1rem', md: '1.125rem' },
+            fontWeight: 800,
+            color: colors.text,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {getListingTitle(listing)}
         </Box>
-        <Box component="span" sx={{ fontSize: '0.875rem', color: colors.label }}>
+        {/* PC：種類と効果。スマホは効果を並べると読みにくいので、売り手だけにする（自分の出品は残りの数） */}
+        <Box component="span" sx={{ display: { xs: 'none', md: 'block' }, fontSize: '0.875rem', color: colors.label }}>
           {getListingSummary(listing)}
-          <Box component="span" sx={{ display: { md: 'none' } }}>
-            {`・${locale.remaining.replace('{count}', String(listing.quantity))}`}
+        </Box>
+        <Box
+          component="span"
+          sx={{
+            display: { xs: 'flex', md: 'none' },
+            alignItems: 'center',
+            gap: 0.75,
+            fontSize: '0.875rem',
+            color: colors.label,
+            minWidth: 0,
+          }}
+        >
+          {showSeller && sellerImageSrc ? (
+            <Box
+              component="img"
+              src={sellerImageSrc}
+              alt=""
+              sx={{
+                width: 24,
+                height: 24,
+                flex: 'none',
+                objectFit: 'contain',
+                objectPosition: 'center bottom',
+                borderRadius: '6px',
+                backgroundColor: '#f3e9d6',
+              }}
+            />
+          ) : null}
+          <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {showSeller ? listing.sellerName : locale.remaining.replace('{count}', String(listing.quantity))}
           </Box>
         </Box>
       </Box>
@@ -149,18 +188,18 @@ function ListingRow({
         component="span"
         sx={{
           justifySelf: 'end',
-          width: { xs: 104, md: 132 },
+          width: { xs: 88, md: 132 },
           boxSizing: 'border-box',
           textAlign: 'right',
           fontVariantNumeric: 'tabular-nums',
           position: 'relative',
           py: 0.75,
-          pr: 1.75,
-          pl: 3.25,
+          pr: { xs: 1.25, md: 1.75 },
+          pl: { xs: 2.75, md: 3.25 },
           backgroundColor: colors.priceTag,
           border: `2px solid ${colors.brass}`,
           borderRadius: '6px 12px 12px 6px',
-          fontSize: { xs: '1rem', md: '1.1875rem' },
+          fontSize: { xs: '0.9375rem', md: '1.1875rem' },
           fontWeight: 800,
           color: colors.priceTagText,
         }}
@@ -270,7 +309,7 @@ export function MarketList({
             disableRipple
             sx={{
               height: 38,
-              px: 1.75,
+              px: { xs: 1.25, sm: 1.75 },
               borderBottom: `3px solid ${category === value ? colors.leather : 'transparent'}`,
               fontFamily: 'inherit',
               fontSize: '0.9375rem',
