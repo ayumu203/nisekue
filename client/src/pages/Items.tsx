@@ -27,7 +27,7 @@ import {
   useItem as consumeItem,
 } from '@/api/item'
 import { createPlayer, getPlayer, updatePlayerEquipment } from '@/api/player'
-import { BagPanel, ItemDetailPanel, MirrorPanel, type BagFilter, type ListingDraft } from '@/components/items/BagTab'
+import { BagPanel, ItemDetailPanel, MirrorPanel, type ListingDraft } from '@/components/items/BagTab'
 import { ForgeList, ForgePanel } from '@/components/items/ForgeTab'
 import {
   canForge,
@@ -109,7 +109,6 @@ export default function Items() {
   const [selectionCount, setSelectionCount] = useState(0)
 
   // 持ち物
-  const [bagFilter, setBagFilter] = useState<BagFilter>('all')
   const [selectedBagKey, setSelectedBagKey] = useState<string | null>(null)
   const [listingKey, setListingKey] = useState<string | null>(null)
   const [listingDraft, setListingDraft] = useState<ListingDraft>({ unitPrice: '10', quantity: '1' })
@@ -199,16 +198,8 @@ export default function Items() {
   const equippedArmor = equippedItems.find((item) => item.equipmentType === 'Armor')
 
   // ---- 持ち物 ----
-  const filteredInventory = useMemo(
-    () =>
-      inventoryItems.filter((item) =>
-        bagFilter === 'all' ? true : bagFilter === 'equipment' ? item.kind === 'equipment' : item.kind === 'item',
-      ),
-    [bagFilter, inventoryItems],
-  )
   // 空きマスは PC だけ（スマホは縦に長くなりすぎるため、所持数の表示だけにする）
-  const emptySlotCount =
-    isDesktop && bagFilter === 'all' && items ? Math.max(0, items.capacity - inventoryItems.length) : 0
+  const emptySlotCount = isDesktop && items ? Math.max(0, items.capacity - inventoryItems.length) : 0
 
   // 選んだ品がなくなったら（使い切った・売ったなど）、袋の先頭の品を選び直す
   const selectedBagItem: InventoryItemView | null = useMemo(() => {
@@ -431,10 +422,8 @@ export default function Items() {
   if (tab === 'bag') {
     leftPanel = (
       <BagPanel
-        items={filteredInventory}
+        items={inventoryItems}
         emptySlotCount={emptySlotCount}
-        filter={bagFilter}
-        onFilterChange={setBagFilter}
         selectedKey={selectedBagKeyResolved}
         onSelect={selectBagItem}
         usedSlots={items?.usedSlots}

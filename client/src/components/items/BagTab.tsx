@@ -16,31 +16,6 @@ import {
 import locale from '../../../locale/items/Items.json'
 import type { InventoryItemView, ItemEquipmentView } from '@/schema/item'
 
-export type BagFilter = 'all' | 'equipment' | 'item'
-
-function FilterChip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
-  return (
-    <ButtonBase
-      onClick={onClick}
-      aria-pressed={selected}
-      disableRipple
-      sx={{
-        height: 38,
-        px: 2.25,
-        borderRadius: 999,
-        border: `2px solid ${colors.leather}`,
-        backgroundColor: selected ? colors.leather : 'transparent',
-        color: selected ? '#ffffff' : colors.leather,
-        fontFamily: 'inherit',
-        fontSize: '0.9375rem',
-        fontWeight: 800,
-      }}
-    >
-      {label}
-    </ButtonBase>
-  )
-}
-
 const slotHeight = { xs: 108, sm: 132 }
 
 // 袋の 1 マス。上に名前、真ん中に絵、左上に強化値、右下に個数
@@ -125,8 +100,6 @@ function BagSlot({ item, selected, onSelect }: { item: InventoryItemView; select
 export function BagPanel({
   items,
   emptySlotCount,
-  filter,
-  onFilterChange,
   selectedKey,
   onSelect,
   usedSlots,
@@ -137,8 +110,6 @@ export function BagPanel({
 }: {
   items: InventoryItemView[]
   emptySlotCount: number
-  filter: BagFilter
-  onFilterChange: (filter: BagFilter) => void
   selectedKey: string | null
   onSelect: (item: InventoryItemView) => void
   usedSlots?: number
@@ -149,15 +120,6 @@ export function BagPanel({
 }) {
   return (
     <BagFrame fill={fill}>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25 }}>
-        <FilterChip label={locale.filterAll} selected={filter === 'all'} onClick={() => onFilterChange('all')} />
-        <FilterChip
-          label={locale.filterEquipment}
-          selected={filter === 'equipment'}
-          onClick={() => onFilterChange('equipment')}
-        />
-        <FilterChip label={locale.filterItem} selected={filter === 'item'} onClick={() => onFilterChange('item')} />
-      </Box>
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: '4px', m: '-4px' }}>
         {isLoading ? (
           <Typography sx={{ color: colors.label }}>{locale.loading}</Typography>
