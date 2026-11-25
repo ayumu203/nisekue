@@ -20,8 +20,6 @@ type GamePanelProps = {
   startAction?: ReactNode
   children: ReactNode
   'aria-label'?: string
-  // 箱の下の影の色。画面ごとの地の色に合わせる
-  shadowColor?: string
   // 中身の余白をなくす（バトル画面のように端まで使うとき）
   disablePadding?: boolean
   // 箱の高さを親に合わせ、中身が多いときは箱の中でスクロールする（PC）。false なら中身の高さに合わせる（スマホ）
@@ -38,7 +36,6 @@ export default function GamePanel({
   startAction,
   children,
   'aria-label': ariaLabel,
-  shadowColor = homePanelColors.shadow,
   disablePadding = false,
   fillHeight = true,
   fitContent = false,
@@ -55,7 +52,6 @@ export default function GamePanel({
         maxHeight: fillHeight ? '100%' : 'none',
         backgroundColor: '#ffffff',
         borderRadius: '12px',
-        boxShadow: `0 2px 0 ${shadowColor}`,
         overflow: 'hidden',
       }}
     >
