@@ -270,6 +270,32 @@ export const trainingPanelColors = {
   divider: '#dfe3ea',
 } as const
 
+// 宝の地図の色（白・金・青：上部の金の帯・白に近い地・白い箱の影）。見出しの帯とボタンは緑ではなく青
+export const treasureMapPanelColors = {
+  topBand: '#9a7008',
+  ground: '#fbfaf5',
+  shadow: '#e6dcbf',
+  band: '#1e4f96',
+  // 探索中の地図の「探索中」の地と文字
+  soft: '#e8eef8',
+  softText: '#143a72',
+  // 押せないボタンの色
+  disabledButton: '#e8e3d8',
+  disabledButtonText: '#6f6758',
+  disabledButtonBorder: '#cfc8b8',
+  // 白い箱の中の文字・区切り線
+  text: '#2e2a22',
+  label: '#5f5747',
+  divider: '#e2dccb',
+  // 星の色
+  star: '#a8741a',
+  starOff: '#d9d2c2',
+  // 探索完了のメッセージウィンドウ
+  messageWindow: 'rgba(14, 26, 54, 0.9)',
+  messageHighlight: '#ffd35a',
+  messageLabel: '#b8c4de',
+} as const
+
 // 白い箱の中の主な操作（募集開始・START・決定など）。見出しの帯と同じ緑
 export const panelPrimaryButtonSx = {
   '&&': {
