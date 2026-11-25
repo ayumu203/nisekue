@@ -61,5 +61,7 @@
   },
   "chatSwitchToGlobal": "全体チャットに切り替える",
   "chatSwitchToPersonal": "個人チャットに切り替える",
-  "statusPanelLabel": "ステータス"
+  "statusPanelLabel": "ステータス",
+  "statusDetailsOpen": "能力値と装備を開く",
+  "statusDetailsClose": "能力値と装備を閉じる"
 }
