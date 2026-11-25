@@ -91,21 +91,32 @@ export function ItemsTabs({
   // スマホのホームボタン（ヘッダーがないため、タブの左に置く）
   startAction?: ReactNode
 }) {
+  // PC：袋の上に付いたしおり。スマホ：ほかの画面の帯と同じく、ホームボタンとタブを 1 本の帯につなげて袋の上辺にする
   return (
-    // スマホはほかの画面の帯と同じく横幅いっぱいに広げる
-    <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: { xs: 0, sm: 0.75 }, pl: { xs: 0, sm: 3 }, flex: 'none' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: { xs: 'stretch', sm: 'flex-end' },
+        gap: { xs: 0, sm: 0.75 },
+        pl: { xs: 0, sm: 3 },
+        flex: 'none',
+        height: { xs: 48, sm: 'auto' },
+        border: { xs: `3px solid ${colors.leather}`, sm: 'none' },
+        borderBottom: { xs: 'none', sm: 'none' },
+        borderRadius: { xs: '18px 18px 0 0', sm: 0 },
+        overflow: { xs: 'hidden', sm: 'visible' },
+        backgroundColor: { xs: colors.tabOff, sm: 'transparent' },
+      }}
+    >
       {startAction ? (
-        // スマホのホームボタン。ほかの画面の帯と同じく、塗りの家と白い縦線で中身と区切る
         <Box
           sx={{
-            height: 42,
             display: 'flex',
             alignItems: 'center',
-            pr: 0.5,
-            mr: 0.25,
+            px: 0.25,
+            backgroundColor: colors.leather,
+            // ホームボタンとタブの区切り（ほかの画面の帯と同じ白い線）
             borderRight: '2px solid rgba(255, 255, 255, 0.85)',
-            borderRadius: '14px 0 0 0',
-            backgroundColor: colors.tabOff,
           }}
         >
           {startAction}
@@ -116,14 +127,15 @@ export function ItemsTabs({
         aria-label={locale.tabsLabel}
         sx={{
           display: 'flex',
-          alignItems: 'flex-end',
-          gap: { xs: 0.5, sm: 0.75 },
-          minWidth: 0,
+          alignItems: { xs: 'stretch', sm: 'flex-end' },
+          gap: { xs: 0, sm: 0.75 },
           flex: { xs: 1, sm: 'none' },
+          minWidth: 0,
         }}
       >
-        {tabs.map((tab) => {
+        {tabs.map((tab, index) => {
           const selected = tab.key === value
+          const previousSelected = index > 0 && tabs[index - 1].key === value
           return (
             <ButtonBase
               key={tab.key}
@@ -135,16 +147,21 @@ export function ItemsTabs({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flex: { xs: 1, sm: 'none' },
                 gap: 1,
-                px: { xs: 1.25, sm: 3.5 },
-                height: selected ? { xs: 50, sm: 60 } : { xs: 42, sm: 50 },
-                borderRadius: '14px 14px 0 0',
-                border: '3px solid',
-                borderBottom: 'none',
-                borderColor: selected ? colors.leather : 'transparent',
-                // 選んでいるタブは袋の枠の上に重ねて、袋とつなげる
-                mb: selected ? '-3px' : 0,
+                flex: { xs: 1, sm: 'none' },
+                minWidth: 0,
+                px: { xs: 0.5, sm: 3.5 },
+                height: { xs: 'auto', sm: selected ? 60 : 50 },
+                borderRadius: { xs: 0, sm: '14px 14px 0 0' },
+                border: { xs: 'none', sm: '3px solid' },
+                borderBottom: { sm: 'none' },
+                borderColor: { sm: selected ? colors.leather : 'transparent' },
+                // スマホ：選んでいないタブどうしの区切り
+                borderLeft: {
+                  xs: index === 0 || selected || previousSelected ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+                },
+                // PC：選んでいるタブは袋の枠の上に重ねて、袋とつなげる
+                mb: { xs: 0, sm: selected ? '-3px' : 0 },
                 zIndex: selected ? 1 : 0,
                 backgroundColor: selected ? colors.canvas : colors.tabOff,
                 color: selected ? colors.text : '#ffffff',
@@ -176,7 +193,9 @@ export function BagFrame({ children, fill }: { children: ReactNode; fill: boolea
         flexDirection: 'column',
         backgroundColor: colors.canvas,
         border: `3px solid ${colors.leather}`,
-        borderRadius: '18px',
+        // スマホは上辺がタブの帯になるので、上の枠と角丸を付けない
+        borderTop: { xs: 'none', sm: `3px solid ${colors.leather}` },
+        borderRadius: { xs: '0 0 18px 18px', sm: '18px' },
         p: { xs: 0.75, sm: 1.25 },
         boxShadow: `0 6px 0 ${colors.leatherDark}`,
       }}
