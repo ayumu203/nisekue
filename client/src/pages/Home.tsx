@@ -36,7 +36,7 @@ import AnnouncementList from '@/components/common/AnnouncementList'
 import GamePanel from '@/components/common/GamePanel'
 import HomeStatusPanel from '@/components/home/HomeStatusPanel'
 import { GearIcon } from '@/components/home/StatusIcons'
-import { SwapIcon } from '@/components/home/HomeIcons'
+import { HomeIcon, SwapIcon } from '@/components/home/HomeIcons'
 import HomeHeaderMenu from '@/components/home/HomeHeaderMenu'
 import HomeMenuList from '@/components/home/HomeMenuList'
 import { buildHomeMenu, getTutorialOpenGroup, type HomeMenuGroupKey } from '@/components/home/homeMenu'
@@ -401,8 +401,9 @@ function Home() {
         background: `linear-gradient(${homePanelColors.topBand}, ${homePanelColors.topBand}) top / 100% 340px no-repeat, ${homePanelColors.ground}`,
       }}
     >
+      {/* ほかの画面と同じく先頭に「ホームへ戻る」を置き、画面を移ってもメニューの並びと幅が変わらないようにする */}
       <HomeHeaderMenu
-        primary={homeMenu.primary}
+        primary={[{ key: 'home', label: locale.backToHome, icon: <HomeIcon />, to: '/' }, ...homeMenu.primary]}
         groups={homeMenu.groups}
         openGroup={openMenuGroup}
         lockedGroup={tutorialOpenGroup}
@@ -410,6 +411,8 @@ function Home() {
         onCloseGroup={() => setOpenMenuGroup(null)}
         gearIconId={gearIconId}
         onGearClick={handleGearClick}
+        currentKey="home"
+        currentColor={homePanelColors.band}
       />
       <Box
         sx={{
