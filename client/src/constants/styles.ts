@@ -239,24 +239,21 @@ export const homePanelColors = {
   band: '#2f7d3a',
   // 帯を「作成｜募集中」のように分けたとき、選んでいる側の色
   bandSelected: '#1d5626',
-  shadow: '#d39a00',
   divider: '#e3d6b8',
   label: '#6b5a3e',
   text: '#3a2f1e',
 } as const
 
-// クエスト画面の色（上部の青緑の帯・地の薄い青緑・白い箱の影）。見出しの帯やボタンの緑はホームと同じ
+// クエスト画面の色（上部の青緑の帯・地の薄い青緑）。見出しの帯やボタンの緑はホームと同じ
 export const questPanelColors = {
   topBand: '#2a7f84',
   ground: '#eaf4f2',
-  shadow: '#bcd9d5',
 } as const
 
-// 訓練場の色（道場：上部の木の茶色の帯・生成りの地・白い箱の影）。見出しの帯とボタンは緑ではなく藍
+// 訓練場の色（道場：上部の木の茶色の帯・生成りの地）。見出しの帯とボタンは緑ではなく藍
 export const trainingPanelColors = {
   topBand: '#6b4423',
   ground: '#f4efe4',
-  shadow: '#dccdb2',
   band: '#2f4a7a',
   // 帯を「NPC｜PLAYER」のように分けたとき、選んでいる側の色
   bandSelected: '#1d3157',
@@ -270,11 +267,10 @@ export const trainingPanelColors = {
   divider: '#dfe3ea',
 } as const
 
-// 宝の地図の色（白・金・青：上部の金の帯・白に近い地・白い箱の影）。見出しの帯とボタンは緑ではなく青
+// 宝の地図の色（白・金・青：上部の金の帯・白に近い地）。見出しの帯とボタンは緑ではなく青
 export const treasureMapPanelColors = {
   topBand: '#9a7008',
   ground: '#fbfaf5',
-  shadow: '#e6dcbf',
   band: '#1e4f96',
   // 探索中の地図の「探索中」の地と文字
   soft: '#e8eef8',

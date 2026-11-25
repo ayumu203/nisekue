@@ -1151,7 +1151,7 @@ export default function Quest() {
     </IconButton>
   )
 
-  const panelProps = { shadowColor: questPanelColors.shadow, fillHeight: isWide }
+  const panelProps = { fillHeight: isWide }
   // ルーム作成・募集中・出発待ちの箱は中身の高さまで縮める（バトル画面とメッセージは画面の高さいっぱいに使う）
   const fitPanelProps = { ...panelProps, fitContent: true }
   const stageName = currentRunStage?.name ?? currentRoomStage?.name ?? null

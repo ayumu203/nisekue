@@ -565,7 +565,6 @@ export default function Training() {
   }
 
   const panelProps = {
-    shadowColor: trainingPanelColors.shadow,
     fillHeight: isWide,
     bandColor: trainingPanelColors.band,
     bandSelectedColor: trainingPanelColors.bandSelected,
