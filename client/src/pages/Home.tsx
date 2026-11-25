@@ -1,20 +1,16 @@
 import {
   Alert,
-  Badge,
   Box,
   CircularProgress,
-  Container,
   IconButton,
   Pagination,
-  Paper,
   Snackbar,
   Stack,
-  Tab,
-  Tabs,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
+import { Link } from 'react-router-dom'
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import useSWR from 'swr'
 import { createPlayer, getPlayer } from '@/api/player'
@@ -37,23 +33,16 @@ import locale from '../../locale/home/Home.json'
 import ChatMessages from '@/components/chat/ChatMessages'
 import ChatForm from '@/components/chat/ChatForm'
 import AnnouncementList from '@/components/common/AnnouncementList'
-import Status from '@/components/home/Status'
 import GamePanel from '@/components/common/GamePanel'
 import HomeStatusPanel from '@/components/home/HomeStatusPanel'
+import { GearIcon } from '@/components/home/StatusIcons'
 import { SwapIcon } from '@/components/home/HomeIcons'
 import HomeHeaderMenu from '@/components/home/HomeHeaderMenu'
 import HomeMenuList from '@/components/home/HomeMenuList'
 import { buildHomeMenu, getTutorialOpenGroup, type HomeMenuGroupKey } from '@/components/home/homeMenu'
-import {
-  gameTabSx,
-  gameTabsSx,
-  homePanelColors,
-  innerSurfaceSx,
-  outerPagePaperSx,
-  twoColumnContentGridSx,
-} from '@/constants/styles'
+import { homePanelColors } from '@/constants/styles'
 import { announcementTabLabel } from '@/lib/announcements'
-import { hasUnreadAnnouncement, markAnnouncementsSeen } from '@/lib/announcementStorage'
+import { markAnnouncementsSeen } from '@/lib/announcementStorage'
 import {
   getTutorialStep,
   isRebirthTutorialShown,
@@ -64,12 +53,6 @@ import {
 } from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
-
-// チャットのタブ。PC では文字の長さに合わせた幅にする
-const chatTabSx = {
-  ...gameTabSx,
-  px: { xs: 0.5, sm: 3 },
-} as const
 
 // アンケートを案内するレベル
 const SURVEY_GUIDE_LEVEL = 10
@@ -90,7 +73,7 @@ function Home() {
     setTutorialStep(userId, next)
     setTutorialStepState(next)
   }
-  const [chatTab, setChatTab] = useState<'personal' | 'global' | 'announcement'>('global')
+  const [chatTab, setChatTab] = useState<'personal' | 'global'>('global')
   const [globalChatPage, setGlobalChatPage] = useState(1)
   // メニューで開いているグループ（強化・交流・その他のうち 1 つだけ）
   const [openMenuGroup, setOpenMenuGroup] = useState<HomeMenuGroupKey | null>(null)
@@ -270,14 +253,10 @@ function Home() {
   }, [session?.access_token, threadAlerts])
 
   // お知らせタブを開いている間は、後から取得した新しいお知らせもその場で既読にする
-  // PC ではお知らせを常に出しているので、表示した時点で既読にする
+  // お知らせは PC・スマホとも常に出しているので、表示した時点で既読にする
   useEffect(() => {
-    if (chatTab === 'announcement' || isDesktop) {
-      markAnnouncementsSeen(userId, latestAnnouncementDate)
-    }
-  }, [chatTab, isDesktop, userId, latestAnnouncementDate])
-
-  const hasUnreadAnnouncements = chatTab !== 'announcement' && hasUnreadAnnouncement(userId, latestAnnouncementDate)
+    markAnnouncementsSeen(userId, latestAnnouncementDate)
+  }, [userId, latestAnnouncementDate])
 
   if (isLoading) {
     return (
@@ -384,7 +363,6 @@ function Home() {
     </Stack>
   )
 
-  const desktopChatTab = chatTab === 'global' ? 'global' : 'personal'
   const playerStatusContent = isPlayerLoading ? (
     <Stack direction="row" spacing={1} alignItems="center">
       <CircularProgress size={16} />
@@ -393,6 +371,25 @@ function Home() {
   ) : playerError ? (
     <Alert severity="warning">{playerError.message}</Alert>
   ) : null
+
+  const chatPanel = (fillHeight: boolean) => (
+    <GamePanel
+      fillHeight={fillHeight}
+      title={chatTab === 'personal' ? locale.chatTabPersonal : locale.chatTabGlobal}
+      aria-label={locale.chatTitle}
+      action={
+        <IconButton
+          aria-label={chatTab === 'personal' ? locale.chatSwitchToGlobal : locale.chatSwitchToPersonal}
+          onClick={() => setChatTab(chatTab === 'personal' ? 'global' : 'personal')}
+          sx={{ width: 44, height: 44, borderRadius: 0, color: '#ffffff' }}
+        >
+          <SwapIcon sx={{ fontSize: 22 }} />
+        </IconButton>
+      }
+    >
+      {chatTab === 'personal' ? personalChatContent : globalChatContent}
+    </GamePanel>
+  )
 
   // PC：上端の白いヘッダー＋上部だけオレンジの帯＋ステータス／チャット／お知らせの 3 列
   const desktopLayout = (
@@ -437,23 +434,7 @@ function Home() {
             {playerStatusContent ?? <HomeStatusPanel player={player} />}
           </GamePanel>
         </Box>
-        <Box sx={{ gridArea: 'chat', minHeight: 0, minWidth: 0 }}>
-          <GamePanel
-            title={desktopChatTab === 'personal' ? locale.chatTabPersonal : locale.chatTabGlobal}
-            aria-label={locale.chatTitle}
-            action={
-              <IconButton
-                aria-label={desktopChatTab === 'personal' ? locale.chatSwitchToGlobal : locale.chatSwitchToPersonal}
-                onClick={() => setChatTab(desktopChatTab === 'personal' ? 'global' : 'personal')}
-                sx={{ width: 44, height: 44, borderRadius: 0, color: '#ffffff' }}
-              >
-                <SwapIcon sx={{ fontSize: 22 }} />
-              </IconButton>
-            }
-          >
-            {desktopChatTab === 'personal' ? personalChatContent : globalChatContent}
-          </GamePanel>
-        </Box>
+        <Box sx={{ gridArea: 'chat', minHeight: 0, minWidth: 0 }}>{chatPanel(true)}</Box>
         <Box sx={{ gridArea: 'news', minHeight: 0 }}>
           <GamePanel title={announcementTabLabel}>
             <AnnouncementList variant="list" />
@@ -463,82 +444,48 @@ function Home() {
     </Box>
   )
 
-  // スマホ：黄色の枠の中に、ステータス・縦並びのメニュー・タブ付きのチャット
+  // スマホ：上部だけオレンジの帯＋ステータス・メニュー・チャット・お知らせを縦に並べる
   const mobileLayout = (
-    <Container maxWidth="lg" sx={{ py: 2 }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={1.5}>
-          {/* スマホではメニューとチャットのあいだを広めに空ける */}
-          <Box sx={{ ...twoColumnContentGridSx, gap: { xs: 3, sm: 3 } }}>
-            <Stack spacing={2}>
-              {isPlayerLoading ? (
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <CircularProgress size={16} />
-                  <Typography variant="body2">{locale.playerLoading}</Typography>
-                </Stack>
-              ) : playerError ? (
-                <Alert severity="warning">{playerError.message}</Alert>
-              ) : (
-                <Status
-                  player={player}
-                  actionAlign="start"
-                  showCollapseToggle={false}
-                  layout="compact"
-                  showDesktopActions={false}
-                  gearIconId={gearIconId}
-                  onGearClick={handleGearClick}
-                />
-              )}
-              <HomeMenuList
-                primary={homeMenu.primary}
-                groups={homeMenu.groups}
-                openGroup={openMenuGroup}
-                lockedGroup={tutorialOpenGroup}
-                onToggleGroup={toggleMenuGroup}
-              />
-              {signOutError ? <Alert severity="error">{signOutError}</Alert> : null}
-            </Stack>
-
-            {/* タブを枠の外に出して、選んでいるタブと枠をつなげる */}
-            <Box sx={{ minWidth: 0 }}>
-              <Tabs
-                value={chatTab}
-                onChange={(_, value: 'personal' | 'global' | 'announcement') => {
-                  setChatTab(value)
-                }}
-                variant="fullWidth"
-                sx={gameTabsSx}
-                slotProps={{ indicator: { sx: { display: 'none' } } }}
-              >
-                <Tab label={locale.chatTabPersonal} value="personal" sx={chatTabSx} />
-                <Tab label={locale.chatTabGlobal} value="global" sx={chatTabSx} />
-                <Tab
-                  label={
-                    <Badge variant="dot" color="error" invisible={!hasUnreadAnnouncements} sx={{ pr: 0.5 }}>
-                      {announcementTabLabel}
-                    </Badge>
-                  }
-                  value="announcement"
-                  sx={chatTabSx}
-                />
-              </Tabs>
-              <Paper
-                variant="outlined"
-                sx={{ ...innerSurfaceSx, borderRadius: 3, borderTopLeftRadius: 0, p: { xs: 2, sm: 2.5 } }}
-              >
-                {chatTab === 'announcement' ? (
-                  <AnnouncementList />
-                ) : chatTab === 'personal' ? (
-                  personalChatContent
-                ) : (
-                  globalChatContent
-                )}
-              </Paper>
-            </Box>
-          </Box>
-        </Stack>
-      </Paper>
-    </Container>
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        background: `linear-gradient(${homePanelColors.topBand}, ${homePanelColors.topBand}) top / 100% 220px no-repeat, ${homePanelColors.ground}`,
+      }}
+    >
+      <Stack spacing={2} sx={{ p: 2 }}>
+        <GamePanel
+          title={player?.userName ?? locale.notSet}
+          aria-label={locale.statusPanelLabel}
+          fillHeight={false}
+          action={
+            <IconButton
+              id={gearIconId}
+              component={Link}
+              to="/player-setting"
+              aria-label="プレイヤー設定へ移動"
+              onClick={handleGearClick}
+              sx={{ width: 44, height: 44, borderRadius: 0, color: '#ffffff' }}
+            >
+              <GearIcon sx={{ fontSize: 22 }} />
+            </IconButton>
+          }
+        >
+          {playerStatusContent ?? <HomeStatusPanel player={player} compact />}
+        </GamePanel>
+        <HomeMenuList
+          primary={homeMenu.primary}
+          groups={homeMenu.groups}
+          openGroup={openMenuGroup}
+          lockedGroup={tutorialOpenGroup}
+          onToggleGroup={toggleMenuGroup}
+        />
+        {signOutError ? <Alert severity="error">{signOutError}</Alert> : null}
+        {chatPanel(false)}
+        <GamePanel title={announcementTabLabel} fillHeight={false}>
+          <AnnouncementList variant="list" />
+        </GamePanel>
+      </Stack>
+    </Box>
   )
 
   return (
