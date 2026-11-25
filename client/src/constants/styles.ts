@@ -267,11 +267,10 @@ export const trainingPanelColors = {
   divider: '#dfe3ea',
 } as const
 
-// 宝の地図の色（白・金・青：上部の金の帯・白に近い地・白い箱の影）。見出しの帯とボタンは緑ではなく青
+// 宝の地図の色（白・金・青：上部の金の帯・白に近い地）。見出しの帯とボタンは緑ではなく青
 export const treasureMapPanelColors = {
   topBand: '#9a7008',
   ground: '#fbfaf5',
-  shadow: '#e6dcbf',
   band: '#1e4f96',
   // 探索中の地図の「探索中」の地と文字
   soft: '#e8eef8',

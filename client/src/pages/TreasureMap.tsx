@@ -447,7 +447,6 @@ export default function TreasureMap() {
   )
 
   const panelProps = {
-    shadowColor: colors.shadow,
     bandColor: colors.band,
     bandSelectedColor: colors.band,
   }
