@@ -73,7 +73,10 @@ function ListingRow({
         display: 'grid',
         gridTemplateColumns: {
           xs: '52px minmax(0, 1fr) auto',
-          md: showSeller ? '64px minmax(0, 1fr) 170px 120px 132px' : '64px minmax(0, 1fr) 120px 132px',
+          // 価格は折り返さず、大きな額のときだけ列を広げる
+          md: showSeller
+            ? '64px minmax(0, 1fr) 170px 120px minmax(132px, auto)'
+            : '64px minmax(0, 1fr) 120px minmax(132px, auto)',
         },
         alignItems: 'center',
         gap: { xs: 1.25, md: 2 },
@@ -188,7 +191,8 @@ function ListingRow({
         component="span"
         sx={{
           justifySelf: 'end',
-          width: { xs: 88, md: 132 },
+          minWidth: { xs: 88, md: 132 },
+          whiteSpace: 'nowrap',
           boxSizing: 'border-box',
           textAlign: 'right',
           fontVariantNumeric: 'tabular-nums',

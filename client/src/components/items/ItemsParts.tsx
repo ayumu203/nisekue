@@ -92,6 +92,7 @@ export function ItemsTabs({
   startAction?: ReactNode
 }) {
   return (
+    // スマホはほかの画面の帯と同じく横幅いっぱいに広げる
     <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: { xs: 0, sm: 0.75 }, pl: { xs: 0, sm: 3 }, flex: 'none' }}>
       {startAction ? (
         // スマホのホームボタン。ほかの画面の帯と同じく、塗りの家と白い縦線で中身と区切る
@@ -113,7 +114,13 @@ export function ItemsTabs({
       <Box
         role="tablist"
         aria-label={locale.tabsLabel}
-        sx={{ display: 'flex', alignItems: 'flex-end', gap: { xs: 0.5, sm: 0.75 }, minWidth: 0 }}
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: { xs: 0.5, sm: 0.75 },
+          minWidth: 0,
+          flex: { xs: 1, sm: 'none' },
+        }}
       >
         {tabs.map((tab) => {
           const selected = tab.key === value
@@ -127,6 +134,8 @@ export function ItemsTabs({
               sx={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
+                flex: { xs: 1, sm: 'none' },
                 gap: 1,
                 px: { xs: 1.25, sm: 3.5 },
                 height: selected ? { xs: 50, sm: 60 } : { xs: 42, sm: 50 },
