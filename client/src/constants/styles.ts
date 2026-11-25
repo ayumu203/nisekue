@@ -250,11 +250,10 @@ export const questPanelColors = {
   ground: '#eaf4f2',
 } as const
 
-// 訓練場の色（道場：上部の木の茶色の帯・生成りの地・白い箱の影）。見出しの帯とボタンは緑ではなく藍
+// 訓練場の色（道場：上部の木の茶色の帯・生成りの地）。見出しの帯とボタンは緑ではなく藍
 export const trainingPanelColors = {
   topBand: '#6b4423',
   ground: '#f4efe4',
-  shadow: '#dccdb2',
   band: '#2f4a7a',
   // 帯を「NPC｜PLAYER」のように分けたとき、選んでいる側の色
   bandSelected: '#1d3157',
