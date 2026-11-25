@@ -599,8 +599,6 @@ export default function Items() {
               gap: 2.5,
               minHeight: 0,
               minWidth: 0,
-              // PC は袋の上端（タブの下）にそろえる
-              pt: { md: '57px' },
               pb: '6px',
             }}
           >

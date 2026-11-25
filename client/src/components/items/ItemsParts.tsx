@@ -91,21 +91,19 @@ export function ItemsTabs({
   // スマホのホームボタン（ヘッダーがないため、タブの左に置く）
   startAction?: ReactNode
 }) {
-  // PC：袋の上に付いたしおり。スマホ：ほかの画面の帯と同じく、ホームボタンとタブを 1 本の帯につなげて袋の上辺にする
+  // ほかの画面の帯と同じく、タブ（スマホはホームボタンも）を隙間なく 1 本の帯につなげて、袋の上辺にする
   return (
     <Box
       sx={{
         display: 'flex',
-        alignItems: { xs: 'stretch', sm: 'flex-end' },
-        gap: { xs: 0, sm: 0.75 },
-        pl: { xs: 0, sm: 3 },
+        alignItems: 'stretch',
         flex: 'none',
-        height: { xs: 48, sm: 'auto' },
-        border: { xs: `3px solid ${colors.leather}`, sm: 'none' },
-        borderBottom: { xs: 'none', sm: 'none' },
-        borderRadius: { xs: '18px 18px 0 0', sm: 0 },
-        overflow: { xs: 'hidden', sm: 'visible' },
-        backgroundColor: { xs: colors.tabOff, sm: 'transparent' },
+        height: { xs: 48, sm: 56 },
+        border: `3px solid ${colors.leather}`,
+        borderBottom: 'none',
+        borderRadius: '18px 18px 0 0',
+        overflow: 'hidden',
+        backgroundColor: colors.tabOff,
       }}
     >
       {startAction ? (
@@ -125,13 +123,7 @@ export function ItemsTabs({
       <Box
         role="tablist"
         aria-label={locale.tabsLabel}
-        sx={{
-          display: 'flex',
-          alignItems: { xs: 'stretch', sm: 'flex-end' },
-          gap: { xs: 0, sm: 0.75 },
-          flex: { xs: 1, sm: 'none' },
-          minWidth: 0,
-        }}
+        sx={{ display: 'flex', alignItems: 'stretch', flex: 1, minWidth: 0 }}
       >
         {tabs.map((tab, index) => {
           const selected = tab.key === value
@@ -148,25 +140,17 @@ export function ItemsTabs({
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 1,
-                flex: { xs: 1, sm: 'none' },
+                flex: 1,
                 minWidth: 0,
-                px: { xs: 0.5, sm: 3.5 },
-                height: { xs: 'auto', sm: selected ? 60 : 50 },
-                borderRadius: { xs: 0, sm: '14px 14px 0 0' },
-                border: { xs: 'none', sm: '3px solid' },
-                borderBottom: { sm: 'none' },
-                borderColor: { sm: selected ? colors.leather : 'transparent' },
-                // スマホ：選んでいないタブどうしの区切り
-                borderLeft: {
-                  xs: index === 0 || selected || previousSelected ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
-                },
-                // PC：選んでいるタブは袋の枠の上に重ねて、袋とつなげる
-                mb: { xs: 0, sm: selected ? '-3px' : 0 },
-                zIndex: selected ? 1 : 0,
+                px: 0.5,
+                // 選んでいないタブどうしの区切り
+                borderLeft:
+                  index === 0 || selected || previousSelected ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+                // 選んでいるタブは袋の布地の色にして、袋とつなげる
                 backgroundColor: selected ? colors.canvas : colors.tabOff,
                 color: selected ? colors.text : '#ffffff',
                 fontFamily: 'inherit',
-                fontSize: { xs: '0.9375rem', sm: '1.1875rem' },
+                fontSize: { xs: '0.9375rem', sm: '1.125rem' },
                 fontWeight: 800,
                 whiteSpace: 'nowrap',
                 '& .MuiSvgIcon-root': { display: { xs: 'none', sm: 'inline-block' }, fontSize: 24 },
@@ -193,9 +177,9 @@ export function BagFrame({ children, fill }: { children: ReactNode; fill: boolea
         flexDirection: 'column',
         backgroundColor: colors.canvas,
         border: `3px solid ${colors.leather}`,
-        // スマホは上辺がタブの帯になるので、上の枠と角丸を付けない
-        borderTop: { xs: 'none', sm: `3px solid ${colors.leather}` },
-        borderRadius: { xs: '0 0 18px 18px', sm: '18px' },
+        // 上辺はタブの帯になるので、上の枠と角丸を付けない
+        borderTop: 'none',
+        borderRadius: '0 0 18px 18px',
         p: { xs: 0.75, sm: 1.25 },
         boxShadow: `0 6px 0 ${colors.leatherDark}`,
       }}
