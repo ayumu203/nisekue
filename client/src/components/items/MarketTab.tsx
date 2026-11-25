@@ -28,23 +28,21 @@ const categoryFilters: Array<[MarketCategoryFilter, string]> = [
   ['Map', locale.categoryMap],
 ]
 
-function SegmentButton({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+function UnderlineTab({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
   return (
     <ButtonBase
-      role="tab"
-      aria-selected={selected}
       onClick={onClick}
+      aria-pressed={selected}
       disableRipple
       sx={{
         height: 38,
-        px: 2.25,
-        borderRadius: 999,
-        border: `2px solid ${colors.leather}`,
-        backgroundColor: selected ? colors.leather : 'transparent',
-        color: selected ? '#ffffff' : colors.leather,
+        px: { xs: 1.25, sm: 1.75 },
+        borderBottom: `3px solid ${selected ? colors.leather : 'transparent'}`,
         fontFamily: 'inherit',
         fontSize: '0.9375rem',
         fontWeight: 800,
+        color: selected ? colors.text : colors.label,
+        whiteSpace: 'nowrap',
       }}
     >
       {label}
@@ -277,53 +275,55 @@ export function MarketList({
           flex: 'none',
         }}
       />
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5 }}>
-        <Box role="tablist" aria-label={locale.marketTabsLabel} sx={{ display: 'flex', gap: 1 }}>
-          <SegmentButton
-            label={locale.publicMarketTab}
-            selected={tab === 'public'}
-            onClick={() => onTabChange('public')}
+      <InputBase
+        value={search}
+        onChange={(event) => onSearchChange(event.target.value)}
+        placeholder={locale.searchPlaceholderMarket}
+        inputProps={{ 'aria-label': locale.searchLabel }}
+        sx={{
+          flex: 'none',
+          height: 42,
+          px: 2,
+          border: `2px solid ${colors.slotLine}`,
+          borderRadius: 999,
+          backgroundColor: '#ffffff',
+          fontFamily: 'inherit',
+          fontSize: '0.9375rem',
+        }}
+      />
+      {/* 種類の絞り込みと「自分の出品」を 1 行の下線タブにまとめる。自分の出品は区切り線の右に置く */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: 0.5,
+          borderBottom: `2px dashed ${colors.stitch}`,
+        }}
+      >
+        {categoryFilters.map(([value, label]) => (
+          <UnderlineTab
+            key={value}
+            label={label}
+            selected={tab === 'public' && category === value}
+            onClick={() => {
+              onTabChange('public')
+              onCategoryChange(value)
+            }}
           />
-          <SegmentButton label={locale.myListingsTab} selected={tab === 'mine'} onClick={() => onTabChange('mine')} />
-        </Box>
-        <InputBase
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder={locale.searchPlaceholderMarket}
-          inputProps={{ 'aria-label': locale.searchLabel }}
-          sx={{
-            flex: 1,
-            minWidth: 220,
-            height: 42,
-            px: 2,
-            border: `2px solid ${colors.slotLine}`,
-            borderRadius: 999,
-            backgroundColor: '#ffffff',
-            fontFamily: 'inherit',
-            fontSize: '0.9375rem',
+        ))}
+        <Box
+          aria-hidden="true"
+          sx={{ width: '2px', height: 22, mx: { xs: 0.5, sm: 1 }, backgroundColor: colors.stitch }}
+        />
+        <UnderlineTab
+          label={locale.myListingsTab}
+          selected={tab === 'mine'}
+          onClick={() => {
+            onTabChange('mine')
+            onCategoryChange('all')
           }}
         />
-      </Box>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, borderBottom: `2px dashed ${colors.stitch}` }}>
-        {categoryFilters.map(([value, label]) => (
-          <ButtonBase
-            key={value}
-            onClick={() => onCategoryChange(value)}
-            aria-pressed={category === value}
-            disableRipple
-            sx={{
-              height: 38,
-              px: { xs: 1.25, sm: 1.75 },
-              borderBottom: `3px solid ${category === value ? colors.leather : 'transparent'}`,
-              fontFamily: 'inherit',
-              fontSize: '0.9375rem',
-              fontWeight: 800,
-              color: category === value ? colors.text : colors.label,
-            }}
-          >
-            {label}
-          </ButtonBase>
-        ))}
       </Box>
       <Box
         sx={{
