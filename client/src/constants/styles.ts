@@ -296,6 +296,45 @@ export const treasureMapPanelColors = {
   messageLabel: '#b8c4de',
 } as const
 
+// アイテム画面の色（道具袋：えんじの革・生成りの布・真鍮）。ほかの画面の白い箱ではなく、袋と札で組む
+export const itemsPanelColors = {
+  topBand: '#4f1d27',
+  ground: '#ede2cf',
+  // 袋の革（枠・タブ・主な操作）と、その影
+  leather: '#7d3340',
+  leatherDark: '#4f1d27',
+  // 選んでいないタブ
+  tabOff: '#a0646d',
+  // 袋の布地・縫い目・マス
+  canvas: '#f6ecdc',
+  stitch: '#d2b48e',
+  slot: '#fffaf0',
+  slotLine: '#e2cfae',
+  // 選んでいるマスの縁
+  brass: '#b8862b',
+  brassSoft: '#f6e2b0',
+  text: '#2e2420',
+  label: '#6a5648',
+  danger: '#a05050',
+  dangerText: '#8a3535',
+  up: '#1f6b3a',
+  down: '#a03030',
+  // 値札
+  priceTag: '#fbe6a6',
+  priceTagText: '#4a3208',
+  // 合成タブの鍛冶場
+  forge: '#2a2220',
+  forgeLine: '#4a3e38',
+  forgeSlot: '#3a302b',
+  forgeSlotLine: '#5a4a42',
+  forgeEmber: '#e0782a',
+  forgeEmberText: '#ffb27a',
+  forgeButton: '#b4501a',
+  forgeText: '#f3e6d8',
+  forgeLabel: '#d8c8b8',
+  forgeMuted: '#8a7a70',
+} as const
+
 // 白い箱の中の主な操作（募集開始・START・決定など）。見出しの帯と同じ緑
 export const panelPrimaryButtonSx = {
   '&&': {
