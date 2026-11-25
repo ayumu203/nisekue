@@ -9,10 +9,18 @@ type HomePanelProps = {
   action?: ReactNode
   children: ReactNode
   'aria-label'?: string
+  // 箱の高さを親に合わせ、中身が多いときは箱の中でスクロールする（PC）。false なら中身の高さに合わせる（スマホ）
+  fillHeight?: boolean
 }
 
-// PC のホームで使う、上に緑の帯の見出しが付いた白い箱。中身が多いときは箱の中でスクロールする
-export default function HomePanel({ title, action, children, 'aria-label': ariaLabel }: HomePanelProps) {
+// ホームで使う、上に緑の帯の見出しが付いた白い箱
+export default function HomePanel({
+  title,
+  action,
+  children,
+  'aria-label': ariaLabel,
+  fillHeight = true,
+}: HomePanelProps) {
   return (
     <Box
       component="section"
@@ -21,7 +29,7 @@ export default function HomePanel({ title, action, children, 'aria-label': ariaL
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
-        height: '100%',
+        height: fillHeight ? '100%' : 'auto',
         backgroundColor: '#ffffff',
         borderRadius: '12px',
         overflow: 'hidden',
@@ -49,7 +57,9 @@ export default function HomePanel({ title, action, children, 'aria-label': ariaL
           </Box>
         ) : null}
       </Box>
-      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 2.5 }}>{children}</Box>
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: fillHeight ? 'auto' : 'visible', p: { xs: 2, sm: 2.5 } }}>
+        {children}
+      </Box>
     </Box>
   )
 }
