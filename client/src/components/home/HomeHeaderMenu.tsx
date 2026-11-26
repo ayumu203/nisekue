@@ -146,6 +146,8 @@ export default function HomeHeaderMenu({
           ))}
           {groups.map((group) => {
             const isOpen = visibleGroup === group.key
+            // 今いる画面がこのグループの中にあるとき（転職は「強化」の中）、グループのボタンを帯の色で示す
+            const containsCurrent = currentKey != null && group.items.some((item) => item.key === currentKey)
 
             return (
               <ClickAwayListener
@@ -174,7 +176,7 @@ export default function HomeHeaderMenu({
                         onToggleGroup(group.key)
                       }
                     }}
-                    sx={headerButtonSx}
+                    sx={containsCurrent && currentColor ? currentHeaderButtonSx(currentColor) : headerButtonSx}
                   >
                     {group.label}
                   </Button>

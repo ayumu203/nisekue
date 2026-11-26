@@ -10,7 +10,8 @@ public record JobRoadmapListEntry(
     int Rank,
     bool IsUnlocked,
     bool CanUnlock,
-    int GoldCostToUnlock);
+    int GoldCostToUnlock,
+    IReadOnlyList<int> RequiredJobIds);
 
 public record QuestStageReference(int Id, string Name);
 
@@ -60,6 +61,9 @@ public class JobRoadmapService(
             var isUnlocked = player.IsRoadmapUnlocked(job);
             var canUnlock = !isUnlocked && await CanUnlockRoadmapAsync(player, job);
             var goldCost = GoldCostForRank(rank);
+            var requiredJobIds = jobProfileRepository.GetByJob(job).RequiredMasterJobs
+                .Select(requiredJob => (int)requiredJob)
+                .ToArray();
 
             entries.Add(new JobRoadmapListEntry(
                 (int)job,
@@ -68,7 +72,8 @@ public class JobRoadmapService(
                 rank,
                 isUnlocked,
                 canUnlock,
-                goldCost));
+                goldCost,
+                requiredJobIds));
         }
 
         return entries;

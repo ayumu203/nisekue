@@ -28,6 +28,25 @@ public class JobRoadmapServiceTests
         list[0].IsUnlocked.Should().BeTrue();
         list[1].JobCode.Should().Be("Warrior");
         list[1].IsUnlocked.Should().BeFalse();
+        list[1].RequiredJobIds.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetListAsync_WhenJobHasPrerequisites_ReturnsRequiredJobIds()
+    {
+        var player = CreatePlayer(level: 1, gold: 1000);
+        var playerRepository = new FakePlayerRepository(player);
+        var service = new JobRoadmapService(
+            playerRepository,
+            new FakeJobProfileRepository(),
+            new FakeJobRoadmapRankRepository(includeOniWarrior: true),
+            new FakeItemRepository(),
+            new FakeQuestStageRepository(),
+            new TestPlayerMutationService(playerRepository));
+
+        var list = await service.GetListAsync(player.Id);
+
+        list.Single(entry => entry.JobCode == "OniWarrior").RequiredJobIds.Should().Equal((int)Job.Warrior);
     }
 
     [Fact]
@@ -331,7 +350,7 @@ public class JobRoadmapServiceTests
         }
     }
 
-    private sealed class FakeJobRoadmapRankRepository : IJobRoadmapRankRepository
+    private sealed class FakeJobRoadmapRankRepository(bool includeOniWarrior = false) : IJobRoadmapRankRepository
     {
         public int? GetRank(Job job)
         {
@@ -346,7 +365,7 @@ public class JobRoadmapServiceTests
 
         public IReadOnlyList<Job> GetJobs()
         {
-            return [Job.Apprentice, Job.Warrior];
+            return includeOniWarrior ? [Job.Apprentice, Job.Warrior, Job.OniWarrior] : [Job.Apprentice, Job.Warrior];
         }
     }
 

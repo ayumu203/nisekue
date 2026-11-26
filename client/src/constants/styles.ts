@@ -405,3 +405,26 @@ export const panelCancelButtonSx = {
     color: '#bf8b84',
   },
 } as const
+
+// 転職画面（聖堂の藍）。上部の帯・地・白い箱の見出しの帯・舞台の上の名札
+export const jobChangePanelColors = {
+  topBand: '#23476d',
+  ground: '#f3f0e8',
+  band: '#2f5d8a',
+  bandDark: '#1f3f60',
+  soft: '#e6eef7',
+  gold: '#b8862b',
+  goldText: '#7a5510',
+  goldSoft: '#fbf1dc',
+  // 舞台の上の名札と札の金
+  plate: 'rgba(28, 52, 82, 0.9)',
+  plateGold: '#e8c46a',
+  text: '#24303d',
+  label: '#4f5b69',
+  divider: '#dfe4ea',
+  // 未解放の札
+  locked: '#f1eee8',
+  lockedBorder: '#ddd6c9',
+  lockedText: '#6f675b',
+  canUnlock: '#fffaf0',
+} as const
