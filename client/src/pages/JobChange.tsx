@@ -170,7 +170,6 @@ export default function JobChange() {
               color: selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
               backgroundColor: selected ? colors.bandDark : colors.band,
               borderLeft: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
-              boxShadow: selected ? `inset 0 -4px 0 ${colors.gold}` : 'none',
             }}
           >
             {label}
@@ -211,7 +210,6 @@ export default function JobChange() {
               fontSize: '0.9375rem',
               color: selected ? colors.text : '#ffffff',
               backgroundColor: selected ? colors.ground : 'transparent',
-              boxShadow: selected ? `inset 0 4px 0 ${colors.gold}` : 'none',
             }}
           >
             {label}
