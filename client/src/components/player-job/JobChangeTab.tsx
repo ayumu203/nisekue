@@ -385,7 +385,6 @@ function SelectFooter({
         fontFamily: 'inherit',
         fontSize: compact ? font.xl : font.xxl,
         boxShadow: `0 4px 0 ${colors.bandDark}`,
-        '&:hover': { backgroundColor: colors.bandDark },
         '&.Mui-disabled': { backgroundColor: palette.gray300, color: palette.white },
       }}
     >

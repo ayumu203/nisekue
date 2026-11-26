@@ -13,12 +13,6 @@ export const softGreenButtonSx = {
     borderColor: palette.white,
     color: palette.white,
   },
-  '&&:hover': {
-    backgroundColor: palette.green400,
-    backgroundImage: 'none',
-    borderColor: palette.cream,
-    boxShadow: 'none',
-  },
   '&&.Mui-disabled': {
     backgroundColor: palette.gray300,
     backgroundImage: 'none',
@@ -33,12 +27,6 @@ export const mutedGreenButtonSx = {
     backgroundImage: 'none',
     borderColor: palette.green400,
     color: palette.green700,
-  },
-  '&&:hover': {
-    backgroundColor: palette.gray300,
-    backgroundImage: 'none',
-    borderColor: palette.green400,
-    boxShadow: 'none',
   },
   '&&.Mui-disabled': {
     backgroundColor: palette.white,
@@ -55,12 +43,6 @@ export const softGoldButtonSx = {
     border: `2px solid ${palette.brown500}`,
     borderColor: palette.brown500,
     color: palette.brown900,
-    boxShadow: 'none',
-  },
-  '&&:hover': {
-    backgroundColor: palette.gold300,
-    backgroundImage: 'none',
-    borderColor: palette.brown500,
     boxShadow: 'none',
   },
   '&&.Mui-disabled': {
@@ -81,12 +63,6 @@ export const googleButtonSx = {
     color: palette.brown900,
     boxShadow: 'none',
   },
-  '&&:hover': {
-    backgroundColor: palette.white,
-    backgroundImage: 'none',
-    borderColor: palette.gray300,
-    boxShadow: 'none',
-  },
   '&&.Mui-disabled': {
     backgroundColor: palette.sky,
     backgroundImage: 'none',
@@ -102,12 +78,6 @@ export const mutedRedButtonSx = {
     backgroundImage: 'none',
     borderColor: palette.red300,
     color: palette.red700,
-  },
-  '&&:hover': {
-    backgroundColor: palette.cream,
-    backgroundImage: 'none',
-    borderColor: palette.red300,
-    boxShadow: 'none',
   },
   '&&.Mui-disabled': {
     backgroundColor: palette.white,
@@ -134,10 +104,8 @@ export const greenBadgeTextSx = {
 export const greenOutlinedInputSx = {
   '& .MuiOutlinedInput-root': {
     backgroundColor: palette.white,
+    '--input-outline-color': palette.brown200,
     '& fieldset': {
-      borderColor: palette.brown200,
-    },
-    '&:hover fieldset': {
       borderColor: palette.brown200,
     },
     '&.Mui-focused fieldset': {
@@ -200,10 +168,7 @@ export const topNavigationIconButtonSx = {
   height: 44,
   border: `2px solid ${palette.white}`,
   color: palette.white,
-  backgroundColor: withAlpha(palette.brown500, 0.9),
-  '&:hover': {
-    backgroundColor: withAlpha(palette.brown500, 0.9),
-  },
+  '&&': { backgroundColor: withAlpha(palette.brown500, 0.9) },
 } as const
 
 export const gameTabsSx = {
@@ -352,10 +317,6 @@ export const panelPrimaryButtonSx = {
     display: 'none',
   },
   // ホバーしても色を変えない
-  '&&:hover': {
-    backgroundColor: homePanelColors.band,
-    boxShadow: 'none',
-  },
   '&&.Mui-disabled': {
     backgroundColor: palette.teal400,
     color: palette.white,
@@ -376,9 +337,6 @@ export const panelOutlinedButtonSx = {
     display: 'none',
   },
   // ホバーしても色を変えない
-  '&&:hover': {
-    backgroundColor: palette.white,
-  },
   '&&.Mui-disabled': {
     color: palette.teal400,
     borderColor: palette.gray300,
@@ -398,11 +356,6 @@ export const panelCancelButtonSx = {
   },
   '& .MuiTouchRipple-root': {
     display: 'none',
-  },
-  '&&:hover': {
-    backgroundColor: palette.white,
-    borderColor: palette.red300,
-    boxShadow: 'none',
   },
   '&&.Mui-disabled': {
     backgroundColor: palette.white,

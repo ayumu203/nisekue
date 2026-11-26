@@ -221,13 +221,6 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
           boxShadow: inverted
             ? `0 10px 24px ${withAlpha(palette.navy, 0.25)}`
             : `0 16px 36px ${withAlpha(palette.navy, 0.1)}`,
-          '&:hover': {
-            borderColor: guidePalette.triggerBorderColor,
-            backgroundColor: guidePalette.triggerHoverBackgroundColor,
-            boxShadow: inverted
-              ? `0 14px 28px ${withAlpha(palette.navy, 0.25)}`
-              : `0 18px 40px ${withAlpha(palette.navy, 0.25)}`,
-          },
           ...triggerSx,
         }}
       >
@@ -321,10 +314,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                   sx={{
                     color: guidePalette.headerTextColor,
                     border: `1px solid ${guidePalette.headerChipBorderColor}`,
-                    backgroundColor: guidePalette.closeButtonBackgroundColor,
-                    '&:hover': {
-                      backgroundColor: guidePalette.closeButtonHoverBackgroundColor,
-                    },
+                    '&&': { backgroundColor: guidePalette.closeButtonBackgroundColor },
                   }}
                 >
                   <CloseRoundedIcon />
@@ -408,10 +398,6 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                 color: guidePalette.headerTextColor,
                 boxShadow: 'none',
                 border: `1px solid ${guidePalette.headerBorderColor}`,
-                '&:hover': {
-                  backgroundColor: guidePalette.triggerHoverBackgroundColor,
-                  boxShadow: 'none',
-                },
               }}
             >
               {beginnerGuideCloseLabel}

@@ -57,7 +57,7 @@ export default function StatusStatRow({
           <LinearProgress
             variant="determinate"
             value={normalized}
-            sx={{ height: 6, borderRadius: 999, backgroundColor: 'action.hover' }}
+            sx={{ height: 6, borderRadius: 999, backgroundColor: withAlpha(palette.brown900, 0.1) }}
           />
         ) : null}
       </Box>

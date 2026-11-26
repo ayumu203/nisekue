@@ -132,7 +132,7 @@ export default function QuestRoomCreateSection({
             count={stagePageCount}
             onChange={(_, nextPage) => setStagePage(nextPage)}
             sx={{
-              '& .MuiPaginationItem-root': {
+              '& .MuiPaginationItem-root.MuiPaginationItem-root': {
                 color: palette.brown900,
                 fontWeight: 700,
                 transition: 'none',
@@ -140,12 +140,9 @@ export default function QuestRoomCreateSection({
               '& .MuiTouchRipple-root': {
                 display: 'none',
               },
-              '& .MuiPaginationItem-root.Mui-selected': {
+              '& .MuiPaginationItem-root.MuiPaginationItem-root.Mui-selected': {
                 color: palette.white,
                 backgroundColor: homePanelColors.band,
-              },
-              '& .MuiPaginationItem-root.Mui-selected:hover': {
-                backgroundColor: homePanelColors.bandSelected,
               },
             }}
           />

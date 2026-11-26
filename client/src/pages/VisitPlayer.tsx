@@ -156,10 +156,7 @@ function VisitPlayer() {
   const visibleGiftItems = giftTab === 'equipments' ? giftEquipments : giftItems
   const actionButtonSx = (isActive: boolean) => ({
     ...topNavigationIconButtonSx,
-    backgroundColor: isActive ? palette.green700 : topNavigationIconButtonSx.backgroundColor,
-    '&:hover': {
-      backgroundColor: isActive ? palette.green700 : topNavigationIconButtonSx['&:hover'].backgroundColor,
-    },
+    '&&': { backgroundColor: isActive ? palette.green700 : topNavigationIconButtonSx['&&'].backgroundColor },
   })
 
   const isDesktop = useMediaQuery((theme: Theme) => theme.breakpoints.up('sm'), { noSsr: true })

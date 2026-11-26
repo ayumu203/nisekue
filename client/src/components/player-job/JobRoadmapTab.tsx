@@ -176,8 +176,7 @@ export default function JobRoadmapTab({ player, onPlayerChanged, isWide }: JobRo
                 width: 44,
                 height: 44,
                 color: palette.white,
-                backgroundColor: colors.plate,
-                '&:hover': { backgroundColor: colors.bandDark },
+                '&&': { backgroundColor: colors.plate },
               }}
             >
               <CloseIcon />
@@ -705,7 +704,6 @@ function LockedConditions({
             fontFamily: 'inherit',
             fontSize: font.lg,
             boxShadow: `0 3px 0 ${colors.bandDark}`,
-            '&:hover': { backgroundColor: colors.bandDark },
             '&.Mui-disabled': { backgroundColor: palette.gray300, color: palette.gray600, boxShadow: 'none' },
           }}
         >

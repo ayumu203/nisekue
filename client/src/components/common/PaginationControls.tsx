@@ -33,10 +33,6 @@ export default function PaginationControls({
     color: palette.teal700,
     borderColor: withAlpha(palette.teal400, 0.5),
     backgroundColor: palette.white,
-    '&:hover': {
-      borderColor: withAlpha(palette.teal700, 0.9),
-      backgroundColor: palette.white,
-    },
     '&.Mui-disabled': {
       color: withAlpha(palette.teal700, 0.5),
       borderColor: withAlpha(palette.teal400, 0.25),
@@ -50,11 +46,6 @@ export default function PaginationControls({
     borderColor: palette.teal400,
     backgroundColor: palette.teal400,
     boxShadow: 'none',
-    '&:hover': {
-      borderColor: palette.teal700,
-      backgroundColor: palette.teal400,
-      boxShadow: 'none',
-    },
     '&.Mui-disabled': {
       color: withAlpha(palette.white, 0.75),
       borderColor: palette.teal400,

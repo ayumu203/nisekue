@@ -37,10 +37,8 @@ const inputSx = {
   '& .MuiOutlinedInput-root': {
     borderRadius: 2,
     backgroundColor: palette.cream,
+    '--input-outline-color': palette.brown500,
     '& fieldset': {
-      borderColor: palette.brown500,
-    },
-    '&:hover fieldset': {
       borderColor: palette.brown500,
     },
     '&.Mui-focused fieldset': {
@@ -59,10 +57,6 @@ const flatPrimaryButtonSx = {
   backgroundColor: palette.brown900,
   color: palette.cream,
   boxShadow: 'none',
-  '&:hover': {
-    backgroundColor: palette.brown900,
-    boxShadow: 'none',
-  },
 } as const
 
 const flatSecondaryButtonSx = {
@@ -72,11 +66,6 @@ const flatSecondaryButtonSx = {
   color: palette.brown900,
   backgroundColor: 'transparent',
   boxShadow: 'none',
-  '&:hover': {
-    borderColor: palette.gray600,
-    backgroundColor: 'transparent',
-    boxShadow: 'none',
-  },
 } as const
 
 const deleteButtonSx = {
@@ -86,11 +75,6 @@ const deleteButtonSx = {
   color: palette.red700,
   backgroundColor: 'transparent',
   boxShadow: 'none',
-  '&:hover': {
-    borderColor: palette.red700,
-    backgroundColor: palette.cream,
-    boxShadow: 'none',
-  },
 } as const
 
 function formatDate(value: string | null): string {
@@ -233,10 +217,6 @@ export default function ThreadDetail() {
                         color: palette.brown900,
                         textDecoration: 'none',
                         transition: 'transform 140ms ease, box-shadow 140ms ease',
-                        '&:hover': {
-                          transform: 'translateY(-1px)',
-                          boxShadow: `0 8px 18px ${withAlpha(palette.brown900, 0.25)}`,
-                        },
                       }}
                     >
                       {data.authorName.slice(0, 1)}
@@ -395,10 +375,6 @@ export default function ThreadDetail() {
                               color: palette.brown900,
                               textDecoration: 'none',
                               transition: 'transform 140ms ease, box-shadow 140ms ease',
-                              '&:hover': {
-                                transform: 'translateY(-1px)',
-                                boxShadow: `0 6px 14px ${withAlpha(palette.brown900, 0.1)}`,
-                              },
                             }}
                           >
                             {reply.authorName.slice(0, 1)}

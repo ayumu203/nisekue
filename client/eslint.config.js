@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
-// 規定値（src/theme/tokens.ts）以外の文字サイズ・間隔・色を検出する
+// 規定値（src/theme/tokens.ts）以外の文字サイズ・間隔・色と、:hover の指定を検出する
 const spacingKeys =
   '^(p|pt|pr|pb|pl|px|py|m|mt|mr|mb|ml|mx|my|padding|paddingTop|paddingRight|paddingBottom|paddingLeft|paddingX|paddingY|margin|marginTop|marginRight|marginBottom|marginLeft|marginX|marginY|gap|rowGap|columnGap)$'
 const spacingScale = '0|0\\.25|0\\.5|0\\.75|1|1\\.5|2|2\\.5|3|4|6'
@@ -54,6 +54,10 @@ const designTokenRules = [
   {
     selector: 'TemplateElement[value.raw=/(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6})(?![0-9a-zA-Z_-])|rgba?\\(|hsla?\\(/]',
     message: '色は palette・withAlpha（@/theme/tokens）から選んでください',
+  },
+  {
+    selector: 'Property > Literal.key[value=/:hover/]',
+    message: 'ホバーで見た目を変えないでください（:hover の指定は禁止）',
   },
 ]
 

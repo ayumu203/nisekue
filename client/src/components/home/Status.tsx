@@ -215,9 +215,8 @@ export default function Status({
                     height: 36,
                     flex: 'none',
                     color: palette.gold700,
-                    backgroundColor: palette.white,
+                    '&&': { backgroundColor: palette.white },
                     border: `1px solid ${palette.brown200}`,
-                    '&:hover': { backgroundColor: palette.cream },
                   }}
                 >
                   <GearIcon fontSize="small" />
@@ -313,10 +312,6 @@ export default function Status({
                   backgroundColor: palette.green700,
                   color: palette.cream,
                   boxShadow: 'none',
-                  '&:hover': {
-                    backgroundColor: palette.green700,
-                    boxShadow: 'none',
-                  },
                 }}
               >
                 {isDetailOpen ? locale.statusDetailsHide : locale.statusDetailsShow}
@@ -360,10 +355,6 @@ export default function Status({
                     backgroundColor: palette.green700,
                     color: palette.cream,
                     boxShadow: 'none',
-                    '&:hover': {
-                      backgroundColor: palette.green700,
-                      boxShadow: 'none',
-                    },
                   }}
                 >
                   {isDetailOpen ? locale.statusDetailsHide : locale.statusDetailsShow}

@@ -405,10 +405,6 @@ export default function SpotlightTutorial({
                         fontSize: { xs: font.sm, sm: font.md },
                         px: { xs: 2, sm: 2.5 },
                       },
-                      '&&:hover': {
-                        backgroundColor: palette.yellow,
-                        boxShadow: 'none',
-                      },
                     }}
                   >
                     {dismissLabel}

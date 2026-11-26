@@ -35,9 +35,6 @@ const tileSx = {
   fontSize: font.md,
   fontWeight: 700,
   whiteSpace: 'nowrap',
-  '&:hover': {
-    backgroundColor: palette.white,
-  },
   '& .MuiButton-startIcon': {
     m: 0,
     color: palette.green400,
@@ -56,9 +53,6 @@ const groupButtonSx = {
   fontSize: font.md,
   fontWeight: 700,
   whiteSpace: 'nowrap',
-  '&:hover': {
-    backgroundColor: palette.white,
-  },
   '&[aria-expanded="true"]': {
     backgroundColor: withAlpha(palette.brown900, 0.1),
   },
@@ -76,9 +70,6 @@ const cellSx = {
   color: palette.brown900,
   fontWeight: 700,
   whiteSpace: 'nowrap',
-  '&:hover': {
-    backgroundColor: palette.white,
-  },
 } as const
 
 function itemLinkProps(item: HomeMenuItem) {

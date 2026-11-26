@@ -45,7 +45,6 @@ const petTrainButtonSx = {
     boxShadow: 'none',
     transition: 'none',
   },
-  '&&:hover': { background: palette.red700, boxShadow: 'none' },
 } as const
 
 const petReleaseButtonSx = {
@@ -57,11 +56,6 @@ const petReleaseButtonSx = {
     backgroundColor: palette.red700,
     boxShadow: 'none',
     transition: 'none',
-  },
-  '&&:hover': {
-    borderColor: palette.red700,
-    backgroundColor: palette.red700,
-    boxShadow: 'none',
   },
 } as const
 
@@ -193,7 +187,6 @@ export default function Pets() {
                       sx={{
                         '& .MuiIconButton-root': {
                           backgroundColor: withAlpha(palette.white, 0.1),
-                          '&:hover': { backgroundColor: withAlpha(palette.white, 0.25) },
                         },
                       }}
                     >

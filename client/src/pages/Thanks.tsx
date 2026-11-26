@@ -125,7 +125,7 @@ export default function Thanks() {
                         <Typography variant="caption" color="text.secondary">
                           URL
                         </Typography>
-                        <MuiLink href={entry.url} target="_blank" rel="noopener noreferrer" underline="hover">
+                        <MuiLink href={entry.url} target="_blank" rel="noopener noreferrer" underline="always">
                           {entry.url}
                         </MuiLink>
                       </Stack>

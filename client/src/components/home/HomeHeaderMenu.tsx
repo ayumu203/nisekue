@@ -48,7 +48,7 @@ const headerButtonSx = {
   '& .MuiTouchRipple-root': {
     display: 'none',
   },
-  '&:hover, &[aria-expanded="true"]': {
+  '&[aria-expanded="true"]': {
     backgroundColor: withAlpha(palette.brown900, 0.1),
   },
   '& .MuiButton-startIcon': {
@@ -66,7 +66,7 @@ function currentHeaderButtonSx(color: string) {
     ...headerButtonSx,
     color: palette.white,
     backgroundColor: color,
-    '&:hover, &[aria-expanded="true"]': {
+    '&[aria-expanded="true"]': {
       backgroundColor: color,
     },
     '& .MuiButton-startIcon': {
@@ -86,9 +86,6 @@ const dropdownItemSx = {
   transition: 'none',
   '& .MuiTouchRipple-root': {
     display: 'none',
-  },
-  '&:hover': {
-    backgroundColor: palette.cream,
   },
 } as const
 

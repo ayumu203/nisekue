@@ -127,8 +127,8 @@ const darkInputSx = {
     backgroundColor: withAlpha(palette.white, 0.1),
     color: palette.sky,
     // 紫の枠は背景から浮いて見えるため、白を薄く乗せた控えめな枠にする
+    '--input-outline-color': withAlpha(palette.white, 0.25),
     '& fieldset': { borderColor: withAlpha(palette.white, 0.25) },
-    '&:hover fieldset': { borderColor: withAlpha(palette.white, 0.25) },
     '&.Mui-focused fieldset': { borderColor: palette.gold300 },
     // ブラウザの自動入力で入力欄が黄色くなり、暗い背景から浮くのを防ぐ。
     // 未対応の疑似クラスがあるとルールごと無視されるため、:-webkit-autofill と :autofill は別々に書く
@@ -150,11 +150,6 @@ const purpleButtonSx = {
     backgroundColor: palette.purple,
     backgroundImage: 'none',
     color: palette.white,
-  },
-  '&&:hover': {
-    backgroundColor: palette.purple,
-    backgroundImage: 'none',
-    boxShadow: 'none',
   },
   '&&.Mui-disabled': {
     backgroundColor: palette.navy,

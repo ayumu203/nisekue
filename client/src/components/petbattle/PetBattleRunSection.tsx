@@ -261,7 +261,7 @@ export default function PetBattleRunSection({
                         sx={{
                           flexWrap: 'wrap',
                           gap: 0.5,
-                          '& .MuiToggleButton-root': {
+                          '& .MuiToggleButton-root.MuiToggleButton-root': {
                             color: cyberColors.textDim,
                             border: `1px solid ${cyberColors.panelBorder}`,
                             borderRadius: '8px !important',
@@ -270,10 +270,9 @@ export default function PetBattleRunSection({
                             fontSize: font.xs,
                             fontWeight: 700,
                           },
-                          '& .MuiToggleButton-root.Mui-selected': {
+                          '& .MuiToggleButton-root.MuiToggleButton-root.Mui-selected': {
                             color: palette.brown900,
                             backgroundColor: cyberColors.accent,
-                            '&:hover': { backgroundColor: cyberColors.accent },
                           },
                         }}
                       >

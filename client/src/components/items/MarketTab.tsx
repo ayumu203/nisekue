@@ -361,8 +361,15 @@ export function MarketList({
           onChange={(_, next) => onPageChange(next)}
           sx={{
             alignSelf: 'center',
-            '& .MuiPaginationItem-root': { fontFamily: 'inherit', fontWeight: 800, color: colors.leather },
-            '& .MuiPaginationItem-root.Mui-selected': { backgroundColor: colors.leather, color: palette.white },
+            '& .MuiPaginationItem-root.MuiPaginationItem-root': {
+              fontFamily: 'inherit',
+              fontWeight: 800,
+              color: colors.leather,
+            },
+            '& .MuiPaginationItem-root.MuiPaginationItem-root.Mui-selected': {
+              backgroundColor: colors.leather,
+              color: palette.white,
+            },
           }}
         />
       ) : null}

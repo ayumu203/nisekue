@@ -72,10 +72,6 @@ const primaryButtonSx = {
   '& .MuiTouchRipple-root': {
     display: 'none',
   },
-  '&&:hover': {
-    backgroundColor: colors.band,
-    boxShadow: 'none',
-  },
   '&&.Mui-disabled': {
     backgroundColor: colors.disabledButton,
     borderColor: colors.disabledButtonBorder,

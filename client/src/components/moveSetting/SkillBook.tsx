@@ -422,7 +422,6 @@ export default function SkillBook({
               fontSize: font.lg,
               color: palette.red300,
               borderColor: palette.red300,
-              '&:hover': { borderColor: palette.red300, backgroundColor: withAlpha(palette.red300, 0.1) },
               '&.Mui-disabled': { color: withAlpha(palette.white, 0.5), borderColor: withAlpha(palette.white, 0.25) },
             }}
           >
@@ -440,7 +439,6 @@ export default function SkillBook({
               color: palette.white,
               backgroundColor: palette.green400,
               boxShadow: 'none',
-              '&:hover': { backgroundColor: palette.green400, boxShadow: 'none' },
               '&.Mui-disabled': {
                 color: withAlpha(palette.white, 0.5),
                 backgroundColor: withAlpha(palette.green400, 0.25),

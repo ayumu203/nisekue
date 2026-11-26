@@ -226,10 +226,6 @@ function Players() {
                                   color: palette.white,
                                   backgroundColor: palette.teal400,
                                   boxShadow: 'none',
-                                  '&:hover': {
-                                    backgroundColor: palette.teal400,
-                                    boxShadow: 'none',
-                                  },
                                 }}
                               >
                                 {locale.visit}

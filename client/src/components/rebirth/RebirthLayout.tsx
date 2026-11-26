@@ -15,10 +15,6 @@ export const rebirthPrimaryButtonSx = {
     border: `1px solid ${palette.sky}`,
     boxShadow: `0 10px 24px ${withAlpha(palette.blue300, 0.25)}`,
   },
-  '&&:hover': {
-    background: `linear-gradient(135deg, ${palette.blue300} 0%, ${palette.blue300} 46%, ${palette.gold300} 100%)`,
-    boxShadow: `0 12px 28px ${withAlpha(palette.blue300, 0.25)}`,
-  },
   '&&.Mui-disabled': {
     background: `linear-gradient(135deg, ${palette.sky} 0%, ${palette.sky} 55%, ${palette.brown200} 100%)`,
     color: palette.blue300,

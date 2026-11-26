@@ -112,12 +112,6 @@ export default function UnlockRoadmapDialog({
                     letterSpacing: '0.05em',
                     boxShadow: 'none',
                   },
-                  '&&:hover': {
-                    border: `2px solid ${palette.gray300}`,
-                    color: palette.white,
-                    bgcolor: palette.brown900,
-                    boxShadow: 'none',
-                  },
                 }}
               >
                 {locale.roadmapUnlockDialogCancel}
@@ -135,11 +129,6 @@ export default function UnlockRoadmapDialog({
                     fontSize: font.sm,
                     py: 0.75,
                     letterSpacing: '0.05em',
-                    boxShadow: 'none',
-                  },
-                  '&&:hover': {
-                    bgcolor: palette.gray300,
-                    border: `2px solid ${palette.gray300}`,
                     boxShadow: 'none',
                   },
                 }}

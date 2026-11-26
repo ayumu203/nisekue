@@ -38,10 +38,8 @@ const inputSx = {
   '& .MuiOutlinedInput-root': {
     borderRadius: 2,
     backgroundColor: palette.cream,
+    '--input-outline-color': palette.brown500,
     '& fieldset': {
-      borderColor: palette.brown500,
-    },
-    '&:hover fieldset': {
       borderColor: palette.brown500,
     },
     '&.Mui-focused fieldset': {
@@ -60,10 +58,6 @@ const flatPrimaryButtonSx = {
   backgroundColor: palette.brown900,
   color: palette.cream,
   boxShadow: 'none',
-  '&:hover': {
-    backgroundColor: palette.brown900,
-    boxShadow: 'none',
-  },
 } as const
 
 const flatSecondaryButtonSx = {
@@ -73,11 +67,6 @@ const flatSecondaryButtonSx = {
   color: palette.brown900,
   backgroundColor: 'transparent',
   boxShadow: 'none',
-  '&:hover': {
-    borderColor: palette.gray600,
-    backgroundColor: 'transparent',
-    boxShadow: 'none',
-  },
 } as const
 
 function formatDate(value: string | null): string {
@@ -316,10 +305,6 @@ export default function Threads() {
                                   color: palette.brown900,
                                   textDecoration: 'none',
                                   transition: 'transform 140ms ease, box-shadow 140ms ease',
-                                  '&:hover': {
-                                    transform: 'translateY(-1px)',
-                                    boxShadow: `0 6px 14px ${withAlpha(palette.brown900, 0.1)}`,
-                                  },
                                 }}
                               >
                                 {thread.authorName.slice(0, 1)}
@@ -379,7 +364,7 @@ export default function Threads() {
                         count={totalPages}
                         onChange={(_, nextPage) => setSearchParams({ page: String(nextPage) })}
                         sx={{
-                          '& .MuiPaginationItem-root': {
+                          '& .MuiPaginationItem-root.MuiPaginationItem-root': {
                             color: palette.brown900,
                           },
                           '& .Mui-selected': {

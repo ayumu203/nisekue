@@ -60,9 +60,6 @@ export const trainingSelectRadioSx = {
   p: 0.25,
   color: palette.blue300,
   backgroundColor: palette.white,
-  '&:hover': {
-    backgroundColor: palette.white,
-  },
   '&.Mui-checked': {
     color: trainingPanelColors.band,
   },

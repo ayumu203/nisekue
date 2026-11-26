@@ -48,17 +48,10 @@ function ChatMessageItem({ message, isOwnMessage, onDelete }: Props) {
             fontSize: font.sm,
             flexShrink: 0,
             textDecoration: 'none',
-            transition: visitPlayerPath ? 'transform 140ms ease, box-shadow 140ms ease' : 'none',
             '& .MuiAvatar-img': {
               objectFit: 'cover',
               objectPosition: 'center top',
             },
-            '&:hover': visitPlayerPath
-              ? {
-                  transform: 'translateY(-1px)',
-                  boxShadow: `0 8px 18px ${withAlpha(palette.brown900, 0.25)}`,
-                }
-              : undefined,
           }}
         >
           {message.senderName.slice(0, 1)}

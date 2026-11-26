@@ -679,10 +679,6 @@ export default function QuestBattleStatusPanel({
             backgroundColor: selectedActionKind === option.value ? palette.brown500 : palette.yellow,
             border: 'none',
             boxShadow: 'none',
-            '&:hover': {
-              backgroundColor: selectedActionKind === option.value ? palette.brown500 : palette.yellow,
-              boxShadow: 'none',
-            },
           }}
         >
           {option.label}

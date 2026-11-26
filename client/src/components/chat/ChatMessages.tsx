@@ -130,12 +130,6 @@ function ChatMessages({ messages, currentPlayerId, onDeleteMessage }: Props) {
                       letterSpacing: '0.05em',
                       boxShadow: 'none',
                     },
-                    '&&:hover': {
-                      border: `2px solid ${palette.gray300}`,
-                      color: palette.white,
-                      bgcolor: palette.brown900,
-                      boxShadow: 'none',
-                    },
                   }}
                 >
                   {locale.deleteCancel}
@@ -154,11 +148,6 @@ function ChatMessages({ messages, currentPlayerId, onDeleteMessage }: Props) {
                       fontSize: font.sm,
                       py: 0.75,
                       letterSpacing: '0.05em',
-                      boxShadow: 'none',
-                    },
-                    '&&:hover': {
-                      bgcolor: palette.red700,
-                      border: `2px solid ${palette.red700}`,
                       boxShadow: 'none',
                     },
                     '&&.Mui-disabled': {

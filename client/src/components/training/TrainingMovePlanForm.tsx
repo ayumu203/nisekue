@@ -160,10 +160,6 @@ function BattleButton({
           backgroundColor: trainingPanelColors.band,
           borderColor: trainingPanelColors.band,
         },
-        '&&:hover': {
-          ...panelPrimaryButtonSx['&&:hover'],
-          backgroundColor: trainingPanelColors.band,
-        },
         '&&.Mui-disabled': {
           backgroundColor: trainingPanelColors.disabledButton,
           borderColor: trainingPanelColors.disabledButton,
@@ -237,8 +233,8 @@ export default function TrainingMovePlanForm({
                   sx={{
                     borderRadius: '8px',
                     backgroundColor: palette.white,
+                    '--input-outline-color': palette.sky,
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.sky },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: palette.gray300 },
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: trainingPanelColors.band },
                     '& .MuiSelect-select': { py: 1, pl: 1.5, display: 'flex', alignItems: 'center' },
                     '& .MuiSvgIcon-root': { color: trainingPanelColors.label },

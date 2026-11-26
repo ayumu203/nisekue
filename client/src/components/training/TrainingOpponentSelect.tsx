@@ -73,12 +73,12 @@ export default function TrainingOpponentSelect({
             count={pageCount}
             onChange={handlePageChange}
             sx={{
-              '& .MuiPaginationItem-root': {
+              '& .MuiPaginationItem-root.MuiPaginationItem-root': {
                 color: palette.brown900,
                 fontWeight: 700,
                 border: `1px solid ${palette.gray300}`,
               },
-              '& .MuiPaginationItem-root.Mui-selected, & .MuiPaginationItem-root.Mui-selected:hover': {
+              '& .MuiPaginationItem-root.MuiPaginationItem-root.Mui-selected': {
                 color: palette.white,
                 backgroundColor: trainingPanelColors.band,
                 borderColor: trainingPanelColors.band,

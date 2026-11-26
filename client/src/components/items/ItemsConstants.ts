@@ -23,22 +23,15 @@ export const listCardSx = {
   borderColor: palette.gray300,
   boxShadow: `0 4px 12px ${withAlpha(palette.brown900, 0.1)}`,
   transition: 'transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease',
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    borderColor: deepGreenBorder,
-    boxShadow: `0 10px 20px ${withAlpha(palette.brown900, 0.1)}`,
-  },
 } as const
 
 export const inputSx = {
   '& .MuiOutlinedInput-root': {
     borderRadius: 2,
     backgroundColor: palette.white,
+    '--input-outline-color': palette.teal400,
     '& fieldset': {
       borderColor: palette.teal400,
-    },
-    '&:hover fieldset': {
-      borderColor: deepGreenBorder,
     },
     '&.Mui-focused fieldset': {
       borderColor: deepGreenBorder,
@@ -58,10 +51,6 @@ export const primaryActionSx = {
     color: palette.white,
     boxShadow: 'none',
   },
-  '&&:hover': {
-    background: palette.green700,
-    boxShadow: 'none',
-  },
 } as const
 
 export const secondaryActionSx = {
@@ -73,11 +62,6 @@ export const secondaryActionSx = {
     backgroundColor: palette.white,
     boxShadow: 'none',
   },
-  '&&:hover': {
-    borderColor: deepGreenBorder,
-    backgroundColor: palette.white,
-    boxShadow: 'none',
-  },
 } as const
 
 export const destructiveActionSx = {
@@ -86,11 +70,6 @@ export const destructiveActionSx = {
     minHeight: 38,
     borderColor: palette.gray600,
     color: palette.brown900,
-    backgroundColor: palette.white,
-    boxShadow: 'none',
-  },
-  '&&:hover': {
-    borderColor: palette.gray600,
     backgroundColor: palette.white,
     boxShadow: 'none',
   },
