@@ -171,6 +171,10 @@ export const innerSurfaceSx = {
   borderColor: '#e7d9b6',
 } as const
 
+// 画面いっぱいに広げた外枠（GamePageFrame）の背景と、ヘッダーメニューで今いる画面を塗る色
+export const gamePageBackground = '#ffcc00'
+export const gamePageAccent = '#b8860b'
+
 export const outerPagePaperSx = {
   backgroundColor: '#ffcc00',
   border: '1px solid',

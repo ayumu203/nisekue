@@ -1,8 +1,20 @@
-import { Alert, Box, Button, Chip, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material'
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Paper,
+  Stack,
+  Typography,
+  useMediaQuery,
+  type Theme,
+} from '@mui/material'
 import { useState } from 'react'
 import useSWR from 'swr'
 import { getPets, releasePet, trainPet } from '@/api/pet'
 import { getPlayer } from '@/api/player'
+import GamePageFrame from '@/components/common/GamePageFrame'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { ControlFrame } from '@/components/items/ItemsLayout'
 import { useAuth } from '@/contexts/useAuth'
@@ -84,6 +96,7 @@ function PetStatusTable({ pet }: { pet: PlayerPetView }) {
 
 export default function Pets() {
   const { session, isLoading } = useAuth()
+  const isDesktop = useMediaQuery((theme: Theme) => theme.breakpoints.up('sm'), { noSsr: true })
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [busyPetId, setBusyPetId] = useState<string | null>(null)
@@ -161,29 +174,20 @@ export default function Pets() {
   const canAffordTraining = player != null && player.gold >= trainingCostGold
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 6 } }}>
-      <Paper
-        elevation={2}
-        sx={{
-          backgroundColor: pokeRed,
-          border: '1px solid',
-          borderColor: '#902030',
-          borderRadius: { xs: 3, sm: 4 },
-          p: '2%',
-        }}
-      >
-        <Stack spacing={2.5}>
-          <Box sx={petFrameSx}>
-            <Stack spacing={2}>
-              <Box
-                sx={{
-                  backgroundColor: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 2,
-                }}
-              >
-                <ControlFrame>
-                  <Stack spacing={1.5}>
+    <GamePageFrame currentKey="pets" currentColor="#902030" background={pokeRed}>
+      <Stack spacing={2.5}>
+        <Box sx={petFrameSx}>
+          <Stack spacing={2}>
+            <Box
+              sx={{
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 2,
+              }}
+            >
+              <ControlFrame>
+                <Stack spacing={1.5}>
+                  {isDesktop ? null : (
                     <Box
                       sx={{
                         '& .MuiIconButton-root': {
@@ -194,153 +198,150 @@ export default function Pets() {
                     >
                       <HomeNavIconButton ariaLabel={locale.backToHome} />
                     </Box>
-                    <Box
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', sm: 'auto 1fr' },
-                        gap: { xs: 1.5, sm: 2 },
-                        alignItems: 'start',
-                        px: { xs: 1, sm: 2 },
-                      }}
-                    >
-                      <Box sx={{ minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
-                        <Typography
-                          variant="overline"
-                          sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}
-                        >
-                          PET CONTROL
-                        </Typography>
-                        <Typography variant="h4" fontWeight={900} color="#ffffff">
-                          {locale.title}
-                        </Typography>
-                      </Box>
-                      <Stack spacing={1} alignItems={{ xs: 'flex-start', sm: 'flex-end' }}>
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          useFlexGap
-                          flexWrap="wrap"
-                          justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
-                        >
+                  )}
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', sm: 'auto 1fr' },
+                      gap: { xs: 1.5, sm: 2 },
+                      alignItems: 'start',
+                      px: { xs: 1, sm: 2 },
+                    }}
+                  >
+                    <Box sx={{ minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
+                      <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}>
+                        PET CONTROL
+                      </Typography>
+                      <Typography variant="h4" fontWeight={900} color="#ffffff">
+                        {locale.title}
+                      </Typography>
+                    </Box>
+                    <Stack spacing={1} alignItems={{ xs: 'flex-start', sm: 'flex-end' }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        useFlexGap
+                        flexWrap="wrap"
+                        justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
+                      >
+                        <Chip
+                          label={`${locale.capacityLabel}: ${petsResponse?.pets.length ?? 0} / ${petsResponse?.maxPetCount ?? 3}`}
+                          sx={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#ffffff', fontWeight: 700 }}
+                        />
+                        {player != null ? (
                           <Chip
-                            label={`${locale.capacityLabel}: ${petsResponse?.pets.length ?? 0} / ${petsResponse?.maxPetCount ?? 3}`}
+                            label={`${locale.goldLabel}: ${player.gold.toLocaleString()}G`}
                             sx={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#ffffff', fontWeight: 700 }}
                           />
-                          {player != null ? (
-                            <Chip
-                              label={`${locale.goldLabel}: ${player.gold.toLocaleString()}G`}
-                              sx={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#ffffff', fontWeight: 700 }}
-                            />
-                          ) : null}
-                        </Stack>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: 'rgba(255,255,255,0.82)', textAlign: { xs: 'left', sm: 'right' } }}
-                        >
-                          {locale.description}
-                        </Typography>
+                        ) : null}
                       </Stack>
-                    </Box>
-                  </Stack>
-                </ControlFrame>
-              </Box>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: 'rgba(255,255,255,0.82)', textAlign: { xs: 'left', sm: 'right' } }}
+                      >
+                        {locale.description}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                </Stack>
+              </ControlFrame>
+            </Box>
 
-              {actionError ? <Alert severity="error">{actionError}</Alert> : null}
-              {actionMessage ? <Alert severity="success">{actionMessage}</Alert> : null}
-              {petsError ? <Alert severity="error">{locale.loadFailed}</Alert> : null}
+            {actionError ? <Alert severity="error">{actionError}</Alert> : null}
+            {actionMessage ? <Alert severity="success">{actionMessage}</Alert> : null}
+            {petsError ? <Alert severity="error">{locale.loadFailed}</Alert> : null}
 
-              <Box sx={{ px: { xs: 0.25, sm: 0.5 }, py: 0.25 }}>
-                {isLoading || isPetsLoading ? (
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <CircularProgress size={16} sx={{ color: 'rgba(255,255,255,0.7)' }} />
-                    <Typography variant="body2" color="rgba(255,255,255,0.8)">
-                      {locale.loading}
-                    </Typography>
-                  </Stack>
-                ) : petsResponse == null || petsResponse.pets.length === 0 ? (
-                  <Paper variant="outlined" sx={{ ...petCardSx, p: 2.5, borderRadius: 3 }}>
-                    <Typography variant="body2" sx={{ color: '#5b4523' }}>
-                      {locale.emptyMessage}
-                    </Typography>
-                  </Paper>
-                ) : (
-                  <Paper variant="outlined" sx={{ ...petCardSx, p: { xs: 1.5, sm: 2 }, borderRadius: 3 }}>
-                    <Box
-                      sx={{
-                        display: 'grid',
-                        gap: 1.5,
-                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
-                      }}
-                    >
-                      {petsResponse.pets.map((pet) => {
-                        const isBusy = busyPetId === pet.petId
-                        const spriteSrc = pet.imagePath ? resolvePublicAssetPath(pet.imagePath) : null
+            <Box sx={{ px: { xs: 0.25, sm: 0.5 }, py: 0.25 }}>
+              {isLoading || isPetsLoading ? (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CircularProgress size={16} sx={{ color: 'rgba(255,255,255,0.7)' }} />
+                  <Typography variant="body2" color="rgba(255,255,255,0.8)">
+                    {locale.loading}
+                  </Typography>
+                </Stack>
+              ) : petsResponse == null || petsResponse.pets.length === 0 ? (
+                <Paper variant="outlined" sx={{ ...petCardSx, p: 2.5, borderRadius: 3 }}>
+                  <Typography variant="body2" sx={{ color: '#5b4523' }}>
+                    {locale.emptyMessage}
+                  </Typography>
+                </Paper>
+              ) : (
+                <Paper variant="outlined" sx={{ ...petCardSx, p: { xs: 1.5, sm: 2 }, borderRadius: 3 }}>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gap: 1.5,
+                      gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+                    }}
+                  >
+                    {petsResponse.pets.map((pet) => {
+                      const isBusy = busyPetId === pet.petId
+                      const spriteSrc = pet.imagePath ? resolvePublicAssetPath(pet.imagePath) : null
 
-                        return (
-                          <Paper key={pet.petId} variant="outlined" sx={{ ...petCardSx, p: 1.5, borderRadius: 3 }}>
-                            <Stack spacing={1}>
-                              <Typography
-                                variant="subtitle2"
-                                noWrap
-                                title={pet.name}
-                                sx={{ fontWeight: 800, color: '#3f2f16' }}
+                      return (
+                        <Paper key={pet.petId} variant="outlined" sx={{ ...petCardSx, p: 1.5, borderRadius: 3 }}>
+                          <Stack spacing={1}>
+                            <Typography
+                              variant="subtitle2"
+                              noWrap
+                              title={pet.name}
+                              sx={{ fontWeight: 800, color: '#3f2f16' }}
+                            >
+                              {pet.name}
+                            </Typography>
+
+                            <Box sx={{ display: 'flex', justifyContent: 'center', minHeight: 84 }}>
+                              {spriteSrc ? (
+                                <Box
+                                  component="img"
+                                  src={spriteSrc}
+                                  alt={pet.name}
+                                  sx={{ height: 84, objectFit: 'contain' }}
+                                />
+                              ) : null}
+                            </Box>
+
+                            <Typography variant="caption" sx={{ color: '#5b4523' }}>
+                              {locale.levelLabel}
+                              {pet.level}
+                            </Typography>
+
+                            <PetStatusTable pet={pet} />
+
+                            <Stack spacing={0.75}>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                disabled={isBusy || !canAffordTraining}
+                                onClick={() => void handleTrain(pet)}
+                                sx={petTrainButtonSx}
                               >
-                                {pet.name}
-                              </Typography>
-
-                              <Box sx={{ display: 'flex', justifyContent: 'center', minHeight: 84 }}>
-                                {spriteSrc ? (
-                                  <Box
-                                    component="img"
-                                    src={spriteSrc}
-                                    alt={pet.name}
-                                    sx={{ height: 84, objectFit: 'contain' }}
-                                  />
-                                ) : null}
-                              </Box>
-
-                              <Typography variant="caption" sx={{ color: '#5b4523' }}>
-                                {locale.levelLabel}
-                                {pet.level}
-                              </Typography>
-
-                              <PetStatusTable pet={pet} />
-
-                              <Stack spacing={0.75}>
-                                <Button
-                                  size="small"
-                                  variant="contained"
-                                  disabled={isBusy || !canAffordTraining}
-                                  onClick={() => void handleTrain(pet)}
-                                  sx={petTrainButtonSx}
-                                >
-                                  {isBusy
-                                    ? locale.training
-                                    : `${locale.train} (${trainingCostGold.toLocaleString()}${locale.trainCostSuffix})`}
-                                </Button>
-                                <Button
-                                  size="small"
-                                  color="error"
-                                  variant="outlined"
-                                  disabled={isBusy}
-                                  onClick={() => void handleRelease(pet)}
-                                  sx={petReleaseButtonSx}
-                                >
-                                  {locale.release}
-                                </Button>
-                              </Stack>
+                                {isBusy
+                                  ? locale.training
+                                  : `${locale.train} (${trainingCostGold.toLocaleString()}${locale.trainCostSuffix})`}
+                              </Button>
+                              <Button
+                                size="small"
+                                color="error"
+                                variant="outlined"
+                                disabled={isBusy}
+                                onClick={() => void handleRelease(pet)}
+                                sx={petReleaseButtonSx}
+                              >
+                                {locale.release}
+                              </Button>
                             </Stack>
-                          </Paper>
-                        )
-                      })}
-                    </Box>
-                  </Paper>
-                )}
-              </Box>
-            </Stack>
-          </Box>
-        </Stack>
-      </Paper>
-    </Container>
+                          </Stack>
+                        </Paper>
+                      )
+                    })}
+                  </Box>
+                </Paper>
+              )}
+            </Box>
+          </Stack>
+        </Box>
+      </Stack>
+    </GamePageFrame>
   )
 }
