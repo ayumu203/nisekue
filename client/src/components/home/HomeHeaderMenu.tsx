@@ -174,7 +174,12 @@ export default function HomeHeaderMenu({
                         onToggleGroup(group.key)
                       }
                     }}
-                    sx={headerButtonSx}
+                    // 今いる画面がこのグループの中の項目なら、グループの項目を帯の色で塗る
+                    sx={
+                      currentColor && group.items.some((item) => item.key === currentKey)
+                        ? currentHeaderButtonSx(currentColor)
+                        : headerButtonSx
+                    }
                   >
                     {group.label}
                   </Button>

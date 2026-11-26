@@ -51,5 +51,19 @@
   "googleLinkDefaultError": "Googleアカウントの連携に失敗しました。",
   "passwordMinLength": "パスワードは6文字以上で入力してください。",
   "sessionMissing": "セッション情報がありません",
-  "saveFailed": "プレイヤー情報の更新に失敗しました"
+  "saveFailed": "プレイヤー情報の更新に失敗しました",
+  "forgetWarning": "新たな技を覚えると消えてしまいます",
+  "skillDetailLabel": "スキルの詳細",
+  "skillBookLabel": "スキル一覧",
+  "closeDetail": "閉じる",
+  "targetLabel": "対象",
+  "targetEnemy": "敵",
+  "targetAlly": "味方",
+  "targetSelf": "自分",
+  "powerLabel": "威力",
+  "healLabel": "回復",
+  "restoreMpLabel": "MP回復",
+  "mpCostAria": "消費MP {{mp}}",
+  "rangeAria": "{{side}}の陣形のうち{{range}}に当たる位置",
+  "noElement": "ー"
 }

@@ -405,3 +405,25 @@ export const panelCancelButtonSx = {
     color: '#bf8b84',
   },
 } as const
+
+// スキル画面（魔導書）。表紙はこげ茶の革、ページは焦げ茶に生成りの文字
+export const skillPanelColors = {
+  topBand: '#4a2c17',
+  ground: '#ece3d3',
+  // 表紙の革と、その縁
+  cover: '#4a2c17',
+  coverDark: '#2b190c',
+  gold: '#c9a24a',
+  // ページ・選んでいる行・行の区切り
+  paper: '#2f2015',
+  rowSelected: '#553b27',
+  line: '#6b4e33',
+  ink: '#f1e4c8',
+  sub: '#bfa784',
+  grip: '#8a6a3c',
+  // 消費MP の結晶と数字
+  gem: '#6fb0ec',
+  mpText: '#cfe6ff',
+  // 1 番目の技の「消えてしまいます」の札
+  warning: '#b3261e',
+} as const
