@@ -12,7 +12,7 @@ type GamePageFrameProps = {
   currentKey: string
   // ヘッダーメニューで今いる画面を塗る色
   currentColor: string
-  // 画面全体の背景（今までの外枠の色）
+  // 画面全体の背景（今までの外枠の色やグラデーション）
   background: string
   children: ReactNode
 }
@@ -36,7 +36,7 @@ export default function GamePageFrame({ currentKey, currentColor, background, ch
   })
 
   return (
-    <Box sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', backgroundColor: background }}>
+    <Box sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background }}>
       {isDesktop ? (
         <HomeHeaderMenu
           primary={[{ key: 'home', label: locale.backToHome, icon: <HomeIcon />, to: '/' }, ...homeMenu.primary]}
