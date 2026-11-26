@@ -62,7 +62,7 @@ export default function PaginationControls({
   } as const
 
   return (
-    <Stack direction="row" justifyContent="center" alignItems="center" spacing={1.25}>
+    <Stack direction="row" justifyContent="center" alignItems="center" spacing={1.5}>
       <Button variant="outlined" sx={secondaryButtonSx} disabled={page <= 1 || isLoading} onClick={onPrevious}>
         {previousLabel}
       </Button>

@@ -24,6 +24,7 @@ import {
   type BeginnerGuideDefinition,
 } from '@/lib/beginnerGuides'
 import { markBeginnerGuideSeen } from '@/lib/beginnerGuideStorage'
+import { font } from '@/theme/tokens'
 
 type BeginnerGuideProps = {
   userId?: string | null
@@ -212,7 +213,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
           alignSelf: 'flex-start',
           borderRadius: 999,
           minHeight: 46,
-          px: 1.75,
+          px: 2,
           color: guidePalette.triggerTextColor,
           border: '1px solid',
           borderColor: guidePalette.triggerBorderColor,
@@ -226,7 +227,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
           ...triggerSx,
         }}
       >
-        <Stack direction="row" spacing={1.25} alignItems="center">
+        <Stack direction="row" spacing={1.5} alignItems="center">
           <Box
             sx={{
               width: 28,
@@ -239,7 +240,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
           >
             <HelpOutlineIcon fontSize="small" />
           </Box>
-          <Typography component="span" fontSize="0.95rem" fontWeight={800} lineHeight={1.1}>
+          <Typography component="span" fontSize={font.md} fontWeight={800} lineHeight={1.1}>
             {beginnerGuideLabel}
           </Typography>
         </Stack>
@@ -274,7 +275,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
           >
             <Stack spacing={2}>
               <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                <Stack spacing={1.25} sx={{ minWidth: 0 }}>
+                <Stack spacing={1.5} sx={{ minWidth: 0 }}>
                   <Chip
                     icon={<AutoStoriesRoundedIcon />}
                     label={beginnerGuideLabel}
@@ -356,7 +357,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                       boxShadow: `inset 0 0 0 1px ${alpha(guidePalette.indexBorderColor, 0.48)}`,
                     }}
                   >
-                    <Typography fontSize="0.95rem" fontWeight={900}>
+                    <Typography fontSize={font.md} fontWeight={900}>
                       {String(index + 1).padStart(2, '0')}
                     </Typography>
                   </Box>

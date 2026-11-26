@@ -68,7 +68,7 @@ export default function Thanks() {
           }}
         >
           <Stack spacing={2}>
-            <Stack spacing={1.25}>
+            <Stack spacing={1.5}>
               <Typography variant="overline" sx={{ letterSpacing: '0.18em', color: 'rgba(242, 235, 207, 0.8)' }}>
                 CREDITS
               </Typography>
@@ -98,7 +98,7 @@ export default function Thanks() {
                     backgroundColor: '#fff9ef',
                   }}
                 >
-                  <Stack spacing={1.25}>
+                  <Stack spacing={1.5}>
                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
                       <Stack spacing={0.5}>
                         <Typography variant="h6" fontWeight={900} lineHeight={1.2}>
@@ -115,7 +115,7 @@ export default function Thanks() {
                       sx={{
                         borderRadius: 2,
                         px: 1.5,
-                        py: 1.25,
+                        py: 1.5,
                         borderColor: '#e7d9b6',
                         backgroundColor: '#fffdf8',
                       }}

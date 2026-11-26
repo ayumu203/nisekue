@@ -5,7 +5,7 @@ export function SummaryStat({ label, value }: { label: string; value: number | s
     <Box
       sx={{
         px: 1.5,
-        py: 1.25,
+        py: 1.5,
         border: '1px solid #eadb9f',
         borderRadius: 2,
         bgcolor: 'rgba(255, 250, 230, 0.88)',

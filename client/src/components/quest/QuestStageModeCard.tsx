@@ -3,6 +3,7 @@ import { homePanelColors, innerSurfaceSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/quest'
 import locale from '../../../locale/quest/QuestRoom.json'
+import { font } from '@/theme/tokens'
 
 type QuestStageModeCardProps = {
   stage: GetQuestStagesResponse[number]
@@ -51,7 +52,7 @@ export default function QuestStageModeCard({
       disableRipple
       sx={{
         ...modeButtonSx,
-        ...(compact ? { flex: 1, minWidth: 0, minHeight: 36, px: 1, fontSize: '0.875rem' } : null),
+        ...(compact ? { flex: 1, minWidth: 0, minHeight: 36, px: 1, fontSize: font.sm } : null),
         '&&': {
           backgroundColor: selected ? homePanelColors.band : compact ? '#ffffff' : 'rgba(255, 255, 255, 0.92)',
           borderColor: compact ? homePanelColors.band : selected ? homePanelColors.band : '#ffffff',
@@ -114,7 +115,7 @@ export default function QuestStageModeCard({
                 left: 6,
                 px: 1,
                 borderRadius: 999,
-                fontSize: '0.8125rem',
+                fontSize: font.sm,
                 fontWeight: 800,
                 color: isEndless ? '#1b2c4a' : '#f4f7ff',
                 backgroundColor: isEndless ? '#ffd66e' : '#6b4fa8',
@@ -124,11 +125,11 @@ export default function QuestStageModeCard({
             </Box>
           ) : null}
         </Box>
-        <Stack spacing={0.5} sx={{ p: 1.25, flex: 1 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: '1rem', lineHeight: 1.3, color: homePanelColors.text }}>
+        <Stack spacing={0.5} sx={{ p: 1.5, flex: 1 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: font.md, lineHeight: 1.3, color: homePanelColors.text }}>
             {stage.name}
           </Typography>
-          <Stack direction="row" spacing={1.5} sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>
+          <Stack direction="row" spacing={1.5} sx={{ fontSize: font.sm, color: homePanelColors.label }}>
             <span>{`${locale.recommendedLevel} ${isMirror ? locale.mirror.hiddenRecommendedLevel : stage.recommendedLevel}`}</span>
             <span>{`${locale.minRequiredLevel} ${stage.minimumEntryLevel}`}</span>
           </Stack>
@@ -218,7 +219,7 @@ export default function QuestStageModeCard({
                     px: 1,
                     py: 0.25,
                     borderRadius: 999,
-                    fontSize: '0.8125rem',
+                    fontSize: font.sm,
                     fontWeight: 800,
                     color: '#1b2c4a',
                     backgroundColor: '#ffd66e',
@@ -235,7 +236,7 @@ export default function QuestStageModeCard({
                     px: 1,
                     py: 0.25,
                     borderRadius: 999,
-                    fontSize: '0.8125rem',
+                    fontSize: font.sm,
                     fontWeight: 800,
                     color: '#f4f7ff',
                     backgroundColor: '#6b4fa8',

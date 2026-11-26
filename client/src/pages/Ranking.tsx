@@ -24,6 +24,7 @@ import { resolveCharacterAssetPath } from '@/lib/assets'
 import { resolveRankColor } from '@/lib/playerRank'
 import { gamePageAccent, gamePageBackground, innerSurfaceSx } from '@/constants/styles'
 import locale from '../../locale/ranking/Ranking.json'
+import { font } from '@/theme/tokens'
 
 function getRankingTypeLabel(type: string): string {
   const labels = locale.rankingTypes as Record<string, string>
@@ -129,7 +130,7 @@ export default function Ranking() {
         )}
 
         <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-          <Stack spacing={1.25}>
+          <Stack spacing={1.5}>
             {isRankingLoading ? (
               <Stack direction="row" spacing={1} alignItems="center">
                 <CircularProgress size={16} />
@@ -149,7 +150,7 @@ export default function Ranking() {
               >
                 <Stack spacing={2}>
                   <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-                    <Stack spacing={1.25}>
+                    <Stack spacing={1.5}>
                       <Typography variant="overline" sx={{ letterSpacing: '0.25em', color: 'rgba(79, 57, 44, 0.7)' }}>
                         {locale.overline}
                       </Typography>
@@ -214,7 +215,7 @@ export default function Ranking() {
                             sx={{ p: 1.5 }}
                           >
                             <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-                              <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
+                              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
                                 <Box
                                   component={Link}
                                   to={`/players/${row.player.userId}/visit`}
@@ -247,14 +248,14 @@ export default function Ranking() {
                                         position: 'absolute',
                                         top: -4,
                                         right: -6,
-                                        fontSize: 14,
+                                        fontSize: font.sm,
                                       }}
                                     >
                                       👑
                                     </Box>
                                   ) : null}
                                 </Box>
-                                <Stack spacing={0.4}>
+                                <Stack spacing={0.5}>
                                   <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
                                     <Typography variant="body1" fontWeight={800}>
                                       {row.rankPosition}位 {row.player.userName ?? '-'}
@@ -263,8 +264,8 @@ export default function Ranking() {
                                       component="span"
                                       sx={{
                                         minWidth: 52,
-                                        px: 1.25,
-                                        py: 0.65,
+                                        px: 1.5,
+                                        py: 0.75,
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -273,7 +274,7 @@ export default function Ranking() {
                                         borderColor: alpha(rankColor, 0.38),
                                         backgroundColor: alpha(rankColor, 0.14),
                                         color: rankColor,
-                                        fontSize: '0.95rem',
+                                        fontSize: font.md,
                                         fontWeight: 900,
                                         lineHeight: 1,
                                       }}

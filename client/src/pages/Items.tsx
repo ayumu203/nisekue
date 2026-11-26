@@ -582,7 +582,7 @@ export default function Items() {
             flex: 1,
             minHeight: 0,
             display: 'grid',
-            gap: { xs: 2.5, md: 3.5 },
+            gap: { xs: 2.5, md: 4 },
             gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 1fr) 520px', lg: 'minmax(0, 1fr) 620px' },
             alignContent: { xs: 'start', md: 'stretch' },
           }}
@@ -599,7 +599,7 @@ export default function Items() {
               gap: 2.5,
               minHeight: 0,
               minWidth: 0,
-              pb: '6px',
+              pb: 0.75,
             }}
           >
             {rightPanel}

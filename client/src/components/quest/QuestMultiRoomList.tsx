@@ -2,6 +2,7 @@ import { Alert, Avatar, Box, Button, Chip, CircularProgress, Paper, Stack, Typog
 import { homePanelColors, innerSurfaceSx, menuButtonSx, panelPrimaryButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import type { GetQuestStagesResponse, ListQuestRoomsResponse } from '@/schema/quest'
+import { font } from '@/theme/tokens'
 
 function formatCooldownRemainingMessage(seconds: number, template: string) {
   const floorSeconds = Math.max(0, seconds)
@@ -78,7 +79,7 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
         },
       }}
     >
-      <Stack spacing={1.25} sx={{ position: 'relative', zIndex: 1 }}>
+      <Stack spacing={1.5} sx={{ position: 'relative', zIndex: 1 }}>
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
           <Box
             sx={{
@@ -111,7 +112,7 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
             <Typography
               variant="h6"
               sx={{
-                fontSize: { xs: '1.15rem', sm: '1.35rem' },
+                fontSize: { xs: font.lg, sm: font.xl },
                 fontWeight: 800,
                 color: '#ffffff',
                 lineHeight: 1.3,
@@ -168,7 +169,7 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
           </Stack>
         </Stack>
 
-        <Stack direction="row" spacing={1.25} alignItems="flex-end" justifyContent="space-between">
+        <Stack direction="row" spacing={1.5} alignItems="flex-end" justifyContent="space-between">
           <Button
             variant="contained"
             onClick={() => void onJoinRoom(room.roomId)}
@@ -194,14 +195,14 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
             </Avatar>
             <Typography
               variant="caption"
-              fontSize="0.8125rem"
+              fontSize={font.sm}
               sx={{ maxWidth: 72, textAlign: 'center', color: 'rgba(222, 236, 255, 0.76)' }}
               noWrap
               title={room.ownerDisplayName ?? '---'}
             >
               {room.ownerDisplayName ?? '---'}
             </Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(222, 236, 255, 0.64)', fontSize: '0.8125rem' }}>
+            <Typography variant="caption" sx={{ color: 'rgba(222, 236, 255, 0.64)', fontSize: font.sm }}>
               {locale.ownerBadge}
             </Typography>
           </Stack>

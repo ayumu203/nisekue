@@ -244,7 +244,7 @@ export default function Rebirth() {
                 </Stack>
 
                 <Stack
-                  spacing={1.75}
+                  spacing={2}
                   sx={{
                     ...templeColumnSx,
                     minWidth: 0,
@@ -441,7 +441,7 @@ export default function Rebirth() {
                               gridTemplateColumns: '1.1fr 0.9fr 1fr 0.9fr',
                               gap: 2,
                               px: 1,
-                              py: 1.25,
+                              py: 1.5,
                               alignItems: 'center',
                             }}
                           >

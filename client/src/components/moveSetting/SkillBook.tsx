@@ -12,6 +12,7 @@ import { ElementEmblem, MpCost, SkillChip } from '@/components/moveSetting/Skill
 import { getMoveAttackRangeLabel } from '@/lib/moveAttackRange'
 import type { PlayerMoveSlot } from '@/schema/player'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
+import { font } from '@/theme/tokens'
 
 type SkillBookProps = {
   id?: string
@@ -84,7 +85,7 @@ function ForgetNotice() {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 }}>
       <ExclamationMark size={24} />
-      <Typography sx={{ fontSize: { xs: 13, sm: 15 }, lineHeight: 1.5, color: colors.ink }}>
+      <Typography sx={{ fontSize: { xs: font.sm, sm: font.md }, lineHeight: 1.5, color: colors.ink }}>
         {locale.forgetNotice}
       </Typography>
     </Box>
@@ -193,7 +194,7 @@ export default function SkillBook({
         // ほかの画面の箱と同じ角丸。上辺の帯（スマホ）も角に沿わせる
         borderRadius: '12px',
         overflow: 'hidden',
-        p: { xs: 1, sm: 1.75 },
+        p: { xs: 1, sm: 2 },
         display: 'flex',
         flexDirection: 'column',
         gap: 1.5,
@@ -203,8 +204,8 @@ export default function SkillBook({
         <Box
           sx={{
             height: 44,
-            mx: { xs: -1, sm: -1.75 },
-            mt: { xs: -1, sm: -1.75 },
+            mx: { xs: -1, sm: -2 },
+            mt: { xs: -1, sm: -2 },
             display: 'flex',
             alignItems: 'stretch',
             backgroundColor: colors.coverDark,
@@ -224,7 +225,7 @@ export default function SkillBook({
           </Box>
           <Typography
             component="h1"
-            sx={{ flex: 1, alignSelf: 'center', textAlign: 'center', fontSize: '1rem', color: '#ffffff', pr: '46px' }}
+            sx={{ flex: 1, alignSelf: 'center', textAlign: 'center', fontSize: font.md, color: '#ffffff', pr: 6 }}
           >
             {locale.skillTitle}
           </Typography>
@@ -281,7 +282,7 @@ export default function SkillBook({
                     display: 'grid',
                     placeItems: 'center',
                     color: colors.gold,
-                    fontSize: 20,
+                    fontSize: font.xl,
                   }}
                 >
                   {isSelected ? '▶' : ''}
@@ -304,7 +305,9 @@ export default function SkillBook({
                   touchAction: 'none',
                 }}
               >
-                <Typography sx={{ fontSize: compact ? 17 : 20, color: colors.ink, minWidth: 22, textAlign: 'right' }}>
+                <Typography
+                  sx={{ fontSize: compact ? font.lg : font.xl, color: colors.ink, minWidth: 22, textAlign: 'right' }}
+                >
                   {index + 1}
                 </Typography>
                 <GripIcon />
@@ -320,13 +323,13 @@ export default function SkillBook({
                   textAlign: 'left',
                   justifyContent: 'stretch',
                   ...(compact
-                    ? { display: 'flex', alignItems: 'center', gap: 1.25, py: 1.25, pr: 1.5 }
+                    ? { display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, pr: 1.5 }
                     : {
                         display: 'grid',
                         gridTemplateColumns: WIDE_CONTENT_COLUMNS,
                         alignItems: 'center',
                         columnGap: 1.5,
-                        pr: 1.75,
+                        pr: 2,
                       }),
                 }}
               >
@@ -334,7 +337,7 @@ export default function SkillBook({
                 {compact ? (
                   <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography noWrap sx={{ fontSize: 18 }}>
+                      <Typography noWrap sx={{ fontSize: font.lg }}>
                         {name}
                       </Typography>
                       {showWarning ? <ExclamationMark label={locale.forgetMarkLabel} size={20} /> : null}
@@ -357,15 +360,15 @@ export default function SkillBook({
                 ) : (
                   <>
                     <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-                        <Typography noWrap sx={{ fontSize: 24, minWidth: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+                        <Typography noWrap sx={{ fontSize: font.xxl, minWidth: 0 }}>
                           {name}
                         </Typography>
                         {showWarning ? <ExclamationMark label={locale.forgetMarkLabel} /> : null}
                       </Box>
                       {isEmpty ? null : (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                          <Typography noWrap sx={{ fontSize: 15, color: colors.sub, minWidth: 0 }}>
+                          <Typography noWrap sx={{ fontSize: font.md, color: colors.sub, minWidth: 0 }}>
                             {slot.description ?? locale.unknownMoveDescription}
                           </Typography>
                         </Box>
@@ -373,8 +376,8 @@ export default function SkillBook({
                     </Box>
                     <Box>{category ? <SkillChip label={category.label} color={category.color} /> : null}</Box>
                     <Box>{isEmpty ? null : <ElementCell slot={slot} />}</Box>
-                    <Typography sx={{ fontSize: 17 }}>{rangeLabel ?? ''}</Typography>
-                    <Typography noWrap sx={{ fontSize: 17 }}>
+                    <Typography sx={{ fontSize: font.lg }}>{rangeLabel ?? ''}</Typography>
+                    <Typography noWrap sx={{ fontSize: font.lg }}>
                       {buildShortEffect(slot.effectSummaries)}
                     </Typography>
                     <Box sx={{ justifySelf: 'end' }}>
@@ -416,7 +419,7 @@ export default function SkillBook({
               minHeight: 48,
               minWidth: 120,
               borderRadius: '4px',
-              fontSize: 17,
+              fontSize: font.lg,
               color: '#e2a08f',
               borderColor: '#e2a08f',
               '&:hover': { borderColor: '#e2a08f', backgroundColor: 'rgba(226, 160, 143, 0.12)' },
@@ -433,7 +436,7 @@ export default function SkillBook({
               minHeight: 48,
               minWidth: 160,
               borderRadius: '4px',
-              fontSize: 17,
+              fontSize: font.lg,
               color: '#ffffff',
               backgroundColor: '#3f9f4a',
               boxShadow: 'none',

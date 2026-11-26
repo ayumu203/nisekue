@@ -54,7 +54,7 @@ export default function PetBattleResultPanel({
           backgroundColor: cyberColors.panelLight,
         }}
       >
-        <Stack spacing={0.4} alignItems="center">
+        <Stack spacing={0.5} alignItems="center">
           {spriteSrc ? (
             <Box component="img" src={spriteSrc} alt={displayName} sx={{ height: 48, objectFit: 'contain' }} />
           ) : null}
@@ -82,7 +82,7 @@ export default function PetBattleResultPanel({
             {locale.resultTitle[run.status]}
           </Typography>
 
-          <Stack spacing={0.8} alignItems="center" sx={{ width: '100%' }}>
+          <Stack spacing={0.75} alignItems="center" sx={{ width: '100%' }}>
             {ownerImageSrc ? (
               <Box
                 component="img"
@@ -103,7 +103,7 @@ export default function PetBattleResultPanel({
             ) : null}
 
             <Stack direction="row" spacing={3} useFlexGap flexWrap="wrap" justifyContent="center" alignItems="baseline">
-              <Stack spacing={0.2} alignItems="center">
+              <Stack spacing={0.25} alignItems="center">
                 <Typography variant="caption" sx={{ color: cyberColors.textDim, letterSpacing: '0.08em' }}>
                   {locale.ratingChangeLabel}
                 </Typography>
@@ -120,7 +120,7 @@ export default function PetBattleResultPanel({
                 </Typography>
               </Stack>
 
-              <Stack spacing={0.2} alignItems="center">
+              <Stack spacing={0.25} alignItems="center">
                 <Typography variant="caption" sx={{ color: cyberColors.textDim, letterSpacing: '0.08em' }}>
                   {locale.resultRatingLabel}
                 </Typography>

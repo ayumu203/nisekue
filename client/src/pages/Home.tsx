@@ -53,6 +53,7 @@ import {
 } from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
+import { font } from '@/theme/tokens'
 
 // アンケートを案内するレベル
 const SURVEY_GUIDE_LEVEL = 10
@@ -383,7 +384,7 @@ function Home() {
           onClick={() => setChatTab(chatTab === 'personal' ? 'global' : 'personal')}
           sx={{ width: 44, height: 44, borderRadius: 0, color: '#ffffff' }}
         >
-          <SwapIcon sx={{ fontSize: 22 }} />
+          <SwapIcon sx={{ fontSize: font.xxl }} />
         </IconButton>
       }
     >
@@ -469,7 +470,7 @@ function Home() {
               onClick={handleGearClick}
               sx={{ width: 44, height: 44, borderRadius: 0, color: '#ffffff' }}
             >
-              <GearIcon sx={{ fontSize: 22 }} />
+              <GearIcon sx={{ fontSize: font.xxl }} />
             </IconButton>
           }
         >

@@ -1,3 +1,4 @@
+import { font } from '@/theme/tokens'
 export const menuButtonSx = {
   width: '100%',
   minHeight: 48,
@@ -217,7 +218,7 @@ export const gameTabSx = {
   minWidth: 0,
   py: 0.5,
   px: { xs: 0.5, sm: 1 },
-  fontSize: { xs: '0.78rem', sm: '0.875rem' },
+  fontSize: { xs: font.xs, sm: font.sm },
   borderRadius: '10px 10px 0 0',
   border: '2px solid #8dbe90',
   borderBottom: 'none',

@@ -1,5 +1,6 @@
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import { Box, LinearProgress, Stack, Typography } from '@mui/material'
+import { font } from '@/theme/tokens'
 
 type RequirementMeterProps = {
   current: number
@@ -38,8 +39,8 @@ export function RequirementMeter({ current, required, prefix = '', suffix = '', 
   return (
     <Box
       sx={{
-        px: 1.75,
-        py: 1.25,
+        px: 2,
+        py: 1.5,
         borderRadius: 2.5,
         border: '1px solid',
         borderColor: isMet ? colors.metBorder : '#dbe7f2',
@@ -54,7 +55,7 @@ export function RequirementMeter({ current, required, prefix = '', suffix = '', 
             fontWeight: 800,
             fontVariantNumeric: 'tabular-nums',
             color: isMet ? colors.metText : '#4f6275',
-            fontSize: { xs: '1rem', sm: '1.05rem' },
+            fontSize: { xs: font.md, sm: font.md },
           }}
         >
           {prefix}

@@ -21,6 +21,7 @@ import type { GetPlayerResponse, JobRoadmapListEntry, JobRoadmapNode } from '@/s
 import { InfoChip, InfoRow, InfoSection } from './jobChangeParts'
 import UnlockRoadmapDialog from './UnlockRoadmapDialog'
 import locale from '../../../locale/player-job/JobChange.json'
+import { font } from '@/theme/tokens'
 
 const panelProps = { bandColor: colors.band, bandSelectedColor: colors.band }
 const RANK_COUNT = 6
@@ -273,7 +274,7 @@ function RoadmapMap({
       <Legend />
       <Box sx={{ display: 'flex', borderBottom: `1px dotted ${colors.divider}`, pb: 1 }}>
         {locale.roadmapRankHeader.map((label) => (
-          <Typography key={label} sx={{ flex: 1, textAlign: 'center', fontSize: '0.875rem', color: colors.label }}>
+          <Typography key={label} sx={{ flex: 1, textAlign: 'center', fontSize: font.sm, color: colors.label }}>
             {label}
           </Typography>
         ))}
@@ -360,9 +361,9 @@ function Legend() {
       sx={{
         display: 'flex',
         flexWrap: 'wrap',
-        gap: 2.75,
+        gap: 3,
         alignItems: 'center',
-        fontSize: '0.875rem',
+        fontSize: font.sm,
         color: colors.label,
       }}
     >
@@ -408,7 +409,7 @@ function JobPill({
         boxSizing: 'border-box',
         borderRadius: 999,
         pl: 0.5,
-        pr: 1.25,
+        pr: 1.5,
         gap: 1,
         justifyContent: 'flex-start',
         fontFamily: 'inherit',
@@ -449,7 +450,7 @@ function JobPill({
         sx={{
           flex: 1,
           minWidth: 0,
-          fontSize: '0.8125rem',
+          fontSize: font.sm,
           textAlign: 'left',
           color: visible ? colors.text : colors.lockedText,
           whiteSpace: 'nowrap',
@@ -471,7 +472,7 @@ function JobPill({
             position: 'absolute',
             right: -6,
             top: -10,
-            fontSize: '0.6875rem',
+            fontSize: font.xs,
             color: '#ffffff',
             backgroundColor: colors.bandDark,
             borderRadius: 999,
@@ -500,7 +501,7 @@ function RoadmapRankList({
   const columns = orderByRank(entries)
   return (
     <Box>
-      <Box sx={{ px: 1.75, pt: 1.5 }}>
+      <Box sx={{ px: 2, pt: 1.5 }}>
         <Legend />
       </Box>
       {columns.map((column, rank) =>
@@ -511,12 +512,12 @@ function RoadmapRankList({
               display: 'flex',
               flexDirection: 'column',
               gap: 1,
-              px: 1.75,
+              px: 2,
               py: 1.5,
               borderTop: rank === 0 ? 'none' : `1px dotted ${colors.divider}`,
             }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: colors.label }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: font.sm, color: colors.label }}>
               <span>{locale.roadmapRankHeader[rank]}</span>
               <span>
                 {locale.roadmapUnlockedCount
@@ -594,15 +595,13 @@ function JobDetail({
           sx={{ height: compact ? 170 : 230 }}
         />
       </Box>
-      <Box
-        sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, px: compact ? 2.25 : 3.25, pt: 2.25, pb: 3 }}
-      >
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, px: compact ? 2.5 : 3, pt: 2.5, pb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 1.5 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography sx={{ fontSize: '0.875rem', color: colors.label }}>
+            <Typography sx={{ fontSize: font.sm, color: colors.label }}>
               {locale.roadmapRankDetail.replaceAll('{{rank}}', String(entry.rank))}
             </Typography>
-            <Typography sx={{ fontSize: compact ? '1.375rem' : '1.625rem', color: colors.text }}>
+            <Typography sx={{ fontSize: compact ? font.xxl : font.xxxl, color: colors.text }}>
               {entry.jobName}
             </Typography>
           </Box>
@@ -620,7 +619,7 @@ function JobDetail({
 
 function RequirementRow({ name, status, ok }: { name: string; status: string; ok: boolean }) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, fontSize: '1rem', color: colors.text }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontSize: font.md, color: colors.text }}>
       <Box
         component="span"
         sx={{
@@ -637,7 +636,7 @@ function RequirementRow({ name, status, ok }: { name: string; status: string; ok
         {ok ? <CheckIcon /> : <LockIcon />}
       </Box>
       <span>{name}</span>
-      <Box component="span" sx={{ ml: 'auto', fontSize: '0.875rem', color: ok ? colors.band : '#8a8173' }}>
+      <Box component="span" sx={{ ml: 'auto', fontSize: font.sm, color: ok ? colors.band : '#8a8173' }}>
         {status}
       </Box>
     </Box>
@@ -701,7 +700,7 @@ function LockedConditions({
             backgroundColor: colors.band,
             color: '#ffffff',
             fontFamily: 'inherit',
-            fontSize: '1.0625rem',
+            fontSize: font.lg,
             boxShadow: `0 3px 0 ${colors.bandDark}`,
             '&:hover': { backgroundColor: colors.bandDark },
             '&.Mui-disabled': { backgroundColor: '#ebe6dc', color: '#6f6758', boxShadow: 'none' },
@@ -739,7 +738,7 @@ function UnlockedConditions({
   const items = (tree?.requirements ?? []).filter((node) => node.type === 'item')
 
   if (jobs.length === 0 && items.length === 0) {
-    return <Typography sx={{ fontSize: '0.9375rem', color: colors.label }}>{locale.roadmapNoCondition}</Typography>
+    return <Typography sx={{ fontSize: font.md, color: colors.label }}>{locale.roadmapNoCondition}</Typography>
   }
 
   return (
@@ -763,10 +762,10 @@ function UnlockedConditions({
         <InfoSection title={`${jobs.length > 0 ? '② ' : ''}${locale.roadmapItemTitle}`}>
           {items.map((node) => (
             <Box key={node.itemId} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Typography sx={{ fontSize: '1.125rem', color: colors.text }}>{node.itemName}</Typography>
+              <Typography sx={{ fontSize: font.lg, color: colors.text }}>{node.itemName}</Typography>
               {node.stages && node.stages.length > 0 ? (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, alignItems: 'center' }}>
-                  <Typography component="span" sx={{ fontSize: '0.875rem', color: colors.label, mr: 0.5 }}>
+                  <Typography component="span" sx={{ fontSize: font.sm, color: colors.label, mr: 0.5 }}>
                     {locale.roadmapItemStage}
                   </Typography>
                   {node.stages.map((stage) => (
@@ -790,7 +789,7 @@ function UnlockedConditions({
               border: `2px solid ${colors.band}`,
               color: colors.band,
               fontFamily: 'inherit',
-              fontSize: '1rem',
+              fontSize: font.md,
             }}
           >
             {locale.roadmapToItems}

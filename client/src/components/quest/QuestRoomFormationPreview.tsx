@@ -4,6 +4,7 @@ import locale from '../../../locale/quest/QuestRoom.json'
 import { homePanelColors } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolveJobAssetPath } from '@/lib/assets'
 import type { BattleColumn, BattleRow, QuestRoomDetailResponse } from '@/schema/quest'
+import { font } from '@/theme/tokens'
 
 type QuestRoomFormationPreviewProps = {
   currentRoom: QuestRoomDetailResponse
@@ -31,7 +32,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
     <Box sx={{ display: 'grid', gridTemplateColumns: '56px repeat(2, minmax(0, 1fr))', gap: 1 }}>
       <Box />
       {columnOrder.map((column) => (
-        <Typography key={column} sx={{ fontSize: '0.8125rem', color: homePanelColors.label, textAlign: 'center' }}>
+        <Typography key={column} sx={{ fontSize: font.sm, color: homePanelColors.label, textAlign: 'center' }}>
           {locale.columns[column]}
         </Typography>
       ))}
@@ -43,7 +44,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
               placeItems: 'center',
               borderRadius: 2,
               backgroundColor: rowBackground[row],
-              fontSize: '0.875rem',
+              fontSize: font.sm,
               fontWeight: 700,
               color: '#5a4421',
             }}
@@ -64,7 +65,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
                   border: '1px dashed',
                   borderColor: homePanelColors.divider,
                   backgroundColor: rowBackground[row],
-                  px: 1.25,
+                  px: 1.5,
                   py: 0.75,
                   display: 'flex',
                   flexDirection: 'column',
@@ -73,7 +74,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
                 }}
               >
                 {members.length === 0 ? (
-                  <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label, textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: font.sm, color: homePanelColors.label, textAlign: 'center' }}>
                     {locale.emptyPosition}
                   </Typography>
                 ) : (
@@ -85,7 +86,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
                       <Stack
                         key={participant.participantId}
                         direction={{ xs: 'column', sm: 'row' }}
-                        spacing={{ xs: 0.5, sm: 1.75 }}
+                        spacing={{ xs: 0.5, sm: 2 }}
                         alignItems="center"
                         sx={{ minWidth: 0 }}
                       >
@@ -124,7 +125,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
                             title={participant.displayName}
                             sx={{
                               maxWidth: '100%',
-                              fontSize: { xs: '1rem', sm: '1.0625rem' },
+                              fontSize: { xs: font.md, sm: font.lg },
                               fontWeight: 700,
                               color: homePanelColors.text,
                             }}
@@ -138,7 +139,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
                             sx={{ minWidth: 0, maxWidth: '100%' }}
                           >
                             {participant.level != null ? (
-                              <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>
+                              <Typography sx={{ fontSize: font.sm, color: homePanelColors.label }}>
                                 {`${locale.levelLabel}.${participant.level}`}
                               </Typography>
                             ) : null}
@@ -151,7 +152,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
                               />
                             ) : null}
                             {participant.job?.displayName ? (
-                              <Typography noWrap sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>
+                              <Typography noWrap sx={{ fontSize: font.sm, color: homePanelColors.label }}>
                                 {participant.job.displayName}
                               </Typography>
                             ) : null}

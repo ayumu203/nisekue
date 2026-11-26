@@ -8,6 +8,7 @@ import type { GetPlayerResponse, PlayerJob, PlayerJobCode } from '@/schema/playe
 import { ExpBar, InfoChip, PlateChip } from './jobChangeParts'
 import { formatExpProgress, stageBackgroundSx } from './jobChangeStyles'
 import locale from '../../../locale/player-job/JobChange.json'
+import { font } from '@/theme/tokens'
 
 const BASE_JOB_ORDER: PlayerJobCode[] = ['Warrior', 'Guardian', 'Mage', 'Priest', 'Ranger']
 const UNLOCK_LEVEL = 5
@@ -84,7 +85,7 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
                 display: 'grid',
                 gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
                 gridTemplateRows: 'minmax(0, 1fr)',
-                pt: 5,
+                pt: 6,
                 px: 3,
                 borderBottom: `4px solid ${colors.gold}`,
               }}
@@ -161,7 +162,7 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
               }}
             />
           ) : null}
-          {selectedJob ? <Cursor sx={{ top: 12, fontSize: '1.625rem' }} /> : null}
+          {selectedJob ? <Cursor sx={{ top: 12, fontSize: font.xxxl }} /> : null}
         </Box>
         <Box
           role="group"
@@ -169,8 +170,8 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
           sx={{
             display: 'flex',
             justifyContent: 'space-between',
-            px: 1.75,
-            pt: 1.75,
+            px: 2,
+            pt: 2,
             pb: 2,
             borderBottom: `1px dotted ${colors.divider}`,
           }}
@@ -218,11 +219,11 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
                       left: '50%',
                       bottom: -9,
                       transform: 'translateX(-50%)',
-                      fontSize: '0.625rem',
+                      fontSize: font.xxs,
                       color: '#ffffff',
                       backgroundColor: colors.bandDark,
                       borderRadius: '4px',
-                      px: 0.625,
+                      px: 0.75,
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -250,7 +251,7 @@ function Cursor({ sx }: { sx?: object }) {
         transform: 'translateX(-50%)',
         zIndex: 5,
         lineHeight: 1,
-        fontSize: '1.875rem',
+        fontSize: font.xxxl,
         color: colors.plateGold,
         textShadow: `0 2px 0 ${colors.bandDark}`,
         ...sx,
@@ -336,9 +337,9 @@ function StageActor({
               backgroundColor: colors.plate,
               border: `3px solid ${isSelected ? colors.plateGold : 'rgba(255, 255, 255, 0.9)'}`,
               borderRadius: '6px',
-              px: 2.25,
+              px: 2.5,
               py: 0.5,
-              fontSize: isSelected ? '1.5rem' : '1.25rem',
+              fontSize: isSelected ? font.xxl : font.xl,
               color: isSelected ? colors.plateGold : '#ffffff',
               whiteSpace: 'nowrap',
             }}
@@ -382,7 +383,7 @@ function SelectFooter({
         backgroundColor: colors.band,
         color: '#ffffff',
         fontFamily: 'inherit',
-        fontSize: compact ? '1.25rem' : '1.375rem',
+        fontSize: compact ? font.xl : font.xxl,
         boxShadow: `0 4px 0 ${colors.bandDark}`,
         '&:hover': { backgroundColor: colors.bandDark },
         '&.Mui-disabled': { backgroundColor: '#c9cfd6', color: '#ffffff' },
@@ -393,21 +394,21 @@ function SelectFooter({
   )
 
   return (
-    <Box sx={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 1.5, px: compact ? 2 : 3.25, py: 2.25 }}>
+    <Box sx={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 1.5, px: compact ? 2 : 3, py: 2.5 }}>
       {isMaxLevel ? <Alert severity="warning">{locale.maxLevelNoticeBody}</Alert> : null}
       <Box
         sx={{
           display: 'flex',
           flexDirection: compact ? 'column' : 'row',
           alignItems: compact ? 'stretch' : 'center',
-          gap: compact ? 1 : 3.5,
+          gap: compact ? 1 : 4,
         }}
       >
         <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-          <Typography sx={{ fontSize: compact ? '1.375rem' : '1.5rem', color: colors.text }}>
+          <Typography sx={{ fontSize: compact ? font.xxl : font.xxl, color: colors.text }}>
             {job.displayName}
           </Typography>
-          <Typography sx={{ fontSize: compact ? '0.875rem' : '1rem', lineHeight: 1.75, color: colors.label }}>
+          <Typography sx={{ fontSize: compact ? font.sm : font.md, lineHeight: 1.75, color: colors.label }}>
             {job.description}
           </Typography>
         </Box>
@@ -427,8 +428,8 @@ function LockedFooter() {
         justifyContent: 'center',
         gap: 2.5,
         px: 3,
-        py: 2.75,
-        fontSize: '1.125rem',
+        py: 3,
+        fontSize: font.lg,
         color: colors.label,
       }}
     >
@@ -501,10 +502,10 @@ function CurrentJobDetail({ player, isMastered }: { player: GetPlayerResponse; i
         </Box>
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-        <Typography sx={{ fontSize: '1.875rem', textAlign: 'center', color: colors.text }}>
+        <Typography sx={{ fontSize: font.xxxl, textAlign: 'center', color: colors.text }}>
           {player.job.displayName}
         </Typography>
-        <Typography sx={{ fontSize: '0.875rem', lineHeight: 1.7, color: colors.label }}>
+        <Typography sx={{ fontSize: font.sm, lineHeight: 1.7, color: colors.label }}>
           {player.job.description}
         </Typography>
       </Box>
@@ -523,22 +524,22 @@ function CurrentJobDetail({ player, isMastered }: { player: GetPlayerResponse; i
           <Box
             key={item.label}
             sx={{
-              py: 1.25,
+              py: 1.5,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               borderLeft: index === 0 ? 'none' : dotted,
             }}
           >
-            <Typography sx={{ fontSize: '0.8125rem', color: colors.label }}>{item.label}</Typography>
-            <Typography sx={{ fontSize: '1.5rem', color: item.color, letterSpacing: '0.04em' }}>
+            <Typography sx={{ fontSize: font.sm, color: colors.label }}>{item.label}</Typography>
+            <Typography sx={{ fontSize: font.xxl, color: item.color, letterSpacing: '0.04em' }}>
               {item.value}
             </Typography>
           </Box>
         ))}
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: colors.label }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: font.sm, color: colors.label }}>
           <span>{locale.expLabel}</span>
           <Box component="span" sx={{ color: colors.text }}>
             {info.expText}
@@ -547,7 +548,7 @@ function CurrentJobDetail({ player, isMastered }: { player: GetPlayerResponse; i
         <ExpBar ratio={info.ratio} label={locale.expLabel} />
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Typography sx={{ fontSize: '0.875rem', color: colors.label }}>{locale.masteredJobsLabel}</Typography>
+        <Typography sx={{ fontSize: font.sm, color: colors.label }}>{locale.masteredJobsLabel}</Typography>
         <MasteredChips player={player} />
       </Box>
       <Box
@@ -559,8 +560,8 @@ function CurrentJobDetail({ player, isMastered }: { player: GetPlayerResponse; i
           pt: 1.5,
         }}
       >
-        <Typography sx={{ fontSize: '0.875rem', color: colors.label }}>{locale.goldLabel}</Typography>
-        <Typography sx={{ fontSize: '1.125rem', color: colors.text }}>{player.gold.toLocaleString()} G</Typography>
+        <Typography sx={{ fontSize: font.sm, color: colors.label }}>{locale.goldLabel}</Typography>
+        <Typography sx={{ fontSize: font.lg, color: colors.text }}>{player.gold.toLocaleString()} G</Typography>
       </Box>
     </Box>
   )
@@ -571,7 +572,7 @@ function CurrentJobCompact({ player, isMastered }: { player: GetPlayerResponse; 
   const info = useLevelInfo(player, isMastered)
 
   return (
-    <Box sx={{ display: 'flex', gap: 1.75, alignItems: 'center' }}>
+    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
       <Box
         sx={{
           width: 88,
@@ -594,20 +595,20 @@ function CurrentJobCompact({ player, isMastered }: { player: GetPlayerResponse; 
         />
       </Box>
       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-        <Typography sx={{ fontSize: '1.375rem', color: colors.text }}>{player.job.displayName}</Typography>
+        <Typography sx={{ fontSize: font.xxl, color: colors.text }}>{player.job.displayName}</Typography>
         <Box
           sx={{
             display: 'flex',
             flexWrap: 'wrap',
             columnGap: 1.5,
             rowGap: 0.25,
-            fontSize: '0.875rem',
+            fontSize: font.sm,
             color: colors.label,
           }}
         >
           <span>
             {locale.levelLabel}{' '}
-            <Box component="b" sx={{ fontWeight: 400, fontSize: '1rem', color: colors.text }}>
+            <Box component="b" sx={{ fontWeight: 400, fontSize: font.md, color: colors.text }}>
               Lv.{player.level}
             </Box>
           </span>
@@ -617,7 +618,7 @@ function CurrentJobCompact({ player, isMastered }: { player: GetPlayerResponse; 
               component="b"
               sx={{
                 fontWeight: 400,
-                fontSize: '1rem',
+                fontSize: font.md,
                 color: isMastered ? colors.goldText : colors.text,
                 letterSpacing: '0.04em',
               }}
@@ -626,7 +627,7 @@ function CurrentJobCompact({ player, isMastered }: { player: GetPlayerResponse; 
             </Box>
           </span>
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: colors.label }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: font.sm, color: colors.label }}>
           <span>{locale.expLabel}</span>
           <Box component="span" sx={{ color: colors.text }}>
             {info.expText}

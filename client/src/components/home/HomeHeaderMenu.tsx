@@ -5,6 +5,7 @@ import { GearIcon, SignOutIcon } from '@/components/home/StatusIcons'
 import { topNavigationIconButtonSx } from '@/constants/styles'
 import { useSignOut } from '@/hooks/useSignOut'
 import homeLocale from '../../../locale/home/Home.json'
+import { font } from '@/theme/tokens'
 
 type HomeHeaderMenuProps = {
   primary: HomeMenuItem[]
@@ -41,7 +42,7 @@ const headerButtonSx = {
   color: BAR_TEXT_COLOR,
   whiteSpace: 'nowrap',
   fontWeight: 700,
-  fontSize: '1rem',
+  fontSize: font.md,
   // ホバーや押したときの色の変化・波紋のアニメーションは付けない
   transition: 'none',
   '& .MuiTouchRipple-root': {
@@ -55,7 +56,7 @@ const headerButtonSx = {
   },
   // 16px の文字に合わせてアイコンを 22px にする
   '& .MuiButton-startIcon > *:nth-of-type(1), & .MuiButton-endIcon > *:nth-of-type(1)': {
-    fontSize: 22,
+    fontSize: font.xxl,
   },
 } as const
 
@@ -77,7 +78,7 @@ function currentHeaderButtonSx(color: string) {
 const dropdownItemSx = {
   justifyContent: 'flex-start',
   minHeight: 44,
-  px: 2.25,
+  px: 2.5,
   borderRadius: 0,
   color: '#3a2f1e',
   fontWeight: 700,

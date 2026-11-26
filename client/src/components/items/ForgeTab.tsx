@@ -6,6 +6,7 @@ import { ActionButton, BagFrame, CoinIcon, DoubleFrame, ForgeTabIcon, FrameHeadi
 import { formatGold, formatPlusValue, getSynthesisCost } from './itemUtils'
 import locale from '../../../locale/items/Items.json'
 import type { ItemEquipmentView } from '@/schema/item'
+import { font } from '@/theme/tokens'
 
 export function ForgeList({
   groups,
@@ -22,7 +23,7 @@ export function ForgeList({
 }) {
   return (
     <BagFrame fill={fill}>
-      <Typography component="h2" sx={{ m: 0, fontSize: '1.25rem', fontWeight: 800, color: colors.text }}>
+      <Typography component="h2" sx={{ m: 0, fontSize: font.xl, fontWeight: 800, color: colors.text }}>
         {locale.forgeListTitle}
       </Typography>
       <Box
@@ -30,11 +31,11 @@ export function ForgeList({
           flex: 1,
           minHeight: 0,
           overflow: 'auto',
-          p: '4px',
-          m: '-4px',
+          p: 0.5,
+          m: -0.5,
           display: 'flex',
           flexDirection: 'column',
-          gap: 1.25,
+          gap: 1.5,
         }}
       >
         {isLoading ? <Typography sx={{ color: colors.label }}>{locale.loading}</Typography> : null}
@@ -58,7 +59,7 @@ export function ForgeList({
                 justifyContent: 'flex-start',
                 gap: 2,
                 px: 2,
-                py: 1.25,
+                py: 1.5,
                 borderRadius: '14px',
                 textAlign: 'left',
                 fontFamily: 'inherit',
@@ -78,7 +79,7 @@ export function ForgeList({
                 sx={{
                   width: { xs: 'auto', sm: 160 },
                   flex: { xs: 1, sm: 'none' },
-                  fontSize: '1.125rem',
+                  fontSize: font.lg,
                   fontWeight: 800,
                   color: colors.text,
                 }}
@@ -99,7 +100,7 @@ export function ForgeList({
                       borderRadius: '8px',
                       backgroundColor: ok ? colors.leatherDark : '#d9cbb5',
                       color: '#ffffff',
-                      fontSize: '0.875rem',
+                      fontSize: font.sm,
                       fontWeight: 800,
                     }}
                   >
@@ -113,7 +114,7 @@ export function ForgeList({
                   display: { xs: 'none', sm: 'block' },
                   width: 200,
                   textAlign: 'right',
-                  fontSize: '0.9375rem',
+                  fontSize: font.md,
                   color: colors.label,
                 }}
               >
@@ -140,7 +141,7 @@ function ForgeSlot({ label, item, after = false }: { label: string; item?: ItemE
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, minWidth: 0 }}>
       <Typography
         component="span"
-        sx={{ fontSize: '0.875rem', fontWeight: 800, color: after ? colors.forgeEmberText : colors.forgeLabel }}
+        sx={{ fontSize: font.sm, fontWeight: 800, color: after ? colors.forgeEmberText : colors.forgeLabel }}
       >
         {label}
       </Typography>
@@ -162,7 +163,7 @@ function ForgeSlot({ label, item, after = false }: { label: string; item?: ItemE
       <Typography
         component="span"
         sx={{
-          fontSize: { xs: '0.875rem', sm: '1.0625rem' },
+          fontSize: { xs: font.sm, sm: font.lg },
           fontWeight: 800,
           color: '#ffffff',
           textAlign: 'center',
@@ -202,12 +203,12 @@ export function ForgePanel({
   return (
     <DoubleFrame dark fill={fill}>
       <FrameHeading dark icon={<ForgeTabIcon />} title={locale.forgeTitle} />
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 0.75, sm: 1.75 } }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: 0.75, sm: 2 } }}>
         <ForgeSlot label={locale.forgeTarget} item={target} />
         <Box
           component="span"
           aria-hidden="true"
-          sx={{ fontSize: '1.875rem', fontWeight: 800, color: colors.forgeLabel }}
+          sx={{ fontSize: font.xxxl, fontWeight: 800, color: colors.forgeLabel }}
         >
           ＋
         </Box>
@@ -215,7 +216,7 @@ export function ForgePanel({
         <Box
           component="span"
           aria-hidden="true"
-          sx={{ fontSize: '1.875rem', fontWeight: 800, color: colors.forgeEmber }}
+          sx={{ fontSize: font.xxxl, fontWeight: 800, color: colors.forgeEmber }}
         >
           →
         </Box>
@@ -226,28 +227,28 @@ export function ForgePanel({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 2.25,
-          py: 1.75,
+          gap: 2.5,
+          py: 2,
           borderTop: `2px solid ${colors.forgeLine}`,
           borderBottom: `2px solid ${colors.forgeLine}`,
         }}
       >
-        <Box component="span" sx={{ fontSize: '0.9375rem', fontWeight: 800, color: colors.forgeLabel }}>
+        <Box component="span" sx={{ fontSize: font.md, fontWeight: 800, color: colors.forgeLabel }}>
           {locale.plusValueLabel}
         </Box>
-        <Box component="span" sx={{ fontSize: '2.125rem', fontWeight: 800, color: '#ffffff' }}>
+        <Box component="span" sx={{ fontSize: font.display, fontWeight: 800, color: '#ffffff' }}>
           {target ? `+${target.plusValue}` : '-'}
         </Box>
-        <Box component="span" aria-hidden="true" sx={{ fontSize: '1.5rem', color: colors.forgeLabel }}>
+        <Box component="span" aria-hidden="true" sx={{ fontSize: font.xxl, color: colors.forgeLabel }}>
           ▶
         </Box>
-        <Box component="span" sx={{ fontSize: '2.125rem', fontWeight: 800, color: colors.forgeEmberText }}>
+        <Box component="span" sx={{ fontSize: font.display, fontWeight: 800, color: colors.forgeEmberText }}>
           {target ? `+${target.plusValue + 1}` : '-'}
         </Box>
       </Box>
-      <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+      <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box component="span" sx={{ fontSize: '0.9375rem', fontWeight: 800, color: colors.forgeLabel }}>
+          <Box component="span" sx={{ fontSize: font.md, fontWeight: 800, color: colors.forgeLabel }}>
             {locale.synthesisCost}
           </Box>
           <Box
@@ -256,14 +257,14 @@ export function ForgePanel({
               display: 'flex',
               alignItems: 'center',
               gap: 1,
-              fontSize: '1.625rem',
+              fontSize: font.xxxl,
               fontWeight: 800,
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            <CoinIcon sx={{ fontSize: 26 }} />
+            <CoinIcon sx={{ fontSize: font.xxxl }} />
             {cost != null ? formatGold(cost) : '-'}
-            <Box component="span" sx={{ fontSize: '1rem', color: colors.forgeLabel }}>
+            <Box component="span" sx={{ fontSize: font.md, color: colors.forgeLabel }}>
               / {locale.perTime}
             </Box>
           </Box>
@@ -273,7 +274,7 @@ export function ForgePanel({
           from={gold != null ? formatGold(gold) : '-'}
           to={goldAfter != null ? formatGold(goldAfter) : '-'}
         />
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.25, mt: 0.75 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5, mt: 0.75 }}>
           <ActionButton kind="forge" onClick={onSynthesize} disabled={busy || !target || !material || !canPay}>
             {locale.actionSynthesize}
           </ActionButton>

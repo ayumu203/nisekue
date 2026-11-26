@@ -22,6 +22,7 @@ import {
 } from '@/components/petbattle/petBattleTargets'
 import locale from '../../../locale/pet/PetBattle.json'
 import type { BattleColumn, BattleRow, PetBattleActionKind, PetBattleMember, PetBattleRun } from '@/schema/petBattle'
+import { font } from '@/theme/tokens'
 
 type PetBattleRunSectionProps = {
   run: PetBattleRun
@@ -61,7 +62,7 @@ function FieldGrid({
               border: `1px solid ${cyberColors.panelBorder}`,
             }}
           >
-            <Typography variant="caption" sx={{ color: cyberColors.accentDim, fontSize: '0.6rem', fontWeight: 700 }}>
+            <Typography variant="caption" sx={{ color: cyberColors.accentDim, fontSize: font.xxs, fontWeight: 700 }}>
               {locale.rows[row]}
             </Typography>
           </Box>
@@ -140,8 +141,8 @@ export default function PetBattleRunSection({
 
   return (
     <Stack spacing={2}>
-      <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.25, sm: 2 } }}>
-        <Stack spacing={1.25}>
+      <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.5, sm: 2 } }}>
+        <Stack spacing={1.5}>
           <Stack direction="row" spacing={2} alignItems="center" useFlexGap flexWrap="wrap">
             <Typography variant="body2" sx={{ color: cyberColors.text, fontWeight: 800, letterSpacing: '0.06em' }}>
               {`TURN ${run.currentTurnNo}`}
@@ -187,7 +188,7 @@ export default function PetBattleRunSection({
         </Stack>
       </Paper>
 
-      <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.25, sm: 2 } }}>
+      <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.5, sm: 2 } }}>
         <Stack spacing={1.5}>
           <Typography
             variant="h6"
@@ -206,7 +207,7 @@ export default function PetBattleRunSection({
                 key={member.participantId}
                 variant="outlined"
                 sx={{
-                  p: { xs: 1, sm: 1.25 },
+                  p: { xs: 1, sm: 1.5 },
                   borderRadius: 2,
                   backgroundColor: cyberColors.panelLight,
                   borderColor: cyberColors.panelBorder,
@@ -264,9 +265,9 @@ export default function PetBattleRunSection({
                             color: cyberColors.textDim,
                             border: `1px solid ${cyberColors.panelBorder}`,
                             borderRadius: '8px !important',
-                            px: 1.25,
-                            py: 0.4,
-                            fontSize: '0.74rem',
+                            px: 1.5,
+                            py: 0.5,
+                            fontSize: font.xs,
                             fontWeight: 700,
                           },
                           '& .MuiToggleButton-root.Mui-selected': {

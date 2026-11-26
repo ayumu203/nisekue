@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { skillPanelColors as colors } from '@/constants/styles'
 import { elementStyles, type MoveElementKey } from '@/components/moveSetting/moveDisplay'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
+import { font } from '@/theme/tokens'
 
 // 属性ごとの白いシルエット（24×24）。単色の丸の上に置く
 const elementIcons: Record<MoveElementKey, ReactNode> = {
@@ -120,10 +121,10 @@ export function SkillChip({ label, color, outlined = false }: { label: string; c
       component="span"
       sx={{
         display: 'inline-block',
-        fontSize: 14,
+        fontSize: font.sm,
         lineHeight: 1.4,
-        px: '9px',
-        py: '2px',
+        px: 1,
+        py: 0.25,
         borderRadius: '3px',
         whiteSpace: 'nowrap',
         color: outlined ? colors.sub : '#ffffff',

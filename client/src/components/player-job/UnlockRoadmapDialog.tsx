@@ -2,6 +2,7 @@ import { Box, Button, Dialog, DialogContent, Stack, Typography } from '@mui/mate
 import { resolveJobAssetPath } from '@/lib/assets'
 import type { PlayerJobCode } from '@/schema/player'
 import locale from '../../../locale/player-job/JobChange.json'
+import { font } from '@/theme/tokens'
 
 interface UnlockRoadmapDialogProps {
   open: boolean
@@ -67,27 +68,27 @@ export default function UnlockRoadmapDialog({
                 </Typography>
               )}
             </Box>
-            <Typography sx={{ fontSize: '0.65rem', color: '#888', letterSpacing: '0.1em' }}>
+            <Typography sx={{ fontSize: font.xxs, color: '#888', letterSpacing: '0.1em' }}>
               {locale.roadmapUnlockDialogJob}
             </Typography>
-            <Typography fontWeight={900} color="#fff" lineHeight={1.2} sx={{ fontSize: '1.1rem', mt: 0.25 }}>
+            <Typography fontWeight={900} color="#fff" lineHeight={1.2} sx={{ fontSize: font.lg, mt: 0.25 }}>
               {jobName}
             </Typography>
           </Box>
 
           {/* 質問テキスト */}
           <Box sx={{ px: 3, py: 2.5, textAlign: 'center' }}>
-            <Typography color="#fff" fontWeight={700} sx={{ fontSize: '0.95rem', lineHeight: 1.7 }}>
+            <Typography color="#fff" fontWeight={700} sx={{ fontSize: font.md, lineHeight: 1.7 }}>
               {locale.roadmapUnlockDialogTitle}
             </Typography>
             <Stack direction="row" alignItems="baseline" spacing={1} justifyContent="center" sx={{ mt: 1.5 }}>
-              <Typography sx={{ fontSize: '0.7rem', color: '#888', letterSpacing: '0.08em' }}>
+              <Typography sx={{ fontSize: font.xs, color: '#888', letterSpacing: '0.08em' }}>
                 {locale.roadmapUnlockDialogCost}
               </Typography>
-              <Typography fontWeight={900} color="#fff" sx={{ fontSize: '1.2rem' }}>
+              <Typography fontWeight={900} color="#fff" sx={{ fontSize: font.xl }}>
                 {goldCost.toLocaleString()}
               </Typography>
-              <Typography fontWeight={700} color="#aaa" sx={{ fontSize: '0.85rem' }}>
+              <Typography fontWeight={700} color="#aaa" sx={{ fontSize: font.sm }}>
                 G
               </Typography>
             </Stack>
@@ -106,7 +107,7 @@ export default function UnlockRoadmapDialog({
                     color: '#aaa',
                     bgcolor: '#000',
                     fontWeight: 900,
-                    fontSize: '0.9rem',
+                    fontSize: font.sm,
                     py: 0.75,
                     letterSpacing: '0.05em',
                     boxShadow: 'none',
@@ -131,7 +132,7 @@ export default function UnlockRoadmapDialog({
                     color: '#000',
                     bgcolor: '#fff',
                     fontWeight: 900,
-                    fontSize: '0.9rem',
+                    fontSize: font.sm,
                     py: 0.75,
                     letterSpacing: '0.05em',
                     boxShadow: 'none',

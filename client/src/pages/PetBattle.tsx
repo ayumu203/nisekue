@@ -29,6 +29,7 @@ import {
 import { useAuth } from '@/contexts/useAuth'
 import locale from '../../locale/pet/PetBattle.json'
 import type { BattleColumn, BattleRow, PetBattleRoom, PetBattleRun } from '@/schema/petBattle'
+import { font } from '@/theme/tokens'
 
 export default function PetBattle() {
   const { session, isLoading } = useAuth()
@@ -455,7 +456,7 @@ export default function PetBattle() {
                         fontWeight: 900,
                         letterSpacing: '0.06em',
                         textShadow: `0 0 14px ${cyberColors.accentDim}`,
-                        fontSize: { xs: '1.65rem', sm: '2rem' },
+                        fontSize: { xs: font.xxxl, sm: font.display },
                       }}
                     >
                       {locale.title}

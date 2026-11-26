@@ -10,6 +10,7 @@ import { GearIcon, SignOutIcon } from '@/components/home/StatusIcons'
 import { useSignOut } from '@/hooks/useSignOut'
 import { resolveCharacterAssetPath, resolveStatusAssetPath } from '@/lib/assets'
 import { formatEquippedItemWithPlus, formatExpProgress, formatStatusValue, toNormalized } from '@/lib/playerStatus'
+import { font } from '@/theme/tokens'
 
 type StatValue = number | string
 
@@ -194,7 +195,7 @@ export default function Status({
                     flex: 1,
                     minWidth: 0,
                     // 長い名前（最大 20 文字）は少し小さくして、2 行に収める
-                    fontSize: (player?.userName?.length ?? 0) > 12 ? '1.05rem' : '1.2rem',
+                    fontSize: (player?.userName?.length ?? 0) > 12 ? font.md : font.xl,
                     lineHeight: 1.3,
                     overflowWrap: 'anywhere',
                     textAlign: 'center',
@@ -298,7 +299,7 @@ export default function Status({
           )}
 
           {compactTrainingMobile ? (
-            <Stack spacing={1.25}>
+            <Stack spacing={1.5}>
               <Button
                 variant="contained"
                 size="small"
@@ -345,7 +346,7 @@ export default function Status({
             </Stack>
           ) : (
             <Box>
-              <Stack spacing={1.25}>
+              <Stack spacing={1.5}>
                 <Button
                   variant="contained"
                   size="small"
@@ -445,7 +446,7 @@ export default function Status({
             ...topNavigationIconButtonSx,
           }}
         >
-          <Typography component="span" fontSize="1.1rem" fontWeight={900}>
+          <Typography component="span" fontSize={font.lg} fontWeight={900}>
             {isOpen ? '−' : '+'}
           </Typography>
         </IconButton>

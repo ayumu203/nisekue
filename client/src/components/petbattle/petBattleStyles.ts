@@ -1,3 +1,4 @@
+import { font } from '@/theme/tokens'
 export const cyberColors = {
   bg: '#050505',
   panel: '#101111',
@@ -69,7 +70,7 @@ export const cyberSelectSx = {
   color: cyberColors.text,
   backgroundColor: cyberColors.panelLight,
   borderRadius: 1.5,
-  fontSize: '0.85rem',
+  fontSize: font.sm,
   '& .MuiOutlinedInput-notchedOutline': { borderColor: cyberColors.panelBorder },
   '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: cyberColors.accentDim },
   '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: cyberColors.accent },

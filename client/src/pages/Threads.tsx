@@ -135,7 +135,7 @@ export default function Threads() {
       )}
 
       <ThreadBoardSurface>
-        <Paper variant="outlined" sx={{ ...boardSx, borderRadius: 3, p: { xs: 2, sm: 2.75 } }}>
+        <Paper variant="outlined" sx={{ ...boardSx, borderRadius: 3, p: { xs: 2, sm: 3 } }}>
           <Stack spacing={2}>
             <Typography variant="overline" sx={{ letterSpacing: '0.22em', color: 'rgba(246, 239, 220, 0.72)' }}>
               THREAD BOARD
@@ -283,14 +283,14 @@ export default function Threads() {
                           backgroundColor: index % 2 === 0 ? '#d6c4ab' : '#cfbda2',
                         }}
                       >
-                        <Stack spacing={1.25}>
+                        <Stack spacing={1.5}>
                           <Stack
                             direction={{ xs: 'column', sm: 'row' }}
                             spacing={1.5}
                             justifyContent="space-between"
                             alignItems={{ xs: 'flex-start', sm: 'center' }}
                           >
-                            <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
+                            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
                               <Avatar
                                 component={Link}
                                 to={`/players/${thread.authorPlayerId}/visit`}

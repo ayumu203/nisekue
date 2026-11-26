@@ -8,7 +8,7 @@ import locale from '../../locale/player-image-list/PlayerImageList.json'
 
 export default function PlayerImageList() {
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 6 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={2}>
           <Stack direction="row" justifyContent="flex-end">

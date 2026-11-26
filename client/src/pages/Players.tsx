@@ -25,6 +25,7 @@ import { resolveRankColor } from '@/lib/playerRank'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../locale/players/Players.json'
 import { innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
+import { font } from '@/theme/tokens'
 
 const PAGE_SIZE = 24
 
@@ -100,7 +101,7 @@ function Players() {
           sx={{
             ...innerSurfaceSx,
             borderRadius: 3,
-            p: { xs: 1.75, sm: 2.25 },
+            p: { xs: 2, sm: 2.5 },
             color: '#274d54',
             backgroundColor: '#f8fffd',
             borderColor: 'rgba(126, 189, 181, 0.42)',
@@ -192,8 +193,8 @@ function Players() {
                                     component="span"
                                     sx={{
                                       minWidth: 52,
-                                      px: 1.25,
-                                      py: 0.65,
+                                      px: 1.5,
+                                      py: 0.75,
                                       display: 'inline-flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
@@ -202,7 +203,7 @@ function Players() {
                                       borderColor: alpha(rankColor, 0.38),
                                       backgroundColor: alpha(rankColor, 0.14),
                                       color: rankColor,
-                                      fontSize: '0.95rem',
+                                      fontSize: font.md,
                                       fontWeight: 900,
                                       lineHeight: 1,
                                     }}
@@ -215,7 +216,7 @@ function Players() {
                                 </Typography>
                               </Box>
                             </Stack>
-                            <Stack spacing={1.25} alignItems="flex-end" sx={{ flexShrink: 0 }}>
+                            <Stack spacing={1.5} alignItems="flex-end" sx={{ flexShrink: 0 }}>
                               <Button
                                 component={Link}
                                 to={`/players/${player.userId}/visit`}

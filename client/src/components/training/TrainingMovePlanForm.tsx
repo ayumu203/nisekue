@@ -6,6 +6,7 @@ import type { GetPlayerResponse, PlayerMoveSlot } from '@/schema/player'
 import type { TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
 import { getTrainingBackgroundPath } from './trainingSelectStyles'
+import { font } from '@/theme/tokens'
 
 type TrainingMovePlanFormProps = {
   // まだ相手を選んでいないときは null（技の欄と「戦闘」を押せない状態で出す）
@@ -86,7 +87,7 @@ function MpMeter({ plannedMp, maxMp }: { plannedMp: number; maxMp: number }) {
   const ratio = maxMp > 0 ? Math.min(1, plannedMp / maxMp) : 0
 
   return (
-    <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
+    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
       <Typography variant="body2" fontWeight={700} sx={{ color: trainingPanelColors.label, whiteSpace: 'nowrap' }}>
         {locale.plannedMpLabel}
       </Typography>
@@ -151,7 +152,7 @@ function BattleButton({
         ...panelPrimaryButtonSx,
         flex: 'none',
         height: 48,
-        fontSize: '1.05rem',
+        fontSize: font.md,
         '&&': {
           ...panelPrimaryButtonSx['&&'],
           backgroundColor: trainingPanelColors.band,
@@ -205,7 +206,7 @@ export default function TrainingMovePlanForm({
   )
 
   const turnSlots = (
-    <Stack spacing={1.25}>
+    <Stack spacing={1.5}>
       {plannedTurns.map((turn, index) => {
         const turnLabel = locale.turnLabel.replace('{{turn}}', String(index + 1))
         return (
@@ -237,7 +238,7 @@ export default function TrainingMovePlanForm({
                     '& .MuiOutlinedInput-notchedOutline': { borderColor: '#d9dee7' },
                     '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#b3bccb' },
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: trainingPanelColors.band },
-                    '& .MuiSelect-select': { py: 1.1, pl: 1.5, display: 'flex', alignItems: 'center' },
+                    '& .MuiSelect-select': { py: 1, pl: 1.5, display: 'flex', alignItems: 'center' },
                     '& .MuiSvgIcon-root': { color: trainingPanelColors.label },
                   }}
                 >
@@ -246,7 +247,7 @@ export default function TrainingMovePlanForm({
                   </MenuItem>
                   {availableMoves.map((move) => (
                     <MenuItem key={move.moveId} value={String(move.moveId)} sx={{ color: trainingPanelColors.text }}>
-                      <Stack spacing={0.2} sx={{ minWidth: 0 }}>
+                      <Stack spacing={0.25} sx={{ minWidth: 0 }}>
                         <Typography sx={{ overflowWrap: 'anywhere', lineHeight: 1.25 }}>{move.moveName}</Typography>
                         <Typography variant="caption" color="text.secondary">
                           {formatSlotDetail(move.mpCost ?? 0, resolveTargetTypeLabel(move.targetType))}
@@ -269,7 +270,7 @@ export default function TrainingMovePlanForm({
   )
 
   return (
-    <Stack spacing={1.75} sx={{ height: '100%' }}>
+    <Stack spacing={2} sx={{ height: '100%' }}>
       <Stack
         direction="row"
         spacing={1.5}
@@ -305,7 +306,7 @@ export default function TrainingMovePlanForm({
             {enemyImageSrc ? (
               <Box component="img" src={enemyImageSrc} alt="" sx={{ maxWidth: 46, maxHeight: 46 }} />
             ) : (
-              <Typography aria-hidden="true" sx={{ fontSize: '1.4rem', fontWeight: 900, color: '#8f98a8' }}>
+              <Typography aria-hidden="true" sx={{ fontSize: font.xxl, fontWeight: 900, color: '#8f98a8' }}>
                 ?
               </Typography>
             )}

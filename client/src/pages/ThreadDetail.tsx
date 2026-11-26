@@ -21,6 +21,7 @@ import ThreadPageShell from '@/components/common/ThreadPageShell'
 import { useAuth } from '@/contexts/useAuth'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../locale/threads/ThreadDetail.json'
+import { font } from '@/theme/tokens'
 
 const boardSx = {
   backgroundColor: '#7b553d',
@@ -194,7 +195,7 @@ export default function ThreadDetail() {
           <Alert severity="warning">{locale.threadMissing}</Alert>
         ) : (
           <>
-            <Paper variant="outlined" sx={{ ...boardSx, borderRadius: 3, p: { xs: 2, sm: 2.75 } }}>
+            <Paper variant="outlined" sx={{ ...boardSx, borderRadius: 3, p: { xs: 2, sm: 3 } }}>
               <Stack spacing={2}>
                 <Typography variant="overline" sx={{ letterSpacing: '0.22em', color: 'rgba(246, 239, 220, 0.76)' }}>
                   THREAD DETAIL
@@ -206,7 +207,7 @@ export default function ThreadDetail() {
                   sx={{
                     color: '#f8efe4',
                     wordBreak: 'break-word',
-                    fontSize: { xs: '1.25rem', sm: '2.4rem', md: '2.85rem' },
+                    fontSize: { xs: font.xl, sm: font.display, md: font.display },
                   }}
                 >
                   {data.title}
@@ -358,8 +359,8 @@ export default function ThreadDetail() {
                         backgroundColor: index % 2 === 0 ? '#d6c4ab' : '#cfbda2',
                       }}
                     >
-                      <Stack spacing={1.25}>
-                        <Stack direction="row" spacing={1.25} alignItems="center">
+                      <Stack spacing={1.5}>
+                        <Stack direction="row" spacing={1.5} alignItems="center">
                           <Avatar
                             component={Link}
                             to={`/players/${reply.authorPlayerId}/visit`}

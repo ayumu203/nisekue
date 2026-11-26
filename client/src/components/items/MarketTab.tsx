@@ -16,6 +16,7 @@ import {
 import { formatGold } from './itemUtils'
 import locale from '../../../locale/items/Items.json'
 import type { MarketListingView } from '@/schema/item'
+import { font } from '@/theme/tokens'
 
 export type MarketTabKey = 'public' | 'mine'
 export type MarketCategoryFilter = 'all' | 'Weapon' | 'Armor' | 'Item' | 'Map'
@@ -36,10 +37,10 @@ function UnderlineTab({ label, selected, onClick }: { label: string; selected: b
       disableRipple
       sx={{
         height: 38,
-        px: { xs: 1.25, sm: 1.75 },
+        px: { xs: 1.5, sm: 2 },
         borderBottom: `3px solid ${selected ? colors.leather : 'transparent'}`,
         fontFamily: 'inherit',
-        fontSize: '0.9375rem',
+        fontSize: font.md,
         fontWeight: 800,
         color: selected ? colors.text : colors.label,
         whiteSpace: 'nowrap',
@@ -77,8 +78,8 @@ function ListingRow({
             : '64px minmax(0, 1fr) 120px minmax(132px, auto)',
         },
         alignItems: 'center',
-        gap: { xs: 1.25, md: 2 },
-        px: { xs: 1.25, md: 1.75 },
+        gap: { xs: 1.5, md: 2 },
+        px: { xs: 1.5, md: 2 },
         py: 1,
         borderRadius: '14px',
         textAlign: 'left',
@@ -104,7 +105,7 @@ function ListingRow({
         <Box
           component="span"
           sx={{
-            fontSize: { xs: '1rem', md: '1.125rem' },
+            fontSize: { xs: font.md, md: font.lg },
             fontWeight: 800,
             color: colors.text,
             overflow: 'hidden',
@@ -115,7 +116,7 @@ function ListingRow({
           {getListingTitle(listing)}
         </Box>
         {/* PC：種類と効果。スマホは効果を並べると読みにくいので、売り手だけにする（自分の出品は残りの数） */}
-        <Box component="span" sx={{ display: { xs: 'none', md: 'block' }, fontSize: '0.875rem', color: colors.label }}>
+        <Box component="span" sx={{ display: { xs: 'none', md: 'block' }, fontSize: font.sm, color: colors.label }}>
           {getListingSummary(listing)}
         </Box>
         <Box
@@ -124,7 +125,7 @@ function ListingRow({
             display: { xs: 'flex', md: 'none' },
             alignItems: 'center',
             gap: 0.75,
-            fontSize: '0.875rem',
+            fontSize: font.sm,
             color: colors.label,
             minWidth: 0,
           }}
@@ -170,7 +171,7 @@ function ListingRow({
           <Box
             component="span"
             sx={{
-              fontSize: '0.9375rem',
+              fontSize: font.md,
               fontWeight: 700,
               color: colors.text,
               overflow: 'hidden',
@@ -182,7 +183,7 @@ function ListingRow({
           </Box>
         </Box>
       ) : null}
-      <Box component="span" sx={{ display: { xs: 'none', md: 'block' }, fontSize: '0.9375rem', color: colors.label }}>
+      <Box component="span" sx={{ display: { xs: 'none', md: 'block' }, fontSize: font.md, color: colors.label }}>
         {locale.remaining.replace('{count}', String(listing.quantity))}
       </Box>
       <Box
@@ -196,12 +197,12 @@ function ListingRow({
           fontVariantNumeric: 'tabular-nums',
           position: 'relative',
           py: 0.75,
-          pr: { xs: 1.25, md: 1.75 },
-          pl: { xs: 2.75, md: 3.25 },
+          pr: { xs: 1.5, md: 2 },
+          pl: { xs: 3, md: 3 },
           backgroundColor: colors.priceTag,
           border: `2px solid ${colors.brass}`,
           borderRadius: '6px 12px 12px 6px',
-          fontSize: { xs: '0.9375rem', md: '1.1875rem' },
+          fontSize: { xs: font.md, md: font.xl },
           fontWeight: 800,
           color: colors.priceTagText,
         }}
@@ -215,7 +216,7 @@ function ListingRow({
             top: '50%',
             width: 8,
             height: 8,
-            mt: '-4px',
+            mt: -0.5,
             borderRadius: '50%',
             backgroundColor: colors.slot,
             border: `2px solid ${colors.brass}`,
@@ -267,8 +268,8 @@ export function MarketList({
         aria-hidden="true"
         sx={{
           height: 34,
-          mx: { xs: -1.25, sm: -2.5 },
-          mt: { xs: -1.5, sm: -2.25 },
+          mx: { xs: -1.5, sm: -2.5 },
+          mt: { xs: -1.5, sm: -2.5 },
           borderRadius: '10px 10px 0 0',
           background: `repeating-linear-gradient(90deg, ${colors.leather} 0 56px, #fbf1dc 56px 112px)`,
           boxShadow: 'inset 0 -6px 0 rgba(0,0,0,0.12)',
@@ -288,7 +289,7 @@ export function MarketList({
           borderRadius: 999,
           backgroundColor: '#ffffff',
           fontFamily: 'inherit',
-          fontSize: '0.9375rem',
+          fontSize: font.md,
         }}
       />
       {/* 種類の絞り込みと「自分の出品」を 1 行の下線タブにまとめる。自分の出品は区切り線の右に置く */}
@@ -330,8 +331,8 @@ export function MarketList({
           flex: 1,
           minHeight: 0,
           overflow: 'auto',
-          p: '4px',
-          m: '-4px',
+          p: 0.5,
+          m: -0.5,
           display: 'flex',
           flexDirection: 'column',
           gap: 1,
@@ -376,7 +377,7 @@ const stepButtonSx = {
   border: `2px solid ${colors.leather}`,
   backgroundColor: '#ffffff',
   color: colors.leather,
-  fontSize: '1.375rem',
+  fontSize: font.xxl,
   fontWeight: 800,
   '&.Mui-disabled': { opacity: 0.4 },
 } as const
@@ -432,10 +433,10 @@ export function PurchasePanel({
           <ItemIcon item={listing} size={92} />
         </Box>
         <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Typography component="span" sx={{ fontSize: '1.5rem', fontWeight: 800, color: colors.text }}>
+          <Typography component="span" sx={{ fontSize: font.xxl, fontWeight: 800, color: colors.text }}>
             {getListingTitle(listing)}
           </Typography>
-          <Typography component="span" sx={{ fontSize: '0.9375rem', color: colors.label }}>
+          <Typography component="span" sx={{ fontSize: font.md, color: colors.label }}>
             {getListingSummary(listing)}
           </Typography>
         </Box>
@@ -450,18 +451,18 @@ export function PurchasePanel({
           borderBottom: `2px dashed ${colors.stitch}`,
         }}
       >
-        <Typography component="span" sx={{ fontSize: '0.9375rem', fontWeight: 800, color: colors.label }}>
+        <Typography component="span" sx={{ fontSize: font.md, fontWeight: 800, color: colors.label }}>
           {isMine
             ? locale.remaining.replace('{count}', String(listing.quantity))
             : `${locale.purchaseQuantity} (${quantity}/${listing.quantity})`}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-          <Box component="span" sx={{ fontSize: '1.5rem', fontWeight: 800, color: colors.text }}>
+          <Box component="span" sx={{ fontSize: font.xxl, fontWeight: 800, color: colors.text }}>
             {formatGold(listing.unitPrice)}
           </Box>
           <Operator>×</Operator>
           {isMine ? (
-            <Box component="span" sx={{ fontSize: '1.5rem', fontWeight: 800, color: colors.text }}>
+            <Box component="span" sx={{ fontSize: font.xxl, fontWeight: 800, color: colors.text }}>
               {listing.quantity}
             </Box>
           ) : (
@@ -489,7 +490,7 @@ export function PurchasePanel({
                   borderRadius: '10px',
                   backgroundColor: '#ffffff',
                   fontFamily: 'inherit',
-                  fontSize: '1.25rem',
+                  fontSize: font.xl,
                   fontWeight: 800,
                   '& input': { textAlign: 'center', p: 0 },
                 }}
@@ -512,19 +513,19 @@ export function PurchasePanel({
               display: 'flex',
               alignItems: 'center',
               gap: 1,
-              fontSize: '1.75rem',
+              fontSize: font.xxxl,
               fontWeight: 800,
               color: colors.text,
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            <CoinIcon sx={{ fontSize: 26 }} />
+            <CoinIcon sx={{ fontSize: font.xxxl }} />
             {formatGold(total)}
           </Box>
         </Box>
       </Box>
       {isMine ? null : (
-        <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+        <Box sx={{ mt: 'auto', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <GoldChangeRow
             from={gold != null ? formatGold(gold) : '-'}
             to={goldAfter != null ? formatGold(goldAfter) : '-'}

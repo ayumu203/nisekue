@@ -6,6 +6,7 @@ import locale from '../../../locale/quest/QuestRoom.json'
 import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/quest'
 import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestStageModeCard from './QuestStageModeCard'
+import { font } from '@/theme/tokens'
 
 type QuestRoomCreateSectionProps = {
   activeStages: GetQuestStagesResponse
@@ -41,7 +42,7 @@ function PanelRow({ label, value }: { label: string; value: string }) {
         // 見出しと内容を離しすぎないよう、内容は見出しのすぐ右に置く
         alignItems: 'baseline',
         gap: 2,
-        py: 1.25,
+        py: 1.5,
         borderBottom: '1px solid #eadfc6',
       }}
     >
@@ -51,7 +52,7 @@ function PanelRow({ label, value }: { label: string; value: string }) {
       >
         {label}
       </Typography>
-      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: '1rem' }}>{value}</Typography>
+      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: font.md }}>{value}</Typography>
     </Box>
   )
 }
@@ -183,7 +184,7 @@ export default function QuestRoomCreateSection({
           variant="contained"
           onClick={() => void onCreateRoom()}
           disabled={isCreateDisabled}
-          sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, minHeight: { xs: 48, md: 56 }, fontSize: { md: '1.15rem' } }}
+          sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, minHeight: { xs: 48, md: 56 }, fontSize: { md: font.lg } }}
         >
           {isSubmitting ? locale.creatingRoom : locale.createRoom}
         </Button>

@@ -13,7 +13,7 @@ export default function ThreadBoardSurface({ children }: ThreadBoardSurfaceProps
       sx={{
         ...innerSurfaceSx,
         borderRadius: 3,
-        p: { xs: 1.75, sm: 2.25 },
+        p: { xs: 2, sm: 2.5 },
         color: '#432f22',
         backgroundColor: '#d7c4a8',
         borderColor: '#94704c',

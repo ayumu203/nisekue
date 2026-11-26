@@ -4,6 +4,7 @@ import type { GetChatRoomResponse } from '@/schema/chat'
 import ChatMessageItem from '@/components/chat/ChatMessageItem'
 import { getShowSystemMessages, saveShowSystemMessages } from '@/lib/chatPreferencesStorage'
 import locale from '../../../locale/chat/Chat.json'
+import { font } from '@/theme/tokens'
 
 type Props = {
   messages: GetChatRoomResponse['messages']
@@ -99,10 +100,10 @@ function ChatMessages({ messages, currentPlayerId, onDeleteMessage }: Props) {
         <DialogContent sx={{ p: 0 }}>
           <Stack spacing={0}>
             <Box sx={{ px: 3, py: 2.5, textAlign: 'center' }}>
-              <Typography color="#fff" fontWeight={700} sx={{ fontSize: '0.95rem', lineHeight: 1.7 }}>
+              <Typography color="#fff" fontWeight={700} sx={{ fontSize: font.md, lineHeight: 1.7 }}>
                 {locale.deleteConfirmTitle}
               </Typography>
-              <Typography sx={{ mt: 1, fontSize: '0.8rem', color: '#aaa', lineHeight: 1.6 }}>
+              <Typography sx={{ mt: 1, fontSize: font.xs, color: '#aaa', lineHeight: 1.6 }}>
                 {locale.deleteConfirmBody}
               </Typography>
               {deleteError ? (
@@ -124,7 +125,7 @@ function ChatMessages({ messages, currentPlayerId, onDeleteMessage }: Props) {
                       color: '#aaa',
                       bgcolor: '#000',
                       fontWeight: 900,
-                      fontSize: '0.9rem',
+                      fontSize: font.sm,
                       py: 0.75,
                       letterSpacing: '0.05em',
                       boxShadow: 'none',
@@ -150,7 +151,7 @@ function ChatMessages({ messages, currentPlayerId, onDeleteMessage }: Props) {
                       color: '#fff',
                       bgcolor: '#d32f2f',
                       fontWeight: 900,
-                      fontSize: '0.9rem',
+                      fontSize: font.sm,
                       py: 0.75,
                       letterSpacing: '0.05em',
                       boxShadow: 'none',

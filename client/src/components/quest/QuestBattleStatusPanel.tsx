@@ -29,6 +29,7 @@ import type {
   QuestPartyMemberView,
   QuestRunDetailResponse,
 } from '@/schema/quest'
+import { font } from '@/theme/tokens'
 
 type AvailableMove = {
   slot: number
@@ -161,8 +162,8 @@ function AllyStatusCard({ member }: { member: QuestPartyMemberView }) {
     <Paper
       variant="outlined"
       sx={{
-        px: { xs: 0.45, sm: 0.8 },
-        py: { xs: 0.32, sm: 0.55 },
+        px: { xs: 0.5, sm: 0.75 },
+        py: { xs: 0.25, sm: 0.5 },
         borderRadius: 1.75,
         borderColor: 'rgba(123, 92, 44, 0.28)',
         backgroundColor: 'rgba(255, 248, 224, 0.88)',
@@ -170,26 +171,26 @@ function AllyStatusCard({ member }: { member: QuestPartyMemberView }) {
         opacity: member.isDead ? 0.62 : 1,
       }}
     >
-      <Stack spacing={0.05} sx={{ minWidth: 0 }}>
+      <Stack spacing={0} sx={{ minWidth: 0 }}>
         <Typography
           variant="caption"
           noWrap
           title={member.displayName}
-          sx={{ fontWeight: 800, color: '#503717', fontSize: { xs: '0.56rem', sm: '1rem' }, lineHeight: 1.2 }}
+          sx={{ fontWeight: 800, color: '#503717', fontSize: { xs: font.xxs, sm: font.md }, lineHeight: 1.2 }}
         >
           {member.displayName}
         </Typography>
         <Typography
           variant="caption"
           noWrap
-          sx={{ color: '#624927', fontSize: { xs: '0.5rem', sm: '0.875rem' }, lineHeight: 1.2 }}
+          sx={{ color: '#624927', fontSize: { xs: font.xxs, sm: font.sm }, lineHeight: 1.2 }}
         >
           HP {member.currentHp}/{member.maxHp ?? '-'}
         </Typography>
         <Typography
           variant="caption"
           noWrap
-          sx={{ color: '#30506e', fontSize: { xs: '0.5rem', sm: '0.875rem' }, lineHeight: 1.2 }}
+          sx={{ color: '#30506e', fontSize: { xs: font.xxs, sm: font.sm }, lineHeight: 1.2 }}
         >
           MP {member.currentMp}/{member.maxMp ?? '-'}
         </Typography>
@@ -269,7 +270,7 @@ function BattleSprite({
             transform: 'translate(-50%, -10px)',
             width: { xs: 132, sm: 168 },
             px: 1,
-            py: 0.7,
+            py: 0.75,
             borderRadius: 2,
             border: '1px solid rgba(112, 83, 31, 0.4)',
             backgroundColor: 'rgba(255, 252, 241, 0.96)',
@@ -298,7 +299,7 @@ function BattleSprite({
               color: '#503717',
               textAlign: 'center',
               lineHeight: 1.35,
-              fontSize: { xs: '0.72rem', sm: '0.875rem' },
+              fontSize: { xs: font.xs, sm: font.sm },
               wordBreak: 'break-word',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
@@ -310,13 +311,15 @@ function BattleSprite({
       ) : null}
 
       <Stack
-        spacing={0.35}
+        spacing={0.25}
         sx={{
-          mb: 0.4,
+          mb: 0.5,
           px: 0.25,
           width: isAlly
             ? { xs: 'calc(100% - 34px)', sm: 'calc(100% - 10px)' }
             : { xs: 'calc(100% + 22px)', sm: 'calc(100% + 10px)' },
+          // 余白ではなく、上の width（calc）と組になった位置合わせの値
+          // eslint-disable-next-line no-restricted-syntax
           ml: isAlly ? { xs: '17px', sm: '5px' } : { xs: '-11px', sm: '-5px' },
         }}
       >
@@ -327,7 +330,7 @@ function BattleSprite({
           title={name}
           textAlign="center"
           sx={{
-            fontSize: { xs: '0.62rem', sm: '1rem' },
+            fontSize: { xs: font.xxs, sm: font.md },
             color: isDead ? 'rgba(90,90,90,0.92)' : '#3f2f16',
             textShadow: '0 1px 0 rgba(255,255,255,0.55)',
             lineHeight: isAlly ? 1.1 : { xs: 1.02, sm: 1.1 },
@@ -345,7 +348,7 @@ function BattleSprite({
           variant="caption"
           color="text.secondary"
           textAlign="center"
-          sx={{ fontSize: { xs: '0.58rem', sm: '0.875rem' }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
+          sx={{ fontSize: { xs: font.xxs, sm: font.sm }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
         >
           HP {hp}/{maxHp ?? '-'}
         </Typography>
@@ -664,10 +667,10 @@ export default function QuestBattleStatusPanel({
             width: { xs: 38, sm: 'auto' },
             minHeight: { xs: 38, sm: 46 },
             borderRadius: 2.5,
-            px: { xs: 0.2, sm: 1.75 },
-            py: { xs: 0.15, sm: 0.75 },
+            px: { xs: 0.25, sm: 2 },
+            py: { xs: 0.25, sm: 0.75 },
             fontWeight: 700,
-            fontSize: { xs: '0.52rem', sm: '1rem' },
+            fontSize: { xs: font.xxs, sm: font.md },
             lineHeight: { xs: 1.02, sm: 1.3 },
             textAlign: 'center',
             whiteSpace: 'normal',
@@ -713,7 +716,7 @@ export default function QuestBattleStatusPanel({
           minWidth: { xs: 64, sm: 124 },
           minHeight: { xs: 38, sm: 46 },
           ml: selectedActionKind === 'UseMove' ? 0 : { sm: 'auto' },
-          fontSize: { xs: '0.56rem', sm: '1rem' },
+          fontSize: { xs: font.xxs, sm: font.md },
           ...softGreenButtonSx,
         }}
       >
@@ -732,16 +735,16 @@ export default function QuestBattleStatusPanel({
               sx={{
                 borderRadius: 2.5,
                 px: { xs: 1.5, sm: 2 },
-                py: { xs: 1, sm: 1.25 },
+                py: { xs: 1, sm: 1.5 },
                 backgroundColor: '#fff4d2',
                 border: '1px solid #e6b53d',
                 color: '#6a4300',
               }}
             >
-              <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.8rem', sm: '1rem' } }}>
+              <Typography sx={{ fontWeight: 700, fontSize: { xs: font.xs, sm: font.md } }}>
                 ★ {endlessCheckpointBannerTitle}
               </Typography>
-              <Typography sx={{ mt: 0.25, fontSize: { xs: '0.7rem', sm: '0.875rem' }, lineHeight: 1.5 }}>
+              <Typography sx={{ mt: 0.25, fontSize: { xs: font.xs, sm: font.sm }, lineHeight: 1.5 }}>
                 {locale.endlessCheckpoint.bannerBody}
               </Typography>
             </Box>
@@ -945,7 +948,7 @@ export default function QuestBattleStatusPanel({
               bottom: { xs: 6, sm: 10 },
               zIndex: 3,
               display: 'grid',
-              gap: { xs: 0.45, sm: 0.65 },
+              gap: { xs: 0.5, sm: 0.75 },
               gridTemplateColumns: {
                 xs: 'repeat(2, minmax(0, 1fr))',
                 sm: 'repeat(3, minmax(0, 1fr))',

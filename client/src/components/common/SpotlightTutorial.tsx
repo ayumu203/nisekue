@@ -8,6 +8,7 @@ import { resolvePublicAssetPath } from '@/lib/assets'
 import { completeTutorial } from '@/lib/tutorial'
 import tutorialLocale from '../../../locale/tutorial/Tutorial.json'
 import { getGuidePortraitPlacement, TUTORIAL_GUIDES, type TutorialGuideId } from './tutorialGuides'
+import { font } from '@/theme/tokens'
 
 type TargetRect = {
   top: number
@@ -234,7 +235,7 @@ export default function SpotlightTutorial({
                 display: 'flex',
                 flexDirection: pointerDirection === 'up' ? 'column' : 'column-reverse',
                 alignItems: 'center',
-                gap: '2px',
+                gap: 0.25,
                 height: POINTER_HEIGHT,
                 justifyContent: pointerDirection === 'up' ? 'flex-start' : 'flex-end',
                 animation: `${pointerDirection === 'up' ? pointUp : pointDown} 0.9s ease-in-out infinite`,
@@ -245,7 +246,7 @@ export default function SpotlightTutorial({
               <Typography
                 component="span"
                 sx={{
-                  fontSize: 15,
+                  fontSize: font.md,
                   fontWeight: 700,
                   lineHeight: 1,
                   color: '#ffffff',
@@ -321,7 +322,7 @@ export default function SpotlightTutorial({
               component="p"
               sx={{
                 mb: 0.75,
-                fontSize: { xs: 19, sm: 23 },
+                fontSize: { xs: font.xl, sm: font.xxl },
                 fontWeight: 700,
                 lineHeight: 1.2,
                 letterSpacing: '0.05em',
@@ -333,7 +334,7 @@ export default function SpotlightTutorial({
             <Box
               sx={{
                 position: 'relative',
-                px: { xs: 1.25, sm: 2.25 },
+                px: { xs: 1.5, sm: 2.5 },
                 py: { xs: 1, sm: 1.5 },
                 backgroundColor: BUBBLE_COLOR,
                 borderRadius: '14px',
@@ -355,7 +356,7 @@ export default function SpotlightTutorial({
                   wordBreak: 'keep-all',
                   overflowWrap: 'anywhere',
                   lineHeight: 1.7,
-                  fontSize: { xs: 15, sm: 19 },
+                  fontSize: { xs: font.md, sm: font.xl },
                 }}
               >
                 {renderPhrases(message)}
@@ -367,7 +368,7 @@ export default function SpotlightTutorial({
                     wordBreak: 'keep-all',
                     overflowWrap: 'anywhere',
                     lineHeight: 1.7,
-                    fontSize: { xs: 14, sm: 16 },
+                    fontSize: { xs: font.sm, sm: font.md },
                     mt: 1,
                     pt: 1,
                     borderTop: '1px dashed rgba(61, 42, 30, 0.3)',
@@ -384,7 +385,7 @@ export default function SpotlightTutorial({
                     size="small"
                     variant="text"
                     onClick={handleSkip}
-                    sx={{ color: '#fff1d6', fontSize: { xs: 13, sm: 15 } }}
+                    sx={{ color: '#fff1d6', fontSize: { xs: font.sm, sm: font.md } }}
                   >
                     {tutorialLocale.debugSkip}
                   </Button>
@@ -401,7 +402,7 @@ export default function SpotlightTutorial({
                         borderColor: WINDOW_BORDER_COLOR,
                         color: ACCENT_TEXT_COLOR,
                         boxShadow: 'none',
-                        fontSize: { xs: 14, sm: 16 },
+                        fontSize: { xs: font.sm, sm: font.md },
                         px: { xs: 2, sm: 2.5 },
                       },
                       '&&:hover': {

@@ -26,6 +26,7 @@ import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import locale from '../../locale/player-job/JobChange.json'
+import { font } from '@/theme/tokens'
 
 export default function JobChange() {
   const { session, isLoading } = useAuth()
@@ -166,7 +167,7 @@ export default function JobChange() {
             sx={{
               flex: 1,
               fontFamily: 'inherit',
-              fontSize: '1.0625rem',
+              fontSize: font.lg,
               color: selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
               backgroundColor: selected ? colors.bandDark : colors.band,
               borderLeft: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
@@ -220,7 +221,7 @@ export default function JobChange() {
             sx={{
               flex: 1,
               fontFamily: 'inherit',
-              fontSize: '1rem',
+              fontSize: font.md,
               color: selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
               backgroundColor: selected ? colors.bandDark : colors.band,
               borderLeft: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
@@ -262,8 +263,8 @@ export default function JobChange() {
           minHeight: { md: 760 },
           boxSizing: 'border-box',
           px: { xs: 1.5, sm: 4 },
-          pt: { xs: 1.5, sm: 2.25 },
-          pb: { xs: 1.5, sm: 3.5 },
+          pt: { xs: 1.5, sm: 2.5 },
+          pb: { xs: 1.5, sm: 4 },
           display: 'flex',
           flexDirection: 'column',
         }}

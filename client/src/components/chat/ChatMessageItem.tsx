@@ -4,6 +4,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import type { GetChatRoomResponse } from '@/schema/chat'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../../locale/chat/Chat.json'
+import { font } from '@/theme/tokens'
 
 type ChatMessage = GetChatRoomResponse['messages'][number]
 
@@ -44,7 +45,7 @@ function ChatMessageItem({ message, isOwnMessage, onDelete }: Props) {
             width: 45,
             height: 45,
             bgcolor: 'grey.300',
-            fontSize: 14,
+            fontSize: font.sm,
             flexShrink: 0,
             textDecoration: 'none',
             transition: visitPlayerPath ? 'transform 140ms ease, box-shadow 140ms ease' : 'none',
@@ -101,7 +102,7 @@ function ChatMessageItem({ message, isOwnMessage, onDelete }: Props) {
           onClick={onDelete}
           sx={{ alignSelf: 'flex-start', p: 0.25, color: 'text.secondary' }}
         >
-          <CloseIcon sx={{ fontSize: 16 }} />
+          <CloseIcon sx={{ fontSize: font.md }} />
         </IconButton>
       ) : null}
       {isOwnMessage ? (
@@ -113,7 +114,7 @@ function ChatMessageItem({ message, isOwnMessage, onDelete }: Props) {
             width: 45,
             height: 45,
             bgcolor: '#9ccc9f',
-            fontSize: 14,
+            fontSize: font.sm,
             flexShrink: 0,
             '& .MuiAvatar-img': {
               objectFit: 'cover',

@@ -3,6 +3,7 @@ import { softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import questRoomLocale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestRunDetailResponse } from '@/schema/quest'
+import { font } from '@/theme/tokens'
 
 type QuestRunResultPanelProps = {
   run: QuestRunDetailResponse
@@ -82,7 +83,7 @@ export default function QuestRunResultPanel({
           : 'linear-gradient(180deg, #fff3f1 0%, #fde5e1 52%, #f8d4ce 100%)',
       }}
     >
-      <Stack spacing={2} sx={{ p: { xs: 1.5, sm: 2.75 } }}>
+      <Stack spacing={2} sx={{ p: { xs: 1.5, sm: 3 } }}>
         <Box>
           <Typography
             variant="h4"
@@ -92,7 +93,7 @@ export default function QuestRunResultPanel({
               textAlign: 'center',
               color: isSucceeded ? '#8b5a00' : '#9b2c1d',
               textShadow: '0 2px 0 rgba(255,255,255,0.45)',
-              fontSize: { xs: '1.6rem', sm: '2.125rem' },
+              fontSize: { xs: font.xxl, sm: font.display },
             }}
           >
             {isSucceeded ? locale.clearTitle : locale.failedTitle}

@@ -8,6 +8,7 @@ import { resolvePublicAssetPath } from '@/lib/assets'
 import { supabase } from '@/lib/supabase'
 import GoogleColorIcon from '@/components/common/GoogleColorIcon'
 import locale from '../../locale/auth/Auth.json'
+import { font } from '@/theme/tokens'
 
 type SubmitMode = 'google' | 'signIn' | 'signUp' | 'anonymous' | null
 type EmailAuthMode = 'signIn' | 'signUp'
@@ -135,7 +136,7 @@ const darkInputSx = {
 const fieldLabelSx = {
   display: 'block',
   mb: 0.75,
-  fontSize: '0.9rem',
+  fontSize: font.sm,
   color: '#e6dfff',
 } as const
 
@@ -395,12 +396,12 @@ function Auth() {
         <Paper elevation={0} sx={authCardSx}>
           {/* PC は画面の高さに合わせて余白・マスコット・ボタンを大きくし、パネル全体を使う */}
           <Stack sx={{ gap: { xs: 3, md: 'clamp(20px, 3.6vh, 48px)' } }}>
-            <Stack alignItems="center" spacing={1.25}>
+            <Stack alignItems="center" spacing={1.5}>
               <Typography
                 component="h2"
                 textAlign="center"
                 sx={{
-                  fontSize: { xs: '1.7rem', md: 'clamp(2rem, 3.8vh, 2.8rem)' },
+                  fontSize: { xs: font.xxxl, md: 'clamp(2rem, 3.8vh, 2.8rem)' },
                   color: '#f2d27a',
                   letterSpacing: '0.06em',
                 }}
@@ -442,8 +443,8 @@ function Auth() {
               sx={{
                 ...softGoldButtonSx,
                 ...noBorderButtonSx,
-                py: { xs: 1.4, md: 'clamp(14px, 2.2vh, 24px)' },
-                fontSize: { xs: '1.2rem', md: 'clamp(1.35rem, 2.6vh, 1.6rem)' },
+                py: { xs: 1.5, md: 'clamp(14px, 2.2vh, 24px)' },
+                fontSize: { xs: font.xl, md: 'clamp(1.35rem, 2.6vh, 1.6rem)' },
               }}
             >
               {submitMode === 'anonymous' ? locale.anonymousSubmitting : locale.anonymousSubmit}
@@ -459,7 +460,7 @@ function Auth() {
                 ...googleButtonSx,
                 ...noBorderButtonSx,
                 py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' },
-                fontSize: { xs: '1.1rem', md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
+                fontSize: { xs: font.lg, md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
                 // MUI はアイコンを 20px 固定にするため、文字の大きさに合わせて拡縮させる
                 '& .MuiButton-startIcon > *:nth-of-type(1)': { fontSize: '1.2em' },
                 '& .MuiButton-startIcon': { mr: '0.5em' },
@@ -513,7 +514,7 @@ function Auth() {
                     ...purpleButtonSx,
                     ...noBorderButtonSx,
                     py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' },
-                    fontSize: { xs: '1.1rem', md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
+                    fontSize: { xs: font.lg, md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
                   }}
                 >
                   {submitMode === emailAuthMode

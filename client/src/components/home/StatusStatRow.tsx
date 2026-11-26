@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Box, LinearProgress, Stack, Typography } from '@mui/material'
 import { resolveRankColor } from '@/lib/playerRank'
+import { font } from '@/theme/tokens'
 
 type StatusStatRowProps = {
   label: string
@@ -25,7 +26,7 @@ export default function StatusStatRow({
   const rankColor = resolveRankColor(rank)
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 0.6 }}>
+    <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 0.5 }}>
       <Box
         sx={
           plain
@@ -74,7 +75,7 @@ export default function StatusStatRow({
             borderColor: rankColor,
             color: rankColor,
             backgroundColor: 'rgba(255,255,255,0.72)',
-            fontSize: '0.94rem',
+            fontSize: font.md,
             fontWeight: 900,
             lineHeight: 1,
             letterSpacing: 0,

@@ -1,6 +1,7 @@
 import { Box, Button, Stack, SvgIcon, type SvgIconProps } from '@mui/material'
 import { Link } from 'react-router-dom'
 import type { HomeMenuGroup, HomeMenuGroupKey, HomeMenuItem } from '@/components/home/homeMenu'
+import { font } from '@/theme/tokens'
 
 type HomeMenuListProps = {
   primary: HomeMenuItem[]
@@ -31,7 +32,7 @@ const tileSx = {
   flexDirection: 'column',
   gap: 0.75,
   color: MENU_TEXT_COLOR,
-  fontSize: '1rem',
+  fontSize: font.md,
   fontWeight: 700,
   whiteSpace: 'nowrap',
   '&:hover': {
@@ -42,7 +43,7 @@ const tileSx = {
     color: '#3f8f45',
   },
   '& .MuiButton-startIcon > *:nth-of-type(1)': {
-    fontSize: 26,
+    fontSize: font.xxxl,
   },
 } as const
 
@@ -52,7 +53,7 @@ const groupButtonSx = {
   px: 1,
   borderRadius: 0,
   color: MENU_TEXT_COLOR,
-  fontSize: '1rem',
+  fontSize: font.md,
   fontWeight: 700,
   whiteSpace: 'nowrap',
   '&:hover': {
@@ -154,6 +155,8 @@ export default function HomeMenuList({ primary, groups, openGroup, lockedGroup, 
           sx={{
             display: 'grid',
             gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            // 余白ではなく項目の区切り線（背景色を 1px 見せる）
+            // eslint-disable-next-line no-restricted-syntax
             gap: '1px',
             backgroundColor: '#eadcbf',
             border: '1px solid #d9c49a',

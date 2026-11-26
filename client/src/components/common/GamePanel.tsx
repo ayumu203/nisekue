@@ -1,6 +1,7 @@
 import { Box, ButtonBase, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { homePanelColors } from '@/constants/styles'
+import { font } from '@/theme/tokens'
 
 export type GamePanelTab = {
   key: string
@@ -89,7 +90,7 @@ export default function GamePanel({
               sx={{
                 flex: 1,
                 fontFamily: 'inherit',
-                fontSize: '1rem',
+                fontSize: font.md,
                 fontWeight: 700,
                 color: tab.selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
                 backgroundColor: tab.selected ? bandSelectedColor : bandColor,
@@ -132,7 +133,7 @@ export default function GamePanel({
               {startAction}
             </Box>
           ) : null}
-          <Typography component="h2" noWrap sx={{ fontSize: '1rem', fontWeight: 700 }}>
+          <Typography component="h2" noWrap sx={{ fontSize: font.md, fontWeight: 700 }}>
             {title}
           </Typography>
           {startAction ? (

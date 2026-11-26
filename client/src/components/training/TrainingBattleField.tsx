@@ -5,6 +5,7 @@ import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
 import { getTrainingBackgroundPath } from './trainingSelectStyles'
+import { font } from '@/theme/tokens'
 
 export type TrainingBattleFighter = {
   name: string
@@ -121,7 +122,7 @@ function FighterSprite({
       <Box
         sx={{
           minWidth: { xs: 120, sm: 170 },
-          px: 1.75,
+          px: 2,
           py: 0.75,
           borderRadius: '10px',
           backgroundColor: 'rgba(255, 255, 255, 0.72)',
@@ -139,7 +140,7 @@ function FighterSprite({
         </Typography>
         {hp ? (
           <>
-            <Box sx={{ height: 8, borderRadius: 9, backgroundColor: '#dfe3ea', my: 0.6, overflow: 'hidden' }}>
+            <Box sx={{ height: 8, borderRadius: 9, backgroundColor: '#dfe3ea', my: 0.5, overflow: 'hidden' }}>
               <Box sx={{ width: `${normalizeHp(hp.current, hp.max)}%`, height: '100%', backgroundColor: hpBarColor }} />
             </Box>
             <Typography variant="body2" sx={{ color: trainingPanelColors.label }}>
@@ -185,7 +186,7 @@ function EmptyFighter({ imageHeight }: { imageHeight: { xs: number; md: number }
         display: 'grid',
         placeItems: 'center',
         color: '#ffffff',
-        fontSize: { xs: '2rem', md: '3.5rem' },
+        fontSize: { xs: font.display, md: font.display },
         fontWeight: 900,
         textShadow: '0 2px 0 rgba(0, 0, 0, 0.3)',
       }}
@@ -223,7 +224,7 @@ export default function TrainingBattleField({
         gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 1fr) auto minmax(0, 1fr) 440px' },
         alignItems: 'end',
         gap: { xs: 2, md: 3 },
-        px: { xs: 2, md: 8 },
+        px: { xs: 2, md: 6 },
         py: { xs: 2, md: 3 },
         backgroundColor: '#e3e7ee',
         backgroundImage: `url(${getTrainingBackgroundPath(backgroundKey)})`,
@@ -249,7 +250,7 @@ export default function TrainingBattleField({
         <Typography
           sx={{
             alignSelf: 'center',
-            fontSize: { xs: '1.75rem', md: '2.5rem' },
+            fontSize: { xs: font.xxxl, md: font.display },
             fontWeight: 900,
             color: '#ffffff',
             textShadow: '0 2px 0 rgba(0, 0, 0, 0.4)',
@@ -275,7 +276,7 @@ export default function TrainingBattleField({
             maxHeight: '100%',
             overflowY: 'auto',
             boxSizing: 'border-box',
-            px: 2.75,
+            px: 3,
             py: 1.5,
             borderRadius: '12px',
             backgroundColor: 'rgba(255, 255, 255, 0.72)',
@@ -321,7 +322,7 @@ export default function TrainingBattleField({
               <Typography
                 key={`${index}-${log}`}
                 sx={{
-                  py: 0.85,
+                  py: 0.75,
                   borderTop: index === 0 ? 'none' : logDivider,
                   color: logTextColor,
                   fontWeight: 400,
@@ -335,9 +336,9 @@ export default function TrainingBattleField({
           {hasExpProgress ? (
             <Stack
               direction="row"
-              spacing={1.25}
+              spacing={1.5}
               alignItems="center"
-              sx={{ pt: 1.25, mt: 0.5, borderTop: '1px solid rgba(40, 50, 70, 0.25)' }}
+              sx={{ pt: 1.5, mt: 0.5, borderTop: '1px solid rgba(40, 50, 70, 0.25)' }}
             >
               <Typography
                 variant="body2"
@@ -370,7 +371,7 @@ export default function TrainingBattleField({
               mt: 1,
               py: 0.5,
               fontFamily: 'inherit',
-              fontSize: '0.85rem',
+              fontSize: font.sm,
               fontWeight: 800,
               color: trainingPanelColors.label,
             }}
