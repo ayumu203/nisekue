@@ -146,12 +146,12 @@ export default function JobChange() {
     id: tutorialHomeButtonId,
   }
 
-  // PC：帯の上に「基本職｜解放条件一覧」のタブ
+  // PC：「基本職｜ロードマップ」を、クエスト・アイテムと同じく隙間なく 1 本の帯につなげたタブにする
   const desktopTabs = (
     <Box
       role="tablist"
       aria-label={locale.roadmapTab}
-      sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.75, flex: 'none' }}
+      sx={{ display: 'flex', height: 48, flex: 'none', borderRadius: '12px', overflow: 'hidden' }}
     >
       {tabLabels.map((label, index) => {
         const selected = tabIndex === index
@@ -160,17 +160,17 @@ export default function JobChange() {
             key={label}
             id={index === 1 ? roadmapTabId : undefined}
             role="tab"
+            disableRipple
             aria-selected={selected}
             onClick={() => selectTab(index)}
             sx={{
-              height: selected ? 52 : 44,
-              px: selected ? 4 : 3.5,
-              borderRadius: '12px 12px 0 0',
+              flex: 1,
               fontFamily: 'inherit',
-              fontSize: selected ? '1.0625rem' : '1rem',
-              color: selected ? colors.text : '#ffffff',
-              backgroundColor: selected ? '#ffffff' : 'rgba(255, 255, 255, 0.16)',
-              boxShadow: selected ? `inset 0 4px 0 ${colors.gold}` : 'none',
+              fontSize: '1.0625rem',
+              color: selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
+              backgroundColor: selected ? colors.bandDark : colors.band,
+              borderLeft: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+              boxShadow: selected ? `inset 0 -4px 0 ${colors.gold}` : 'none',
             }}
           >
             {label}

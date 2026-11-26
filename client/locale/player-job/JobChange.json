@@ -29,7 +29,7 @@
   "changed": "{{jobName}}に転職しました。",
   "changedWithMoves": "{{jobName}}に転職し、スキルを習得しました。",
   "learnedMoves": "習得したスキル",
-  "roadmapTab": "解放条件一覧",
+  "roadmapTab": "ロードマップ",
   "roadmapTitle": "ジョブルート",
   "roadmapSelectHint": "左の一覧からジョブを選択してください",
   "roadmapUnlocked": "解放済み",
