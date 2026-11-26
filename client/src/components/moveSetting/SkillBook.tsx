@@ -1,5 +1,5 @@
 import { Box, Button, ButtonBase, Typography } from '@mui/material'
-import type { PointerEvent } from 'react'
+import type { PointerEvent, ReactNode } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { skillPanelColors as colors } from '@/constants/styles'
 import {
@@ -26,6 +26,8 @@ type SkillBookProps = {
   onCancel: () => void
   // 狭い画面では列をそろえた表ではなく、2 段の行にする
   compact: boolean
+  // スマホ：本の上辺の帯の左端に置くホームボタン（クエストの箱の帯と同じ形）
+  bandStartAction?: ReactNode
 }
 
 // PC の行の列：カーソル／番号とつまみ／紋章／技名と説明／種類／属性／範囲／効果／消費MP
@@ -108,6 +110,7 @@ export default function SkillBook({
   onSave,
   onCancel,
   compact,
+  bandStartAction,
 }: SkillBookProps) {
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
   const pointerCaptureRef = useRef<HTMLElement | null>(null)
@@ -193,6 +196,37 @@ export default function SkillBook({
         gap: 1.5,
       }}
     >
+      {bandStartAction ? (
+        <Box
+          sx={{
+            height: 44,
+            mx: { xs: -1, sm: -1.75 },
+            mt: { xs: -1, sm: -1.75 },
+            display: 'flex',
+            alignItems: 'stretch',
+            backgroundColor: colors.coverDark,
+            flexShrink: 0,
+          }}
+        >
+          <Box
+            sx={{
+              flex: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              // ホームボタンと帯の中身の区切り（クエストの帯と同じ白い線）
+              borderRight: '2px solid rgba(255, 255, 255, 0.85)',
+            }}
+          >
+            {bandStartAction}
+          </Box>
+          <Typography
+            component="h1"
+            sx={{ flex: 1, alignSelf: 'center', textAlign: 'center', fontSize: '1rem', color: '#ffffff', pr: '46px' }}
+          >
+            {locale.skillTitle}
+          </Typography>
+        </Box>
+      ) : null}
       <Box
         onPointerMove={handlePointerMove}
         onPointerUp={finishDragging}

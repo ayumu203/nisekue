@@ -200,26 +200,7 @@ export default function MoveSetting() {
           currentKey="moveSetting"
           currentColor={colors.cover}
         />
-      ) : (
-        // スマホはヘッダーがないので、帯の左端にホームへ戻るボタンを置く
-        <Box sx={{ height: 56, display: 'flex', alignItems: 'center', px: 0.75, flexShrink: 0 }}>
-          <IconButton
-            component={Link}
-            to="/"
-            id={tutorialHomeButtonId}
-            aria-label={locale.backToHome}
-            sx={{
-              color: '#ffffff',
-              width: 48,
-              height: 44,
-              borderRadius: 0,
-              borderRight: '2px solid rgba(255, 255, 255, 0.7)',
-            }}
-          >
-            <HomeFilledIcon />
-          </IconButton>
-        </Box>
-      )}
+      ) : null}
 
       <Box
         sx={{
@@ -229,7 +210,7 @@ export default function MoveSetting() {
           minHeight: { lg: 760 },
           boxSizing: 'border-box',
           px: { xs: 1.25, sm: 4 },
-          pt: { xs: 0, sm: 2.75 },
+          pt: { xs: 1.5, sm: 2.75 },
           pb: { xs: 3, sm: 3.75 },
           display: 'flex',
           flexDirection: 'column',
@@ -268,6 +249,20 @@ export default function MoveSetting() {
               onSave={() => void handleSave()}
               onCancel={handleCancel}
               compact={!isWide}
+              bandStartAction={
+                isDesktop ? undefined : (
+                  <IconButton
+                    component={Link}
+                    to="/"
+                    id={tutorialHomeButtonId}
+                    aria-label={locale.backToHome}
+                    disableRipple
+                    sx={{ color: '#ffffff', width: 44, height: 44 }}
+                  >
+                    <HomeFilledIcon />
+                  </IconButton>
+                )
+              }
             />
             {isWide ? (
               <Box
