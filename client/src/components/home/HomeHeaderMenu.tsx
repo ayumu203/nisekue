@@ -4,6 +4,7 @@ import type { HomeMenuGroup, HomeMenuGroupKey, HomeMenuItem } from '@/components
 import { GearIcon, SignOutIcon } from '@/components/home/StatusIcons'
 import { topNavigationIconButtonSx } from '@/constants/styles'
 import { useSignOut } from '@/hooks/useSignOut'
+import homeLocale from '../../../locale/home/Home.json'
 
 type HomeHeaderMenuProps = {
   primary: HomeMenuItem[]
@@ -141,7 +142,8 @@ export default function HomeHeaderMenu({
               aria-current={item.key === currentKey ? 'page' : undefined}
               sx={item.key === currentKey && currentColor ? currentHeaderButtonSx(currentColor) : headerButtonSx}
             >
-              {item.label}
+              {/* 「ホーム」は画面ごとに文言が違うと幅が変わってほかの項目がずれるので、ここでそろえる */}
+              {item.key === 'home' ? homeLocale.homeMenuLabel : item.label}
             </Button>
           ))}
           {groups.map((group) => {
