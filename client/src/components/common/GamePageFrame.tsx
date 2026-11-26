@@ -17,7 +17,7 @@ type GamePageFrameProps = {
   children: ReactNode
 }
 
-// 画面いっぱいに広げた外枠。PC（sm 以上）は上にホームと同じヘッダーメニューを出す。
+// 画面いっぱいに広げた外枠。PC（sm 以上）でログインしているときは上にホームと同じヘッダーメニューを出す。
 // 中身の見た目は各画面のまま
 export default function GamePageFrame({ currentKey, currentColor, background, children }: GamePageFrameProps) {
   const { session } = useAuth()
@@ -37,7 +37,7 @@ export default function GamePageFrame({ currentKey, currentColor, background, ch
 
   return (
     <Box sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background }}>
-      {isDesktop ? (
+      {isDesktop && session ? (
         <HomeHeaderMenu
           primary={[{ key: 'home', label: locale.backToHome, icon: <HomeIcon />, to: '/' }, ...homeMenu.primary]}
           groups={homeMenu.groups}
