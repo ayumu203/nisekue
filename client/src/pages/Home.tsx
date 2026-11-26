@@ -33,7 +33,7 @@ import locale from '../../locale/home/Home.json'
 import ChatMessages from '@/components/chat/ChatMessages'
 import ChatForm from '@/components/chat/ChatForm'
 import AnnouncementList from '@/components/common/AnnouncementList'
-import HomePanel from '@/components/home/HomePanel'
+import GamePanel from '@/components/common/GamePanel'
 import HomeStatusPanel from '@/components/home/HomeStatusPanel'
 import { GearIcon } from '@/components/home/StatusIcons'
 import { SwapIcon } from '@/components/home/HomeIcons'
@@ -373,7 +373,7 @@ function Home() {
   ) : null
 
   const chatPanel = (fillHeight: boolean) => (
-    <HomePanel
+    <GamePanel
       fillHeight={fillHeight}
       title={chatTab === 'personal' ? locale.chatTabPersonal : locale.chatTabGlobal}
       aria-label={locale.chatTitle}
@@ -388,7 +388,7 @@ function Home() {
       }
     >
       {chatTab === 'personal' ? personalChatContent : globalChatContent}
-    </HomePanel>
+    </GamePanel>
   )
 
   // PC：上端の白いヘッダー＋上部だけオレンジの帯＋ステータス／チャット／お知らせの 3 列
@@ -430,15 +430,15 @@ function Home() {
         }}
       >
         <Box sx={{ gridArea: 'status', minHeight: 0 }}>
-          <HomePanel title={player?.userName ?? locale.notSet} aria-label={locale.statusPanelLabel}>
+          <GamePanel title={player?.userName ?? locale.notSet} aria-label={locale.statusPanelLabel}>
             {playerStatusContent ?? <HomeStatusPanel player={player} />}
-          </HomePanel>
+          </GamePanel>
         </Box>
         <Box sx={{ gridArea: 'chat', minHeight: 0, minWidth: 0 }}>{chatPanel(true)}</Box>
         <Box sx={{ gridArea: 'news', minHeight: 0 }}>
-          <HomePanel title={announcementTabLabel}>
+          <GamePanel title={announcementTabLabel}>
             <AnnouncementList variant="list" />
-          </HomePanel>
+          </GamePanel>
         </Box>
       </Box>
     </Box>
@@ -453,7 +453,7 @@ function Home() {
       }}
     >
       <Stack spacing={2} sx={{ p: 2 }}>
-        <HomePanel
+        <GamePanel
           title={player?.userName ?? locale.notSet}
           aria-label={locale.statusPanelLabel}
           fillHeight={false}
@@ -471,7 +471,7 @@ function Home() {
           }
         >
           {playerStatusContent ?? <HomeStatusPanel player={player} compact />}
-        </HomePanel>
+        </GamePanel>
         <HomeMenuList
           primary={homeMenu.primary}
           groups={homeMenu.groups}
@@ -481,9 +481,9 @@ function Home() {
         />
         {signOutError ? <Alert severity="error">{signOutError}</Alert> : null}
         {chatPanel(false)}
-        <HomePanel title={announcementTabLabel} fillHeight={false}>
+        <GamePanel title={announcementTabLabel} fillHeight={false}>
           <AnnouncementList variant="list" />
-        </HomePanel>
+        </GamePanel>
       </Stack>
     </Box>
   )

@@ -1,5 +1,22 @@
 import { SvgIcon, type SvgIconProps } from '@mui/material'
 
+export function HomeIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M12 3.5 3 10.5V21h6.5v-5.5h5V21H21V10.5zm0 2.53 7 5.44V19h-2.5v-5.5h-9V19H5v-7.53z" />
+    </SvgIcon>
+  )
+}
+
+// 塗りつぶしの家。帯の上に白で置くと、輪郭だけの HomeIcon は線が二重に見えるため、帯のホームボタンはこちらを使う
+export function HomeFilledIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+    </SvgIcon>
+  )
+}
+
 export function TrainingIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">

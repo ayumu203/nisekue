@@ -1,5 +1,4 @@
 import { Box, Button, Paper, Stack, Typography } from '@mui/material'
-import { innerSurfaceSx } from '@/constants/styles'
 import { softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import questRoomLocale from '../../../locale/quest/QuestRoom.json'
@@ -73,13 +72,11 @@ export default function QuestRunResultPanel({
   ]
 
   return (
-    <Paper
-      variant="outlined"
+    // 白い箱（GamePanel）の中に端まで広げて置くので、外側の枠と角丸は付けない
+    <Box
       sx={{
-        ...innerSurfaceSx,
+        flex: 1,
         overflow: 'hidden',
-        borderRadius: 3,
-        borderColor: isSucceeded ? '#d9c36f' : '#d8b3b0',
         background: isSucceeded
           ? 'linear-gradient(180deg, #fff6d6 0%, #fff1cf 48%, #ffe7b0 100%)'
           : 'linear-gradient(180deg, #fff3f1 0%, #fde5e1 52%, #f8d4ce 100%)',
@@ -249,6 +246,6 @@ export default function QuestRunResultPanel({
           </Button>
         </Box>
       </Stack>
-    </Paper>
+    </Box>
   )
 }

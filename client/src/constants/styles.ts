@@ -237,7 +237,132 @@ export const homePanelColors = {
   topBand: '#ffcc00',
   ground: '#fdf3d8',
   band: '#2f7d3a',
+  // 帯を「作成｜募集中」のように分けたとき、選んでいる側の色
+  bandSelected: '#1d5626',
   divider: '#e3d6b8',
   label: '#6b5a3e',
   text: '#3a2f1e',
+} as const
+
+// クエスト画面の色（上部の青緑の帯・地の薄い青緑）。見出しの帯やボタンの緑はホームと同じ
+export const questPanelColors = {
+  topBand: '#2a7f84',
+  ground: '#eaf4f2',
+} as const
+
+// 訓練場の色（道場：上部の木の茶色の帯・生成りの地）。見出しの帯とボタンは緑ではなく藍
+export const trainingPanelColors = {
+  topBand: '#6b4423',
+  ground: '#f4efe4',
+  band: '#2f4a7a',
+  // 帯を「NPC｜PLAYER」のように分けたとき、選んでいる側の色
+  bandSelected: '#1d3157',
+  // 選んでいる相手カードの地
+  selectedSurface: '#e9eef7',
+  // 押せないボタンの色
+  disabledButton: '#a3b1c9',
+  // 白い箱の中の文字・区切り線（茶色やベージュを使わず、藍に合わせたグレー）
+  text: '#2b2f38',
+  label: '#5a6170',
+  divider: '#dfe3ea',
+} as const
+
+// 宝の地図の色（白・金・青：上部の金の帯・白に近い地）。見出しの帯とボタンは緑ではなく青
+export const treasureMapPanelColors = {
+  topBand: '#9a7008',
+  ground: '#fbfaf5',
+  band: '#1e4f96',
+  // 探索中の地図の「探索中」の地と文字
+  soft: '#e8eef8',
+  softText: '#143a72',
+  // 押せないボタンの色
+  disabledButton: '#e8e3d8',
+  disabledButtonText: '#6f6758',
+  disabledButtonBorder: '#cfc8b8',
+  // 白い箱の中の文字・区切り線
+  text: '#2e2a22',
+  label: '#5f5747',
+  divider: '#e2dccb',
+  // 星の色
+  star: '#a8741a',
+  starOff: '#d9d2c2',
+  // 探索完了のメッセージウィンドウ
+  messageWindow: 'rgba(14, 26, 54, 0.9)',
+  messageHighlight: '#ffd35a',
+  messageLabel: '#b8c4de',
+} as const
+
+// 白い箱の中の主な操作（募集開始・START・決定など）。見出しの帯と同じ緑
+export const panelPrimaryButtonSx = {
+  '&&': {
+    backgroundColor: homePanelColors.band,
+    backgroundImage: 'none',
+    // 枠付きのボタンと高さ・幅をそろえるため、同じ太さの枠を同じ色で付ける
+    border: `2px solid ${homePanelColors.band}`,
+    color: '#ffffff',
+    fontWeight: 800,
+    boxShadow: 'none',
+    transition: 'none',
+  },
+  '& .MuiTouchRipple-root': {
+    display: 'none',
+  },
+  // ホバーしても色を変えない
+  '&&:hover': {
+    backgroundColor: homePanelColors.band,
+    boxShadow: 'none',
+  },
+  '&&.Mui-disabled': {
+    backgroundColor: '#a9c9ad',
+    color: '#ffffff',
+    boxShadow: 'none',
+  },
+} as const
+
+// 白い箱の中の、主な操作の横に置く操作（参加制限・この配置で決定など）
+export const panelOutlinedButtonSx = {
+  '&&': {
+    backgroundColor: '#ffffff',
+    color: homePanelColors.band,
+    border: `2px solid ${homePanelColors.band}`,
+    fontWeight: 800,
+    transition: 'none',
+  },
+  '& .MuiTouchRipple-root': {
+    display: 'none',
+  },
+  // ホバーしても色を変えない
+  '&&:hover': {
+    backgroundColor: '#ffffff',
+  },
+  '&&.Mui-disabled': {
+    color: '#9fbfa3',
+    borderColor: '#c3dbc6',
+  },
+} as const
+
+// 白い箱の中の取り消し操作（CANCEL）。ホバーや押したときに見た目を変えない
+export const panelCancelButtonSx = {
+  '&&': {
+    backgroundColor: '#fff1ef',
+    backgroundImage: 'none',
+    border: '2px solid #d77a70',
+    color: '#9f2f24',
+    fontWeight: 800,
+    boxShadow: 'none',
+    transition: 'none',
+  },
+  '& .MuiTouchRipple-root': {
+    display: 'none',
+  },
+  '&&:hover': {
+    backgroundColor: '#fff1ef',
+    borderColor: '#d77a70',
+    boxShadow: 'none',
+  },
+  '&&.Mui-disabled': {
+    backgroundColor: '#f8ecea',
+    borderColor: '#dfb2ac',
+    color: '#bf8b84',
+  },
 } as const

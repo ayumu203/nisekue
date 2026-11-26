@@ -17,7 +17,7 @@ import {
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { useRef } from 'react'
-import { greenOutlinedInputSx, innerSurfaceSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
+import { greenOutlinedInputSx, playerHpBarSx, softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import { resolveEndlessBattlefield } from '@/lib/endless'
 import type { MoveAttackRange } from '@/schema/player'
@@ -48,10 +48,6 @@ type QuestBattleStatusPanelProps = {
   selectedMoveId: number | ''
   selectedTargetRow: BattleRow | ''
   selectedTargetColumn: BattleColumn | ''
-  currentPendingCommand: {
-    actionKind: QuestActionKind
-    submittedAt: string
-  } | null
   canCapture: boolean
   canSummonPet: boolean
   canSubmitCurrentTurn: boolean
@@ -179,21 +175,21 @@ function AllyStatusCard({ member }: { member: QuestPartyMemberView }) {
           variant="caption"
           noWrap
           title={member.displayName}
-          sx={{ fontWeight: 800, color: '#503717', fontSize: { xs: '0.56rem', sm: '0.82rem' }, lineHeight: 1.1 }}
+          sx={{ fontWeight: 800, color: '#503717', fontSize: { xs: '0.56rem', sm: '1rem' }, lineHeight: 1.2 }}
         >
           {member.displayName}
         </Typography>
         <Typography
           variant="caption"
           noWrap
-          sx={{ color: '#624927', fontSize: { xs: '0.5rem', sm: '0.76rem' }, lineHeight: 1.1 }}
+          sx={{ color: '#624927', fontSize: { xs: '0.5rem', sm: '0.875rem' }, lineHeight: 1.2 }}
         >
           HP {member.currentHp}/{member.maxHp ?? '-'}
         </Typography>
         <Typography
           variant="caption"
           noWrap
-          sx={{ color: '#30506e', fontSize: { xs: '0.5rem', sm: '0.76rem' }, lineHeight: 1.1 }}
+          sx={{ color: '#30506e', fontSize: { xs: '0.5rem', sm: '0.875rem' }, lineHeight: 1.2 }}
         >
           MP {member.currentMp}/{member.maxMp ?? '-'}
         </Typography>
@@ -254,7 +250,8 @@ function BattleSprite({
         left,
         bottom,
         // 敵（48px のドット絵）は味方と同じくらいの大きさで見えるよう、画像の枠の高さいっぱいまで広げる
-        width: isAlly ? { xs: 84, sm: 96, md: 110 } : { xs: 84, sm: 106, md: 120 },
+        // PC の広い画面ではバトル画面が大きくなるので、キャラも大きくする
+        width: isAlly ? { xs: 84, sm: 96, md: 110, lg: 150, xl: 180 } : { xs: 84, sm: 106, md: 120, lg: 160, xl: 190 },
         transform: `translateX(-50%) scale(${scale})`,
         transformOrigin: '50% 100%',
         zIndex: 2,
@@ -301,7 +298,7 @@ function BattleSprite({
               color: '#503717',
               textAlign: 'center',
               lineHeight: 1.35,
-              fontSize: { xs: '0.72rem', sm: '0.82rem' },
+              fontSize: { xs: '0.72rem', sm: '0.875rem' },
               wordBreak: 'break-word',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
@@ -330,7 +327,7 @@ function BattleSprite({
           title={name}
           textAlign="center"
           sx={{
-            fontSize: { xs: '0.62rem', sm: '0.88rem' },
+            fontSize: { xs: '0.62rem', sm: '1rem' },
             color: isDead ? 'rgba(90,90,90,0.92)' : '#3f2f16',
             textShadow: '0 1px 0 rgba(255,255,255,0.55)',
             lineHeight: isAlly ? 1.1 : { xs: 1.02, sm: 1.1 },
@@ -348,7 +345,7 @@ function BattleSprite({
           variant="caption"
           color="text.secondary"
           textAlign="center"
-          sx={{ fontSize: { xs: '0.58rem', sm: '0.84rem' }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
+          sx={{ fontSize: { xs: '0.58rem', sm: '0.875rem' }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
         >
           HP {hp}/{maxHp ?? '-'}
         </Typography>
@@ -358,7 +355,7 @@ function BattleSprite({
       <Box
         sx={{
           position: 'relative',
-          height: { xs: 94, sm: 106, md: 120 },
+          height: { xs: 94, sm: 106, md: 120, lg: 160, xl: 190 },
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
@@ -473,7 +470,6 @@ export default function QuestBattleStatusPanel({
   selectedMoveId,
   selectedTargetRow,
   selectedTargetColumn,
-  currentPendingCommand,
   canCapture,
   canSummonPet,
   canSubmitCurrentTurn,
@@ -671,7 +667,7 @@ export default function QuestBattleStatusPanel({
             px: { xs: 0.2, sm: 1.75 },
             py: { xs: 0.15, sm: 0.75 },
             fontWeight: 700,
-            fontSize: { xs: '0.52rem', sm: '0.9375rem' },
+            fontSize: { xs: '0.52rem', sm: '1rem' },
             lineHeight: { xs: 1.02, sm: 1.3 },
             textAlign: 'center',
             whiteSpace: 'normal',
@@ -717,7 +713,7 @@ export default function QuestBattleStatusPanel({
           minWidth: { xs: 64, sm: 124 },
           minHeight: { xs: 38, sm: 46 },
           ml: selectedActionKind === 'UseMove' ? 0 : { sm: 'auto' },
-          fontSize: { xs: '0.56rem', sm: '0.9375rem' },
+          fontSize: { xs: '0.56rem', sm: '1rem' },
           ...softGreenButtonSx,
         }}
       >
@@ -727,8 +723,9 @@ export default function QuestBattleStatusPanel({
   )
 
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
-      <Stack spacing={2}>
+    // 白い箱（GamePanel）の中に端まで広げて置く。待機中の人数は箱の見出しに出す
+    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Stack spacing={0} sx={{ flex: 1 }}>
         {run.floor.isEndless ? (
           isEndlessCheckpointFloor ? (
             <Box
@@ -741,27 +738,22 @@ export default function QuestBattleStatusPanel({
                 color: '#6a4300',
               }}
             >
-              <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.8rem', sm: '0.95rem' } }}>
+              <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.8rem', sm: '1rem' } }}>
                 ★ {endlessCheckpointBannerTitle}
               </Typography>
-              <Typography sx={{ mt: 0.25, fontSize: { xs: '0.7rem', sm: '0.82rem' }, lineHeight: 1.4 }}>
+              <Typography sx={{ mt: 0.25, fontSize: { xs: '0.7rem', sm: '0.875rem' }, lineHeight: 1.5 }}>
                 {locale.endlessCheckpoint.bannerBody}
               </Typography>
             </Box>
           ) : null
-        ) : (
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            <Chip label={`${locale.waitingParticipantsLabel}: ${run.turn.waitingParticipantIds.length}`} />
-          </Stack>
-        )}
+        ) : null}
 
         <Box
           sx={{
             position: 'relative',
             overflow: 'hidden',
-            borderRadius: 4,
+            flex: 1,
             minHeight: { xs: 500, sm: 575, md: 620 },
-            border: '1px solid #c7a96f',
             backgroundColor: '#d9e6df',
           }}
         >
@@ -820,21 +812,6 @@ export default function QuestBattleStatusPanel({
                 left: { xs: 10, sm: 16 },
                 zIndex: 4,
                 fontWeight: 700,
-              }}
-            />
-          ) : null}
-
-          {currentPendingCommand ? (
-            <Chip
-              color="success"
-              label={`${locale.pendingCommandTitle}: ${locale.actionKinds[currentPendingCommand.actionKind]}`}
-              sx={{
-                display: 'inline-flex',
-                position: 'absolute',
-                top: { xs: 58, sm: 72 },
-                right: { xs: 10, sm: 16 },
-                zIndex: 4,
-                maxWidth: { xs: 'calc(100% - 20px)', sm: 'none' },
               }}
             />
           ) : null}
@@ -1001,6 +978,6 @@ export default function QuestBattleStatusPanel({
           </Button>
         </DialogActions>
       </Dialog>
-    </Paper>
+    </Box>
   )
 }
