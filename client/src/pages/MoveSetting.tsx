@@ -273,6 +273,7 @@ export default function MoveSetting() {
                   minWidth: 0,
                   backgroundColor: colors.cover,
                   border: `2px solid ${colors.coverDark}`,
+                  borderRadius: '12px',
                   p: 1.75,
                   display: 'flex',
                   flexDirection: 'column',

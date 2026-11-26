@@ -190,6 +190,9 @@ export default function SkillBook({
         minHeight: compact ? 'auto' : 0,
         backgroundColor: colors.cover,
         border: `2px solid ${colors.coverDark}`,
+        // ほかの画面の箱と同じ角丸。上辺の帯（スマホ）も角に沿わせる
+        borderRadius: '12px',
+        overflow: 'hidden',
         p: { xs: 1, sm: 1.75 },
         display: 'flex',
         flexDirection: 'column',
