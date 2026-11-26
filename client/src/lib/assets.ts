@@ -77,3 +77,17 @@ export function resolveJobAssetPath(jobCode: string | null | undefined): string 
 
   return resolvePublicAssetPath(`image/job/${fileName}`)
 }
+
+// 転職画面の舞台に出す上半身の絵。元の絵の縮尺のまま上から 370px で切り、横の余白だけ詰めてある（全員の顔の大きさがそろう）
+export function resolveJobBustAssetPath(jobCode: string | null | undefined): string | null {
+  if (!jobCode) {
+    return null
+  }
+
+  const fileName = jobAssetFileNameByCode[jobCode as keyof typeof jobAssetFileNameByCode]
+  if (!fileName) {
+    return null
+  }
+
+  return resolvePublicAssetPath(`image/job/bust/${fileName}`)
+}
