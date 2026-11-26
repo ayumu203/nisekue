@@ -9,6 +9,8 @@ import {
   Stack,
   TextField,
   Typography,
+  useMediaQuery,
+  type Theme,
 } from '@mui/material'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -109,6 +111,8 @@ export default function Threads() {
     return getThreads({ page }, session.access_token)
   })
 
+  const isDesktop = useMediaQuery((theme: Theme) => theme.breakpoints.up('sm'), { noSsr: true })
+
   if (isLoading) {
     return (
       <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
@@ -124,9 +128,11 @@ export default function Threads() {
 
   return (
     <ThreadPageShell>
-      <Stack direction="row" justifyContent="flex-start">
-        <HomeNavIconButton ariaLabel={locale.backToHome} />
-      </Stack>
+      {isDesktop ? null : (
+        <Stack direction="row" justifyContent="flex-start">
+          <HomeNavIconButton ariaLabel={locale.backToHome} />
+        </Stack>
+      )}
 
       <ThreadBoardSurface>
         <Paper variant="outlined" sx={{ ...boardSx, borderRadius: 3, p: { xs: 2, sm: 2.75 } }}>

@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Container,
   IconButton,
   Paper,
   Stack,
@@ -12,6 +11,8 @@ import {
   Tabs,
   TextField,
   Typography,
+  useMediaQuery,
+  type Theme,
   type SvgIconProps,
 } from '@mui/material'
 import { useState } from 'react'
@@ -23,10 +24,17 @@ import { getItems } from '@/api/item'
 import { createPlayer, getPlayer, getPlayerById, sendPlayerGift } from '@/api/player'
 import ChatForm from '@/components/chat/ChatForm'
 import ChatMessages from '@/components/chat/ChatMessages'
+import GamePageFrame from '@/components/common/GamePageFrame'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import Status from '@/components/home/Status'
 import { useAuth } from '@/contexts/useAuth'
-import { innerSurfaceSx, outerPagePaperSx, topNavigationIconButtonSx, twoColumnContentGridSx } from '@/constants/styles'
+import {
+  gamePageAccent,
+  gamePageBackground,
+  innerSurfaceSx,
+  topNavigationIconButtonSx,
+  twoColumnContentGridSx,
+} from '@/constants/styles'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import type { ItemEquipmentView, ItemStackView } from '@/schema/item'
 import locale from '../../locale/visit-player/VisitPlayer.json'
@@ -153,6 +161,8 @@ function VisitPlayer() {
     },
   })
 
+  const isDesktop = useMediaQuery((theme: Theme) => theme.breakpoints.up('sm'), { noSsr: true })
+
   if (isLoading) {
     return (
       <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
@@ -165,240 +175,238 @@ function VisitPlayer() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={{ xs: 2, sm: 2 }}>
-          <Box sx={twoColumnContentGridSx}>
-            <Stack spacing={{ xs: 1.5, sm: 2 }}>
-              {isVisitedPlayerLoading ? (
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <CircularProgress size={16} />
-                  <Typography variant="body2">{locale.loading}</Typography>
-                </Stack>
-              ) : visitedPlayerError ? (
-                <Alert severity="warning">{visitedPlayerError.message}</Alert>
-              ) : (
-                <Status
-                  player={visitedPlayer}
-                  showDesktopActions={false}
-                  topAction={
-                    <Stack direction="row" spacing={1}>
-                      <HomeNavIconButton ariaLabel={locale.backToHome} />
-                      <IconButton
-                        aria-label={locale.chatButtonAriaLabel}
-                        onClick={() => setActivePanel('chat')}
-                        sx={actionButtonSx(activePanel === 'chat')}
-                      >
-                        <ChatPanelIcon />
-                      </IconButton>
-                      <IconButton
-                        aria-label={locale.giftButtonAriaLabel}
-                        onClick={() => setActivePanel('gift')}
-                        sx={actionButtonSx(activePanel === 'gift')}
-                      >
-                        <GiftPanelIcon />
-                      </IconButton>
-                    </Stack>
-                  }
-                />
-              )}
-            </Stack>
+    <GamePageFrame currentKey="visitPlayers" currentColor={gamePageAccent} background={gamePageBackground}>
+      <Stack spacing={{ xs: 2, sm: 2 }}>
+        <Box sx={twoColumnContentGridSx}>
+          <Stack spacing={{ xs: 1.5, sm: 2 }}>
+            {isVisitedPlayerLoading ? (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <CircularProgress size={16} />
+                <Typography variant="body2">{locale.loading}</Typography>
+              </Stack>
+            ) : visitedPlayerError ? (
+              <Alert severity="warning">{visitedPlayerError.message}</Alert>
+            ) : (
+              <Status
+                player={visitedPlayer}
+                showDesktopActions={false}
+                topAction={
+                  <Stack direction="row" spacing={1}>
+                    {isDesktop ? null : <HomeNavIconButton ariaLabel={locale.backToHome} />}
+                    <IconButton
+                      aria-label={locale.chatButtonAriaLabel}
+                      onClick={() => setActivePanel('chat')}
+                      sx={actionButtonSx(activePanel === 'chat')}
+                    >
+                      <ChatPanelIcon />
+                    </IconButton>
+                    <IconButton
+                      aria-label={locale.giftButtonAriaLabel}
+                      onClick={() => setActivePanel('gift')}
+                      sx={actionButtonSx(activePanel === 'gift')}
+                    >
+                      <GiftPanelIcon />
+                    </IconButton>
+                  </Stack>
+                }
+              />
+            )}
+          </Stack>
 
-            <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-              <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                <Typography variant="h5">
-                  {activePanel === 'chat'
-                    ? visitedPlayer?.userName
-                      ? `${visitedPlayer.userName}${locale.chatTitleSuffix}`
-                      : locale.loading
-                    : locale.giftTitle}
-                </Typography>
-                {activePanel === 'gift' ? (
-                  <Paper variant="outlined" sx={{ borderRadius: 2.5, p: 2 }}>
-                    <Stack spacing={1.5}>
-                      <Typography variant="body2" color="text.secondary">
-                        {locale.giftDescription}
-                      </Typography>
-                      {giftFeedback ? <Alert severity={giftFeedback.type}>{giftFeedback.message}</Alert> : null}
-                      {visitedPlayer?.userId === currentPlayer?.userId ? (
-                        <Alert severity="info">{locale.giftSelfDisabled}</Alert>
-                      ) : isGiftInventoryLoading ? (
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <CircularProgress size={16} />
-                          <Typography variant="body2">{locale.giftSending}</Typography>
-                        </Stack>
-                      ) : giftInventoryError ? (
-                        <Alert severity="warning">{giftInventoryError.message || locale.giftListLoadFailed}</Alert>
-                      ) : (
-                        <Stack spacing={1.5}>
-                          <Tabs
-                            value={giftTab}
-                            onChange={(_, value: 'equipments' | 'items') => setGiftTab(value)}
-                            variant="fullWidth"
-                          >
-                            <Tab value="equipments" label={locale.giftEquipmentsTab} />
-                            <Tab value="items" label={locale.giftItemsTab} />
-                          </Tabs>
-                          {visibleGiftItems.length === 0 ? (
-                            <Typography variant="body2">{locale.giftEmpty}</Typography>
-                          ) : (
-                            <Stack spacing={1}>
-                              {visibleGiftItems.map((item) => {
-                                const key = item.kind === 'equipment' ? item.playerEquipmentId : item.itemStackId
-                                return (
-                                  <Paper key={key} variant="outlined" sx={{ borderRadius: 2, p: 1.5 }}>
+          <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+            <Stack spacing={{ xs: 1.5, sm: 2 }}>
+              <Typography variant="h5">
+                {activePanel === 'chat'
+                  ? visitedPlayer?.userName
+                    ? `${visitedPlayer.userName}${locale.chatTitleSuffix}`
+                    : locale.loading
+                  : locale.giftTitle}
+              </Typography>
+              {activePanel === 'gift' ? (
+                <Paper variant="outlined" sx={{ borderRadius: 2.5, p: 2 }}>
+                  <Stack spacing={1.5}>
+                    <Typography variant="body2" color="text.secondary">
+                      {locale.giftDescription}
+                    </Typography>
+                    {giftFeedback ? <Alert severity={giftFeedback.type}>{giftFeedback.message}</Alert> : null}
+                    {visitedPlayer?.userId === currentPlayer?.userId ? (
+                      <Alert severity="info">{locale.giftSelfDisabled}</Alert>
+                    ) : isGiftInventoryLoading ? (
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <CircularProgress size={16} />
+                        <Typography variant="body2">{locale.giftSending}</Typography>
+                      </Stack>
+                    ) : giftInventoryError ? (
+                      <Alert severity="warning">{giftInventoryError.message || locale.giftListLoadFailed}</Alert>
+                    ) : (
+                      <Stack spacing={1.5}>
+                        <Tabs
+                          value={giftTab}
+                          onChange={(_, value: 'equipments' | 'items') => setGiftTab(value)}
+                          variant="fullWidth"
+                        >
+                          <Tab value="equipments" label={locale.giftEquipmentsTab} />
+                          <Tab value="items" label={locale.giftItemsTab} />
+                        </Tabs>
+                        {visibleGiftItems.length === 0 ? (
+                          <Typography variant="body2">{locale.giftEmpty}</Typography>
+                        ) : (
+                          <Stack spacing={1}>
+                            {visibleGiftItems.map((item) => {
+                              const key = item.kind === 'equipment' ? item.playerEquipmentId : item.itemStackId
+                              return (
+                                <Paper key={key} variant="outlined" sx={{ borderRadius: 2, p: 1.5 }}>
+                                  <Stack
+                                    direction={{ xs: 'column', sm: 'row' }}
+                                    spacing={1.5}
+                                    justifyContent="space-between"
+                                    alignItems={{ sm: 'center' }}
+                                  >
+                                    <Box sx={{ minWidth: 0 }}>
+                                      <Typography fontWeight={800}>{item.name}</Typography>
+                                      <Typography variant="body2" color="text.secondary">
+                                        {item.flavorText || '-'}
+                                      </Typography>
+                                    </Box>
                                     <Stack
                                       direction={{ xs: 'column', sm: 'row' }}
-                                      spacing={1.5}
-                                      justifyContent="space-between"
+                                      spacing={1}
                                       alignItems={{ sm: 'center' }}
                                     >
-                                      <Box sx={{ minWidth: 0 }}>
-                                        <Typography fontWeight={800}>{item.name}</Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                          {item.flavorText || '-'}
-                                        </Typography>
-                                      </Box>
-                                      <Stack
-                                        direction={{ xs: 'column', sm: 'row' }}
-                                        spacing={1}
-                                        alignItems={{ sm: 'center' }}
-                                      >
-                                        {item.kind === 'item' ? (
-                                          <TextField
-                                            size="small"
-                                            label={locale.giftQuantity}
-                                            value={giftQuantities[key] ?? '1'}
-                                            onChange={(event) =>
-                                              setGiftQuantities((current) => ({
-                                                ...current,
-                                                [key]: event.target.value,
-                                              }))
-                                            }
-                                            inputProps={{ inputMode: 'numeric', min: 1, max: item.quantity }}
-                                            sx={{ width: 104 }}
-                                          />
-                                        ) : (
-                                          <Typography variant="body2">x1</Typography>
-                                        )}
-                                        <Button
-                                          variant="contained"
-                                          disabled={
-                                            giftBusyKey !== null || !visitedPlayer?.userId || !session?.access_token
+                                      {item.kind === 'item' ? (
+                                        <TextField
+                                          size="small"
+                                          label={locale.giftQuantity}
+                                          value={giftQuantities[key] ?? '1'}
+                                          onChange={(event) =>
+                                            setGiftQuantities((current) => ({
+                                              ...current,
+                                              [key]: event.target.value,
+                                            }))
                                           }
-                                          onClick={async () => {
-                                            if (!visitedPlayer?.userId || !session?.access_token) {
-                                              return
-                                            }
+                                          inputProps={{ inputMode: 'numeric', min: 1, max: item.quantity }}
+                                          sx={{ width: 104 }}
+                                        />
+                                      ) : (
+                                        <Typography variant="body2">x1</Typography>
+                                      )}
+                                      <Button
+                                        variant="contained"
+                                        disabled={
+                                          giftBusyKey !== null || !visitedPlayer?.userId || !session?.access_token
+                                        }
+                                        onClick={async () => {
+                                          if (!visitedPlayer?.userId || !session?.access_token) {
+                                            return
+                                          }
 
-                                            setGiftBusyKey(key)
-                                            setGiftFeedback(null)
-                                            try {
-                                              const response = await sendPlayerGift(
-                                                visitedPlayer.userId,
-                                                item.kind === 'equipment'
-                                                  ? {
-                                                      playerEquipmentId: item.playerEquipmentId,
-                                                      itemStackId: null,
-                                                      quantity: 1,
-                                                    }
-                                                  : {
-                                                      playerEquipmentId: null,
-                                                      itemStackId: item.itemStackId,
-                                                      quantity: Number.parseInt(giftQuantities[key] ?? '1', 10) || 1,
-                                                    },
-                                                session.access_token,
-                                              )
-                                              setGiftFeedback({
-                                                type: 'success',
-                                                message: response.message || locale.giftSuccess,
-                                              })
-                                              await Promise.all([mutateGiftInventory(), mutateChatRoom()])
-                                            } catch (error) {
-                                              setGiftFeedback({
-                                                type: 'error',
-                                                message:
-                                                  error instanceof Error ? error.message : locale.giftListLoadFailed,
-                                              })
-                                            } finally {
-                                              setGiftBusyKey(null)
-                                            }
-                                          }}
-                                        >
-                                          {giftBusyKey === key ? locale.giftSending : locale.giftSend}
-                                        </Button>
-                                      </Stack>
+                                          setGiftBusyKey(key)
+                                          setGiftFeedback(null)
+                                          try {
+                                            const response = await sendPlayerGift(
+                                              visitedPlayer.userId,
+                                              item.kind === 'equipment'
+                                                ? {
+                                                    playerEquipmentId: item.playerEquipmentId,
+                                                    itemStackId: null,
+                                                    quantity: 1,
+                                                  }
+                                                : {
+                                                    playerEquipmentId: null,
+                                                    itemStackId: item.itemStackId,
+                                                    quantity: Number.parseInt(giftQuantities[key] ?? '1', 10) || 1,
+                                                  },
+                                              session.access_token,
+                                            )
+                                            setGiftFeedback({
+                                              type: 'success',
+                                              message: response.message || locale.giftSuccess,
+                                            })
+                                            await Promise.all([mutateGiftInventory(), mutateChatRoom()])
+                                          } catch (error) {
+                                            setGiftFeedback({
+                                              type: 'error',
+                                              message:
+                                                error instanceof Error ? error.message : locale.giftListLoadFailed,
+                                            })
+                                          } finally {
+                                            setGiftBusyKey(null)
+                                          }
+                                        }}
+                                      >
+                                        {giftBusyKey === key ? locale.giftSending : locale.giftSend}
+                                      </Button>
                                     </Stack>
-                                  </Paper>
-                                )
-                              })}
-                            </Stack>
-                          )}
-                        </Stack>
-                      )}
-                    </Stack>
-                  </Paper>
-                ) : (
-                  <>
-                    {isCurrentPlayerLoading ? (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <CircularProgress size={16} />
-                        <Typography variant="body2">{locale.loading}</Typography>
-                      </Stack>
-                    ) : currentPlayerError ? (
-                      <Alert severity="warning">{currentPlayerError.message}</Alert>
-                    ) : isChatLoading ? (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <CircularProgress size={16} />
-                        <Typography variant="body2">{locale.loading}</Typography>
-                      </Stack>
-                    ) : chatError ? (
-                      <Alert severity="warning">{chatError.message}</Alert>
-                    ) : !currentPlayer || !playerId ? (
-                      <Alert severity="warning">{locale.sessionInfoMissing}</Alert>
-                    ) : (
-                      <Stack spacing={2}>
-                        <ChatForm
-                          isSubmitting={isChatValidating}
-                          disabled={isAnonymous}
-                          disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
-                          onSubmit={async (text) => {
-                            if (!session?.access_token) {
-                              throw new Error(locale.sessionInfoMissing)
-                            }
-
-                            const updated = await postChatMessage(
-                              {
-                                ownerId: playerId,
-                                text,
-                              },
-                              session.access_token,
-                            )
-                            await mutateChatRoom(updated, { revalidate: false })
-                          }}
-                        />
-                        <ChatMessages
-                          messages={chatRoom?.messages ?? []}
-                          currentPlayerId={currentPlayer.userId}
-                          onDeleteMessage={async (chatId) => {
-                            if (!session?.access_token) {
-                              throw new Error(locale.sessionInfoMissing)
-                            }
-
-                            await deleteChatMessage({ ownerId: playerId, chatId }, session.access_token)
-                            await mutateChatRoom()
-                          }}
-                        />
+                                  </Stack>
+                                </Paper>
+                              )
+                            })}
+                          </Stack>
+                        )}
                       </Stack>
                     )}
-                  </>
-                )}
-              </Stack>
-            </Paper>
-          </Box>
-        </Stack>
-      </Paper>
-    </Container>
+                  </Stack>
+                </Paper>
+              ) : (
+                <>
+                  {isCurrentPlayerLoading ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CircularProgress size={16} />
+                      <Typography variant="body2">{locale.loading}</Typography>
+                    </Stack>
+                  ) : currentPlayerError ? (
+                    <Alert severity="warning">{currentPlayerError.message}</Alert>
+                  ) : isChatLoading ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CircularProgress size={16} />
+                      <Typography variant="body2">{locale.loading}</Typography>
+                    </Stack>
+                  ) : chatError ? (
+                    <Alert severity="warning">{chatError.message}</Alert>
+                  ) : !currentPlayer || !playerId ? (
+                    <Alert severity="warning">{locale.sessionInfoMissing}</Alert>
+                  ) : (
+                    <Stack spacing={2}>
+                      <ChatForm
+                        isSubmitting={isChatValidating}
+                        disabled={isAnonymous}
+                        disabledReason={isAnonymous ? locale.anonymousPostingRestricted : null}
+                        onSubmit={async (text) => {
+                          if (!session?.access_token) {
+                            throw new Error(locale.sessionInfoMissing)
+                          }
+
+                          const updated = await postChatMessage(
+                            {
+                              ownerId: playerId,
+                              text,
+                            },
+                            session.access_token,
+                          )
+                          await mutateChatRoom(updated, { revalidate: false })
+                        }}
+                      />
+                      <ChatMessages
+                        messages={chatRoom?.messages ?? []}
+                        currentPlayerId={currentPlayer.userId}
+                        onDeleteMessage={async (chatId) => {
+                          if (!session?.access_token) {
+                            throw new Error(locale.sessionInfoMissing)
+                          }
+
+                          await deleteChatMessage({ ownerId: playerId, chatId }, session.access_token)
+                          await mutateChatRoom()
+                        }}
+                      />
+                    </Stack>
+                  )}
+                </>
+              )}
+            </Stack>
+          </Paper>
+        </Box>
+      </Stack>
+    </GamePageFrame>
   )
 }
 

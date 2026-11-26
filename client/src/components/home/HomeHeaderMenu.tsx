@@ -15,7 +15,7 @@ type HomeHeaderMenuProps = {
   onCloseGroup: () => void
   gearIconId?: string
   onGearClick?: () => void
-  // 今いる画面の項目（ホーム以外の画面で使う）。その項目を帯の色で塗って示す
+  // 今いる画面の項目（ホーム以外の画面で使う）。その項目（グループの中ならグループ）を帯の色で塗って示す
   currentKey?: string
   currentColor?: string
 }
@@ -146,6 +146,8 @@ export default function HomeHeaderMenu({
           ))}
           {groups.map((group) => {
             const isOpen = visibleGroup === group.key
+            // 今いる画面がグループの中の項目なら、グループのボタンを帯の色で塗る
+            const isCurrentGroup = currentKey != null && group.items.some((item) => item.key === currentKey)
 
             return (
               <ClickAwayListener
@@ -174,12 +176,7 @@ export default function HomeHeaderMenu({
                         onToggleGroup(group.key)
                       }
                     }}
-                    // 今いる画面がこのグループの中の項目なら、グループの項目を帯の色で塗る
-                    sx={
-                      currentColor && group.items.some((item) => item.key === currentKey)
-                        ? currentHeaderButtonSx(currentColor)
-                        : headerButtonSx
-                    }
+                    sx={isCurrentGroup && currentColor ? currentHeaderButtonSx(currentColor) : headerButtonSx}
                   >
                     {group.label}
                   </Button>
