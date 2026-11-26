@@ -51,24 +51,41 @@ function GripIcon() {
   )
 }
 
-function ForgetWarning({ wrap = false }: { wrap?: boolean }) {
+// 「！」の丸。1 番目の技（次に新しいスキルを覚えると消える技）と、下の注意書きに付ける
+function ExclamationMark({ label, size = 22 }: { label?: string; size?: number }) {
   return (
-    <Typography
+    <Box
       component="span"
+      role={label ? 'img' : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+      title={label}
       sx={{
-        flexShrink: wrap ? 1 : 0,
-        fontSize: 13,
-        lineHeight: 1.4,
-        color: '#ffffff',
+        width: size,
+        height: size,
+        flexShrink: 0,
+        borderRadius: '50%',
         backgroundColor: colors.warning,
-        px: 1,
-        whiteSpace: wrap ? 'normal' : 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
+        color: '#ffffff',
+        display: 'inline-grid',
+        placeItems: 'center',
+        fontSize: Math.round(size * 0.68),
+        lineHeight: 1,
       }}
     >
-      {locale.forgetWarning}
-    </Typography>
+      !
+    </Box>
+  )
+}
+
+function ForgetNotice() {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 }}>
+      <ExclamationMark size={24} />
+      <Typography sx={{ fontSize: { xs: 13, sm: 15 }, lineHeight: 1.5, color: colors.ink }}>
+        {locale.forgetNotice}
+      </Typography>
+    </Box>
   )
 }
 
@@ -157,6 +174,8 @@ export default function SkillBook({
     onSelect(index)
   }
 
+  const isFull = slots.every((slot) => slot.moveId !== null)
+
   return (
     <Box
       id={id}
@@ -198,7 +217,7 @@ export default function SkillBook({
           const category = slot.category ? categoryStyles[slot.category] : null
           const rangeLabel = getMoveAttackRangeLabel(slot.attackRange)
           const name = slot.moveName ?? (isEmpty ? locale.emptySlot : locale.unknownMove)
-          const showWarning = index === 0 && !isEmpty && !hasChanges
+          const showWarning = index === 0 && !isEmpty && isFull
 
           return (
             <Box
@@ -281,17 +300,13 @@ export default function SkillBook({
                       <Typography noWrap sx={{ fontSize: 18 }}>
                         {name}
                       </Typography>
+                      {showWarning ? <ExclamationMark label={locale.forgetMarkLabel} size={20} /> : null}
                       {typeof slot.mpCost === 'number' ? (
                         <Box sx={{ ml: 'auto' }}>
                           <MpCost mp={slot.mpCost} size={18} fontSize={17} />
                         </Box>
                       ) : null}
                     </Box>
-                    {showWarning ? (
-                      <Box sx={{ display: 'flex' }}>
-                        <ForgetWarning wrap />
-                      </Box>
-                    ) : null}
                     {isEmpty ? null : (
                       <Box sx={{ display: 'flex', gap: 0.5, overflow: 'hidden' }}>
                         {category ? <SkillChip label={category.label} color={category.color} /> : null}
@@ -306,13 +321,13 @@ export default function SkillBook({
                   <>
                     <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-                        <Typography noWrap sx={{ fontSize: 24, flexShrink: 0, maxWidth: '100%' }}>
+                        <Typography noWrap sx={{ fontSize: 24, minWidth: 0 }}>
                           {name}
                         </Typography>
+                        {showWarning ? <ExclamationMark label={locale.forgetMarkLabel} /> : null}
                       </Box>
                       {isEmpty ? null : (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                          {showWarning ? <ForgetWarning /> : null}
                           <Typography noWrap sx={{ fontSize: 15, color: colors.sub, minWidth: 0 }}>
                             {slot.description ?? locale.unknownMoveDescription}
                           </Typography>
@@ -338,48 +353,60 @@ export default function SkillBook({
 
       <Box
         sx={{
-          display: compact ? 'grid' : 'flex',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          justifyContent: 'flex-end',
+          display: 'flex',
+          flexDirection: compact ? 'column' : 'row',
+          alignItems: compact ? 'stretch' : 'center',
           gap: 1.5,
           flexShrink: 0,
+          px: compact ? 0.5 : 1,
         }}
       >
-        <Button
-          variant="outlined"
-          onClick={onCancel}
-          disabled={isSaving || !hasChanges}
+        <ForgetNotice />
+        <Box
           sx={{
-            minHeight: 48,
-            minWidth: 120,
-            borderRadius: '4px',
-            fontSize: 17,
-            color: '#e2a08f',
-            borderColor: '#e2a08f',
-            '&:hover': { borderColor: '#e2a08f', backgroundColor: 'rgba(226, 160, 143, 0.12)' },
-            '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.45)', borderColor: 'rgba(255, 255, 255, 0.25)' },
+            display: compact ? 'grid' : 'flex',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            justifyContent: 'flex-end',
+            gap: 1.5,
+            flexShrink: 0,
           }}
         >
-          {locale.cancelMoveOrder}
-        </Button>
-        <Button
-          variant="contained"
-          onClick={onSave}
-          disabled={isSaving || !hasChanges}
-          sx={{
-            minHeight: 48,
-            minWidth: 160,
-            borderRadius: '4px',
-            fontSize: 17,
-            color: '#ffffff',
-            backgroundColor: '#3f9f4a',
-            boxShadow: 'none',
-            '&:hover': { backgroundColor: '#358a3f', boxShadow: 'none' },
-            '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.55)', backgroundColor: 'rgba(63, 159, 74, 0.35)' },
-          }}
-        >
-          {isSaving ? locale.savingMoveOrder : locale.saveMoveOrder}
-        </Button>
+          <Button
+            variant="outlined"
+            onClick={onCancel}
+            disabled={isSaving || !hasChanges}
+            sx={{
+              minHeight: 48,
+              minWidth: 120,
+              borderRadius: '4px',
+              fontSize: 17,
+              color: '#e2a08f',
+              borderColor: '#e2a08f',
+              '&:hover': { borderColor: '#e2a08f', backgroundColor: 'rgba(226, 160, 143, 0.12)' },
+              '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.45)', borderColor: 'rgba(255, 255, 255, 0.25)' },
+            }}
+          >
+            {locale.cancelMoveOrder}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={onSave}
+            disabled={isSaving || !hasChanges}
+            sx={{
+              minHeight: 48,
+              minWidth: 160,
+              borderRadius: '4px',
+              fontSize: 17,
+              color: '#ffffff',
+              backgroundColor: '#3f9f4a',
+              boxShadow: 'none',
+              '&:hover': { backgroundColor: '#358a3f', boxShadow: 'none' },
+              '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.55)', backgroundColor: 'rgba(63, 159, 74, 0.35)' },
+            }}
+          >
+            {isSaving ? locale.savingMoveOrder : locale.saveMoveOrder}
+          </Button>
+        </Box>
       </Box>
     </Box>
   )
