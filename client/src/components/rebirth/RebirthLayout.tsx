@@ -1,12 +1,6 @@
-export const rebirthPagePaperSx = {
-  background:
-    'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,252,255,0.98) 38%, rgba(255,248,220,0.98) 100%)',
-  border: '1px solid',
-  borderColor: '#efe1a6',
-  borderRadius: { xs: 3, sm: 4 },
-  boxShadow: '0 20px 60px rgba(224, 196, 94, 0.18)',
-  p: { xs: 2, sm: 4 },
-} as const
+// 画面いっぱいに広げた外枠（GamePageFrame）の背景
+export const rebirthPageBackground =
+  'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,252,255,0.98) 38%, rgba(255,248,220,0.98) 100%)'
 
 export const rebirthSurfaceSx = {
   background:
