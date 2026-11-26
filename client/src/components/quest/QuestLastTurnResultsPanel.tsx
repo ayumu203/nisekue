@@ -1,5 +1,5 @@
-import { Alert, Box, Button, Paper, Stack, TextField, Typography } from '@mui/material'
-import { greenOutlinedInputSx, innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
+import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material'
+import { greenOutlinedInputSx, panelPrimaryButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { QuestRunDetailResponse } from '@/schema/quest'
 
@@ -97,10 +97,13 @@ function ChatMessageItem({
       </Box>
 
       <Stack spacing={0.3} sx={{ minWidth: 0 }}>
-        <Typography variant="caption" sx={{ fontWeight: 700, color: '#5a4421' }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, color: '#5a4421', fontSize: '0.8125rem' }}>
           {displayName}
         </Typography>
-        <Typography variant="body2" sx={{ color: '#322617', lineHeight: 1.45, wordBreak: 'break-word' }}>
+        <Typography
+          variant="body2"
+          sx={{ color: '#322617', lineHeight: 1.5, wordBreak: 'break-word', fontSize: { sm: '1rem' } }}
+        >
           {message}
         </Typography>
       </Stack>
@@ -134,7 +137,8 @@ export default function QuestLastTurnResultsPanel({
   const hasContent = currentTurnMessages.length > 0 || lastTurnMessages.length > 0 || logs.length > 0
 
   return (
-    <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
+    // 白い箱（GamePanel）の中に置くので、外側の枠は付けない
+    <Box>
       <Stack spacing={2}>
         {chatDisabledReason ? <Alert severity="info">{chatDisabledReason}</Alert> : null}
         <Stack direction="row" spacing={1} alignItems="flex-start">
@@ -159,7 +163,7 @@ export default function QuestLastTurnResultsPanel({
             variant="contained"
             onClick={() => void onSubmitChatMessage()}
             disabled={isChatDisabled || chatMessage.trim().length === 0}
-            sx={{ minWidth: 78, minHeight: 40, ...softGreenButtonSx }}
+            sx={{ minWidth: 78, minHeight: 40, ...panelPrimaryButtonSx }}
           >
             {isChatSubmitting ? locale.chatSending : locale.chatSend}
           </Button>
@@ -173,9 +177,6 @@ export default function QuestLastTurnResultsPanel({
           <Stack spacing={1}>
             {currentTurnMessages.length > 0 ? (
               <Stack spacing={0.75}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5a4421' }}>
-                  {locale.currentTurnMessagesTitle}
-                </Typography>
                 <Stack spacing={0.6}>
                   {currentTurnMessages.map((message, index) => (
                     <ChatMessageItem
@@ -192,9 +193,6 @@ export default function QuestLastTurnResultsPanel({
 
             {lastTurnMessages.length > 0 ? (
               <Stack spacing={0.75}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#5a4421' }}>
-                  {locale.lastTurnMessagesTitle}
-                </Typography>
                 <Stack spacing={0.6}>
                   {lastTurnMessages.map((message, index) => (
                     <ChatMessageItem
@@ -220,7 +218,10 @@ export default function QuestLastTurnResultsPanel({
                       borderBottom: '1px solid #c9c2b7',
                     }}
                   >
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#3b2f1f', lineHeight: 1.5 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 600, color: '#3b2f1f', lineHeight: 1.6, fontSize: { sm: '1rem' } }}
+                    >
                       {log.segments.map((segment, segmentIndex) => (
                         <Box
                           key={`${segment.text}-${segmentIndex}`}
@@ -238,6 +239,6 @@ export default function QuestLastTurnResultsPanel({
           </Stack>
         )}
       </Stack>
-    </Paper>
+    </Box>
   )
 }

@@ -42,5 +42,12 @@
   "messages": {
     "started": "遠征を開始しました。",
     "claimed": "報酬を受け取りました。"
-  }
+  },
+  "mapListTitle": "宝の地図",
+  "finishedMessage": "{mapName}の探索を終えた！",
+  "lootLabel": "戦利品",
+  "historyMapColumn": "地図",
+  "experienceValue": "{value} EXP",
+  "goldValue": "{value} G",
+  "rankLabel": "ランク{grade}"
 }

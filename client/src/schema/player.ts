@@ -440,6 +440,8 @@ export const jobRoadmapListEntrySchema = z.object({
   isUnlocked: z.boolean(),
   canUnlock: z.boolean(),
   goldCostToUnlock: z.number().int(),
+  // 前提となるジョブ（この順に系統図の線を引く）。古いサーバーは返さないので空にする
+  requiredJobIds: z.array(z.number().int()).default([]),
 })
 
 export const jobRoadmapListResponseSchema = z.array(jobRoadmapListEntrySchema)

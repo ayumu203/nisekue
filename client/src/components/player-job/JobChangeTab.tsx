@@ -1,376 +1,640 @@
-import { Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from '@mui/material'
-import type { GetPlayerResponse, PlayerJobCode } from '@/schema/player'
-import { resolveJobAssetPath } from '@/lib/assets'
+import { Alert, Box, ButtonBase, Button, Typography } from '@mui/material'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import GamePanel from '@/components/common/GamePanel'
+import { jobChangePanelColors as colors } from '@/constants/styles'
+import { resolveJobAssetPath, resolveJobBustAssetPath } from '@/lib/assets'
+import type { GetPlayerResponse, PlayerJob, PlayerJobCode } from '@/schema/player'
+import { ExpBar, InfoChip, PlateChip } from './jobChangeParts'
+import { formatExpProgress, stageBackgroundSx } from './jobChangeStyles'
 import locale from '../../../locale/player-job/JobChange.json'
 
-const baseJobCodes = new Set<PlayerJobCode>(['Warrior', 'Guardian', 'Mage', 'Priest', 'Ranger'])
+const BASE_JOB_ORDER: PlayerJobCode[] = ['Warrior', 'Guardian', 'Mage', 'Priest', 'Ranger']
+const UNLOCK_LEVEL = 5
 
-function formatExpProgress(
-  currentExp: number,
-  requiredExp: number,
-): { current: number; required: number; ratio: number } {
-  // レベル上限に達すると requiredExp は 0 になる。文言に出る値なので 1 に丸めず、そのまま扱う。
-  const required = Math.max(0, requiredExp)
-  const current = Math.max(0, currentExp)
-  return {
-    current,
-    required,
-    ratio: required > 0 ? Math.max(0, Math.min(100, (current / required) * 100)) : 100,
-  }
-}
+const panelProps = { bandColor: colors.band, bandSelectedColor: colors.band }
 
 interface JobChangeTabProps {
   player: GetPlayerResponse
   isSubmittingJobValue: number | null
   onJobChange: (jobValue: number) => void
+  // PC（md 以上）は左に現在の職業、右に舞台。狭い画面は縦に積む
+  isWide: boolean
 }
 
-export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange }: JobChangeTabProps) {
-  const currentJobs = (player.jobProfiles ?? []).filter((job) => baseJobCodes.has(job.code))
-  const unlockThreshold = 5
-  const isMaxLevel = player.isMaxLevel === true
-  const levelProgress = formatExpProgress(player.exp ?? 0, player.requiredExpForNextLevel ?? 1)
-  const isCurrentJobMastered =
-    player.job?.code != null && (player.masteredJobs ?? []).some((job) => job.code === player.job.code)
+type ActorState = 'current' | 'open' | 'locked'
 
-  return (
-    <Stack spacing={2}>
-      <Paper
-        variant="outlined"
+export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange, isWide }: JobChangeTabProps) {
+  const baseJobs = BASE_JOB_ORDER.map((code) => (player.jobProfiles ?? []).find((job) => job.code === code)).filter(
+    (job): job is PlayerJob => job != null,
+  )
+  const isLocked = player.level < UNLOCK_LEVEL
+  const masteredCodes = new Set((player.masteredJobs ?? []).map((job) => job.code))
+  const [selectedCode, setSelectedCode] = useState<PlayerJobCode | null>(
+    () => baseJobs.find((job) => job.code !== player.job.code)?.code ?? null,
+  )
+  // 転職したあとなど、選んでいた職業が現在の職業になったら選び直す
+  const selectedJob =
+    isLocked || selectedCode === player.job.code ? null : (baseJobs.find((job) => job.code === selectedCode) ?? null)
+
+  function stateOf(job: PlayerJob): ActorState {
+    if (isLocked) return 'locked'
+    return job.code === player.job.code ? 'current' : 'open'
+  }
+
+  const footer = isLocked ? (
+    <LockedFooter />
+  ) : selectedJob ? (
+    <SelectFooter
+      job={selectedJob}
+      isMaxLevel={player.isMaxLevel === true}
+      isSubmitting={isSubmittingJobValue !== null}
+      onChange={() => onJobChange(selectedJob.value)}
+      compact={!isWide}
+    />
+  ) : null
+
+  if (isWide) {
+    return (
+      <Box
         sx={{
-          borderRadius: 3,
-          p: { xs: 2, sm: 2.5 },
-          backgroundColor: '#44644a',
-          borderColor: '#b8ab7a',
+          flex: 1,
+          minHeight: 0,
+          display: 'grid',
+          gridTemplateColumns: { md: '380px minmax(0, 1fr)', lg: '440px minmax(0, 1fr)' },
+          gap: 3,
         }}
       >
-        <Stack spacing={2}>
-          <Stack spacing={0.25}>
-            <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(243, 238, 220, 0.72)' }}>
-              JOB CHANGE
-            </Typography>
-            <Typography variant="h4" fontWeight={900} lineHeight={1.1} color="#fff8ea">
-              {locale.title}
-            </Typography>
-          </Stack>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={2}
-            alignItems={{ xs: 'stretch', sm: 'center' }}
-            justifyContent="space-between"
-          >
-            <Stack spacing={0.5}>
-              <Chip
-                label={player.job.displayName}
-                sx={{
-                  width: 'fit-content',
-                  fontWeight: 900,
-                  fontSize: '1rem',
-                  bgcolor: 'rgba(255, 249, 232, 0.92)',
-                  color: '#35513a',
-                  border: '1px solid #cbb783',
-                }}
-              />
-              <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.84)' }}>
-                {player.job.description}
-              </Typography>
-            </Stack>
-          </Stack>
-
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: '220px minmax(0, 1fr)' },
-              gap: 2,
-              alignItems: { xs: 'stretch', sm: 'start' },
-            }}
-          >
+        <Box sx={{ minHeight: 0 }}>
+          <GamePanel hideBand aria-label={locale.currentJobTitle} {...panelProps}>
+            <CurrentJobDetail player={player} isMastered={masteredCodes.has(player.job.code)} />
+          </GamePanel>
+        </Box>
+        <Box sx={{ minHeight: 0 }}>
+          <GamePanel hideBand aria-label={locale.jobListTitle} disablePadding {...panelProps}>
             <Box
+              role="group"
+              aria-label={locale.jobSelectLabel}
               sx={{
-                width: '100%',
-                maxWidth: 240,
-                aspectRatio: '1 / 1',
-                justifySelf: 'center',
-                borderRadius: 3,
-                border: '2px solid',
-                borderColor: '#bda86f',
-                bgcolor: '#fff8ea',
-                boxShadow: '0 10px 24px rgba(45, 61, 39, 0.12)',
+                ...stageBackgroundSx,
+                position: 'relative',
+                flex: 1,
+                minHeight: 420,
                 overflow: 'hidden',
                 display: 'grid',
-                placeItems: 'center',
-                p: 1.5,
-                backgroundImage:
-                  'radial-gradient(circle at 50% 35%, rgba(232, 242, 221, 0.95), rgba(255, 248, 234, 0.88) 58%, rgba(219, 231, 199, 0.92))',
+                gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+                gridTemplateRows: 'minmax(0, 1fr)',
+                pt: 5,
+                px: 3,
+                borderBottom: `4px solid ${colors.gold}`,
               }}
             >
+              {baseJobs.map((job) => (
+                <StageActor
+                  key={job.code}
+                  job={job}
+                  state={stateOf(job)}
+                  isSelected={selectedJob?.code === job.code}
+                  isMastered={masteredCodes.has(job.code)}
+                  onSelect={() => setSelectedCode(job.code)}
+                />
+              ))}
+            </Box>
+            {footer}
+          </GamePanel>
+        </Box>
+      </Box>
+    )
+  }
+
+  // スマホ：選んでいる 1 人を舞台の中央に大きく立たせ、下に 5 職業の顔のボタンを並べる
+  const shownJob = selectedJob ?? baseJobs.find((job) => job.code === player.job.code) ?? baseJobs[0]
+  const shownIndex = shownJob ? baseJobs.indexOf(shownJob) : 0
+  const leftJob = baseJobs[shownIndex - 1]
+  const rightJob = baseJobs[shownIndex + 1]
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <GamePanel hideBand aria-label={locale.currentJobTitle} fillHeight={false} {...panelProps}>
+        <CurrentJobCompact player={player} isMastered={masteredCodes.has(player.job.code)} />
+      </GamePanel>
+      <GamePanel hideBand aria-label={locale.jobListTitle} fillHeight={false} disablePadding {...panelProps}>
+        <Box
+          sx={{
+            ...stageBackgroundSx,
+            position: 'relative',
+            height: 300,
+            overflow: 'hidden',
+            borderBottom: `4px solid ${colors.gold}`,
+          }}
+        >
+          {[leftJob, rightJob].map((job, index) =>
+            job ? (
               <Box
+                key={job.code}
                 component="img"
-                src={resolveJobAssetPath(player.job.code) ?? ''}
-                alt={player.job.displayName}
+                src={resolveJobBustAssetPath(job.code) ?? ''}
+                alt=""
+                aria-hidden
                 sx={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  display: 'block',
-                  filter: 'drop-shadow(0 10px 14px rgba(91, 63, 16, 0.18))',
-                  transform: 'scale(1.04)',
+                  position: 'absolute',
+                  bottom: 0,
+                  [index === 0 ? 'left' : 'right']: -60,
+                  height: 200,
+                  filter: isLocked ? 'brightness(0) opacity(0.5)' : 'saturate(0.85) brightness(0.85)',
                 }}
               />
-            </Box>
-
-            <Stack spacing={1.25}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                  gap: 1,
-                }}
-              >
-                <Paper
-                  variant="outlined"
-                  sx={{ borderRadius: 2, p: 1.5, borderColor: '#d2c08b', bgcolor: 'rgba(255, 249, 232, 0.92)' }}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    {locale.currentLevel.replace('{{level}}', '')}
-                  </Typography>
-                  <Typography variant="h6" fontWeight={800} color="#324c36">
-                    Lv.{player.level}
-                  </Typography>
-                </Paper>
-                <Paper
-                  variant="outlined"
-                  sx={{ borderRadius: 2, p: 1.5, borderColor: '#d2c08b', bgcolor: 'rgba(255, 249, 232, 0.92)' }}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    {locale.currentJobLevel.replace('{{level}}', '')}
-                  </Typography>
-                  <Typography variant="h6" fontWeight={800} color="#324c36">
-                    {isCurrentJobMastered ? 'マスター' : `Lv.${player.jobLevel}`}
-                  </Typography>
-                </Paper>
-              </Box>
-
-              <Stack spacing={0.75}>
-                <Stack direction="row" justifyContent="space-between" spacing={1}>
-                  <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.84)' }}>
-                    {locale.levelExpProgress
-                      .replace('{{current}}', String(levelProgress.current))
-                      .replace('{{required}}', String(levelProgress.required))}
-                  </Typography>
-                  <Typography variant="body2" fontWeight={700} color="#f0ddb0">
-                    {isMaxLevel ? 100 : Math.round(levelProgress.ratio)}%
-                  </Typography>
-                </Stack>
-                <LinearProgress
-                  variant="determinate"
-                  value={isMaxLevel ? 100 : levelProgress.ratio}
-                  sx={{
-                    height: 10,
-                    borderRadius: 999,
-                    backgroundColor: 'rgba(255, 249, 232, 0.35)',
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: '#f0ddb0',
-                    },
-                  }}
-                />
-              </Stack>
-            </Stack>
-          </Box>
-
-          {isMaxLevel ? <MaxLevelWarning /> : null}
-        </Stack>
-      </Paper>
-
-      <Paper variant="outlined" sx={{ borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-        <Stack spacing={1.5}>
-          <Typography variant="h6">{locale.jobListTitle}</Typography>
-          {currentJobs.map((job) => {
-            const isCurrent = player.job.value === job.value
-            const isLocked = player.level < unlockThreshold
-            const isDisabled = isLocked || isCurrent
-            const isSubmitting = isSubmittingJobValue === job.value
-            const jobImageSrc = resolveJobAssetPath(job.code)
-            const statusLabel = isCurrent ? locale.currentBadge : isLocked ? locale.jobLocked : locale.jobAvailable
-
+            ) : null,
+          )}
+          {shownJob ? (
+            <Box
+              component="img"
+              src={resolveJobBustAssetPath(shownJob.code) ?? ''}
+              alt={shownJob.displayName}
+              sx={{
+                position: 'absolute',
+                left: '50%',
+                bottom: 0,
+                height: 260,
+                transform: 'translateX(-50%)',
+                filter: isLocked ? 'brightness(0) opacity(0.5)' : 'none',
+              }}
+            />
+          ) : null}
+          {selectedJob ? <Cursor sx={{ top: 12, fontSize: '1.625rem' }} /> : null}
+        </Box>
+        <Box
+          role="group"
+          aria-label={locale.jobSelectLabel}
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            px: 1.75,
+            pt: 1.75,
+            pb: 2,
+            borderBottom: `1px dotted ${colors.divider}`,
+          }}
+        >
+          {baseJobs.map((job) => {
+            const state = stateOf(job)
+            const isSelected = selectedJob?.code === job.code
             return (
-              <Paper
+              <ButtonBase
                 key={job.code}
-                variant="outlined"
+                aria-label={job.displayName}
+                aria-pressed={isSelected}
+                disabled={state !== 'open'}
+                onClick={() => setSelectedCode(job.code)}
                 sx={{
-                  borderRadius: 2,
-                  p: 2,
-                  backgroundColor: isCurrent ? '#f8f3e3' : '#fffdf8',
-                  borderColor: isCurrent ? '#bca56d' : '#d1c19a',
+                  position: 'relative',
+                  width: 58,
+                  height: 58,
+                  borderRadius: '8px',
+                  border: isSelected ? `3px solid ${colors.plateGold}` : `2px solid ${colors.divider}`,
+                  boxShadow: isSelected ? `0 0 0 2px ${colors.bandDark}` : 'none',
+                  backgroundColor: colors.soft,
                 }}
               >
-                <Stack
-                  direction={{ xs: 'column', sm: 'row' }}
-                  spacing={{ xs: 1.5, sm: 2.5 }}
-                  justifyContent="space-between"
-                  alignItems={{ xs: 'stretch', sm: 'center' }}
-                >
-                  <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    spacing={1.5}
-                    alignItems={{ xs: 'stretch', sm: 'center' }}
+                <Box sx={{ width: '100%', height: '100%', borderRadius: '6px', overflow: 'hidden' }}>
+                  <Box
+                    component="img"
+                    src={resolveJobBustAssetPath(job.code) ?? ''}
+                    alt=""
+                    sx={{
+                      width: '100%',
+                      height: '170%',
+                      objectFit: 'cover',
+                      objectPosition: 'top',
+                      display: 'block',
+                      filter: state === 'locked' ? 'brightness(0) opacity(0.5)' : 'none',
+                    }}
+                  />
+                </Box>
+                {state === 'current' ? (
+                  <Box
+                    component="span"
+                    sx={{
+                      position: 'absolute',
+                      left: '50%',
+                      bottom: -9,
+                      transform: 'translateX(-50%)',
+                      fontSize: '0.625rem',
+                      color: '#ffffff',
+                      backgroundColor: colors.bandDark,
+                      borderRadius: '4px',
+                      px: 0.625,
+                      whiteSpace: 'nowrap',
+                    }}
                   >
-                    {jobImageSrc ? (
-                      <Box
-                        sx={{
-                          width: { xs: '100%', sm: 132 },
-                          minWidth: { sm: 132 },
-                          aspectRatio: '1 / 1',
-                          borderRadius: 2.5,
-                          border: '2px solid',
-                          borderColor: isCurrent ? '#bca56d' : '#d1c19a',
-                          bgcolor: '#fff9ef',
-                          overflow: 'hidden',
-                          display: 'grid',
-                          placeItems: 'center',
-                          p: 1.25,
-                          boxShadow: isCurrent
-                            ? '0 10px 18px rgba(52, 74, 45, 0.14)'
-                            : '0 6px 12px rgba(79, 71, 47, 0.08)',
-                          backgroundImage: isCurrent
-                            ? 'radial-gradient(circle at 50% 35%, rgba(231, 241, 219, 0.95), rgba(255, 248, 238, 0.88) 58%, rgba(220, 230, 201, 0.9))'
-                            : 'radial-gradient(circle at 50% 35%, rgba(246, 240, 214, 0.94), rgba(255, 250, 240, 0.86) 60%, rgba(233, 225, 195, 0.84))',
-                        }}
-                      >
-                        <Box
-                          component="img"
-                          src={jobImageSrc}
-                          alt={job.displayName}
-                          loading="lazy"
-                          sx={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'contain',
-                            display: 'block',
-                            filter: 'drop-shadow(0 8px 12px rgba(91, 63, 16, 0.14))',
-                            transform: isCurrent ? 'scale(1.05)' : 'scale(1.02)',
-                          }}
-                        />
-                      </Box>
-                    ) : null}
-                    <Stack spacing={0.5}>
-                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                        <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '1.2rem' }}>
-                          {job.displayName}
-                        </Typography>
-                        <Chip
-                          label={statusLabel}
-                          size="small"
-                          variant={isLocked ? 'outlined' : 'filled'}
-                          sx={{
-                            fontWeight: 700,
-                            ...(isCurrent
-                              ? {
-                                  bgcolor: 'rgba(255, 249, 232, 0.92)',
-                                  color: '#35513a',
-                                  border: '1px solid #cbb783',
-                                }
-                              : isLocked
-                                ? {
-                                    bgcolor: 'transparent',
-                                    color: '#6c6246',
-                                    border: '1px solid #c7ba96',
-                                  }
-                                : {
-                                    bgcolor: '#4a6c51',
-                                    color: '#fff8e8',
-                                    border: '1px solid #bfa86e',
-                                  }),
-                          }}
-                        />
-                      </Stack>
-                      <Typography variant="body2" color="text.secondary">
-                        {job.description}
-                      </Typography>
-                      {isCurrent || isLocked ? (
-                        <Typography variant="body2" color="text.secondary">
-                          {isCurrent ? locale.currentDetail : locale.jobLockedDetail}
-                        </Typography>
-                      ) : null}
-                    </Stack>
-                  </Stack>
-                  {isCurrent ? null : (
-                    <Button
-                      variant="contained"
-                      sx={{
-                        ...(isDisabled
-                          ? {
-                              '&&': {
-                                backgroundColor: '#efe7cf',
-                                borderColor: '#d5c49a',
-                                color: '#8a7d5d',
-                              },
-                              '&&:hover': {
-                                backgroundColor: '#efe7cf',
-                                borderColor: '#d5c49a',
-                                boxShadow: 'none',
-                              },
-                              '&&.Mui-disabled': {
-                                backgroundColor: '#efe7cf',
-                                borderColor: '#d5c49a',
-                                color: '#8a7d5d',
-                              },
-                            }
-                          : {
-                              '&&': {
-                                backgroundColor: '#4a6c51',
-                                borderColor: '#bfa86e',
-                                color: '#fff8e8',
-                              },
-                              '&&:hover': {
-                                backgroundColor: '#3f5f46',
-                                borderColor: '#b59d63',
-                                boxShadow: 'none',
-                              },
-                              '&&.Mui-disabled': {
-                                backgroundColor: '#7f967f',
-                                borderColor: '#c4b07c',
-                                color: '#f5efe0',
-                              },
-                            }),
-                        minWidth: { sm: 116 },
-                        alignSelf: { sm: 'center' },
-                        whiteSpace: 'nowrap',
-                      }}
-                      disabled={isDisabled || isSubmittingJobValue !== null}
-                      fullWidth={false}
-                      onClick={() => {
-                        onJobChange(job.value)
-                      }}
-                    >
-                      {isSubmitting ? locale.changing : isLocked ? locale.lockedButton : locale.changeButton}
-                    </Button>
-                  )}
-                </Stack>
-              </Paper>
+                    {locale.currentBadge}
+                  </Box>
+                ) : null}
+              </ButtonBase>
             )
           })}
-        </Stack>
-      </Paper>
-    </Stack>
+        </Box>
+        {footer}
+      </GamePanel>
+    </Box>
   )
 }
 
-function MaxLevelWarning() {
+function Cursor({ sx }: { sx?: object }) {
+  return (
+    <Box
+      component="span"
+      aria-hidden
+      sx={{
+        position: 'absolute',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 5,
+        lineHeight: 1,
+        fontSize: '1.875rem',
+        color: colors.plateGold,
+        textShadow: `0 2px 0 ${colors.bandDark}`,
+        ...sx,
+      }}
+    >
+      ▼
+    </Box>
+  )
+}
+
+// 舞台の上の 1 人。上半身の絵を舞台の下端にそろえ、選んでいる人は大きく前に出す
+function StageActor({
+  job,
+  state,
+  isSelected,
+  isMastered,
+  onSelect,
+}: {
+  job: PlayerJob
+  state: ActorState
+  isSelected: boolean
+  isMastered: boolean
+  onSelect: () => void
+}) {
+  const filter =
+    state === 'locked' ? 'brightness(0) opacity(0.5)' : isSelected ? 'none' : 'saturate(0.85) brightness(0.88)'
+
+  return (
+    <ButtonBase
+      aria-pressed={isSelected}
+      aria-label={job.displayName}
+      disabled={state !== 'open'}
+      onClick={onSelect}
+      sx={{
+        // z-index を付けない（名札を隣の人の絵より前に出すため、重なり順は中の要素で決める）
+        position: 'relative',
+        height: '100%',
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        fontFamily: 'inherit',
+        '&.Mui-disabled': { pointerEvents: 'none' },
+      }}
+    >
+      <Box
+        component="span"
+        sx={{
+          position: 'relative',
+          // 舞台が縦に長い画面でも大きくなりすぎないように上限を付ける
+          height: isSelected ? 'min(100%, 520px)' : 'min(82%, 430px)',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+        }}
+      >
+        {isSelected ? <Cursor sx={{ top: -6 }} /> : null}
+        <Box
+          component="img"
+          src={resolveJobBustAssetPath(job.code) ?? ''}
+          alt=""
+          sx={{ position: 'relative', zIndex: isSelected ? 2 : 1, height: '100%', width: 'auto', flex: 'none', filter }}
+        />
+        <Box
+          component="span"
+          sx={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 14,
+            zIndex: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 0.75,
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              backgroundColor: colors.plate,
+              border: `3px solid ${isSelected ? colors.plateGold : 'rgba(255, 255, 255, 0.9)'}`,
+              borderRadius: '6px',
+              px: 2.25,
+              py: 0.5,
+              fontSize: isSelected ? '1.5rem' : '1.25rem',
+              color: isSelected ? colors.plateGold : '#ffffff',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {job.displayName}
+          </Box>
+          <Box component="span" sx={{ display: 'flex', gap: 0.75, minHeight: 24 }}>
+            {state === 'current' ? <PlateChip>{locale.currentBadge}</PlateChip> : null}
+            {isMastered ? <PlateChip>{locale.mastered}</PlateChip> : null}
+            {state === 'locked' ? <PlateChip>{locale.lockedTag}</PlateChip> : null}
+          </Box>
+        </Box>
+      </Box>
+    </ButtonBase>
+  )
+}
+
+function SelectFooter({
+  job,
+  isMaxLevel,
+  isSubmitting,
+  onChange,
+  compact,
+}: {
+  job: PlayerJob
+  isMaxLevel: boolean
+  isSubmitting: boolean
+  onChange: () => void
+  compact: boolean
+}) {
+  const button = (
+    <Button
+      onClick={onChange}
+      disabled={isSubmitting}
+      sx={{
+        flex: 'none',
+        width: compact ? '100%' : 'auto',
+        height: compact ? 56 : 60,
+        px: 4,
+        borderRadius: '12px',
+        backgroundColor: colors.band,
+        color: '#ffffff',
+        fontFamily: 'inherit',
+        fontSize: compact ? '1.25rem' : '1.375rem',
+        boxShadow: `0 4px 0 ${colors.bandDark}`,
+        '&:hover': { backgroundColor: colors.bandDark },
+        '&.Mui-disabled': { backgroundColor: '#c9cfd6', color: '#ffffff' },
+      }}
+    >
+      {isSubmitting ? locale.changing : locale.changeTo.replace('{{jobName}}', job.displayName)}
+    </Button>
+  )
+
+  return (
+    <Box sx={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 1.5, px: compact ? 2 : 3.25, py: 2.25 }}>
+      {isMaxLevel ? <Alert severity="warning">{locale.maxLevelNoticeBody}</Alert> : null}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: compact ? 'column' : 'row',
+          alignItems: compact ? 'stretch' : 'center',
+          gap: compact ? 1 : 3.5,
+        }}
+      >
+        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+          <Typography sx={{ fontSize: compact ? '1.375rem' : '1.5rem', color: colors.text }}>
+            {job.displayName}
+          </Typography>
+          <Typography sx={{ fontSize: compact ? '0.875rem' : '1rem', lineHeight: 1.75, color: colors.label }}>
+            {job.description}
+          </Typography>
+        </Box>
+        {button}
+      </Box>
+    </Box>
+  )
+}
+
+function LockedFooter() {
   return (
     <Box
       sx={{
-        mt: 1,
-        p: 1.5,
-        borderRadius: 2,
-        bgcolor: 'rgba(255, 229, 143, 0.15)',
-        border: '1px solid',
-        borderColor: 'rgba(200, 187, 131, 0.45)',
+        flex: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 2.5,
+        px: 3,
+        py: 2.75,
+        fontSize: '1.125rem',
+        color: colors.label,
       }}
     >
-      <Typography variant="body2" sx={{ color: '#ffd9a0', fontWeight: 700 }}>
-        {locale.maxLevelNoticeBody}
+      <Typography component="span" sx={{ fontSize: 'inherit' }}>
+        {locale.changeCondition}
       </Typography>
+      <Box component={Link} to="/training" sx={{ color: colors.band }}>
+        {locale.toTraining}
+      </Box>
+    </Box>
+  )
+}
+
+function useLevelInfo(player: GetPlayerResponse, isMastered: boolean) {
+  const isMaxLevel = player.isMaxLevel === true
+  const progress = formatExpProgress(player.exp ?? 0, player.requiredExpForNextLevel ?? 1)
+  return {
+    jobLevel: isMastered ? locale.mastered : `Lv.${player.jobLevel}`,
+    expText: isMaxLevel
+      ? locale.expMax
+      : `${progress.current.toLocaleString()} / ${progress.required.toLocaleString()}`,
+    ratio: isMaxLevel ? 100 : progress.ratio,
+  }
+}
+
+function MasteredChips({ player }: { player: GetPlayerResponse }) {
+  const mastered = player.masteredJobs ?? []
+  return (
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+      {mastered.length > 0 ? (
+        mastered.map((job) => (
+          <InfoChip key={job.code} tone="gold">
+            {job.displayName}
+          </InfoChip>
+        ))
+      ) : (
+        <InfoChip tone="mute">{locale.masteredNone}</InfoChip>
+      )}
+    </Box>
+  )
+}
+
+// PC の「現在の職業」：アーチ窓の中の絵、名前・説明、レベル、経験値、マスター済みジョブ、所持ゴールド
+function CurrentJobDetail({ player, isMastered }: { player: GetPlayerResponse; isMastered: boolean }) {
+  const info = useLevelInfo(player, isMastered)
+  const dotted = `1px dotted ${colors.divider}`
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Box
+          sx={{
+            width: 200,
+            height: 270,
+            borderRadius: '999px 999px 10px 10px',
+            border: `3px solid ${colors.gold}`,
+            backgroundColor: colors.soft,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}
+        >
+          <Box
+            component="img"
+            src={resolveJobAssetPath(player.job.code) ?? ''}
+            alt={player.job.displayName}
+            sx={{ width: '100%', height: '92%', objectFit: 'contain', objectPosition: 'bottom', display: 'block' }}
+          />
+        </Box>
+      </Box>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+        <Typography sx={{ fontSize: '1.875rem', textAlign: 'center', color: colors.text }}>
+          {player.job.displayName}
+        </Typography>
+        <Typography sx={{ fontSize: '0.875rem', lineHeight: 1.7, color: colors.label }}>
+          {player.job.description}
+        </Typography>
+      </Box>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+          borderTop: dotted,
+          borderBottom: dotted,
+        }}
+      >
+        {[
+          { label: locale.levelLabel, value: `Lv.${player.level}`, color: colors.text },
+          { label: locale.jobLevelLabel, value: info.jobLevel, color: isMastered ? colors.goldText : colors.text },
+        ].map((item, index) => (
+          <Box
+            key={item.label}
+            sx={{
+              py: 1.25,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              borderLeft: index === 0 ? 'none' : dotted,
+            }}
+          >
+            <Typography sx={{ fontSize: '0.8125rem', color: colors.label }}>{item.label}</Typography>
+            <Typography sx={{ fontSize: '1.5rem', color: item.color, letterSpacing: '0.04em' }}>
+              {item.value}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: colors.label }}>
+          <span>{locale.expLabel}</span>
+          <Box component="span" sx={{ color: colors.text }}>
+            {info.expText}
+          </Box>
+        </Box>
+        <ExpBar ratio={info.ratio} label={locale.expLabel} />
+      </Box>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Typography sx={{ fontSize: '0.875rem', color: colors.label }}>{locale.masteredJobsLabel}</Typography>
+        <MasteredChips player={player} />
+      </Box>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          borderTop: dotted,
+          pt: 1.5,
+        }}
+      >
+        <Typography sx={{ fontSize: '0.875rem', color: colors.label }}>{locale.goldLabel}</Typography>
+        <Typography sx={{ fontSize: '1.125rem', color: colors.text }}>{player.gold.toLocaleString()} G</Typography>
+      </Box>
+    </Box>
+  )
+}
+
+// スマホの「現在の職業」：小さいアーチ窓の横に名前・レベル・経験値・マスター済みジョブ
+function CurrentJobCompact({ player, isMastered }: { player: GetPlayerResponse; isMastered: boolean }) {
+  const info = useLevelInfo(player, isMastered)
+
+  return (
+    <Box sx={{ display: 'flex', gap: 1.75, alignItems: 'center' }}>
+      <Box
+        sx={{
+          width: 88,
+          height: 124,
+          flex: 'none',
+          borderRadius: '999px 999px 8px 8px',
+          border: `3px solid ${colors.gold}`,
+          backgroundColor: colors.soft,
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          component="img"
+          src={resolveJobAssetPath(player.job.code) ?? ''}
+          alt={player.job.displayName}
+          sx={{ width: '100%', height: '92%', objectFit: 'contain', objectPosition: 'bottom', display: 'block' }}
+        />
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+        <Typography sx={{ fontSize: '1.375rem', color: colors.text }}>{player.job.displayName}</Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            columnGap: 1.5,
+            rowGap: 0.25,
+            fontSize: '0.875rem',
+            color: colors.label,
+          }}
+        >
+          <span>
+            {locale.levelLabel}{' '}
+            <Box component="b" sx={{ fontWeight: 400, fontSize: '1rem', color: colors.text }}>
+              Lv.{player.level}
+            </Box>
+          </span>
+          <span>
+            {locale.jobLevelLabel}{' '}
+            <Box
+              component="b"
+              sx={{
+                fontWeight: 400,
+                fontSize: '1rem',
+                color: isMastered ? colors.goldText : colors.text,
+                letterSpacing: '0.04em',
+              }}
+            >
+              {info.jobLevel}
+            </Box>
+          </span>
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: colors.label }}>
+          <span>{locale.expLabel}</span>
+          <Box component="span" sx={{ color: colors.text }}>
+            {info.expText}
+          </Box>
+        </Box>
+        <ExpBar ratio={info.ratio} label={locale.expLabel} />
+        <MasteredChips player={player} />
+      </Box>
     </Box>
   )
 }

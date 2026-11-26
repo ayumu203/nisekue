@@ -1,5 +1,4 @@
-import { Box, SvgIcon, type SvgIconProps } from '@mui/material'
-import { resolveCharacterAssetPath } from '@/lib/assets'
+import { SvgIcon, type SvgIconProps } from '@mui/material'
 import type { InventoryItemView, MarketListingView } from '@/schema/item'
 
 export function WeaponIllustration(props: SvgIconProps) {
@@ -71,81 +70,43 @@ export function ExpMultiplierIllustration(props: SvgIconProps) {
   )
 }
 
-export function ItemArtwork({
-  item,
-  sellerImagePath,
-}: {
-  item: InventoryItemView | MarketListingView
-  sellerImagePath?: string | null
-}) {
-  const sellerImageSrc = resolveCharacterAssetPath(sellerImagePath)
-  const marketEquipmentType = 'equipmentDetail' in item ? item.equipmentDetail?.equipmentType : null
+type IconSource = InventoryItemView | MarketListingView
 
-  return (
-    <Box
-      sx={{
-        borderRadius: 2,
-        border: '1px solid #b08e66',
-        background: '#a88d73',
-        height: 96,
-        display: 'grid',
-        placeItems: 'center',
-        overflow: 'hidden',
-        position: 'relative',
-      }}
-    >
-      {'kind' in item ? (
-        item.kind === 'equipment' ? (
-          item.equipmentType === 'Weapon' ? (
-            <WeaponIllustration sx={{ fontSize: 72, color: '#6d5630' }} />
-          ) : (
-            <ArmorIllustration sx={{ fontSize: 72, color: '#5a7387' }} />
-          )
-        ) : item.effectType === 'StatBoost' ? (
-          <StatBoostIllustration sx={{ fontSize: 72, color: '#a53636' }} />
-        ) : item.effectType === 'ExpMultiplier' ? (
-          <ExpMultiplierIllustration sx={{ fontSize: 72, color: '#5b4e8c' }} />
-        ) : (
-          <JobChangeIllustration sx={{ fontSize: 72, color: '#4f7148' }} />
-        )
-      ) : marketEquipmentType === 'Weapon' ? (
-        <WeaponIllustration sx={{ fontSize: 72, color: '#6d5630' }} />
-      ) : marketEquipmentType === 'Armor' ? (
-        <ArmorIllustration sx={{ fontSize: 72, color: '#5a7387' }} />
-      ) : item.itemName.includes('剣') ? (
-        <WeaponIllustration sx={{ fontSize: 72, color: '#6d5630' }} />
-      ) : item.itemName.includes('服') || item.itemName.includes('鎧') ? (
-        <ArmorIllustration sx={{ fontSize: 72, color: '#5a7387' }} />
-      ) : item.itemName.includes('証') ? (
-        <JobChangeIllustration sx={{ fontSize: 72, color: '#4f7148' }} />
-      ) : item.itemName.includes('経験') ? (
-        <ExpMultiplierIllustration sx={{ fontSize: 72, color: '#5b4e8c' }} />
-      ) : (
-        <StatBoostIllustration sx={{ fontSize: 72, color: '#a53636' }} />
-      )}
+type IconKind = 'Weapon' | 'Armor' | 'StatBoost' | 'ExpMultiplier' | 'ChangeJob'
 
-      {sellerImageSrc ? (
-        <Box
-          sx={{
-            position: 'absolute',
-            right: 8,
-            bottom: 8,
-            width: 32,
-            height: 32,
-            borderRadius: 1,
-            border: '2px solid #f7e0ae',
-            backgroundColor: 'rgba(255, 249, 232, 0.96)',
-            overflow: 'hidden',
-          }}
-        >
-          <Box
-            component="img"
-            src={sellerImageSrc}
-            alt=""
-            sx={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center bottom' }}
-          />
-        </Box>
-      ) : null}
-    </Box>
-  )
+function resolveIconKind(item: IconSource): IconKind {
+  if ('kind' in item) {
+    if (item.kind === 'equipment') {
+      return item.equipmentType
+    }
+    if (item.effectType === 'StatBoost' || item.effectType === 'ExpMultiplier') {
+      return item.effectType
+    }
+    return 'ChangeJob'
+  }
+
+  // マーケットの出品は、装備なら種別、アイテムは名前から絵を選ぶ（出品に効果の種別が含まれないため）
+  if (item.equipmentDetail) {
+    return item.equipmentDetail.equipmentType
+  }
+  if (item.itemName.includes('証')) return 'ChangeJob'
+  if (item.itemName.includes('経験')) return 'ExpMultiplier'
+  return 'StatBoost'
+}
+
+// 品物の絵（枠なし）。マス・札・出品の行で使う
+export function ItemIcon({ item, size }: { item: IconSource; size: number }) {
+  const sx = { fontSize: size }
+  switch (resolveIconKind(item)) {
+    case 'Weapon':
+      return <WeaponIllustration sx={sx} />
+    case 'Armor':
+      return <ArmorIllustration sx={sx} />
+    case 'ExpMultiplier':
+      return <ExpMultiplierIllustration sx={sx} />
+    case 'ChangeJob':
+      return <JobChangeIllustration sx={sx} />
+    default:
+      return <StatBoostIllustration sx={sx} />
+  }
 }

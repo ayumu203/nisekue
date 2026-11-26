@@ -171,6 +171,10 @@ export const innerSurfaceSx = {
   borderColor: '#e7d9b6',
 } as const
 
+// 画面いっぱいに広げた外枠（GamePageFrame）の背景と、ヘッダーメニューで今いる画面を塗る色
+export const gamePageBackground = '#ffcc00'
+export const gamePageAccent = '#b8860b'
+
 export const outerPagePaperSx = {
   backgroundColor: '#ffcc00',
   border: '1px solid',
@@ -230,4 +234,223 @@ export const gameTabSx = {
     borderColor: '#2f8b3f',
     color: '#ffffff',
   },
+} as const
+
+// PC のホームの色（上部のオレンジの帯・地のクリーム・白い箱）
+export const homePanelColors = {
+  topBand: '#ffcc00',
+  ground: '#fdf3d8',
+  band: '#2f7d3a',
+  // 帯を「作成｜募集中」のように分けたとき、選んでいる側の色
+  bandSelected: '#1d5626',
+  divider: '#e3d6b8',
+  label: '#6b5a3e',
+  text: '#3a2f1e',
+} as const
+
+// クエスト画面の色（上部の青緑の帯・地の薄い青緑）。見出しの帯やボタンの緑はホームと同じ
+export const questPanelColors = {
+  topBand: '#2a7f84',
+  ground: '#eaf4f2',
+} as const
+
+// 訓練場の色（道場：上部の木の茶色の帯・生成りの地）。見出しの帯とボタンは緑ではなく藍
+export const trainingPanelColors = {
+  topBand: '#6b4423',
+  ground: '#f4efe4',
+  band: '#2f4a7a',
+  // 帯を「NPC｜PLAYER」のように分けたとき、選んでいる側の色
+  bandSelected: '#1d3157',
+  // 選んでいる相手カードの地
+  selectedSurface: '#e9eef7',
+  // 押せないボタンの色
+  disabledButton: '#a3b1c9',
+  // 白い箱の中の文字・区切り線（茶色やベージュを使わず、藍に合わせたグレー）
+  text: '#2b2f38',
+  label: '#5a6170',
+  divider: '#dfe3ea',
+} as const
+
+// 宝の地図の色（白・金・青：上部の金の帯・白に近い地）。見出しの帯とボタンは緑ではなく青
+export const treasureMapPanelColors = {
+  topBand: '#9a7008',
+  ground: '#fbfaf5',
+  band: '#1e4f96',
+  // 探索中の地図の「探索中」の地と文字
+  soft: '#e8eef8',
+  softText: '#143a72',
+  // 押せないボタンの色
+  disabledButton: '#e8e3d8',
+  disabledButtonText: '#6f6758',
+  disabledButtonBorder: '#cfc8b8',
+  // 白い箱の中の文字・区切り線
+  text: '#2e2a22',
+  label: '#5f5747',
+  divider: '#e2dccb',
+  // 星の色
+  star: '#a8741a',
+  starOff: '#d9d2c2',
+  // 探索完了のメッセージウィンドウ
+  messageWindow: 'rgba(14, 26, 54, 0.9)',
+  messageHighlight: '#ffd35a',
+  messageLabel: '#b8c4de',
+} as const
+
+// アイテム画面の色（道具袋：えんじの革・生成りの布・真鍮）。ほかの画面の白い箱ではなく、袋と札で組む
+export const itemsPanelColors = {
+  topBand: '#4f1d27',
+  ground: '#ede2cf',
+  // 袋の革（枠・タブ・主な操作）と、その影
+  leather: '#7d3340',
+  leatherDark: '#4f1d27',
+  // 選んでいないタブ
+  tabOff: '#a0646d',
+  // 袋の布地・縫い目・マス
+  canvas: '#f6ecdc',
+  stitch: '#d2b48e',
+  slot: '#fffaf0',
+  slotLine: '#e2cfae',
+  // 選んでいるマスの縁
+  brass: '#b8862b',
+  brassSoft: '#f6e2b0',
+  text: '#2e2420',
+  label: '#6a5648',
+  danger: '#a05050',
+  dangerText: '#8a3535',
+  up: '#1f6b3a',
+  down: '#a03030',
+  // 値札
+  priceTag: '#fbe6a6',
+  priceTagText: '#4a3208',
+  // 合成タブの鍛冶場
+  forge: '#2a2220',
+  forgeLine: '#4a3e38',
+  forgeSlot: '#3a302b',
+  forgeSlotLine: '#5a4a42',
+  forgeEmber: '#e0782a',
+  forgeEmberText: '#ffb27a',
+  forgeButton: '#b4501a',
+  forgeText: '#f3e6d8',
+  forgeLabel: '#d8c8b8',
+  forgeMuted: '#8a7a70',
+} as const
+
+// 白い箱の中の主な操作（募集開始・START・決定など）。見出しの帯と同じ緑
+export const panelPrimaryButtonSx = {
+  '&&': {
+    backgroundColor: homePanelColors.band,
+    backgroundImage: 'none',
+    // 枠付きのボタンと高さ・幅をそろえるため、同じ太さの枠を同じ色で付ける
+    border: `2px solid ${homePanelColors.band}`,
+    color: '#ffffff',
+    fontWeight: 800,
+    boxShadow: 'none',
+    transition: 'none',
+  },
+  '& .MuiTouchRipple-root': {
+    display: 'none',
+  },
+  // ホバーしても色を変えない
+  '&&:hover': {
+    backgroundColor: homePanelColors.band,
+    boxShadow: 'none',
+  },
+  '&&.Mui-disabled': {
+    backgroundColor: '#a9c9ad',
+    color: '#ffffff',
+    boxShadow: 'none',
+  },
+} as const
+
+// 白い箱の中の、主な操作の横に置く操作（参加制限・この配置で決定など）
+export const panelOutlinedButtonSx = {
+  '&&': {
+    backgroundColor: '#ffffff',
+    color: homePanelColors.band,
+    border: `2px solid ${homePanelColors.band}`,
+    fontWeight: 800,
+    transition: 'none',
+  },
+  '& .MuiTouchRipple-root': {
+    display: 'none',
+  },
+  // ホバーしても色を変えない
+  '&&:hover': {
+    backgroundColor: '#ffffff',
+  },
+  '&&.Mui-disabled': {
+    color: '#9fbfa3',
+    borderColor: '#c3dbc6',
+  },
+} as const
+
+// 白い箱の中の取り消し操作（CANCEL）。ホバーや押したときに見た目を変えない
+export const panelCancelButtonSx = {
+  '&&': {
+    backgroundColor: '#fff1ef',
+    backgroundImage: 'none',
+    border: '2px solid #d77a70',
+    color: '#9f2f24',
+    fontWeight: 800,
+    boxShadow: 'none',
+    transition: 'none',
+  },
+  '& .MuiTouchRipple-root': {
+    display: 'none',
+  },
+  '&&:hover': {
+    backgroundColor: '#fff1ef',
+    borderColor: '#d77a70',
+    boxShadow: 'none',
+  },
+  '&&.Mui-disabled': {
+    backgroundColor: '#f8ecea',
+    borderColor: '#dfb2ac',
+    color: '#bf8b84',
+  },
+} as const
+
+// スキル画面（魔導書）。表紙はこげ茶の革、ページは焦げ茶に生成りの文字
+export const skillPanelColors = {
+  topBand: '#4a2c17',
+  ground: '#ece3d3',
+  // 表紙の革と、その縁
+  cover: '#4a2c17',
+  coverDark: '#2b190c',
+  gold: '#c9a24a',
+  // ページ・選んでいる行・行の区切り
+  paper: '#2f2015',
+  rowSelected: '#553b27',
+  line: '#6b4e33',
+  ink: '#f1e4c8',
+  sub: '#bfa784',
+  grip: '#8a6a3c',
+  // 消費MP の結晶と数字
+  gem: '#6fb0ec',
+  mpText: '#cfe6ff',
+  // 1 番目の技の「消えてしまいます」の札
+  warning: '#b3261e',
+} as const
+
+// 転職画面（聖堂の藍）。上部の帯・地・白い箱の見出しの帯・舞台の上の名札
+export const jobChangePanelColors = {
+  topBand: '#23476d',
+  ground: '#f3f0e8',
+  band: '#2f5d8a',
+  bandDark: '#1f3f60',
+  soft: '#e6eef7',
+  gold: '#b8862b',
+  goldText: '#7a5510',
+  goldSoft: '#fbf1dc',
+  // 舞台の上の名札と札の金
+  plate: 'rgba(28, 52, 82, 0.9)',
+  plateGold: '#e8c46a',
+  text: '#24303d',
+  label: '#4f5b69',
+  divider: '#dfe4ea',
+  // 未解放の札
+  locked: '#f1eee8',
+  lockedBorder: '#ddd6c9',
+  lockedText: '#6f675b',
+  canUnlock: '#fffaf0',
 } as const

@@ -1,5 +1,6 @@
 import { Box, Stack, Typography } from '@mui/material'
 import { useAnnouncements } from '@/hooks/useAnnouncements'
+import { homePanelColors } from '@/constants/styles'
 import {
   announcementEmptyMessage,
   announcementErrorMessage,
@@ -7,7 +8,12 @@ import {
   formatAnnouncementDate,
 } from '@/lib/announcements'
 
-export default function AnnouncementList() {
+type AnnouncementListProps = {
+  // card：緑のカードで並べる（スマホのホームなど）／list：点線で区切った一覧（PC のホームの白い箱の中）
+  variant?: 'card' | 'list'
+}
+
+export default function AnnouncementList({ variant = 'card' }: AnnouncementListProps) {
   const { announcements, error, isLoading } = useAnnouncements()
 
   if (isLoading) {
@@ -26,6 +32,45 @@ export default function AnnouncementList() {
     <>
       {announcements.length === 0 ? (
         <Typography variant="body2">{announcementEmptyMessage}</Typography>
+      ) : variant === 'list' ? (
+        <Box>
+          {announcements.map((item) => (
+            <Box
+              key={item.id}
+              component="article"
+              sx={{ py: 1.75, borderBottom: `2px dotted ${homePanelColors.divider}`, '&:first-of-type': { pt: 0 } }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1.25 }}>
+                <Typography
+                  sx={{ fontSize: '1.0625rem', fontWeight: 700, lineHeight: 1.5, color: homePanelColors.band }}
+                >
+                  {item.title}
+                </Typography>
+                <Typography
+                  sx={{
+                    flexShrink: 0,
+                    fontSize: '0.8125rem',
+                    color: homePanelColors.label,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {formatAnnouncementDate(item.date)}
+                </Typography>
+              </Box>
+              <Typography
+                sx={{
+                  mt: 0.75,
+                  fontSize: '0.9375rem',
+                  lineHeight: 1.7,
+                  color: homePanelColors.text,
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                {item.body}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
       ) : (
         <Stack spacing={2}>
           {announcements.map((item) => (

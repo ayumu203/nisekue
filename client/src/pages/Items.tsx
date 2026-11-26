@@ -2,25 +2,18 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   CircularProgress,
-  Container,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Pagination,
-  Paper,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
-  Stack,
-  Tab,
-  Tabs,
-  TextField,
+  IconButton,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import useSWR, { useSWRConfig } from 'swr'
 import {
   createMarketListing,
@@ -33,34 +26,37 @@ import {
   synthesizeEquipment,
   useItem as consumeItem,
 } from '@/api/item'
-import { createPlayer, updatePlayerEquipment } from '@/api/player'
-import BeginnerGuide from '@/components/common/BeginnerGuide'
-import HomeNavIconButton from '@/components/common/HomeNavIconButton'
-import { ConsumableCard } from '@/components/items/ConsumableCard'
-import { EquipmentCard } from '@/components/items/EquipmentCard'
-import { ItemSummary } from '@/components/items/ItemSummary'
-import { ControlFrame, PageFrame, SectionFrame } from '@/components/items/ItemsLayout'
-import { itemInnerPanelSx, inputSx, tabsPaperSx, tabsSx } from '@/components/items/ItemsConstants'
-import { normalizeText, parsePositiveInteger } from '@/components/items/itemUtils'
-import { MarketCard } from '@/components/items/MarketCard'
+import { createPlayer, getPlayer, updatePlayerEquipment } from '@/api/player'
+import { BagPanel, ItemDetailPanel, MirrorPanel, type ListingDraft } from '@/components/items/BagTab'
+import { ForgeList, ForgePanel } from '@/components/items/ForgeTab'
+import {
+  canForge,
+  getForgeMaterials,
+  getForgeTarget,
+  getInventoryKey,
+  type ForgeGroup,
+} from '@/components/items/itemsLogic'
+import { ItemsTabs, type ItemsTabKey } from '@/components/items/ItemsParts'
+import {
+  compareStatusBonus,
+  getEquipmentBonus,
+  normalizeText,
+  parsePositiveInteger,
+} from '@/components/items/itemUtils'
+import { MarketList, PurchasePanel, type MarketCategoryFilter, type MarketTabKey } from '@/components/items/MarketTab'
+import HomeHeaderMenu from '@/components/home/HomeHeaderMenu'
+import { HomeFilledIcon, HomeIcon } from '@/components/home/HomeIcons'
+import { buildHomeMenu, type HomeMenuGroupKey, type HomeMenuItem } from '@/components/home/homeMenu'
+import { itemsPanelColors as colors } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
-import { outerPagePaperSx } from '@/constants/styles'
+import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
-import { beginnerGuides } from '@/lib/beginnerGuides'
+import { resolveCharacterAssetPath } from '@/lib/assets'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/items/Items.json'
 import type { InventoryItemView, ItemEquipmentView, ItemStackView, MarketListingView } from '@/schema/item'
 
 const PAGE_SIZE = 30
-
-type PrimaryTab = 'items' | 'market'
-type MarketTab = 'public' | 'mine'
-type MarketCategoryFilter = 'all' | 'Weapon' | 'Armor' | 'Item' | 'Map'
-
-function paginate<T>(items: T[], page: number): T[] {
-  const start = (page - 1) * PAGE_SIZE
-  return items.slice(start, start + PAGE_SIZE)
-}
 
 function matchesMarketSearch(listing: MarketListingView, searchText: string): boolean {
   if (!searchText) {
@@ -76,30 +72,63 @@ function matchesMarketCategory(listing: MarketListingView, category: MarketCateg
   return category === 'all' || listing.listingCategory === category
 }
 
+// 同じ装備の個体をまとめる（破損は合成に使えないので除く）。合成できるものを先に、名前順
+function buildForgeGroups(equipments: ItemEquipmentView[]): ForgeGroup[] {
+  const byId = new Map<number, ItemEquipmentView[]>()
+  for (const equipment of equipments) {
+    if (equipment.status === 'Broken') continue
+    const copies = byId.get(equipment.equipmentId) ?? []
+    copies.push(equipment)
+    byId.set(equipment.equipmentId, copies)
+  }
+
+  return [...byId.entries()]
+    .map(([equipmentId, copies]) => ({
+      equipmentId,
+      copies: [...copies].sort((a, b) => b.plusValue - a.plusValue),
+    }))
+    .sort((a, b) => {
+      const okDiff = Number(canForge(b)) - Number(canForge(a))
+      return okDiff !== 0 ? okDiff : a.copies[0].name.localeCompare(b.copies[0].name, 'ja')
+    })
+}
+
 export default function Items() {
   const { session, isLoading } = useAuth()
+  const theme = useTheme()
+  const isDesktop = useMediaQuery(theme.breakpoints.up('sm'), { noSsr: true })
+  const isWide = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true })
+  const { canUseDebug } = useDebugStatus()
   const { mutate: mutateCache } = useSWRConfig()
-  const [primaryTab, setPrimaryTab] = useState<PrimaryTab>('items')
-  const [marketTab, setMarketTab] = useState<MarketTab>('public')
+  const [openMenuGroup, setOpenMenuGroup] = useState<HomeMenuGroupKey | null>(null)
+
+  const [tab, setTab] = useState<ItemsTabKey>('bag')
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [busyKey, setBusyKey] = useState<string | null>(null)
+  // スマホで品物を選んだら、下の札までスクロールする
+  const [selectionCount, setSelectionCount] = useState(0)
+
+  // 持ち物
+  const [selectedBagKey, setSelectedBagKey] = useState<string | null>(null)
+  const [listingKey, setListingKey] = useState<string | null>(null)
+  const [listingDraft, setListingDraft] = useState<ListingDraft>({ unitPrice: '10', quantity: '1' })
+  const [pendingUseItem, setPendingUseItem] = useState<ItemStackView | null>(null)
+
+  // 合成
+  const [selectedForgeId, setSelectedForgeId] = useState<number | null>(null)
+  const [materialIndex, setMaterialIndex] = useState(0)
+
+  // マーケット
+  const [marketTab, setMarketTab] = useState<MarketTabKey>('public')
   const [marketPage, setMarketPage] = useState(1)
   const [myMarketPage, setMyMarketPage] = useState(1)
   const [marketSearch, setMarketSearch] = useState('')
   const [marketCategory, setMarketCategory] = useState<MarketCategoryFilter>('all')
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
-  const [busyKey, setBusyKey] = useState<string | null>(null)
-  const [listingEditorKey, setListingEditorKey] = useState<string | null>(null)
-  const [synthesizeTarget, setSynthesizeTarget] = useState<ItemEquipmentView | null>(null)
-  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null)
-  const [pendingUseItem, setPendingUseItem] = useState<ItemStackView | null>(null)
-  const [quantities, setQuantities] = useState<Record<string, string>>({})
-  const [unitPrices, setUnitPrices] = useState<Record<string, string>>({})
-  const errorAlertRef = useRef<HTMLDivElement | null>(null)
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(null)
+  const [purchaseQuantity, setPurchaseQuantity] = useState(1)
 
-  useMobileScrollToRef(errorAlertRef, {
-    enabled: feedback?.type === 'error',
-    offsetTop: 12,
-    trigger: feedback?.type === 'error' ? feedback.message : null,
-  })
+  const detailRef = useRef<HTMLDivElement | null>(null)
+  useMobileScrollToRef(detailRef, { enabled: selectionCount > 0, offsetTop: 12, trigger: selectionCount })
 
   const itemsSWRKey = session?.user.id ? ([`items`, session.user.id] as const) : null
   const {
@@ -153,78 +182,103 @@ export default function Items() {
     return getMyMarketListings(session.access_token)
   })
 
+  // 姿見に出すキャラの絵
+  const playerSWRKey = session?.user.id ? ([`items-player`, session.user.id] as const) : null
+  const { data: player } = useSWR(playerSWRKey, async () => {
+    if (!session?.access_token) {
+      throw new Error(locale.sessionInfoMissing)
+    }
+
+    return getPlayer(session.access_token)
+  })
+
   const equippedItems = useMemo(() => items?.equippedItems ?? [], [items])
+  const inventoryItems = useMemo(() => items?.inventoryItems ?? [], [items])
+  const equippedWeapon = equippedItems.find((item) => item.equipmentType === 'Weapon')
+  const equippedArmor = equippedItems.find((item) => item.equipmentType === 'Armor')
+
+  // ---- 持ち物 ----
+  // 空きマスは PC だけ（スマホは縦に長くなりすぎるため、所持数の表示だけにする）
+  const emptySlotCount = isDesktop && items ? Math.max(0, items.capacity - inventoryItems.length) : 0
+
+  // 選んだ品がなくなったら（使い切った・売ったなど）、袋の先頭の品を選び直す
+  const selectedBagItem: InventoryItemView | null = useMemo(() => {
+    const all: InventoryItemView[] = [...inventoryItems, ...equippedItems]
+    const found = selectedBagKey ? all.find((item) => getInventoryKey(item) === selectedBagKey) : undefined
+    return found ?? inventoryItems[0] ?? equippedItems[0] ?? null
+  }, [equippedItems, inventoryItems, selectedBagKey])
+  const selectedBagKeyResolved = selectedBagItem ? getInventoryKey(selectedBagItem) : null
+  const isSelectedEquipped =
+    selectedBagItem?.kind === 'equipment' &&
+    equippedItems.some((item) => item.playerEquipmentId === selectedBagItem.playerEquipmentId)
+
+  const statusChanges = useMemo(() => {
+    if (!selectedBagItem || selectedBagItem.kind !== 'equipment' || isSelectedEquipped) {
+      return null
+    }
+    const current = selectedBagItem.equipmentType === 'Weapon' ? equippedWeapon : equippedArmor
+    return compareStatusBonus(current ? getEquipmentBonus(current) : null, getEquipmentBonus(selectedBagItem))
+  }, [equippedArmor, equippedWeapon, isSelectedEquipped, selectedBagItem])
+
+  function selectBagItem(item: InventoryItemView): void {
+    setSelectedBagKey(getInventoryKey(item))
+    setListingKey(null)
+    setSelectionCount((count) => count + 1)
+  }
+
+  // ---- 合成 ----
+  const forgeGroups = useMemo(
+    () =>
+      buildForgeGroups([
+        ...equippedItems,
+        ...inventoryItems.filter((item): item is ItemEquipmentView => item.kind === 'equipment'),
+      ]),
+    [equippedItems, inventoryItems],
+  )
+  const selectedForgeGroup =
+    forgeGroups.find((group) => group.equipmentId === selectedForgeId && canForge(group)) ??
+    forgeGroups.find((group) => canForge(group)) ??
+    null
+  const forgeTarget = selectedForgeGroup ? getForgeTarget(selectedForgeGroup) : undefined
+  const forgeMaterials = selectedForgeGroup ? getForgeMaterials(selectedForgeGroup) : []
+  const forgeMaterial = forgeMaterials.length > 0 ? forgeMaterials[materialIndex % forgeMaterials.length] : undefined
+
+  // ---- マーケット ----
   const normalizedMarketSearch = useMemo(() => normalizeText(marketSearch), [marketSearch])
-
-  const inventoryEquipments = useMemo(() => {
-    return (items?.inventoryItems ?? []).filter((item): item is ItemEquipmentView => item.kind === 'equipment')
-  }, [items])
-
-  const inventoryConsumables = useMemo(() => {
-    return (items?.inventoryItems ?? []).filter((item): item is ItemStackView => item.kind === 'item')
-  }, [items])
-
-  const synthesizeSources = useMemo(() => {
-    if (!synthesizeTarget) return []
-    return [...equippedItems, ...inventoryEquipments].filter(
-      (item) =>
-        item.equipmentId === synthesizeTarget.equipmentId &&
-        item.playerEquipmentId !== synthesizeTarget.playerEquipmentId &&
-        item.status !== 'Broken',
-    )
-  }, [synthesizeTarget, equippedItems, inventoryEquipments])
-
-  const publicMarketListings = useMemo(
+  const currentMarketListings = useMemo(
     () =>
-      (marketListings ?? []).filter(
+      (marketTab === 'public' ? (marketListings ?? []) : (myListings ?? [])).filter(
         (item) => matchesMarketSearch(item, normalizedMarketSearch) && matchesMarketCategory(item, marketCategory),
       ),
-    [marketCategory, marketListings, normalizedMarketSearch],
+    [marketCategory, marketListings, marketTab, myListings, normalizedMarketSearch],
   )
-  const ownMarketListings = useMemo(
-    () =>
-      (myListings ?? []).filter(
-        (item) => matchesMarketSearch(item, normalizedMarketSearch) && matchesMarketCategory(item, marketCategory),
-      ),
-    [marketCategory, myListings, normalizedMarketSearch],
-  )
-
-  const currentMarketListings = marketTab === 'public' ? publicMarketListings : ownMarketListings
   const marketPageCount = Math.max(1, Math.ceil(currentMarketListings.length / PAGE_SIZE))
-  const visibleMarketPage = marketTab === 'public' ? marketPage : myMarketPage
-  const pagedMarketListings = useMemo(
-    () => paginate(currentMarketListings, visibleMarketPage),
-    [currentMarketListings, visibleMarketPage],
+  const visibleMarketPage = Math.min(marketTab === 'public' ? marketPage : myMarketPage, marketPageCount)
+  const pagedMarketListings = currentMarketListings.slice(
+    (visibleMarketPage - 1) * PAGE_SIZE,
+    visibleMarketPage * PAGE_SIZE,
   )
+  const selectedListing =
+    pagedMarketListings.find((listing) => listing.listingId === selectedListingId) ?? pagedMarketListings[0] ?? null
+  const clampedPurchaseQuantity = selectedListing
+    ? Math.min(Math.max(1, purchaseQuantity), Math.max(1, selectedListing.quantity))
+    : 1
 
-  useEffect(() => {
-    if (marketPage > Math.max(1, Math.ceil(publicMarketListings.length / PAGE_SIZE))) {
-      setMarketPage(1)
-    }
-  }, [marketPage, publicMarketListings.length])
+  function resetMarketPage(): void {
+    setMarketPage(1)
+    setMyMarketPage(1)
+  }
 
-  useEffect(() => {
-    if (myMarketPage > Math.max(1, Math.ceil(ownMarketListings.length / PAGE_SIZE))) {
-      setMyMarketPage(1)
-    }
-  }, [myMarketPage, ownMarketListings.length])
-
+  // ---- 操作 ----
   async function refreshAll(): Promise<void> {
     await Promise.all([
       mutateItems(),
       mutateMarket(),
       mutateMyListings(),
       session?.user.id ? mutateCache([`player`, session.user.id]) : Promise.resolve(),
+      session?.user.id ? mutateCache([`items-player`, session.user.id]) : Promise.resolve(),
       mutateCache([`quest-stages`]),
     ])
-  }
-
-  function setQuantityValue(key: string, value: string): void {
-    setQuantities((current) => ({ ...current, [key]: value }))
-  }
-
-  function setUnitPriceValue(key: string, value: string): void {
-    setUnitPrices((current) => ({ ...current, [key]: value }))
   }
 
   async function runAction(actionKey: string, action: () => Promise<{ message: string }>): Promise<boolean> {
@@ -259,51 +313,22 @@ export default function Items() {
     setPendingUseItem(null)
 
     await runAction(`use:${item.itemStackId}`, () =>
-      consumeItem(
-        item.itemStackId,
-        { quantity: parsePositiveInteger(quantities[item.itemStackId], 1) },
-        session.access_token,
-      ),
+      consumeItem(item.itemStackId, { quantity: 1 }, session.access_token),
     )
   }
 
-  async function handleDeleteItem(item: ItemStackView): Promise<void> {
+  async function handleDelete(item: InventoryItemView): Promise<void> {
     if (!session?.access_token) return
 
-    await runAction(`delete-item:${item.itemStackId}`, () =>
-      deleteItemStack(
-        item.itemStackId,
-        { quantity: parsePositiveInteger(quantities[`delete:${item.itemStackId}`] ?? quantities[item.itemStackId], 1) },
-        session.access_token,
-      ),
-    )
-  }
-
-  async function handleDeleteEquipment(item: ItemEquipmentView): Promise<void> {
-    if (!session?.access_token) return
-
-    await runAction(`delete-equipment:${item.playerEquipmentId}`, () =>
-      deleteEquipment(item.playerEquipmentId, session.access_token),
-    )
-  }
-
-  async function handleSynthesize(item: ItemEquipmentView): Promise<void> {
-    setSynthesizeTarget(item)
-    setSelectedSourceId(null)
-  }
-
-  async function handleSynthesizeConfirm(): Promise<void> {
-    if (!session?.access_token || !synthesizeTarget || !selectedSourceId) return
-
-    await runAction(`synthesize:${synthesizeTarget.playerEquipmentId}`, () =>
-      synthesizeEquipment(
-        synthesizeTarget.playerEquipmentId,
-        { sourcePlayerEquipmentId: selectedSourceId },
-        session.access_token,
-      ),
-    )
-    setSynthesizeTarget(null)
-    setSelectedSourceId(null)
+    if (item.kind === 'item') {
+      await runAction(`delete-item:${item.itemStackId}`, () =>
+        deleteItemStack(item.itemStackId, { quantity: 1 }, session.access_token),
+      )
+    } else {
+      await runAction(`delete-equipment:${item.playerEquipmentId}`, () =>
+        deleteEquipment(item.playerEquipmentId, session.access_token),
+      )
+    }
   }
 
   async function handleEquip(item: ItemEquipmentView): Promise<void> {
@@ -311,52 +336,56 @@ export default function Items() {
 
     await runAction(`equip:${item.playerEquipmentId}`, () =>
       updatePlayerEquipment(
-        {
-          equipmentType: item.equipmentType,
-          playerEquipmentId: item.playerEquipmentId,
-        },
+        { equipmentType: item.equipmentType, playerEquipmentId: item.playerEquipmentId },
         session.access_token,
       ),
     )
   }
 
-  async function handleListInventoryItem(item: InventoryItemView): Promise<void> {
+  async function handleList(item: InventoryItemView): Promise<void> {
     if (!session?.access_token) return
 
-    const key = item.kind === 'item' ? item.itemStackId : item.playerEquipmentId
-    const succeeded = await runAction(`list:${key}`, () =>
+    const unitPrice = parsePositiveInteger(listingDraft.unitPrice, 10)
+    const succeeded = await runAction(`list:${getInventoryKey(item)}`, () =>
       createMarketListing(
         item.kind === 'item'
           ? {
               itemStackId: item.itemStackId,
               playerEquipmentId: null,
-              quantity: parsePositiveInteger(quantities[key], 1),
-              unitPrice: parsePositiveInteger(unitPrices[`price:${key}`], 10),
+              quantity: parsePositiveInteger(listingDraft.quantity, 1),
+              unitPrice,
             }
-          : {
-              playerEquipmentId: item.playerEquipmentId,
-              itemStackId: null,
-              quantity: 1,
-              unitPrice: parsePositiveInteger(unitPrices[`price:${key}`], 10),
-            },
+          : { playerEquipmentId: item.playerEquipmentId, itemStackId: null, quantity: 1, unitPrice },
         session.access_token,
       ),
     )
     if (succeeded) {
-      setListingEditorKey(null)
+      setListingKey(null)
     }
+  }
+
+  async function handleSynthesize(): Promise<void> {
+    if (!session?.access_token || !forgeTarget || !forgeMaterial) return
+
+    await runAction(`synthesize:${forgeTarget.playerEquipmentId}`, () =>
+      synthesizeEquipment(
+        forgeTarget.playerEquipmentId,
+        { sourcePlayerEquipmentId: forgeMaterial.playerEquipmentId },
+        session.access_token,
+      ),
+    )
+    setMaterialIndex(0)
   }
 
   async function handlePurchase(listing: MarketListingView): Promise<void> {
     if (!session?.access_token) return
 
-    await runAction(`purchase:${listing.listingId}`, () =>
-      purchaseMarketListing(
-        listing.listingId,
-        { quantity: parsePositiveInteger(quantities[`purchase:${listing.listingId}`], 1) },
-        session.access_token,
-      ),
+    const succeeded = await runAction(`purchase:${listing.listingId}`, () =>
+      purchaseMarketListing(listing.listingId, { quantity: clampedPurchaseQuantity }, session.access_token),
     )
+    if (succeeded) {
+      setPurchaseQuantity(1)
+    }
   }
 
   if (isLoading) {
@@ -367,367 +396,237 @@ export default function Items() {
     )
   }
 
+  // PC のヘッダーメニュー。ホームと同じ項目の先頭に「ホーム」を足し、今いるアイテムを帯の色で示す
+  const homeMenu = buildHomeMenu({
+    userId: session?.user.id ?? null,
+    tutorialStep: null,
+    showRebirthTutorial: false,
+    showSurveyGuide: false,
+    onSurveyClick: () => {},
+    canUseDebug,
+  })
+  const homeMenuItem: HomeMenuItem = { key: 'home', label: locale.backToHome, icon: <HomeIcon />, to: '/' }
+
+  // スマホはヘッダーがないので、タブの左にホームへ戻るボタンを置く
+  const mobileHomeButton = isDesktop ? undefined : (
+    <IconButton component={Link} to="/" aria-label={locale.backToHome} sx={{ color: '#ffffff', width: 44, height: 44 }}>
+      <HomeFilledIcon />
+    </IconButton>
+  )
+
+  const busy = busyKey !== null
+  const fill = isWide
+
+  let leftPanel
+  let rightPanel
+  if (tab === 'bag') {
+    leftPanel = (
+      <BagPanel
+        items={inventoryItems}
+        emptySlotCount={emptySlotCount}
+        selectedKey={selectedBagKeyResolved}
+        onSelect={selectBagItem}
+        usedSlots={items?.usedSlots}
+        capacity={items?.capacity}
+        gold={items?.gold}
+        isLoading={isItemsLoading}
+        fill={fill}
+      />
+    )
+    rightPanel = (
+      <>
+        <MirrorPanel
+          weapon={equippedWeapon}
+          armor={equippedArmor}
+          playerImageSrc={resolveCharacterAssetPath(player?.imagePath ?? null)}
+          selectedKey={selectedBagKeyResolved}
+          onSelect={selectBagItem}
+          changes={statusChanges}
+        />
+        <ItemDetailPanel
+          item={selectedBagItem}
+          isEquipped={isSelectedEquipped}
+          isListing={listingKey !== null && listingKey === selectedBagKeyResolved}
+          listingDraft={listingDraft}
+          onListingDraftChange={setListingDraft}
+          onEquip={() => selectedBagItem?.kind === 'equipment' && void handleEquip(selectedBagItem)}
+          onUse={() => selectedBagItem?.kind === 'item' && handleUseItem(selectedBagItem)}
+          onStartListing={() => {
+            setListingDraft({ unitPrice: '10', quantity: '1' })
+            setListingKey(selectedBagKeyResolved)
+          }}
+          onCancelListing={() => setListingKey(null)}
+          onList={() => selectedBagItem && void handleList(selectedBagItem)}
+          onDelete={() => selectedBagItem && void handleDelete(selectedBagItem)}
+          busy={busy}
+          fill={fill}
+        />
+      </>
+    )
+  } else if (tab === 'forge') {
+    leftPanel = (
+      <ForgeList
+        groups={forgeGroups}
+        selectedId={selectedForgeGroup?.equipmentId ?? null}
+        onSelect={(group) => {
+          setSelectedForgeId(group.equipmentId)
+          setMaterialIndex(0)
+          setSelectionCount((count) => count + 1)
+        }}
+        isLoading={isItemsLoading}
+        fill={fill}
+      />
+    )
+    rightPanel = (
+      <ForgePanel
+        target={forgeTarget}
+        material={forgeMaterial}
+        gold={items?.gold}
+        canChangeMaterial={forgeMaterials.length > 1}
+        onChangeMaterial={() => setMaterialIndex((index) => index + 1)}
+        onSynthesize={() => void handleSynthesize()}
+        busy={busy}
+        fill={fill}
+      />
+    )
+  } else {
+    leftPanel = (
+      <MarketList
+        tab={marketTab}
+        onTabChange={(next) => {
+          setMarketTab(next)
+          setSelectedListingId(null)
+        }}
+        search={marketSearch}
+        onSearchChange={(value) => {
+          setMarketSearch(value)
+          resetMarketPage()
+        }}
+        category={marketCategory}
+        onCategoryChange={(value) => {
+          setMarketCategory(value)
+          resetMarketPage()
+        }}
+        listings={pagedMarketListings}
+        selectedId={selectedListing?.listingId ?? null}
+        onSelect={(listing) => {
+          setSelectedListingId(listing.listingId)
+          setPurchaseQuantity(1)
+          setSelectionCount((count) => count + 1)
+        }}
+        page={visibleMarketPage}
+        pageCount={marketPageCount}
+        onPageChange={(next) => (marketTab === 'public' ? setMarketPage(next) : setMyMarketPage(next))}
+        isLoading={marketTab === 'public' ? isMarketLoading : isMyListingsLoading}
+        isFiltered={normalizedMarketSearch !== '' || marketCategory !== 'all'}
+        fill={fill}
+      />
+    )
+    rightPanel = (
+      <PurchasePanel
+        listing={selectedListing}
+        isMine={marketTab === 'mine'}
+        quantity={clampedPurchaseQuantity}
+        onQuantityChange={setPurchaseQuantity}
+        gold={items?.gold}
+        onPurchase={() => selectedListing && void handlePurchase(selectedListing)}
+        busy={busy}
+        fill={fill}
+      />
+    )
+  }
+
+  const loadError = itemsError ?? (tab === 'market' ? (marketTab === 'public' ? marketError : myListingsError) : null)
+
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 6 } }}>
-      <Paper elevation={2} sx={outerPagePaperSx}>
-        <Stack spacing={2.5}>
-          <PageFrame>
-            <ControlFrame>
-              <Stack spacing={1.5}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
-                  <HomeNavIconButton ariaLabel={locale.backToHome} />
-                  <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.items} inverted />
-                </Stack>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}>
-                    ITEM CONTROL
-                  </Typography>
-                  <Typography variant="h4" fontWeight={900} color="#ffffff">
-                    {locale.title}
-                  </Typography>
-                </Box>
-              </Stack>
-            </ControlFrame>
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: `linear-gradient(${colors.topBand}, ${colors.topBand}) top / 100% ${isDesktop ? 260 : 160}px no-repeat, ${colors.ground}`,
+        fontFamily: 'inherit',
+      }}
+    >
+      {isDesktop ? (
+        <HomeHeaderMenu
+          primary={[homeMenuItem, ...homeMenu.primary]}
+          groups={homeMenu.groups}
+          openGroup={openMenuGroup}
+          lockedGroup={null}
+          onToggleGroup={(key) => setOpenMenuGroup((current) => (current === key ? null : key))}
+          onCloseGroup={() => setOpenMenuGroup(null)}
+          currentKey="items"
+          currentColor={colors.leather}
+        />
+      ) : null}
+      <Box
+        sx={{
+          flex: 1,
+          // PC は袋の中でスクロールさせるため、画面の高さに合わせる（低すぎる画面ではページごとスクロール）
+          height: { md: 'calc(100dvh - 57px)' },
+          minHeight: { md: 720 },
+          boxSizing: 'border-box',
+          px: { xs: 1.5, sm: 4 },
+          pt: { xs: 1.5, sm: 2.5 },
+          pb: { xs: 3, sm: 4 },
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1.5,
+        }}
+      >
+        {feedback ? <Alert severity={feedback.type}>{feedback.message}</Alert> : null}
+        {loadError ? <Alert severity="warning">{loadError.message}</Alert> : null}
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: 'grid',
+            gap: { xs: 2.5, md: 3.5 },
+            gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 1fr) 520px', lg: 'minmax(0, 1fr) 620px' },
+            alignContent: { xs: 'start', md: 'stretch' },
+          }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
+            <ItemsTabs value={tab} onChange={setTab} startAction={mobileHomeButton} />
+            {leftPanel}
+          </Box>
+          <Box
+            ref={detailRef}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2.5,
+              minHeight: 0,
+              minWidth: 0,
+              pb: '6px',
+            }}
+          >
+            {rightPanel}
+          </Box>
+        </Box>
+      </Box>
 
-            {feedback ? (
-              <Box ref={feedback.type === 'error' ? errorAlertRef : undefined}>
-                <Alert severity={feedback.type}>{feedback.message}</Alert>
-              </Box>
-            ) : null}
-            {itemsError ? <Alert severity="warning">{itemsError.message}</Alert> : null}
-            {marketError ? <Alert severity="warning">{marketError.message}</Alert> : null}
-            {myListingsError ? <Alert severity="warning">{myListingsError.message}</Alert> : null}
-
-            <Dialog open={synthesizeTarget !== null} onClose={() => setSynthesizeTarget(null)} maxWidth="xs" fullWidth>
-              <DialogTitle>合成素材の選択</DialogTitle>
-              <DialogContent>
-                {synthesizeSources.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    合成素材として使用できる装備がありません。
-                  </Typography>
-                ) : (
-                  <RadioGroup
-                    value={selectedSourceId ?? ''}
-                    onChange={(event) => setSelectedSourceId(event.target.value)}
-                  >
-                    {synthesizeSources.map((source) => (
-                      <FormControlLabel
-                        key={source.playerEquipmentId}
-                        value={source.playerEquipmentId}
-                        control={<Radio />}
-                        label={`${source.name}${source.plusValue > 0 ? ` (+${source.plusValue})` : ''}`}
-                      />
-                    ))}
-                  </RadioGroup>
-                )}
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setSynthesizeTarget(null)} disabled={busyKey !== null}>
-                  キャンセル
-                </Button>
-                <Button
-                  onClick={() => void handleSynthesizeConfirm()}
-                  disabled={busyKey !== null || selectedSourceId === null || synthesizeSources.length === 0}
-                  variant="contained"
-                >
-                  合成
-                </Button>
-              </DialogActions>
-            </Dialog>
-
-            <Dialog open={pendingUseItem !== null} onClose={() => setPendingUseItem(null)} maxWidth="xs" fullWidth>
-              <DialogTitle>{locale.useConfirmTitle}</DialogTitle>
-              <DialogContent>
-                <Typography variant="body2">
-                  {locale.useConfirmMessage.replace('{{name}}', pendingUseItem?.name ?? '')}
-                </Typography>
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => setPendingUseItem(null)} disabled={busyKey !== null}>
-                  {locale.actionCancel}
-                </Button>
-                <Button
-                  onClick={() => pendingUseItem && void handleUseItemConfirmed(pendingUseItem)}
-                  disabled={busyKey !== null}
-                  variant="contained"
-                >
-                  {locale.useConfirmAction}
-                </Button>
-              </DialogActions>
-            </Dialog>
-
-            <ControlFrame>
-              <Stack spacing={2}>
-                <ItemSummary usedSlots={items?.usedSlots} capacity={items?.capacity} gold={items?.gold} />
-
-                <Paper variant="outlined" sx={tabsPaperSx}>
-                  <Tabs
-                    value={primaryTab}
-                    onChange={(_, value: PrimaryTab) => setPrimaryTab(value)}
-                    variant="fullWidth"
-                    sx={tabsSx}
-                  >
-                    <Tab value="items" label={locale.itemsTab} />
-                    <Tab value="market" label={locale.marketTab} />
-                  </Tabs>
-                </Paper>
-              </Stack>
-            </ControlFrame>
-
-            {primaryTab === 'items' ? (
-              <Stack spacing={2}>
-                <SectionFrame title={locale.equippedTitle}>
-                  <Stack spacing={2}>
-                    {isItemsLoading ? (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <CircularProgress size={16} />
-                        <Typography variant="body2">{locale.loading}</Typography>
-                      </Stack>
-                    ) : equippedItems.length > 0 ? (
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
-                          gap: 1.5,
-                        }}
-                      >
-                        {equippedItems.map((item) => (
-                          <EquipmentCard
-                            key={item.playerEquipmentId}
-                            item={item}
-                            quantityValue="1"
-                            unitPriceValue="10"
-                            onQuantityChange={() => undefined}
-                            onUnitPriceChange={() => undefined}
-                            onSynthesize={() => undefined}
-                            onDelete={() => undefined}
-                            onList={() => undefined}
-                            onStartListing={() => undefined}
-                            onCancelListing={() => undefined}
-                            actionDisabled
-                            showActions={false}
-                          />
-                        ))}
-                      </Box>
-                    ) : (
-                      <Typography variant="body2">{locale.emptyEquipped}</Typography>
-                    )}
-                  </Stack>
-                </SectionFrame>
-
-                <SectionFrame title={locale.inventoryEquipmentsTitle}>
-                  <Stack spacing={2}>
-                    {isItemsLoading ? (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <CircularProgress size={16} />
-                        <Typography variant="body2">{locale.loading}</Typography>
-                      </Stack>
-                    ) : inventoryEquipments.length > 0 ? (
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: {
-                            xs: 'repeat(2, minmax(0, 1fr))',
-                            sm: 'repeat(3, minmax(0, 1fr))',
-                            xl: 'repeat(4, minmax(0, 1fr))',
-                          },
-                          gap: 1.25,
-                        }}
-                      >
-                        {inventoryEquipments.map((item) => {
-                          const key = item.playerEquipmentId
-                          return (
-                            <EquipmentCard
-                              key={key}
-                              item={item}
-                              quantityValue={quantities[key] ?? '1'}
-                              unitPriceValue={unitPrices[`price:${key}`] ?? '10'}
-                              onQuantityChange={(value) => setQuantityValue(key, value)}
-                              onUnitPriceChange={(value) => setUnitPriceValue(`price:${key}`, value)}
-                              onSynthesize={() => void handleSynthesize(item)}
-                              onDelete={() => void handleDeleteEquipment(item)}
-                              onList={() => void handleListInventoryItem(item)}
-                              onStartListing={() => setListingEditorKey(key)}
-                              onCancelListing={() => setListingEditorKey(null)}
-                              onEquip={() => void handleEquip(item)}
-                              actionDisabled={busyKey !== null}
-                              isListingMode={listingEditorKey === key}
-                            />
-                          )
-                        })}
-                      </Box>
-                    ) : (
-                      <Typography variant="body2">{locale.emptyInventory}</Typography>
-                    )}
-                  </Stack>
-                </SectionFrame>
-
-                <SectionFrame title={locale.inventoryConsumablesTitle}>
-                  <Stack spacing={2}>
-                    {isItemsLoading ? (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <CircularProgress size={16} />
-                        <Typography variant="body2">{locale.loading}</Typography>
-                      </Stack>
-                    ) : inventoryConsumables.length > 0 ? (
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: {
-                            xs: 'repeat(2, minmax(0, 1fr))',
-                            sm: 'repeat(3, minmax(0, 1fr))',
-                            xl: 'repeat(4, minmax(0, 1fr))',
-                          },
-                          gap: 1.25,
-                        }}
-                      >
-                        {inventoryConsumables.map((item) => {
-                          const key = item.itemStackId
-                          return (
-                            <ConsumableCard
-                              key={key}
-                              item={item}
-                              quantityValue={quantities[key] ?? '1'}
-                              unitPriceValue={unitPrices[`price:${key}`] ?? '10'}
-                              onQuantityChange={(value) => setQuantityValue(key, value)}
-                              onUnitPriceChange={(value) => setUnitPriceValue(`price:${key}`, value)}
-                              onUse={() => void handleUseItem(item)}
-                              onDelete={() => void handleDeleteItem(item)}
-                              onList={() => void handleListInventoryItem(item)}
-                              onStartListing={() => setListingEditorKey(key)}
-                              onCancelListing={() => setListingEditorKey(null)}
-                              actionDisabled={busyKey !== null}
-                              isListingMode={listingEditorKey === key}
-                            />
-                          )
-                        })}
-                      </Box>
-                    ) : (
-                      <Typography variant="body2">{locale.emptyInventory}</Typography>
-                    )}
-                  </Stack>
-                </SectionFrame>
-              </Stack>
-            ) : (
-              <Stack spacing={2}>
-                <ControlFrame>
-                  <Stack spacing={2}>
-                    <Paper variant="outlined" sx={{ ...itemInnerPanelSx, p: 2, borderRadius: 3 }}>
-                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-                        <TextField
-                          label={locale.searchLabel}
-                          placeholder={locale.searchPlaceholderMarket}
-                          value={marketSearch}
-                          onChange={(event) => {
-                            setMarketSearch(event.target.value)
-                            setMarketPage(1)
-                            setMyMarketPage(1)
-                          }}
-                          fullWidth
-                          sx={inputSx}
-                        />
-                      </Stack>
-                      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        {(
-                          [
-                            ['all', locale.categoryAll],
-                            ['Weapon', locale.categoryWeapon],
-                            ['Armor', locale.categoryArmor],
-                            ['Item', locale.categoryItem],
-                            ['Map', locale.categoryMap],
-                          ] as const
-                        ).map(([value, label]) => (
-                          <Chip
-                            key={value}
-                            label={label}
-                            color={marketCategory === value ? 'primary' : 'default'}
-                            variant={marketCategory === value ? 'filled' : 'outlined'}
-                            onClick={() => {
-                              setMarketCategory(value)
-                              setMarketPage(1)
-                              setMyMarketPage(1)
-                            }}
-                          />
-                        ))}
-                      </Stack>
-                    </Paper>
-
-                    <Paper variant="outlined" sx={tabsPaperSx}>
-                      <Tabs
-                        value={marketTab}
-                        onChange={(_, value: MarketTab) => {
-                          setMarketTab(value)
-                        }}
-                        variant="fullWidth"
-                        sx={tabsSx}
-                      >
-                        <Tab value="public" label={locale.publicMarketTab} />
-                        <Tab value="mine" label={locale.myListingsTab} />
-                      </Tabs>
-                    </Paper>
-                  </Stack>
-                </ControlFrame>
-
-                <SectionFrame title={marketTab === 'public' ? locale.marketTitle : locale.myListingsTitle}>
-                  <Stack spacing={2}>
-                    {(marketTab === 'public' ? isMarketLoading : isMyListingsLoading) ? (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <CircularProgress size={16} />
-                        <Typography variant="body2">{locale.marketLoading}</Typography>
-                      </Stack>
-                    ) : pagedMarketListings.length > 0 ? (
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: {
-                            xs: 'repeat(2, minmax(0, 1fr))',
-                            sm: 'repeat(3, minmax(0, 1fr))',
-                            xl: 'repeat(4, minmax(0, 1fr))',
-                          },
-                          gap: 1.25,
-                        }}
-                      >
-                        {pagedMarketListings.map((listing) => (
-                          <MarketCard
-                            key={listing.listingId}
-                            listing={listing}
-                            quantityValue={quantities[`purchase:${listing.listingId}`] ?? '1'}
-                            onQuantityChange={(value) => setQuantityValue(`purchase:${listing.listingId}`, value)}
-                            onPurchase={marketTab === 'public' ? () => void handlePurchase(listing) : undefined}
-                            actionDisabled={busyKey !== null}
-                            showSeller={marketTab === 'public'}
-                          />
-                        ))}
-                      </Box>
-                    ) : (
-                      <Typography variant="body2">
-                        {normalizedMarketSearch ? locale.noSearchResults : locale.emptyMarket}
-                      </Typography>
-                    )}
-
-                    {currentMarketListings.length > PAGE_SIZE ? (
-                      <Stack alignItems="center">
-                        <Pagination
-                          page={visibleMarketPage}
-                          count={marketPageCount}
-                          color="primary"
-                          onChange={(_, nextPage) => {
-                            if (marketTab === 'public') {
-                              setMarketPage(nextPage)
-                            } else {
-                              setMyMarketPage(nextPage)
-                            }
-                          }}
-                        />
-                      </Stack>
-                    ) : null}
-                  </Stack>
-                </SectionFrame>
-              </Stack>
-            )}
-          </PageFrame>
-        </Stack>
-      </Paper>
-    </Container>
+      <Dialog open={pendingUseItem !== null} onClose={() => setPendingUseItem(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>{locale.useConfirmTitle}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            {locale.useConfirmMessage.replace('{{name}}', pendingUseItem?.name ?? '')}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingUseItem(null)} disabled={busy}>
+            {locale.actionCancel}
+          </Button>
+          <Button
+            onClick={() => pendingUseItem && void handleUseItemConfirmed(pendingUseItem)}
+            disabled={busy}
+            variant="contained"
+          >
+            {locale.useConfirmAction}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   )
 }
