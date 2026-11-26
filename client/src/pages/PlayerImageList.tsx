@@ -5,6 +5,7 @@ import { outerPagePaperSx } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import { PLAYER_IMAGE_OPTIONS } from '@/lib/playerImages'
 import locale from '../../locale/player-image-list/PlayerImageList.json'
+import { palette, withAlpha } from '@/theme/tokens'
 
 export default function PlayerImageList() {
   return (
@@ -58,7 +59,7 @@ export default function PlayerImageList() {
                     width: '100%',
                     aspectRatio: '338 / 350',
                     borderRadius: 2,
-                    bgcolor: 'rgba(255,255,255,0.72)',
+                    bgcolor: withAlpha(palette.white, 0.75),
                     border: '1px solid',
                     borderColor: 'divider',
                     overflow: 'hidden',

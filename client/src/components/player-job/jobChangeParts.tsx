@@ -1,7 +1,7 @@
 import { Box, LinearProgress, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { jobChangePanelColors as colors } from '@/constants/styles'
-import { font } from '@/theme/tokens'
+import { font, palette } from '@/theme/tokens'
 
 // 舞台の上の札（現在の職業・MASTER・未解放）
 export function PlateChip({ children }: { children: ReactNode }) {
@@ -35,7 +35,7 @@ export function InfoChip({
   const toneSx = {
     soft: { color: colors.bandDark, backgroundColor: colors.soft },
     gold: { color: colors.goldText, backgroundColor: colors.goldSoft, border: `1px solid ${colors.gold}` },
-    band: { color: '#ffffff', backgroundColor: colors.band },
+    band: { color: palette.white, backgroundColor: colors.band },
     mute: { color: colors.label, backgroundColor: colors.locked },
   }[tone]
 
@@ -95,7 +95,7 @@ export function ExpBar({ ratio, label }: { ratio: number; label: string }) {
       sx={{
         height: 10,
         borderRadius: 999,
-        backgroundColor: '#ece6da',
+        backgroundColor: palette.cream,
         '& .MuiLinearProgress-bar': { backgroundColor: colors.gold, borderRadius: 999 },
       }}
     />

@@ -2,6 +2,7 @@ import { type z } from 'zod'
 import type { PlayerMoveSlot } from '@/schema/player'
 import { moveAilmentTypeSchema, moveBuffStatSchema, moveEffectSummarySchema } from '@/schema/player'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
+import { palette } from '@/theme/tokens'
 
 type MoveEffectSummary = z.infer<typeof moveEffectSummarySchema>
 type BuffStat = z.infer<typeof moveBuffStatSchema>
@@ -10,16 +11,16 @@ export type MoveElementKey = NonNullable<PlayerMoveSlot['elementType']> | 'NoEle
 
 // 属性ごとの紋章の色と名前。属性のない補助スキルは緑（回復役らしさ）
 export const elementStyles: Record<MoveElementKey, { color: string; label: string | null }> = {
-  Strike: { color: '#6d4c41', label: '打属性' },
-  Slash: { color: '#8e24aa', label: '斬属性' },
-  Pierce: { color: '#546e7a', label: '突属性' },
-  Fire: { color: '#d84315', label: '火属性' },
-  Water: { color: '#1e6fc0', label: '水属性' },
-  Earth: { color: '#9a6532', label: '土属性' },
-  Wind: { color: '#167f74', label: '風属性' },
-  Holy: { color: '#d4a20f', label: '聖属性' },
-  None: { color: '#7a7a7a', label: '無属性' },
-  NoElement: { color: '#2f9a5a', label: null },
+  Strike: { color: palette.brown900, label: '打属性' },
+  Slash: { color: palette.purple, label: '斬属性' },
+  Pierce: { color: palette.teal700, label: '突属性' },
+  Fire: { color: palette.red700, label: '火属性' },
+  Water: { color: palette.purple, label: '水属性' },
+  Earth: { color: palette.brown500, label: '土属性' },
+  Wind: { color: palette.teal700, label: '風属性' },
+  Holy: { color: palette.yellow, label: '聖属性' },
+  None: { color: palette.gray600, label: '無属性' },
+  NoElement: { color: palette.green400, label: null },
 }
 
 export function resolveElementKey(slot: PlayerMoveSlot): MoveElementKey {
@@ -27,9 +28,9 @@ export function resolveElementKey(slot: PlayerMoveSlot): MoveElementKey {
 }
 
 export const categoryStyles: Record<NonNullable<PlayerMoveSlot['category']>, { color: string; label: string }> = {
-  Attack: { color: '#c0392b', label: '攻撃' },
-  Support: { color: '#2e7d32', label: '補助' },
-  Hybrid: { color: '#b26a00', label: '複合' },
+  Attack: { color: palette.red700, label: '攻撃' },
+  Support: { color: palette.green400, label: '補助' },
+  Hybrid: { color: palette.gold700, label: '複合' },
 }
 
 export function resolveTargetLabel(targetType: PlayerMoveSlot['targetType']): string | null {

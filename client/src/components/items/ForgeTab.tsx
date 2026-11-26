@@ -6,7 +6,7 @@ import { ActionButton, BagFrame, CoinIcon, DoubleFrame, ForgeTabIcon, FrameHeadi
 import { formatGold, formatPlusValue, getSynthesisCost } from './itemUtils'
 import locale from '../../../locale/items/Items.json'
 import type { ItemEquipmentView } from '@/schema/item'
-import { font } from '@/theme/tokens'
+import { font, palette } from '@/theme/tokens'
 
 export function ForgeList({
   groups,
@@ -98,8 +98,8 @@ export function ForgeList({
                       display: 'grid',
                       placeItems: 'center',
                       borderRadius: '8px',
-                      backgroundColor: ok ? colors.leatherDark : '#d9cbb5',
-                      color: '#ffffff',
+                      backgroundColor: ok ? colors.leatherDark : palette.brown200,
+                      color: palette.white,
                       fontSize: font.sm,
                       fontWeight: 800,
                     }}
@@ -165,7 +165,7 @@ function ForgeSlot({ label, item, after = false }: { label: string; item?: ItemE
         sx={{
           fontSize: { xs: font.sm, sm: font.lg },
           fontWeight: 800,
-          color: '#ffffff',
+          color: palette.white,
           textAlign: 'center',
           minHeight: '1.5em',
         }}
@@ -236,7 +236,7 @@ export function ForgePanel({
         <Box component="span" sx={{ fontSize: font.md, fontWeight: 800, color: colors.forgeLabel }}>
           {locale.plusValueLabel}
         </Box>
-        <Box component="span" sx={{ fontSize: font.display, fontWeight: 800, color: '#ffffff' }}>
+        <Box component="span" sx={{ fontSize: font.display, fontWeight: 800, color: palette.white }}>
           {target ? `+${target.plusValue}` : '-'}
         </Box>
         <Box component="span" aria-hidden="true" sx={{ fontSize: font.xxl, color: colors.forgeLabel }}>

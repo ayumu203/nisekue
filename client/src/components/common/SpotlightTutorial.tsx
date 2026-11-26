@@ -8,7 +8,7 @@ import { resolvePublicAssetPath } from '@/lib/assets'
 import { completeTutorial } from '@/lib/tutorial'
 import tutorialLocale from '../../../locale/tutorial/Tutorial.json'
 import { getGuidePortraitPlacement, TUTORIAL_GUIDES, type TutorialGuideId } from './tutorialGuides'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type TargetRect = {
   top: number
@@ -32,13 +32,13 @@ type SpotlightTutorialProps = {
 }
 
 // 実際の画面（歯車ボタン・外枠）の配色に合わせる
-const WINDOW_COLOR = '#93602c'
-const WINDOW_OUTLINE_COLOR = '#6e4415'
-const WINDOW_BORDER_COLOR = '#ffffff'
-const ACCENT_COLOR = '#ffcc00'
-const ACCENT_TEXT_COLOR = '#4f392c'
-const BUBBLE_COLOR = '#fffaf0'
-const BUBBLE_TEXT_COLOR = '#3d2a1e'
+const WINDOW_COLOR = palette.brown500
+const WINDOW_OUTLINE_COLOR = palette.brown500
+const WINDOW_BORDER_COLOR = palette.white
+const ACCENT_COLOR = palette.yellow
+const ACCENT_TEXT_COLOR = palette.brown900
+const BUBBLE_COLOR = palette.cream
+const BUBBLE_TEXT_COLOR = palette.brown900
 // 背景が明るくても暗くても読めるように、ラベルを茶色で縁取る
 const POINTER_LABEL_OUTLINE = [
   [-2, 0],
@@ -52,7 +52,7 @@ const POINTER_LABEL_OUTLINE = [
 ]
   .map(([x, y]) => `${x}px ${y}px 0 ${WINDOW_OUTLINE_COLOR}`)
   .join(', ')
-const OVERLAY_COLOR = 'rgba(20, 12, 4, 0.62)'
+const OVERLAY_COLOR = withAlpha(palette.brown900, 0.5)
 const POINTER_HEIGHT = 44
 const POINTER_GAP = 6
 
@@ -249,7 +249,7 @@ export default function SpotlightTutorial({
                   fontSize: font.md,
                   fontWeight: 700,
                   lineHeight: 1,
-                  color: '#ffffff',
+                  color: palette.white,
                   textShadow: POINTER_LABEL_OUTLINE,
                   whiteSpace: 'nowrap',
                 }}
@@ -295,7 +295,7 @@ export default function SpotlightTutorial({
               position: 'relative',
               boxSizing: 'border-box',
               overflow: 'hidden',
-              backgroundColor: '#fff7e8',
+              backgroundColor: palette.cream,
               border: `2px solid ${WINDOW_BORDER_COLOR}`,
               borderRadius: '6px',
             }}
@@ -364,14 +364,14 @@ export default function SpotlightTutorial({
               {subMessage && (
                 <Typography
                   sx={{
-                    color: '#6b5444',
+                    color: palette.brown900,
                     wordBreak: 'keep-all',
                     overflowWrap: 'anywhere',
                     lineHeight: 1.7,
                     fontSize: { xs: font.sm, sm: font.md },
                     mt: 1,
                     pt: 1,
-                    borderTop: '1px dashed rgba(61, 42, 30, 0.3)',
+                    borderTop: `1px dashed ${withAlpha(palette.brown900, 0.25)}`,
                   }}
                 >
                   {renderPhrases(subMessage)}
@@ -385,7 +385,7 @@ export default function SpotlightTutorial({
                     size="small"
                     variant="text"
                     onClick={handleSkip}
-                    sx={{ color: '#fff1d6', fontSize: { xs: font.sm, sm: font.md } }}
+                    sx={{ color: palette.cream, fontSize: { xs: font.sm, sm: font.md } }}
                   >
                     {tutorialLocale.debugSkip}
                   </Button>
@@ -406,7 +406,7 @@ export default function SpotlightTutorial({
                         px: { xs: 2, sm: 2.5 },
                       },
                       '&&:hover': {
-                        backgroundColor: '#f2c200',
+                        backgroundColor: palette.yellow,
                         boxShadow: 'none',
                       },
                     }}

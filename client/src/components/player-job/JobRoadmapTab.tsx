@@ -21,7 +21,7 @@ import type { GetPlayerResponse, JobRoadmapListEntry, JobRoadmapNode } from '@/s
 import { InfoChip, InfoRow, InfoSection } from './jobChangeParts'
 import UnlockRoadmapDialog from './UnlockRoadmapDialog'
 import locale from '../../../locale/player-job/JobChange.json'
-import { font } from '@/theme/tokens'
+import { font, palette } from '@/theme/tokens'
 
 const panelProps = { bandColor: colors.band, bandSelectedColor: colors.band }
 const RANK_COUNT = 6
@@ -175,7 +175,7 @@ export default function JobRoadmapTab({ player, onPlayerChanged, isWide }: JobRo
                 zIndex: 2,
                 width: 44,
                 height: 44,
-                color: '#ffffff',
+                color: palette.white,
                 backgroundColor: colors.plate,
                 '&:hover': { backgroundColor: colors.bandDark },
               }}
@@ -304,7 +304,7 @@ function RoadmapMap({
                       key={`${requiredId}-${entry.jobId}`}
                       d={`M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}`}
                       fill="none"
-                      stroke={entry.isUnlocked ? colors.band : '#cbc3b4'}
+                      stroke={entry.isUnlocked ? colors.band : palette.brown200}
                       strokeWidth={entry.isUnlocked ? 2.5 : 1.5}
                       strokeDasharray={entry.isUnlocked ? undefined : '5 5'}
                     />
@@ -339,7 +339,7 @@ function Legend() {
     <Box component="span" sx={{ width: 26, height: 16, borderRadius: 999, boxSizing: 'border-box', ...sx }} />
   )
   const items: [ReactNode, string][] = [
-    [swatch({ backgroundColor: '#ffffff', border: `2px solid ${colors.band}` }), locale.roadmapUnlocked],
+    [swatch({ backgroundColor: palette.white, border: `2px solid ${colors.band}` }), locale.roadmapUnlocked],
     [swatch({ backgroundColor: colors.canUnlock, border: `2px dashed ${colors.gold}` }), locale.roadmapCanUnlock],
     [swatch({ backgroundColor: colors.locked, border: `2px solid ${colors.lockedBorder}` }), locale.roadmapLocked],
     [
@@ -394,7 +394,7 @@ function JobPill({
 }) {
   const state = stateOf(entry)
   const boxSx = {
-    unlocked: { backgroundColor: '#ffffff', border: `2px solid ${colors.band}` },
+    unlocked: { backgroundColor: palette.white, border: `2px solid ${colors.band}` },
     canUnlock: { backgroundColor: colors.canUnlock, border: `2px dashed ${colors.gold}` },
     locked: { backgroundColor: colors.locked, border: `2px solid ${colors.lockedBorder}` },
   }[state]
@@ -461,7 +461,10 @@ function JobPill({
         {entry.jobName}
       </Box>
       {state !== 'unlocked' ? (
-        <Box component="span" sx={{ display: 'flex', color: state === 'canUnlock' ? colors.goldText : '#8a8173' }}>
+        <Box
+          component="span"
+          sx={{ display: 'flex', color: state === 'canUnlock' ? colors.goldText : palette.gray600 }}
+        >
           <LockIcon />
         </Box>
       ) : null}
@@ -473,7 +476,7 @@ function JobPill({
             right: -6,
             top: -10,
             fontSize: font.xs,
-            color: '#ffffff',
+            color: palette.white,
             backgroundColor: colors.bandDark,
             borderRadius: 999,
             px: 1,
@@ -630,13 +633,13 @@ function RequirementRow({ name, status, ok }: { name: string; status: string; ok
           display: 'grid',
           placeItems: 'center',
           backgroundColor: ok ? colors.soft : colors.locked,
-          color: ok ? colors.band : '#8a8173',
+          color: ok ? colors.band : palette.gray600,
         }}
       >
         {ok ? <CheckIcon /> : <LockIcon />}
       </Box>
       <span>{name}</span>
-      <Box component="span" sx={{ ml: 'auto', fontSize: font.sm, color: ok ? colors.band : '#8a8173' }}>
+      <Box component="span" sx={{ ml: 'auto', fontSize: font.sm, color: ok ? colors.band : palette.gray600 }}>
         {status}
       </Box>
     </Box>
@@ -682,7 +685,7 @@ function LockedConditions({
           value={
             <>
               {gold.toLocaleString()} G →{' '}
-              <Box component="span" sx={{ color: canPay ? colors.goldText : '#b3261e' }}>
+              <Box component="span" sx={{ color: canPay ? colors.goldText : palette.red700 }}>
                 {after.toLocaleString()} G
               </Box>
             </>
@@ -698,12 +701,12 @@ function LockedConditions({
             height: 52,
             borderRadius: '12px',
             backgroundColor: colors.band,
-            color: '#ffffff',
+            color: palette.white,
             fontFamily: 'inherit',
             fontSize: font.lg,
             boxShadow: `0 3px 0 ${colors.bandDark}`,
             '&:hover': { backgroundColor: colors.bandDark },
-            '&.Mui-disabled': { backgroundColor: '#ebe6dc', color: '#6f6758', boxShadow: 'none' },
+            '&.Mui-disabled': { backgroundColor: palette.gray300, color: palette.gray600, boxShadow: 'none' },
           }}
         >
           {!entry.canUnlock

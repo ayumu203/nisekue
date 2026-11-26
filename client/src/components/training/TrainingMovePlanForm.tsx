@@ -6,7 +6,7 @@ import type { GetPlayerResponse, PlayerMoveSlot } from '@/schema/player'
 import type { TrainingEnemy } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
 import { getTrainingBackgroundPath } from './trainingSelectStyles'
-import { font } from '@/theme/tokens'
+import { font, palette } from '@/theme/tokens'
 
 type TrainingMovePlanFormProps = {
   // まだ相手を選んでいないときは null（技の欄と「戦闘」を押せない状態で出す）
@@ -93,14 +93,16 @@ function MpMeter({ plannedMp, maxMp }: { plannedMp: number; maxMp: number }) {
       </Typography>
       <Box
         aria-hidden="true"
-        sx={{ flex: 1, minWidth: 60, height: 8, borderRadius: 9, backgroundColor: '#e3e7ee', overflow: 'hidden' }}
+        sx={{ flex: 1, minWidth: 60, height: 8, borderRadius: 9, backgroundColor: palette.sky, overflow: 'hidden' }}
       >
-        <Box sx={{ width: `${ratio * 100}%`, height: '100%', backgroundColor: isOver ? '#c62828' : '#4a7fc1' }} />
+        <Box
+          sx={{ width: `${ratio * 100}%`, height: '100%', backgroundColor: isOver ? palette.red700 : palette.blue300 }}
+        />
       </Box>
       <Typography
         variant="body2"
         fontWeight={700}
-        sx={{ color: isOver ? '#c62828' : trainingPanelColors.text, whiteSpace: 'nowrap' }}
+        sx={{ color: isOver ? palette.red700 : trainingPanelColors.text, whiteSpace: 'nowrap' }}
       >
         {locale.plannedMpSummary.replace('{{plannedMp}}', String(plannedMp)).replace('{{maxMp}}', String(maxMp))}
       </Typography>
@@ -165,7 +167,7 @@ function BattleButton({
         '&&.Mui-disabled': {
           backgroundColor: trainingPanelColors.disabledButton,
           borderColor: trainingPanelColors.disabledButton,
-          color: '#ffffff',
+          color: palette.white,
         },
       }}
     >
@@ -234,9 +236,9 @@ export default function TrainingMovePlanForm({
                   }
                   sx={{
                     borderRadius: '8px',
-                    backgroundColor: '#ffffff',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#d9dee7' },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#b3bccb' },
+                    backgroundColor: palette.white,
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.sky },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: palette.gray300 },
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: trainingPanelColors.band },
                     '& .MuiSelect-select': { py: 1, pl: 1.5, display: 'flex', alignItems: 'center' },
                     '& .MuiSvgIcon-root': { color: trainingPanelColors.label },
@@ -293,8 +295,8 @@ export default function TrainingMovePlanForm({
               display: 'grid',
               placeItems: 'center',
               boxSizing: 'border-box',
-              border: enemy ? 'none' : '2px dashed #c6cdd8',
-              backgroundColor: enemy ? '#e3e7ee' : 'transparent',
+              border: enemy ? 'none' : `2px dashed ${palette.gray300}`,
+              backgroundColor: enemy ? palette.sky : 'transparent',
               backgroundImage:
                 enemy && enemyBackgroundKey !== undefined
                   ? `url(${getTrainingBackgroundPath(enemyBackgroundKey)})`
@@ -306,7 +308,7 @@ export default function TrainingMovePlanForm({
             {enemyImageSrc ? (
               <Box component="img" src={enemyImageSrc} alt="" sx={{ maxWidth: 46, maxHeight: 46 }} />
             ) : (
-              <Typography aria-hidden="true" sx={{ fontSize: font.xxl, fontWeight: 900, color: '#8f98a8' }}>
+              <Typography aria-hidden="true" sx={{ fontSize: font.xxl, fontWeight: 900, color: palette.blue300 }}>
                 ?
               </Typography>
             )}

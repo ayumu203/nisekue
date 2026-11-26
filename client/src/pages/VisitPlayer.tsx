@@ -38,6 +38,7 @@ import {
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import type { ItemEquipmentView, ItemStackView } from '@/schema/item'
 import locale from '../../locale/visit-player/VisitPlayer.json'
+import { palette } from '@/theme/tokens'
 
 function ChatPanelIcon(props: SvgIconProps) {
   return (
@@ -155,9 +156,9 @@ function VisitPlayer() {
   const visibleGiftItems = giftTab === 'equipments' ? giftEquipments : giftItems
   const actionButtonSx = (isActive: boolean) => ({
     ...topNavigationIconButtonSx,
-    backgroundColor: isActive ? '#5f7f67' : topNavigationIconButtonSx.backgroundColor,
+    backgroundColor: isActive ? palette.green700 : topNavigationIconButtonSx.backgroundColor,
     '&:hover': {
-      backgroundColor: isActive ? '#56755f' : topNavigationIconButtonSx['&:hover'].backgroundColor,
+      backgroundColor: isActive ? palette.green700 : topNavigationIconButtonSx['&:hover'].backgroundColor,
     },
   })
 

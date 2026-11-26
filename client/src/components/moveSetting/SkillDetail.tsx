@@ -13,7 +13,7 @@ import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import { getMoveAttackRangeLabel } from '@/lib/moveAttackRange'
 import type { PlayerMoveSlot } from '@/schema/player'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 // 範囲の図に並べる絵。陣形の [前・中・後列][左・右] の順。見た目のための固定の絵
 const BATTLEFIELD_IMAGE = 'image/quest/moonlit-castle-battlefield.svg'
@@ -56,7 +56,7 @@ function RangeFigure({ slot, playerImagePath, compact }: RangeFigureProps) {
         borderRadius: '4px',
         overflow: 'hidden',
         p: compact ? 1 : 2,
-        backgroundImage: `linear-gradient(rgba(12, 14, 34, 0.25), rgba(12, 14, 34, 0.25)), url(${resolvePublicAssetPath(BATTLEFIELD_IMAGE)})`,
+        backgroundImage: `linear-gradient(${withAlpha(palette.navy, 0.25)}, ${withAlpha(palette.navy, 0.25)}), url(${resolvePublicAssetPath(BATTLEFIELD_IMAGE)})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'grid',
@@ -136,7 +136,7 @@ function RangeFigure({ slot, playerImagePath, compact }: RangeFigureProps) {
                         height={compact ? 13 : 18}
                         viewBox="0 0 24 24"
                         fill="none"
-                        stroke="#ffffff"
+                        stroke={palette.white}
                         strokeWidth="2.6"
                         strokeLinecap="round"
                         aria-hidden="true"
@@ -160,7 +160,7 @@ function Tile({ label, value, compact }: { label: string; value: string; compact
   return (
     <Box
       sx={{
-        backgroundColor: '#3e2b1d',
+        backgroundColor: palette.brown900,
         borderRadius: '4px',
         px: compact ? 1.5 : 2,
         py: compact ? 1 : 2,

@@ -1,22 +1,21 @@
 import { createTheme } from '@mui/material'
-import { font } from '@/theme/tokens'
+import { font, palette } from '@/theme/tokens'
 
 const fontFamily = '"DotGothic16", sans-serif'
 
 export const theme = createTheme({
   palette: {
     primary: {
-      main: '#f4a6c1',
-      dark: '#ea8db0',
-      contrastText: '#ffffff',
+      main: palette.pink,
+      contrastText: palette.white,
     },
     background: {
-      default: '#eaf3f8',
-      paper: '#fff7e8',
+      default: palette.sky,
+      paper: palette.cream,
     },
     text: {
-      primary: '#4f4638',
-      secondary: '#7a6f5c',
+      primary: palette.brown900,
+      secondary: palette.brown500,
     },
   },
   typography: {
@@ -51,17 +50,17 @@ export const theme = createTheme({
         contained: {
           borderWidth: 2,
           borderStyle: 'solid',
-          borderColor: '#ffffff',
+          borderColor: palette.white,
           boxShadow: 'none',
         },
         containedPrimary: {
-          color: '#ffffff',
+          color: palette.white,
         },
         outlined: {
           borderWidth: 2,
           borderStyle: 'solid',
-          borderColor: '#ffffff',
-          color: '#ffffff',
+          borderColor: palette.white,
+          color: palette.white,
         },
         text: {
           border: 'none',

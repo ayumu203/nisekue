@@ -4,7 +4,7 @@ import locale from '../../../locale/quest/QuestRoom.json'
 import { homePanelColors } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolveJobAssetPath } from '@/lib/assets'
 import type { BattleColumn, BattleRow, QuestRoomDetailResponse } from '@/schema/quest'
-import { font } from '@/theme/tokens'
+import { font, palette } from '@/theme/tokens'
 
 type QuestRoomFormationPreviewProps = {
   currentRoom: QuestRoomDetailResponse
@@ -14,9 +14,9 @@ type QuestRoomFormationPreviewProps = {
 const rowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const columnOrder: BattleColumn[] = ['Left', 'Right']
 const rowBackground: Record<BattleRow, string> = {
-  Front: '#fff5ea',
-  Middle: '#f6fbf3',
-  Back: '#eef6fb',
+  Front: palette.cream,
+  Middle: palette.white,
+  Back: palette.sky,
 }
 
 // 隊列の確認用の表。前列・中列・後列 × 左・右のマスに、キャラの小さい画像と名前を並べる
@@ -46,7 +46,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
               backgroundColor: rowBackground[row],
               fontSize: font.sm,
               fontWeight: 700,
-              color: '#5a4421',
+              color: palette.brown900,
             }}
           >
             {locale.rows[row]}
@@ -96,7 +96,7 @@ export default function QuestRoomFormationPreview({ currentRoom, positionDrafts 
                             height: { xs: 80, sm: 110 },
                             flexShrink: 0,
                             borderRadius: 1.5,
-                            backgroundColor: '#efe4c8',
+                            backgroundColor: palette.cream,
                             overflow: 'hidden',
                           }}
                         >

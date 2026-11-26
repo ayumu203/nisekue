@@ -29,7 +29,7 @@ import {
 import { useAuth } from '@/contexts/useAuth'
 import locale from '../../locale/pet/PetBattle.json'
 import type { BattleColumn, BattleRow, PetBattleRoom, PetBattleRun } from '@/schema/petBattle'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 export default function PetBattle() {
   const { session, isLoading } = useAuth()
@@ -433,7 +433,7 @@ export default function PetBattle() {
           sx={{
             backgroundColor: cyberColors.bg,
             borderRadius: 3,
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: `1px solid ${withAlpha(palette.white, 0.1)}`,
             px: { xs: 1, sm: 2 },
             py: { xs: 1.5, sm: 2 },
           }}

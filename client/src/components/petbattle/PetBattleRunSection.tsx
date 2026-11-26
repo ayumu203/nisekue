@@ -22,7 +22,7 @@ import {
 } from '@/components/petbattle/petBattleTargets'
 import locale from '../../../locale/pet/PetBattle.json'
 import type { BattleColumn, BattleRow, PetBattleActionKind, PetBattleMember, PetBattleRun } from '@/schema/petBattle'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type PetBattleRunSectionProps = {
   run: PetBattleRun
@@ -159,7 +159,7 @@ export default function PetBattleRunSection({
               border: `1px solid ${cyberColors.danger}`,
               borderRadius: 2,
               p: 0.75,
-              backgroundColor: 'rgba(255, 56, 96, 0.04)',
+              backgroundColor: withAlpha(palette.red700, 0.1),
             }}
           >
             <FieldGrid
@@ -175,7 +175,7 @@ export default function PetBattleRunSection({
               border: `1px solid ${cyberColors.mp}`,
               borderRadius: 2,
               p: 0.75,
-              backgroundColor: 'rgba(62, 197, 255, 0.05)',
+              backgroundColor: withAlpha(palette.blue300, 0.1),
             }}
           >
             <FieldGrid
@@ -223,7 +223,7 @@ export default function PetBattleRunSection({
                       <Chip
                         size="small"
                         label={locale.deadChip}
-                        sx={{ color: cyberColors.danger, backgroundColor: 'rgba(255, 56, 96, 0.14)' }}
+                        sx={{ color: cyberColors.danger, backgroundColor: withAlpha(palette.red700, 0.1) }}
                       />
                     ) : isSubmitted ? (
                       <Chip
@@ -235,7 +235,7 @@ export default function PetBattleRunSection({
                       <Chip
                         size="small"
                         label={locale.cannotActChip}
-                        sx={{ color: cyberColors.warn, backgroundColor: 'rgba(255, 209, 102, 0.12)' }}
+                        sx={{ color: cyberColors.warn, backgroundColor: withAlpha(palette.gold300, 0.1) }}
                       />
                     ) : null}
                   </Stack>
@@ -271,7 +271,7 @@ export default function PetBattleRunSection({
                             fontWeight: 700,
                           },
                           '& .MuiToggleButton-root.Mui-selected': {
-                            color: '#0a0d0c',
+                            color: palette.brown900,
                             backgroundColor: cyberColors.accent,
                             '&:hover': { backgroundColor: cyberColors.accent },
                           },

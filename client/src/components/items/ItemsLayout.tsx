@@ -1,6 +1,7 @@
 import { Box, Stack, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { deepGreen, framedPanelSx } from './ItemsConstants'
+import { palette, withAlpha } from '@/theme/tokens'
 
 export function ControlFrame({ children }: { children: ReactNode }) {
   return (
@@ -43,11 +44,11 @@ export function SectionFrame({ title, subtitle, children }: { title: string; sub
           spacing={1}
           alignItems={{ sm: 'center' }}
         >
-          <Typography variant="h5" fontWeight={900} color="#ffffff">
+          <Typography variant="h5" fontWeight={900} color={palette.white}>
             {title}
           </Typography>
           {subtitle ? (
-            <Typography variant="body2" color="rgba(255,255,255,0.76)">
+            <Typography variant="body2" color={withAlpha(palette.white, 0.75)}>
               {subtitle}
             </Typography>
           ) : null}

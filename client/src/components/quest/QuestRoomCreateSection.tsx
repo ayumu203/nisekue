@@ -6,7 +6,7 @@ import locale from '../../../locale/quest/QuestRoom.json'
 import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/quest'
 import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestStageModeCard from './QuestStageModeCard'
-import { font } from '@/theme/tokens'
+import { font, palette } from '@/theme/tokens'
 
 type QuestRoomCreateSectionProps = {
   activeStages: GetQuestStagesResponse
@@ -43,12 +43,12 @@ function PanelRow({ label, value }: { label: string; value: string }) {
         alignItems: 'baseline',
         gap: 2,
         py: 1.5,
-        borderBottom: '1px solid #eadfc6',
+        borderBottom: `1px solid ${palette.brown200}`,
       }}
     >
       <Typography
         variant="body2"
-        sx={{ color: '#5a4421', fontWeight: 700, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
+        sx={{ color: palette.brown900, fontWeight: 700, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
       >
         {label}
       </Typography>
@@ -133,7 +133,7 @@ export default function QuestRoomCreateSection({
             onChange={(_, nextPage) => setStagePage(nextPage)}
             sx={{
               '& .MuiPaginationItem-root': {
-                color: '#5a3a10',
+                color: palette.brown900,
                 fontWeight: 700,
                 transition: 'none',
               },
@@ -141,7 +141,7 @@ export default function QuestRoomCreateSection({
                 display: 'none',
               },
               '& .MuiPaginationItem-root.Mui-selected': {
-                color: '#ffffff',
+                color: palette.white,
                 backgroundColor: homePanelColors.band,
               },
               '& .MuiPaginationItem-root.Mui-selected:hover': {

@@ -24,6 +24,7 @@ import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import { PLAYER_IMAGE_COUNT, resolvePlayerImageFileName, resolvePlayerImageNo } from '@/lib/playerImages'
 import locale from '../../locale/player-setting/PlayerSetting.json'
+import { palette, withAlpha } from '@/theme/tokens'
 
 export default function PlayerSetting() {
   const { session, isLoading } = useAuth()
@@ -44,10 +45,10 @@ export default function PlayerSetting() {
   const settingInputSx = {
     ...greenOutlinedInputSx,
     '& .MuiInputLabel-root.Mui-focused': {
-      color: '#f3eedc',
+      color: palette.cream,
     },
     '& .MuiFormHelperText-root': {
-      color: 'rgba(243, 238, 220, 0.72)',
+      color: withAlpha(palette.cream, 0.75),
     },
   } as const
 
@@ -325,9 +326,9 @@ export default function PlayerSetting() {
                   ...innerSurfaceSx,
                   borderRadius: 3,
                   p: { xs: 2, sm: 2.5 },
-                  backgroundColor: '#44644a',
-                  borderColor: '#b8ab7a',
-                  color: '#fff8ea',
+                  backgroundColor: palette.green700,
+                  borderColor: palette.brown200,
+                  color: palette.cream,
                 }}
               >
                 <Box component="form" onSubmit={handleSubmit}>
@@ -335,11 +336,11 @@ export default function PlayerSetting() {
                     <Stack spacing={0.25}>
                       <Typography
                         variant="overline"
-                        sx={{ letterSpacing: '0.18em', color: 'rgba(243, 238, 220, 0.72)' }}
+                        sx={{ letterSpacing: '0.18em', color: withAlpha(palette.cream, 0.75) }}
                       >
                         {locale.titleRuby}
                       </Typography>
-                      <Typography variant="h4" fontWeight={900} color="#fff8ea">
+                      <Typography variant="h4" fontWeight={900} color={palette.cream}>
                         {locale.title}
                       </Typography>
                     </Stack>
@@ -347,7 +348,11 @@ export default function PlayerSetting() {
                       spacing={0.75}
                       id={tutorialStep === 'player-setting-name' ? 'tutorial-name-field' : undefined}
                     >
-                      <Typography id="player-name-label" variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                      <Typography
+                        id="player-name-label"
+                        variant="subtitle1"
+                        sx={{ color: withAlpha(palette.cream, 0.9) }}
+                      >
                         {locale.playerNameLabel}
                       </Typography>
                       <TextField
@@ -364,7 +369,7 @@ export default function PlayerSetting() {
                       />
                     </Stack>
                     <Stack spacing={1.5}>
-                      <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                      <Typography variant="subtitle1" sx={{ color: withAlpha(palette.cream, 0.9) }}>
                         {locale.playerImageLabel}
                       </Typography>
                       <Box
@@ -375,7 +380,7 @@ export default function PlayerSetting() {
                           borderRadius: 2,
                           border: '1px solid',
                           borderColor: 'divider',
-                          bgcolor: 'rgba(255,255,255,0.72)',
+                          bgcolor: withAlpha(palette.white, 0.75),
                           overflow: 'hidden',
                           alignSelf: 'center',
                         }}
@@ -405,7 +410,7 @@ export default function PlayerSetting() {
                         <Typography
                           id="player-image-no-label"
                           variant="subtitle1"
-                          sx={{ color: 'rgba(243, 238, 220, 0.9)' }}
+                          sx={{ color: withAlpha(palette.cream, 0.9) }}
                         >
                           {locale.playerImageNoLabel}
                         </Typography>
@@ -474,21 +479,21 @@ export default function PlayerSetting() {
                   ...innerSurfaceSx,
                   borderRadius: 3,
                   p: { xs: 2, sm: 2.5 },
-                  backgroundColor: '#44644a',
-                  borderColor: '#b8ab7a',
-                  color: '#fff8ea',
+                  backgroundColor: palette.green700,
+                  borderColor: palette.brown200,
+                  color: palette.cream,
                 }}
               >
                 <Stack spacing={2}>
                   <Stack spacing={0.5}>
-                    <Typography variant="h5" fontWeight={800} color="#fff8ea">
+                    <Typography variant="h5" fontWeight={800} color={palette.cream}>
                       {locale.accountLinkTitle}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
+                    <Typography variant="body2" sx={{ color: withAlpha(palette.cream, 0.75) }}>
                       {anonymousIdentity ? locale.accountLinkDescription : locale.accountLinkedDescription}
                     </Typography>
                     {accountEmail ? (
-                      <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.72)' }}>
+                      <Typography variant="body2" sx={{ color: withAlpha(palette.cream, 0.75) }}>
                         {locale.accountCurrentEmail.replace('{email}', accountEmail)}
                       </Typography>
                     ) : null}
@@ -510,7 +515,7 @@ export default function PlayerSetting() {
                   <Box component="form" onSubmit={handleAccountSubmit} noValidate>
                     <Stack spacing={2}>
                       <Stack spacing={0.75}>
-                        <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                        <Typography variant="subtitle1" sx={{ color: withAlpha(palette.cream, 0.9) }}>
                           {locale.accountEmailLabel}
                         </Typography>
                         <TextField
@@ -526,10 +531,10 @@ export default function PlayerSetting() {
                       </Stack>
 
                       <Stack spacing={0.75}>
-                        <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                        <Typography variant="subtitle1" sx={{ color: withAlpha(palette.cream, 0.9) }}>
                           {locale.setPasswordLabel}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
+                        <Typography variant="body2" sx={{ color: withAlpha(palette.cream, 0.75) }}>
                           {locale.setAccountDescription}
                         </Typography>
                         <TextField

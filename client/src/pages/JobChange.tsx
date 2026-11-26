@@ -26,7 +26,7 @@ import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import locale from '../../locale/player-job/JobChange.json'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 export default function JobChange() {
   const { session, isLoading } = useAuth()
@@ -168,9 +168,9 @@ export default function JobChange() {
               flex: 1,
               fontFamily: 'inherit',
               fontSize: font.lg,
-              color: selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
+              color: selected ? palette.white : withAlpha(palette.white, 0.75),
               backgroundColor: selected ? colors.bandDark : colors.band,
-              borderLeft: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+              borderLeft: index === 0 ? 'none' : `1px solid ${withAlpha(palette.white, 0.25)}`,
             }}
           >
             {label}
@@ -194,7 +194,7 @@ export default function JobChange() {
           alignItems: 'center',
           backgroundColor: colors.band,
           // ホームボタンと帯の中身の区切り（クエストの帯と同じ白い線）
-          borderRight: '2px solid rgba(255, 255, 255, 0.85)',
+          borderRight: `2px solid ${withAlpha(palette.white, 0.9)}`,
         }}
       >
         <IconButton
@@ -203,7 +203,7 @@ export default function JobChange() {
           to="/"
           aria-label={locale.backToHome}
           disableRipple
-          sx={{ color: '#ffffff', width: 44, height: 44 }}
+          sx={{ color: palette.white, width: 44, height: 44 }}
         >
           <HomeFilledIcon />
         </IconButton>
@@ -222,9 +222,9 @@ export default function JobChange() {
               flex: 1,
               fontFamily: 'inherit',
               fontSize: font.md,
-              color: selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
+              color: selected ? palette.white : withAlpha(palette.white, 0.75),
               backgroundColor: selected ? colors.bandDark : colors.band,
-              borderLeft: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+              borderLeft: index === 0 ? 'none' : `1px solid ${withAlpha(palette.white, 0.25)}`,
             }}
           >
             {label}
@@ -276,7 +276,7 @@ export default function JobChange() {
           </Alert>
         ) : null}
         {isPlayerLoading ? (
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ color: '#ffffff' }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ color: palette.white }}>
             <CircularProgress size={16} color="inherit" />
             <Typography variant="body2">{locale.loadingPlayer}</Typography>
           </Stack>

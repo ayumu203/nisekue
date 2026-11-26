@@ -1,7 +1,7 @@
 import { Box, ButtonBase, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { homePanelColors } from '@/constants/styles'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 export type GamePanelTab = {
   key: string
@@ -59,7 +59,7 @@ export default function GamePanel({
         minHeight: 0,
         height: fillHeight && !fitContent ? '100%' : 'auto',
         maxHeight: fillHeight ? '100%' : 'none',
-        backgroundColor: '#ffffff',
+        backgroundColor: palette.white,
         borderRadius: '12px',
         overflow: 'hidden',
       }}
@@ -74,7 +74,7 @@ export default function GamePanel({
                 alignItems: 'center',
                 backgroundColor: bandColor,
                 // ホームボタンと帯の中身の区切りをはっきり見せる白い線
-                borderRight: '2px solid rgba(255, 255, 255, 0.85)',
+                borderRight: `2px solid ${withAlpha(palette.white, 0.9)}`,
               }}
             >
               {startAction}
@@ -92,9 +92,9 @@ export default function GamePanel({
                 fontFamily: 'inherit',
                 fontSize: font.md,
                 fontWeight: 700,
-                color: tab.selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
+                color: tab.selected ? palette.white : withAlpha(palette.white, 0.75),
                 backgroundColor: tab.selected ? bandSelectedColor : bandColor,
-                borderLeft: index === 0 || startAction ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+                borderLeft: index === 0 || startAction ? 'none' : `1px solid ${withAlpha(palette.white, 0.25)}`,
               }}
             >
               {tab.label}
@@ -107,7 +107,7 @@ export default function GamePanel({
                 display: 'flex',
                 alignItems: 'center',
                 backgroundColor: bandColor,
-                borderLeft: '1px solid rgba(255, 255, 255, 0.35)',
+                borderLeft: `1px solid ${withAlpha(palette.white, 0.25)}`,
               }}
             >
               {action}
@@ -125,7 +125,7 @@ export default function GamePanel({
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: bandColor,
-            color: '#ffffff',
+            color: palette.white,
           }}
         >
           {startAction ? (
@@ -145,7 +145,7 @@ export default function GamePanel({
                 bottom: 0,
                 display: 'flex',
                 alignItems: 'center',
-                borderRight: '2px solid rgba(255, 255, 255, 0.85)',
+                borderRight: `2px solid ${withAlpha(palette.white, 0.9)}`,
               }}
             >
               {startAction}

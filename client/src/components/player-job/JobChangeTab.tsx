@@ -8,7 +8,7 @@ import type { GetPlayerResponse, PlayerJob, PlayerJobCode } from '@/schema/playe
 import { ExpBar, InfoChip, PlateChip } from './jobChangeParts'
 import { formatExpProgress, stageBackgroundSx } from './jobChangeStyles'
 import locale from '../../../locale/player-job/JobChange.json'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 const BASE_JOB_ORDER: PlayerJobCode[] = ['Warrior', 'Guardian', 'Mage', 'Priest', 'Ranger']
 const UNLOCK_LEVEL = 5
@@ -220,7 +220,7 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
                       bottom: -9,
                       transform: 'translateX(-50%)',
                       fontSize: font.xxs,
-                      color: '#ffffff',
+                      color: palette.white,
                       backgroundColor: colors.bandDark,
                       borderRadius: '4px',
                       px: 0.75,
@@ -335,12 +335,12 @@ function StageActor({
             component="span"
             sx={{
               backgroundColor: colors.plate,
-              border: `3px solid ${isSelected ? colors.plateGold : 'rgba(255, 255, 255, 0.9)'}`,
+              border: `3px solid ${isSelected ? colors.plateGold : withAlpha(palette.white, 0.9)}`,
               borderRadius: '6px',
               px: 2.5,
               py: 0.5,
               fontSize: isSelected ? font.xxl : font.xl,
-              color: isSelected ? colors.plateGold : '#ffffff',
+              color: isSelected ? colors.plateGold : palette.white,
               whiteSpace: 'nowrap',
             }}
           >
@@ -381,12 +381,12 @@ function SelectFooter({
         px: 4,
         borderRadius: '12px',
         backgroundColor: colors.band,
-        color: '#ffffff',
+        color: palette.white,
         fontFamily: 'inherit',
         fontSize: compact ? font.xl : font.xxl,
         boxShadow: `0 4px 0 ${colors.bandDark}`,
         '&:hover': { backgroundColor: colors.bandDark },
-        '&.Mui-disabled': { backgroundColor: '#c9cfd6', color: '#ffffff' },
+        '&.Mui-disabled': { backgroundColor: palette.gray300, color: palette.white },
       }}
     >
       {isSubmitting ? locale.changing : locale.changeTo.replace('{{jobName}}', job.displayName)}
