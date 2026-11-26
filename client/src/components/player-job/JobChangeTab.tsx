@@ -66,12 +66,12 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
         }}
       >
         <Box sx={{ minHeight: 0 }}>
-          <GamePanel title={locale.currentJobTitle} {...panelProps}>
+          <GamePanel hideBand aria-label={locale.currentJobTitle} {...panelProps}>
             <CurrentJobDetail player={player} isMastered={masteredCodes.has(player.job.code)} />
           </GamePanel>
         </Box>
         <Box sx={{ minHeight: 0 }}>
-          <GamePanel title={locale.jobListTitle} disablePadding {...panelProps}>
+          <GamePanel hideBand aria-label={locale.jobListTitle} disablePadding {...panelProps}>
             <Box
               role="group"
               aria-label={locale.jobSelectLabel}
@@ -115,10 +115,10 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      <GamePanel title={locale.currentJobTitle} fillHeight={false} {...panelProps}>
+      <GamePanel hideBand aria-label={locale.currentJobTitle} fillHeight={false} {...panelProps}>
         <CurrentJobCompact player={player} isMastered={masteredCodes.has(player.job.code)} />
       </GamePanel>
-      <GamePanel title={locale.jobListTitle} fillHeight={false} disablePadding {...panelProps}>
+      <GamePanel hideBand aria-label={locale.jobListTitle} fillHeight={false} disablePadding {...panelProps}>
         <Box
           sx={{
             ...stageBackgroundSx,
