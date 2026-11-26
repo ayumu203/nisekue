@@ -184,17 +184,29 @@ export default function JobChange() {
     <Box
       role="tablist"
       aria-label={locale.roadmapTab}
-      sx={{ display: 'flex', height: 52, backgroundColor: colors.topBand, flex: 'none' }}
+      sx={{ display: 'flex', height: 44, flex: 'none', borderRadius: '12px', overflow: 'hidden', mb: 1.5 }}
     >
-      <IconButton
-        id={tutorialHomeButtonId}
-        component={Link}
-        to="/"
-        aria-label={locale.backToHome}
-        sx={{ width: 56, borderRadius: 0, color: '#ffffff', borderRight: '1px solid rgba(255, 255, 255, 0.5)' }}
+      <Box
+        sx={{
+          flex: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          backgroundColor: colors.band,
+          // ホームボタンと帯の中身の区切り（クエストの帯と同じ白い線）
+          borderRight: '2px solid rgba(255, 255, 255, 0.85)',
+        }}
       >
-        <HomeFilledIcon />
-      </IconButton>
+        <IconButton
+          id={tutorialHomeButtonId}
+          component={Link}
+          to="/"
+          aria-label={locale.backToHome}
+          disableRipple
+          sx={{ color: '#ffffff', width: 44, height: 44 }}
+        >
+          <HomeFilledIcon />
+        </IconButton>
+      </Box>
       {tabLabels.map((label, index) => {
         const selected = tabIndex === index
         return (
@@ -202,14 +214,16 @@ export default function JobChange() {
             key={label}
             id={index === 1 ? roadmapTabId : undefined}
             role="tab"
+            disableRipple
             aria-selected={selected}
             onClick={() => selectTab(index)}
             sx={{
               flex: 1,
               fontFamily: 'inherit',
-              fontSize: '0.9375rem',
-              color: selected ? colors.text : '#ffffff',
-              backgroundColor: selected ? colors.ground : 'transparent',
+              fontSize: '1rem',
+              color: selected ? '#ffffff' : 'rgba(255, 255, 255, 0.82)',
+              backgroundColor: selected ? colors.bandDark : colors.band,
+              borderLeft: index === 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
             }}
           >
             {label}
@@ -239,9 +253,7 @@ export default function JobChange() {
           currentKey="jobChange"
           currentColor={colors.topBand}
         />
-      ) : (
-        mobileTabs
-      )}
+      ) : null}
       <Box
         sx={{
           flex: 1,
@@ -256,7 +268,7 @@ export default function JobChange() {
           flexDirection: 'column',
         }}
       >
-        {isDesktop ? <Box sx={{ mb: 2 }}>{desktopTabs}</Box> : null}
+        {isDesktop ? <Box sx={{ mb: 2 }}>{desktopTabs}</Box> : mobileTabs}
         {submitError ? (
           <Alert severity="error" sx={{ mb: 1.5 }}>
             {submitError}
