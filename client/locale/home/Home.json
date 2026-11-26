@@ -64,5 +64,6 @@
   "statusPanelLabel": "ステータス",
   "statusDetailsOpen": "能力値と装備を開く",
   "statusDetailsClose": "能力値と装備を閉じる",
-  "backToHome": "ホームへ戻る"
+  "backToHome": "ホームへ戻る",
+  "homeMenuLabel": "ホーム"
 }
