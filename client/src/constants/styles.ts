@@ -171,6 +171,10 @@ export const innerSurfaceSx = {
   borderColor: '#e7d9b6',
 } as const
 
+// 画面いっぱいに広げた外枠（GamePageFrame）の背景と、ヘッダーメニューで今いる画面を塗る色
+export const gamePageBackground = '#ffcc00'
+export const gamePageAccent = '#b8860b'
+
 export const outerPagePaperSx = {
   backgroundColor: '#ffcc00',
   border: '1px solid',
@@ -404,4 +408,49 @@ export const panelCancelButtonSx = {
     borderColor: '#dfb2ac',
     color: '#bf8b84',
   },
+} as const
+
+// スキル画面（魔導書）。表紙はこげ茶の革、ページは焦げ茶に生成りの文字
+export const skillPanelColors = {
+  topBand: '#4a2c17',
+  ground: '#ece3d3',
+  // 表紙の革と、その縁
+  cover: '#4a2c17',
+  coverDark: '#2b190c',
+  gold: '#c9a24a',
+  // ページ・選んでいる行・行の区切り
+  paper: '#2f2015',
+  rowSelected: '#553b27',
+  line: '#6b4e33',
+  ink: '#f1e4c8',
+  sub: '#bfa784',
+  grip: '#8a6a3c',
+  // 消費MP の結晶と数字
+  gem: '#6fb0ec',
+  mpText: '#cfe6ff',
+  // 1 番目の技の「消えてしまいます」の札
+  warning: '#b3261e',
+} as const
+
+// 転職画面（聖堂の藍）。上部の帯・地・白い箱の見出しの帯・舞台の上の名札
+export const jobChangePanelColors = {
+  topBand: '#23476d',
+  ground: '#f3f0e8',
+  band: '#2f5d8a',
+  bandDark: '#1f3f60',
+  soft: '#e6eef7',
+  gold: '#b8862b',
+  goldText: '#7a5510',
+  goldSoft: '#fbf1dc',
+  // 舞台の上の名札と札の金
+  plate: 'rgba(28, 52, 82, 0.9)',
+  plateGold: '#e8c46a',
+  text: '#24303d',
+  label: '#4f5b69',
+  divider: '#dfe4ea',
+  // 未解放の札
+  locked: '#f1eee8',
+  lockedBorder: '#ddd6c9',
+  lockedText: '#6f675b',
+  canUnlock: '#fffaf0',
 } as const

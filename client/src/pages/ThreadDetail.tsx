@@ -1,4 +1,16 @@
-import { Alert, Avatar, Box, Button, CircularProgress, Paper, Stack, TextField, Typography } from '@mui/material'
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+  useMediaQuery,
+  type Theme,
+} from '@mui/material'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import useSWR from 'swr'
@@ -136,6 +148,8 @@ export default function ThreadDetail() {
     }
   }
 
+  const isDesktop = useMediaQuery((theme: Theme) => theme.breakpoints.up('sm'), { noSsr: true })
+
   if (isLoading) {
     return (
       <Box minHeight="100vh" display="grid" sx={{ placeItems: 'center' }}>
@@ -149,8 +163,8 @@ export default function ThreadDetail() {
 
   return (
     <ThreadPageShell>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <HomeNavIconButton ariaLabel={locale.backToHome} />
+      <Stack direction="row" justifyContent={isDesktop ? 'flex-end' : 'space-between'} alignItems="center">
+        {isDesktop ? null : <HomeNavIconButton ariaLabel={locale.backToHome} />}
         <Stack direction="row" spacing={1}>
           {canDelete ? (
             <Button variant="outlined" disabled={isDeleting} sx={deleteButtonSx} onClick={handleDelete}>
