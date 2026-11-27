@@ -1,4 +1,4 @@
-import { Alert, Box, Button, ClickAwayListener, IconButton, SvgIcon, type SvgIconProps } from '@mui/material'
+import { Box, Button, ClickAwayListener, IconButton, SvgIcon, type SvgIconProps } from '@mui/material'
 import { Link } from 'react-router-dom'
 import type { HomeMenuGroup, HomeMenuGroupKey, HomeMenuItem } from '@/components/home/homeMenu'
 import { GearIcon, SignOutIcon } from '@/components/home/StatusIcons'
@@ -114,7 +114,7 @@ export default function HomeHeaderMenu({
   currentKey,
   currentColor,
 }: HomeHeaderMenuProps) {
-  const { signOut, isSigningOut, signOutError } = useSignOut()
+  const { signOut, isSigningOut } = useSignOut()
   const visibleGroup = lockedGroup ?? openGroup
 
   return (
@@ -247,11 +247,6 @@ export default function HomeHeaderMenu({
           </IconButton>
         </Box>
       </Box>
-      {signOutError ? (
-        <Alert severity="error" sx={{ mx: 4, mt: 1 }}>
-          {signOutError}
-        </Alert>
-      ) : null}
     </Box>
   )
 }

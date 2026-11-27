@@ -18,6 +18,7 @@ import GamePageFrame from '@/components/common/GamePageFrame'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { ControlFrame } from '@/components/items/ItemsLayout'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import locale from '../../locale/pet/Pets.json'
 import type { PetStatus, PlayerPetView } from '@/schema/pet'
@@ -92,8 +93,7 @@ function PetStatusTable({ pet }: { pet: PlayerPetView }) {
 export default function Pets() {
   const { session, isLoading } = useAuth()
   const isDesktop = useMediaQuery((theme: Theme) => theme.breakpoints.up('sm'), { noSsr: true })
-  const [actionError, setActionError] = useState<string | null>(null)
-  const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const notify = useNotify()
   const [busyPetId, setBusyPetId] = useState<string | null>(null)
 
   const petsSWRKey = session?.user.id ? (['pets', session.user.id] as const) : null
@@ -121,18 +121,16 @@ export default function Pets() {
 
   async function runPetAction(petId: string, action: () => Promise<void>): Promise<void> {
     if (!session?.access_token) {
-      setActionError(locale.sessionInfoMissing)
+      notify.error(locale.sessionInfoMissing)
       return
     }
 
     setBusyPetId(petId)
-    setActionError(null)
-    setActionMessage(null)
 
     try {
       await action()
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : locale.actionFailed)
+      notify.error(error instanceof Error ? error.message : locale.actionFailed)
       setBusyPetId(null)
       return
     }
@@ -140,7 +138,7 @@ export default function Pets() {
     try {
       await mutatePets()
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : locale.loadFailed)
+      notify.error(error instanceof Error ? error.message : locale.loadFailed)
     } finally {
       setBusyPetId(null)
     }
@@ -150,7 +148,7 @@ export default function Pets() {
     await runPetAction(pet.petId, async () => {
       await trainPet(pet.petId, session!.access_token)
       await mutatePlayer()
-      setActionMessage(`${pet.name}${locale.trainSucceeded}`)
+      notify.success(`${pet.name}${locale.trainSucceeded}`)
     })
   }
 
@@ -161,7 +159,7 @@ export default function Pets() {
 
     await runPetAction(pet.petId, async () => {
       await releasePet(pet.petId, session!.access_token)
-      setActionMessage(locale.releaseSucceeded)
+      notify.success(locale.releaseSucceeded)
     })
   }
 
@@ -252,8 +250,6 @@ export default function Pets() {
               </ControlFrame>
             </Box>
 
-            {actionError ? <Alert severity="error">{actionError}</Alert> : null}
-            {actionMessage ? <Alert severity="success">{actionMessage}</Alert> : null}
             {petsError ? <Alert severity="error">{locale.loadFailed}</Alert> : null}
 
             <Box sx={{ px: { xs: 0.25, sm: 0.5 }, py: 0.25 }}>

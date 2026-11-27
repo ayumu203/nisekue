@@ -1,10 +1,12 @@
-import { Alert, Box, Button, Dialog, DialogContent, FormControlLabel, Stack, Switch, Typography } from '@mui/material'
+import { Box, Button, Dialog, DialogContent, FormControlLabel, Stack, Switch, Typography } from '@mui/material'
 import { useState } from 'react'
 import type { GetChatRoomResponse } from '@/schema/chat'
 import ChatMessageItem from '@/components/chat/ChatMessageItem'
 import { getShowSystemMessages, saveShowSystemMessages } from '@/lib/chatPreferencesStorage'
 import locale from '../../../locale/chat/Chat.json'
 import { font, palette } from '@/theme/tokens'
+import { useNotify } from '@/contexts/useNotify'
+import { EmptyText } from '@/components/common/EmptyText'
 
 type Props = {
   messages: GetChatRoomResponse['messages']
@@ -17,7 +19,7 @@ function ChatMessages({ messages, currentPlayerId, onDeleteMessage }: Props) {
   const [showSystemMessages, setShowSystemMessages] = useState(() => getShowSystemMessages(currentPlayerId))
   const [pendingDeleteChatId, setPendingDeleteChatId] = useState<number | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const notify = useNotify()
 
   const closeDeleteDialog = () => {
     if (isDeleting) {
@@ -25,7 +27,6 @@ function ChatMessages({ messages, currentPlayerId, onDeleteMessage }: Props) {
     }
 
     setPendingDeleteChatId(null)
-    setDeleteError(null)
   }
 
   const confirmDelete = async () => {
@@ -34,19 +35,18 @@ function ChatMessages({ messages, currentPlayerId, onDeleteMessage }: Props) {
     }
 
     setIsDeleting(true)
-    setDeleteError(null)
     try {
       await onDeleteMessage(pendingDeleteChatId)
       setPendingDeleteChatId(null)
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : locale.deleteFailed)
+      notify.error(error instanceof Error ? error.message : locale.deleteFailed)
     } finally {
       setIsDeleting(false)
     }
   }
 
   if (messages.length === 0) {
-    return <Alert severity="info">まだメッセージはありません。</Alert>
+    return <EmptyText>{locale.noMessages}</EmptyText>
   }
 
   const filteredMessages = showSystemMessages ? messages : messages.filter((message) => message.senderType !== 'System')
@@ -71,7 +71,7 @@ function ChatMessages({ messages, currentPlayerId, onDeleteMessage }: Props) {
         {filteredMessages.length}件
       </Typography>
       {reversedMessages.length === 0 ? (
-        <Alert severity="info">{locale.noVisibleMessages}</Alert>
+        <EmptyText>{locale.noVisibleMessages}</EmptyText>
       ) : (
         reversedMessages.map((message) => (
           <ChatMessageItem
@@ -106,11 +106,6 @@ function ChatMessages({ messages, currentPlayerId, onDeleteMessage }: Props) {
               <Typography sx={{ mt: 1, fontSize: font.xs, color: palette.gray300, lineHeight: 1.6 }}>
                 {locale.deleteConfirmBody}
               </Typography>
-              {deleteError ? (
-                <Alert severity="error" sx={{ mt: 2, textAlign: 'left' }}>
-                  {deleteError}
-                </Alert>
-              ) : null}
             </Box>
             <Box sx={{ borderTop: `1px solid ${palette.brown900}`, px: 3, py: 2 }}>
               <Stack direction="row" spacing={2} justifyContent="center">

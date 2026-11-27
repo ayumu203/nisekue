@@ -13,7 +13,10 @@
   "cannotChange": "転職にはレベル5が必要です。",
   "levelExpProgress": "経験値 {{current}} / 次のレベルまで {{required}}",
   "resetNoticeTitle": "転職時の注意",
-  "maxLevelNoticeBody": "レベルが上限に達しています。いま転職すると職業レベルが1のまま上がらなくなり、その職業をマスターできません。転生してから転職してください。",
+  "maxLevelNotice": [
+    { "label": "転職後の職業レベル", "value": "1 で固定（レベル上限）" },
+    { "label": "転職先のマスター", "value": "不可（転生後の転職で可）" }
+  ],
   "jobListTitle": "転職先",
   "jobDescription": "{{jobName}}へ転職します。",
   "jobAvailable": "転職可能",

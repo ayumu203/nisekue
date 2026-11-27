@@ -20,9 +20,11 @@ import ThreadBoardSurface from '@/components/common/ThreadBoardSurface'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import ThreadPageShell from '@/components/common/ThreadPageShell'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../locale/threads/Threads.json'
 import { palette, withAlpha } from '@/theme/tokens'
+import { EmptyText } from '@/components/common/EmptyText'
 
 const boardSx = {
   backgroundColor: palette.brown500,
@@ -83,7 +85,7 @@ export default function Threads() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const notify = useNotify()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const page = Math.max(1, Number(searchParams.get('page') ?? '1') || 1)
 
@@ -178,7 +180,6 @@ export default function Threads() {
               </Box>
 
               {isAnonymous ? <Alert severity="info">{locale.anonymousPostingRestricted}</Alert> : null}
-              {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
 
               <TextField
                 label={locale.form.title}
@@ -207,17 +208,16 @@ export default function Threads() {
                 sx={flatPrimaryButtonSx}
                 onClick={async () => {
                   if (isAnonymous) {
-                    setSubmitError(locale.anonymousPostingRestricted)
+                    notify.error(locale.anonymousPostingRestricted)
                     return
                   }
 
                   if (!session?.access_token) {
-                    setSubmitError(locale.sessionMissing)
+                    notify.error(locale.sessionMissing)
                     return
                   }
 
                   setIsSubmitting(true)
-                  setSubmitError(null)
                   try {
                     const created = await createThread({ title, body }, session.access_token)
                     setTitle('')
@@ -225,7 +225,7 @@ export default function Threads() {
                     await mutate()
                     navigate(`/threads/${created.id}`)
                   } catch (submitError) {
-                    setSubmitError(submitError instanceof Error ? submitError.message : locale.createFailed)
+                    notify.error(submitError instanceof Error ? submitError.message : locale.createFailed)
                   } finally {
                     setIsSubmitting(false)
                   }
@@ -269,7 +269,7 @@ export default function Threads() {
                 </Box>
               ) : !data || data.items.length === 0 ? (
                 <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2.5 }}>
-                  <Alert severity="info">{locale.empty}</Alert>
+                  <EmptyText>{locale.empty}</EmptyText>
                 </Box>
               ) : (
                 <>

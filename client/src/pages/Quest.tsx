@@ -45,6 +45,7 @@ import { HomeFilledIcon, HomeIcon } from '@/components/home/HomeIcons'
 import { buildHomeMenu, type HomeMenuGroupKey, type HomeMenuItem } from '@/components/home/homeMenu'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { questPanelColors } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
@@ -178,7 +179,7 @@ export default function Quest() {
   const [isRestrictionsDirty, setIsRestrictionsDirty] = useState(false)
   const [createdRoom, setCreatedRoom] = useState<QuestRoomDetailResponse | null>(null)
   const [startedRun, setStartedRun] = useState<QuestRunDetailResponse | null>(null)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const notify = useNotify()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
   const [isCancellingRoom, setIsCancellingRoom] = useState(false)
@@ -197,13 +198,7 @@ export default function Quest() {
   const hasAttemptedQuestRecoveryRef = useRef(false)
   const mutateRunRef = useRef<KeyedMutator<QuestRunDetailResponse> | null>(null)
   const questMainRef = useRef<HTMLDivElement | null>(null)
-  const errorAlertRef = useRef<HTMLDivElement | null>(null)
   useMobileScrollToRef(questMainRef, { enabled: !isLoading })
-  useMobileScrollToRef(errorAlertRef, {
-    enabled: submitError != null,
-    offsetTop: 12,
-    trigger: submitError,
-  })
 
   useEffect(() => {
     hasAttemptedQuestRecoveryRef.current = false
@@ -333,17 +328,16 @@ export default function Quest() {
 
   async function handleCreateRoom(): Promise<void> {
     if (!session?.access_token) {
-      setSubmitError(locale.sessionInfoMissing)
+      notify.error(locale.sessionInfoMissing)
       return
     }
 
     if (selectedStageId === '') {
-      setSubmitError(locale.selectStageFirst)
+      notify.error(locale.selectStageFirst)
       return
     }
 
     setIsSubmitting(true)
-    setSubmitError(null)
 
     try {
       const room = await createQuestRoom(
@@ -360,7 +354,7 @@ export default function Quest() {
       setMultiEntryView('create')
       await mutateRooms()
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.createRoomFailed)
+      notify.error(error instanceof Error ? error.message : locale.createRoomFailed)
     } finally {
       setIsSubmitting(false)
     }
@@ -445,12 +439,11 @@ export default function Quest() {
 
   async function handleJoinRoom(roomId: string): Promise<void> {
     if (!session?.access_token) {
-      setSubmitError(locale.sessionInfoMissing)
+      notify.error(locale.sessionInfoMissing)
       return
     }
 
     setIsJoiningRoomId(roomId)
-    setSubmitError(null)
 
     try {
       const room = await joinQuestRoom(roomId, session.access_token)
@@ -460,7 +453,7 @@ export default function Quest() {
       await mutateRoom(room, { revalidate: false })
       await mutateRooms()
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.joinRoomFailed)
+      notify.error(error instanceof Error ? error.message : locale.joinRoomFailed)
     } finally {
       setIsJoiningRoomId(null)
     }
@@ -468,17 +461,16 @@ export default function Quest() {
 
   async function handleStartQuest(): Promise<void> {
     if (!session?.access_token) {
-      setSubmitError(locale.sessionInfoMissing)
+      notify.error(locale.sessionInfoMissing)
       return
     }
 
     if (!currentRoom) {
-      setSubmitError(locale.createRoomFirst)
+      notify.error(locale.createRoomFirst)
       return
     }
 
     setIsStarting(true)
-    setSubmitError(null)
 
     try {
       const run = await startQuestRoom(currentRoom.roomId, session.access_token)
@@ -495,7 +487,7 @@ export default function Quest() {
       )
       await mutateRooms()
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.startQuestFailed)
+      notify.error(error instanceof Error ? error.message : locale.startQuestFailed)
     } finally {
       setIsStarting(false)
     }
@@ -503,17 +495,16 @@ export default function Quest() {
 
   async function handleCancelRoom(): Promise<void> {
     if (!session?.access_token) {
-      setSubmitError(locale.sessionInfoMissing)
+      notify.error(locale.sessionInfoMissing)
       return
     }
 
     if (!currentRoom) {
-      setSubmitError(locale.createRoomFirst)
+      notify.error(locale.createRoomFirst)
       return
     }
 
     setIsCancellingRoom(true)
-    setSubmitError(null)
 
     try {
       const room = await cancelQuestRoom(currentRoom.roomId, session.access_token)
@@ -522,7 +513,7 @@ export default function Quest() {
       await mutateRoom(room, { revalidate: false })
       await mutateRooms()
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.cancelRoomFailed)
+      notify.error(error instanceof Error ? error.message : locale.cancelRoomFailed)
     } finally {
       setIsCancellingRoom(false)
     }
@@ -822,7 +813,7 @@ export default function Quest() {
       } catch (error) {
         const message = error instanceof Error ? error.message : ''
         if (message) {
-          setSubmitError(message)
+          notify.error(message)
         }
       } finally {
         setIsRecoveringQuest(false)
@@ -831,7 +822,7 @@ export default function Quest() {
     }
 
     void recoverQuest()
-  }, [createdRoom, isPlayerLoading, liveRoom, liveRun, player, session?.access_token, startedRun])
+  }, [createdRoom, isPlayerLoading, liveRoom, liveRun, notify, player, session?.access_token, startedRun])
 
   useEffect(() => {
     if (currentRun?.status !== 'Succeeded' && currentRun?.status !== 'Failed') {
@@ -918,7 +909,7 @@ export default function Quest() {
   // 列・位置を変えたらすぐに保存する（「この配置で決定」ボタンはない）
   async function handleSaveFormation(drafts: typeof positionDrafts = positionDrafts): Promise<void> {
     if (!session?.access_token || !currentRoom) {
-      setSubmitError(locale.sessionInfoMissing)
+      notify.error(locale.sessionInfoMissing)
       return
     }
 
@@ -931,7 +922,6 @@ export default function Quest() {
     }
 
     setIsSavingFormation(true)
-    setSubmitError(null)
     let successfulUpdates = 0
 
     try {
@@ -961,9 +951,9 @@ export default function Quest() {
       const baseMessage = error instanceof Error ? error.message : locale.updatePositionFailed
       if (successfulUpdates > 0) {
         await mutateRoom()
-        setSubmitError(`${baseMessage} ${locale.updatePositionPartiallyFailedSuffix}`)
+        notify.error(`${baseMessage} ${locale.updatePositionPartiallyFailedSuffix}`)
       } else {
-        setSubmitError(baseMessage)
+        notify.error(baseMessage)
       }
     } finally {
       setIsSavingFormation(false)
@@ -972,22 +962,21 @@ export default function Quest() {
 
   async function handleSubmitCommand(): Promise<void> {
     if (!session?.access_token) {
-      setSubmitError(locale.sessionInfoMissing)
+      notify.error(locale.sessionInfoMissing)
       return
     }
 
     if (!currentRun || !selfParticipantId) {
-      setSubmitError(locale.commandUnavailable)
+      notify.error(locale.commandUnavailable)
       return
     }
 
     if (!currentRun.turn.waitingParticipantIds.includes(selfParticipantId) || currentPendingCommand != null) {
-      setSubmitError(locale.commandAlreadyConfirmed)
+      notify.error(locale.commandAlreadyConfirmed)
       return
     }
 
     setIsCommandSubmitting(true)
-    setSubmitError(null)
 
     try {
       const selectedTargetPosition = isEnemyTargetingAction
@@ -1028,7 +1017,7 @@ export default function Quest() {
       )
       await mutateRun()
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.commandSubmitFailed)
+      notify.error(error instanceof Error ? error.message : locale.commandSubmitFailed)
     } finally {
       setIsCommandSubmitting(false)
     }
@@ -1036,17 +1025,17 @@ export default function Quest() {
 
   async function handleSubmitChatMessage(): Promise<void> {
     if (isAnonymous) {
-      setSubmitError(locale.anonymousPostingRestricted)
+      notify.error(locale.anonymousPostingRestricted)
       return
     }
 
     if (!session?.access_token) {
-      setSubmitError(locale.sessionInfoMissing)
+      notify.error(locale.sessionInfoMissing)
       return
     }
 
     if (!currentRun || !selfParticipantId) {
-      setSubmitError(locale.commandUnavailable)
+      notify.error(locale.commandUnavailable)
       return
     }
 
@@ -1056,12 +1045,11 @@ export default function Quest() {
     }
 
     if (normalizedMessage.length > 50) {
-      setSubmitError(locale.chatSubmitFailed)
+      notify.error(locale.chatSubmitFailed)
       return
     }
 
     setIsChatSubmitting(true)
-    setSubmitError(null)
 
     try {
       await postQuestChatMessage(
@@ -1075,7 +1063,7 @@ export default function Quest() {
       setChatMessage('')
       await mutateRun()
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.chatSubmitFailed)
+      notify.error(error instanceof Error ? error.message : locale.chatSubmitFailed)
     } finally {
       setIsChatSubmitting(false)
     }
@@ -1089,7 +1077,6 @@ export default function Quest() {
     await refreshPlayerStatus()
     setCreatedRoom(null)
     setStartedRun(null)
-    setSubmitError(null)
     setChatMessage('')
     setSelectedActionKind('NormalAttack')
     setSelectedMoveId('')
@@ -1377,11 +1364,6 @@ export default function Quest() {
       {roomsError ? <Alert severity="warning">{roomsError.message}</Alert> : null}
       {roomError ? <Alert severity="warning">{roomError.message}</Alert> : null}
       {runError ? <Alert severity="warning">{runError.message}</Alert> : null}
-      {submitError ? (
-        <Box ref={errorAlertRef}>
-          <Alert severity="error">{submitError}</Alert>
-        </Box>
-      ) : null}
       {isRecoveringQuest ? (
         <Stack direction="row" spacing={1} alignItems="center">
           <CircularProgress size={16} sx={{ color: palette.white }} />

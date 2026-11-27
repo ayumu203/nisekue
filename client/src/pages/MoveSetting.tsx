@@ -21,6 +21,7 @@ import SkillDetail from '@/components/moveSetting/SkillDetail'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import { skillPanelColors as colors } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
@@ -44,7 +45,7 @@ export default function MoveSetting() {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const notify = useNotify()
 
   if (userId !== prevUserId) {
     setPrevUserId(userId)
@@ -112,19 +113,15 @@ export default function MoveSetting() {
     }
 
     setIsSaving(true)
-    setFeedback(null)
     try {
       const response = await updatePlayerMoveSet(
         { moveIds: editableSlots.map((slot) => slot.moveId) },
         session.access_token,
       )
-      setFeedback({ type: 'success', message: response.message || locale.moveOrderSaved })
+      notify.success(response.message || locale.moveOrderSaved)
       await mutatePlayer()
     } catch (error) {
-      setFeedback({
-        type: 'error',
-        message: error instanceof Error ? error.message : locale.moveOrderSaveFailed,
-      })
+      notify.error(error instanceof Error ? error.message : locale.moveOrderSaveFailed)
     } finally {
       setIsSaving(false)
     }
@@ -134,7 +131,6 @@ export default function MoveSetting() {
     if (player) {
       setEditableSlots(player.moveSlots)
     }
-    setFeedback(null)
   }
 
   function handleReorder(next: PlayerMoveSlot[], fromIndex: number, toIndex: number): void {
@@ -218,7 +214,6 @@ export default function MoveSetting() {
           gap: 1.5,
         }}
       >
-        {feedback ? <Alert severity={feedback.type}>{feedback.message}</Alert> : null}
         {isPlayerLoading ? (
           <Stack direction="row" spacing={1} alignItems="center" sx={{ color: palette.white }}>
             <CircularProgress size={16} color="inherit" />

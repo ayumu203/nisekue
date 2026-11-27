@@ -28,6 +28,7 @@ import GamePageFrame from '@/components/common/GamePageFrame'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import Status from '@/components/home/Status'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import {
   gamePageAccent,
   gamePageBackground,
@@ -63,7 +64,7 @@ function VisitPlayer() {
   const [giftTab, setGiftTab] = useState<'equipments' | 'items'>('items')
   const [giftQuantities, setGiftQuantities] = useState<Record<string, string>>({})
   const [giftBusyKey, setGiftBusyKey] = useState<string | null>(null)
-  const [giftFeedback, setGiftFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const notify = useNotify()
 
   const currentPlayerSWRKey = session?.user.id ? (['player', session.user.id] as const) : null
   const {
@@ -226,7 +227,6 @@ function VisitPlayer() {
                     <Typography variant="body2" color="text.secondary">
                       {locale.giftDescription}
                     </Typography>
-                    {giftFeedback ? <Alert severity={giftFeedback.type}>{giftFeedback.message}</Alert> : null}
                     {visitedPlayer?.userId === currentPlayer?.userId ? (
                       <Alert severity="info">{locale.giftSelfDisabled}</Alert>
                     ) : isGiftInventoryLoading ? (
@@ -299,7 +299,6 @@ function VisitPlayer() {
                                           }
 
                                           setGiftBusyKey(key)
-                                          setGiftFeedback(null)
                                           try {
                                             const response = await sendPlayerGift(
                                               visitedPlayer.userId,
@@ -316,17 +315,12 @@ function VisitPlayer() {
                                                   },
                                               session.access_token,
                                             )
-                                            setGiftFeedback({
-                                              type: 'success',
-                                              message: response.message || locale.giftSuccess,
-                                            })
+                                            notify.success(response.message || locale.giftSuccess)
                                             await Promise.all([mutateGiftInventory(), mutateChatRoom()])
                                           } catch (error) {
-                                            setGiftFeedback({
-                                              type: 'error',
-                                              message:
-                                                error instanceof Error ? error.message : locale.giftListLoadFailed,
-                                            })
+                                            notify.error(
+                                              error instanceof Error ? error.message : locale.giftListLoadFailed,
+                                            )
                                           } finally {
                                             setGiftBusyKey(null)
                                           }

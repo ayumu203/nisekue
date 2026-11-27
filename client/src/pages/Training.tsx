@@ -1,14 +1,4 @@
-import {
-  Alert,
-  Box,
-  CircularProgress,
-  IconButton,
-  Snackbar,
-  Stack,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material'
+import { Alert, Box, CircularProgress, IconButton, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { Link } from 'react-router-dom'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
@@ -32,6 +22,7 @@ import { buildHomeMenu, type HomeMenuGroupKey, type HomeMenuItem } from '@/compo
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { normalizeCharacterPath } from '@/lib/assets'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { trainingPanelColors } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
@@ -132,15 +123,13 @@ export default function Training() {
   const [selectedEnemy, setSelectedEnemy] = useState<TrainingEnemy | null>(null)
   const [selectedOpponent, setSelectedOpponent] = useState<PlayerSummary | null>(null)
   const [trainingResult, setTrainingResult] = useState<ExecuteTrainingResponse | null>(null)
-  const [trainingError, setTrainingError] = useState<string | null>(null)
+  const notify = useNotify()
   const [isTrainingSubmitting, setIsTrainingSubmitting] = useState(false)
   const [trainingLockUntilMs, setTrainingLockUntilMs] = useState(0)
   const [trainingLockRemainingMs, setTrainingLockRemainingMs] = useState(0)
   const trainingLockRemainingSeconds = Math.ceil(trainingLockRemainingMs / 1000)
   const [plannedMoveIds, setPlannedMoveIds] = useState<Array<number | null> | null>(null)
   const [lastSubmittedMoveIds, setLastSubmittedMoveIds] = useState<Array<number | null> | null>(null)
-  const [newEnemiesMessage, setNewEnemiesMessage] = useState<string | null>(null)
-  const lastNewEnemiesMessageRef = useRef<string | null>(null)
   const prevLevelRef = useRef<number | undefined>(undefined)
   const knownEnemyIdsRef = useRef<Set<number>>(new Set())
   const userId = session?.user.id ?? null
@@ -337,9 +326,9 @@ export default function Training() {
     knownEnemyIdsRef.current = new Set(trainingEnemies.map((e) => e.id))
 
     if (knownIds.size > 0 && hasNewEnemies) {
-      setNewEnemiesMessage(locale.newEnemiesUnlocked)
+      notify.info(locale.newEnemiesUnlocked)
     }
-  }, [trainingEnemies])
+  }, [notify, trainingEnemies])
 
   const isBattleLocked = isTrainingSubmitting || trainingLockRemainingSeconds > 0
   const isTrainingActionDisabled = isBattleLocked
@@ -376,7 +365,6 @@ export default function Training() {
     }
 
     setIsTrainingSubmitting(true)
-    setTrainingError(null)
     setSelectedEnemy(enemy)
 
     try {
@@ -406,11 +394,11 @@ export default function Training() {
     } catch (error) {
       if (error instanceof TrainingCooldownError) {
         const retryAfterMessage = locale.retryAfterSeconds.replace('{{seconds}}', String(error.retryAfterSeconds))
-        setTrainingError(`${error.message} (${retryAfterMessage})`)
+        notify.error(`${error.message} (${retryAfterMessage})`)
       } else if (error instanceof Error) {
-        setTrainingError(error.message)
+        notify.error(error.message)
       } else {
-        setTrainingError(locale.trainingFailed)
+        notify.error(locale.trainingFailed)
       }
     } finally {
       setIsTrainingSubmitting(false)
@@ -428,7 +416,6 @@ export default function Training() {
     }
 
     setIsTrainingSubmitting(true)
-    setTrainingError(null)
     setSelectedOpponent(opponent)
 
     try {
@@ -453,11 +440,11 @@ export default function Training() {
     } catch (error) {
       if (error instanceof TrainingCooldownError) {
         const retryAfterMessage = locale.retryAfterSeconds.replace('{{seconds}}', String(error.retryAfterSeconds))
-        setTrainingError(`${error.message} (${retryAfterMessage})`)
+        notify.error(`${error.message} (${retryAfterMessage})`)
       } else if (error instanceof Error) {
-        setTrainingError(error.message)
+        notify.error(error.message)
       } else {
-        setTrainingError(locale.trainingFailed)
+        notify.error(locale.trainingFailed)
       }
     } finally {
       setIsTrainingSubmitting(false)
@@ -469,7 +456,6 @@ export default function Training() {
     setSelectedEnemy(enemy)
     setSelectedOpponent(null)
     setTrainingResult(null)
-    setTrainingError(null)
 
     if (tutorialStep === 'training-fight') {
       const hasMovesSelected = lastSubmittedMoveIds?.some((id) => id !== null) ?? false
@@ -487,7 +473,6 @@ export default function Training() {
     setSelectedOpponent(opponent)
     setSelectedEnemy(null)
     setTrainingResult(null)
-    setTrainingError(null)
 
     if (!player) {
       return
@@ -583,7 +568,6 @@ export default function Training() {
       setSelectedEnemy(null)
       setSelectedOpponent(null)
       setTrainingResult(null)
-      setTrainingError(null)
     },
   }))
 
@@ -712,7 +696,6 @@ export default function Training() {
           />
         </GamePanel>
       </Box>
-      {trainingError ? <Alert severity="warning">{trainingError}</Alert> : null}
       {renderColumns(
         <GamePanel tabs={modeTabs} aria-label={locale.enemySelectTitle} {...panelProps}>
           {renderOpponentList()}
@@ -849,33 +832,6 @@ export default function Training() {
           onDismiss={() => advanceTutorial('home-quest')}
         />
       )}
-      <Snackbar
-        open={newEnemiesMessage !== null}
-        autoHideDuration={3000}
-        onClose={(_, reason) => {
-          if (reason === 'clickaway') return
-          lastNewEnemiesMessageRef.current = newEnemiesMessage
-          setNewEnemiesMessage(null)
-        }}
-        TransitionProps={{
-          onExited: () => {
-            lastNewEnemiesMessageRef.current = null
-          },
-        }}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity="info"
-          variant="filled"
-          onClose={() => {
-            lastNewEnemiesMessageRef.current = newEnemiesMessage
-            setNewEnemiesMessage(null)
-          }}
-          sx={{ width: '100%', alignItems: 'center' }}
-        >
-          {newEnemiesMessage ?? lastNewEnemiesMessageRef.current ?? ''}
-        </Alert>
-      </Snackbar>
     </Box>
   )
 }

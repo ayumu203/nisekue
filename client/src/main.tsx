@@ -6,6 +6,7 @@ import { SWRConfig } from 'swr'
 import './index.css'
 import App from '@/App'
 import { AuthProvider } from '@/contexts/AuthProvider'
+import { NotificationProvider } from '@/contexts/NotificationProvider'
 import { theme } from '@/theme/theme'
 
 function getRouterBasename(): string | undefined {
@@ -36,9 +37,11 @@ createRoot(document.getElementById('root')!).render(
       <AuthProvider>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <BrowserRouter basename={getRouterBasename()}>
-            <App />
-          </BrowserRouter>
+          <NotificationProvider>
+            <BrowserRouter basename={getRouterBasename()}>
+              <App />
+            </BrowserRouter>
+          </NotificationProvider>
         </ThemeProvider>
       </AuthProvider>
     </SWRConfig>

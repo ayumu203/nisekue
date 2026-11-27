@@ -1,4 +1,4 @@
-import { Alert, Box, Button, CircularProgress, Pagination, Stack, Typography } from '@mui/material'
+import { Box, Button, CircularProgress, Pagination, Stack, Typography } from '@mui/material'
 import { useMemo, useState, type ReactNode } from 'react'
 import { homePanelColors, menuButtonSx, panelOutlinedButtonSx, panelPrimaryButtonSx } from '@/constants/styles'
 import type { PlayerSummary } from '@/schema/player'
@@ -7,6 +7,7 @@ import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/qu
 import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestStageModeCard from './QuestStageModeCard'
 import { font, palette } from '@/theme/tokens'
+import { EmptyText } from '@/components/common/EmptyText'
 
 type QuestRoomCreateSectionProps = {
   activeStages: GetQuestStagesResponse
@@ -102,7 +103,7 @@ export default function QuestRoomCreateSection({
       </Typography>
     </Stack>
   ) : activeStages.length === 0 ? (
-    <Alert severity="info">{locale.stagesEmpty}</Alert>
+    <EmptyText>{locale.stagesEmpty}</EmptyText>
   ) : (
     <Stack spacing={2}>
       <Box

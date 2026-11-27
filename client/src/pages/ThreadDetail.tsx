@@ -19,9 +19,11 @@ import ThreadBoardSurface from '@/components/common/ThreadBoardSurface'
 import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import ThreadPageShell from '@/components/common/ThreadPageShell'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../locale/threads/ThreadDetail.json'
 import { font, palette, withAlpha } from '@/theme/tokens'
+import { EmptyText } from '@/components/common/EmptyText'
 
 const boardSx = {
   backgroundColor: palette.brown500,
@@ -90,9 +92,8 @@ export default function ThreadDetail() {
   const { session, isLoading, isAnonymous } = useAuth()
   const navigate = useNavigate()
   const [replyBody, setReplyBody] = useState('')
-  const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const notify = useNotify()
   const [isDeleting, setIsDeleting] = useState(false)
 
   const swrKey = session?.access_token && threadId ? (['thread', threadId] as const) : null
@@ -113,7 +114,7 @@ export default function ThreadDetail() {
 
   const handleDelete = async () => {
     if (!session?.access_token || !threadId) {
-      setDeleteError(locale.threadMissing)
+      notify.error(locale.threadMissing)
       return
     }
 
@@ -122,12 +123,11 @@ export default function ThreadDetail() {
     }
 
     setIsDeleting(true)
-    setDeleteError(null)
     try {
       await deleteThread(threadId, session.access_token)
       navigate('/threads')
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : locale.deleteFailed)
+      notify.error(error instanceof Error ? error.message : locale.deleteFailed)
     } finally {
       setIsDeleting(false)
     }
@@ -168,11 +168,6 @@ export default function ThreadDetail() {
       </Stack>
 
       <ThreadBoardSurface>
-        {deleteError ? (
-          <Box sx={{ mb: 2 }}>
-            <Alert severity="warning">{deleteError}</Alert>
-          </Box>
-        ) : null}
         {isThreadLoading ? (
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={16} />
@@ -277,7 +272,6 @@ export default function ThreadDetail() {
                 </Box>
 
                 {isAnonymous ? <Alert severity="info">{locale.anonymousPostingRestricted}</Alert> : null}
-                {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
 
                 <TextField
                   label={locale.replyForm.body}
@@ -298,23 +292,22 @@ export default function ThreadDetail() {
                   sx={flatPrimaryButtonSx}
                   onClick={async () => {
                     if (isAnonymous) {
-                      setSubmitError(locale.anonymousPostingRestricted)
+                      notify.error(locale.anonymousPostingRestricted)
                       return
                     }
 
                     if (!session?.access_token || !threadId) {
-                      setSubmitError(locale.threadMissing)
+                      notify.error(locale.threadMissing)
                       return
                     }
 
                     setIsSubmitting(true)
-                    setSubmitError(null)
                     try {
                       const updated = await createThreadReply(threadId, { body: replyBody }, session.access_token)
                       setReplyBody('')
                       await mutate(updated, { revalidate: false })
                     } catch (submitError) {
-                      setSubmitError(submitError instanceof Error ? submitError.message : locale.replyFailed)
+                      notify.error(submitError instanceof Error ? submitError.message : locale.replyFailed)
                     } finally {
                       setIsSubmitting(false)
                     }
@@ -346,7 +339,7 @@ export default function ThreadDetail() {
 
               {data.replies.length === 0 ? (
                 <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2.5 }}>
-                  <Alert severity="info">{locale.emptyReplies}</Alert>
+                  <EmptyText>{locale.emptyReplies}</EmptyText>
                 </Box>
               ) : (
                 <Stack spacing={0}>

@@ -49,6 +49,7 @@ import { HomeFilledIcon, HomeIcon } from '@/components/home/HomeIcons'
 import { buildHomeMenu, type HomeMenuGroupKey, type HomeMenuItem } from '@/components/home/homeMenu'
 import { itemsPanelColors as colors } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
 import { resolveCharacterAssetPath } from '@/lib/assets'
@@ -104,7 +105,7 @@ export default function Items() {
   const [openMenuGroup, setOpenMenuGroup] = useState<HomeMenuGroupKey | null>(null)
 
   const [tab, setTab] = useState<ItemsTabKey>('bag')
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const notify = useNotify()
   const [busyKey, setBusyKey] = useState<string | null>(null)
   // スマホで品物を選んだら、下の札までスクロールする
   const [selectionCount, setSelectionCount] = useState(0)
@@ -284,17 +285,13 @@ export default function Items() {
 
   async function runAction(actionKey: string, action: () => Promise<{ message: string }>): Promise<boolean> {
     setBusyKey(actionKey)
-    setFeedback(null)
     try {
       const result = await action()
-      setFeedback({ type: 'success', message: result.message })
+      notify.success(result.message)
       await refreshAll()
       return true
     } catch (error) {
-      setFeedback({
-        type: 'error',
-        message: error instanceof Error ? error.message : locale.actionFailed,
-      })
+      notify.error(error instanceof Error ? error.message : locale.actionFailed)
       return false
     } finally {
       setBusyKey(null)
@@ -581,7 +578,6 @@ export default function Items() {
           gap: 1.5,
         }}
       >
-        {feedback ? <Alert severity={feedback.type}>{feedback.message}</Alert> : null}
         {loadError ? <Alert severity="warning">{loadError.message}</Alert> : null}
         <Box
           sx={{

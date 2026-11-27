@@ -4,7 +4,6 @@ import {
   CircularProgress,
   IconButton,
   Pagination,
-  Snackbar,
   Stack,
   Typography,
   useMediaQuery,
@@ -25,6 +24,7 @@ import {
 } from '@/api/chat'
 import { getThreadAlerts, markThreadRepliesAlerted } from '@/api/thread'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { useSignOut } from '@/hooks/useSignOut'
 import { useAnnouncements } from '@/hooks/useAnnouncements'
@@ -60,7 +60,7 @@ const SURVEY_GUIDE_LEVEL = 10
 
 function Home() {
   const { session, isLoading, isAnonymous } = useAuth()
-  const [toastQueue, setToastQueue] = useState<string[]>([])
+  const notify = useNotify()
   const userId = session?.user.id ?? null
   const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
   const [isRebirthTutorialDismissed, setIsRebirthTutorialDismissed] = useState(false)
@@ -82,12 +82,12 @@ function Home() {
   // 最初の描画から正しい側を出す（チュートリアルのスポットライトが最初に測った要素を使い続けるため）
   const isDesktop = useMediaQuery(theme.breakpoints.up('sm'), { noSsr: true })
   const { canUseDebug } = useDebugStatus()
-  const { signOut, isSigningOut, signOutError } = useSignOut()
+  const { signOut, isSigningOut } = useSignOut()
   const { latestAnnouncementDate } = useAnnouncements()
   const handledChatIdsRef = useRef<Set<number>>(new Set())
   const handledReplyIdsRef = useRef<Set<string>>(new Set())
   const enqueueToast = useEffectEvent((message: string) => {
-    setToastQueue((current) => [...current, message])
+    notify.info(message)
   })
   const playerSWRKey = session?.user.id ? (['player', session.user.id] as const) : null
   const {
@@ -483,7 +483,6 @@ function Home() {
           lockedGroup={tutorialOpenGroup}
           onToggleGroup={toggleMenuGroup}
         />
-        {signOutError ? <Alert severity="error">{signOutError}</Alert> : null}
         {chatPanel(false)}
         <GamePanel title={announcementTabLabel} fillHeight={false}>
           <AnnouncementList variant="list" />
@@ -554,27 +553,6 @@ function Home() {
           }}
         />
       )}
-      <Snackbar
-        open={toastQueue.length > 0}
-        autoHideDuration={1500}
-        onClose={(_, reason) => {
-          if (reason === 'clickaway') {
-            return
-          }
-
-          setToastQueue((current) => current.slice(1))
-        }}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity="info"
-          variant="filled"
-          onClose={() => setToastQueue((current) => current.slice(1))}
-          sx={{ width: '100%', alignItems: 'center' }}
-        >
-          {toastQueue[0] ?? ''}
-        </Alert>
-      </Snackbar>
     </>
   )
 }
