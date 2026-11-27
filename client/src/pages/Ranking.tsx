@@ -173,7 +173,7 @@ export default function Ranking() {
                     >
                       {locale.overline}
                     </Typography>
-                    <Typography variant="h4" fontWeight={900} sx={{ color: palette.gold300 }}>
+                    <Typography variant="h4" fontWeight={900} sx={{ color: palette.white }}>
                       {locale.title}
                     </Typography>
                     <Typography variant="body2" sx={{ color: withAlpha(palette.white, 0.9) }}>
