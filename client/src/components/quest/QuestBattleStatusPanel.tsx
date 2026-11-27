@@ -685,6 +685,9 @@ export default function QuestBattleStatusPanel({
         </Button>
       ))}
 
+      {/* スマホでは行動ボタンとスキル選択・決定を常に二段に分ける */}
+      <Box aria-hidden="true" sx={{ display: { xs: 'block', sm: 'none' }, flexBasis: '100%', height: 0 }} />
+
       {selectedActionKind === 'UseMove' ? (
         <FormControl sx={{ minWidth: { xs: 116, sm: 180 }, ml: { sm: 'auto' }, ...greenOutlinedInputSx }}>
           <Select
@@ -807,7 +810,7 @@ export default function QuestBattleStatusPanel({
               sx={{
                 display: 'inline-flex',
                 position: 'absolute',
-                top: { xs: 58, sm: 72 },
+                top: { xs: 98, sm: 72 },
                 left: { xs: 10, sm: 16 },
                 zIndex: 4,
                 fontWeight: 700,
