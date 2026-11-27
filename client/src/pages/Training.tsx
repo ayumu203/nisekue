@@ -820,6 +820,7 @@ export default function Training() {
         <SpotlightTutorial
           guide="instructor"
           targetId="tutorial-move-plan-form"
+          dimBackground={false}
           pointerTargetId="tutorial-next-move-select"
           message={tutorialLocale.steps.trainingMoveSelect.message}
           showDismiss

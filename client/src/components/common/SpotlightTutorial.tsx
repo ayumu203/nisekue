@@ -29,6 +29,8 @@ type SpotlightTutorialProps = {
   padding?: number
   // 話しているキャラ。指定がなければ受付嬢
   guide?: TutorialGuideId
+  // 周りを暗くするか。ほかの所も自由に操作してよい場面では false にして、枠と矢印だけで示す
+  dimBackground?: boolean
 }
 
 // 実際の画面（歯車ボタン・外枠）の配色に合わせる
@@ -151,6 +153,7 @@ export default function SpotlightTutorial({
   onDismiss,
   padding = 12,
   guide = 'receptionist',
+  dimBackground = true,
   pointerTargetId,
 }: SpotlightTutorialProps) {
   const guideInfo = TUTORIAL_GUIDES[guide]
@@ -215,7 +218,7 @@ export default function SpotlightTutorial({
               width: targetRect.width,
               height: targetRect.height,
               borderRadius: 2,
-              boxShadow: `0 0 0 9999px ${OVERLAY_COLOR}`,
+              boxShadow: dimBackground ? `0 0 0 9999px ${OVERLAY_COLOR}` : 'none',
               border: `3px solid ${ACCENT_COLOR}`,
               boxSizing: 'border-box',
               pointerEvents: 'none',

@@ -571,6 +571,7 @@ export default function PlayerSetting() {
       {tutorialStep === 'player-setting-name' && (
         <SpotlightTutorial
           targetId="tutorial-name-field"
+          dimBackground={false}
           message={tutorialLocale.steps.playerSettingName.message}
           showDismiss
           dismissLabel={tutorialLocale.steps.playerSettingName.dismissLabel}
@@ -580,6 +581,7 @@ export default function PlayerSetting() {
       {tutorialStep === 'player-setting-random' && (
         <SpotlightTutorial
           targetId="tutorial-random-btn"
+          dimBackground={false}
           message={tutorialLocale.steps.playerSettingRandom.message}
           showDismiss
           onDismiss={() => advanceTutorial('player-setting-image-list')}
@@ -588,6 +590,7 @@ export default function PlayerSetting() {
       {tutorialStep === 'player-setting-image-list' && (
         <SpotlightTutorial
           targetId="tutorial-image-list-btn"
+          dimBackground={false}
           message={tutorialLocale.steps.playerSettingImageList.message}
           showDismiss
           onDismiss={() => advanceTutorial('player-setting-save')}
@@ -596,6 +599,7 @@ export default function PlayerSetting() {
       {tutorialStep === 'player-setting-save' && (
         <SpotlightTutorial
           targetId="tutorial-save-btn"
+          dimBackground={false}
           message={tutorialLocale.steps.playerSettingSave.message}
           showDismiss
           onDismiss={() => advanceTutorial('player-setting-account')}
