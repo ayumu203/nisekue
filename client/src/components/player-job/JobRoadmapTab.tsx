@@ -1,14 +1,4 @@
-import {
-  Alert,
-  Box,
-  Button,
-  ButtonBase,
-  CircularProgress,
-  Drawer,
-  IconButton,
-  Snackbar,
-  Typography,
-} from '@mui/material'
+import { Alert, Box, Button, ButtonBase, CircularProgress, Drawer, IconButton, Typography } from '@mui/material'
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import useSWR from 'swr'
@@ -16,6 +6,7 @@ import { getJobRoadmap, getJobRoadmapList, unlockJobRoadmap } from '@/api/player
 import GamePanel from '@/components/common/GamePanel'
 import { jobChangePanelColors as colors } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { resolveJobAssetPath, resolveJobBustAssetPath } from '@/lib/assets'
 import type { GetPlayerResponse, JobRoadmapListEntry, JobRoadmapNode } from '@/schema/player'
 import { InfoChip, InfoRow, InfoSection } from './jobChangeParts'
@@ -47,8 +38,7 @@ export default function JobRoadmapTab({ player, onPlayerChanged, isWide, attachT
   const [selectedJobId, setSelectedJobId] = useState<number | null>(player.job.value)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const notify = useNotify()
 
   const {
     data: roadmapList,
@@ -76,14 +66,13 @@ export default function JobRoadmapTab({ player, onPlayerChanged, isWide, attachT
   async function handleUnlockConfirm() {
     if (!accessToken || !selectedEntry) return
     setDialogOpen(false)
-    setSubmitError(null)
 
     try {
       const result = await unlockJobRoadmap({ jobId: selectedEntry.jobId }, accessToken)
       await Promise.all([mutateList(), mutateTree(), onPlayerChanged()])
-      setSuccessMessage(locale.roadmapUnlockSuccess.replace('{{jobName}}', result.jobName))
+      notify.success(locale.roadmapUnlockSuccess.replace('{{jobName}}', result.jobName))
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.roadmapUnlockFailed)
+      notify.error(error instanceof Error ? error.message : locale.roadmapUnlockFailed)
     }
   }
 
@@ -116,7 +105,6 @@ export default function JobRoadmapTab({ player, onPlayerChanged, isWide, attachT
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      {submitError && !attachToTabs ? <Alert severity="error">{submitError}</Alert> : null}
       {isWide ? (
         <Box
           sx={{
@@ -166,8 +154,6 @@ export default function JobRoadmapTab({ player, onPlayerChanged, isWide, attachT
           )}
         </GamePanel>
       )}
-      {/* スマホはタブと箱をつなげるため、エラーは箱の下に出す */}
-      {submitError && attachToTabs ? <Alert severity="error">{submitError}</Alert> : null}
 
       {!isWide ? (
         <Drawer
@@ -205,13 +191,6 @@ export default function JobRoadmapTab({ player, onPlayerChanged, isWide, attachT
         goldCost={selectedEntry?.goldCostToUnlock ?? 0}
         onClose={() => setDialogOpen(false)}
         onConfirm={handleUnlockConfirm}
-      />
-      <Snackbar
-        open={successMessage !== null}
-        autoHideDuration={3000}
-        onClose={() => setSuccessMessage(null)}
-        message={successMessage}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
     </Box>
   )

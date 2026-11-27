@@ -4,6 +4,7 @@
   "sendFailed": "メッセージ送信に失敗しました",
   "anonymousPostingRestricted": "オタメシプレイ中は投稿できません。プレイヤー設定からアカウント連携してください。",
   "showSystemMessages": "システム通知を表示",
+  "noMessages": "メッセージなし",
   "noVisibleMessages": "表示するメッセージはありません。",
   "deleteMessage": "発言を削除",
   "deleteConfirmTitle": "このメッセージを削除しますか？",

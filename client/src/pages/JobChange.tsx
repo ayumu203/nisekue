@@ -21,6 +21,7 @@ import JobChangeTab from '@/components/player-job/JobChangeTab'
 import JobRoadmapTab from '@/components/player-job/JobRoadmapTab'
 import { jobChangePanelColors as colors } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
@@ -38,7 +39,7 @@ export default function JobChange() {
   const { canUseDebug } = useDebugStatus()
   const [openMenuGroup, setOpenMenuGroup] = useState<HomeMenuGroupKey | null>(null)
   const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const notify = useNotify()
   const [isSubmittingJobValue, setIsSubmittingJobValue] = useState<number | null>(null)
   const [tabIndex, setTabIndex] = useState(0)
 
@@ -91,18 +92,17 @@ export default function JobChange() {
 
   async function handleChangeJob(nextJobValue: number): Promise<void> {
     if (!session?.access_token) {
-      setSubmitError(locale.sessionMissing)
+      notify.error(locale.sessionMissing)
       return
     }
 
-    setSubmitError(null)
     setIsSubmittingJobValue(nextJobValue)
 
     try {
       await updatePlayerJob({ job: nextJobValue }, session.access_token)
       await mutatePlayer()
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.changeFailed)
+      notify.error(error instanceof Error ? error.message : locale.changeFailed)
     } finally {
       setIsSubmittingJobValue(null)
     }
@@ -270,18 +270,7 @@ export default function JobChange() {
           flexDirection: 'column',
         }}
       >
-        {/* スマホはタブと箱をつなげるため、エラーはタブの上に出す */}
-        {submitError && !isDesktop ? (
-          <Alert severity="error" sx={{ mb: 1.5 }}>
-            {submitError}
-          </Alert>
-        ) : null}
         {isDesktop ? <Box sx={{ mb: 2 }}>{desktopTabs}</Box> : mobileTabs}
-        {submitError && isDesktop ? (
-          <Alert severity="error" sx={{ mb: 1.5 }}>
-            {submitError}
-          </Alert>
-        ) : null}
         {isPlayerLoading ? (
           <Stack direction="row" spacing={1} alignItems="center" sx={{ color: palette.white }}>
             <CircularProgress size={16} color="inherit" />

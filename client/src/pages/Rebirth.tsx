@@ -26,6 +26,7 @@ import {
   templeSectionTitleSx,
 } from '@/components/rebirth/RebirthLayout'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-rebirth/Rebirth.json'
@@ -54,7 +55,7 @@ export default function Rebirth() {
   const { session, isLoading } = useAuth()
   const isDesktop = useMediaQuery((theme: Theme) => theme.breakpoints.up('sm'), { noSsr: true })
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+  const notify = useNotify()
   const [resultStatus, setResultStatus] = useState<{
     maxHp: number
     maxMp: number
@@ -65,8 +66,6 @@ export default function Rebirth() {
     speed: number
   } | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [dataResetError, setDataResetError] = useState<string | null>(null)
-  const [dataResetMessage, setDataResetMessage] = useState<string | null>(null)
   const [isResettingData, setIsResettingData] = useState(false)
 
   const playerSWRKey = session?.user.id ? (['rebirth', session.user.id] as const) : null
@@ -117,11 +116,10 @@ export default function Rebirth() {
 
   async function handleRebirth(): Promise<void> {
     if (!session?.access_token) {
-      setSubmitError(locale.sessionMissing)
+      notify.error(locale.sessionMissing)
       return
     }
 
-    setSubmitError(null)
     setResultStatus(null)
     setIsSubmitting(true)
 
@@ -131,7 +129,7 @@ export default function Rebirth() {
       await mutatePlayer()
       await mutateRebirthHistory()
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.executeFailed)
+      notify.error(error instanceof Error ? error.message : locale.executeFailed)
     } finally {
       setIsSubmitting(false)
     }
@@ -139,7 +137,7 @@ export default function Rebirth() {
 
   async function handleDataReset(): Promise<void> {
     if (!session?.access_token) {
-      setDataResetError(locale.sessionMissing)
+      notify.error(locale.sessionMissing)
       return
     }
 
@@ -147,17 +145,15 @@ export default function Rebirth() {
       return
     }
 
-    setDataResetError(null)
-    setDataResetMessage(null)
     setResultStatus(null)
     setIsResettingData(true)
 
     try {
       await resetPlayerData(session.access_token)
-      setDataResetMessage(locale.dataReset.done)
+      notify.success(locale.dataReset.done)
       await mutatePlayer()
     } catch (error) {
-      setDataResetError(error instanceof Error ? error.message : locale.dataReset.failed)
+      notify.error(error instanceof Error ? error.message : locale.dataReset.failed)
     } finally {
       setIsResettingData(false)
     }
@@ -386,8 +382,6 @@ export default function Rebirth() {
               </Box>
             </Paper>
 
-            {submitError ? <Alert severity="error">{submitError}</Alert> : null}
-
             <Paper variant="outlined" sx={{ ...rebirthSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
               <Stack spacing={1.5}>
                 <Typography variant="h6">{locale.statusPreviewTitle}</Typography>
@@ -567,8 +561,6 @@ export default function Rebirth() {
                 <Typography variant="body2" color="text.secondary">
                   {locale.dataReset.description.replace('{{gold}}', String(dataResetGold))}
                 </Typography>
-                {dataResetError ? <Alert severity="error">{dataResetError}</Alert> : null}
-                {dataResetMessage ? <Alert severity="success">{dataResetMessage}</Alert> : null}
                 <Box>
                   <Button
                     variant="outlined"

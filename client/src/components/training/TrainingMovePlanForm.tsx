@@ -1,4 +1,4 @@
-import { Alert, Box, Button, FormControl, MenuItem, Select, Stack, Typography } from '@mui/material'
+import { Box, Button, FormControl, MenuItem, Select, Stack, Typography } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import { panelPrimaryButtonSx, trainingPanelColors } from '@/constants/styles'
@@ -28,7 +28,6 @@ type PlannedTurn = {
   moveId: number | null
   moveName: string
   mpCost: number
-  warning: string | null
 }
 
 const dottedDivider = `1px dotted ${trainingPanelColors.divider}`
@@ -60,7 +59,6 @@ function buildPlannedTurns(player: GetPlayerResponse, moveIds: Array<number | nu
         moveId: null,
         moveName: locale.normalAttack,
         mpCost: 0,
-        warning: null,
       }
     }
 
@@ -76,7 +74,6 @@ function buildPlannedTurns(player: GetPlayerResponse, moveIds: Array<number | nu
       moveId,
       moveName: move?.moveName ?? String(moveId),
       mpCost,
-      warning: canUse ? null : locale.waitWarning,
     }
   })
 }
@@ -256,11 +253,6 @@ export default function TrainingMovePlanForm({
                 </Select>
               </FormControl>
             </Stack>
-            {turn.warning ? (
-              <Alert severity="error" sx={{ mt: 0.75, py: 0.25, fontWeight: 700 }}>
-                {turn.warning}
-              </Alert>
-            ) : null}
           </Box>
         )
       })}

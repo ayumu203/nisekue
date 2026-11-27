@@ -26,6 +26,7 @@ import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../locale/players/Players.json'
 import { innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
 import { font, palette, withAlpha } from '@/theme/tokens'
+import { EmptyText } from '@/components/common/EmptyText'
 
 const PAGE_SIZE = 24
 
@@ -127,7 +128,7 @@ function Players() {
             ) : playersError ? (
               <Alert severity="warning">{playersError.message}</Alert>
             ) : visitTargets.length === 0 ? (
-              <Alert severity="info">{locale.empty}</Alert>
+              <EmptyText>{locale.empty}</EmptyText>
             ) : (
               <Stack spacing={2}>
                 <Box

@@ -26,6 +26,7 @@ import { HomeFilledIcon, HomeIcon } from '@/components/home/HomeIcons'
 import { buildHomeMenu, type HomeMenuGroupKey, type HomeMenuItem } from '@/components/home/homeMenu'
 import { treasureMapPanelColors as colors } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
@@ -222,7 +223,7 @@ export default function TreasureMap() {
   const [openMenuGroup, setOpenMenuGroup] = useState<HomeMenuGroupKey | null>(null)
   const userId = session?.user.id ?? null
   const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
-  const [actionError, setActionError] = useState<string | null>(null)
+  const notify = useNotify()
   const [actionMapId, setActionMapId] = useState<number | null>(null)
   const [isClaiming, setIsClaiming] = useState(false)
   const [nowMs, setNowMs] = useState(() => Date.now())
@@ -363,13 +364,12 @@ export default function TreasureMap() {
     }
 
     setActionMapId(mapId)
-    setActionError(null)
 
     try {
       await startTreasureMapExpedition({ mapId }, session.access_token)
       await Promise.all([mutateMaps(), mutateCurrent()])
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : locale.sessionMissing)
+      notify.error(error instanceof Error ? error.message : locale.sessionMissing)
     } finally {
       setActionMapId(null)
     }
@@ -381,7 +381,6 @@ export default function TreasureMap() {
     }
 
     setIsClaiming(true)
-    setActionError(null)
 
     try {
       const response = await claimTreasureMapReward(currentExpedition.expeditionId, session.access_token)
@@ -394,7 +393,7 @@ export default function TreasureMap() {
       })
       await Promise.all([mutateMaps(), mutateCurrent()])
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : locale.sessionMissing)
+      notify.error(error instanceof Error ? error.message : locale.sessionMissing)
     } finally {
       setIsClaiming(false)
     }
@@ -1013,7 +1012,6 @@ export default function TreasureMap() {
           gap: { xs: 1.5, sm: 2 },
         }}
       >
-        {actionError ? <Alert severity="warning">{actionError}</Alert> : null}
         {currentError ? <Alert severity="warning">{currentError.message}</Alert> : null}
         {/* PC（md 以上）：左に地図の一覧、右に探索中／戦利品と帰還記録。狭い画面は 探索中／戦利品 → 地図 → 帰還記録 の順に積む */}
         <Box

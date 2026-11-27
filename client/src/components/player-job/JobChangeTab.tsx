@@ -1,4 +1,4 @@
-import { Alert, Box, ButtonBase, Button, Typography } from '@mui/material'
+import { Box, ButtonBase, Button, Typography } from '@mui/material'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import GamePanel from '@/components/common/GamePanel'
@@ -408,7 +408,15 @@ function SelectFooter({
 
   return (
     <Box sx={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 1.5, px: compact ? 2 : 3, py: 2.5 }}>
-      {isMaxLevel ? <Alert severity="warning">{locale.maxLevelNoticeBody}</Alert> : null}
+      {isMaxLevel ? (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+          {locale.maxLevelNotice.map((item) => (
+            <Typography key={item.label} sx={{ fontSize: compact ? font.sm : font.md, color: palette.red700 }}>
+              {item.label}：{item.value}
+            </Typography>
+          ))}
+        </Box>
+      ) : null}
       <Box
         sx={{
           display: 'flex',

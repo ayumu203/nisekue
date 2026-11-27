@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Alert, Box, Button, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material'
+import { Box, Button, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material'
 import { Link } from 'react-router-dom'
 import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx, topNavigationIconButtonSx } from '@/constants/styles'
 import type { GetPlayerResponse } from '@/schema/player'
@@ -51,7 +51,7 @@ export default function Status({
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(true)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const { signOut, isSigningOut, signOutError } = useSignOut()
+  const { signOut, isSigningOut } = useSignOut()
   const equippedWeapon = player?.equipments.find(
     (equipment) => equipment.equipmentType === 'Weapon' && equipment.status === 'Equipped',
   )
@@ -462,12 +462,6 @@ export default function Status({
       )}
 
       <Collapse in={isOpen || !showCollapseToggle}>{statusPaper}</Collapse>
-
-      {signOutError ? (
-        <Alert severity="error" sx={{ mt: 1 }}>
-          {signOutError}
-        </Alert>
-      ) : null}
     </Box>
   )
 }

@@ -18,6 +18,7 @@ import {
   softGreenButtonSx,
 } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { hasAnonymousIdentity } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
@@ -34,13 +35,10 @@ export default function PlayerSetting() {
   const [accountIsAnonymous, setAccountIsAnonymous] = useState(hasAnonymousIdentity(session?.user ?? null))
   const [userName, setUserName] = useState('')
   const [imageNoInput, setImageNoInput] = useState('')
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const notify = useNotify()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [accountEmailInput, setAccountEmailInput] = useState(session?.user.email ?? '')
   const [accountPasswordInput, setAccountPasswordInput] = useState('')
-  const [accountError, setAccountError] = useState<string | null>(null)
-  const [accountSuccess, setAccountSuccess] = useState<string | null>(null)
   const [accountAction, setAccountAction] = useState<'account' | 'google' | null>(null)
   const settingInputSx = {
     ...greenOutlinedInputSx,
@@ -120,20 +118,18 @@ export default function PlayerSetting() {
 
     if (!hasAnonymousIdentity(session?.user ?? null)) {
       setAccountIsAnonymous(false)
-      setAccountSuccess(locale.googleLinkSuccess)
+      notify.success(locale.googleLinkSuccess)
     }
-  }, [session?.user])
+  }, [notify, session?.user])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
 
     if (!session?.access_token) {
-      setSubmitError(locale.sessionMissing)
+      notify.error(locale.sessionMissing)
       return
     }
 
-    setSubmitError(null)
-    setSuccessMessage(null)
     setIsSubmitting(true)
 
     try {
@@ -154,7 +150,7 @@ export default function PlayerSetting() {
       const shouldUpdateImage = normalizedImageNo !== null && normalizedImageNo !== currentImageNo
 
       if (!shouldUpdateName && !shouldUpdateImage) {
-        setSuccessMessage(locale.saved)
+        notify.success(locale.saved)
         return
       }
 
@@ -184,17 +180,17 @@ export default function PlayerSetting() {
       }
 
       if (errors.length === 0) {
-        setSuccessMessage(locale.saved)
+        notify.success(locale.saved)
         if (tutorialStep === 'player-setting-save') {
           advanceTutorial('player-setting-account')
         }
       } else if (anySuccess) {
-        setSubmitError(`${locale.partialSaveFailed} ${errors.join(' ')}`)
+        notify.error(`${locale.partialSaveFailed} ${errors.join(' ')}`)
       } else {
-        setSubmitError(errors.join(' ') || locale.saveFailed)
+        notify.error(errors.join(' ') || locale.saveFailed)
       }
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.saveFailed)
+      notify.error(error instanceof Error ? error.message : locale.saveFailed)
     } finally {
       setIsSubmitting(false)
     }
@@ -214,20 +210,16 @@ export default function PlayerSetting() {
     const trimmedPassword = accountPasswordInput.trim()
 
     if (!trimmedEmail) {
-      setAccountError(locale.accountEmailRequired)
-      setAccountSuccess(null)
+      notify.error(locale.accountEmailRequired)
       return
     }
 
     if (trimmedPassword.length < 6) {
-      setAccountError(locale.passwordMinLength)
-      setAccountSuccess(null)
+      notify.error(locale.passwordMinLength)
       return
     }
 
     setAccountAction('account')
-    setAccountError(null)
-    setAccountSuccess(null)
 
     const emailRedirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
     const { data, error } = await supabase.auth.updateUser(
@@ -245,7 +237,7 @@ export default function PlayerSetting() {
         'email address already in use',
         'email exists',
       ])
-      setAccountError(
+      notify.error(
         existingAccountMessages.has(normalized) ? locale.linkEmailExistingAccount : locale.setAccountDefaultError,
       )
       setAccountAction(null)
@@ -258,7 +250,7 @@ export default function PlayerSetting() {
     setAccountIsAnonymous(nextAnonymousIdentity)
     setAccountEmailInput(data.user?.email ?? trimmedEmail)
     setAccountPasswordInput('')
-    setAccountSuccess(
+    notify.success(
       latestEmail === trimmedEmail.toLowerCase()
         ? locale.setAccountImmediateSuccess
         : locale.setAccountEmailPendingSuccess,
@@ -268,8 +260,6 @@ export default function PlayerSetting() {
 
   async function handleGoogleLink(): Promise<void> {
     setAccountAction('google')
-    setAccountError(null)
-    setAccountSuccess(null)
 
     const redirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
     sessionStorage.setItem('googleLinkPending', 'true')
@@ -279,7 +269,7 @@ export default function PlayerSetting() {
     })
 
     if (error) {
-      setAccountError(locale.googleLinkDefaultError)
+      notify.error(locale.googleLinkDefaultError)
       setAccountAction(null)
     }
   }
@@ -457,8 +447,6 @@ export default function PlayerSetting() {
                         </Button>
                       </Stack>
                     </Stack>
-                    {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
-                    {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
                     <Button
                       id={tutorialStep === 'player-setting-save' ? 'tutorial-save-btn' : undefined}
                       type="submit"
@@ -559,9 +547,6 @@ export default function PlayerSetting() {
                       </Button>
                     </Stack>
                   </Box>
-
-                  {accountError ? <Alert severity="warning">{accountError}</Alert> : null}
-                  {accountSuccess ? <Alert severity="success">{accountSuccess}</Alert> : null}
                 </Stack>
               </Paper>
             </Stack>

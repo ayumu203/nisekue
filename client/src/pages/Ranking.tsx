@@ -25,6 +25,7 @@ import { resolveRankColor } from '@/lib/playerRank'
 import { gamePageAccent, gamePageBackground, innerSurfaceSx } from '@/constants/styles'
 import locale from '../../locale/ranking/Ranking.json'
 import { font, palette, withAlpha } from '@/theme/tokens'
+import { EmptyText } from '@/components/common/EmptyText'
 
 function getRankingTypeLabel(type: string): string {
   const labels = locale.rankingTypes as Record<string, string>
@@ -139,7 +140,7 @@ export default function Ranking() {
             ) : error ? (
               <Alert severity="warning">{error.message}</Alert>
             ) : !data || data.rows.length === 0 ? (
-              <Alert severity="info">{locale.empty}</Alert>
+              <EmptyText>{locale.empty}</EmptyText>
             ) : (
               <Box
                 sx={{
