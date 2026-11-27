@@ -175,7 +175,31 @@ export default function SkillBook({
       pointerCaptureRef.current = event.currentTarget
     }
     setDraggingIndex(index)
-    onSelect(index)
+    // スマホは行を選ぶと詳細が開くため、並び替えでは選ばない（PC は選んだ行を右の詳細に出す）
+    if (!compact) {
+      onSelect(index)
+    }
+  }
+
+  function renderGrip(index: number) {
+    return (
+      <Box
+        onPointerDown={(event) => startDragging(event, index)}
+        aria-label={locale.dragHandle}
+        sx={{
+          // 指で押しやすいよう、つまみの当たり判定は 44px 以上にする
+          width: 44,
+          flexShrink: 0,
+          display: 'grid',
+          placeItems: 'center',
+          color: colors.grip,
+          cursor: 'grab',
+          touchAction: 'none',
+        }}
+      >
+        <GripIcon />
+      </Box>
+    )
   }
 
   const isFull = slots.every((slot) => slot.moveId !== null)
@@ -190,7 +214,8 @@ export default function SkillBook({
         minWidth: 0,
         minHeight: compact ? 'auto' : 0,
         backgroundColor: colors.cover,
-        border: `2px solid ${colors.coverDark}`,
+        // スマホの帯は箱の端まで付ける（ほかの画面の箱と同じ形）ため、縁を付けない
+        border: bandStartAction ? 'none' : `2px solid ${colors.coverDark}`,
         // ほかの画面の箱と同じ角丸。上辺の帯（スマホ）も角に沿わせる
         borderRadius: '12px',
         overflow: 'hidden',
@@ -208,7 +233,8 @@ export default function SkillBook({
             mt: { xs: -1, sm: -2 },
             display: 'flex',
             alignItems: 'stretch',
-            backgroundColor: colors.coverDark,
+            // 上部の帯・表紙と同じ色にすると帯の形が見えないため、金の帯にする
+            backgroundColor: colors.band,
             flexShrink: 0,
           }}
         >
@@ -225,7 +251,15 @@ export default function SkillBook({
           </Box>
           <Typography
             component="h1"
-            sx={{ flex: 1, alignSelf: 'center', textAlign: 'center', fontSize: font.md, color: palette.white, pr: 6 }}
+            sx={{
+              flex: 1,
+              alignSelf: 'center',
+              textAlign: 'center',
+              fontSize: font.md,
+              fontWeight: 700,
+              color: palette.white,
+              pr: 6,
+            }}
           >
             {locale.skillTitle}
           </Typography>
@@ -288,30 +322,33 @@ export default function SkillBook({
                   {isSelected ? '▶' : ''}
                 </Box>
               )}
-              <Box
-                onPointerDown={(event) => startDragging(event, index)}
-                aria-label={locale.dragHandle}
-                sx={{
-                  // 指で押しやすいよう、つまみの当たり判定は 44px 以上にする
-                  width: compact ? 44 : 64,
-                  flexShrink: 0,
-                  display: 'flex',
-                  flexDirection: compact ? 'column' : 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 0.5,
-                  color: colors.grip,
-                  cursor: 'grab',
-                  touchAction: 'none',
-                }}
-              >
-                <Typography
-                  sx={{ fontSize: compact ? font.lg : font.xl, color: colors.ink, minWidth: 22, textAlign: 'right' }}
+              {compact ? (
+                // スマホ：番号だけを左に置き、つまみは行の右端に分ける（行を押したつもりで並び替えが始まらないように）
+                <Box sx={{ width: 32, flexShrink: 0, display: 'grid', placeItems: 'center' }}>
+                  <Typography sx={{ fontSize: font.lg, color: colors.ink }}>{index + 1}</Typography>
+                </Box>
+              ) : (
+                <Box
+                  onPointerDown={(event) => startDragging(event, index)}
+                  aria-label={locale.dragHandle}
+                  sx={{
+                    width: 64,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    color: colors.grip,
+                    cursor: 'grab',
+                    touchAction: 'none',
+                  }}
                 >
-                  {index + 1}
-                </Typography>
-                <GripIcon />
-              </Box>
+                  <Typography sx={{ fontSize: font.xl, color: colors.ink, minWidth: 22, textAlign: 'right' }}>
+                    {index + 1}
+                  </Typography>
+                  <GripIcon />
+                </Box>
+              )}
               <ButtonBase
                 onClick={() => onSelect(index)}
                 aria-pressed={isSelected}
@@ -323,7 +360,7 @@ export default function SkillBook({
                   textAlign: 'left',
                   justifyContent: 'stretch',
                   ...(compact
-                    ? { display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, pr: 1.5 }
+                    ? { display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, pr: 0.5 }
                     : {
                         display: 'grid',
                         gridTemplateColumns: WIDE_CONTENT_COLUMNS,
@@ -386,6 +423,7 @@ export default function SkillBook({
                   </>
                 )}
               </ButtonBase>
+              {compact ? renderGrip(index) : null}
             </Box>
           )
         })}

@@ -371,6 +371,8 @@ export const skillPanelColors = {
   // 表紙の革と、その縁
   cover: palette.brown900,
   coverDark: palette.brown900,
+  // スマホの箱の見出しの帯（上部の帯・表紙と同じ色にしない）
+  band: palette.gold700,
   gold: palette.gold300,
   // ページ・選んでいる行・行の区切り
   paper: palette.brown900,

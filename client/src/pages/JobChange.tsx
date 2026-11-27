@@ -181,12 +181,12 @@ export default function JobChange() {
     </Box>
   )
 
-  // スマホ：帯の左端にホームボタン、右に 2 つのタブ
+  // スマホ：帯の左端にホームボタン、右に 2 つのタブ。クエストと同じく、すぐ下の白い箱とつなげる
   const mobileTabs = (
     <Box
       role="tablist"
       aria-label={locale.roadmapTab}
-      sx={{ display: 'flex', height: 44, flex: 'none', borderRadius: '12px', overflow: 'hidden', mb: 1.5 }}
+      sx={{ display: 'flex', height: 44, flex: 'none', borderRadius: '12px 12px 0 0', overflow: 'hidden' }}
     >
       <Box
         sx={{
@@ -287,9 +287,15 @@ export default function JobChange() {
             isSubmittingJobValue={isSubmittingJobValue}
             onJobChange={handleChangeJob}
             isWide={isWide}
+            attachToTabs={!isDesktop}
           />
         ) : (
-          <JobRoadmapTab player={player} onPlayerChanged={() => mutatePlayer()} isWide={isWide} />
+          <JobRoadmapTab
+            player={player}
+            onPlayerChanged={() => mutatePlayer()}
+            isWide={isWide}
+            attachToTabs={!isDesktop}
+          />
         )}
       </Box>
       {tutorialStep === 'training-to-lv7' && (

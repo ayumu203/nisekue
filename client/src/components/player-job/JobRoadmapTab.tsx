@@ -22,6 +22,8 @@ interface JobRoadmapTabProps {
   // 解放でゴールドが減るので、親のプレイヤー情報を読み直す
   onPlayerChanged: () => Promise<unknown>
   isWide: boolean
+  // 箱をすぐ上のタブの帯とつなげる（スマホ）
+  attachToTabs: boolean
 }
 
 type NodeState = 'unlocked' | 'canUnlock' | 'locked'
@@ -30,7 +32,7 @@ function stateOf(entry: JobRoadmapListEntry): NodeState {
   return entry.isUnlocked ? 'unlocked' : entry.canUnlock ? 'canUnlock' : 'locked'
 }
 
-export default function JobRoadmapTab({ player, onPlayerChanged, isWide }: JobRoadmapTabProps) {
+export default function JobRoadmapTab({ player, onPlayerChanged, isWide, attachToTabs }: JobRoadmapTabProps) {
   const { session } = useAuth()
   const accessToken = session?.access_token ?? null
   const [selectedJobId, setSelectedJobId] = useState<number | null>(player.job.value)
@@ -133,7 +135,15 @@ export default function JobRoadmapTab({ player, onPlayerChanged, isWide }: JobRo
           </Box>
         </Box>
       ) : (
-        <GamePanel hideBand aria-label={locale.roadmapTitle} fillHeight={false} disablePadding {...panelProps}>
+        // スマホはすぐ上のタブとつなげる
+        <GamePanel
+          hideBand
+          attachTop={attachToTabs}
+          aria-label={locale.roadmapTitle}
+          fillHeight={false}
+          disablePadding
+          {...panelProps}
+        >
           {listStatus ?? (
             <RoadmapRankList
               entries={entries}

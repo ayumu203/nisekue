@@ -21,11 +21,19 @@ interface JobChangeTabProps {
   onJobChange: (jobValue: number) => void
   // PC（md 以上）は左に現在の職業、右に舞台。狭い画面は縦に積む
   isWide: boolean
+  // 箱をすぐ上のタブの帯とつなげる（スマホ）
+  attachToTabs: boolean
 }
 
 type ActorState = 'current' | 'open' | 'locked'
 
-export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange, isWide }: JobChangeTabProps) {
+export default function JobChangeTab({
+  player,
+  isSubmittingJobValue,
+  onJobChange,
+  isWide,
+  attachToTabs,
+}: JobChangeTabProps) {
   const baseJobs = BASE_JOB_ORDER.map((code) => (player.jobProfiles ?? []).find((job) => job.code === code)).filter(
     (job): job is PlayerJob => job != null,
   )
@@ -116,7 +124,13 @@ export default function JobChangeTab({ player, isSubmittingJobValue, onJobChange
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      <GamePanel hideBand aria-label={locale.currentJobTitle} fillHeight={false} {...panelProps}>
+      <GamePanel
+        hideBand
+        attachTop={attachToTabs}
+        aria-label={locale.currentJobTitle}
+        fillHeight={false}
+        {...panelProps}
+      >
         <CurrentJobCompact player={player} isMastered={masteredCodes.has(player.job.code)} />
       </GamePanel>
       <GamePanel hideBand aria-label={locale.jobListTitle} fillHeight={false} disablePadding {...panelProps}>
