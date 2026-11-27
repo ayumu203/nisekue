@@ -3,7 +3,7 @@ import { cyberColors } from '@/components/petbattle/petBattleStyles'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import locale from '../../../locale/pet/PetBattle.json'
 import type { PetBattleMember } from '@/schema/petBattle'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type PetBattleMemberCardProps = {
   member: PetBattleMember
@@ -36,7 +36,7 @@ function StatusBar({ label, current, max, color }: { label: string; current: num
         sx={{
           height: 5,
           borderRadius: 999,
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          backgroundColor: withAlpha(palette.white, 0.1),
           '& .MuiLinearProgress-bar': { backgroundColor: color, borderRadius: 999 },
         }}
       />
@@ -82,7 +82,7 @@ export default function PetBattleMemberCard({
                 height: 16,
                 fontSize: font.xxs,
                 color: cyberColors.danger,
-                backgroundColor: 'rgba(255, 56, 96, 0.14)',
+                backgroundColor: withAlpha(palette.red700, 0.1),
               }}
             />
           ) : isSubmitted ? (
@@ -128,7 +128,7 @@ export default function PetBattleMemberCard({
                   height: 16,
                   fontSize: font.xxs,
                   color: cyberColors.warn,
-                  backgroundColor: 'rgba(255, 209, 102, 0.12)',
+                  backgroundColor: withAlpha(palette.gold300, 0.1),
                 }}
               />
             ))}

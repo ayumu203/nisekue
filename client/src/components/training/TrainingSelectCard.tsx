@@ -6,7 +6,7 @@ import {
   trainingSelectCardSx,
   trainingSelectRadioSx,
 } from './trainingSelectStyles'
-import { font } from '@/theme/tokens'
+import { font, palette } from '@/theme/tokens'
 
 type TrainingSelectCardProps = {
   id?: string
@@ -58,7 +58,7 @@ export default function TrainingSelectCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#e3e7ee',
+          backgroundColor: palette.sky,
           backgroundImage: `url(${getTrainingBackgroundPath(backgroundKey)})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',

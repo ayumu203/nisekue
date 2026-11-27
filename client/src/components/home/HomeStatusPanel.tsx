@@ -12,7 +12,7 @@ import {
   formatExpProgress,
   formatStatusValue,
 } from '@/lib/playerStatus'
-import { font } from '@/theme/tokens'
+import { font, palette } from '@/theme/tokens'
 
 type HomeStatusPanelProps = {
   player: GetPlayerResponse | undefined
@@ -179,9 +179,11 @@ export default function HomeStatusPanel({ player, compact = false }: HomeStatusP
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(expPercent)}
-              sx={{ mt: 0.5, height: 8, borderRadius: 999, backgroundColor: '#efe4c8', overflow: 'hidden' }}
+              sx={{ mt: 0.5, height: 8, borderRadius: 999, backgroundColor: palette.cream, overflow: 'hidden' }}
             >
-              <Box sx={{ width: `${expPercent}%`, height: '100%', borderRadius: 999, backgroundColor: '#e6a800' }} />
+              <Box
+                sx={{ width: `${expPercent}%`, height: '100%', borderRadius: 999, backgroundColor: palette.yellow }}
+              />
             </Box>
           </Box>
           {compact ? null : hpMp}
@@ -220,7 +222,7 @@ export default function HomeStatusPanel({ player, compact = false }: HomeStatusP
             mx: -2,
             mb: -2,
             height: 40,
-            borderTop: '1px solid #f0e6cf',
+            borderTop: `1px solid ${palette.cream}`,
             color: homePanelColors.band,
           }}
         >

@@ -12,7 +12,7 @@ import { ElementEmblem, MpCost, SkillChip } from '@/components/moveSetting/Skill
 import { getMoveAttackRangeLabel } from '@/lib/moveAttackRange'
 import type { PlayerMoveSlot } from '@/schema/player'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type SkillBookProps = {
   id?: string
@@ -69,7 +69,7 @@ function ExclamationMark({ label, size = 22 }: { label?: string; size?: number }
         flexShrink: 0,
         borderRadius: '50%',
         backgroundColor: colors.warning,
-        color: '#ffffff',
+        color: palette.white,
         display: 'inline-grid',
         placeItems: 'center',
         fontSize: Math.round(size * 0.68),
@@ -218,14 +218,14 @@ export default function SkillBook({
               display: 'flex',
               alignItems: 'center',
               // ホームボタンと帯の中身の区切り（クエストの帯と同じ白い線）
-              borderRight: '2px solid rgba(255, 255, 255, 0.85)',
+              borderRight: `2px solid ${withAlpha(palette.white, 0.9)}`,
             }}
           >
             {bandStartAction}
           </Box>
           <Typography
             component="h1"
-            sx={{ flex: 1, alignSelf: 'center', textAlign: 'center', fontSize: font.md, color: '#ffffff', pr: 6 }}
+            sx={{ flex: 1, alignSelf: 'center', textAlign: 'center', fontSize: font.md, color: palette.white, pr: 6 }}
           >
             {locale.skillTitle}
           </Typography>
@@ -420,10 +420,9 @@ export default function SkillBook({
               minWidth: 120,
               borderRadius: '4px',
               fontSize: font.lg,
-              color: '#e2a08f',
-              borderColor: '#e2a08f',
-              '&:hover': { borderColor: '#e2a08f', backgroundColor: 'rgba(226, 160, 143, 0.12)' },
-              '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.45)', borderColor: 'rgba(255, 255, 255, 0.25)' },
+              color: palette.red300,
+              borderColor: palette.red300,
+              '&.Mui-disabled': { color: withAlpha(palette.white, 0.5), borderColor: withAlpha(palette.white, 0.25) },
             }}
           >
             {locale.cancelMoveOrder}
@@ -437,11 +436,13 @@ export default function SkillBook({
               minWidth: 160,
               borderRadius: '4px',
               fontSize: font.lg,
-              color: '#ffffff',
-              backgroundColor: '#3f9f4a',
+              color: palette.white,
+              backgroundColor: palette.green400,
               boxShadow: 'none',
-              '&:hover': { backgroundColor: '#358a3f', boxShadow: 'none' },
-              '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.55)', backgroundColor: 'rgba(63, 159, 74, 0.35)' },
+              '&.Mui-disabled': {
+                color: withAlpha(palette.white, 0.5),
+                backgroundColor: withAlpha(palette.green400, 0.25),
+              },
             }}
           >
             {isSaving ? locale.savingMoveOrder : locale.saveMoveOrder}

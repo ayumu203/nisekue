@@ -2,7 +2,7 @@ import { Alert, Avatar, Box, Button, Chip, CircularProgress, Paper, Stack, Typog
 import { homePanelColors, innerSurfaceSx, menuButtonSx, panelPrimaryButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import type { GetQuestStagesResponse, ListQuestRoomsResponse } from '@/schema/quest'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 function formatCooldownRemainingMessage(seconds: number, template: string) {
   const floorSeconds = Math.max(0, seconds)
@@ -65,14 +65,14 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
         overflow: 'hidden',
         borderRadius: 3,
         p: 1.5,
-        color: '#f4f7ff',
-        backgroundColor: '#243654',
-        borderColor: 'rgba(152, 192, 255, 0.3)',
+        color: palette.sky,
+        backgroundColor: palette.blue900,
+        borderColor: withAlpha(palette.blue300, 0.25),
         '&::before': {
           content: '""',
           position: 'absolute',
           inset: 0,
-          backgroundImage: `linear-gradient(135deg, rgba(18, 29, 48, 0.8), rgba(32, 49, 80, 0.68)), url(${battlefieldImageSrc})`,
+          backgroundImage: `linear-gradient(135deg, ${withAlpha(palette.navy, 0.75)}, ${withAlpha(palette.blue900, 0.75)}), url(${battlefieldImageSrc})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           opacity: 0.95,
@@ -90,8 +90,8 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
               flexShrink: 0,
               display: 'grid',
               placeItems: 'center',
-              background: 'radial-gradient(circle at 30% 30%, #eef4ff 0%, #9cbbe6 100%)',
-              border: '2px solid #a9c3eb',
+              background: `radial-gradient(circle at 30% 30%, ${palette.sky} 0%, ${palette.blue300} 100%)`,
+              border: `2px solid ${palette.blue300}`,
             }}
           >
             {stage?.previewEnemyImagePath ? (
@@ -114,7 +114,7 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
               sx={{
                 fontSize: { xs: font.lg, sm: font.xl },
                 fontWeight: 800,
-                color: '#ffffff',
+                color: palette.white,
                 lineHeight: 1.3,
                 wordBreak: 'break-word',
               }}
@@ -122,11 +122,11 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
             >
               {stage?.name ?? room.stageName ?? String(room.stageId)}
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
+            <Typography variant="body2" sx={{ color: withAlpha(palette.sky, 0.75) }}>
               {`${locale.recommendedLevel} ${stage?.recommendedLevel ?? '-'}`}
             </Typography>
             {displayedMinimumLevel != null ? (
-              <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.76)' }}>
+              <Typography variant="body2" sx={{ color: withAlpha(palette.sky, 0.75) }}>
                 {`${locale.minRequiredLevel} ${displayedMinimumLevel}`}
               </Typography>
             ) : null}
@@ -136,10 +136,10 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
                 label={roomModeLabel}
                 sx={{
                   fontWeight: 700,
-                  bgcolor: room.mode === 'Solo' ? 'rgba(122, 180, 255, 0.2)' : 'rgba(158, 216, 206, 0.2)',
-                  color: room.mode === 'Solo' ? '#ddebff' : '#d6f5ef',
+                  bgcolor: room.mode === 'Solo' ? withAlpha(palette.blue300, 0.25) : withAlpha(palette.teal400, 0.25),
+                  color: room.mode === 'Solo' ? palette.sky : palette.sky,
                   border: '1px solid',
-                  borderColor: room.mode === 'Solo' ? 'rgba(122, 180, 255, 0.38)' : 'rgba(158, 216, 206, 0.38)',
+                  borderColor: room.mode === 'Solo' ? withAlpha(palette.blue300, 0.5) : withAlpha(palette.teal400, 0.5),
                 }}
               />
               <Chip
@@ -148,9 +148,9 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
                 variant="outlined"
                 sx={{
                   fontWeight: 700,
-                  color: '#edf5ff',
-                  bgcolor: 'rgba(255,255,255,0.08)',
-                  borderColor: 'rgba(222, 236, 255, 0.34)',
+                  color: palette.sky,
+                  bgcolor: withAlpha(palette.white, 0.1),
+                  borderColor: withAlpha(palette.sky, 0.25),
                 }}
               />
               {room.hasAllowedPlayerRestriction ? (
@@ -159,9 +159,9 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
                   label={locale.allowedPlayersOnly}
                   sx={{
                     fontWeight: 700,
-                    color: '#fce8b2',
-                    bgcolor: 'rgba(241, 194, 80, 0.16)',
-                    border: '1px solid rgba(241, 194, 80, 0.3)',
+                    color: palette.brown200,
+                    bgcolor: withAlpha(palette.gold300, 0.1),
+                    border: `1px solid ${withAlpha(palette.gold300, 0.25)}`,
                   }}
                 />
               ) : null}
@@ -189,31 +189,31 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
             <Avatar
               src={ownerImageSrc ?? undefined}
               alt={room.ownerDisplayName ?? 'owner'}
-              sx={{ width: 56, height: 56, bgcolor: '#d8e8ff', color: '#274163', fontWeight: 700 }}
+              sx={{ width: 56, height: 56, bgcolor: palette.sky, color: palette.blue900, fontWeight: 700 }}
             >
               {(room.ownerDisplayName ?? '?').slice(0, 1)}
             </Avatar>
             <Typography
               variant="caption"
               fontSize={font.sm}
-              sx={{ maxWidth: 72, textAlign: 'center', color: 'rgba(222, 236, 255, 0.76)' }}
+              sx={{ maxWidth: 72, textAlign: 'center', color: withAlpha(palette.sky, 0.75) }}
               noWrap
               title={room.ownerDisplayName ?? '---'}
             >
               {room.ownerDisplayName ?? '---'}
             </Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(222, 236, 255, 0.64)', fontSize: font.sm }}>
+            <Typography variant="caption" sx={{ color: withAlpha(palette.sky, 0.75), fontSize: font.sm }}>
               {locale.ownerBadge}
             </Typography>
           </Stack>
         </Stack>
         {!room.isJoinable && room.joinDisabledReason ? (
           <Stack spacing={0.25}>
-            <Typography variant="body2" sx={{ color: '#ffd7d7' }}>
+            <Typography variant="body2" sx={{ color: palette.gray300 }}>
               {locale.joinDisabledReasons[room.joinDisabledReason] ?? room.joinDisabledReason}
             </Typography>
             {cooldownRemainingText ? (
-              <Typography variant="body2" sx={{ color: '#ffd7d7' }}>
+              <Typography variant="body2" sx={{ color: palette.gray300 }}>
                 {cooldownRemainingText}
               </Typography>
             ) : null}

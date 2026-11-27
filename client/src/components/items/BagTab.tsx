@@ -15,7 +15,7 @@ import {
 } from './itemUtils'
 import locale from '../../../locale/items/Items.json'
 import type { InventoryItemView, ItemEquipmentView } from '@/schema/item'
-import { font } from '@/theme/tokens'
+import { font, palette } from '@/theme/tokens'
 
 const slotHeight = { xs: 108, sm: 132 }
 
@@ -70,7 +70,7 @@ function BagSlot({ item, selected, onSelect }: { item: InventoryItemView; select
               px: 0.75,
               borderRadius: '6px',
               backgroundColor: colors.leatherDark,
-              color: '#ffffff',
+              color: palette.white,
               fontSize: font.sm,
               fontWeight: 800,
             }}
@@ -178,7 +178,7 @@ export function BagPanel({
             py: 1,
             borderRadius: 999,
             backgroundColor: colors.leatherDark,
-            color: '#ffe7a8',
+            color: palette.gold300,
             fontVariantNumeric: 'tabular-nums',
           }}
         >
@@ -219,7 +219,7 @@ function EquippedSlot({
           height: { xs: 84, sm: 112 },
           display: 'grid',
           placeItems: 'center',
-          backgroundColor: '#ffffff',
+          backgroundColor: palette.white,
           borderRadius: '16px',
           border: selected
             ? `3px solid ${colors.brass}`
@@ -532,7 +532,7 @@ export function ItemDetailPanel({
               flex: 'none',
               display: 'grid',
               placeItems: 'center',
-              backgroundColor: '#ffffff',
+              backgroundColor: palette.white,
               border: `3px solid ${colors.slotLine}`,
               borderRadius: '16px',
             }}

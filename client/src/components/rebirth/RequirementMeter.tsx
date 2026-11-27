@@ -1,6 +1,6 @@
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import { Box, LinearProgress, Stack, Typography } from '@mui/material'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type RequirementMeterProps = {
   current: number
@@ -14,18 +14,18 @@ type RequirementMeterProps = {
 
 const toneColors = {
   blue: {
-    bar: 'linear-gradient(90deg, #8fd3ff 0%, #5fb6f5 100%)',
-    metBorder: '#a8ddff',
-    metBg: 'rgba(237, 249, 255, 0.95)',
-    metText: '#20618f',
-    icon: '#5fb6f5',
+    bar: `linear-gradient(90deg, ${palette.blue300} 0%, ${palette.blue300} 100%)`,
+    metBorder: palette.blue300,
+    metBg: palette.sky,
+    metText: palette.blue700,
+    icon: palette.blue300,
   },
   gold: {
-    bar: 'linear-gradient(90deg, #ffe58a 0%, #f0c43c 100%)',
-    metBorder: '#f0db7f',
-    metBg: 'rgba(255, 251, 233, 0.95)',
-    metText: '#8a6a00',
-    icon: '#e0b52a',
+    bar: `linear-gradient(90deg, ${palette.gold300} 0%, ${palette.yellow} 100%)`,
+    metBorder: palette.gold300,
+    metBg: palette.cream,
+    metText: palette.gold700,
+    icon: palette.yellow,
   },
 } as const
 
@@ -43,9 +43,9 @@ export function RequirementMeter({ current, required, prefix = '', suffix = '', 
         py: 1.5,
         borderRadius: 2.5,
         border: '1px solid',
-        borderColor: isMet ? colors.metBorder : '#dbe7f2',
-        bgcolor: isMet ? colors.metBg : 'rgba(246, 249, 252, 0.95)',
-        boxShadow: isMet ? '0 6px 16px rgba(214, 186, 92, 0.14)' : 'none',
+        borderColor: isMet ? colors.metBorder : palette.sky,
+        bgcolor: isMet ? colors.metBg : palette.white,
+        boxShadow: isMet ? `0 6px 16px ${withAlpha(palette.gold300, 0.1)}` : 'none',
         transition: 'all 0.2s ease',
       }}
     >
@@ -54,13 +54,13 @@ export function RequirementMeter({ current, required, prefix = '', suffix = '', 
           sx={{
             fontWeight: 800,
             fontVariantNumeric: 'tabular-nums',
-            color: isMet ? colors.metText : '#4f6275',
+            color: isMet ? colors.metText : palette.teal700,
             fontSize: { xs: font.md, sm: font.md },
           }}
         >
           {prefix}
           {numberFormat.format(current)}
-          <Box component="span" sx={{ color: '#90a2b4', fontWeight: 600, mx: 0.5 }}>
+          <Box component="span" sx={{ color: palette.blue300, fontWeight: 600, mx: 0.5 }}>
             /
           </Box>
           {numberFormat.format(required)}
@@ -79,7 +79,7 @@ export function RequirementMeter({ current, required, prefix = '', suffix = '', 
           mt: 1,
           height: 6,
           borderRadius: 999,
-          bgcolor: 'rgba(206, 220, 233, 0.6)',
+          bgcolor: withAlpha(palette.sky, 0.5),
           '& .MuiLinearProgress-bar': {
             borderRadius: 999,
             background: colors.bar,

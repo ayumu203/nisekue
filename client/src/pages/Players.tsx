@@ -25,7 +25,7 @@ import { resolveRankColor } from '@/lib/playerRank'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../locale/players/Players.json'
 import { innerSurfaceSx, softGreenButtonSx } from '@/constants/styles'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 const PAGE_SIZE = 24
 
@@ -89,7 +89,7 @@ function Players() {
   }
 
   return (
-    <GamePageFrame currentKey="visitPlayers" currentColor="#3f8f84" background="#bfe5dd">
+    <GamePageFrame currentKey="visitPlayers" currentColor={palette.teal400} background={palette.gray300}>
       <Stack spacing={2}>
         {isDesktop ? null : (
           <Stack direction="row" justifyContent="flex-start">
@@ -102,17 +102,17 @@ function Players() {
             ...innerSurfaceSx,
             borderRadius: 3,
             p: { xs: 2, sm: 2.5 },
-            color: '#274d54',
-            backgroundColor: '#f8fffd',
-            borderColor: 'rgba(126, 189, 181, 0.42)',
+            color: palette.teal700,
+            backgroundColor: palette.white,
+            borderColor: withAlpha(palette.teal400, 0.5),
           }}
         >
           <Stack spacing={2}>
             <Stack spacing={0.5} alignItems="flex-start">
-              <Typography variant="overline" sx={{ color: 'rgba(57, 103, 109, 0.72)', letterSpacing: '0.18em' }}>
+              <Typography variant="overline" sx={{ color: withAlpha(palette.teal700, 0.75), letterSpacing: '0.18em' }}>
                 PLAYERS ROOM
               </Typography>
-              <Typography variant="h4" fontWeight={900} sx={{ color: '#2f646c' }}>
+              <Typography variant="h4" fontWeight={900} sx={{ color: palette.teal700 }}>
                 {locale.title}
               </Typography>
             </Stack>
@@ -139,7 +139,7 @@ function Players() {
                 >
                   {visitTargets.map((player) =>
                     (() => {
-                      const rankColor = resolveRankColor(player.combatIndexRank) ?? '#68b7a7'
+                      const rankColor = resolveRankColor(player.combatIndexRank) ?? palette.teal400
 
                       return (
                         <Paper
@@ -162,7 +162,7 @@ function Players() {
                                   width: 56,
                                   height: 56,
                                   bgcolor: alpha(rankColor, 0.14),
-                                  color: '#2f646c',
+                                  color: palette.teal700,
                                   border: '1px solid',
                                   borderColor: alpha(rankColor, 0.28),
                                   '& .MuiAvatar-img': {
@@ -185,7 +185,7 @@ function Players() {
                                   <Typography
                                     variant="h6"
                                     fontWeight={800}
-                                    sx={{ wordBreak: 'break-word', color: '#2f646c' }}
+                                    sx={{ wordBreak: 'break-word', color: palette.teal700 }}
                                   >
                                     {player.userName ?? '-'}
                                   </Typography>
@@ -211,7 +211,7 @@ function Players() {
                                     {player.combatIndexRank}
                                   </Box>
                                 </Stack>
-                                <Typography variant="body2" sx={{ color: 'rgba(47, 100, 108, 0.76)' }}>
+                                <Typography variant="body2" sx={{ color: withAlpha(palette.teal700, 0.75) }}>
                                   {`${player.job.displayName} / Lv.${player.level}`}
                                 </Typography>
                               </Box>
@@ -223,13 +223,9 @@ function Players() {
                                 variant="contained"
                                 sx={{
                                   ...softGreenButtonSx,
-                                  color: '#fff',
-                                  backgroundColor: '#68b7a7',
+                                  color: palette.white,
+                                  backgroundColor: palette.teal400,
                                   boxShadow: 'none',
-                                  '&:hover': {
-                                    backgroundColor: '#75c3b4',
-                                    boxShadow: 'none',
-                                  },
                                 }}
                               >
                                 {locale.visit}

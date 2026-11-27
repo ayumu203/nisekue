@@ -55,6 +55,7 @@ import { resolveCharacterAssetPath } from '@/lib/assets'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/items/Items.json'
 import type { InventoryItemView, ItemEquipmentView, ItemStackView, MarketListingView } from '@/schema/item'
+import { palette } from '@/theme/tokens'
 
 const PAGE_SIZE = 30
 
@@ -409,7 +410,12 @@ export default function Items() {
 
   // スマホはヘッダーがないので、タブの左にホームへ戻るボタンを置く
   const mobileHomeButton = isDesktop ? undefined : (
-    <IconButton component={Link} to="/" aria-label={locale.backToHome} sx={{ color: '#ffffff', width: 44, height: 44 }}>
+    <IconButton
+      component={Link}
+      to="/"
+      aria-label={locale.backToHome}
+      sx={{ color: palette.white, width: 44, height: 44 }}
+    >
       <HomeFilledIcon />
     </IconButton>
   )

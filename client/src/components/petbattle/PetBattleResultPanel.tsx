@@ -3,6 +3,7 @@ import { cyberButtonSx, cyberColors, cyberPanelSx } from '@/components/petbattle
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import locale from '../../../locale/pet/PetBattle.json'
 import type { PetBattleRun, PetBattleStats } from '@/schema/petBattle'
+import { palette, withAlpha } from '@/theme/tokens'
 
 type PetBattleResultPanelProps = {
   run: PetBattleRun
@@ -76,7 +77,7 @@ export default function PetBattleResultPanel({
               fontWeight: 900,
               letterSpacing: '0.1em',
               color: isWin ? cyberColors.accent : cyberColors.danger,
-              textShadow: isWin ? `0 0 18px ${cyberColors.accentDim}` : '0 0 18px rgba(255, 56, 96, 0.5)',
+              textShadow: isWin ? `0 0 18px ${cyberColors.accentDim}` : `0 0 18px ${withAlpha(palette.red700, 0.5)}`,
             }}
           >
             {locale.resultTitle[run.status]}

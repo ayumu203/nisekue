@@ -1,6 +1,7 @@
 import { Paper, Stack } from '@mui/material'
 import type { ReactNode } from 'react'
 import { innerSurfaceSx } from '@/constants/styles'
+import { palette } from '@/theme/tokens'
 
 type ThreadBoardSurfaceProps = {
   children: ReactNode
@@ -14,9 +15,9 @@ export default function ThreadBoardSurface({ children }: ThreadBoardSurfaceProps
         ...innerSurfaceSx,
         borderRadius: 3,
         p: { xs: 2, sm: 2.5 },
-        color: '#432f22',
-        backgroundColor: '#d7c4a8',
-        borderColor: '#94704c',
+        color: palette.brown900,
+        backgroundColor: palette.brown200,
+        borderColor: palette.brown500,
       }}
     >
       <Stack spacing={2}>{children}</Stack>

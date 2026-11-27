@@ -16,7 +16,7 @@ import {
 import { formatGold } from './itemUtils'
 import locale from '../../../locale/items/Items.json'
 import type { MarketListingView } from '@/schema/item'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 export type MarketTabKey = 'public' | 'mine'
 export type MarketCategoryFilter = 'all' | 'Weapon' | 'Armor' | 'Item' | 'Map'
@@ -95,7 +95,7 @@ function ListingRow({
           height: { xs: 52, md: 64 },
           display: 'grid',
           placeItems: 'center',
-          backgroundColor: '#ffffff',
+          backgroundColor: palette.white,
           borderRadius: '12px',
         }}
       >
@@ -142,7 +142,7 @@ function ListingRow({
                 objectFit: 'contain',
                 objectPosition: 'center bottom',
                 borderRadius: '6px',
-                backgroundColor: '#f3e9d6',
+                backgroundColor: palette.cream,
               }}
             />
           ) : null}
@@ -164,7 +164,7 @@ function ListingRow({
                 objectFit: 'contain',
                 objectPosition: 'center bottom',
                 borderRadius: '8px',
-                backgroundColor: '#f3e9d6',
+                backgroundColor: palette.cream,
               }}
             />
           ) : null}
@@ -271,8 +271,8 @@ export function MarketList({
           mx: { xs: -1.5, sm: -2.5 },
           mt: { xs: -1.5, sm: -2.5 },
           borderRadius: '10px 10px 0 0',
-          background: `repeating-linear-gradient(90deg, ${colors.leather} 0 56px, #fbf1dc 56px 112px)`,
-          boxShadow: 'inset 0 -6px 0 rgba(0,0,0,0.12)',
+          background: `repeating-linear-gradient(90deg, ${colors.leather} 0 56px, ${palette.cream} 56px 112px)`,
+          boxShadow: `inset 0 -6px 0 ${withAlpha(palette.black, 0.1)}`,
           flex: 'none',
         }}
       />
@@ -287,7 +287,7 @@ export function MarketList({
           px: 2,
           border: `2px solid ${colors.slotLine}`,
           borderRadius: 999,
-          backgroundColor: '#ffffff',
+          backgroundColor: palette.white,
           fontFamily: 'inherit',
           fontSize: font.md,
         }}
@@ -361,8 +361,15 @@ export function MarketList({
           onChange={(_, next) => onPageChange(next)}
           sx={{
             alignSelf: 'center',
-            '& .MuiPaginationItem-root': { fontFamily: 'inherit', fontWeight: 800, color: colors.leather },
-            '& .MuiPaginationItem-root.Mui-selected': { backgroundColor: colors.leather, color: '#ffffff' },
+            '& .MuiPaginationItem-root.MuiPaginationItem-root': {
+              fontFamily: 'inherit',
+              fontWeight: 800,
+              color: colors.leather,
+            },
+            '& .MuiPaginationItem-root.MuiPaginationItem-root.Mui-selected': {
+              backgroundColor: colors.leather,
+              color: palette.white,
+            },
           }}
         />
       ) : null}
@@ -375,7 +382,7 @@ const stepButtonSx = {
   height: 46,
   borderRadius: '10px',
   border: `2px solid ${colors.leather}`,
-  backgroundColor: '#ffffff',
+  backgroundColor: palette.white,
   color: colors.leather,
   fontSize: font.xxl,
   fontWeight: 800,
@@ -425,7 +432,7 @@ export function PurchasePanel({
             flex: 'none',
             display: 'grid',
             placeItems: 'center',
-            backgroundColor: '#ffffff',
+            backgroundColor: palette.white,
             border: `3px solid ${colors.slotLine}`,
             borderRadius: '16px',
           }}
@@ -488,7 +495,7 @@ export function PurchasePanel({
                   height: 46,
                   border: `2px solid ${colors.slotLine}`,
                   borderRadius: '10px',
-                  backgroundColor: '#ffffff',
+                  backgroundColor: palette.white,
                   fontFamily: 'inherit',
                   fontSize: font.xl,
                   fontWeight: 800,

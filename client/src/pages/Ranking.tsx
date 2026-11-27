@@ -24,7 +24,7 @@ import { resolveCharacterAssetPath } from '@/lib/assets'
 import { resolveRankColor } from '@/lib/playerRank'
 import { gamePageAccent, gamePageBackground, innerSurfaceSx } from '@/constants/styles'
 import locale from '../../locale/ranking/Ranking.json'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 function getRankingTypeLabel(type: string): string {
   const labels = locale.rankingTypes as Record<string, string>
@@ -144,17 +144,20 @@ export default function Ranking() {
               <Box
                 sx={{
                   borderRadius: 3,
-                  backgroundColor: '#295d63',
+                  backgroundColor: palette.teal700,
                   p: { xs: 2, sm: 3 },
                 }}
               >
                 <Stack spacing={2}>
                   <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
                     <Stack spacing={1.5}>
-                      <Typography variant="overline" sx={{ letterSpacing: '0.25em', color: 'rgba(79, 57, 44, 0.7)' }}>
+                      <Typography
+                        variant="overline"
+                        sx={{ letterSpacing: '0.25em', color: withAlpha(palette.brown900, 0.75) }}
+                      >
                         {locale.overline}
                       </Typography>
-                      <Typography variant="h4" fontWeight={900} sx={{ color: '#f8c058' }}>
+                      <Typography variant="h4" fontWeight={900} sx={{ color: palette.gold300 }}>
                         {locale.title}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
@@ -207,7 +210,7 @@ export default function Ranking() {
                     <Stack spacing={1}>
                       {filteredRows.map((row) => {
                         const jobName = row.player.job.displayName ?? row.player.job.code
-                        const rankColor = resolveRankColor(row.player.combatIndexRank) ?? '#68b7a7'
+                        const rankColor = resolveRankColor(row.player.combatIndexRank) ?? palette.teal400
                         return (
                           <Paper
                             key={`${row.rankingType}-${row.periodKind}-${row.combatIndexRank}-${row.rankPosition}-${row.player.userId}`}

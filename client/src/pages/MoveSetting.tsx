@@ -27,6 +27,7 @@ import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import type { PlayerMoveSlot } from '@/schema/player'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import locale from '../../locale/player-setting/PlayerSetting.json'
+import { palette, withAlpha } from '@/theme/tokens'
 
 export default function MoveSetting() {
   const { session, isLoading } = useAuth()
@@ -219,7 +220,7 @@ export default function MoveSetting() {
       >
         {feedback ? <Alert severity={feedback.type}>{feedback.message}</Alert> : null}
         {isPlayerLoading ? (
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ color: '#ffffff' }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ color: palette.white }}>
             <CircularProgress size={16} color="inherit" />
             <Typography variant="body2">{locale.loadingPlayer}</Typography>
           </Stack>
@@ -257,7 +258,7 @@ export default function MoveSetting() {
                     id={tutorialHomeButtonId}
                     aria-label={locale.backToHome}
                     disableRipple
-                    sx={{ color: '#ffffff', width: 44, height: 44 }}
+                    sx={{ color: palette.white, width: 44, height: 44 }}
                   >
                     <HomeFilledIcon />
                   </IconButton>
@@ -311,7 +312,7 @@ export default function MoveSetting() {
         <Box sx={{ position: 'relative', height: 28, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
           <Box
             aria-hidden="true"
-            sx={{ width: 48, height: 5, borderRadius: '999px', backgroundColor: 'rgba(255, 255, 255, 0.5)' }}
+            sx={{ width: 48, height: 5, borderRadius: '999px', backgroundColor: withAlpha(palette.white, 0.5) }}
           />
           <IconButton
             aria-label={locale.closeDetail}

@@ -25,7 +25,7 @@ import {
 import locale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestRoomDetailResponse } from '@/schema/quest'
 import { resolveCharacterAssetPath, resolveJobAssetPath } from '@/lib/assets'
-import { font } from '@/theme/tokens'
+import { font, palette } from '@/theme/tokens'
 
 type QuestRoomLobbySectionProps = {
   currentRoom: QuestRoomDetailResponse | null
@@ -161,7 +161,7 @@ export default function QuestRoomLobbySection({
                   minWidth: { xs: 64, sm: 100 },
                   aspectRatio: '4 / 5',
                   borderRadius: 2,
-                  backgroundColor: '#efe4c8',
+                  backgroundColor: palette.cream,
                   overflow: 'hidden',
                   display: 'grid',
                   placeItems: 'center',
@@ -196,7 +196,7 @@ export default function QuestRoomLobbySection({
                     <Chip
                       size="small"
                       label={locale.ownerBadge}
-                      sx={{ color: '#3a2400', backgroundColor: '#ffcc00', fontWeight: 800 }}
+                      sx={{ color: palette.brown900, backgroundColor: palette.yellow, fontWeight: 800 }}
                     />
                   ) : null}
                 </Stack>

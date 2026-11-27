@@ -21,16 +21,17 @@ import { useAuth } from '@/contexts/useAuth'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import locale from '../../locale/pet/Pets.json'
 import type { PetStatus, PlayerPetView } from '@/schema/pet'
+import { palette, withAlpha } from '@/theme/tokens'
 
-const pokeRed = '#b83040'
-const pokeDeepRed = '#7c1828'
-const pokeRedBorder = '#a02838'
-const pokeCardBorder = '#c04058'
+const pokeRed = palette.red700
+const pokeDeepRed = palette.red700
+const pokeRedBorder = palette.red700
+const pokeCardBorder = palette.red300
 
 const petFrameSx = {
   borderRadius: 2,
   border: `1px solid ${pokeRedBorder}`,
-  boxShadow: '0 8px 20px rgba(80, 0, 10, 0.18)',
+  boxShadow: `0 8px 20px ${withAlpha(palette.brown900, 0.25)}`,
   p: { xs: 1.5, sm: 2 },
   background: pokeDeepRed,
 } as const
@@ -39,35 +40,29 @@ const petTrainButtonSx = {
   '&&': {
     borderRadius: 2,
     minHeight: 38,
-    background: '#a02838',
-    color: '#ffffff',
+    background: palette.red700,
+    color: palette.white,
     boxShadow: 'none',
     transition: 'none',
   },
-  '&&:hover': { background: '#a02838', boxShadow: 'none' },
 } as const
 
 const petReleaseButtonSx = {
   '&&': {
     borderRadius: 2,
     minHeight: 34,
-    color: '#ffffff',
-    borderColor: '#9a1f30',
-    backgroundColor: '#b83040',
+    color: palette.white,
+    borderColor: palette.red700,
+    backgroundColor: palette.red700,
     boxShadow: 'none',
     transition: 'none',
-  },
-  '&&:hover': {
-    borderColor: '#9a1f30',
-    backgroundColor: '#b83040',
-    boxShadow: 'none',
   },
 } as const
 
 const petCardSx = {
-  backgroundColor: '#ffffff',
+  backgroundColor: palette.white,
   borderColor: pokeCardBorder,
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.75)',
+  boxShadow: `inset 0 1px 0 ${withAlpha(palette.white, 0.75)}`,
 } as const
 
 const statusKeys: Array<keyof PetStatus> = ['maxHp', 'maxMp', 'strength', 'defense', 'intelligence', 'luck', 'speed']
@@ -77,13 +72,13 @@ function PetStatusTable({ pet }: { pet: PlayerPetView }) {
     <Stack spacing={0.25}>
       {statusKeys.map((key) => (
         <Stack key={key} direction="row" justifyContent="space-between" spacing={1}>
-          <Typography variant="caption" sx={{ color: '#5b4523' }}>
+          <Typography variant="caption" sx={{ color: palette.brown900 }}>
             {locale.statusNames[key]}
           </Typography>
-          <Typography variant="caption" sx={{ color: '#3f2f16', fontWeight: 700 }}>
+          <Typography variant="caption" sx={{ color: palette.brown900, fontWeight: 700 }}>
             {pet.totalStatus[key]}
             {pet.bonusStatus[key] > 0 ? (
-              <Typography component="span" variant="caption" sx={{ color: '#a02838', ml: 0.5 }}>
+              <Typography component="span" variant="caption" sx={{ color: palette.red700, ml: 0.5 }}>
                 (+{pet.bonusStatus[key]})
               </Typography>
             ) : null}
@@ -174,14 +169,14 @@ export default function Pets() {
   const canAffordTraining = player != null && player.gold >= trainingCostGold
 
   return (
-    <GamePageFrame currentKey="pets" currentColor="#902030" background={pokeRed}>
+    <GamePageFrame currentKey="pets" currentColor={palette.red700} background={pokeRed}>
       <Stack spacing={2.5}>
         <Box sx={petFrameSx}>
           <Stack spacing={2}>
             <Box
               sx={{
-                backgroundColor: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                backgroundColor: withAlpha(palette.white, 0.1),
+                border: `1px solid ${withAlpha(palette.white, 0.1)}`,
                 borderRadius: 2,
               }}
             >
@@ -191,8 +186,7 @@ export default function Pets() {
                     <Box
                       sx={{
                         '& .MuiIconButton-root': {
-                          backgroundColor: 'rgba(255,255,255,0.12)',
-                          '&:hover': { backgroundColor: 'rgba(255,255,255,0.22)' },
+                          backgroundColor: withAlpha(palette.white, 0.1),
                         },
                       }}
                     >
@@ -209,10 +203,13 @@ export default function Pets() {
                     }}
                   >
                     <Box sx={{ minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
-                      <Typography variant="overline" sx={{ letterSpacing: '0.16em', color: 'rgba(255,255,255,0.66)' }}>
+                      <Typography
+                        variant="overline"
+                        sx={{ letterSpacing: '0.16em', color: withAlpha(palette.white, 0.75) }}
+                      >
                         PET CONTROL
                       </Typography>
-                      <Typography variant="h4" fontWeight={900} color="#ffffff">
+                      <Typography variant="h4" fontWeight={900} color={palette.white}>
                         {locale.title}
                       </Typography>
                     </Box>
@@ -226,18 +223,26 @@ export default function Pets() {
                       >
                         <Chip
                           label={`${locale.capacityLabel}: ${petsResponse?.pets.length ?? 0} / ${petsResponse?.maxPetCount ?? 3}`}
-                          sx={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#ffffff', fontWeight: 700 }}
+                          sx={{
+                            backgroundColor: withAlpha(palette.white, 0.25),
+                            color: palette.white,
+                            fontWeight: 700,
+                          }}
                         />
                         {player != null ? (
                           <Chip
                             label={`${locale.goldLabel}: ${player.gold.toLocaleString()}G`}
-                            sx={{ backgroundColor: 'rgba(255,255,255,0.18)', color: '#ffffff', fontWeight: 700 }}
+                            sx={{
+                              backgroundColor: withAlpha(palette.white, 0.25),
+                              color: palette.white,
+                              fontWeight: 700,
+                            }}
                           />
                         ) : null}
                       </Stack>
                       <Typography
                         variant="body2"
-                        sx={{ color: 'rgba(255,255,255,0.82)', textAlign: { xs: 'left', sm: 'right' } }}
+                        sx={{ color: withAlpha(palette.white, 0.75), textAlign: { xs: 'left', sm: 'right' } }}
                       >
                         {locale.description}
                       </Typography>
@@ -254,14 +259,14 @@ export default function Pets() {
             <Box sx={{ px: { xs: 0.25, sm: 0.5 }, py: 0.25 }}>
               {isLoading || isPetsLoading ? (
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <CircularProgress size={16} sx={{ color: 'rgba(255,255,255,0.7)' }} />
-                  <Typography variant="body2" color="rgba(255,255,255,0.8)">
+                  <CircularProgress size={16} sx={{ color: withAlpha(palette.white, 0.75) }} />
+                  <Typography variant="body2" color={withAlpha(palette.white, 0.75)}>
                     {locale.loading}
                   </Typography>
                 </Stack>
               ) : petsResponse == null || petsResponse.pets.length === 0 ? (
                 <Paper variant="outlined" sx={{ ...petCardSx, p: 2.5, borderRadius: 3 }}>
-                  <Typography variant="body2" sx={{ color: '#5b4523' }}>
+                  <Typography variant="body2" sx={{ color: palette.brown900 }}>
                     {locale.emptyMessage}
                   </Typography>
                 </Paper>
@@ -285,7 +290,7 @@ export default function Pets() {
                               variant="subtitle2"
                               noWrap
                               title={pet.name}
-                              sx={{ fontWeight: 800, color: '#3f2f16' }}
+                              sx={{ fontWeight: 800, color: palette.brown900 }}
                             >
                               {pet.name}
                             </Typography>
@@ -301,7 +306,7 @@ export default function Pets() {
                               ) : null}
                             </Box>
 
-                            <Typography variant="caption" sx={{ color: '#5b4523' }}>
+                            <Typography variant="caption" sx={{ color: palette.brown900 }}>
                               {locale.levelLabel}
                               {pet.level}
                             </Typography>

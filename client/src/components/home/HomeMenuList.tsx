@@ -1,7 +1,7 @@
 import { Box, Button, Stack, SvgIcon, type SvgIconProps } from '@mui/material'
 import { Link } from 'react-router-dom'
 import type { HomeMenuGroup, HomeMenuGroupKey, HomeMenuItem } from '@/components/home/homeMenu'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type HomeMenuListProps = {
   primary: HomeMenuItem[]
@@ -22,8 +22,8 @@ function ChevronIcon({ up, ...props }: SvgIconProps & { up: boolean }) {
   )
 }
 
-const MENU_TEXT_COLOR = '#5a3a10'
-const MENU_DIVIDER_COLOR = 'rgba(90, 58, 16, 0.22)'
+const MENU_TEXT_COLOR = palette.brown900
+const MENU_DIVIDER_COLOR = withAlpha(palette.brown900, 0.25)
 
 // 白い箱の中のタイル。区切りは細い線だけにして、ボタンの形は付けない
 const tileSx = {
@@ -35,12 +35,9 @@ const tileSx = {
   fontSize: font.md,
   fontWeight: 700,
   whiteSpace: 'nowrap',
-  '&:hover': {
-    backgroundColor: '#ffffff',
-  },
   '& .MuiButton-startIcon': {
     m: 0,
-    color: '#3f8f45',
+    color: palette.green400,
   },
   '& .MuiButton-startIcon > *:nth-of-type(1)': {
     fontSize: font.xxxl,
@@ -56,11 +53,8 @@ const groupButtonSx = {
   fontSize: font.md,
   fontWeight: 700,
   whiteSpace: 'nowrap',
-  '&:hover': {
-    backgroundColor: '#ffffff',
-  },
   '&[aria-expanded="true"]': {
-    backgroundColor: 'rgba(90, 58, 16, 0.06)',
+    backgroundColor: withAlpha(palette.brown900, 0.1),
   },
   '& .MuiButton-endIcon': {
     ml: 0.25,
@@ -72,13 +66,10 @@ const cellSx = {
   minHeight: 48,
   px: 1.5,
   borderRadius: 0,
-  backgroundColor: '#ffffff',
-  color: '#3a2f1e',
+  backgroundColor: palette.white,
+  color: palette.brown900,
   fontWeight: 700,
   whiteSpace: 'nowrap',
-  '&:hover': {
-    backgroundColor: '#ffffff',
-  },
 } as const
 
 function itemLinkProps(item: HomeMenuItem) {
@@ -105,7 +96,7 @@ export default function HomeMenuList({ primary, groups, openGroup, lockedGroup, 
 
   return (
     <Stack spacing={1}>
-      <Box component="nav" sx={{ backgroundColor: '#ffffff', borderRadius: '12px', overflow: 'hidden' }}>
+      <Box component="nav" sx={{ backgroundColor: palette.white, borderRadius: '12px', overflow: 'hidden' }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
           {primary.map((item, index) => (
             <Button
@@ -158,11 +149,11 @@ export default function HomeMenuList({ primary, groups, openGroup, lockedGroup, 
             // 余白ではなく項目の区切り線（背景色を 1px 見せる）
             // eslint-disable-next-line no-restricted-syntax
             gap: '1px',
-            backgroundColor: '#eadcbf',
-            border: '1px solid #d9c49a',
+            backgroundColor: palette.brown200,
+            border: `1px solid ${palette.brown200}`,
             borderRadius: '12px',
             overflow: 'hidden',
-            boxShadow: '0 4px 14px rgba(60, 40, 0, 0.16)',
+            boxShadow: `0 4px 14px ${withAlpha(palette.brown900, 0.1)}`,
           }}
         >
           {cells.map((item, index) =>
@@ -172,12 +163,12 @@ export default function HomeMenuList({ primary, groups, openGroup, lockedGroup, 
                 {...itemLinkProps(item)}
                 id={item.id}
                 onClick={item.onClick}
-                sx={item.danger ? { ...cellSx, color: '#a0461e' } : cellSx}
+                sx={item.danger ? { ...cellSx, color: palette.red700 } : cellSx}
               >
                 {item.label}
               </Button>
             ) : (
-              <Box key={`empty-${index}`} sx={{ backgroundColor: '#ffffff' }} />
+              <Box key={`empty-${index}`} sx={{ backgroundColor: palette.white }} />
             ),
           )}
         </Box>

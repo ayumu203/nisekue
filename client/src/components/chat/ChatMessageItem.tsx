@@ -4,7 +4,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import type { GetChatRoomResponse } from '@/schema/chat'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../../locale/chat/Chat.json'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type ChatMessage = GetChatRoomResponse['messages'][number]
 
@@ -48,17 +48,10 @@ function ChatMessageItem({ message, isOwnMessage, onDelete }: Props) {
             fontSize: font.sm,
             flexShrink: 0,
             textDecoration: 'none',
-            transition: visitPlayerPath ? 'transform 140ms ease, box-shadow 140ms ease' : 'none',
             '& .MuiAvatar-img': {
               objectFit: 'cover',
               objectPosition: 'center top',
             },
-            '&:hover': visitPlayerPath
-              ? {
-                  transform: 'translateY(-1px)',
-                  boxShadow: '0 8px 18px rgba(36, 20, 11, 0.18)',
-                }
-              : undefined,
           }}
         >
           {message.senderName.slice(0, 1)}
@@ -71,13 +64,13 @@ function ChatMessageItem({ message, isOwnMessage, onDelete }: Props) {
             px: 1.5,
             py: 1,
             borderRadius: 2,
-            bgcolor: isOwnMessage ? '#78c27d' : 'grey.200',
-            color: isOwnMessage ? '#ffffff' : 'text.primary',
+            bgcolor: isOwnMessage ? palette.green400 : 'grey.200',
+            color: isOwnMessage ? palette.white : 'text.primary',
           }}
         >
           <Typography
             variant="caption"
-            color={isOwnMessage ? 'rgba(255, 255, 255, 0.82)' : 'text.secondary'}
+            color={isOwnMessage ? withAlpha(palette.white, 0.75) : 'text.secondary'}
             sx={{ display: 'block', mb: 0.5 }}
           >
             {message.senderName}
@@ -113,7 +106,7 @@ function ChatMessageItem({ message, isOwnMessage, onDelete }: Props) {
           sx={{
             width: 45,
             height: 45,
-            bgcolor: '#9ccc9f',
+            bgcolor: palette.green400,
             fontSize: font.sm,
             flexShrink: 0,
             '& .MuiAvatar-img': {

@@ -2,7 +2,7 @@ import { Box, ButtonBase, InputBase, SvgIcon, type SvgIconProps } from '@mui/mat
 import type { ReactNode } from 'react'
 import { itemsPanelColors as colors } from '@/constants/styles'
 import locale from '../../../locale/items/Items.json'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 export type ItemsTabKey = 'bag' | 'forge' | 'market'
 
@@ -64,10 +64,10 @@ export function MarketTabIcon(props: SvgIconProps) {
 export function CoinIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="9" fill="#e7b43c" stroke="#a8741a" strokeWidth="2" />
+      <circle cx="12" cy="12" r="9" fill={palette.gold300} stroke={palette.gold700} strokeWidth="2" />
       <path
         d="M12 7v10M9 9.5h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H15"
-        stroke="#7a4f0e"
+        stroke={palette.gold700}
         strokeWidth="1.6"
         fill="none"
       />
@@ -115,7 +115,7 @@ export function ItemsTabs({
             px: 0.25,
             backgroundColor: colors.leather,
             // ホームボタンとタブの区切り（ほかの画面の帯と同じ白い線）
-            borderRight: '2px solid rgba(255, 255, 255, 0.85)',
+            borderRight: `2px solid ${withAlpha(palette.white, 0.9)}`,
           }}
         >
           {startAction}
@@ -146,10 +146,10 @@ export function ItemsTabs({
                 px: 0.5,
                 // 選んでいないタブどうしの区切り
                 borderLeft:
-                  index === 0 || selected || previousSelected ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+                  index === 0 || selected || previousSelected ? 'none' : `1px solid ${withAlpha(palette.white, 0.25)}`,
                 // 選んでいるタブは袋の布地の色にして、袋とつなげる
                 backgroundColor: selected ? colors.canvas : colors.tabOff,
-                color: selected ? colors.text : '#ffffff',
+                color: selected ? colors.text : palette.white,
                 fontFamily: 'inherit',
                 fontSize: { xs: font.md, sm: font.lg },
                 fontWeight: 800,
@@ -289,10 +289,10 @@ export function FrameHeading({ icon, title, dark = false }: { icon: ReactNode; t
 type ActionKind = 'primary' | 'secondary' | 'danger' | 'forge' | 'forgeSecondary'
 
 const actionColors: Record<ActionKind, { bg: string; border: string; text: string }> = {
-  primary: { bg: colors.leather, border: colors.leather, text: '#ffffff' },
+  primary: { bg: colors.leather, border: colors.leather, text: palette.white },
   secondary: { bg: colors.slot, border: colors.leather, text: colors.leather },
   danger: { bg: colors.slot, border: colors.danger, text: colors.dangerText },
-  forge: { bg: colors.forgeButton, border: colors.forgeButton, text: '#ffffff' },
+  forge: { bg: colors.forgeButton, border: colors.forgeButton, text: palette.white },
   forgeSecondary: { bg: 'transparent', border: colors.forgeMuted, text: colors.forgeText },
 }
 
@@ -362,7 +362,7 @@ export function NumberField({
           boxSizing: 'border-box',
           border: `2px solid ${colors.slotLine}`,
           borderRadius: '10px',
-          backgroundColor: '#ffffff',
+          backgroundColor: palette.white,
           fontFamily: 'inherit',
           fontSize: font.xxl,
           fontWeight: 800,

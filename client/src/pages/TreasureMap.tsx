@@ -32,7 +32,7 @@ import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import locale from '../../locale/treasure-map/TreasureMap.json'
 import type { TreasureMapExpedition, TreasureMapSummary } from '@/schema/treasureMap'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 const mapBackgroundByGrade: Record<TreasureMapSummary['grade'], string> = {
   S: 'image/quest/moonlit-castle-battlefield.svg',
@@ -63,7 +63,7 @@ const primaryButtonSx = {
     backgroundImage: 'none',
     border: `2px solid ${colors.band}`,
     borderRadius: '10px',
-    color: '#ffffff',
+    color: palette.white,
     fontSize: font.md,
     fontWeight: 800,
     boxShadow: 'none',
@@ -71,10 +71,6 @@ const primaryButtonSx = {
   },
   '& .MuiTouchRipple-root': {
     display: 'none',
-  },
-  '&&:hover': {
-    backgroundColor: colors.band,
-    boxShadow: 'none',
   },
   '&&.Mui-disabled': {
     backgroundColor: colors.disabledButton,
@@ -441,7 +437,7 @@ export default function TreasureMap() {
       component={Link}
       to="/"
       aria-label={locale.backToHome}
-      sx={{ color: '#ffffff', width: 44, height: 44 }}
+      sx={{ color: palette.white, width: 44, height: 44 }}
     >
       <HomeFilledIcon />
     </IconButton>
@@ -478,7 +474,7 @@ export default function TreasureMap() {
           position: 'relative',
           overflow: 'hidden',
           height: mode === 'progress' ? { xs: 200, md: 300 } : { xs: 360, md: 440 },
-          backgroundColor: '#d9e6df',
+          backgroundColor: palette.gray300,
         }}
       >
         <SceneImage src={background} sx={{ inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -506,7 +502,7 @@ export default function TreasureMap() {
               px: 1.5,
               py: 0.5,
               borderRadius: '8px',
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              backgroundColor: withAlpha(palette.white, 0.75),
               color: colors.text,
               fontSize: { xs: font.md, md: font.lg },
               fontWeight: 800,
@@ -549,7 +545,7 @@ export default function TreasureMap() {
               mt: 1,
               height: { xs: 10, md: 12 },
               borderRadius: 999,
-              backgroundColor: '#ece6d6',
+              backgroundColor: palette.cream,
               overflow: 'hidden',
             }}
           >
@@ -592,10 +588,10 @@ export default function TreasureMap() {
               pt: { xs: 1.5, md: 2 },
               pb: { xs: 2, md: 2.5 },
               backgroundColor: colors.messageWindow,
-              border: '3px solid #ffffff',
+              border: `3px solid ${palette.white}`,
               borderRadius: '12px',
               boxShadow: `0 0 0 3px ${colors.messageWindow}`,
-              color: '#ffffff',
+              color: palette.white,
             }}
           >
             <Typography sx={{ fontSize: { xs: font.lg, md: font.xl }, fontWeight: 800 }}>
@@ -605,7 +601,7 @@ export default function TreasureMap() {
               sx={{
                 mt: { xs: 1.5, md: 1.5 },
                 pt: { xs: 1.5, md: 1.5 },
-                borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+                borderTop: `1px solid ${withAlpha(palette.white, 0.25)}`,
                 display: 'grid',
                 gap: { xs: 1.5, md: 4 },
                 gridTemplateColumns: { xs: 'minmax(0, 1fr) auto', md: 'minmax(0, 1fr) auto auto' },

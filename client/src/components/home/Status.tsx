@@ -10,7 +10,7 @@ import { GearIcon, SignOutIcon } from '@/components/home/StatusIcons'
 import { useSignOut } from '@/hooks/useSignOut'
 import { resolveCharacterAssetPath, resolveStatusAssetPath } from '@/lib/assets'
 import { formatEquippedItemWithPlus, formatExpProgress, formatStatusValue, toNormalized } from '@/lib/playerStatus'
-import { font } from '@/theme/tokens'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type StatValue = number | string
 
@@ -214,10 +214,9 @@ export default function Status({
                     width: 36,
                     height: 36,
                     flex: 'none',
-                    color: '#8a5a1f',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2cfa6',
-                    '&:hover': { backgroundColor: '#fff4d6' },
+                    color: palette.gold700,
+                    '&&': { backgroundColor: palette.white },
+                    border: `1px solid ${palette.brown200}`,
                   }}
                 >
                   <GearIcon fontSize="small" />
@@ -310,13 +309,9 @@ export default function Status({
                   borderRadius: 1,
                   minHeight: 38,
                   fontWeight: 700,
-                  backgroundColor: '#5f7f67',
-                  color: '#fff8ea',
+                  backgroundColor: palette.green700,
+                  color: palette.cream,
                   boxShadow: 'none',
-                  '&:hover': {
-                    backgroundColor: '#56755f',
-                    boxShadow: 'none',
-                  },
                 }}
               >
                 {isDetailOpen ? locale.statusDetailsHide : locale.statusDetailsShow}
@@ -357,13 +352,9 @@ export default function Status({
                     borderRadius: 1,
                     minHeight: 38,
                     fontWeight: 700,
-                    backgroundColor: '#5f7f67',
-                    color: '#fff8ea',
+                    backgroundColor: palette.green700,
+                    color: palette.cream,
                     boxShadow: 'none',
-                    '&:hover': {
-                      backgroundColor: '#56755f',
-                      boxShadow: 'none',
-                    },
                   }}
                 >
                   {isDetailOpen ? locale.statusDetailsHide : locale.statusDetailsShow}
@@ -431,8 +422,8 @@ export default function Status({
           display: showDesktopActions ? 'inline-flex' : 'none',
           ...topNavigationIconButtonSx,
           '&.Mui-disabled': {
-            color: 'rgba(255,255,255,0.56)',
-            backgroundColor: 'rgba(122, 77, 25, 0.62)',
+            color: withAlpha(palette.white, 0.5),
+            backgroundColor: withAlpha(palette.brown500, 0.5),
           },
         }}
       >

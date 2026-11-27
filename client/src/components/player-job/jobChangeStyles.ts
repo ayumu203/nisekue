@@ -1,8 +1,9 @@
 import { resolvePublicAssetPath } from '@/lib/assets'
+import { palette } from '@/theme/tokens'
 
 // 舞台の背景（ダーマ神殿の祭壇）。基本職の舞台だけで使う
 export const stageBackgroundSx = {
-  backgroundColor: '#5a3c1a',
+  backgroundColor: palette.brown900,
   backgroundImage: `url(${resolvePublicAssetPath('image/job-change/background.jpg')})`,
   backgroundSize: 'cover',
   backgroundPosition: 'center 30%',
