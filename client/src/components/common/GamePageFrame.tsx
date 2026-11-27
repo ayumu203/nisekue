@@ -14,12 +14,20 @@ type GamePageFrameProps = {
   currentColor: string
   // 画面全体の背景（今までの外枠の色やグラデーション）
   background: string
+  // PC（md 以上）で中身を画面の高さに合わせる（箱の中でスクロールさせる画面用）。中身は縦の flex に並ぶ
+  fillHeight?: boolean
   children: ReactNode
 }
 
 // 画面いっぱいに広げた外枠。PC（sm 以上）でログインしているときは上にホームと同じヘッダーメニューを出す。
 // 中身の見た目は各画面のまま
-export default function GamePageFrame({ currentKey, currentColor, background, children }: GamePageFrameProps) {
+export default function GamePageFrame({
+  currentKey,
+  currentColor,
+  background,
+  fillHeight = false,
+  children,
+}: GamePageFrameProps) {
   const { session } = useAuth()
   const theme = useTheme()
   const isDesktop = useMediaQuery(theme.breakpoints.up('sm'), { noSsr: true })
@@ -56,6 +64,15 @@ export default function GamePageFrame({ currentKey, currentColor, background, ch
           px: { xs: 1.5, sm: 4 },
           pt: { xs: 1.5, sm: 3 },
           pb: { xs: 3, sm: 4 },
+          ...(fillHeight
+            ? {
+                // 低すぎる画面ではページごとスクロール
+                height: { md: 'calc(100dvh - 57px)' },
+                minHeight: { md: 640 },
+                display: 'flex',
+                flexDirection: 'column',
+              }
+            : {}),
         }}
       >
         {children}

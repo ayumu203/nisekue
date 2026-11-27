@@ -386,6 +386,14 @@ export const skillPanelColors = {
   warning: palette.red700,
 } as const
 
+// 転生画面（金）。上部の帯・地・白い箱の見出しの帯
+// 見出しの帯は上部の帯と同じ色にしない（箱が背景に溶け込むため）
+export const rebirthPanelColors = {
+  topBand: palette.gold700,
+  ground: palette.cream,
+  band: palette.brown900,
+} as const
+
 // 転職画面（聖堂の藍）。上部の帯・地・白い箱の見出しの帯・舞台の上の名札
 export const jobChangePanelColors = {
   topBand: palette.blue900,
