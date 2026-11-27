@@ -42,6 +42,8 @@ export default function JobChange() {
   const notify = useNotify()
   const [isSubmittingJobValue, setIsSubmittingJobValue] = useState<number | null>(null)
   const [tabIndex, setTabIndex] = useState(0)
+  // 「OK」で閉じた転職の案内。転職ボタンを押しやすいように出さない
+  const [isSelectGuideClosed, setIsSelectGuideClosed] = useState(false)
 
   useEffect(() => {
     if (!userId) {
@@ -89,6 +91,15 @@ export default function JobChange() {
       return getPlayer(session.access_token)
     }
   })
+
+  // 転職の案内中に見習いから転職したら（すでに転職済みのときも）、ロードマップの案内へ進む
+  const hasChangedFromApprentice = player != null && player.job.code !== 'Apprentice'
+  useEffect(() => {
+    if (tutorialStep === 'job-change-select' && hasChangedFromApprentice && userId) {
+      setTutorialStep(userId, 'job-change-roadmap')
+      setTutorialStepState('job-change-roadmap')
+    }
+  }, [tutorialStep, hasChangedFromApprentice, userId])
 
   async function handleChangeJob(nextJobValue: number): Promise<void> {
     if (!session?.access_token) {
@@ -288,6 +299,7 @@ export default function JobChange() {
             onJobChange={handleChangeJob}
             isWide={isWide}
             attachToTabs={!isDesktop}
+            changeButtonId={tutorialStep === 'job-change-select' ? 'tutorial-job-change-submit' : undefined}
           />
         ) : (
           <JobRoadmapTab
@@ -311,7 +323,18 @@ export default function JobChange() {
           message={tutorialLocale.steps.jobChangeInfo.message}
           showDismiss
           dismissLabel={tutorialLocale.steps.jobChangeInfo.dismissLabel}
-          onDismiss={() => advanceTutorial('job-change-roadmap')}
+          onDismiss={() => advanceTutorial('job-change-select')}
+        />
+      )}
+      {tutorialStep === 'job-change-select' && !isSelectGuideClosed && (
+        <SpotlightTutorial
+          guide="priest"
+          targetId="tutorial-job-change-submit"
+          message={tutorialLocale.steps.jobChangeSelect.message}
+          dimBackground={false}
+          showDismiss
+          dismissLabel={tutorialLocale.closeLabel}
+          onDismiss={() => setIsSelectGuideClosed(true)}
         />
       )}
       {tutorialStep === 'job-change-roadmap' && (

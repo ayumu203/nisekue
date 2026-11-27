@@ -13,6 +13,7 @@ export type TutorialStep =
   | 'training-to-lv5'
   | 'home-job-change'
   | 'job-change-info'
+  | 'job-change-select'
   | 'job-change-roadmap'
   | 'training-to-lv7'
   | 'training-quest-guide'
@@ -45,6 +46,7 @@ const TUTORIAL_STEPS: readonly TutorialStep[] = [
   'training-to-lv5',
   'home-job-change',
   'job-change-info',
+  'job-change-select',
   'job-change-roadmap',
   'training-to-lv7',
   'training-quest-guide',

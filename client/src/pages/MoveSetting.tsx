@@ -41,6 +41,8 @@ export default function MoveSetting() {
   const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
   const [prevUserId, setPrevUserId] = useState(userId)
   const [openMenuGroup, setOpenMenuGroup] = useState<HomeMenuGroupKey | null>(null)
+  // 「OK」で閉じたら、技を並べ替えられるように戻る案内を出さない
+  const [isToHomeGuideClosed, setIsToHomeGuideClosed] = useState(false)
   const [editableSlots, setEditableSlots] = useState<PlayerMoveSlot[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -341,11 +343,15 @@ export default function MoveSetting() {
           onDismiss={() => advanceTutorial('home-treasure-map')}
         />
       )}
-      {tutorialStep === 'home-treasure-map' && (
+      {tutorialStep === 'home-treasure-map' && !isToHomeGuideClosed && (
         <SpotlightTutorial
           guide="mage"
           targetId="tutorial-home-btn-move"
           message={tutorialLocale.steps.moveSettingToHome.message}
+          dimBackground={false}
+          showDismiss
+          dismissLabel={tutorialLocale.closeLabel}
+          onDismiss={() => setIsToHomeGuideClosed(true)}
         />
       )}
     </Box>
