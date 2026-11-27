@@ -33,10 +33,12 @@ export type FontSizeToken = (typeof font)[keyof typeof font]
  */
 export const spaceScale = [0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 6] as const
 
-/** 色（21 色）。色の直書きはせず、ここから選ぶ */
+/** 色（22 色）。色の直書きはせず、ここから選ぶ */
 export const palette = {
   /** 白 */
   white: '#ffffff',
+  /** 黒（暗幕・影・黒地） */
+  black: '#000000',
   /** クリーム（紙） */
   cream: '#fff7e8',
   /** 水色（地） */

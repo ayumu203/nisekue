@@ -52,7 +52,7 @@ const POINTER_LABEL_OUTLINE = [
 ]
   .map(([x, y]) => `${x}px ${y}px 0 ${WINDOW_OUTLINE_COLOR}`)
   .join(', ')
-const OVERLAY_COLOR = withAlpha(palette.brown900, 0.5)
+const OVERLAY_COLOR = withAlpha(palette.black, 0.75)
 const POINTER_HEIGHT = 44
 const POINTER_GAP = 6
 

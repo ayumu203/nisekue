@@ -31,7 +31,7 @@ export default function UnlockRoadmapDialog({
       fullWidth
       PaperProps={{
         sx: {
-          bgcolor: palette.navy,
+          bgcolor: palette.black,
           border: `3px solid ${palette.white}`,
           borderRadius: 0,
           boxShadow: `4px 4px 0 ${palette.gray600}, inset 0 0 0 1px ${palette.brown900}`,
@@ -50,7 +50,7 @@ export default function UnlockRoadmapDialog({
                 border: `2px solid ${palette.white}`,
                 display: 'grid',
                 placeItems: 'center',
-                bgcolor: palette.brown900,
+                bgcolor: palette.black,
                 mx: 'auto',
                 mb: 1.5,
               }}
@@ -105,7 +105,7 @@ export default function UnlockRoadmapDialog({
                     border: `2px solid ${palette.gray600}`,
                     borderRadius: 0,
                     color: palette.gray300,
-                    bgcolor: palette.navy,
+                    bgcolor: palette.black,
                     fontWeight: 900,
                     fontSize: font.sm,
                     py: 0.75,
@@ -123,7 +123,7 @@ export default function UnlockRoadmapDialog({
                     minWidth: 80,
                     border: `2px solid ${palette.white}`,
                     borderRadius: 0,
-                    color: palette.navy,
+                    color: palette.black,
                     bgcolor: palette.white,
                     fontWeight: 900,
                     fontSize: font.sm,

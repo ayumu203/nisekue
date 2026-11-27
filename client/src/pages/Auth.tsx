@@ -89,7 +89,7 @@ const heroTitleSx = {
     `3px -3px 0 ${palette.navy}`,
     `-3px 3px 0 ${palette.navy}`,
     `3px 3px 0 ${palette.navy}`,
-    `0 6px 0 ${withAlpha(palette.navy, 0.5)}`,
+    `0 6px 0 ${withAlpha(palette.black, 0.5)}`,
   ].join(', '),
 } as const
 
@@ -357,7 +357,7 @@ function Auth() {
                   width: `${sprite.width * 0.5}%`,
                   height: '3%',
                   borderRadius: '50%',
-                  background: `radial-gradient(ellipse at center, ${withAlpha(palette.navy, 0.9)} 0%, transparent 70%)`,
+                  background: `radial-gradient(ellipse at center, ${withAlpha(palette.black, 0.9)} 0%, transparent 70%)`,
                   opacity: 0.5,
                   pointerEvents: 'none',
                 }}

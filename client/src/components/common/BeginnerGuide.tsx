@@ -169,14 +169,14 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
       footerTextColor: palette.teal700,
     },
   }[guide.pageKey] ?? {
-    triggerBackgroundColor: palette.navy,
-    triggerHoverBackgroundColor: palette.navy,
+    triggerBackgroundColor: palette.black,
+    triggerHoverBackgroundColor: palette.black,
     triggerBorderColor: palette.brown500,
     triggerTextColor: palette.sky,
     triggerBadgeBackgroundColor: withAlpha(palette.brown500, 0.25),
     dialogBackgroundColor: palette.white,
     dialogBorderColor: palette.gray300,
-    headerBackgroundColor: palette.navy,
+    headerBackgroundColor: palette.black,
     headerBorderColor: palette.brown500,
     headerTextColor: palette.sky,
     headerMutedTextColor: withAlpha(palette.sky, 0.75),
@@ -189,7 +189,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
     sectionBorderColor: palette.gray300,
     sectionTitleColor: palette.navy,
     sectionBodyColor: palette.teal700,
-    indexBackgroundColor: palette.navy,
+    indexBackgroundColor: palette.black,
     indexTextColor: palette.brown200,
     indexBorderColor: palette.brown500,
     footerTextColor: palette.teal700,
@@ -255,7 +255,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
             borderRadius: fullScreen ? 0 : 4,
             backgroundColor: guidePalette.dialogBackgroundColor,
             border: `1px solid ${guidePalette.dialogBorderColor}`,
-            boxShadow: `0 32px 80px ${withAlpha(palette.navy, 0.5)}`,
+            boxShadow: `0 32px 80px ${withAlpha(palette.black, 0.5)}`,
           },
         }}
       >
@@ -334,7 +334,7 @@ export default function BeginnerGuide({ userId, guide, inverted = false, trigger
                   borderRadius: 3,
                   borderColor: guidePalette.sectionBorderColor,
                   backgroundColor: guidePalette.sectionBackgroundColor,
-                  boxShadow: `0 10px 24px ${withAlpha(palette.navy, 0.1)}`,
+                  boxShadow: `0 10px 24px ${withAlpha(palette.black, 0.1)}`,
                 }}
               >
                 <Stack direction="row" spacing={1.5} alignItems="flex-start">

@@ -35,7 +35,7 @@ type TurnLog = {
 // 自分と相手の画像を置く枠の高さ（大きいほうの画像に合わせる）
 const fighterAreaHeight = { xs: 120, md: 230 }
 
-const logTextColor = palette.brown900
+const logTextColor = palette.black
 const logDivider = `1px dotted ${withAlpha(palette.navy, 0.25)}`
 
 function normalizeHp(current: number, max: number): number {
@@ -188,7 +188,7 @@ function EmptyFighter({ imageHeight }: { imageHeight: { xs: number; md: number }
         color: palette.white,
         fontSize: { xs: font.display, md: font.display },
         fontWeight: 900,
-        textShadow: `0 2px 0 ${withAlpha(palette.navy, 0.25)}`,
+        textShadow: `0 2px 0 ${withAlpha(palette.black, 0.25)}`,
       }}
     >
       ?
@@ -253,7 +253,7 @@ export default function TrainingBattleField({
             fontSize: { xs: font.xxxl, md: font.display },
             fontWeight: 900,
             color: palette.white,
-            textShadow: `0 2px 0 ${withAlpha(palette.navy, 0.5)}`,
+            textShadow: `0 2px 0 ${withAlpha(palette.black, 0.5)}`,
           }}
         >
           VS

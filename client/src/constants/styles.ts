@@ -232,7 +232,7 @@ export const trainingPanelColors = {
   // 押せないボタンの色
   disabledButton: palette.blue300,
   // 白い箱の中の文字・区切り線（茶色やベージュを使わず、藍に合わせたグレー）
-  text: palette.brown900,
+  text: palette.black,
   label: palette.teal700,
   divider: palette.sky,
 } as const
@@ -289,7 +289,7 @@ export const itemsPanelColors = {
   priceTag: palette.gold300,
   priceTagText: palette.brown900,
   // 合成タブの鍛冶場
-  forge: palette.brown900,
+  forge: palette.black,
   forgeLine: palette.brown900,
   forgeSlot: palette.brown900,
   forgeSlotLine: palette.brown900,
@@ -399,7 +399,7 @@ export const jobChangePanelColors = {
   // 舞台の上の名札と札の金
   plate: withAlpha(palette.navy, 0.9),
   plateGold: palette.gold300,
-  text: palette.teal700,
+  text: palette.black,
   label: palette.teal700,
   divider: palette.sky,
   // 未解放の札

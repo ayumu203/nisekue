@@ -271,7 +271,7 @@ export default function PetBattleRunSection({
                             fontWeight: 700,
                           },
                           '& .MuiToggleButton-root.MuiToggleButton-root.Mui-selected': {
-                            color: palette.brown900,
+                            color: palette.black,
                             backgroundColor: cyberColors.accent,
                           },
                         }}

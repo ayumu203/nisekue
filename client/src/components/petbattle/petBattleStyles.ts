@@ -1,8 +1,8 @@
 import { font, palette, withAlpha } from '@/theme/tokens'
 export const cyberColors = {
-  bg: palette.navy,
-  panel: palette.brown900,
-  panelLight: palette.brown900,
+  bg: palette.black,
+  panel: palette.black,
+  panelLight: palette.black,
   panelBorder: withAlpha(palette.teal400, 0.25),
   accent: palette.teal400,
   accentDim: withAlpha(palette.teal400, 0.5),
@@ -18,7 +18,7 @@ export const cyberPanelSx = {
   backgroundColor: cyberColors.panel,
   border: `1px solid ${cyberColors.panelBorder}`,
   borderRadius: 2.5,
-  boxShadow: `0 0 20px ${withAlpha(palette.navy, 0.25)}`,
+  boxShadow: `0 0 20px ${withAlpha(palette.black, 0.25)}`,
 } as const
 
 export const cyberButtonSx = {
@@ -28,7 +28,7 @@ export const cyberButtonSx = {
     px: 2.5,
     fontWeight: 800,
     letterSpacing: '0.08em',
-    color: palette.brown900,
+    color: palette.black,
     background: cyberColors.accent,
     boxShadow: `0 0 12px ${withAlpha(palette.teal400, 0.25)}`,
   },

@@ -272,7 +272,7 @@ export function MarketList({
           mt: { xs: -1.5, sm: -2.5 },
           borderRadius: '10px 10px 0 0',
           background: `repeating-linear-gradient(90deg, ${colors.leather} 0 56px, ${palette.cream} 56px 112px)`,
-          boxShadow: `inset 0 -6px 0 ${withAlpha(palette.navy, 0.1)}`,
+          boxShadow: `inset 0 -6px 0 ${withAlpha(palette.black, 0.1)}`,
           flex: 'none',
         }}
       />
