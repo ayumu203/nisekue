@@ -59,7 +59,6 @@ export default function JobChangeTab({
   ) : selectedJob ? (
     <SelectFooter
       job={selectedJob}
-      isMaxLevel={player.isMaxLevel === true}
       isSubmitting={isSubmittingJobValue !== null}
       onChange={() => onJobChange(selectedJob.value)}
       compact={!isWide}
@@ -377,14 +376,12 @@ function StageActor({
 
 function SelectFooter({
   job,
-  isMaxLevel,
   isSubmitting,
   onChange,
   compact,
   buttonId,
 }: {
   job: PlayerJob
-  isMaxLevel: boolean
   isSubmitting: boolean
   onChange: () => void
   compact: boolean
@@ -415,15 +412,6 @@ function SelectFooter({
 
   return (
     <Box sx={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 1.5, px: compact ? 2 : 3, py: 2.5 }}>
-      {isMaxLevel ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-          {locale.maxLevelNotice.map((item) => (
-            <Typography key={item.label} sx={{ fontSize: compact ? font.sm : font.md, color: palette.red700 }}>
-              {item.label}：{item.value}
-            </Typography>
-          ))}
-        </Box>
-      ) : null}
       <Box
         sx={{
           display: 'flex',
