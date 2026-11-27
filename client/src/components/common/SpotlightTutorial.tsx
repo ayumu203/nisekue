@@ -109,12 +109,22 @@ function useTargetRect(targetId: string | undefined, padding: number): TargetRec
       }
 
       const r = el.getBoundingClientRect()
-      setRect({
+      const next = {
         top: r.top - padding,
         left: r.left - padding,
         width: r.width + padding * 2,
         height: r.height + padding * 2,
-      })
+      }
+      // 位置が変わらないときは更新しない（DOM の変化のたびに描き直さないように）
+      setRect((prev) =>
+        prev &&
+        prev.top === next.top &&
+        prev.left === next.left &&
+        prev.width === next.width &&
+        prev.height === next.height
+          ? prev
+          : next,
+      )
     }
 
     measure()
@@ -124,10 +134,29 @@ function useTargetRect(targetId: string | undefined, padding: number): TargetRec
     const observer = new ResizeObserver(measure)
     observer.observe(document.documentElement)
 
+    // 指す要素が後から表示される（読み込み後に一覧が出るなど）ときにも探し直す。
+    // 全画面のレイアウトではページ全体の大きさが変わらず、ResizeObserver では気づけないため
+    let frame = 0
+    const mutationObserver = new MutationObserver(() => {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        measure()
+      })
+    })
+    mutationObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['id'],
+    })
+
     return () => {
       window.removeEventListener('resize', measure)
       window.removeEventListener('scroll', measure, true)
       observer.disconnect()
+      mutationObserver.disconnect()
+      if (frame) cancelAnimationFrame(frame)
     }
   }, [targetId, padding])
 
