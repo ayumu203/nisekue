@@ -126,7 +126,7 @@ export default function JobRoadmapTab({ player, onPlayerChanged, isWide }: JobRo
           }}
         >
           <Box sx={{ minHeight: 0 }}>
-            <GamePanel title={locale.roadmapTitle} {...panelProps}>
+            <GamePanel hideBand aria-label={locale.roadmapTitle} {...panelProps}>
               {listStatus ?? (
                 <RoadmapMap
                   entries={entries}
@@ -139,13 +139,13 @@ export default function JobRoadmapTab({ player, onPlayerChanged, isWide }: JobRo
             </GamePanel>
           </Box>
           <Box sx={{ minHeight: 0 }}>
-            <GamePanel title={locale.roadmapDetailTitle} disablePadding {...panelProps}>
+            <GamePanel hideBand aria-label={locale.roadmapDetailTitle} disablePadding {...panelProps}>
               {detail}
             </GamePanel>
           </Box>
         </Box>
       ) : (
-        <GamePanel title={locale.roadmapTitle} fillHeight={false} disablePadding {...panelProps}>
+        <GamePanel hideBand aria-label={locale.roadmapTitle} fillHeight={false} disablePadding {...panelProps}>
           {listStatus ?? (
             <RoadmapRankList
               entries={entries}
