@@ -32,6 +32,8 @@ type GamePanelProps = {
   // 見出しの帯の色（省略するとホームと同じ緑）。訓練場は藍
   bandColor?: string
   bandSelectedColor?: string
+  // 箱の外の真上にあるタブの帯とつなげる（上の角を丸めない）。スマホの転職画面で使う
+  attachTop?: boolean
 }
 
 // 上に帯の見出しが付いた白い箱（帯はふだん緑、訓練場は藍）。PC のホーム・クエスト・訓練場で使う
@@ -48,6 +50,7 @@ export default function GamePanel({
   fitContent = false,
   bandColor = homePanelColors.band,
   bandSelectedColor = homePanelColors.bandSelected,
+  attachTop = false,
 }: GamePanelProps) {
   return (
     <Box
@@ -60,7 +63,7 @@ export default function GamePanel({
         height: fillHeight && !fitContent ? '100%' : 'auto',
         maxHeight: fillHeight ? '100%' : 'none',
         backgroundColor: palette.white,
-        borderRadius: '12px',
+        borderRadius: attachTop ? '0 0 12px 12px' : '12px',
         overflow: 'hidden',
       }}
     >
