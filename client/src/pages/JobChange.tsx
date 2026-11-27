@@ -147,7 +147,8 @@ export default function JobChange() {
     id: tutorialHomeButtonId,
   }
 
-  // PC：「基本職｜ロードマップ」を、クエスト・アイテムと同じく隙間なく 1 本の帯につなげたタブにする
+  // PC：「基本職｜ロードマップ」を、クエスト・アイテムと同じく隙間なく 1 本の帯につなげたタブにする。
+  // 上部の帯（濃い藍）に溶け込まないよう、非選択は空色、選択中は藍
   const desktopTabs = (
     <Box
       role="tablist"
@@ -168,8 +169,8 @@ export default function JobChange() {
               flex: 1,
               fontFamily: 'inherit',
               fontSize: font.lg,
-              color: selected ? palette.white : withAlpha(palette.white, 0.75),
-              backgroundColor: selected ? colors.bandDark : colors.band,
+              color: selected ? palette.white : palette.blue900,
+              backgroundColor: selected ? colors.band : palette.blue300,
               borderLeft: index === 0 ? 'none' : `1px solid ${withAlpha(palette.white, 0.25)}`,
             }}
           >
@@ -222,8 +223,8 @@ export default function JobChange() {
               flex: 1,
               fontFamily: 'inherit',
               fontSize: font.md,
-              color: selected ? palette.white : withAlpha(palette.white, 0.75),
-              backgroundColor: selected ? colors.bandDark : colors.band,
+              color: selected ? palette.white : palette.blue900,
+              backgroundColor: selected ? colors.band : palette.blue300,
               borderLeft: index === 0 ? 'none' : `1px solid ${withAlpha(palette.white, 0.25)}`,
             }}
           >
