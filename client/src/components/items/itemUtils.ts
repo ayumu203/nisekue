@@ -73,3 +73,52 @@ export function parsePositiveInteger(value: string | undefined, fallback: number
 export function normalizeText(value: string): string {
   return value.trim().toLocaleLowerCase('ja-JP')
 }
+
+type StatusBonus = ItemEquipmentView['statusBonus']
+
+const statusBonusKeys = ['maxHp', 'maxMp', 'strength', 'defense', 'intelligence', 'luck', 'speed'] as const
+const statusBonusLabels: Record<(typeof statusBonusKeys)[number], string> = {
+  maxHp: 'HP',
+  maxMp: 'MP',
+  strength: 'STR',
+  defense: 'DEF',
+  intelligence: 'INT',
+  luck: 'LUK',
+  speed: 'SPD',
+}
+
+// サーバー（EquipmentStatusResolver）と同じ計算：元の値 ×（100 ＋ 強化値）÷ 100（0 に向けて切り捨て）
+export function applyPlusValue(bonus: StatusBonus, plusValue: number): StatusBonus {
+  const result = { ...bonus }
+  for (const key of statusBonusKeys) {
+    result[key] = bonus[key] === 0 ? 0 : Math.trunc((bonus[key] * (100 + plusValue)) / 100)
+  }
+  return result
+}
+
+// 強化値を反映した装備の効果
+export function getEquipmentBonus(item: Pick<ItemEquipmentView, 'statusBonus' | 'plusValue'>): StatusBonus {
+  return applyPlusValue(item.statusBonus, item.plusValue)
+}
+
+export type StatusChange = { label: string; from: number; to: number }
+
+// 装備を持ち替えたときの能力の変化（変わるものだけ）
+export function compareStatusBonus(current: StatusBonus | null, next: StatusBonus): StatusChange[] {
+  return statusBonusKeys
+    .map((key) => ({ label: statusBonusLabels[key], from: current?.[key] ?? 0, to: next[key] }))
+    .filter((change) => change.from !== change.to)
+}
+
+// 1 回の合成費用（サーバーと同じ：合成コスト ×（今の強化値 ＋ 1））
+export function getSynthesisCost(target: Pick<ItemEquipmentView, 'synthesisGoldCost' | 'plusValue'>): number {
+  return target.synthesisGoldCost * (target.plusValue + 1)
+}
+
+export function formatGold(value: number): string {
+  return `${value.toLocaleString('ja-JP')} G`
+}
+
+export function formatPlusValue(plusValue: number): string {
+  return plusValue > 0 ? `+${plusValue}` : ''
+}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Alert, Box, Button, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material'
+import { Box, Button, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material'
 import { Link } from 'react-router-dom'
 import { greenBadgeSx, greenBadgeTextSx, innerSurfaceSx, topNavigationIconButtonSx } from '@/constants/styles'
 import type { GetPlayerResponse } from '@/schema/player'
@@ -9,6 +9,8 @@ import StatusStatRow from '@/components/home/StatusStatRow'
 import { GearIcon, SignOutIcon } from '@/components/home/StatusIcons'
 import { useSignOut } from '@/hooks/useSignOut'
 import { resolveCharacterAssetPath, resolveStatusAssetPath } from '@/lib/assets'
+import { formatEquippedItemWithPlus, formatExpProgress, formatStatusValue, toNormalized } from '@/lib/playerStatus'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type StatValue = number | string
 
@@ -34,60 +36,6 @@ type StatusProps = {
   layout?: 'default' | 'compact'
 }
 
-function toNormalized(value: number | undefined, maxValue: number): number {
-  if (typeof value !== 'number' || maxValue <= 0) {
-    return 0
-  }
-
-  return Math.max(0, Math.min(100, (value / maxValue) * 100))
-}
-
-function formatExpProgress(exp: number | undefined, requiredExp: number | undefined, fallback: string): string {
-  if (typeof exp !== 'number' || typeof requiredExp !== 'number') {
-    return `${fallback} / ${fallback}`
-  }
-
-  // レベル上限に達すると requiredExp は 0 になる。値としては正しいので fallback にはしない。
-  if (!Number.isFinite(exp) || !Number.isFinite(requiredExp) || requiredExp < 0) {
-    return `${fallback} / ${fallback}`
-  }
-
-  return `${exp} / ${requiredExp}`
-}
-
-function formatStatusValue(
-  baseValue: number | undefined,
-  effectiveValue: number | undefined,
-  fallback: string,
-): StatValue {
-  if (typeof baseValue !== 'number' || typeof effectiveValue !== 'number') {
-    return fallback
-  }
-
-  const diff = effectiveValue - baseValue
-  if (diff === 0) {
-    return effectiveValue
-  }
-
-  return `${effectiveValue} (${diff > 0 ? '+' : ''}${diff})`
-}
-
-function formatEquippedItemWithPlus(
-  equipment:
-    | {
-        name: string
-        plusValue: number
-      }
-    | undefined,
-  fallback: string,
-): string {
-  if (!equipment) {
-    return fallback
-  }
-
-  return equipment.plusValue > 0 ? `${equipment.name} (+${equipment.plusValue})` : equipment.name
-}
-
 export default function Status({
   player,
   compactTrainingMobile = false,
@@ -103,7 +51,7 @@ export default function Status({
   const [failedImagePath, setFailedImagePath] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(true)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const { signOut, isSigningOut, signOutError } = useSignOut()
+  const { signOut, isSigningOut } = useSignOut()
   const equippedWeapon = player?.equipments.find(
     (equipment) => equipment.equipmentType === 'Weapon' && equipment.status === 'Equipped',
   )
@@ -247,7 +195,7 @@ export default function Status({
                     flex: 1,
                     minWidth: 0,
                     // 長い名前（最大 20 文字）は少し小さくして、2 行に収める
-                    fontSize: (player?.userName?.length ?? 0) > 12 ? '1.05rem' : '1.2rem',
+                    fontSize: (player?.userName?.length ?? 0) > 12 ? font.md : font.xl,
                     lineHeight: 1.3,
                     overflowWrap: 'anywhere',
                     textAlign: 'center',
@@ -266,10 +214,9 @@ export default function Status({
                     width: 36,
                     height: 36,
                     flex: 'none',
-                    color: '#8a5a1f',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2cfa6',
-                    '&:hover': { backgroundColor: '#fff4d6' },
+                    color: palette.gold700,
+                    '&&': { backgroundColor: palette.white },
+                    border: `1px solid ${palette.brown200}`,
                   }}
                 >
                   <GearIcon fontSize="small" />
@@ -351,7 +298,7 @@ export default function Status({
           )}
 
           {compactTrainingMobile ? (
-            <Stack spacing={1.25}>
+            <Stack spacing={1.5}>
               <Button
                 variant="contained"
                 size="small"
@@ -362,13 +309,9 @@ export default function Status({
                   borderRadius: 1,
                   minHeight: 38,
                   fontWeight: 700,
-                  backgroundColor: '#5f7f67',
-                  color: '#fff8ea',
+                  backgroundColor: palette.green700,
+                  color: palette.cream,
                   boxShadow: 'none',
-                  '&:hover': {
-                    backgroundColor: '#56755f',
-                    boxShadow: 'none',
-                  },
                 }}
               >
                 {isDetailOpen ? locale.statusDetailsHide : locale.statusDetailsShow}
@@ -398,7 +341,7 @@ export default function Status({
             </Stack>
           ) : (
             <Box>
-              <Stack spacing={1.25}>
+              <Stack spacing={1.5}>
                 <Button
                   variant="contained"
                   size="small"
@@ -409,13 +352,9 @@ export default function Status({
                     borderRadius: 1,
                     minHeight: 38,
                     fontWeight: 700,
-                    backgroundColor: '#5f7f67',
-                    color: '#fff8ea',
+                    backgroundColor: palette.green700,
+                    color: palette.cream,
                     boxShadow: 'none',
-                    '&:hover': {
-                      backgroundColor: '#56755f',
-                      boxShadow: 'none',
-                    },
                   }}
                 >
                   {isDetailOpen ? locale.statusDetailsHide : locale.statusDetailsShow}
@@ -483,8 +422,8 @@ export default function Status({
           display: showDesktopActions ? 'inline-flex' : 'none',
           ...topNavigationIconButtonSx,
           '&.Mui-disabled': {
-            color: 'rgba(255,255,255,0.56)',
-            backgroundColor: 'rgba(122, 77, 25, 0.62)',
+            color: withAlpha(palette.white, 0.5),
+            backgroundColor: withAlpha(palette.brown500, 0.5),
           },
         }}
       >
@@ -498,7 +437,7 @@ export default function Status({
             ...topNavigationIconButtonSx,
           }}
         >
-          <Typography component="span" fontSize="1.1rem" fontWeight={900}>
+          <Typography component="span" fontSize={font.lg} fontWeight={900}>
             {isOpen ? '−' : '+'}
           </Typography>
         </IconButton>
@@ -523,12 +462,6 @@ export default function Status({
       )}
 
       <Collapse in={isOpen || !showCollapseToggle}>{statusPaper}</Collapse>
-
-      {signOutError ? (
-        <Alert severity="error" sx={{ mt: 1 }}>
-          {signOutError}
-        </Alert>
-      ) : null}
     </Box>
   )
 }

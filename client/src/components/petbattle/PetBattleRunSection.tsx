@@ -22,6 +22,7 @@ import {
 } from '@/components/petbattle/petBattleTargets'
 import locale from '../../../locale/pet/PetBattle.json'
 import type { BattleColumn, BattleRow, PetBattleActionKind, PetBattleMember, PetBattleRun } from '@/schema/petBattle'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type PetBattleRunSectionProps = {
   run: PetBattleRun
@@ -61,7 +62,7 @@ function FieldGrid({
               border: `1px solid ${cyberColors.panelBorder}`,
             }}
           >
-            <Typography variant="caption" sx={{ color: cyberColors.accentDim, fontSize: '0.6rem', fontWeight: 700 }}>
+            <Typography variant="caption" sx={{ color: cyberColors.accentDim, fontSize: font.xxs, fontWeight: 700 }}>
               {locale.rows[row]}
             </Typography>
           </Box>
@@ -140,8 +141,8 @@ export default function PetBattleRunSection({
 
   return (
     <Stack spacing={2}>
-      <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.25, sm: 2 } }}>
-        <Stack spacing={1.25}>
+      <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.5, sm: 2 } }}>
+        <Stack spacing={1.5}>
           <Stack direction="row" spacing={2} alignItems="center" useFlexGap flexWrap="wrap">
             <Typography variant="body2" sx={{ color: cyberColors.text, fontWeight: 800, letterSpacing: '0.06em' }}>
               {`TURN ${run.currentTurnNo}`}
@@ -158,7 +159,7 @@ export default function PetBattleRunSection({
               border: `1px solid ${cyberColors.danger}`,
               borderRadius: 2,
               p: 0.75,
-              backgroundColor: 'rgba(255, 56, 96, 0.04)',
+              backgroundColor: withAlpha(palette.red700, 0.1),
             }}
           >
             <FieldGrid
@@ -174,7 +175,7 @@ export default function PetBattleRunSection({
               border: `1px solid ${cyberColors.mp}`,
               borderRadius: 2,
               p: 0.75,
-              backgroundColor: 'rgba(62, 197, 255, 0.05)',
+              backgroundColor: withAlpha(palette.blue300, 0.1),
             }}
           >
             <FieldGrid
@@ -187,7 +188,7 @@ export default function PetBattleRunSection({
         </Stack>
       </Paper>
 
-      <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.25, sm: 2 } }}>
+      <Paper variant="outlined" sx={{ ...cyberPanelSx, p: { xs: 1.5, sm: 2 } }}>
         <Stack spacing={1.5}>
           <Typography
             variant="h6"
@@ -206,7 +207,7 @@ export default function PetBattleRunSection({
                 key={member.participantId}
                 variant="outlined"
                 sx={{
-                  p: { xs: 1, sm: 1.25 },
+                  p: { xs: 1, sm: 1.5 },
                   borderRadius: 2,
                   backgroundColor: cyberColors.panelLight,
                   borderColor: cyberColors.panelBorder,
@@ -222,7 +223,7 @@ export default function PetBattleRunSection({
                       <Chip
                         size="small"
                         label={locale.deadChip}
-                        sx={{ color: cyberColors.danger, backgroundColor: 'rgba(255, 56, 96, 0.14)' }}
+                        sx={{ color: cyberColors.danger, backgroundColor: withAlpha(palette.red700, 0.1) }}
                       />
                     ) : isSubmitted ? (
                       <Chip
@@ -234,7 +235,7 @@ export default function PetBattleRunSection({
                       <Chip
                         size="small"
                         label={locale.cannotActChip}
-                        sx={{ color: cyberColors.warn, backgroundColor: 'rgba(255, 209, 102, 0.12)' }}
+                        sx={{ color: cyberColors.warn, backgroundColor: withAlpha(palette.gold300, 0.1) }}
                       />
                     ) : null}
                   </Stack>
@@ -260,19 +261,18 @@ export default function PetBattleRunSection({
                         sx={{
                           flexWrap: 'wrap',
                           gap: 0.5,
-                          '& .MuiToggleButton-root': {
+                          '& .MuiToggleButton-root.MuiToggleButton-root': {
                             color: cyberColors.textDim,
                             border: `1px solid ${cyberColors.panelBorder}`,
                             borderRadius: '8px !important',
-                            px: 1.25,
-                            py: 0.4,
-                            fontSize: '0.74rem',
+                            px: 1.5,
+                            py: 0.5,
+                            fontSize: font.xs,
                             fontWeight: 700,
                           },
-                          '& .MuiToggleButton-root.Mui-selected': {
-                            color: '#0a0d0c',
+                          '& .MuiToggleButton-root.MuiToggleButton-root.Mui-selected': {
+                            color: palette.black,
                             backgroundColor: cyberColors.accent,
-                            '&:hover': { backgroundColor: cyberColors.accent },
                           },
                         }}
                       >

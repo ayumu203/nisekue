@@ -1,18 +1,6 @@
-import {
-  Alert,
-  Box,
-  CircularProgress,
-  Container,
-  Paper,
-  Snackbar,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material'
-import { useEffect, useRef, useState } from 'react'
+import { Alert, Box, CircularProgress, IconButton, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import { PLAYER_DEDUPING_INTERVAL } from '@/constants/swr'
 import {
@@ -23,18 +11,21 @@ import {
   TrainingCooldownError,
 } from '@/api/training'
 import { createPlayer, getPlayer } from '@/api/player'
-import BeginnerGuide from '@/components/common/BeginnerGuide'
-import HomeNavIconButton from '@/components/common/HomeNavIconButton'
-import TrainingBattleResult from '@/components/training/TrainingBattleResult'
+import GamePanel from '@/components/common/GamePanel'
+import TrainingBattleField from '@/components/training/TrainingBattleField'
 import TrainingEnemySelect from '@/components/training/TrainingEnemySelect'
 import TrainingMovePlanForm from '@/components/training/TrainingMovePlanForm'
 import TrainingOpponentSelect from '@/components/training/TrainingOpponentSelect'
+import HomeHeaderMenu from '@/components/home/HomeHeaderMenu'
+import { HomeFilledIcon, HomeIcon } from '@/components/home/HomeIcons'
+import { buildHomeMenu, type HomeMenuGroupKey, type HomeMenuItem } from '@/components/home/homeMenu'
+import { useDebugStatus } from '@/hooks/useDebugStatus'
 import { normalizeCharacterPath } from '@/lib/assets'
 import { useAuth } from '@/contexts/useAuth'
-import { innerSurfaceSx, outerPagePaperSx } from '@/constants/styles'
+import { useNotify } from '@/contexts/useNotify'
+import { trainingPanelColors } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
-import { beginnerGuides } from '@/lib/beginnerGuides'
-import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import { getTutorialStep, setTutorialStep, type TutorialStep } from '@/lib/tutorial'
 import { getNextMoveTurnIndex } from '@/lib/trainingMovePlan'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
@@ -42,6 +33,7 @@ import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import type { GetPlayerResponse, PlayerSummary } from '@/schema/player'
+import { palette } from '@/theme/tokens'
 
 type TrainingMode = 'npc' | 'player'
 
@@ -57,7 +49,8 @@ function playerSummaryToDisplayEnemy(opponent: PlayerSummary): TrainingEnemy {
 }
 
 const TRAINING_COOLDOWN_MS = 3000
-const PVP_OPPONENTS_PAGE_SIZE = 24
+// PC は NPC と同じ小さいカードを 2 段まで出す
+const PVP_OPPONENTS_PAGE_SIZE = 16
 const PVP_OPPONENTS_PAGE_SIZE_MOBILE = 5
 
 function getAvailableTrainingMoveIds(player: GetPlayerResponse): number[] {
@@ -115,6 +108,14 @@ export default function Training() {
   const { mutate: mutateCache } = useSWRConfig()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  // 最初の描画から正しい側を出す（チュートリアルのスポットライトが最初に測った要素を使い続けるため）
+  const isDesktop = useMediaQuery(theme.breakpoints.up('sm'), { noSsr: true })
+  // 2 列に並べられる幅。これより狭いときは箱を縦に積み、ページごとスクロールする
+  const isWide = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true })
+  const { canUseDebug } = useDebugStatus()
+  // ヘッダーメニューで開いているグループ（強化・交流・その他のうち 1 つだけ）
+  const [openMenuGroup, setOpenMenuGroup] = useState<HomeMenuGroupKey | null>(null)
+  const trainingMainRef = useRef<HTMLDivElement | null>(null)
   const trainingPanelRef = useRef<HTMLDivElement | null>(null)
   const battleResultRef = useRef<HTMLDivElement | null>(null)
   const trainingMovePlanRef = useRef<HTMLDivElement | null>(null)
@@ -122,19 +123,20 @@ export default function Training() {
   const [selectedEnemy, setSelectedEnemy] = useState<TrainingEnemy | null>(null)
   const [selectedOpponent, setSelectedOpponent] = useState<PlayerSummary | null>(null)
   const [trainingResult, setTrainingResult] = useState<ExecuteTrainingResponse | null>(null)
-  const [trainingError, setTrainingError] = useState<string | null>(null)
+  const notify = useNotify()
   const [isTrainingSubmitting, setIsTrainingSubmitting] = useState(false)
   const [trainingLockUntilMs, setTrainingLockUntilMs] = useState(0)
-  const [trainingLockRemainingSeconds, setTrainingLockRemainingSeconds] = useState(0)
+  const [trainingLockRemainingMs, setTrainingLockRemainingMs] = useState(0)
+  const trainingLockRemainingSeconds = Math.ceil(trainingLockRemainingMs / 1000)
   const [plannedMoveIds, setPlannedMoveIds] = useState<Array<number | null> | null>(null)
   const [lastSubmittedMoveIds, setLastSubmittedMoveIds] = useState<Array<number | null> | null>(null)
-  const [newEnemiesMessage, setNewEnemiesMessage] = useState<string | null>(null)
-  const lastNewEnemiesMessageRef = useRef<string | null>(null)
   const prevLevelRef = useRef<number | undefined>(undefined)
   const knownEnemyIdsRef = useRef<Set<number>>(new Set())
   const userId = session?.user.id ?? null
   const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
   const [opponentsPage, setOpponentsPage] = useState(1)
+  // 「OK」で閉じた案内。戦闘ボタンなどに重ならないように、この画面にいる間は出さない
+  const [closedTutorialStep, setClosedTutorialStep] = useState<TutorialStep | null>(null)
 
   function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
     if (!userId) {
@@ -156,12 +158,12 @@ export default function Training() {
 
   useEffect(() => {
     if (trainingLockUntilMs <= Date.now()) {
-      setTrainingLockRemainingSeconds(0)
+      setTrainingLockRemainingMs(0)
       return
     }
 
     const update = () => {
-      setTrainingLockRemainingSeconds(Math.max(0, Math.ceil((trainingLockUntilMs - Date.now()) / 1000)))
+      setTrainingLockRemainingMs(Math.max(0, trainingLockUntilMs - Date.now()))
     }
 
     update()
@@ -182,9 +184,9 @@ export default function Training() {
       return
     }
 
-    trainingPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    battleResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [isMobile, trainingResult])
-  useMobileScrollToRef(trainingPanelRef, { enabled: isMobile })
+  useMobileScrollToRef(trainingMainRef, { enabled: isMobile })
 
   const playerSWRKey = session?.user.id ? ([`training-player`, session.user.id] as const) : null
   const {
@@ -326,9 +328,9 @@ export default function Training() {
     knownEnemyIdsRef.current = new Set(trainingEnemies.map((e) => e.id))
 
     if (knownIds.size > 0 && hasNewEnemies) {
-      setNewEnemiesMessage(locale.newEnemiesUnlocked)
+      notify.info(locale.newEnemiesUnlocked)
     }
-  }, [trainingEnemies])
+  }, [notify, trainingEnemies])
 
   const isBattleLocked = isTrainingSubmitting || trainingLockRemainingSeconds > 0
   const isTrainingActionDisabled = isBattleLocked
@@ -365,7 +367,6 @@ export default function Training() {
     }
 
     setIsTrainingSubmitting(true)
-    setTrainingError(null)
     setSelectedEnemy(enemy)
 
     try {
@@ -395,11 +396,11 @@ export default function Training() {
     } catch (error) {
       if (error instanceof TrainingCooldownError) {
         const retryAfterMessage = locale.retryAfterSeconds.replace('{{seconds}}', String(error.retryAfterSeconds))
-        setTrainingError(`${error.message} (${retryAfterMessage})`)
+        notify.error(`${error.message} (${retryAfterMessage})`)
       } else if (error instanceof Error) {
-        setTrainingError(error.message)
+        notify.error(error.message)
       } else {
-        setTrainingError(locale.trainingFailed)
+        notify.error(locale.trainingFailed)
       }
     } finally {
       setIsTrainingSubmitting(false)
@@ -417,7 +418,6 @@ export default function Training() {
     }
 
     setIsTrainingSubmitting(true)
-    setTrainingError(null)
     setSelectedOpponent(opponent)
 
     try {
@@ -442,11 +442,11 @@ export default function Training() {
     } catch (error) {
       if (error instanceof TrainingCooldownError) {
         const retryAfterMessage = locale.retryAfterSeconds.replace('{{seconds}}', String(error.retryAfterSeconds))
-        setTrainingError(`${error.message} (${retryAfterMessage})`)
+        notify.error(`${error.message} (${retryAfterMessage})`)
       } else if (error instanceof Error) {
-        setTrainingError(error.message)
+        notify.error(error.message)
       } else {
-        setTrainingError(locale.trainingFailed)
+        notify.error(locale.trainingFailed)
       }
     } finally {
       setIsTrainingSubmitting(false)
@@ -458,7 +458,6 @@ export default function Training() {
     setSelectedEnemy(enemy)
     setSelectedOpponent(null)
     setTrainingResult(null)
-    setTrainingError(null)
 
     if (tutorialStep === 'training-fight') {
       const hasMovesSelected = lastSubmittedMoveIds?.some((id) => id !== null) ?? false
@@ -476,7 +475,6 @@ export default function Training() {
     setSelectedOpponent(opponent)
     setSelectedEnemy(null)
     setTrainingResult(null)
-    setTrainingError(null)
 
     if (!player) {
       return
@@ -535,211 +533,260 @@ export default function Training() {
     )
   }
 
-  return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 8 } }}>
-      <Paper
-        elevation={2}
+  const tutorialHomeButtonId = tutorialStep === 'home-job-change' ? 'tutorial-home-btn' : undefined
+
+  // PC のヘッダーメニュー。ホームと同じ項目の先頭に「ホーム」を足し、今いる訓練場を帯の色で示す
+  const homeMenu = buildHomeMenu({
+    userId,
+    tutorialStep: null,
+    showRebirthTutorial: false,
+    showSurveyGuide: false,
+    onSurveyClick: () => {},
+    canUseDebug,
+  })
+  const homeMenuItem: HomeMenuItem = {
+    key: 'home',
+    label: locale.backToHome,
+    icon: <HomeIcon />,
+    to: '/',
+    id: tutorialHomeButtonId,
+  }
+
+  const panelProps = {
+    fillHeight: isWide,
+    bandColor: trainingPanelColors.band,
+    bandSelectedColor: trainingPanelColors.bandSelected,
+  }
+  const displayEnemy = selectedEnemy ?? (selectedOpponent ? playerSummaryToDisplayEnemy(selectedOpponent) : null)
+  const displayEnemyBackgroundKey = selectedOpponent?.userId ?? selectedEnemy?.id ?? 0
+
+  const modeTabs = (['npc', 'player'] as const).map((key) => ({
+    key,
+    label: key === 'npc' ? locale.modeNpc : locale.modePlayer,
+    selected: mode === key,
+    onClick: () => {
+      if (mode === key) return
+      setMode(key)
+      setSelectedEnemy(null)
+      setSelectedOpponent(null)
+      setTrainingResult(null)
+    },
+  }))
+
+  // 相手の一覧（上の段に戦闘画面があるので、小さいカードで詰めて並べる）
+  function renderOpponentList(): ReactNode {
+    if (mode === 'npc') {
+      if (isTrainingEnemiesLoading) {
+        return (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={16} />
+            <Typography variant="body2">{locale.enemiesLoading}</Typography>
+          </Stack>
+        )
+      }
+      if (trainingEnemiesError) {
+        return <Alert severity="warning">{trainingEnemiesError.message}</Alert>
+      }
+      return (
+        <TrainingEnemySelect
+          enemies={trainingEnemies ?? []}
+          selectedEnemyId={selectedEnemy?.id ?? null}
+          isSelectionDisabled={isTrainingSubmitting}
+          tutorialHighlightFirstCard={tutorialStep === 'training-fight'}
+          compact
+          onSelect={handleSelectEnemy}
+        />
+      )
+    }
+
+    if (isPlayerListLoading) {
+      return (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <CircularProgress size={16} />
+          <Typography variant="body2">{locale.opponentsLoading}</Typography>
+        </Stack>
+      )
+    }
+    if (playerListError) {
+      return <Alert severity="warning">{playerListError.message}</Alert>
+    }
+    return (
+      <TrainingOpponentSelect
+        opponents={(playerListPage?.items ?? [])
+          .filter((p) => p.userId !== session?.user.id)
+          .sort((a, b) => a.level - b.level)}
+        selectedOpponentId={selectedOpponent?.userId ?? null}
+        isSelectionDisabled={isTrainingSubmitting}
+        page={opponentsPage}
+        pageCount={opponentsPageCount}
+        compact
+        onPageChange={setOpponentsPage}
+        onSelect={handleSelectOpponent}
+      />
+    )
+  }
+
+  function renderMovePlan(): ReactNode {
+    if (!player || !plannedMoveIds) {
+      return null
+    }
+
+    return (
+      <Box
+        ref={trainingMovePlanRef}
+        id={tutorialStep === 'training-move-select' ? 'tutorial-move-plan-form' : undefined}
+        sx={{ height: '100%' }}
+      >
+        <TrainingMovePlanForm
+          enemy={displayEnemy}
+          enemyBackgroundKey={displayEnemyBackgroundKey}
+          player={player}
+          moveIds={plannedMoveIds}
+          isActionDisabled={isTrainingActionDisabled}
+          lockRemainingSeconds={trainingLockRemainingSeconds}
+          onChangeMoveId={handleChangePlannedMoveId}
+          tutorialMoveSelect={
+            tutorialStep === 'training-move-select' && nextTutorialMoveTurnIndex !== null
+              ? { index: nextTutorialMoveTurnIndex, id: 'tutorial-next-move-select' }
+              : undefined
+          }
+          submitButtonId={tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined}
+          onSubmit={startBattle}
+        />
+      </Box>
+    )
+  }
+
+  const hasResult = trainingResult !== null && displayEnemy !== null
+
+  // 上の段に全幅の戦闘画面（戦闘の前は自分と相手が向かい合い、戦闘のあとは HP とログを出す）、
+  // 下の段に相手の一覧と技選択。戦闘の前後で画面の作りは変えない
+  const content = player ? (
+    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
+      <Box ref={battleResultRef} sx={{ flex: 'none', height: { md: 'min(400px, 45%)' }, minHeight: { md: 320 } }}>
+        <GamePanel
+          title={locale.battleFieldTitle}
+          // スマホはヘッダーがないので、帯の左端にホームへ戻るボタンを置く
+          startAction={
+            isDesktop ? undefined : (
+              <IconButton
+                id={tutorialHomeButtonId}
+                component={Link}
+                to="/"
+                aria-label={locale.backToHome}
+                sx={{ color: palette.white, width: 44, height: 44 }}
+              >
+                <HomeFilledIcon />
+              </IconButton>
+            )
+          }
+          disablePadding
+          {...panelProps}
+        >
+          <TrainingBattleField
+            player={{
+              name: player.userName ?? locale.anonymousPlayer,
+              imagePath: player.imagePath ? normalizeCharacterPath(player.imagePath) : DEFAULT_CHARACTER_PATH,
+              level: player.level,
+            }}
+            enemy={displayEnemy}
+            backgroundKey={displayEnemyBackgroundKey}
+            result={hasResult ? trainingResult : null}
+            usedMoveNames={resolveMoveNames(player, lastSubmittedMoveIds)}
+            playerExp={playerExp}
+            nextLevelRequiredExp={nextLevelRequiredExp}
+          />
+        </GamePanel>
+      </Box>
+      {renderColumns(
+        <GamePanel tabs={modeTabs} aria-label={locale.enemySelectTitle} {...panelProps}>
+          {renderOpponentList()}
+        </GamePanel>,
+        // スマホは相手を選ぶまで技選択を出さない
+        isDesktop || displayEnemy ? (
+          // スマホは見出しの帯を出さず、縦幅を節約する
+          <GamePanel title={locale.movePlanTitle} hideBand={!isDesktop} {...panelProps}>
+            {renderMovePlan()}
+          </GamePanel>
+        ) : null,
+        600,
+        // スマホは技選択を一覧の上に出す
+        !isWide,
+      )}
+    </Box>
+  ) : null
+
+  // 画面の中身。PC は横に 2 列、狭い画面は縦に積む
+  function renderColumns(main: ReactNode, side: ReactNode, sideWidth: number, sideFirst = false) {
+    return (
+      <Box
         sx={{
-          ...outerPagePaperSx,
-          background: 'linear-gradient(180deg, rgba(157, 69, 52, 0.98) 0%, rgba(100, 40, 34, 0.96) 100%)',
+          flex: 1,
+          minHeight: 0,
+          display: 'grid',
+          gap: { xs: 2, sm: 3 },
+          gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: side ? `minmax(0, 1fr) ${sideWidth}px` : 'minmax(0, 1fr)' },
         }}
       >
-        <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          {isPlayerLoading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={16} />
-              <Typography variant="body2">{locale.playerLoading}</Typography>
-            </Stack>
-          ) : playerError ? (
-            <Alert severity="warning">{playerError.message}</Alert>
-          ) : null}
-          <Box sx={{ px: 0.5 }}>
-            <HomeNavIconButton
-              id={tutorialStep === 'home-job-change' ? 'tutorial-home-btn' : undefined}
-              ariaLabel={locale.backToHome}
-            />
+        <Box sx={{ minHeight: 0, minWidth: 0, order: sideFirst ? 2 : 1 }}>{main}</Box>
+        {side ? (
+          <Box ref={trainingPanelRef} sx={{ minHeight: 0, minWidth: 0, order: sideFirst ? 1 : 2 }}>
+            {side}
           </Box>
-          <Paper
-            id="training-main"
-            ref={trainingPanelRef}
-            variant="outlined"
-            sx={{
-              ...innerSurfaceSx,
-              borderRadius: 3,
-              p: { xs: 2, sm: 2.5 },
-              color: '#f5f0df',
-              backgroundColor: '#2d1d1e',
-              borderColor: 'rgba(214, 146, 112, 0.55)',
-            }}
-          >
-            <Stack spacing={{ xs: 1.5, sm: 2 }}>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="flex-end"
-                spacing={1.5}
-                sx={{
-                  px: { xs: 0.4, sm: 0.75 },
-                  pb: 1.25,
-                  borderBottom: '1px solid rgba(214, 146, 112, 0.24)',
-                }}
-              >
-                <Stack spacing={0.6} sx={{ minWidth: 0 }}>
-                  <Typography
-                    variant="overline"
-                    sx={{ color: 'rgba(248, 221, 207, 0.72)', letterSpacing: '0.18em', lineHeight: 1.2 }}
-                  >
-                    TRAINING GROUND
-                  </Typography>
-                  <Typography variant="h5" fontWeight={900} sx={{ color: '#fff7dd', lineHeight: 1.15 }}>
-                    訓練場
-                  </Typography>
-                </Stack>
-                <BeginnerGuide userId={session?.user.id} guide={beginnerGuides.training} inverted />
-              </Stack>
+        ) : null}
+      </Box>
+    )
+  }
 
-              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
-                <ToggleButtonGroup
-                  value={mode}
-                  exclusive
-                  onChange={(_e, next: TrainingMode | null) => {
-                    if (next === null) return
-                    setMode(next)
-                    setSelectedEnemy(null)
-                    setSelectedOpponent(null)
-                    setTrainingResult(null)
-                    setTrainingError(null)
-                  }}
-                  size="small"
-                  sx={{
-                    '& .MuiToggleButton-root': {
-                      color: 'rgba(248, 221, 207, 0.7)',
-                      borderColor: 'rgba(214, 146, 112, 0.4)',
-                      fontWeight: 700,
-                      px: 2,
-                    },
-                    '& .Mui-selected': {
-                      color: '#fff5ef !important',
-                      backgroundColor: 'rgba(182, 95, 73, 0.35) !important',
-                    },
-                  }}
-                >
-                  <ToggleButton value="npc">{locale.modeNpc}</ToggleButton>
-                  <ToggleButton value="player">{locale.modePlayer}</ToggleButton>
-                </ToggleButtonGroup>
-              </Stack>
-
-              {(() => {
-                const displayEnemy =
-                  selectedEnemy ?? (selectedOpponent ? playerSummaryToDisplayEnemy(selectedOpponent) : null)
-                return (
-                  <>
-                    {displayEnemy && trainingResult && player ? (
-                      <Box ref={battleResultRef}>
-                        <TrainingBattleResult
-                          player={{
-                            name: player.userName ?? locale.anonymousPlayer,
-                            imagePath: player.imagePath
-                              ? normalizeCharacterPath(player.imagePath)
-                              : DEFAULT_CHARACTER_PATH,
-                            level: player.level,
-                          }}
-                          enemy={displayEnemy}
-                          result={trainingResult}
-                          usedMoveNames={resolveMoveNames(player, lastSubmittedMoveIds)}
-                          playerExp={playerExp}
-                          nextLevelRequiredExp={nextLevelRequiredExp}
-                          movePlanSlot={
-                            player && plannedMoveIds ? (
-                              <TrainingMovePlanForm
-                                enemy={displayEnemy}
-                                player={player}
-                                moveIds={plannedMoveIds}
-                                isActionDisabled={isTrainingActionDisabled}
-                                lockRemainingSeconds={trainingLockRemainingSeconds}
-                                onChangeMoveId={handleChangePlannedMoveId}
-                                showFighterHeader={false}
-                                submitLabel={locale.startBattle}
-                                onSubmit={startBattle}
-                              />
-                            ) : null
-                          }
-                        />
-                      </Box>
-                    ) : null}
-
-                    {displayEnemy && player && plannedMoveIds && !trainingResult ? (
-                      <Box
-                        ref={trainingMovePlanRef}
-                        id={tutorialStep === 'training-move-select' ? 'tutorial-move-plan-form' : undefined}
-                      >
-                        <TrainingMovePlanForm
-                          enemy={displayEnemy}
-                          player={player}
-                          moveIds={plannedMoveIds}
-                          isActionDisabled={isTrainingActionDisabled}
-                          lockRemainingSeconds={trainingLockRemainingSeconds}
-                          onChangeMoveId={handleChangePlannedMoveId}
-                          submitLabel={locale.startBattle}
-                          tutorialMoveSelect={
-                            tutorialStep === 'training-move-select' && nextTutorialMoveTurnIndex !== null
-                              ? { index: nextTutorialMoveTurnIndex, id: 'tutorial-next-move-select' }
-                              : undefined
-                          }
-                          submitButtonId={
-                            tutorialStep === 'training-confirm' ? 'tutorial-start-training-btn' : undefined
-                          }
-                          onSubmit={startBattle}
-                        />
-                      </Box>
-                    ) : null}
-                  </>
-                )
-              })()}
-
-              {mode === 'npc' ? (
-                isTrainingEnemiesLoading ? (
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <CircularProgress size={16} />
-                    <Typography variant="body2">{locale.enemiesLoading}</Typography>
-                  </Stack>
-                ) : trainingEnemiesError ? (
-                  <Alert severity="warning">{trainingEnemiesError.message}</Alert>
-                ) : (
-                  <TrainingEnemySelect
-                    enemies={trainingEnemies ?? []}
-                    selectedEnemyId={selectedEnemy?.id ?? null}
-                    isSelectionDisabled={isTrainingSubmitting}
-                    tutorialHighlightFirstCard={tutorialStep === 'training-fight'}
-                    onSelect={handleSelectEnemy}
-                  />
-                )
-              ) : isPlayerListLoading ? (
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <CircularProgress size={16} />
-                  <Typography variant="body2">{locale.opponentsLoading}</Typography>
-                </Stack>
-              ) : playerListError ? (
-                <Alert severity="warning">{playerListError.message}</Alert>
-              ) : (
-                <TrainingOpponentSelect
-                  opponents={(playerListPage?.items ?? [])
-                    .filter((p) => p.userId !== session?.user.id)
-                    .sort((a, b) => a.level - b.level)}
-                  selectedOpponentId={selectedOpponent?.userId ?? null}
-                  isSelectionDisabled={isTrainingSubmitting}
-                  page={opponentsPage}
-                  pageCount={opponentsPageCount}
-                  onPageChange={setOpponentsPage}
-                  onSelect={handleSelectOpponent}
-                />
-              )}
-
-              {trainingError ? <Alert severity="warning">{trainingError}</Alert> : null}
-            </Stack>
-          </Paper>
-        </Stack>
-      </Paper>
+  return (
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: `linear-gradient(${trainingPanelColors.topBand}, ${trainingPanelColors.topBand}) top / 100% 300px no-repeat, ${trainingPanelColors.ground}`,
+      }}
+    >
+      {isDesktop ? (
+        <HomeHeaderMenu
+          primary={[homeMenuItem, ...homeMenu.primary]}
+          groups={homeMenu.groups}
+          openGroup={openMenuGroup}
+          lockedGroup={null}
+          onToggleGroup={(key) => setOpenMenuGroup((current) => (current === key ? null : key))}
+          onCloseGroup={() => setOpenMenuGroup(null)}
+          currentKey="training"
+          currentColor={trainingPanelColors.topBand}
+        />
+      ) : null}
+      <Box
+        id="training-main"
+        ref={trainingMainRef}
+        sx={{
+          flex: 1,
+          // PC は箱の中でスクロールさせるため、画面の高さに合わせる（低すぎる画面ではページごとスクロール）
+          height: { md: 'calc(100dvh - 57px)' },
+          minHeight: { md: 640 },
+          boxSizing: 'border-box',
+          px: { xs: 1.5, sm: 4 },
+          py: { xs: 1.5, sm: 3 },
+          display: 'flex',
+          flexDirection: 'column',
+          gap: { xs: 1.5, sm: 2 },
+        }}
+      >
+        {isPlayerLoading ? (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={16} sx={{ color: palette.white }} />
+            <Typography variant="body2" sx={{ color: palette.white }}>
+              {locale.playerLoading}
+            </Typography>
+          </Stack>
+        ) : playerError ? (
+          <Alert severity="warning">{playerError.message}</Alert>
+        ) : null}
+        {content}
+      </Box>
       {tutorialStep === 'home-job-change' && (
         <SpotlightTutorial
           guide="instructor"
@@ -758,6 +805,7 @@ export default function Training() {
         <SpotlightTutorial
           guide="instructor"
           targetId="tutorial-move-plan-form"
+          dimBackground={false}
           pointerTargetId="tutorial-next-move-select"
           message={tutorialLocale.steps.trainingMoveSelect.message}
           showDismiss
@@ -771,11 +819,23 @@ export default function Training() {
           message={tutorialLocale.steps.trainingConfirm.message}
         />
       )}
-      {tutorialStep === 'training-to-lv5' && (
-        <SpotlightTutorial guide="instructor" message={tutorialLocale.steps.trainingToLv5.message} />
+      {tutorialStep === 'training-to-lv5' && closedTutorialStep !== 'training-to-lv5' && (
+        <SpotlightTutorial
+          guide="instructor"
+          message={tutorialLocale.steps.trainingToLv5.message}
+          showDismiss
+          dismissLabel={tutorialLocale.closeLabel}
+          onDismiss={() => setClosedTutorialStep('training-to-lv5')}
+        />
       )}
-      {tutorialStep === 'training-to-lv7' && (
-        <SpotlightTutorial guide="instructor" message={tutorialLocale.steps.trainingToLv7.message} />
+      {tutorialStep === 'training-to-lv7' && closedTutorialStep !== 'training-to-lv7' && (
+        <SpotlightTutorial
+          guide="instructor"
+          message={tutorialLocale.steps.trainingToLv7.message}
+          showDismiss
+          dismissLabel={tutorialLocale.closeLabel}
+          onDismiss={() => setClosedTutorialStep('training-to-lv7')}
+        />
       )}
       {tutorialStep === 'training-quest-guide' && (
         <SpotlightTutorial
@@ -786,33 +846,6 @@ export default function Training() {
           onDismiss={() => advanceTutorial('home-quest')}
         />
       )}
-      <Snackbar
-        open={newEnemiesMessage !== null}
-        autoHideDuration={3000}
-        onClose={(_, reason) => {
-          if (reason === 'clickaway') return
-          lastNewEnemiesMessageRef.current = newEnemiesMessage
-          setNewEnemiesMessage(null)
-        }}
-        TransitionProps={{
-          onExited: () => {
-            lastNewEnemiesMessageRef.current = null
-          },
-        }}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          severity="info"
-          variant="filled"
-          onClose={() => {
-            lastNewEnemiesMessageRef.current = newEnemiesMessage
-            setNewEnemiesMessage(null)
-          }}
-          sx={{ width: '100%', alignItems: 'center' }}
-        >
-          {newEnemiesMessage ?? lastNewEnemiesMessageRef.current ?? ''}
-        </Alert>
-      </Snackbar>
-    </Container>
+    </Box>
   )
 }

@@ -1,23 +1,23 @@
 import { useState } from 'react'
 import signOutLocale from '../../locale/auth/SignOut.json'
+import { useNotify } from '@/contexts/useNotify'
 import { supabase } from '@/lib/supabase'
 
-// ログアウト処理。ステータス欄とホームのヘッダーの両方から使う
+// ログアウト処理。ステータス欄とホームのヘッダーの両方から使う。失敗はトーストで出す
 export function useSignOut() {
   const [isSigningOut, setIsSigningOut] = useState(false)
-  const [signOutError, setSignOutError] = useState<string | null>(null)
+  const notify = useNotify()
 
   const signOut = async () => {
     setIsSigningOut(true)
-    setSignOutError(null)
 
     const { error } = await supabase.auth.signOut()
     if (error) {
-      setSignOutError(error.message || signOutLocale.toastFailed)
+      notify.error(error.message || signOutLocale.toastFailed)
     }
 
     setIsSigningOut(false)
   }
 
-  return { signOut, isSigningOut, signOutError }
+  return { signOut, isSigningOut }
 }

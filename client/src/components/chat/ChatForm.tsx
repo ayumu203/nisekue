@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Alert, Button, Stack, SvgIcon, TextField, type SvgIconProps } from '@mui/material'
 import { greenOutlinedInputSx, softGreenButtonSx } from '@/constants/styles'
 import locale from '../../../locale/chat/Chat.json'
+import { useNotify } from '@/contexts/useNotify'
 
 type Props = {
   isSubmitting: boolean
@@ -20,7 +21,7 @@ function SendIcon(props: SvgIconProps) {
 
 function ChatForm({ isSubmitting, disabled = false, disabledReason = null, onSubmit }: Props) {
   const [text, setText] = useState('')
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const notify = useNotify()
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -32,25 +33,20 @@ function ChatForm({ isSubmitting, disabled = false, disabledReason = null, onSub
     try {
       await onSubmit(normalized)
       setText('')
-      setErrorMessage(null)
     } catch (error) {
       const message = error instanceof Error ? error.message : locale.sendFailed
-      setErrorMessage(message)
+      notify.error(message)
     }
   }
 
   return (
     <Stack spacing={1}>
       {disabledReason ? <Alert severity="info">{disabledReason}</Alert> : null}
-      {errorMessage ? <Alert severity="warning">{errorMessage}</Alert> : null}
       <Stack component="form" direction="row" spacing={1} alignItems="stretch" onSubmit={handleSubmit}>
         <TextField
           value={text}
           onChange={(event) => {
             setText(event.target.value)
-            if (errorMessage) {
-              setErrorMessage(null)
-            }
           }}
           size="small"
           placeholder={locale.placeholder}

@@ -1,23 +1,26 @@
-import { Box, Chip, Paper, Stack, Typography } from '@mui/material'
+import { Box, Stack, Typography } from '@mui/material'
+import { Fragment } from 'react'
 import locale from '../../../locale/quest/QuestRoom.json'
+import { homePanelColors } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolveJobAssetPath } from '@/lib/assets'
 import type { BattleColumn, BattleRow, QuestRoomDetailResponse } from '@/schema/quest'
+import { font, palette } from '@/theme/tokens'
 
 type QuestRoomFormationPreviewProps = {
   currentRoom: QuestRoomDetailResponse
-  selfParticipantId: string | null
   positionDrafts: Record<string, { row: BattleRow; column: BattleColumn }>
 }
 
 const rowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const columnOrder: BattleColumn[] = ['Left', 'Right']
-const positionSlotHeight = 220
+const rowBackground: Record<BattleRow, string> = {
+  Front: palette.cream,
+  Middle: palette.white,
+  Back: palette.sky,
+}
 
-export default function QuestRoomFormationPreview({
-  currentRoom,
-  selfParticipantId,
-  positionDrafts,
-}: QuestRoomFormationPreviewProps) {
+// 隊列の確認用の表。前列・中列・後列 × 左・右のマスに、キャラの小さい画像と名前を並べる
+export default function QuestRoomFormationPreview({ currentRoom, positionDrafts }: QuestRoomFormationPreviewProps) {
   const playerParticipants = currentRoom.participants
     .filter((participant) => participant.type === 'Player')
     .map((participant) => ({
@@ -26,161 +29,144 @@ export default function QuestRoomFormationPreview({
     }))
 
   return (
-    <Stack spacing={1}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: '56px repeat(2, minmax(0, 1fr))', gap: 1 }}>
+      <Box />
+      {columnOrder.map((column) => (
+        <Typography key={column} sx={{ fontSize: font.sm, color: homePanelColors.label, textAlign: 'center' }}>
+          {locale.columns[column]}
+        </Typography>
+      ))}
       {rowOrder.map((row) => (
-        <Paper
-          key={row}
-          variant="outlined"
-          sx={{
-            borderRadius: 2.5,
-            p: { xs: 1, sm: 1.5 },
-            background:
-              row === 'Front'
-                ? 'linear-gradient(180deg, #fff5ea 0%, #fffdf8 100%)'
-                : row === 'Middle'
-                  ? 'linear-gradient(180deg, #f6fbf3 0%, #fffdf8 100%)'
-                  : 'linear-gradient(180deg, #eef6fb 0%, #fffdf8 100%)',
-          }}
-        >
-          <Stack spacing={1.25}>
-            <Typography variant="subtitle2">{locale.rows[row]}</Typography>
+        <Fragment key={row}>
+          <Box
+            sx={{
+              display: 'grid',
+              placeItems: 'center',
+              borderRadius: 2,
+              backgroundColor: rowBackground[row],
+              fontSize: font.sm,
+              fontWeight: 700,
+              color: palette.brown900,
+            }}
+          >
+            {locale.rows[row]}
+          </Box>
+          {columnOrder.map((column) => {
+            const members = playerParticipants.filter(
+              (participant) => participant.previewPosition.row === row && participant.previewPosition.column === column,
+            )
 
-            <Stack direction="row" spacing={1}>
-              {columnOrder.map((column) => {
-                const members = playerParticipants.filter(
-                  (participant) =>
-                    participant.previewPosition.row === row && participant.previewPosition.column === column,
-                )
+            return (
+              <Box
+                key={column}
+                sx={{
+                  minHeight: 128,
+                  borderRadius: 2,
+                  border: '1px dashed',
+                  borderColor: homePanelColors.divider,
+                  backgroundColor: rowBackground[row],
+                  px: 1.5,
+                  py: 0.75,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                }}
+              >
+                {members.length === 0 ? (
+                  <Typography sx={{ fontSize: font.sm, color: homePanelColors.label, textAlign: 'center' }}>
+                    {locale.emptyPosition}
+                  </Typography>
+                ) : (
+                  members.map((participant) => {
+                    const jobImageSrc = participant.job?.code ? resolveJobAssetPath(participant.job.code) : null
 
-                return (
-                  <Box key={column} sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
-                      {locale.columns[column]}
-                    </Typography>
-
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        borderRadius: 2,
-                        minHeight: positionSlotHeight,
-                        p: 1,
-                        backgroundColor: '#fffdfa',
-                        borderStyle: 'dashed',
-                      }}
-                    >
-                      {members.length > 0 ? (
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          useFlexGap
-                          flexWrap="wrap"
-                          sx={{ minHeight: positionSlotHeight - 16, alignItems: 'stretch' }}
-                        >
-                          {members.map((participant) => {
-                            const jobImageSrc = participant.job?.code ? resolveJobAssetPath(participant.job.code) : null
-                            const isSelf = participant.participantId === selfParticipantId
-
-                            return (
-                              <Paper
-                                key={participant.participantId}
-                                variant="outlined"
-                                sx={{
-                                  width: '100%',
-                                  minHeight: positionSlotHeight - 16,
-                                  minWidth: 0,
-                                  borderRadius: 2,
-                                  p: 1,
-                                  backgroundColor: isSelf ? '#fff6df' : '#ffffff',
-                                }}
-                              >
-                                <Stack spacing={0.75}>
-                                  <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
-                                    {participant.level != null ? (
-                                      <Chip size="small" label={`${locale.levelLabel}.${participant.level}`} />
-                                    ) : null}
-                                    {participant.job?.displayName ? (
-                                      <Chip
-                                        size="small"
-                                        label={participant.job.displayName}
-                                        icon={
-                                          jobImageSrc ? (
-                                            <Box
-                                              component="img"
-                                              src={jobImageSrc}
-                                              alt={participant.job.displayName}
-                                              sx={{ width: 16, height: 16, objectFit: 'contain' }}
-                                            />
-                                          ) : undefined
-                                        }
-                                      />
-                                    ) : null}
-                                    {isSelf ? <Chip size="small" label={locale.selfBadge} /> : null}
-                                  </Stack>
-
-                                  <Box
-                                    sx={{
-                                      width: { xs: 112, sm: 140 },
-                                      maxWidth: '100%',
-                                      aspectRatio: '4 / 5',
-                                      borderRadius: 1.5,
-                                      backgroundColor: '#f5efe2',
-                                      overflow: 'hidden',
-                                      display: 'grid',
-                                      placeItems: 'center',
-                                      alignSelf: 'center',
-                                    }}
-                                  >
-                                    {participant.imagePath ? (
-                                      <Box
-                                        component="img"
-                                        src={resolveCharacterAssetPath(participant.imagePath) ?? undefined}
-                                        alt={participant.displayName}
-                                        sx={{
-                                          width: 'auto',
-                                          height: '100%',
-                                          maxWidth: '100%',
-                                          objectFit: 'contain',
-                                          objectPosition: 'center',
-                                          display: 'block',
-                                          mx: 'auto',
-                                        }}
-                                      />
-                                    ) : (
-                                      <Typography variant="caption" color="text.secondary">
-                                        {locale.noImage}
-                                      </Typography>
-                                    )}
-                                  </Box>
-
-                                  <Typography variant="body2" noWrap title={participant.displayName}>
-                                    {participant.displayName}
-                                  </Typography>
-                                </Stack>
-                              </Paper>
-                            )
-                          })}
-                        </Stack>
-                      ) : (
+                    return (
+                      // スマホはマスが狭いので、画像の下に名前を縦に並べる
+                      <Stack
+                        key={participant.participantId}
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={{ xs: 0.5, sm: 2 }}
+                        alignItems="center"
+                        sx={{ minWidth: 0 }}
+                      >
                         <Box
                           sx={{
-                            minHeight: positionSlotHeight - 16,
-                            display: 'grid',
-                            placeItems: 'center',
+                            width: { xs: 64, sm: 88 },
+                            height: { xs: 80, sm: 110 },
+                            flexShrink: 0,
+                            borderRadius: 1.5,
+                            backgroundColor: palette.cream,
+                            overflow: 'hidden',
                           }}
                         >
-                          <Typography variant="body2" color="text.secondary">
-                            {locale.emptyPosition}
-                          </Typography>
+                          {participant.imagePath ? (
+                            <Box
+                              component="img"
+                              src={resolveCharacterAssetPath(participant.imagePath) ?? undefined}
+                              alt={participant.displayName}
+                              sx={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'contain',
+                                objectPosition: 'center bottom',
+                                display: 'block',
+                              }}
+                            />
+                          ) : null}
                         </Box>
-                      )}
-                    </Paper>
-                  </Box>
-                )
-              })}
-            </Stack>
-          </Stack>
-        </Paper>
+                        <Stack
+                          spacing={0.25}
+                          alignItems={{ xs: 'center', sm: 'flex-start' }}
+                          sx={{ minWidth: 0, maxWidth: '100%' }}
+                        >
+                          <Typography
+                            noWrap
+                            title={participant.displayName}
+                            sx={{
+                              maxWidth: '100%',
+                              fontSize: { xs: font.md, sm: font.lg },
+                              fontWeight: 700,
+                              color: homePanelColors.text,
+                            }}
+                          >
+                            {participant.displayName}
+                          </Typography>
+                          <Stack
+                            direction="row"
+                            spacing={0.75}
+                            alignItems="center"
+                            sx={{ minWidth: 0, maxWidth: '100%' }}
+                          >
+                            {participant.level != null ? (
+                              <Typography sx={{ fontSize: font.sm, color: homePanelColors.label }}>
+                                {`${locale.levelLabel}.${participant.level}`}
+                              </Typography>
+                            ) : null}
+                            {jobImageSrc ? (
+                              <Box
+                                component="img"
+                                src={jobImageSrc}
+                                alt=""
+                                sx={{ width: 16, height: 16, objectFit: 'contain' }}
+                              />
+                            ) : null}
+                            {participant.job?.displayName ? (
+                              <Typography noWrap sx={{ fontSize: font.sm, color: homePanelColors.label }}>
+                                {participant.job.displayName}
+                              </Typography>
+                            ) : null}
+                          </Stack>
+                        </Stack>
+                      </Stack>
+                    )
+                  })
+                )}
+              </Box>
+            )
+          })}
+        </Fragment>
       ))}
-    </Stack>
+    </Box>
   )
 }

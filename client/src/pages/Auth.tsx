@@ -8,6 +8,7 @@ import { resolvePublicAssetPath } from '@/lib/assets'
 import { supabase } from '@/lib/supabase'
 import GoogleColorIcon from '@/components/common/GoogleColorIcon'
 import locale from '../../locale/auth/Auth.json'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type SubmitMode = 'google' | 'signIn' | 'signUp' | 'anonymous' | null
 type EmailAuthMode = 'signIn' | 'signUp'
@@ -16,7 +17,7 @@ type EmailAuthMode = 'signIn' | 'signUp'
 // 背景は tools/auth-hero/generate_throne_hall.py で生成した自作のドット絵（1200x1200）で、
 // 下側 1200x630 がサムネと同じ「ステージ」。キャラ・敵の素材は加工せず、ステージ基準の割合で重ねる。
 const heroBackgroundUrl = resolvePublicAssetPath('image/auth/throne-hall.png')
-const heroCeilingColor = '#120d2c'
+const heroCeilingColor = palette.navy
 
 // フォーム脇に出すマスコット。ヒーローで使っているキャラ（ch109・ch173・ch175）は重複を避けるため除外する。
 const formMascotPaths = [
@@ -81,22 +82,27 @@ const heroTitleSx = {
   // ステージの幅に合わせて拡縮する（サムネでは幅 1200px に対して約 80px）
   fontSize: 'max(2rem, 6.8cqw)',
   lineHeight: 1.05,
-  color: '#fffaf0',
+  color: palette.cream,
   letterSpacing: '0.04em',
   textShadow: [
-    '-3px -3px 0 #1a0f33',
-    '3px -3px 0 #1a0f33',
-    '-3px 3px 0 #1a0f33',
-    '3px 3px 0 #1a0f33',
-    '0 6px 0 rgba(10, 6, 24, 0.6)',
+    `-3px -3px 0 ${palette.navy}`,
+    `3px -3px 0 ${palette.navy}`,
+    `-3px 3px 0 ${palette.navy}`,
+    `3px 3px 0 ${palette.navy}`,
+    `0 6px 0 ${withAlpha(palette.black, 0.5)}`,
   ].join(', '),
 } as const
 
 const heroTaglineSx = {
   fontSize: 'max(0.85rem, 2.5cqw)',
-  color: '#f2d27a',
+  color: palette.gold300,
   letterSpacing: '0.04em',
-  textShadow: ['-2px -2px 0 #1a0f33', '2px -2px 0 #1a0f33', '-2px 2px 0 #1a0f33', '2px 2px 0 #1a0f33'].join(', '),
+  textShadow: [
+    `-2px -2px 0 ${palette.navy}`,
+    `2px -2px 0 ${palette.navy}`,
+    `-2px 2px 0 ${palette.navy}`,
+    `2px 2px 0 ${palette.navy}`,
+  ].join(', '),
 } as const
 
 // 枠を持たせず、右側（モバイルは下側）のパネル全体をフォームの面にする
@@ -110,20 +116,20 @@ const authCardSx = {
 } as const
 
 const autofillOverrideSx = {
-  WebkitBoxShadow: '0 0 0 100px #231c45 inset',
-  boxShadow: '0 0 0 100px #231c45 inset',
-  WebkitTextFillColor: '#f4f0ff',
-  caretColor: '#f4f0ff',
+  WebkitBoxShadow: `0 0 0 100px ${palette.navy} inset`,
+  boxShadow: `0 0 0 100px ${palette.navy} inset`,
+  WebkitTextFillColor: palette.sky,
+  caretColor: palette.sky,
 } as const
 
 const darkInputSx = {
   '& .MuiOutlinedInput-root': {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    color: '#f4f0ff',
+    backgroundColor: withAlpha(palette.white, 0.1),
+    color: palette.sky,
     // 紫の枠は背景から浮いて見えるため、白を薄く乗せた控えめな枠にする
-    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.18)' },
-    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.35)' },
-    '&.Mui-focused fieldset': { borderColor: '#d9a441' },
+    '--input-outline-color': withAlpha(palette.white, 0.25),
+    '& fieldset': { borderColor: withAlpha(palette.white, 0.25) },
+    '&.Mui-focused fieldset': { borderColor: palette.gold300 },
     // ブラウザの自動入力で入力欄が黄色くなり、暗い背景から浮くのを防ぐ。
     // 未対応の疑似クラスがあるとルールごと無視されるため、:-webkit-autofill と :autofill は別々に書く
     '& input:-webkit-autofill': autofillOverrideSx,
@@ -135,25 +141,20 @@ const darkInputSx = {
 const fieldLabelSx = {
   display: 'block',
   mb: 0.75,
-  fontSize: '0.9rem',
-  color: '#e6dfff',
+  fontSize: font.sm,
+  color: palette.sky,
 } as const
 
 const purpleButtonSx = {
   '&&': {
-    backgroundColor: '#4f2fa8',
+    backgroundColor: palette.purple,
     backgroundImage: 'none',
-    color: '#ffffff',
-  },
-  '&&:hover': {
-    backgroundColor: '#41248f',
-    backgroundImage: 'none',
-    boxShadow: 'none',
+    color: palette.white,
   },
   '&&.Mui-disabled': {
-    backgroundColor: '#3a2f63',
+    backgroundColor: palette.navy,
     backgroundImage: 'none',
-    color: '#b3a8d6',
+    color: palette.blue300,
   },
 } as const
 
@@ -163,7 +164,7 @@ const noBorderButtonSx = {
   '&&&': { border: 'none', borderRadius: '8px' },
 } as const
 
-const dividerColor = 'rgba(205, 184, 255, 0.4)'
+const dividerColor = withAlpha(palette.blue300, 0.5)
 
 function Auth() {
   const { user, isLoading } = useAuth()
@@ -356,7 +357,7 @@ function Auth() {
                   width: `${sprite.width * 0.5}%`,
                   height: '3%',
                   borderRadius: '50%',
-                  background: 'radial-gradient(ellipse at center, rgba(8, 6, 20, 0.9) 0%, rgba(8, 6, 20, 0) 70%)',
+                  background: `radial-gradient(ellipse at center, ${withAlpha(palette.black, 0.9)} 0%, transparent 70%)`,
                   opacity: 0.5,
                   pointerEvents: 'none',
                 }}
@@ -389,19 +390,19 @@ function Auth() {
           justifyContent: 'center',
           px: { xs: 2, sm: 4 },
           py: { xs: 4, md: 6 },
-          background: 'linear-gradient(180deg, #1b1538 0%, #0d0a20 100%)',
+          background: `linear-gradient(180deg, ${palette.navy} 0%, ${palette.navy} 100%)`,
         }}
       >
         <Paper elevation={0} sx={authCardSx}>
           {/* PC は画面の高さに合わせて余白・マスコット・ボタンを大きくし、パネル全体を使う */}
           <Stack sx={{ gap: { xs: 3, md: 'clamp(20px, 3.6vh, 48px)' } }}>
-            <Stack alignItems="center" spacing={1.25}>
+            <Stack alignItems="center" spacing={1.5}>
               <Typography
                 component="h2"
                 textAlign="center"
                 sx={{
-                  fontSize: { xs: '1.7rem', md: 'clamp(2rem, 3.8vh, 2.8rem)' },
-                  color: '#f2d27a',
+                  fontSize: { xs: font.xxxl, md: 'clamp(2rem, 3.8vh, 2.8rem)' },
+                  color: palette.gold300,
                   letterSpacing: '0.06em',
                 }}
               >
@@ -414,7 +415,7 @@ function Auth() {
                   width: 88,
                   height: 4,
                   borderRadius: 999,
-                  background: 'linear-gradient(90deg, #7a5bd0 0%, #d9a441 50%, #7a5bd0 100%)',
+                  background: `linear-gradient(90deg, ${palette.purple} 0%, ${palette.gold300} 50%, ${palette.purple} 100%)`,
                 }}
               />
             </Stack>
@@ -442,8 +443,8 @@ function Auth() {
               sx={{
                 ...softGoldButtonSx,
                 ...noBorderButtonSx,
-                py: { xs: 1.4, md: 'clamp(14px, 2.2vh, 24px)' },
-                fontSize: { xs: '1.2rem', md: 'clamp(1.35rem, 2.6vh, 1.6rem)' },
+                py: { xs: 1.5, md: 'clamp(14px, 2.2vh, 24px)' },
+                fontSize: { xs: font.xl, md: 'clamp(1.35rem, 2.6vh, 1.6rem)' },
               }}
             >
               {submitMode === 'anonymous' ? locale.anonymousSubmitting : locale.anonymousSubmit}
@@ -459,7 +460,7 @@ function Auth() {
                 ...googleButtonSx,
                 ...noBorderButtonSx,
                 py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' },
-                fontSize: { xs: '1.1rem', md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
+                fontSize: { xs: font.lg, md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
                 // MUI はアイコンを 20px 固定にするため、文字の大きさに合わせて拡縮させる
                 '& .MuiButton-startIcon > *:nth-of-type(1)': { fontSize: '1.2em' },
                 '& .MuiButton-startIcon': { mr: '0.5em' },
@@ -513,7 +514,7 @@ function Auth() {
                     ...purpleButtonSx,
                     ...noBorderButtonSx,
                     py: { xs: 1, md: 'clamp(10px, 1.8vh, 20px)' },
-                    fontSize: { xs: '1.1rem', md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
+                    fontSize: { xs: font.lg, md: 'clamp(1.25rem, 2.3vh, 1.45rem)' },
                   }}
                 >
                   {submitMode === emailAuthMode
@@ -526,7 +527,7 @@ function Auth() {
                 </Button>
                 {error ? <Alert severity="error">{error}</Alert> : null}
                 <Stack direction="row" spacing={0.75} justifyContent="center" alignItems="center" sx={{ pt: 0.5 }}>
-                  <Typography variant="body2" sx={{ color: '#ffffff' }}>
+                  <Typography variant="body2" sx={{ color: palette.white }}>
                     {emailAuthMode === 'signIn' ? locale.signUpPrompt : locale.signInPrompt}
                   </Typography>
                   <Link
@@ -535,7 +536,7 @@ function Auth() {
                     variant="body2"
                     onClick={toggleEmailAuthMode}
                     disabled={isAnySubmitting}
-                    sx={{ color: '#ffffff', fontWeight: 700, textDecorationColor: 'rgba(255, 255, 255, 0.6)' }}
+                    sx={{ color: palette.white, fontWeight: 700, textDecorationColor: withAlpha(palette.white, 0.5) }}
                   >
                     {emailAuthMode === 'signIn' ? locale.signUp : locale.signIn}
                   </Link>

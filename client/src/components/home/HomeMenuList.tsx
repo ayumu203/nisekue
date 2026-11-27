@@ -1,7 +1,7 @@
 import { Box, Button, Stack, SvgIcon, type SvgIconProps } from '@mui/material'
 import { Link } from 'react-router-dom'
 import type { HomeMenuGroup, HomeMenuGroupKey, HomeMenuItem } from '@/components/home/homeMenu'
-import { softGreenButtonSx } from '@/constants/styles'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type HomeMenuListProps = {
   primary: HomeMenuItem[]
@@ -22,25 +22,40 @@ function ChevronIcon({ up, ...props }: SvgIconProps & { up: boolean }) {
   )
 }
 
+const MENU_TEXT_COLOR = palette.brown900
+const MENU_DIVIDER_COLOR = withAlpha(palette.brown900, 0.25)
+
+// 白い箱の中のタイル。区切りは細い線だけにして、ボタンの形は付けない
 const tileSx = {
-  ...softGreenButtonSx,
-  minHeight: 52,
-  borderRadius: '14px',
-  fontSize: '0.95rem',
+  minHeight: 72,
+  borderRadius: 0,
+  flexDirection: 'column',
+  gap: 0.75,
+  color: MENU_TEXT_COLOR,
+  fontSize: font.md,
   fontWeight: 700,
   whiteSpace: 'nowrap',
+  '& .MuiButton-startIcon': {
+    m: 0,
+    color: palette.green400,
+  },
   '& .MuiButton-startIcon > *:nth-of-type(1)': {
-    fontSize: 22,
+    fontSize: font.xxxl,
   },
 } as const
 
 const groupButtonSx = {
-  ...softGreenButtonSx,
-  minHeight: 44,
+  minHeight: 48,
   minWidth: 0,
   px: 1,
+  borderRadius: 0,
+  color: MENU_TEXT_COLOR,
+  fontSize: font.md,
   fontWeight: 700,
   whiteSpace: 'nowrap',
+  '&[aria-expanded="true"]': {
+    backgroundColor: withAlpha(palette.brown900, 0.1),
+  },
   '& .MuiButton-endIcon': {
     ml: 0.25,
   },
@@ -51,13 +66,10 @@ const cellSx = {
   minHeight: 48,
   px: 1.5,
   borderRadius: 0,
-  backgroundColor: '#ffffff',
-  color: '#3a2f1e',
+  backgroundColor: palette.white,
+  color: palette.brown900,
   fontWeight: 700,
   whiteSpace: 'nowrap',
-  '&:hover': {
-    backgroundColor: '#ffffff',
-  },
 } as const
 
 function itemLinkProps(item: HomeMenuItem) {
@@ -72,7 +84,8 @@ function itemLinkProps(item: HomeMenuItem) {
   return { disabled: item.disabled }
 }
 
-// スマホのホームで使うメニュー。よく使う 4 つは 2×2 のタイル、残りはグループごとに開いて 2 列のマス目で出す
+// スマホのホームで使うメニュー。白い箱の中に、よく使う 4 つを 2×2 のタイル、残りのグループを横 1 列に並べる
+// グループを開くと、箱の下に 2 列のマス目で項目を出す
 export default function HomeMenuList({ primary, groups, openGroup, lockedGroup, onToggleGroup }: HomeMenuListProps) {
   const visibleGroup = groups.find((group) => group.key === (lockedGroup ?? openGroup)) ?? null
   const cells: (HomeMenuItem | null)[] = visibleGroup ? [...visibleGroup.items] : []
@@ -82,31 +95,33 @@ export default function HomeMenuList({ primary, groups, openGroup, lockedGroup, 
   }
 
   return (
-    <Stack spacing={2}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
-        {primary.map((item) => (
-          <Button
-            key={item.key}
-            {...itemLinkProps(item)}
-            id={item.id}
-            variant="contained"
-            startIcon={item.icon}
-            onClick={item.onClick}
-            sx={tileSx}
-          >
-            {item.label}
-          </Button>
-        ))}
-      </Box>
-      <Stack spacing={1}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.5 }}>
-          {groups.map((group) => {
+    <Stack spacing={1}>
+      <Box component="nav" sx={{ backgroundColor: palette.white, borderRadius: '12px', overflow: 'hidden' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+          {primary.map((item, index) => (
+            <Button
+              key={item.key}
+              {...itemLinkProps(item)}
+              id={item.id}
+              startIcon={item.icon}
+              onClick={item.onClick}
+              sx={{
+                ...tileSx,
+                borderBottom: `1px solid ${MENU_DIVIDER_COLOR}`,
+                borderRight: index % 2 === 0 ? `1px solid ${MENU_DIVIDER_COLOR}` : 'none',
+              }}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </Box>
+        <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${groups.length}, minmax(0, 1fr))` }}>
+          {groups.map((group, index) => {
             const isOpen = visibleGroup?.key === group.key
 
             return (
               <Button
                 key={group.key}
-                variant="contained"
                 endIcon={<ChevronIcon up={isOpen} />}
                 aria-expanded={isOpen}
                 onClick={() => {
@@ -114,45 +129,50 @@ export default function HomeMenuList({ primary, groups, openGroup, lockedGroup, 
                     onToggleGroup(group.key)
                   }
                 }}
-                sx={groupButtonSx}
+                sx={{
+                  ...groupButtonSx,
+                  borderRight: index < groups.length - 1 ? `1px solid ${MENU_DIVIDER_COLOR}` : 'none',
+                }}
               >
                 {group.label}
               </Button>
             )
           })}
         </Box>
-        {/* チュートリアルのスポットライトが位置を測れるように、通常の要素として描画する */}
-        {visibleGroup && (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-              gap: '1px',
-              backgroundColor: '#eadcbf',
-              border: '1px solid #d9c49a',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              boxShadow: '0 4px 14px rgba(60, 40, 0, 0.16)',
-            }}
-          >
-            {cells.map((item, index) =>
-              item ? (
-                <Button
-                  key={item.key}
-                  {...itemLinkProps(item)}
-                  id={item.id}
-                  onClick={item.onClick}
-                  sx={item.danger ? { ...cellSx, color: '#a0461e' } : cellSx}
-                >
-                  {item.label}
-                </Button>
-              ) : (
-                <Box key={`empty-${index}`} sx={{ backgroundColor: '#ffffff' }} />
-              ),
-            )}
-          </Box>
-        )}
-      </Stack>
+      </Box>
+      {/* チュートリアルのスポットライトが位置を測れるように、通常の要素として描画する */}
+      {visibleGroup && (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            // 余白ではなく項目の区切り線（背景色を 1px 見せる）
+            // eslint-disable-next-line no-restricted-syntax
+            gap: '1px',
+            backgroundColor: palette.brown200,
+            border: `1px solid ${palette.brown200}`,
+            borderRadius: '12px',
+            overflow: 'hidden',
+            boxShadow: `0 4px 14px ${withAlpha(palette.brown900, 0.1)}`,
+          }}
+        >
+          {cells.map((item, index) =>
+            item ? (
+              <Button
+                key={item.key}
+                {...itemLinkProps(item)}
+                id={item.id}
+                onClick={item.onClick}
+                sx={item.danger ? { ...cellSx, color: palette.red700 } : cellSx}
+              >
+                {item.label}
+              </Button>
+            ) : (
+              <Box key={`empty-${index}`} sx={{ backgroundColor: palette.white }} />
+            ),
+          )}
+        </Box>
+      )}
     </Stack>
   )
 }

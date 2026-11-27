@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Alert, Button, Stack, type SxProps, type Theme } from '@mui/material'
+import { Button, Stack, type SxProps, type Theme } from '@mui/material'
 import { supabase } from '@/lib/supabase'
 import locale from '../../../locale/auth/SignOut.json'
+import { useNotify } from '@/contexts/useNotify'
 
 type SignOutProps = {
   onMessage?: (message: string) => void
@@ -10,16 +11,15 @@ type SignOutProps = {
 
 function SignOut({ onMessage, buttonSx }: SignOutProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const notify = useNotify()
 
   const handleSignOut = async () => {
     setIsSubmitting(true)
-    setError(null)
 
     const { error: signOutError } = await supabase.auth.signOut()
 
     if (signOutError) {
-      setError(signOutError.message)
+      notify.error(signOutError.message)
       onMessage?.(locale.toastFailed)
       setIsSubmitting(false)
       return
@@ -34,7 +34,6 @@ function SignOut({ onMessage, buttonSx }: SignOutProps) {
       <Button type="button" variant="outlined" onClick={handleSignOut} disabled={isSubmitting} sx={buttonSx}>
         {isSubmitting ? locale.submitting : locale.submit}
       </Button>
-      {error ? <Alert severity="error">{error}</Alert> : null}
     </Stack>
   )
 }

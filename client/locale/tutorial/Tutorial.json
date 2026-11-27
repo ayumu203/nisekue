@@ -10,6 +10,7 @@
   },
   "pointerLabelTap": "Tap!",
   "pointerLabelClick": "Click!",
+  "closeLabel": "OK",
   "steps": {
     "homePlayerSetting": {
       "message": "キャラメークをしましょう！\n歯車から設定画面へ移動できます。"
@@ -59,11 +60,14 @@
       "message": "転職をご希望ですね。\n転職すると、能力の伸び方が変化したり、技を覚えたりできますよ。初めての方は盾兵と魔法使いのどちらかを選ぶと良いでしょう。",
       "dismissLabel": "次へ"
     },
+    "jobChangeSelect": {
+      "message": "転職先を選んで、転職してみてください。"
+    },
     "jobChangeRoadmap": {
       "message": "こちらから転職の条件を確かめられます。"
     },
     "jobChangeToTraining": {
-      "message": "転職が済みましたら、ホームへお戻りください。\n訓練場でもう一度鍛えましょう！"
+      "message": "ホームへお戻りください。\n訓練場でもう一度鍛えましょう！"
     },
     "backToTraining": {
       "message": "転職が済んだら、訓練場へ戻りましょう！"

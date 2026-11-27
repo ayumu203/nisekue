@@ -1,5 +1,22 @@
 import { SvgIcon, type SvgIconProps } from '@mui/material'
 
+export function HomeIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M12 3.5 3 10.5V21h6.5v-5.5h5V21H21V10.5zm0 2.53 7 5.44V19h-2.5v-5.5h-9V19H5v-7.53z" />
+    </SvgIcon>
+  )
+}
+
+// 塗りつぶしの家。帯の上に白で置くと、輪郭だけの HomeIcon は線が二重に見えるため、帯のホームボタンはこちらを使う
+export function HomeFilledIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+    </SvgIcon>
+  )
+}
+
 export function TrainingIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
@@ -148,6 +165,15 @@ export function DebugIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
       <path d="M20 8h-2.81a6 6 0 0 0-1.82-1.96L17 4.41 15.59 3l-2.17 2.17a6 6 0 0 0-2.83 0L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81A6 6 0 0 0 12 22a6 6 0 0 0 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20zm-6 8h-4v-2h4zm0-4h-4v-2h4z" />
+    </SvgIcon>
+  )
+}
+
+// 個人チャットと全体チャットを切り替えるボタンのアイコン（左右の矢印）
+export function SwapIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path d="M16 3l5 5-5 5v-4H4V7h12zM8 11v4h12v2H8v4l-5-5z" />
     </SvgIcon>
   )
 }

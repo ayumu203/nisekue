@@ -1,9 +1,9 @@
 import { Box, Button, Paper, Stack, Typography } from '@mui/material'
-import { innerSurfaceSx } from '@/constants/styles'
 import { softGreenButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import questRoomLocale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestRunDetailResponse } from '@/schema/quest'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type QuestRunResultPanelProps = {
   run: QuestRunDetailResponse
@@ -73,19 +73,17 @@ export default function QuestRunResultPanel({
   ]
 
   return (
-    <Paper
-      variant="outlined"
+    // 白い箱（GamePanel）の中に端まで広げて置くので、外側の枠と角丸は付けない
+    <Box
       sx={{
-        ...innerSurfaceSx,
+        flex: 1,
         overflow: 'hidden',
-        borderRadius: 3,
-        borderColor: isSucceeded ? '#d9c36f' : '#d8b3b0',
         background: isSucceeded
-          ? 'linear-gradient(180deg, #fff6d6 0%, #fff1cf 48%, #ffe7b0 100%)'
-          : 'linear-gradient(180deg, #fff3f1 0%, #fde5e1 52%, #f8d4ce 100%)',
+          ? `linear-gradient(180deg, ${palette.cream} 0%, ${palette.cream} 48%, ${palette.brown200} 100%)`
+          : `linear-gradient(180deg, ${palette.white} 0%, ${palette.cream} 52%, ${palette.gray300} 100%)`,
       }}
     >
-      <Stack spacing={2} sx={{ p: { xs: 1.5, sm: 2.75 } }}>
+      <Stack spacing={2} sx={{ p: { xs: 1.5, sm: 3 } }}>
         <Box>
           <Typography
             variant="h4"
@@ -93,14 +91,14 @@ export default function QuestRunResultPanel({
               fontWeight: 800,
               letterSpacing: '0.08em',
               textAlign: 'center',
-              color: isSucceeded ? '#8b5a00' : '#9b2c1d',
-              textShadow: '0 2px 0 rgba(255,255,255,0.45)',
-              fontSize: { xs: '1.6rem', sm: '2.125rem' },
+              color: isSucceeded ? palette.gold700 : palette.red700,
+              textShadow: `0 2px 0 ${withAlpha(palette.white, 0.5)}`,
+              fontSize: { xs: font.xxl, sm: font.display },
             }}
           >
             {isSucceeded ? locale.clearTitle : locale.failedTitle}
           </Typography>
-          <Typography variant="body2" sx={{ mt: 0.75, textAlign: 'center', color: '#5b4b2d' }}>
+          <Typography variant="body2" sx={{ mt: 0.75, textAlign: 'center', color: palette.brown900 }}>
             {isSucceeded ? locale.clearSubtitle : locale.failedSubtitle}
           </Typography>
         </Box>
@@ -108,19 +106,19 @@ export default function QuestRunResultPanel({
         {isEndless ? (
           <Stack direction="row" spacing={2} useFlexGap flexWrap="wrap" justifyContent="center">
             <Stack alignItems="center" spacing={0.25}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#7b5e2f' }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: palette.brown500 }}>
                 {questRoomLocale.endless.reachedFloorLabel}
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 900, color: '#8b5a00', lineHeight: 1 }}>
+              <Typography variant="h4" sx={{ fontWeight: 900, color: palette.gold700, lineHeight: 1 }}>
                 {reachedFloor}
               </Typography>
             </Stack>
             {endlessBestFloor != null ? (
               <Stack alignItems="center" spacing={0.25}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: '#7b5e2f' }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: palette.brown500 }}>
                   {questRoomLocale.endless.bestFloorLabel}
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 900, color: '#4b391c', lineHeight: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 900, color: palette.brown900, lineHeight: 1 }}>
                   {Math.max(endlessBestFloor, reachedFloor)}
                 </Typography>
               </Stack>
@@ -139,11 +137,11 @@ export default function QuestRunResultPanel({
                     width: '100%',
                     height: { xs: 120, sm: 136 },
                     borderRadius: 2.5,
-                    border: '1px solid rgba(124, 91, 25, 0.2)',
+                    border: `1px solid ${withAlpha(palette.gold700, 0.25)}`,
                     background: isSucceeded
-                      ? 'linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,241,196,0.86) 100%)'
-                      : 'linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(246,219,214,0.88) 100%)',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45)',
+                      ? `linear-gradient(180deg, ${withAlpha(palette.white, 0.75)} 0%, ${withAlpha(palette.cream, 0.9)} 100%)`
+                      : `linear-gradient(180deg, ${withAlpha(palette.white, 0.75)} 0%, ${withAlpha(palette.gray300, 0.9)} 100%)`,
+                    boxShadow: `inset 0 1px 0 ${withAlpha(palette.white, 0.5)}`,
                     overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'flex-end',
@@ -180,7 +178,7 @@ export default function QuestRunResultPanel({
                     maxWidth: '100%',
                     fontWeight: 700,
                     textAlign: 'center',
-                    color: '#433118',
+                    color: palette.brown900,
                     wordBreak: 'break-word',
                   }}
                 >
@@ -198,16 +196,16 @@ export default function QuestRunResultPanel({
               px: 2,
               py: 1.5,
               borderRadius: 2,
-              borderColor: 'rgba(124, 91, 25, 0.28)',
-              background: 'rgba(255,255,255,0.55)',
+              borderColor: withAlpha(palette.gold700, 0.25),
+              background: withAlpha(palette.white, 0.5),
             }}
           >
             <Stack spacing={0.75} alignItems="stretch">
-              <Typography variant="subtitle1" fontWeight={800} color="#6f4d11">
+              <Typography variant="subtitle1" fontWeight={800} color={palette.gold700}>
                 {locale.rewardTitle}
               </Typography>
               {isMirror ? (
-                <Typography variant="body2" fontWeight={700} color="#4b391c" textAlign="center">
+                <Typography variant="body2" fontWeight={700} color={palette.brown900} textAlign="center">
                   {questRoomLocale.mirror.noReward}
                 </Typography>
               ) : null}
@@ -220,22 +218,22 @@ export default function QuestRunResultPanel({
                   alignItems="center"
                   sx={{
                     py: 0.25,
-                    borderBottom: '1px solid rgba(124, 91, 25, 0.12)',
+                    borderBottom: `1px solid ${withAlpha(palette.gold700, 0.1)}`,
                     '&:last-of-type': {
                       borderBottom: 'none',
                     },
                   }}
                 >
-                  <Typography variant="body2" fontWeight={700} color="#6f4d11">
+                  <Typography variant="body2" fontWeight={700} color={palette.gold700}>
                     {reward.label}
                   </Typography>
-                  <Typography variant="body1" fontWeight={700} color="#4b391c" textAlign="right">
+                  <Typography variant="body1" fontWeight={700} color={palette.brown900} textAlign="right">
                     {reward.value}
                   </Typography>
                 </Stack>
               ))}
               {skippedCount > 0 ? (
-                <Typography variant="body2" color="#7b5e2f" textAlign="center">
+                <Typography variant="body2" color={palette.brown500} textAlign="center">
                   {locale.rewardInventoryFullSkipped.replace('{{count}}', String(skippedCount))}
                 </Typography>
               ) : null}
@@ -249,6 +247,6 @@ export default function QuestRunResultPanel({
           </Button>
         </Box>
       </Stack>
-    </Paper>
+    </Box>
   )
 }

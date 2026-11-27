@@ -1,13 +1,13 @@
-import { Alert, Box, Button, CircularProgress, Pagination, Paper, Stack, Typography } from '@mui/material'
-import { innerSurfaceSx, menuButtonSx, softGreenButtonSx } from '@/constants/styles'
-import { useMemo, useState } from 'react'
+import { Box, Button, CircularProgress, Pagination, Stack, Typography } from '@mui/material'
+import { useMemo, useState, type ReactNode } from 'react'
+import { homePanelColors, menuButtonSx, panelOutlinedButtonSx, panelPrimaryButtonSx } from '@/constants/styles'
 import type { PlayerSummary } from '@/schema/player'
 import locale from '../../../locale/quest/QuestRoom.json'
 import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/quest'
 import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestStageModeCard from './QuestStageModeCard'
-
-const STAGE_PAGE_SIZE = 3
+import { font, palette } from '@/theme/tokens'
+import { EmptyText } from '@/components/common/EmptyText'
 
 type QuestRoomCreateSectionProps = {
   activeStages: GetQuestStagesResponse
@@ -27,6 +27,35 @@ type QuestRoomCreateSectionProps = {
   onModeChange: (mode: CreateQuestRoomRequest['mode']) => void
   onRestrictionsChange: (value: string, nextAllowedPlayerIds: string[]) => void
   onCreateRoom: () => void | Promise<void>
+  // 1 ページに出すステージの数と、横に並べる列の数（PC は 2 列で多めに出す）
+  stagePageSize?: number
+  stageColumns?: number
+  compactCards?: boolean
+  // ステージ一覧と、参加制限・募集開始をどの箱に置くかは画面側で決める
+  renderLayout: (parts: { stages: ReactNode; form: ReactNode }) => ReactNode
+}
+
+function PanelRow({ label, value }: { label: string; value: string }) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        // 見出しと内容を離しすぎないよう、内容は見出しのすぐ右に置く
+        alignItems: 'baseline',
+        gap: 2,
+        py: 1.5,
+        borderBottom: `1px solid ${palette.brown200}`,
+      }}
+    >
+      <Typography
+        variant="body2"
+        sx={{ color: palette.brown900, fontWeight: 700, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
+      >
+        {label}
+      </Typography>
+      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: font.md }}>{value}</Typography>
+    </Box>
+  )
 }
 
 export default function QuestRoomCreateSection({
@@ -47,6 +76,10 @@ export default function QuestRoomCreateSection({
   onModeChange,
   onRestrictionsChange,
   onCreateRoom,
+  stagePageSize = 3,
+  stageColumns = 1,
+  compactCards = false,
+  renderLayout,
 }: QuestRoomCreateSectionProps) {
   const [isRestrictionsModalOpen, setIsRestrictionsModalOpen] = useState(false)
   const [stagePage, setStagePage] = useState(1)
@@ -55,146 +88,119 @@ export default function QuestRoomCreateSection({
     onModeChange(nextMode)
   }
 
-  const stagePageCount = Math.max(1, Math.ceil(activeStages.length / STAGE_PAGE_SIZE))
+  const stagePageCount = Math.max(1, Math.ceil(activeStages.length / stagePageSize))
   const visibleStagePage = Math.min(stagePage, stagePageCount)
   const pagedStages = useMemo(() => {
-    const start = (visibleStagePage - 1) * STAGE_PAGE_SIZE
-    return activeStages.slice(start, start + STAGE_PAGE_SIZE)
-  }, [activeStages, visibleStagePage])
+    const start = (visibleStagePage - 1) * stagePageSize
+    return activeStages.slice(start, start + stagePageSize)
+  }, [activeStages, visibleStagePage, stagePageSize])
 
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        ...innerSurfaceSx,
-        borderRadius: 3,
-        p: { xs: 2, sm: 2.5 },
-        color: '#eef4ff',
-        backgroundColor: '#1d2d4a',
-        borderColor: 'rgba(152, 192, 255, 0.34)',
-      }}
-    >
-      <Stack spacing={2}>
-        {isLoading ? (
-          <Stack direction="row" spacing={1} alignItems="center">
-            <CircularProgress size={18} />
-            <Typography variant="body2">{locale.roomPageLoading}</Typography>
-          </Stack>
-        ) : activeStages.length === 0 ? (
-          <Alert severity="info">{locale.stagesEmpty}</Alert>
-        ) : (
-          <Stack spacing={2}>
-            <Box
-              sx={{
-                display: 'grid',
-                gap: 2,
-              }}
-            >
-              {pagedStages.map((stage) => (
-                <QuestStageModeCard
-                  key={stage.stageId}
-                  stage={stage}
-                  playerImagePath={currentPlayerImagePath}
-                  isSelected={selectedStageId === stage.stageId}
-                  selectedMode={mode}
-                  onSelect={handleStageModeSelect}
-                />
-              ))}
-            </Box>
+  const stages = isLoading ? (
+    <Stack direction="row" spacing={1} alignItems="center">
+      <CircularProgress size={18} />
+      <Typography variant="body2" sx={{ color: homePanelColors.label }}>
+        {locale.roomPageLoading}
+      </Typography>
+    </Stack>
+  ) : activeStages.length === 0 ? (
+    <EmptyText>{locale.stagesEmpty}</EmptyText>
+  ) : (
+    <Stack spacing={2}>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: compactCards ? 1.5 : 2,
+          gridTemplateColumns: `repeat(${stageColumns}, minmax(0, 1fr))`,
+        }}
+      >
+        {pagedStages.map((stage) => (
+          <QuestStageModeCard
+            key={stage.stageId}
+            stage={stage}
+            playerImagePath={currentPlayerImagePath}
+            isSelected={selectedStageId === stage.stageId}
+            selectedMode={mode}
+            onSelect={handleStageModeSelect}
+            compact={compactCards}
+          />
+        ))}
+      </Box>
 
-            {stagePageCount > 1 ? (
-              <Stack alignItems="center">
-                <Pagination
-                  page={visibleStagePage}
-                  count={stagePageCount}
-                  onChange={(_, nextPage) => setStagePage(nextPage)}
-                  color="primary"
-                  sx={{
-                    '& .MuiPaginationItem-root': {
-                      color: '#f4f8ff',
-                      borderColor: 'rgba(180, 209, 255, 0.4)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                    },
-                    '& .MuiPaginationItem-root:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.14)',
-                    },
-                    '& .MuiPaginationItem-root.Mui-selected': {
-                      color: '#10233f',
-                      backgroundColor: '#d6e6ff',
-                      borderColor: '#d6e6ff',
-                      fontWeight: 800,
-                    },
-                    '& .MuiPaginationItem-root.Mui-selected:hover': {
-                      backgroundColor: '#c3dafd',
-                    },
-                    '& .MuiPaginationItem-ellipsis': {
-                      color: 'rgba(244, 248, 255, 0.84)',
-                      backgroundColor: 'transparent',
-                    },
-                  }}
-                />
-              </Stack>
-            ) : null}
-
-            <Stack spacing={1.5}>
-              <Stack spacing={1}>
-                <Typography variant="body2" sx={{ color: 'rgba(240, 247, 255, 0.9)' }}>
-                  {minRequiredLevelInput.trim() === ''
-                    ? `${locale.labels.minRequiredLevel}: ${locale.noRestriction}`
-                    : `${locale.labels.minRequiredLevel}: ${minRequiredLevelInput}`}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#f3f8ff', fontWeight: 600 }}>
-                  {allowedPlayerIds.length === 0
-                    ? `${locale.labels.allowedPlayers}: ${locale.noRestriction}`
-                    : locale.selectedAllowedPlayersCount.replace('{{count}}', String(allowedPlayerIds.length))}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  onClick={() => setIsRestrictionsModalOpen(true)}
-                  sx={{
-                    ...menuButtonSx,
-                    color: '#eef4ff',
-                    borderColor: 'rgba(152, 192, 255, 0.34)',
-                  }}
-                >
-                  {locale.openRestrictionsModal}
-                </Button>
-              </Stack>
-            </Stack>
-
-            <Button
-              variant="contained"
-              onClick={() => void onCreateRoom()}
-              disabled={isCreateDisabled}
-              sx={{
-                ...menuButtonSx,
-                ...softGreenButtonSx,
-                color: '#ffffff',
-                backgroundColor: '#4f79b5',
-                boxShadow: 'none',
-                '&:hover': {
-                  backgroundColor: '#5a86c5',
-                  boxShadow: 'none',
-                },
-              }}
-            >
-              {isSubmitting ? locale.creatingRoom : locale.createRoom}
-            </Button>
-
-            <QuestRestrictionsModal
-              open={isRestrictionsModalOpen}
-              minRequiredLevelInput={minRequiredLevelInput}
-              currentPlayerLevel={currentPlayerLevel}
-              selectablePlayers={selectablePlayers}
-              allowedPlayerIds={allowedPlayerIds}
-              isLoading={isPlayerCandidatesLoading}
-              error={playerCandidatesError}
-              onClose={() => setIsRestrictionsModalOpen(false)}
-              onApply={onRestrictionsChange}
-            />
-          </Stack>
-        )}
-      </Stack>
-    </Paper>
+      {stagePageCount > 1 ? (
+        <Stack alignItems="center">
+          <Pagination
+            page={visibleStagePage}
+            count={stagePageCount}
+            onChange={(_, nextPage) => setStagePage(nextPage)}
+            sx={{
+              '& .MuiPaginationItem-root.MuiPaginationItem-root': {
+                color: palette.brown900,
+                fontWeight: 700,
+                transition: 'none',
+              },
+              '& .MuiTouchRipple-root': {
+                display: 'none',
+              },
+              '& .MuiPaginationItem-root.MuiPaginationItem-root.Mui-selected': {
+                color: palette.white,
+                backgroundColor: homePanelColors.band,
+              },
+            }}
+          />
+        </Stack>
+      ) : null}
+    </Stack>
   )
+
+  const form = (
+    <Stack spacing={2}>
+      <Box>
+        <PanelRow
+          label={locale.labels.minRequiredLevel}
+          value={minRequiredLevelInput.trim() === '' ? locale.noRestriction : minRequiredLevelInput}
+        />
+        <PanelRow
+          label={locale.labels.allowedPlayers}
+          value={
+            allowedPlayerIds.length === 0
+              ? locale.noRestriction
+              : locale.selectedAllowedPlayersCount.replace('{{count}}', String(allowedPlayerIds.length))
+          }
+        />
+      </Box>
+      {/* スマホは 2 つのボタンを横に並べて縦の長さを抑える */}
+      <Stack direction={{ xs: 'row', md: 'column' }} spacing={{ xs: 1.5, md: 2 }}>
+        <Button
+          variant="outlined"
+          onClick={() => setIsRestrictionsModalOpen(true)}
+          disabled={isLoading}
+          sx={{ ...menuButtonSx, ...panelOutlinedButtonSx }}
+        >
+          {locale.editRestrictions}
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => void onCreateRoom()}
+          disabled={isCreateDisabled}
+          sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, minHeight: { xs: 48, md: 56 }, fontSize: { md: font.lg } }}
+        >
+          {isSubmitting ? locale.creatingRoom : locale.createRoom}
+        </Button>
+      </Stack>
+
+      <QuestRestrictionsModal
+        open={isRestrictionsModalOpen}
+        minRequiredLevelInput={minRequiredLevelInput}
+        currentPlayerLevel={currentPlayerLevel}
+        selectablePlayers={selectablePlayers}
+        allowedPlayerIds={allowedPlayerIds}
+        isLoading={isPlayerCandidatesLoading}
+        error={playerCandidatesError}
+        onClose={() => setIsRestrictionsModalOpen(false)}
+        onApply={onRestrictionsChange}
+      />
+    </Stack>
+  )
+
+  return <>{renderLayout({ stages, form })}</>
 }

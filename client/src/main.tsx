@@ -1,11 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material'
+import { CssBaseline, ThemeProvider } from '@mui/material'
 import { SWRConfig } from 'swr'
 import './index.css'
 import App from '@/App'
 import { AuthProvider } from '@/contexts/AuthProvider'
+import { NotificationProvider } from '@/contexts/NotificationProvider'
+import { theme } from '@/theme/theme'
 
 function getRouterBasename(): string | undefined {
   const normalizedBaseUrl = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
@@ -29,76 +31,17 @@ function restoreGithubPagesPath(): void {
 
 restoreGithubPagesPath()
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#f4a6c1',
-      dark: '#ea8db0',
-      contrastText: '#ffffff',
-    },
-    background: {
-      default: '#eaf3f8',
-      paper: '#fff7e8',
-    },
-    text: {
-      primary: '#4f4638',
-      secondary: '#7a6f5c',
-    },
-  },
-  typography: {
-    fontFamily: '"DotGothic16", sans-serif',
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 999,
-          textTransform: 'none',
-          fontWeight: 900,
-          fontSize: '0.95rem',
-          '@media (min-width:900px)': {
-            fontSize: '1.08rem',
-          },
-        },
-        contained: {
-          borderWidth: 2,
-          borderStyle: 'solid',
-          borderColor: '#ffffff',
-          boxShadow: 'none',
-        },
-        containedPrimary: {
-          color: '#ffffff',
-        },
-        outlined: {
-          borderWidth: 2,
-          borderStyle: 'solid',
-          borderColor: '#ffffff',
-          color: '#ffffff',
-        },
-        text: {
-          border: 'none',
-        },
-      },
-    },
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: {
-          backgroundColor: 'var(--app-bg-color)',
-        },
-      },
-    },
-  },
-})
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <SWRConfig value={{ revalidateOnFocus: false }}>
       <AuthProvider>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <BrowserRouter basename={getRouterBasename()}>
-            <App />
-          </BrowserRouter>
+          <NotificationProvider>
+            <BrowserRouter basename={getRouterBasename()}>
+              <App />
+            </BrowserRouter>
+          </NotificationProvider>
         </ThemeProvider>
       </AuthProvider>
     </SWRConfig>

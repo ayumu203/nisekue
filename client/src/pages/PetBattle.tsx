@@ -27,8 +27,10 @@ import {
   type PetBattleCommandDraft,
 } from '@/components/petbattle/petBattleTargets'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import locale from '../../locale/pet/PetBattle.json'
 import type { BattleColumn, BattleRow, PetBattleRoom, PetBattleRun } from '@/schema/petBattle'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 export default function PetBattle() {
   const { session, isLoading } = useAuth()
@@ -41,7 +43,13 @@ export default function PetBattle() {
   const [isStarting, setIsStarting] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isAborting, setIsAborting] = useState(false)
+  // 失敗したら自動のマッチングを止める。表示はトースト
   const [error, setError] = useState<string | null>(null)
+  const notify = useNotify()
+  const showError = (message: string) => {
+    setError(message)
+    notify.error(message)
+  }
   const [drafts, setDrafts] = useState<Record<string, PetBattleCommandDraft>>({})
   const hasAttemptedRecoveryRef = useRef(false)
   const lastDraftKeyRef = useRef<string | null>(null)
@@ -70,14 +78,16 @@ export default function PetBattle() {
           setMatchedRoom(status.room)
         }
       } catch (recoveryError) {
-        setError(recoveryError instanceof Error ? recoveryError.message : locale.loadFailed)
+        const message = recoveryError instanceof Error ? recoveryError.message : locale.loadFailed
+        setError(message)
+        notify.error(message)
       } finally {
         setHasRecovered(true)
       }
     }
 
     void recover()
-  }, [session?.access_token])
+  }, [notify, session?.access_token])
 
   const statsSWRKey = session?.user.id ? (['pet-battle-stats', session.user.id] as const) : null
   const { data: stats, mutate: mutateStats } = useSWR(statsSWRKey, async () => {
@@ -246,7 +256,7 @@ export default function PetBattle() {
 
   async function handleMatch(): Promise<void> {
     if (!session?.access_token) {
-      setError(locale.sessionInfoMissing)
+      showError(locale.sessionInfoMissing)
       return
     }
 
@@ -257,7 +267,7 @@ export default function PetBattle() {
       const room = await matchPetBattle(session.access_token)
       setMatchedRoom(room)
     } catch (matchError) {
-      setError(matchError instanceof Error ? matchError.message : locale.matchFailed)
+      showError(matchError instanceof Error ? matchError.message : locale.matchFailed)
     } finally {
       setIsMatching(false)
     }
@@ -275,7 +285,7 @@ export default function PetBattle() {
       const room = await assignPetBattleSlot(currentRoom.roomId, { petId, row, column }, session.access_token)
       setMatchedRoom(room)
     } catch (assignError) {
-      setError(assignError instanceof Error ? assignError.message : locale.assignFailed)
+      showError(assignError instanceof Error ? assignError.message : locale.assignFailed)
     } finally {
       setIsAssigning(false)
     }
@@ -293,7 +303,7 @@ export default function PetBattle() {
       const room = await removePetBattleSlot(currentRoom.roomId, petId, session.access_token)
       setMatchedRoom(room)
     } catch (removeError) {
-      setError(removeError instanceof Error ? removeError.message : locale.assignFailed)
+      showError(removeError instanceof Error ? removeError.message : locale.assignFailed)
     } finally {
       setIsAssigning(false)
     }
@@ -312,7 +322,7 @@ export default function PetBattle() {
       setStartedRun(run)
       setMatchedRoom(null)
     } catch (startError) {
-      setError(startError instanceof Error ? startError.message : locale.startFailed)
+      showError(startError instanceof Error ? startError.message : locale.startFailed)
     } finally {
       setIsStarting(false)
     }
@@ -330,23 +340,23 @@ export default function PetBattle() {
     for (const member of waitingMembers) {
       const draft = drafts[member.participantId]
       if (draft == null) {
-        setError(locale.commandIncomplete)
+        showError(locale.commandIncomplete)
         return
       }
 
       const move = draft.moveId === '' ? null : (member.moves.find((m) => m.moveId === draft.moveId) ?? null)
       if (draft.actionKind === 'UseMove' && move == null) {
-        setError(locale.commandIncomplete)
+        showError(locale.commandIncomplete)
         return
       }
 
       if (draft.actionKind === 'UseMove' && move != null && move.mpCost > member.currentMp) {
-        setError(locale.commandIncomplete)
+        showError(locale.commandIncomplete)
         return
       }
 
       if (needsTargetSelection(draft, move) && (draft.targetRow === '' || draft.targetColumn === '')) {
-        setError(locale.commandIncomplete)
+        showError(locale.commandIncomplete)
         return
       }
     }
@@ -380,7 +390,7 @@ export default function PetBattle() {
       setStartedRun(latestRun)
       await mutateRun(latestRun, { revalidate: false })
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : locale.commandFailed)
+      showError(submitError instanceof Error ? submitError.message : locale.commandFailed)
       await mutateRun()
     } finally {
       setIsSubmitting(false)
@@ -405,7 +415,7 @@ export default function PetBattle() {
       await mutateRun(run, { revalidate: false })
       await mutateStats()
     } catch (abortError) {
-      setError(abortError instanceof Error ? abortError.message : locale.surrenderFailed)
+      showError(abortError instanceof Error ? abortError.message : locale.surrenderFailed)
     } finally {
       setIsAborting(false)
     }
@@ -432,7 +442,7 @@ export default function PetBattle() {
           sx={{
             backgroundColor: cyberColors.bg,
             borderRadius: 3,
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: `1px solid ${withAlpha(palette.white, 0.1)}`,
             px: { xs: 1, sm: 2 },
             py: { xs: 1.5, sm: 2 },
           }}
@@ -455,7 +465,7 @@ export default function PetBattle() {
                         fontWeight: 900,
                         letterSpacing: '0.06em',
                         textShadow: `0 0 14px ${cyberColors.accentDim}`,
-                        fontSize: { xs: '1.65rem', sm: '2rem' },
+                        fontSize: { xs: font.xxxl, sm: font.display },
                       }}
                     >
                       {locale.title}
@@ -474,11 +484,6 @@ export default function PetBattle() {
               </Stack>
             </Paper>
 
-            {error ? (
-              <Alert severity="error" onClose={() => setError(null)}>
-                {error}
-              </Alert>
-            ) : null}
             {runError instanceof Error ? <Alert severity="warning">{runError.message}</Alert> : null}
 
             {showLoading ? (

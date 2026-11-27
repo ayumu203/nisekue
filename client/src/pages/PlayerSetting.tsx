@@ -18,12 +18,14 @@ import {
   softGreenButtonSx,
 } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
+import { useNotify } from '@/contexts/useNotify'
 import { hasAnonymousIdentity } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import { PLAYER_IMAGE_COUNT, resolvePlayerImageFileName, resolvePlayerImageNo } from '@/lib/playerImages'
 import locale from '../../locale/player-setting/PlayerSetting.json'
+import { palette, withAlpha } from '@/theme/tokens'
 
 export default function PlayerSetting() {
   const { session, isLoading } = useAuth()
@@ -33,21 +35,18 @@ export default function PlayerSetting() {
   const [accountIsAnonymous, setAccountIsAnonymous] = useState(hasAnonymousIdentity(session?.user ?? null))
   const [userName, setUserName] = useState('')
   const [imageNoInput, setImageNoInput] = useState('')
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const notify = useNotify()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [accountEmailInput, setAccountEmailInput] = useState(session?.user.email ?? '')
   const [accountPasswordInput, setAccountPasswordInput] = useState('')
-  const [accountError, setAccountError] = useState<string | null>(null)
-  const [accountSuccess, setAccountSuccess] = useState<string | null>(null)
   const [accountAction, setAccountAction] = useState<'account' | 'google' | null>(null)
   const settingInputSx = {
     ...greenOutlinedInputSx,
     '& .MuiInputLabel-root.Mui-focused': {
-      color: '#f3eedc',
+      color: palette.cream,
     },
     '& .MuiFormHelperText-root': {
-      color: 'rgba(243, 238, 220, 0.72)',
+      color: withAlpha(palette.cream, 0.75),
     },
   } as const
 
@@ -119,20 +118,18 @@ export default function PlayerSetting() {
 
     if (!hasAnonymousIdentity(session?.user ?? null)) {
       setAccountIsAnonymous(false)
-      setAccountSuccess(locale.googleLinkSuccess)
+      notify.success(locale.googleLinkSuccess)
     }
-  }, [session?.user])
+  }, [notify, session?.user])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
 
     if (!session?.access_token) {
-      setSubmitError(locale.sessionMissing)
+      notify.error(locale.sessionMissing)
       return
     }
 
-    setSubmitError(null)
-    setSuccessMessage(null)
     setIsSubmitting(true)
 
     try {
@@ -153,7 +150,7 @@ export default function PlayerSetting() {
       const shouldUpdateImage = normalizedImageNo !== null && normalizedImageNo !== currentImageNo
 
       if (!shouldUpdateName && !shouldUpdateImage) {
-        setSuccessMessage(locale.saved)
+        notify.success(locale.saved)
         return
       }
 
@@ -183,17 +180,17 @@ export default function PlayerSetting() {
       }
 
       if (errors.length === 0) {
-        setSuccessMessage(locale.saved)
+        notify.success(locale.saved)
         if (tutorialStep === 'player-setting-save') {
           advanceTutorial('player-setting-account')
         }
       } else if (anySuccess) {
-        setSubmitError(`${locale.partialSaveFailed} ${errors.join(' ')}`)
+        notify.error(`${locale.partialSaveFailed} ${errors.join(' ')}`)
       } else {
-        setSubmitError(errors.join(' ') || locale.saveFailed)
+        notify.error(errors.join(' ') || locale.saveFailed)
       }
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : locale.saveFailed)
+      notify.error(error instanceof Error ? error.message : locale.saveFailed)
     } finally {
       setIsSubmitting(false)
     }
@@ -213,20 +210,16 @@ export default function PlayerSetting() {
     const trimmedPassword = accountPasswordInput.trim()
 
     if (!trimmedEmail) {
-      setAccountError(locale.accountEmailRequired)
-      setAccountSuccess(null)
+      notify.error(locale.accountEmailRequired)
       return
     }
 
     if (trimmedPassword.length < 6) {
-      setAccountError(locale.passwordMinLength)
-      setAccountSuccess(null)
+      notify.error(locale.passwordMinLength)
       return
     }
 
     setAccountAction('account')
-    setAccountError(null)
-    setAccountSuccess(null)
 
     const emailRedirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
     const { data, error } = await supabase.auth.updateUser(
@@ -244,7 +237,7 @@ export default function PlayerSetting() {
         'email address already in use',
         'email exists',
       ])
-      setAccountError(
+      notify.error(
         existingAccountMessages.has(normalized) ? locale.linkEmailExistingAccount : locale.setAccountDefaultError,
       )
       setAccountAction(null)
@@ -257,7 +250,7 @@ export default function PlayerSetting() {
     setAccountIsAnonymous(nextAnonymousIdentity)
     setAccountEmailInput(data.user?.email ?? trimmedEmail)
     setAccountPasswordInput('')
-    setAccountSuccess(
+    notify.success(
       latestEmail === trimmedEmail.toLowerCase()
         ? locale.setAccountImmediateSuccess
         : locale.setAccountEmailPendingSuccess,
@@ -267,8 +260,6 @@ export default function PlayerSetting() {
 
   async function handleGoogleLink(): Promise<void> {
     setAccountAction('google')
-    setAccountError(null)
-    setAccountSuccess(null)
 
     const redirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
     sessionStorage.setItem('googleLinkPending', 'true')
@@ -278,7 +269,7 @@ export default function PlayerSetting() {
     })
 
     if (error) {
-      setAccountError(locale.googleLinkDefaultError)
+      notify.error(locale.googleLinkDefaultError)
       setAccountAction(null)
     }
   }
@@ -325,9 +316,9 @@ export default function PlayerSetting() {
                   ...innerSurfaceSx,
                   borderRadius: 3,
                   p: { xs: 2, sm: 2.5 },
-                  backgroundColor: '#44644a',
-                  borderColor: '#b8ab7a',
-                  color: '#fff8ea',
+                  backgroundColor: palette.green700,
+                  borderColor: palette.brown200,
+                  color: palette.cream,
                 }}
               >
                 <Box component="form" onSubmit={handleSubmit}>
@@ -335,11 +326,11 @@ export default function PlayerSetting() {
                     <Stack spacing={0.25}>
                       <Typography
                         variant="overline"
-                        sx={{ letterSpacing: '0.18em', color: 'rgba(243, 238, 220, 0.72)' }}
+                        sx={{ letterSpacing: '0.18em', color: withAlpha(palette.cream, 0.75) }}
                       >
                         {locale.titleRuby}
                       </Typography>
-                      <Typography variant="h4" fontWeight={900} color="#fff8ea">
+                      <Typography variant="h4" fontWeight={900} color={palette.cream}>
                         {locale.title}
                       </Typography>
                     </Stack>
@@ -347,7 +338,11 @@ export default function PlayerSetting() {
                       spacing={0.75}
                       id={tutorialStep === 'player-setting-name' ? 'tutorial-name-field' : undefined}
                     >
-                      <Typography id="player-name-label" variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                      <Typography
+                        id="player-name-label"
+                        variant="subtitle1"
+                        sx={{ color: withAlpha(palette.cream, 0.9) }}
+                      >
                         {locale.playerNameLabel}
                       </Typography>
                       <TextField
@@ -364,7 +359,7 @@ export default function PlayerSetting() {
                       />
                     </Stack>
                     <Stack spacing={1.5}>
-                      <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                      <Typography variant="subtitle1" sx={{ color: withAlpha(palette.cream, 0.9) }}>
                         {locale.playerImageLabel}
                       </Typography>
                       <Box
@@ -375,7 +370,7 @@ export default function PlayerSetting() {
                           borderRadius: 2,
                           border: '1px solid',
                           borderColor: 'divider',
-                          bgcolor: 'rgba(255,255,255,0.72)',
+                          bgcolor: withAlpha(palette.white, 0.75),
                           overflow: 'hidden',
                           alignSelf: 'center',
                         }}
@@ -405,7 +400,7 @@ export default function PlayerSetting() {
                         <Typography
                           id="player-image-no-label"
                           variant="subtitle1"
-                          sx={{ color: 'rgba(243, 238, 220, 0.9)' }}
+                          sx={{ color: withAlpha(palette.cream, 0.9) }}
                         >
                           {locale.playerImageNoLabel}
                         </Typography>
@@ -452,8 +447,6 @@ export default function PlayerSetting() {
                         </Button>
                       </Stack>
                     </Stack>
-                    {submitError ? <Alert severity="warning">{submitError}</Alert> : null}
-                    {successMessage ? <Alert severity="success">{successMessage}</Alert> : null}
                     <Button
                       id={tutorialStep === 'player-setting-save' ? 'tutorial-save-btn' : undefined}
                       type="submit"
@@ -474,21 +467,21 @@ export default function PlayerSetting() {
                   ...innerSurfaceSx,
                   borderRadius: 3,
                   p: { xs: 2, sm: 2.5 },
-                  backgroundColor: '#44644a',
-                  borderColor: '#b8ab7a',
-                  color: '#fff8ea',
+                  backgroundColor: palette.green700,
+                  borderColor: palette.brown200,
+                  color: palette.cream,
                 }}
               >
                 <Stack spacing={2}>
                   <Stack spacing={0.5}>
-                    <Typography variant="h5" fontWeight={800} color="#fff8ea">
+                    <Typography variant="h5" fontWeight={800} color={palette.cream}>
                       {locale.accountLinkTitle}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
+                    <Typography variant="body2" sx={{ color: withAlpha(palette.cream, 0.75) }}>
                       {anonymousIdentity ? locale.accountLinkDescription : locale.accountLinkedDescription}
                     </Typography>
                     {accountEmail ? (
-                      <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.72)' }}>
+                      <Typography variant="body2" sx={{ color: withAlpha(palette.cream, 0.75) }}>
                         {locale.accountCurrentEmail.replace('{email}', accountEmail)}
                       </Typography>
                     ) : null}
@@ -510,7 +503,7 @@ export default function PlayerSetting() {
                   <Box component="form" onSubmit={handleAccountSubmit} noValidate>
                     <Stack spacing={2}>
                       <Stack spacing={0.75}>
-                        <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                        <Typography variant="subtitle1" sx={{ color: withAlpha(palette.cream, 0.9) }}>
                           {locale.accountEmailLabel}
                         </Typography>
                         <TextField
@@ -526,10 +519,10 @@ export default function PlayerSetting() {
                       </Stack>
 
                       <Stack spacing={0.75}>
-                        <Typography variant="subtitle1" sx={{ color: 'rgba(243, 238, 220, 0.9)' }}>
+                        <Typography variant="subtitle1" sx={{ color: withAlpha(palette.cream, 0.9) }}>
                           {locale.setPasswordLabel}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(243, 238, 220, 0.82)' }}>
+                        <Typography variant="body2" sx={{ color: withAlpha(palette.cream, 0.75) }}>
                           {locale.setAccountDescription}
                         </Typography>
                         <TextField
@@ -554,9 +547,6 @@ export default function PlayerSetting() {
                       </Button>
                     </Stack>
                   </Box>
-
-                  {accountError ? <Alert severity="warning">{accountError}</Alert> : null}
-                  {accountSuccess ? <Alert severity="success">{accountSuccess}</Alert> : null}
                 </Stack>
               </Paper>
             </Stack>
@@ -566,6 +556,7 @@ export default function PlayerSetting() {
       {tutorialStep === 'player-setting-name' && (
         <SpotlightTutorial
           targetId="tutorial-name-field"
+          dimBackground={false}
           message={tutorialLocale.steps.playerSettingName.message}
           showDismiss
           dismissLabel={tutorialLocale.steps.playerSettingName.dismissLabel}
@@ -575,6 +566,7 @@ export default function PlayerSetting() {
       {tutorialStep === 'player-setting-random' && (
         <SpotlightTutorial
           targetId="tutorial-random-btn"
+          dimBackground={false}
           message={tutorialLocale.steps.playerSettingRandom.message}
           showDismiss
           onDismiss={() => advanceTutorial('player-setting-image-list')}
@@ -583,6 +575,7 @@ export default function PlayerSetting() {
       {tutorialStep === 'player-setting-image-list' && (
         <SpotlightTutorial
           targetId="tutorial-image-list-btn"
+          dimBackground={false}
           message={tutorialLocale.steps.playerSettingImageList.message}
           showDismiss
           onDismiss={() => advanceTutorial('player-setting-save')}
@@ -591,6 +584,7 @@ export default function PlayerSetting() {
       {tutorialStep === 'player-setting-save' && (
         <SpotlightTutorial
           targetId="tutorial-save-btn"
+          dimBackground={false}
           message={tutorialLocale.steps.playerSettingSave.message}
           showDismiss
           onDismiss={() => advanceTutorial('player-setting-account')}

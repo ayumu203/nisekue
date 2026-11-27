@@ -3,6 +3,7 @@ import { cyberColors } from '@/components/petbattle/petBattleStyles'
 import { resolvePublicAssetPath } from '@/lib/assets'
 import locale from '../../../locale/pet/PetBattle.json'
 import type { PetBattleMember } from '@/schema/petBattle'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type PetBattleMemberCardProps = {
   member: PetBattleMember
@@ -20,12 +21,12 @@ function getStatusRate(current: number, max: number): number {
 
 function StatusBar({ label, current, max, color }: { label: string; current: number; max: number; color: string }) {
   return (
-    <Stack spacing={0.2}>
+    <Stack spacing={0.25}>
       <Stack direction="row" justifyContent="space-between">
-        <Typography variant="caption" sx={{ color: cyberColors.textDim, fontSize: '0.6rem', lineHeight: 1.1 }}>
+        <Typography variant="caption" sx={{ color: cyberColors.textDim, fontSize: font.xxs, lineHeight: 1.1 }}>
           {label}
         </Typography>
-        <Typography variant="caption" sx={{ color: cyberColors.text, fontSize: '0.6rem', lineHeight: 1.1 }}>
+        <Typography variant="caption" sx={{ color: cyberColors.text, fontSize: font.xxs, lineHeight: 1.1 }}>
           {current}/{max}
         </Typography>
       </Stack>
@@ -35,7 +36,7 @@ function StatusBar({ label, current, max, color }: { label: string; current: num
         sx={{
           height: 5,
           borderRadius: 999,
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          backgroundColor: withAlpha(palette.white, 0.1),
           '& .MuiLinearProgress-bar': { backgroundColor: color, borderRadius: 999 },
         }}
       />
@@ -69,7 +70,7 @@ export default function PetBattleMemberCard({
             variant="caption"
             noWrap
             title={member.displayName}
-            sx={{ fontWeight: 800, color: cyberColors.text, fontSize: { xs: '0.66rem', sm: '0.78rem' } }}
+            sx={{ fontWeight: 800, color: cyberColors.text, fontSize: { xs: font.xxs, sm: font.xs } }}
           >
             {member.displayName}
           </Typography>
@@ -79,9 +80,9 @@ export default function PetBattleMemberCard({
               label={locale.deadChip}
               sx={{
                 height: 16,
-                fontSize: '0.55rem',
+                fontSize: font.xxs,
                 color: cyberColors.danger,
-                backgroundColor: 'rgba(255, 56, 96, 0.14)',
+                backgroundColor: withAlpha(palette.red700, 0.1),
               }}
             />
           ) : isSubmitted ? (
@@ -90,7 +91,7 @@ export default function PetBattleMemberCard({
               label={locale.submittedChip}
               sx={{
                 height: 16,
-                fontSize: '0.55rem',
+                fontSize: font.xxs,
                 color: cyberColors.accent,
                 backgroundColor: cyberColors.accentFaint,
               }}
@@ -117,7 +118,7 @@ export default function PetBattleMemberCard({
         <StatusBar label="MP" current={member.currentMp} max={member.maxMp} color={cyberColors.mp} />
 
         {member.activeEffects.length > 0 ? (
-          <Stack direction="row" spacing={0.4} useFlexGap flexWrap="wrap">
+          <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
             {member.activeEffects.map((effect, index) => (
               <Chip
                 key={`${effect.effectType}-${index}`}
@@ -125,9 +126,9 @@ export default function PetBattleMemberCard({
                 label={`${effect.effectType}(${effect.remainingTurns})`}
                 sx={{
                   height: 16,
-                  fontSize: '0.52rem',
+                  fontSize: font.xxs,
                   color: cyberColors.warn,
-                  backgroundColor: 'rgba(255, 209, 102, 0.12)',
+                  backgroundColor: withAlpha(palette.gold300, 0.1),
                 }}
               />
             ))}

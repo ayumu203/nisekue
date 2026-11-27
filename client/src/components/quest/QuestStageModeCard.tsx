@@ -1,8 +1,9 @@
 import { Box, Button, Card, Stack, Typography } from '@mui/material'
-import { innerSurfaceSx } from '@/constants/styles'
+import { homePanelColors, innerSurfaceSx } from '@/constants/styles'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/quest'
 import locale from '../../../locale/quest/QuestRoom.json'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type QuestStageModeCardProps = {
   stage: GetQuestStagesResponse[number]
@@ -11,6 +12,8 @@ type QuestStageModeCardProps = {
   isSelected: boolean
   selectedMode: CreateQuestRoomRequest['mode']
   onSelect: (stageId: number, mode: CreateQuestRoomRequest['mode']) => void
+  // スマホ用の小さいカード（訓練場の相手カードと同じ作り：上に背景と敵、下の白地に名前とボタン）
+  compact?: boolean
 }
 
 const modeButtonSx = {
@@ -27,6 +30,7 @@ export default function QuestStageModeCard({
   isSelected,
   selectedMode,
   onSelect,
+  compact = false,
 }: QuestStageModeCardProps) {
   const isEndless = stage.progressionType === 'Endless'
   // 名鑑の祠：ソロ限定・推奨レベルは伏せる・アイコンは自分
@@ -40,6 +44,105 @@ export default function QuestStageModeCard({
   const isMultiSelected = isSelected && selectedMode === 'Multi'
   const battlefieldImageSrc = resolvePublicAssetPath(stage.battlefieldImagePath)
 
+  const badge = isEndless ? locale.endless.badge : isMirror ? locale.mirror.badge : null
+  const modeButton = (mode: CreateQuestRoomRequest['mode'], selected: boolean, label: string) => (
+    <Button
+      variant={selected ? 'contained' : 'outlined'}
+      onClick={() => onSelect(stage.stageId, mode)}
+      disableRipple
+      sx={{
+        ...modeButtonSx,
+        ...(compact ? { flex: 1, minWidth: 0, minHeight: 36, px: 1, fontSize: font.sm } : null),
+        '&&': {
+          backgroundColor: selected ? homePanelColors.band : compact ? palette.white : withAlpha(palette.white, 0.9),
+          borderColor: compact ? homePanelColors.band : selected ? homePanelColors.band : palette.white,
+          color: selected ? palette.white : homePanelColors.band,
+          boxShadow: 'none',
+          transition: 'none',
+        },
+      }}
+    >
+      {label}
+    </Button>
+  )
+
+  if (compact) {
+    return (
+      <Box
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          borderRadius: '12px',
+          backgroundColor: palette.white,
+          boxShadow: `0 1px 0 ${palette.brown200}`,
+          outline: isSelected ? `3px solid ${homePanelColors.band}` : 'none',
+          outlineOffset: -3,
+        }}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            height: 120,
+            flex: 'none',
+            display: 'grid',
+            placeItems: 'center',
+            backgroundImage: `url(${battlefieldImageSrc})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          {iconImageSrc ? (
+            <Box
+              component="img"
+              src={iconImageSrc}
+              alt=""
+              sx={{
+                height: 96,
+                maxWidth: '70%',
+                objectFit: 'contain',
+                imageRendering: isMirror ? 'auto' : 'pixelated',
+              }}
+            />
+          ) : null}
+          {badge ? (
+            <Box
+              component="span"
+              sx={{
+                position: 'absolute',
+                top: 6,
+                left: 6,
+                px: 1,
+                borderRadius: 999,
+                fontSize: font.sm,
+                fontWeight: 800,
+                color: isEndless ? palette.blue900 : palette.sky,
+                backgroundColor: isEndless ? palette.gold300 : palette.purple,
+              }}
+            >
+              {badge}
+            </Box>
+          ) : null}
+        </Box>
+        <Stack spacing={0.5} sx={{ p: 1.5, flex: 1 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: font.md, lineHeight: 1.3, color: homePanelColors.text }}>
+            {stage.name}
+          </Typography>
+          <Stack direction="row" spacing={1.5} sx={{ fontSize: font.sm, color: homePanelColors.label }}>
+            <span>{`${locale.recommendedLevel} ${isMirror ? locale.mirror.hiddenRecommendedLevel : stage.recommendedLevel}`}</span>
+            <span>{`${locale.minRequiredLevel} ${stage.minimumEntryLevel}`}</span>
+          </Stack>
+          <Box sx={{ flex: 1 }} />
+          <Stack direction="row" spacing={0.75} sx={{ pt: 0.5 }}>
+            {modeButton('Solo', isSoloSelected, locale.modeSolo)}
+            {isEndless || isMirror ? null : modeButton('Multi', isMultiSelected, locale.modeMulti)}
+          </Stack>
+        </Stack>
+      </Box>
+    )
+  }
+
   return (
     <Card
       variant="outlined"
@@ -49,16 +152,17 @@ export default function QuestStageModeCard({
         overflow: 'hidden',
         height: '100%',
         borderRadius: 3,
-        borderWidth: isSelected ? 2 : 1,
-        color: '#f4f7ff',
-        backgroundColor: '#243654',
-        borderColor: isSelected ? '#90b4ea' : 'rgba(152, 192, 255, 0.26)',
-        boxShadow: isSelected ? '0 10px 24px rgba(22, 39, 73, 0.22)' : 'none',
+        borderWidth: isSelected ? 3 : 1,
+        color: palette.sky,
+        backgroundColor: palette.blue900,
+        // 選んでいるステージは白の枠で示す
+        borderColor: isSelected ? palette.white : withAlpha(palette.blue300, 0.25),
+        boxShadow: isSelected ? `0 10px 24px ${withAlpha(palette.blue900, 0.25)}` : 'none',
         '&::before': {
           content: '""',
           position: 'absolute',
           inset: 0,
-          backgroundImage: `linear-gradient(135deg, rgba(18, 29, 48, 0.74), rgba(32, 49, 80, 0.66)), url(${battlefieldImageSrc})`,
+          backgroundImage: `linear-gradient(135deg, ${withAlpha(palette.navy, 0.75)}, ${withAlpha(palette.blue900, 0.75)}), url(${battlefieldImageSrc})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           opacity: isSelected ? 1 : 0.95,
@@ -80,8 +184,8 @@ export default function QuestStageModeCard({
             flexShrink: 0,
             display: 'grid',
             placeItems: 'center',
-            background: 'radial-gradient(circle at 30% 30%, #eef4ff 0%, #9cbbe6 100%)',
-            border: '2px solid #a9c3eb',
+            background: `radial-gradient(circle at 30% 30%, ${palette.sky} 0%, ${palette.blue300} 100%)`,
+            border: `2px solid ${palette.blue300}`,
           }}
         >
           {iconImageSrc ? (
@@ -105,7 +209,7 @@ export default function QuestStageModeCard({
         <Stack spacing={1.5} sx={{ flex: 1, width: '100%' }}>
           <Stack spacing={0.5}>
             <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-              <Typography variant="h6" sx={{ lineHeight: 1.2, fontWeight: 900, color: '#ffffff' }}>
+              <Typography variant="h6" sx={{ lineHeight: 1.2, fontWeight: 900, color: palette.white }}>
                 {stage.name}
               </Typography>
               {isEndless ? (
@@ -115,10 +219,10 @@ export default function QuestStageModeCard({
                     px: 1,
                     py: 0.25,
                     borderRadius: 999,
-                    fontSize: '0.7rem',
+                    fontSize: font.sm,
                     fontWeight: 800,
-                    color: '#1b2c4a',
-                    backgroundColor: '#ffd66e',
+                    color: palette.blue900,
+                    backgroundColor: palette.gold300,
                     letterSpacing: '0.04em',
                   }}
                 >
@@ -132,10 +236,10 @@ export default function QuestStageModeCard({
                     px: 1,
                     py: 0.25,
                     borderRadius: 999,
-                    fontSize: '0.7rem',
+                    fontSize: font.sm,
                     fontWeight: 800,
-                    color: '#f4f7ff',
-                    backgroundColor: '#6b4fa8',
+                    color: palette.sky,
+                    backgroundColor: palette.purple,
                     letterSpacing: '0.04em',
                   }}
                 >
@@ -143,10 +247,10 @@ export default function QuestStageModeCard({
                 </Box>
               ) : null}
             </Stack>
-            <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.78)' }}>
+            <Typography variant="body2" sx={{ color: withAlpha(palette.sky, 0.75) }}>
               {`${locale.recommendedLevel} ${isMirror ? locale.mirror.hiddenRecommendedLevel : stage.recommendedLevel}`}
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(222, 236, 255, 0.78)' }}>
+            <Typography variant="body2" sx={{ color: withAlpha(palette.sky, 0.75) }}>
               {`${locale.minRequiredLevel} ${stage.minimumEntryLevel}`}
             </Typography>
           </Stack>
@@ -159,9 +263,9 @@ export default function QuestStageModeCard({
               sx={{
                 ...modeButtonSx,
                 '&&': {
-                  backgroundColor: isSoloSelected ? '#7ab4ff' : 'rgba(240, 246, 255, 0.92)',
-                  borderColor: '#7ab4ff',
-                  color: isSoloSelected ? '#13253f' : '#365a90',
+                  backgroundColor: isSoloSelected ? homePanelColors.band : withAlpha(palette.white, 0.9),
+                  borderColor: isSoloSelected ? homePanelColors.band : palette.white,
+                  color: isSoloSelected ? palette.white : homePanelColors.band,
                   boxShadow: 'none',
                   transition: 'none',
                 },
@@ -177,9 +281,9 @@ export default function QuestStageModeCard({
                 sx={{
                   ...modeButtonSx,
                   '&&': {
-                    backgroundColor: isMultiSelected ? '#9ed8ce' : 'rgba(239, 252, 248, 0.92)',
-                    borderColor: '#9ed8ce',
-                    color: isMultiSelected ? '#173a34' : '#2e6e64',
+                    backgroundColor: isMultiSelected ? homePanelColors.band : withAlpha(palette.white, 0.9),
+                    borderColor: isMultiSelected ? homePanelColors.band : palette.white,
+                    color: isMultiSelected ? palette.white : homePanelColors.band,
                     boxShadow: 'none',
                     transition: 'none',
                   },
