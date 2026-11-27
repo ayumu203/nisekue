@@ -23,6 +23,8 @@ interface JobChangeTabProps {
   isWide: boolean
   // 箱をすぐ上のタブの帯とつなげる（スマホ）
   attachToTabs: boolean
+  // 転職ボタンの id（チュートリアルで指すとき）
+  changeButtonId?: string
 }
 
 type ActorState = 'current' | 'open' | 'locked'
@@ -33,6 +35,7 @@ export default function JobChangeTab({
   onJobChange,
   isWide,
   attachToTabs,
+  changeButtonId,
 }: JobChangeTabProps) {
   const baseJobs = BASE_JOB_ORDER.map((code) => (player.jobProfiles ?? []).find((job) => job.code === code)).filter(
     (job): job is PlayerJob => job != null,
@@ -60,6 +63,7 @@ export default function JobChangeTab({
       isSubmitting={isSubmittingJobValue !== null}
       onChange={() => onJobChange(selectedJob.value)}
       compact={!isWide}
+      buttonId={changeButtonId}
     />
   ) : null
 
@@ -377,15 +381,18 @@ function SelectFooter({
   isSubmitting,
   onChange,
   compact,
+  buttonId,
 }: {
   job: PlayerJob
   isMaxLevel: boolean
   isSubmitting: boolean
   onChange: () => void
   compact: boolean
+  buttonId?: string
 }) {
   const button = (
     <Button
+      id={buttonId}
       onClick={onChange}
       disabled={isSubmitting}
       sx={{

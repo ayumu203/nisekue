@@ -25,7 +25,7 @@ import { useAuth } from '@/contexts/useAuth'
 import { useNotify } from '@/contexts/useNotify'
 import { trainingPanelColors } from '@/constants/styles'
 import { useMobileScrollToRef } from '@/hooks/useMobileScrollToRef'
-import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
+import { getTutorialStep, setTutorialStep, type TutorialStep } from '@/lib/tutorial'
 import { getNextMoveTurnIndex } from '@/lib/trainingMovePlan'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
@@ -135,6 +135,8 @@ export default function Training() {
   const userId = session?.user.id ?? null
   const [tutorialStep, setTutorialStepState] = useState(() => (userId ? getTutorialStep(userId) : null))
   const [opponentsPage, setOpponentsPage] = useState(1)
+  // 「OK」で閉じた案内。戦闘ボタンなどに重ならないように、この画面にいる間は出さない
+  const [closedTutorialStep, setClosedTutorialStep] = useState<TutorialStep | null>(null)
 
   function advanceTutorial(next: Parameters<typeof setTutorialStep>[1]): void {
     if (!userId) {
@@ -817,11 +819,23 @@ export default function Training() {
           message={tutorialLocale.steps.trainingConfirm.message}
         />
       )}
-      {tutorialStep === 'training-to-lv5' && (
-        <SpotlightTutorial guide="instructor" message={tutorialLocale.steps.trainingToLv5.message} />
+      {tutorialStep === 'training-to-lv5' && closedTutorialStep !== 'training-to-lv5' && (
+        <SpotlightTutorial
+          guide="instructor"
+          message={tutorialLocale.steps.trainingToLv5.message}
+          showDismiss
+          dismissLabel={tutorialLocale.closeLabel}
+          onDismiss={() => setClosedTutorialStep('training-to-lv5')}
+        />
       )}
-      {tutorialStep === 'training-to-lv7' && (
-        <SpotlightTutorial guide="instructor" message={tutorialLocale.steps.trainingToLv7.message} />
+      {tutorialStep === 'training-to-lv7' && closedTutorialStep !== 'training-to-lv7' && (
+        <SpotlightTutorial
+          guide="instructor"
+          message={tutorialLocale.steps.trainingToLv7.message}
+          showDismiss
+          dismissLabel={tutorialLocale.closeLabel}
+          onDismiss={() => setClosedTutorialStep('training-to-lv7')}
+        />
       )}
       {tutorialStep === 'training-quest-guide' && (
         <SpotlightTutorial
