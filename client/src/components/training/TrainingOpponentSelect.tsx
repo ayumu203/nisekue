@@ -6,6 +6,7 @@ import type { PlayerSummary } from '@/schema/player'
 import locale from '../../../locale/training/Training.json'
 import TrainingSelectCard from './TrainingSelectCard'
 import { trainingCardGridSx } from './trainingSelectStyles'
+import { palette } from '@/theme/tokens'
 
 type TrainingOpponentSelectProps = {
   opponents: PlayerSummary[]
@@ -72,13 +73,13 @@ export default function TrainingOpponentSelect({
             count={pageCount}
             onChange={handlePageChange}
             sx={{
-              '& .MuiPaginationItem-root': {
-                color: '#5a3a10',
+              '& .MuiPaginationItem-root.MuiPaginationItem-root': {
+                color: palette.brown900,
                 fontWeight: 700,
-                border: '1px solid #c6cdd8',
+                border: `1px solid ${palette.gray300}`,
               },
-              '& .MuiPaginationItem-root.Mui-selected, & .MuiPaginationItem-root.Mui-selected:hover': {
-                color: '#ffffff',
+              '& .MuiPaginationItem-root.MuiPaginationItem-root.Mui-selected': {
+                color: palette.white,
                 backgroundColor: trainingPanelColors.band,
                 borderColor: trainingPanelColors.band,
               },

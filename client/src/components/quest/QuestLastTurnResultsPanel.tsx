@@ -2,6 +2,7 @@ import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material'
 import { greenOutlinedInputSx, panelPrimaryButtonSx } from '@/constants/styles'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import type { QuestRunDetailResponse } from '@/schema/quest'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type QuestLastTurnResultsPanelProps = {
   run: QuestRunDetailResponse | null | undefined
@@ -26,15 +27,15 @@ type QuestLastTurnResultsPanelProps = {
 function getLogToneColor(tone: 'Default' | 'Damage' | 'Ailment' | 'Buff' | 'Heal'): string {
   switch (tone) {
     case 'Damage':
-      return '#c62828'
+      return palette.red700
     case 'Ailment':
-      return '#2e7d32'
+      return palette.green400
     case 'Buff':
-      return '#ef6c00'
+      return palette.red700
     case 'Heal':
-      return '#0288d1'
+      return palette.blue700
     default:
-      return '#3b2f1f'
+      return palette.brown900
   }
 }
 
@@ -57,10 +58,10 @@ function ChatMessageItem({
       spacing={1}
       sx={{
         px: 0.75,
-        py: 0.85,
+        py: 0.75,
         borderRadius: 2,
-        backgroundColor: 'rgba(255, 251, 241, 0.92)',
-        border: '1px solid #dbcba7',
+        backgroundColor: withAlpha(palette.cream, 0.9),
+        border: `1px solid ${palette.brown200}`,
       }}
     >
       <Box
@@ -70,8 +71,8 @@ function ChatMessageItem({
           height: 42,
           borderRadius: 1.5,
           overflow: 'hidden',
-          backgroundColor: '#f5efe2',
-          border: '1px solid #d7c7a0',
+          backgroundColor: palette.cream,
+          border: `1px solid ${palette.brown200}`,
           display: 'grid',
           placeItems: 'center',
         }}
@@ -96,13 +97,13 @@ function ChatMessageItem({
         )}
       </Box>
 
-      <Stack spacing={0.3} sx={{ minWidth: 0 }}>
-        <Typography variant="caption" sx={{ fontWeight: 700, color: '#5a4421', fontSize: '0.8125rem' }}>
+      <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, color: palette.brown900, fontSize: font.sm }}>
           {displayName}
         </Typography>
         <Typography
           variant="body2"
-          sx={{ color: '#322617', lineHeight: 1.5, wordBreak: 'break-word', fontSize: { sm: '1rem' } }}
+          sx={{ color: palette.brown900, lineHeight: 1.5, wordBreak: 'break-word', fontSize: { sm: font.md } }}
         >
           {message}
         </Typography>
@@ -155,7 +156,7 @@ export default function QuestLastTurnResultsPanel({
             sx={{
               ...greenOutlinedInputSx,
               '& .MuiInputBase-root': {
-                backgroundColor: '#fffdf8',
+                backgroundColor: palette.white,
               },
             }}
           />
@@ -177,7 +178,7 @@ export default function QuestLastTurnResultsPanel({
           <Stack spacing={1}>
             {currentTurnMessages.length > 0 ? (
               <Stack spacing={0.75}>
-                <Stack spacing={0.6}>
+                <Stack spacing={0.5}>
                   {currentTurnMessages.map((message, index) => (
                     <ChatMessageItem
                       key={`${message.senderParticipantId}-${message.sentAt}-${index}`}
@@ -193,7 +194,7 @@ export default function QuestLastTurnResultsPanel({
 
             {lastTurnMessages.length > 0 ? (
               <Stack spacing={0.75}>
-                <Stack spacing={0.6}>
+                <Stack spacing={0.5}>
                   {lastTurnMessages.map((message, index) => (
                     <ChatMessageItem
                       key={`${message.senderParticipantId}-${message.sentAt}-${index}`}
@@ -215,12 +216,12 @@ export default function QuestLastTurnResultsPanel({
                     sx={{
                       px: 0.5,
                       py: 0.75,
-                      borderBottom: '1px solid #c9c2b7',
+                      borderBottom: `1px solid ${palette.gray300}`,
                     }}
                   >
                     <Typography
                       variant="body2"
-                      sx={{ fontWeight: 600, color: '#3b2f1f', lineHeight: 1.6, fontSize: { sm: '1rem' } }}
+                      sx={{ fontWeight: 600, color: palette.brown900, lineHeight: 1.6, fontSize: { sm: font.md } }}
                     >
                       {log.segments.map((segment, segmentIndex) => (
                         <Box

@@ -21,75 +21,60 @@ import ThreadPageShell from '@/components/common/ThreadPageShell'
 import { useAuth } from '@/contexts/useAuth'
 import { resolveCharacterAssetPath } from '@/lib/assets'
 import locale from '../../locale/threads/ThreadDetail.json'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 const boardSx = {
-  backgroundColor: '#7b553d',
-  borderColor: '#5f3f2b',
-  color: '#f5eadc',
+  backgroundColor: palette.brown500,
+  borderColor: palette.brown900,
+  color: palette.cream,
 } as const
 
 const accentSx = {
-  color: '#295d63',
+  color: palette.teal700,
 } as const
 
 const inputSx = {
   '& .MuiOutlinedInput-root': {
     borderRadius: 2,
-    backgroundColor: '#fff7ea',
+    backgroundColor: palette.cream,
+    '--input-outline-color': palette.brown500,
     '& fieldset': {
-      borderColor: '#94704c',
-    },
-    '&:hover fieldset': {
-      borderColor: '#94704c',
+      borderColor: palette.brown500,
     },
     '&.Mui-focused fieldset': {
-      borderColor: '#6f4d34',
+      borderColor: palette.brown900,
       borderWidth: 2,
     },
   },
   '& .MuiInputLabel-root.Mui-focused': {
-    color: '#5b4030',
+    color: palette.brown900,
   },
 } as const
 
 const flatPrimaryButtonSx = {
   borderRadius: 2,
   minHeight: 42,
-  backgroundColor: '#5b4030',
-  color: '#fff8ef',
+  backgroundColor: palette.brown900,
+  color: palette.cream,
   boxShadow: 'none',
-  '&:hover': {
-    backgroundColor: '#5b4030',
-    boxShadow: 'none',
-  },
 } as const
 
 const flatSecondaryButtonSx = {
   borderRadius: 2,
   minHeight: 36,
-  borderColor: '#8b7a64',
-  color: '#4f392c',
+  borderColor: palette.gray600,
+  color: palette.brown900,
   backgroundColor: 'transparent',
   boxShadow: 'none',
-  '&:hover': {
-    borderColor: '#8b7a64',
-    backgroundColor: 'transparent',
-    boxShadow: 'none',
-  },
 } as const
 
 const deleteButtonSx = {
   borderRadius: 2,
   minHeight: 36,
-  borderColor: '#b22c1c',
-  color: '#b22c1c',
+  borderColor: palette.red700,
+  color: palette.red700,
   backgroundColor: 'transparent',
   boxShadow: 'none',
-  '&:hover': {
-    borderColor: '#b22c1c',
-    backgroundColor: '#ffece8',
-    boxShadow: 'none',
-  },
 } as const
 
 function formatDate(value: string | null): string {
@@ -171,7 +156,12 @@ export default function ThreadDetail() {
               {isDeleting ? <CircularProgress size={18} color="inherit" /> : locale.deleteButton}
             </Button>
           ) : null}
-          <Button component={Link} to="/threads" variant="outlined" sx={{ ...flatSecondaryButtonSx, color: '#295d63' }}>
+          <Button
+            component={Link}
+            to="/threads"
+            variant="outlined"
+            sx={{ ...flatSecondaryButtonSx, color: palette.teal700 }}
+          >
             {locale.backToList}
           </Button>
         </Stack>
@@ -194,9 +184,9 @@ export default function ThreadDetail() {
           <Alert severity="warning">{locale.threadMissing}</Alert>
         ) : (
           <>
-            <Paper variant="outlined" sx={{ ...boardSx, borderRadius: 3, p: { xs: 2, sm: 2.75 } }}>
+            <Paper variant="outlined" sx={{ ...boardSx, borderRadius: 3, p: { xs: 2, sm: 3 } }}>
               <Stack spacing={2}>
-                <Typography variant="overline" sx={{ letterSpacing: '0.22em', color: 'rgba(246, 239, 220, 0.76)' }}>
+                <Typography variant="overline" sx={{ letterSpacing: '0.22em', color: withAlpha(palette.cream, 0.75) }}>
                   THREAD DETAIL
                 </Typography>
                 <Typography
@@ -204,9 +194,9 @@ export default function ThreadDetail() {
                   fontWeight={900}
                   lineHeight={1.05}
                   sx={{
-                    color: '#f8efe4',
+                    color: palette.cream,
                     wordBreak: 'break-word',
-                    fontSize: { xs: '1.25rem', sm: '2.4rem', md: '2.85rem' },
+                    fontSize: { xs: font.xl, sm: font.display, md: font.display },
                   }}
                 >
                   {data.title}
@@ -223,30 +213,26 @@ export default function ThreadDetail() {
                       sx={{
                         width: 56,
                         height: 56,
-                        bgcolor: '#c7a57b',
-                        color: '#4f392c',
+                        bgcolor: palette.brown200,
+                        color: palette.brown900,
                         textDecoration: 'none',
                         transition: 'transform 140ms ease, box-shadow 140ms ease',
-                        '&:hover': {
-                          transform: 'translateY(-1px)',
-                          boxShadow: '0 8px 18px rgba(36, 20, 11, 0.18)',
-                        },
                       }}
                     >
                       {data.authorName.slice(0, 1)}
                     </Avatar>
                     <Box>
-                      <Typography variant="h6" fontWeight={900} sx={{ color: '#f8efe4' }}>
+                      <Typography variant="h6" fontWeight={900} sx={{ color: palette.cream }}>
                         {data.authorName}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: 'rgba(64, 43, 28, 0.72)' }}>
+                      <Typography variant="body2" sx={{ color: withAlpha(palette.brown900, 0.75) }}>
                         {locale.createdAt.replace('{value}', formatDate(data.createdAt))}
                       </Typography>
                     </Box>
                   </Stack>
 
-                  <Box sx={{ color: 'rgba(245, 234, 220, 0.9)' }}>
-                    <Typography variant="body2" sx={{ color: '#f0e2d3' }}>
+                  <Box sx={{ color: withAlpha(palette.cream, 0.9) }}>
+                    <Typography variant="body2" sx={{ color: palette.cream }}>
                       {locale.replyCount
                         .replace('{count}', String(data.replies.length))
                         .replace('{last}', formatDate(data.lastRepliedAt))}
@@ -258,11 +244,16 @@ export default function ThreadDetail() {
 
             <Paper
               variant="outlined"
-              sx={{ borderRadius: 3, p: { xs: 2, sm: 2.5 }, backgroundColor: '#d9c6aa', borderColor: '#94704c' }}
+              sx={{
+                borderRadius: 3,
+                p: { xs: 2, sm: 2.5 },
+                backgroundColor: palette.brown200,
+                borderColor: palette.brown500,
+              }}
             >
               <Typography
                 variant="body1"
-                sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#432f22', lineHeight: 1.85 }}
+                sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: palette.brown900, lineHeight: 1.85 }}
               >
                 {data.body}
               </Typography>
@@ -270,14 +261,19 @@ export default function ThreadDetail() {
 
             <Paper
               variant="outlined"
-              sx={{ borderRadius: 3, p: { xs: 2, sm: 2.5 }, backgroundColor: '#d9c6aa', borderColor: '#94704c' }}
+              sx={{
+                borderRadius: 3,
+                p: { xs: 2, sm: 2.5 },
+                backgroundColor: palette.brown200,
+                borderColor: palette.brown500,
+              }}
             >
               <Stack spacing={2}>
                 <Box>
-                  <Typography variant="h5" fontWeight={900} sx={{ color: '#4f392c' }}>
+                  <Typography variant="h5" fontWeight={900} sx={{ color: palette.brown900 }}>
                     {locale.replyForm.title}
                   </Typography>
-                  <Box sx={{ mt: 1, width: 52, height: 4, borderRadius: 999, backgroundColor: '#295d63' }} />
+                  <Box sx={{ mt: 1, width: 52, height: 4, borderRadius: 999, backgroundColor: palette.teal700 }} />
                 </Box>
 
                 {isAnonymous ? <Alert severity="info">{locale.anonymousPostingRestricted}</Alert> : null}
@@ -293,7 +289,7 @@ export default function ThreadDetail() {
                   disabled={isAnonymous || isSubmitting}
                   sx={inputSx}
                 />
-                <Typography variant="caption" sx={{ color: 'rgba(79, 57, 44, 0.68)' }}>
+                <Typography variant="caption" sx={{ color: withAlpha(palette.brown900, 0.75) }}>
                   {locale.replyForm.helper.replace('{count}', String(replyBody.length))}
                 </Typography>
                 <Button
@@ -331,14 +327,20 @@ export default function ThreadDetail() {
 
             <Paper
               variant="outlined"
-              sx={{ borderRadius: 3, p: 0, overflow: 'hidden', backgroundColor: '#d9c6aa', borderColor: '#94704c' }}
+              sx={{
+                borderRadius: 3,
+                p: 0,
+                overflow: 'hidden',
+                backgroundColor: palette.brown200,
+                borderColor: palette.brown500,
+              }}
             >
-              <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2, backgroundColor: '#8a6045' }}>
+              <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2, backgroundColor: palette.brown500 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="h5" fontWeight={900} sx={{ color: '#fff8ef' }}>
+                  <Typography variant="h5" fontWeight={900} sx={{ color: palette.cream }}>
                     {locale.repliesTitle}
                   </Typography>
-                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#295d63' }} />
+                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: palette.teal700 }} />
                 </Stack>
               </Box>
 
@@ -354,12 +356,12 @@ export default function ThreadDetail() {
                       sx={{
                         px: { xs: 2, sm: 2.5 },
                         py: 2,
-                        borderTop: index === 0 ? 'none' : '1px solid rgba(95, 63, 43, 0.18)',
-                        backgroundColor: index % 2 === 0 ? '#d6c4ab' : '#cfbda2',
+                        borderTop: index === 0 ? 'none' : `1px solid ${withAlpha(palette.brown900, 0.25)}`,
+                        backgroundColor: index % 2 === 0 ? palette.brown200 : palette.brown200,
                       }}
                     >
-                      <Stack spacing={1.25}>
-                        <Stack direction="row" spacing={1.25} alignItems="center">
+                      <Stack spacing={1.5}>
+                        <Stack direction="row" spacing={1.5} alignItems="center">
                           <Avatar
                             component={Link}
                             to={`/players/${reply.authorPlayerId}/visit`}
@@ -369,20 +371,16 @@ export default function ThreadDetail() {
                             sx={{
                               width: 40,
                               height: 40,
-                              bgcolor: '#c7a57b',
-                              color: '#4f392c',
+                              bgcolor: palette.brown200,
+                              color: palette.brown900,
                               textDecoration: 'none',
                               transition: 'transform 140ms ease, box-shadow 140ms ease',
-                              '&:hover': {
-                                transform: 'translateY(-1px)',
-                                boxShadow: '0 6px 14px rgba(36, 20, 11, 0.16)',
-                              },
                             }}
                           >
                             {reply.authorName.slice(0, 1)}
                           </Avatar>
                           <Box>
-                            <Typography variant="subtitle1" fontWeight={900} sx={{ color: '#4f392c' }}>
+                            <Typography variant="subtitle1" fontWeight={900} sx={{ color: palette.brown900 }}>
                               {reply.authorName}
                             </Typography>
                             <Typography variant="caption" sx={{ ...accentSx, opacity: 0.84 }}>
@@ -393,7 +391,12 @@ export default function ThreadDetail() {
 
                         <Typography
                           variant="body2"
-                          sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#432f22', lineHeight: 1.75 }}
+                          sx={{
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            color: palette.brown900,
+                            lineHeight: 1.75,
+                          }}
                         >
                           {reply.body}
                         </Typography>

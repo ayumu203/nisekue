@@ -30,6 +30,7 @@ import { resolveCharacterAssetPath } from '@/lib/assets'
 import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/player-rebirth/Rebirth.json'
 import { formatDateTime } from '@/components/quest/questFormat'
+import { palette, withAlpha } from '@/theme/tokens'
 
 const DEFAULT_REQUIRED_LEVEL = 100
 const DEFAULT_REQUIRED_GOLD = 100000
@@ -174,7 +175,7 @@ export default function Rebirth() {
   }
 
   return (
-    <GamePageFrame currentKey="rebirth" currentColor="#8a6a00" background={rebirthPageBackground}>
+    <GamePageFrame currentKey="rebirth" currentColor={palette.gold700} background={rebirthPageBackground}>
       <Stack spacing={{ xs: 1.5, sm: 2 }}>
         {isDesktop ? null : (
           <Stack direction="row" justifyContent="flex-start">
@@ -198,11 +199,11 @@ export default function Rebirth() {
                 <Typography
                   variant="overline"
                   textAlign="center"
-                  sx={{ letterSpacing: '0.16em', color: 'rgba(138, 106, 0, 0.72)', lineHeight: 1.6 }}
+                  sx={{ letterSpacing: '0.16em', color: withAlpha(palette.gold700, 0.75), lineHeight: 1.6 }}
                 >
                   REBIRTH
                 </Typography>
-                <Typography variant="h4" textAlign="center" sx={{ color: '#8a6a00' }}>
+                <Typography variant="h4" textAlign="center" sx={{ color: palette.gold700 }}>
                   {locale.title}
                 </Typography>
               </Stack>
@@ -219,8 +220,7 @@ export default function Rebirth() {
                     sx={{
                       height: 12,
                       borderRadius: 999,
-                      background:
-                        'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(255,232,137,0.9), rgba(227,216,165,0.3))',
+                      background: `linear-gradient(90deg, ${withAlpha(palette.brown200, 0.25)}, ${withAlpha(palette.gold300, 0.9)}, ${withAlpha(palette.brown200, 0.25)})`,
                     }}
                   />
                   <Typography variant="h6" sx={templeSectionTitleSx}>
@@ -244,7 +244,7 @@ export default function Rebirth() {
                 </Stack>
 
                 <Stack
-                  spacing={1.75}
+                  spacing={2}
                   sx={{
                     ...templeColumnSx,
                     minWidth: 0,
@@ -252,16 +252,14 @@ export default function Rebirth() {
                     textAlign: 'center',
                     position: 'relative',
                     overflow: 'hidden',
-                    background:
-                      'linear-gradient(180deg, rgba(255,255,255,0.99) 0%, rgba(244,250,255,0.98) 45%, rgba(255,249,229,0.96) 100%)',
+                    background: `linear-gradient(180deg, ${palette.white} 0%, ${palette.sky} 45%, ${palette.cream} 100%)`,
                   }}
                 >
                   <Box
                     sx={{
                       position: 'absolute',
                       inset: 0,
-                      background:
-                        'linear-gradient(90deg, rgba(233,224,180,0.75) 0, rgba(233,224,180,0.75) 8%, transparent 8%, transparent 92%, rgba(233,224,180,0.75) 92%, rgba(233,224,180,0.75) 100%)',
+                      background: `linear-gradient(90deg, ${withAlpha(palette.brown200, 0.75)} 0, ${withAlpha(palette.brown200, 0.75)} 8%, transparent 8%, transparent 92%, ${withAlpha(palette.brown200, 0.75)} 92%, ${withAlpha(palette.brown200, 0.75)} 100%)`,
                       opacity: 0.55,
                       pointerEvents: 'none',
                     }}
@@ -274,13 +272,12 @@ export default function Rebirth() {
                       right: '10%',
                       height: 10,
                       borderRadius: 999,
-                      background:
-                        'linear-gradient(90deg, rgba(255,255,255,0.55), rgba(247,219,105,0.95), rgba(255,255,255,0.55))',
+                      background: `linear-gradient(90deg, ${withAlpha(palette.white, 0.5)}, ${palette.gold300}, ${withAlpha(palette.white, 0.5)})`,
                       pointerEvents: 'none',
                     }}
                   />
                   <Stack spacing={1} alignItems="center" sx={{ position: 'relative' }}>
-                    <Typography variant="h4" fontWeight={900} color="#8a6a00">
+                    <Typography variant="h4" fontWeight={900} color={palette.gold700}>
                       {player.userName}
                     </Typography>
                   </Stack>
@@ -293,11 +290,10 @@ export default function Rebirth() {
                       alignSelf: 'center',
                       borderRadius: '999px 999px 22px 22px',
                       border: '1px solid',
-                      borderColor: '#efe1a6',
-                      background:
-                        'radial-gradient(circle at 50% 12%, rgba(255, 226, 111, 0.95) 0%, rgba(255, 243, 191, 0.78) 22%, rgba(232, 246, 255, 0.96) 48%, rgba(255,255,255,0.99) 72%)',
+                      borderColor: palette.brown200,
+                      background: `radial-gradient(circle at 50% 12%, ${palette.gold300} 0%, ${withAlpha(palette.cream, 0.75)} 22%, ${palette.sky} 48%, ${palette.white} 72%)`,
                       overflow: 'hidden',
-                      boxShadow: '0 20px 44px rgba(225, 193, 83, 0.2)',
+                      boxShadow: `0 20px 44px ${withAlpha(palette.gold300, 0.25)}`,
                       position: 'relative',
                     }}
                   >
@@ -332,8 +328,7 @@ export default function Rebirth() {
                       maxWidth: 320,
                       height: 14,
                       borderRadius: 999,
-                      background:
-                        'linear-gradient(90deg, rgba(225,211,150,0.35), rgba(247,219,105,0.98), rgba(225,211,150,0.35))',
+                      background: `linear-gradient(90deg, ${withAlpha(palette.gold300, 0.25)}, ${palette.gold300}, ${withAlpha(palette.gold300, 0.25)})`,
                       alignSelf: 'center',
                       position: 'relative',
                     }}
@@ -358,8 +353,7 @@ export default function Rebirth() {
                     sx={{
                       height: 12,
                       borderRadius: 999,
-                      background:
-                        'linear-gradient(90deg, rgba(227,216,165,0.3), rgba(145,213,255,0.92), rgba(227,216,165,0.3))',
+                      background: `linear-gradient(90deg, ${withAlpha(palette.brown200, 0.25)}, ${withAlpha(palette.blue300, 0.9)}, ${withAlpha(palette.brown200, 0.25)})`,
                     }}
                   />
                   <Stack spacing={1} alignItems="center" sx={{ pt: 0.5 }}>
@@ -378,9 +372,9 @@ export default function Rebirth() {
                               label={job.displayName}
                               size="small"
                               sx={{
-                                bgcolor: '#fff9e3',
-                                border: '1px solid #eedc90',
-                                color: '#8a6a00',
+                                bgcolor: palette.cream,
+                                border: `1px solid ${palette.gold300}`,
+                                color: palette.gold700,
                               }}
                             />
                           ))}
@@ -426,7 +420,7 @@ export default function Rebirth() {
                       </Typography>
                     </Box>
 
-                    <Divider sx={{ borderColor: '#efe1a6' }} />
+                    <Divider sx={{ borderColor: palette.brown200 }} />
 
                     {statKeys.map((stat) => {
                       const currentValue = player.baseStatus[stat.key]
@@ -441,11 +435,11 @@ export default function Rebirth() {
                               gridTemplateColumns: '1.1fr 0.9fr 1fr 0.9fr',
                               gap: 2,
                               px: 1,
-                              py: 1.25,
+                              py: 1.5,
                               alignItems: 'center',
                             }}
                           >
-                            <Typography variant="body2" fontWeight={700} color="#8a6a00">
+                            <Typography variant="body2" fontWeight={700} color={palette.gold700}>
                               {stat.label}
                             </Typography>
                             <Typography variant="body2">{currentValue}</Typography>
@@ -455,12 +449,12 @@ export default function Rebirth() {
                             <Typography
                               variant="body2"
                               fontWeight={resultStatus ? 700 : 500}
-                              color={resultStatus ? '#8a6a00' : 'text.secondary'}
+                              color={resultStatus ? palette.gold700 : 'text.secondary'}
                             >
                               {actualValue ?? ''}
                             </Typography>
                           </Box>
-                          <Divider sx={{ borderColor: '#f2e8bc' }} />
+                          <Divider sx={{ borderColor: palette.brown200 }} />
                         </Box>
                       )
                     })}
@@ -488,10 +482,10 @@ export default function Rebirth() {
                     {[...rebirthHistory].reverse().map((entry) => (
                       <Box
                         key={entry.rebirthCount}
-                        sx={{ border: '1px solid #efe1a6', borderRadius: 2, p: { xs: 1.5, sm: 2 } }}
+                        sx={{ border: `1px solid ${palette.brown200}`, borderRadius: 2, p: { xs: 1.5, sm: 2 } }}
                       >
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 1, mb: 1 }}>
-                          <Typography variant="subtitle2" fontWeight={700} color="#8a6a00">
+                          <Typography variant="subtitle2" fontWeight={700} color={palette.gold700}>
                             {locale.previousLifeGeneration.replace('{{count}}', String(entry.rebirthCount))}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
@@ -522,12 +516,13 @@ export default function Rebirth() {
                                 {locale.previousLifeDiff}
                               </Typography>
                             </Box>
-                            <Divider sx={{ borderColor: '#efe1a6' }} />
+                            <Divider sx={{ borderColor: palette.brown200 }} />
                             {statKeys.map((stat) => {
                               const pastValue = entry.status[stat.key]
                               const currentValue = player.baseStatus[stat.key]
                               const diff = currentValue - pastValue
-                              const diffColor = diff > 0 ? '#1b7f4b' : diff < 0 ? '#b3261e' : 'text.secondary'
+                              const diffColor =
+                                diff > 0 ? palette.green700 : diff < 0 ? palette.red700 : 'text.secondary'
                               const diffLabel = diff > 0 ? `+${diff}` : String(diff)
 
                               return (
@@ -542,7 +537,7 @@ export default function Rebirth() {
                                       alignItems: 'center',
                                     }}
                                   >
-                                    <Typography variant="body2" fontWeight={700} color="#8a6a00">
+                                    <Typography variant="body2" fontWeight={700} color={palette.gold700}>
                                       {stat.label}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
@@ -553,7 +548,7 @@ export default function Rebirth() {
                                       {diffLabel}
                                     </Typography>
                                   </Box>
-                                  <Divider sx={{ borderColor: '#f2e8bc' }} />
+                                  <Divider sx={{ borderColor: palette.brown200 }} />
                                 </Box>
                               )
                             })}

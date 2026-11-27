@@ -5,6 +5,7 @@ import { resolvePublicAssetPath } from '@/lib/assets'
 import locale from '../../../locale/pet/PetBattle.json'
 import type { PlayerPetView } from '@/schema/pet'
 import type { BattleColumn, BattleRow, PetBattleRoom } from '@/schema/petBattle'
+import { palette, withAlpha } from '@/theme/tokens'
 
 type PetBattleLobbySectionProps = {
   room: PetBattleRoom
@@ -194,11 +195,11 @@ export default function PetBattleLobbySection({
               {
                 '&&': {
                   ...cyberButtonSx['&&'],
-                  color: '#ffffff',
+                  color: palette.white,
                 },
                 '&&.Mui-disabled': {
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  color: 'rgba(255, 255, 255, 0.56)',
+                  background: withAlpha(palette.white, 0.25),
+                  color: withAlpha(palette.white, 0.5),
                   boxShadow: 'none',
                 },
               },

@@ -8,6 +8,7 @@ import { resolvePublicAssetPath } from '@/lib/assets'
 import { completeTutorial } from '@/lib/tutorial'
 import tutorialLocale from '../../../locale/tutorial/Tutorial.json'
 import { getGuidePortraitPlacement, TUTORIAL_GUIDES, type TutorialGuideId } from './tutorialGuides'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type TargetRect = {
   top: number
@@ -28,16 +29,18 @@ type SpotlightTutorialProps = {
   padding?: number
   // 話しているキャラ。指定がなければ受付嬢
   guide?: TutorialGuideId
+  // 周りを暗くするか。ほかの所も自由に操作してよい場面では false にして、枠と矢印だけで示す
+  dimBackground?: boolean
 }
 
 // 実際の画面（歯車ボタン・外枠）の配色に合わせる
-const WINDOW_COLOR = '#93602c'
-const WINDOW_OUTLINE_COLOR = '#6e4415'
-const WINDOW_BORDER_COLOR = '#ffffff'
-const ACCENT_COLOR = '#ffcc00'
-const ACCENT_TEXT_COLOR = '#4f392c'
-const BUBBLE_COLOR = '#fffaf0'
-const BUBBLE_TEXT_COLOR = '#3d2a1e'
+const WINDOW_COLOR = palette.brown500
+const WINDOW_OUTLINE_COLOR = palette.brown500
+const WINDOW_BORDER_COLOR = palette.white
+const ACCENT_COLOR = palette.yellow
+const ACCENT_TEXT_COLOR = palette.brown900
+const BUBBLE_COLOR = palette.cream
+const BUBBLE_TEXT_COLOR = palette.brown900
 // 背景が明るくても暗くても読めるように、ラベルを茶色で縁取る
 const POINTER_LABEL_OUTLINE = [
   [-2, 0],
@@ -51,7 +54,7 @@ const POINTER_LABEL_OUTLINE = [
 ]
   .map(([x, y]) => `${x}px ${y}px 0 ${WINDOW_OUTLINE_COLOR}`)
   .join(', ')
-const OVERLAY_COLOR = 'rgba(20, 12, 4, 0.62)'
+const OVERLAY_COLOR = withAlpha(palette.black, 0.75)
 const POINTER_HEIGHT = 44
 const POINTER_GAP = 6
 
@@ -106,12 +109,22 @@ function useTargetRect(targetId: string | undefined, padding: number): TargetRec
       }
 
       const r = el.getBoundingClientRect()
-      setRect({
+      const next = {
         top: r.top - padding,
         left: r.left - padding,
         width: r.width + padding * 2,
         height: r.height + padding * 2,
-      })
+      }
+      // 位置が変わらないときは更新しない（DOM の変化のたびに描き直さないように）
+      setRect((prev) =>
+        prev &&
+        prev.top === next.top &&
+        prev.left === next.left &&
+        prev.width === next.width &&
+        prev.height === next.height
+          ? prev
+          : next,
+      )
     }
 
     measure()
@@ -121,10 +134,29 @@ function useTargetRect(targetId: string | undefined, padding: number): TargetRec
     const observer = new ResizeObserver(measure)
     observer.observe(document.documentElement)
 
+    // 指す要素が後から表示される（読み込み後に一覧が出るなど）ときにも探し直す。
+    // 全画面のレイアウトではページ全体の大きさが変わらず、ResizeObserver では気づけないため
+    let frame = 0
+    const mutationObserver = new MutationObserver(() => {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        measure()
+      })
+    })
+    mutationObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['id'],
+    })
+
     return () => {
       window.removeEventListener('resize', measure)
       window.removeEventListener('scroll', measure, true)
       observer.disconnect()
+      mutationObserver.disconnect()
+      if (frame) cancelAnimationFrame(frame)
     }
   }, [targetId, padding])
 
@@ -150,6 +182,7 @@ export default function SpotlightTutorial({
   onDismiss,
   padding = 12,
   guide = 'receptionist',
+  dimBackground = true,
   pointerTargetId,
 }: SpotlightTutorialProps) {
   const guideInfo = TUTORIAL_GUIDES[guide]
@@ -214,7 +247,7 @@ export default function SpotlightTutorial({
               width: targetRect.width,
               height: targetRect.height,
               borderRadius: 2,
-              boxShadow: `0 0 0 9999px ${OVERLAY_COLOR}`,
+              boxShadow: dimBackground ? `0 0 0 9999px ${OVERLAY_COLOR}` : 'none',
               border: `3px solid ${ACCENT_COLOR}`,
               boxSizing: 'border-box',
               pointerEvents: 'none',
@@ -234,7 +267,7 @@ export default function SpotlightTutorial({
                 display: 'flex',
                 flexDirection: pointerDirection === 'up' ? 'column' : 'column-reverse',
                 alignItems: 'center',
-                gap: '2px',
+                gap: 0.25,
                 height: POINTER_HEIGHT,
                 justifyContent: pointerDirection === 'up' ? 'flex-start' : 'flex-end',
                 animation: `${pointerDirection === 'up' ? pointUp : pointDown} 0.9s ease-in-out infinite`,
@@ -245,10 +278,10 @@ export default function SpotlightTutorial({
               <Typography
                 component="span"
                 sx={{
-                  fontSize: 15,
+                  fontSize: font.md,
                   fontWeight: 700,
                   lineHeight: 1,
-                  color: '#ffffff',
+                  color: palette.white,
                   textShadow: POINTER_LABEL_OUTLINE,
                   whiteSpace: 'nowrap',
                 }}
@@ -294,7 +327,7 @@ export default function SpotlightTutorial({
               position: 'relative',
               boxSizing: 'border-box',
               overflow: 'hidden',
-              backgroundColor: '#fff7e8',
+              backgroundColor: palette.cream,
               border: `2px solid ${WINDOW_BORDER_COLOR}`,
               borderRadius: '6px',
             }}
@@ -321,7 +354,7 @@ export default function SpotlightTutorial({
               component="p"
               sx={{
                 mb: 0.75,
-                fontSize: { xs: 19, sm: 23 },
+                fontSize: { xs: font.xl, sm: font.xxl },
                 fontWeight: 700,
                 lineHeight: 1.2,
                 letterSpacing: '0.05em',
@@ -333,7 +366,7 @@ export default function SpotlightTutorial({
             <Box
               sx={{
                 position: 'relative',
-                px: { xs: 1.25, sm: 2.25 },
+                px: { xs: 1.5, sm: 2.5 },
                 py: { xs: 1, sm: 1.5 },
                 backgroundColor: BUBBLE_COLOR,
                 borderRadius: '14px',
@@ -355,7 +388,7 @@ export default function SpotlightTutorial({
                   wordBreak: 'keep-all',
                   overflowWrap: 'anywhere',
                   lineHeight: 1.7,
-                  fontSize: { xs: 15, sm: 19 },
+                  fontSize: { xs: font.md, sm: font.xl },
                 }}
               >
                 {renderPhrases(message)}
@@ -363,14 +396,14 @@ export default function SpotlightTutorial({
               {subMessage && (
                 <Typography
                   sx={{
-                    color: '#6b5444',
+                    color: palette.brown900,
                     wordBreak: 'keep-all',
                     overflowWrap: 'anywhere',
                     lineHeight: 1.7,
-                    fontSize: { xs: 14, sm: 16 },
+                    fontSize: { xs: font.sm, sm: font.md },
                     mt: 1,
                     pt: 1,
-                    borderTop: '1px dashed rgba(61, 42, 30, 0.3)',
+                    borderTop: `1px dashed ${withAlpha(palette.brown900, 0.25)}`,
                   }}
                 >
                   {renderPhrases(subMessage)}
@@ -384,7 +417,7 @@ export default function SpotlightTutorial({
                     size="small"
                     variant="text"
                     onClick={handleSkip}
-                    sx={{ color: '#fff1d6', fontSize: { xs: 13, sm: 15 } }}
+                    sx={{ color: palette.cream, fontSize: { xs: font.sm, sm: font.md } }}
                   >
                     {tutorialLocale.debugSkip}
                   </Button>
@@ -401,12 +434,8 @@ export default function SpotlightTutorial({
                         borderColor: WINDOW_BORDER_COLOR,
                         color: ACCENT_TEXT_COLOR,
                         boxShadow: 'none',
-                        fontSize: { xs: 14, sm: 16 },
+                        fontSize: { xs: font.sm, sm: font.md },
                         px: { xs: 2, sm: 2.5 },
-                      },
-                      '&&:hover': {
-                        backgroundColor: '#f2c200',
-                        boxShadow: 'none',
                       },
                     }}
                   >

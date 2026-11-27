@@ -1,5 +1,6 @@
 import { trainingPanelColors } from '@/constants/styles'
 import { resolvePublicAssetPath } from '@/lib/assets'
+import { palette } from '@/theme/tokens'
 
 // 相手カードと戦闘画面の背景。クエストのステージと同じ背景画像を使う
 const trainingBackgroundPaths = [
@@ -44,8 +45,8 @@ export function trainingSelectCardSx(isSelected: boolean, isDisabled: boolean) {
     overflow: 'hidden',
     borderRadius: '12px',
     cursor: isDisabled ? 'default' : 'pointer',
-    backgroundColor: isSelected ? trainingPanelColors.selectedSurface : '#ffffff',
-    boxShadow: '0 1px 0 #dfe3ea',
+    backgroundColor: isSelected ? trainingPanelColors.selectedSurface : palette.white,
+    boxShadow: `0 1px 0 ${palette.sky}`,
     outline: isSelected ? `3px solid ${trainingPanelColors.band}` : 'none',
     outlineOffset: -3,
   } as const
@@ -57,24 +58,21 @@ export const trainingSelectRadioSx = {
   left: 6,
   zIndex: 1,
   p: 0.25,
-  color: '#7f8ea8',
-  backgroundColor: '#ffffff',
-  '&:hover': {
-    backgroundColor: '#ffffff',
-  },
+  color: palette.blue300,
+  backgroundColor: palette.white,
   '&.Mui-checked': {
     color: trainingPanelColors.band,
   },
   '&.Mui-disabled': {
-    color: '#d8ccb4',
+    color: palette.brown200,
   },
 } as const
 
 export const trainingLevelChipSx = {
   height: 24,
   fontWeight: 800,
-  color: '#3a4a66',
-  backgroundColor: '#eef1f6',
+  color: palette.blue900,
+  backgroundColor: palette.sky,
 } as const
 
 // 一覧のマス目。PC は 4 列（戦闘結果の下では 8 列に詰める）、スマホは 2 列

@@ -32,6 +32,7 @@ import { getTutorialStep, setTutorialStep } from '@/lib/tutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
 import locale from '../../locale/treasure-map/TreasureMap.json'
 import type { TreasureMapExpedition, TreasureMapSummary } from '@/schema/treasureMap'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 const mapBackgroundByGrade: Record<TreasureMapSummary['grade'], string> = {
   S: 'image/quest/moonlit-castle-battlefield.svg',
@@ -62,18 +63,14 @@ const primaryButtonSx = {
     backgroundImage: 'none',
     border: `2px solid ${colors.band}`,
     borderRadius: '10px',
-    color: '#ffffff',
-    fontSize: '1rem',
+    color: palette.white,
+    fontSize: font.md,
     fontWeight: 800,
     boxShadow: 'none',
     transition: 'none',
   },
   '& .MuiTouchRipple-root': {
     display: 'none',
-  },
-  '&&:hover': {
-    backgroundColor: colors.band,
-    boxShadow: 'none',
   },
   '&&.Mui-disabled': {
     backgroundColor: colors.disabledButton,
@@ -440,7 +437,7 @@ export default function TreasureMap() {
       component={Link}
       to="/"
       aria-label={locale.backToHome}
-      sx={{ color: '#ffffff', width: 44, height: 44 }}
+      sx={{ color: palette.white, width: 44, height: 44 }}
     >
       <HomeFilledIcon />
     </IconButton>
@@ -477,7 +474,7 @@ export default function TreasureMap() {
           position: 'relative',
           overflow: 'hidden',
           height: mode === 'progress' ? { xs: 200, md: 300 } : { xs: 360, md: 440 },
-          backgroundColor: '#d9e6df',
+          backgroundColor: palette.gray300,
         }}
       >
         <SceneImage src={background} sx={{ inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -502,12 +499,12 @@ export default function TreasureMap() {
               position: 'absolute',
               left: { xs: 10, md: 16 },
               top: { xs: 10, md: 14 },
-              px: 1.25,
+              px: 1.5,
               py: 0.5,
               borderRadius: '8px',
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              backgroundColor: withAlpha(palette.white, 0.75),
               color: colors.text,
-              fontSize: { xs: '0.95rem', md: '1.1rem' },
+              fontSize: { xs: font.md, md: font.lg },
               fontWeight: 800,
             }}
           >
@@ -531,10 +528,10 @@ export default function TreasureMap() {
         {renderScene('progress')}
         <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 1.5, md: 2 }, pb: { xs: 2, md: 2.5 } }}>
           <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-            <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: colors.label }}>
+            <Typography sx={{ fontSize: font.sm, fontWeight: 700, color: colors.label }}>
               {locale.remainingTime}
             </Typography>
-            <Typography sx={{ fontSize: { xs: '1.35rem', md: '1.5rem' }, fontWeight: 800, color: colors.text }}>
+            <Typography sx={{ fontSize: { xs: font.xl, md: font.xxl }, fontWeight: 800, color: colors.text }}>
               {formatSeconds(remainSeconds)}
             </Typography>
           </Stack>
@@ -548,7 +545,7 @@ export default function TreasureMap() {
               mt: 1,
               height: { xs: 10, md: 12 },
               borderRadius: 999,
-              backgroundColor: '#ece6d6',
+              backgroundColor: palette.cream,
               overflow: 'hidden',
             }}
           >
@@ -562,9 +559,9 @@ export default function TreasureMap() {
   // 探索完了：絵の上に RPG のメッセージウィンドウを重ね、見出し・戦利品・経験値とゴールドを出す
   function renderRewardPanel(): ReactNode {
     const statSx = { display: 'flex', flexDirection: 'column' } as const
-    const labelSx = { fontSize: { xs: '0.75rem', md: '0.8125rem' }, color: colors.messageLabel } as const
+    const labelSx = { fontSize: { xs: font.xs, md: font.sm }, color: colors.messageLabel } as const
     const valueSx = {
-      fontSize: { xs: '1.375rem', md: '1.625rem' },
+      fontSize: { xs: font.xxl, md: font.xxxl },
       fontWeight: 800,
       color: colors.messageHighlight,
       lineHeight: 1.2,
@@ -589,24 +586,24 @@ export default function TreasureMap() {
               bottom: { xs: 12, md: 20 },
               px: { xs: 2, md: 3 },
               pt: { xs: 1.5, md: 2 },
-              pb: { xs: 1.75, md: 2.25 },
+              pb: { xs: 2, md: 2.5 },
               backgroundColor: colors.messageWindow,
-              border: '3px solid #ffffff',
+              border: `3px solid ${palette.white}`,
               borderRadius: '12px',
               boxShadow: `0 0 0 3px ${colors.messageWindow}`,
-              color: '#ffffff',
+              color: palette.white,
             }}
           >
-            <Typography sx={{ fontSize: { xs: '1.125rem', md: '1.3rem' }, fontWeight: 800 }}>
+            <Typography sx={{ fontSize: { xs: font.lg, md: font.xl }, fontWeight: 800 }}>
               {locale.finishedMessage.replace('{mapName}', currentMap?.name ?? locale.title)}
             </Typography>
             <Box
               sx={{
-                mt: { xs: 1.25, md: 1.5 },
-                pt: { xs: 1.25, md: 1.5 },
-                borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+                mt: { xs: 1.5, md: 1.5 },
+                pt: { xs: 1.5, md: 1.5 },
+                borderTop: `1px solid ${withAlpha(palette.white, 0.25)}`,
                 display: 'grid',
-                gap: { xs: 1.25, md: 4 },
+                gap: { xs: 1.5, md: 4 },
                 gridTemplateColumns: { xs: 'minmax(0, 1fr) auto', md: 'minmax(0, 1fr) auto auto' },
                 alignItems: 'end',
               }}
@@ -618,7 +615,7 @@ export default function TreasureMap() {
                 <Typography
                   component="span"
                   sx={{
-                    fontSize: { xs: '1.0625rem', md: '1.1875rem' },
+                    fontSize: { xs: font.lg, md: font.xl },
                     fontWeight: 800,
                     color: colors.messageHighlight,
                     lineHeight: 1.5,
@@ -683,7 +680,7 @@ export default function TreasureMap() {
             borderRadius: '10px',
             backgroundColor: colors.soft,
             color: colors.softText,
-            fontSize: { xs: '0.95rem', lg: '1rem' },
+            fontSize: { xs: font.md, lg: font.md },
             fontWeight: 800,
           }}
         >
@@ -718,7 +715,7 @@ export default function TreasureMap() {
   function renderMapRow(map: TreasureMapSummary, index: number): ReactNode {
     const isExploringMap = inProgress && currentExpedition?.mapId === map.mapId
     const dimSx = map.ownedQuantity < 1 ? { opacity: 0.55 } : {}
-    const labelSx = { fontSize: { xs: '0.8125rem', lg: '0.875rem' }, color: colors.label } as const
+    const labelSx = { fontSize: { xs: font.sm, lg: font.sm }, color: colors.label } as const
     const strongSx = { fontWeight: 800, color: colors.text } as const
     const image = (
       <Box
@@ -742,8 +739,8 @@ export default function TreasureMap() {
       </Typography>
     )
     const title = (
-      <Stack direction="row" alignItems="baseline" spacing={1.25} useFlexGap flexWrap="wrap">
-        <Typography component="h3" sx={{ fontSize: { xs: '1.0625rem', lg: '1.25rem' }, ...strongSx }}>
+      <Stack direction="row" alignItems="baseline" spacing={1.5} useFlexGap flexWrap="wrap">
+        <Typography component="h3" sx={{ fontSize: { xs: font.lg, lg: font.xl }, ...strongSx }}>
           {map.name}
         </Typography>
         <Typography component="span" sx={{ ...labelSx, fontWeight: 700 }}>
@@ -763,7 +760,7 @@ export default function TreasureMap() {
     return (
       <Box
         key={map.mapId}
-        sx={{ px: { xs: 2, lg: 2.5 }, py: { xs: 1.75, lg: 1.75 }, borderTop: index === 0 ? 'none' : dottedDivider }}
+        sx={{ px: { xs: 2, lg: 2.5 }, py: { xs: 2, lg: 2 }, borderTop: index === 0 ? 'none' : dottedDivider }}
       >
         {isLarge ? (
           <Stack direction="row" alignItems="center" spacing={2.5}>
@@ -789,7 +786,7 @@ export default function TreasureMap() {
           <>
             <Stack direction="row" spacing={1.5} sx={dimSx}>
               {image}
-              <Stack spacing={0.4} sx={{ minWidth: 0 }}>
+              <Stack spacing={0.5} sx={{ minWidth: 0 }}>
                 {title}
                 {description}
               </Stack>
@@ -799,7 +796,7 @@ export default function TreasureMap() {
               alignItems="center"
               justifyContent="space-between"
               spacing={1}
-              sx={{ mt: 1.25, minHeight: 44 }}
+              sx={{ mt: 1.5, minHeight: 44 }}
             >
               <Stack spacing={0.25} sx={dimSx}>
                 {lootLine}
@@ -865,13 +862,13 @@ export default function TreasureMap() {
 
     let body: ReactNode
     if (rows.length === 0) {
-      body = <Typography sx={{ py: 1.5, fontSize: '0.875rem', color: colors.label }}>{locale.noHistory}</Typography>
+      body = <Typography sx={{ py: 1.5, fontSize: font.sm, color: colors.label }}>{locale.noHistory}</Typography>
     } else if (isLarge) {
       // PC：地図／戦利品／経験値／ゴールドの表
       const headSx = {
-        py: 1.25,
+        py: 1.5,
         px: 0,
-        fontSize: '0.8125rem',
+        fontSize: font.sm,
         fontWeight: 700,
         color: colors.label,
         borderBottom: `1px solid ${colors.divider}`,
@@ -884,7 +881,7 @@ export default function TreasureMap() {
         verticalAlign: 'top',
         color: colors.text,
         textAlign: 'right',
-        fontSize: '0.9375rem',
+        fontSize: font.md,
         fontWeight: 700,
       } as const
       body = (
@@ -920,7 +917,7 @@ export default function TreasureMap() {
                     ...cellSx,
                     borderTop: index === 0 ? 'none' : dottedDivider,
                     textAlign: 'left',
-                    fontSize: '1rem',
+                    fontSize: font.md,
                     fontWeight: 800,
                   }}
                 >
@@ -933,7 +930,7 @@ export default function TreasureMap() {
                     borderTop: index === 0 ? 'none' : dottedDivider,
                     textAlign: 'left',
                     pl: 2,
-                    fontSize: '0.875rem',
+                    fontSize: font.sm,
                     lineHeight: 1.5,
                   }}
                 >
@@ -955,14 +952,14 @@ export default function TreasureMap() {
       body = rows.map((row, index) => (
         <Stack key={row.id} spacing={0.5} sx={{ py: 1.5, borderTop: index === 0 ? 'none' : dottedDivider }}>
           <Stack direction="row" justifyContent="space-between" alignItems="baseline" spacing={1}>
-            <Typography sx={{ fontSize: '1rem', fontWeight: 800, color: colors.text }}>{row.name}</Typography>
-            <Typography sx={{ fontSize: '0.875rem', fontWeight: 700, color: colors.text, ...numberSx }}>
+            <Typography sx={{ fontSize: font.md, fontWeight: 800, color: colors.text }}>{row.name}</Typography>
+            <Typography sx={{ fontSize: font.sm, fontWeight: 700, color: colors.text, ...numberSx }}>
               {row.experience}
               {'　'}
               {row.gold}
             </Typography>
           </Stack>
-          <Typography sx={{ fontSize: '0.8125rem', color: colors.label, lineHeight: 1.5 }}>
+          <Typography sx={{ fontSize: font.sm, color: colors.label, lineHeight: 1.5 }}>
             {locale.lootLabel}：
             <Box component="span" sx={{ fontWeight: 700, color: colors.text }}>
               {row.loot}

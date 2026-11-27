@@ -1,4 +1,5 @@
 import { Button, Stack, Typography } from '@mui/material'
+import { palette, withAlpha } from '@/theme/tokens'
 
 type PaginationControlsProps = {
   page: number
@@ -29,40 +30,31 @@ export default function PaginationControls({
 }: PaginationControlsProps) {
   const secondaryButtonSx = {
     minWidth: 76,
-    color: '#2f646c',
-    borderColor: 'rgba(98, 149, 155, 0.6)',
-    backgroundColor: '#ffffff',
-    '&:hover': {
-      borderColor: 'rgba(84, 130, 136, 0.92)',
-      backgroundColor: '#f1fbf8',
-    },
+    color: palette.teal700,
+    borderColor: withAlpha(palette.teal400, 0.5),
+    backgroundColor: palette.white,
     '&.Mui-disabled': {
-      color: 'rgba(47, 100, 108, 0.45)',
-      borderColor: 'rgba(98, 149, 155, 0.3)',
-      backgroundColor: '#f6fbfa',
+      color: withAlpha(palette.teal700, 0.5),
+      borderColor: withAlpha(palette.teal400, 0.25),
+      backgroundColor: palette.white,
     },
   } as const
 
   const nextButtonSx = {
     minWidth: 76,
-    color: '#ffffff',
-    borderColor: '#3f8f8a',
-    backgroundColor: '#58a9a0',
+    color: palette.white,
+    borderColor: palette.teal400,
+    backgroundColor: palette.teal400,
     boxShadow: 'none',
-    '&:hover': {
-      borderColor: '#327b76',
-      backgroundColor: '#449a92',
-      boxShadow: 'none',
-    },
     '&.Mui-disabled': {
-      color: 'rgba(255, 255, 255, 0.78)',
-      borderColor: '#95c7c2',
-      backgroundColor: '#9fcfc9',
+      color: withAlpha(palette.white, 0.75),
+      borderColor: palette.teal400,
+      backgroundColor: palette.teal400,
     },
   } as const
 
   return (
-    <Stack direction="row" justifyContent="center" alignItems="center" spacing={1.25}>
+    <Stack direction="row" justifyContent="center" alignItems="center" spacing={1.5}>
       <Button variant="outlined" sx={secondaryButtonSx} disabled={page <= 1 || isLoading} onClick={onPrevious}>
         {previousLabel}
       </Button>

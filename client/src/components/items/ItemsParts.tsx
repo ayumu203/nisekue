@@ -2,6 +2,7 @@ import { Box, ButtonBase, InputBase, SvgIcon, type SvgIconProps } from '@mui/mat
 import type { ReactNode } from 'react'
 import { itemsPanelColors as colors } from '@/constants/styles'
 import locale from '../../../locale/items/Items.json'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 export type ItemsTabKey = 'bag' | 'forge' | 'market'
 
@@ -63,10 +64,10 @@ export function MarketTabIcon(props: SvgIconProps) {
 export function CoinIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="9" fill="#e7b43c" stroke="#a8741a" strokeWidth="2" />
+      <circle cx="12" cy="12" r="9" fill={palette.gold300} stroke={palette.gold700} strokeWidth="2" />
       <path
         d="M12 7v10M9 9.5h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H15"
-        stroke="#7a4f0e"
+        stroke={palette.gold700}
         strokeWidth="1.6"
         fill="none"
       />
@@ -114,7 +115,7 @@ export function ItemsTabs({
             px: 0.25,
             backgroundColor: colors.leather,
             // ホームボタンとタブの区切り（ほかの画面の帯と同じ白い線）
-            borderRight: '2px solid rgba(255, 255, 255, 0.85)',
+            borderRight: `2px solid ${withAlpha(palette.white, 0.9)}`,
           }}
         >
           {startAction}
@@ -145,15 +146,15 @@ export function ItemsTabs({
                 px: 0.5,
                 // 選んでいないタブどうしの区切り
                 borderLeft:
-                  index === 0 || selected || previousSelected ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+                  index === 0 || selected || previousSelected ? 'none' : `1px solid ${withAlpha(palette.white, 0.25)}`,
                 // 選んでいるタブは袋の布地の色にして、袋とつなげる
                 backgroundColor: selected ? colors.canvas : colors.tabOff,
-                color: selected ? colors.text : '#ffffff',
+                color: selected ? colors.text : palette.white,
                 fontFamily: 'inherit',
-                fontSize: { xs: '0.9375rem', sm: '1.125rem' },
+                fontSize: { xs: font.md, sm: font.lg },
                 fontWeight: 800,
                 whiteSpace: 'nowrap',
-                '& .MuiSvgIcon-root': { display: { xs: 'none', sm: 'inline-block' }, fontSize: 24 },
+                '& .MuiSvgIcon-root': { display: { xs: 'none', sm: 'inline-block' }, fontSize: font.xxl },
               }}
             >
               {tab.icon}
@@ -180,7 +181,7 @@ export function BagFrame({ children, fill }: { children: ReactNode; fill: boolea
         // 上辺はタブの帯になるので、上の枠と角丸を付けない
         borderTop: 'none',
         borderRadius: '0 0 18px 18px',
-        p: { xs: 0.75, sm: 1.25 },
+        p: { xs: 0.75, sm: 1.5 },
         boxShadow: `0 6px 0 ${colors.leatherDark}`,
       }}
     >
@@ -190,8 +191,8 @@ export function BagFrame({ children, fill }: { children: ReactNode; fill: boolea
           minHeight: 0,
           border: `2px dashed ${colors.stitch}`,
           borderRadius: '12px',
-          px: { xs: 1.25, sm: 2.5 },
-          py: { xs: 1.5, sm: 2.25 },
+          px: { xs: 1.5, sm: 2.5 },
+          py: { xs: 1.5, sm: 2.5 },
           display: 'flex',
           flexDirection: 'column',
           gap: 2,
@@ -236,7 +237,7 @@ export function DoubleFrame({ children, dark = false, fill }: { children: ReactN
         border: `3px solid ${colors.leather}`,
         borderRadius: '18px',
         boxShadow: `0 6px 0 ${colors.leatherDark}`,
-        p: { xs: 0.75, sm: 1.25 },
+        p: { xs: 0.75, sm: 1.5 },
         color: dark ? colors.forgeText : colors.text,
       }}
     >
@@ -247,11 +248,11 @@ export function DoubleFrame({ children, dark = false, fill }: { children: ReactN
           overflow: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: { xs: 2, sm: 2.75 },
+          gap: { xs: 2, sm: 3 },
           border: dark ? `2px solid ${colors.forgeLine}` : `2px dashed ${colors.stitch}`,
           borderRadius: '12px',
-          px: { xs: 1.75, sm: 3 },
-          py: { xs: 2, sm: 2.75 },
+          px: { xs: 2, sm: 3 },
+          py: { xs: 2, sm: 3 },
         }}
       >
         {children}
@@ -267,17 +268,17 @@ export function FrameHeading({ icon, title, dark = false }: { icon: ReactNode; t
       sx={{
         display: 'flex',
         alignItems: 'center',
-        gap: 1.25,
-        pb: 1.75,
+        gap: 1.5,
+        pb: 2,
         borderBottom: dark ? `2px solid ${colors.forgeLine}` : `2px dashed ${colors.stitch}`,
         color: dark ? colors.forgeEmber : colors.leather,
-        '& .MuiSvgIcon-root': { fontSize: 28 },
+        '& .MuiSvgIcon-root': { fontSize: font.xxxl },
       }}
     >
       {icon}
       <Box
         component="h2"
-        sx={{ m: 0, fontSize: '1.5rem', fontWeight: 800, color: dark ? colors.forgeText : colors.text }}
+        sx={{ m: 0, fontSize: font.xxl, fontWeight: 800, color: dark ? colors.forgeText : colors.text }}
       >
         {title}
       </Box>
@@ -288,10 +289,10 @@ export function FrameHeading({ icon, title, dark = false }: { icon: ReactNode; t
 type ActionKind = 'primary' | 'secondary' | 'danger' | 'forge' | 'forgeSecondary'
 
 const actionColors: Record<ActionKind, { bg: string; border: string; text: string }> = {
-  primary: { bg: colors.leather, border: colors.leather, text: '#ffffff' },
+  primary: { bg: colors.leather, border: colors.leather, text: palette.white },
   secondary: { bg: colors.slot, border: colors.leather, text: colors.leather },
   danger: { bg: colors.slot, border: colors.danger, text: colors.dangerText },
-  forge: { bg: colors.forgeButton, border: colors.forgeButton, text: '#ffffff' },
+  forge: { bg: colors.forgeButton, border: colors.forgeButton, text: palette.white },
   forgeSecondary: { bg: 'transparent', border: colors.forgeMuted, text: colors.forgeText },
 }
 
@@ -321,7 +322,7 @@ export function ActionButton({
         backgroundColor: c.bg,
         color: c.text,
         fontFamily: 'inherit',
-        fontSize: '1.0625rem',
+        fontSize: font.lg,
         fontWeight: 800,
         '&.Mui-disabled': { opacity: 0.45 },
       }}
@@ -357,20 +358,20 @@ export function NumberField({
         sx={{
           width,
           height: 50,
-          px: 1.25,
+          px: 1.5,
           boxSizing: 'border-box',
           border: `2px solid ${colors.slotLine}`,
           borderRadius: '10px',
-          backgroundColor: '#ffffff',
+          backgroundColor: palette.white,
           fontFamily: 'inherit',
-          fontSize: '1.375rem',
+          fontSize: font.xxl,
           fontWeight: 800,
           color: colors.text,
           '& input': { textAlign: 'right', p: 0 },
           '&.Mui-disabled': { backgroundColor: colors.canvas },
         }}
       />
-      <Box component="span" sx={{ fontSize: '1.0625rem', fontWeight: 800, color: colors.text }}>
+      <Box component="span" sx={{ fontSize: font.lg, fontWeight: 800, color: colors.text }}>
         {unit}
       </Box>
     </Box>
@@ -383,7 +384,7 @@ export function Operator({ children, dark = false }: { children: ReactNode; dark
     <Box
       component="span"
       aria-hidden="true"
-      sx={{ fontSize: '1.5rem', fontWeight: 800, color: dark ? colors.forgeLabel : colors.label }}
+      sx={{ fontSize: font.xxl, fontWeight: 800, color: dark ? colors.forgeLabel : colors.label }}
     >
       {children}
     </Box>
@@ -394,13 +395,10 @@ export function Operator({ children, dark = false }: { children: ReactNode; dark
 export function GoldChangeRow({ from, to, dark = false }: { from: string; to: string; dark?: boolean }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1 }}>
-      <Box
-        component="span"
-        sx={{ fontSize: '0.9375rem', fontWeight: 800, color: dark ? colors.forgeLabel : colors.label }}
-      >
+      <Box component="span" sx={{ fontSize: font.md, fontWeight: 800, color: dark ? colors.forgeLabel : colors.label }}>
         {locale.goldLabel}
       </Box>
-      <Box component="span" sx={{ fontSize: '1.25rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
+      <Box component="span" sx={{ fontSize: font.xl, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
         {from}{' '}
         <Box component="span" aria-hidden="true" sx={{ color: dark ? colors.forgeEmber : colors.leather }}>
           →

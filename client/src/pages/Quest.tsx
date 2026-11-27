@@ -59,6 +59,7 @@ import type {
   QuestRunDetailResponse,
 } from '@/schema/quest'
 import type { PlayerSummary } from '@/schema/player'
+import { palette, withAlpha } from '@/theme/tokens'
 
 const battleRowOrder: BattleRow[] = ['Front', 'Middle', 'Back']
 const battleColumnOrder: BattleColumn[] = ['Left', 'Right']
@@ -1145,7 +1146,7 @@ export default function Quest() {
       onClick={handleHomeClick}
       aria-label={locale.backToHome}
       disableRipple
-      sx={{ color: '#ffffff', width: 44, height: 44 }}
+      sx={{ color: palette.white, width: 44, height: 44 }}
     >
       <HomeFilledIcon />
     </IconButton>
@@ -1241,7 +1242,7 @@ export default function Quest() {
             <GamePanel tabs={createTabs} startAction={mobileHomeButton} {...panelProps}>
               <Stack spacing={2}>
                 {stages}
-                <Box sx={{ borderTop: '1px solid #eadfc6', pt: 1 }}>{form}</Box>
+                <Box sx={{ borderTop: `1px solid ${palette.brown200}`, pt: 1 }}>{form}</Box>
               </Stack>
             </GamePanel>
           ) : (
@@ -1315,7 +1316,12 @@ export default function Quest() {
                   <Chip
                     size="small"
                     label={`${locale.waitingParticipantsLabel}: ${currentRun.turn.waitingParticipantIds.length}`}
-                    sx={{ mr: 1.5, color: '#ffffff', fontWeight: 700, backgroundColor: 'rgba(255, 255, 255, 0.22)' }}
+                    sx={{
+                      mr: 1.5,
+                      color: palette.white,
+                      fontWeight: 700,
+                      backgroundColor: withAlpha(palette.white, 0.25),
+                    }}
                   />
                 )}
               </Stack>
@@ -1378,8 +1384,8 @@ export default function Quest() {
       ) : null}
       {isRecoveringQuest ? (
         <Stack direction="row" spacing={1} alignItems="center">
-          <CircularProgress size={16} sx={{ color: '#ffffff' }} />
-          <Typography variant="body2" sx={{ color: '#ffffff' }}>
+          <CircularProgress size={16} sx={{ color: palette.white }} />
+          <Typography variant="body2" sx={{ color: palette.white }}>
             {locale.runLoading}
           </Typography>
         </Stack>

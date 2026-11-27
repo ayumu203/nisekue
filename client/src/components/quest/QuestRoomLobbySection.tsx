@@ -25,6 +25,7 @@ import {
 import locale from '../../../locale/quest/QuestRoom.json'
 import type { BattleColumn, BattleRow, QuestRoomDetailResponse } from '@/schema/quest'
 import { resolveCharacterAssetPath, resolveJobAssetPath } from '@/lib/assets'
+import { font, palette } from '@/theme/tokens'
 
 type QuestRoomLobbySectionProps = {
   currentRoom: QuestRoomDetailResponse | null
@@ -160,7 +161,7 @@ export default function QuestRoomLobbySection({
                   minWidth: { xs: 64, sm: 100 },
                   aspectRatio: '4 / 5',
                   borderRadius: 2,
-                  backgroundColor: '#efe4c8',
+                  backgroundColor: palette.cream,
                   overflow: 'hidden',
                   display: 'grid',
                   placeItems: 'center',
@@ -195,7 +196,7 @@ export default function QuestRoomLobbySection({
                     <Chip
                       size="small"
                       label={locale.ownerBadge}
-                      sx={{ color: '#3a2400', backgroundColor: '#ffcc00', fontWeight: 800 }}
+                      sx={{ color: palette.brown900, backgroundColor: palette.yellow, fontWeight: 800 }}
                     />
                   ) : null}
                 </Stack>
@@ -204,7 +205,7 @@ export default function QuestRoomLobbySection({
                   {participant.level != null ? (
                     <Typography
                       variant="body2"
-                      sx={{ whiteSpace: 'nowrap', flexShrink: 0, color: homePanelColors.text, fontSize: '1rem' }}
+                      sx={{ whiteSpace: 'nowrap', flexShrink: 0, color: homePanelColors.text, fontSize: font.md }}
                     >
                       {`${locale.levelLabel}.${participant.level}`}
                     </Typography>
@@ -212,7 +213,7 @@ export default function QuestRoomLobbySection({
                 </Stack>
 
                 {isOwner ? (
-                  <Stack direction="row" spacing={{ xs: 0.75, sm: 1.25 }}>
+                  <Stack direction="row" spacing={{ xs: 0.75, sm: 1.5 }}>
                     <FormControl fullWidth size="small" sx={positionSelectSx}>
                       <InputLabel id={`participant-row-${participant.participantId}`}>{locale.positionRow}</InputLabel>
                       <Select
@@ -277,7 +278,7 @@ export default function QuestRoomLobbySection({
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       color: homePanelColors.text,
-                      fontSize: '0.875rem',
+                      fontSize: font.sm,
                       fontWeight: 700,
                     }}
                   >
@@ -293,7 +294,7 @@ export default function QuestRoomLobbySection({
         <Stack direction="row" spacing={1.5} sx={{ pt: 0.5 }}>
           <Button
             variant="contained"
-            startIcon={<PlayArrowIcon sx={{ fontSize: 20 }} />}
+            startIcon={<PlayArrowIcon sx={{ fontSize: font.xl }} />}
             onClick={() => void onStartQuest()}
             disabled={isStartDisabled || isSavingFormation}
             sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, flex: 1, minHeight: 52 }}
@@ -302,7 +303,7 @@ export default function QuestRoomLobbySection({
           </Button>
           <Button
             variant="outlined"
-            startIcon={<CancelIcon sx={{ fontSize: 20 }} />}
+            startIcon={<CancelIcon sx={{ fontSize: font.xl }} />}
             onClick={() => void onCancelRoom()}
             disabled={isStarting || isCancellingRoom || !isRecruiting}
             sx={{ ...menuButtonSx, ...panelCancelButtonSx, flex: 1, minHeight: 52 }}

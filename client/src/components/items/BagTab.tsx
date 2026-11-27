@@ -15,6 +15,7 @@ import {
 } from './itemUtils'
 import locale from '../../../locale/items/Items.json'
 import type { InventoryItemView, ItemEquipmentView } from '@/schema/item'
+import { font, palette } from '@/theme/tokens'
 
 const slotHeight = { xs: 108, sm: 132 }
 
@@ -45,7 +46,7 @@ function BagSlot({ item, selected, onSelect }: { item: InventoryItemView; select
       <Box
         component="span"
         sx={{
-          fontSize: '0.75rem',
+          fontSize: font.xs,
           fontWeight: 800,
           color: colors.text,
           textAlign: 'center',
@@ -69,8 +70,8 @@ function BagSlot({ item, selected, onSelect }: { item: InventoryItemView; select
               px: 0.75,
               borderRadius: '6px',
               backgroundColor: colors.leatherDark,
-              color: '#ffffff',
-              fontSize: '0.8125rem',
+              color: palette.white,
+              fontSize: font.sm,
               fontWeight: 800,
             }}
           >
@@ -84,7 +85,7 @@ function BagSlot({ item, selected, onSelect }: { item: InventoryItemView; select
               position: 'absolute',
               right: 4,
               bottom: 4,
-              fontSize: '0.9375rem',
+              fontSize: font.md,
               fontWeight: 800,
               color: colors.text,
             }}
@@ -120,7 +121,7 @@ export function BagPanel({
 }) {
   return (
     <BagFrame fill={fill}>
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: '4px', m: '-4px' }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 0.5, m: -0.5 }}>
         {isLoading ? (
           <Typography sx={{ color: colors.label }}>{locale.loading}</Typography>
         ) : (
@@ -133,7 +134,7 @@ export function BagPanel({
                 lg: 'repeat(8, minmax(0, 1fr))',
                 xl: 'repeat(10, minmax(0, 1fr))',
               },
-              gap: { xs: 0.75, sm: 1.25 },
+              gap: { xs: 0.75, sm: 1.5 },
             }}
           >
             {items.map((item) => {
@@ -157,13 +158,13 @@ export function BagPanel({
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 1.5,
-          pt: 1.75,
+          pt: 2,
           borderTop: `2px dashed ${colors.stitch}`,
         }}
       >
-        <Typography component="span" sx={{ fontSize: '0.9375rem', color: colors.label }}>
+        <Typography component="span" sx={{ fontSize: font.md, color: colors.label }}>
           {locale.slotsLabel}{' '}
-          <Box component="b" sx={{ fontSize: '1.375rem', color: colors.text }}>
+          <Box component="b" sx={{ fontSize: font.xxl, color: colors.text }}>
             {usedSlots ?? '-'}
           </Box>{' '}
           / {capacity ?? '-'}
@@ -172,17 +173,17 @@ export function BagPanel({
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 1.25,
-            px: 2.25,
+            gap: 1.5,
+            px: 2.5,
             py: 1,
             borderRadius: 999,
             backgroundColor: colors.leatherDark,
-            color: '#ffe7a8',
+            color: palette.gold300,
             fontVariantNumeric: 'tabular-nums',
           }}
         >
-          <CoinIcon sx={{ fontSize: 22 }} />
-          <Box component="b" sx={{ fontSize: '1.25rem' }}>
+          <CoinIcon sx={{ fontSize: font.xxl }} />
+          <Box component="b" sx={{ fontSize: font.xl }}>
             {gold != null ? formatGold(gold) : '-'}
           </Box>
         </Box>
@@ -204,7 +205,7 @@ function EquippedSlot({
 }) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.75, width: { xs: 96, sm: 150 } }}>
-      <Typography component="span" sx={{ fontSize: '0.875rem', fontWeight: 800, color: colors.label }}>
+      <Typography component="span" sx={{ fontSize: font.sm, fontWeight: 800, color: colors.label }}>
         {label}
       </Typography>
       <ButtonBase
@@ -218,7 +219,7 @@ function EquippedSlot({
           height: { xs: 84, sm: 112 },
           display: 'grid',
           placeItems: 'center',
-          backgroundColor: '#ffffff',
+          backgroundColor: palette.white,
           borderRadius: '16px',
           border: selected
             ? `3px solid ${colors.brass}`
@@ -232,7 +233,7 @@ function EquippedSlot({
       </ButtonBase>
       <Typography
         component="span"
-        sx={{ fontSize: '0.9375rem', fontWeight: 800, color: colors.text, textAlign: 'center', minHeight: '1.5em' }}
+        sx={{ fontSize: font.md, fontWeight: 800, color: colors.text, textAlign: 'center', minHeight: '1.5em' }}
       >
         {item ? `${item.name} ${formatPlusValue(item.plusValue)}`.trim() : locale.emptyEquipped}
       </Typography>
@@ -265,7 +266,7 @@ export function MirrorPanel({
           justifyContent: 'center',
           gap: 1,
           px: 2.5,
-          pt: 2.25,
+          pt: 2.5,
           pb: 2,
         }}
       >
@@ -297,8 +298,8 @@ export function MirrorPanel({
       {changes && changes.length > 0 ? (
         <Box
           sx={{
-            mx: { xs: 2, sm: 2.75 },
-            mb: 2.25,
+            mx: { xs: 2, sm: 3 },
+            mb: 2.5,
             px: 2,
             py: 1.5,
             borderRadius: '12px',
@@ -323,7 +324,7 @@ export function MirrorPanel({
                   display: 'grid',
                   gridTemplateColumns: '2.8em 2.4em 1.6em 2.4em auto',
                   alignItems: 'baseline',
-                  fontSize: '1.0625rem',
+                  fontSize: font.lg,
                   color: colors.text,
                   fontVariantNumeric: 'tabular-nums',
                   whiteSpace: 'nowrap',
@@ -335,7 +336,7 @@ export function MirrorPanel({
                   →
                 </Box>
                 <b>{change.to}</b>
-                <Box component="b" sx={{ fontSize: '0.9375rem', color: diff > 0 ? colors.up : colors.down }}>
+                <Box component="b" sx={{ fontSize: font.md, color: diff > 0 ? colors.up : colors.down }}>
                   {diff > 0 ? `▲${diff}` : `▼${-diff}`}
                 </Box>
               </Box>
@@ -356,7 +357,7 @@ function DetailRow({ label, value, first }: { label: string; value: ReactNode; f
         gap: 2,
         py: 1,
         borderTop: first ? 'none' : `1px dashed ${colors.stitch}`,
-        fontSize: '1rem',
+        fontSize: font.md,
       }}
     >
       <Box component="span" sx={{ color: colors.label, flex: 'none', whiteSpace: 'nowrap' }}>
@@ -465,7 +466,7 @@ export function ItemDetailPanel({
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: 1.25,
+            gap: 1.5,
           }}
         >
           <NumberField
@@ -484,11 +485,11 @@ export function ItemDetailPanel({
             width={80}
           />
           <Operator>=</Operator>
-          <Box component="span" sx={{ fontSize: '1.625rem', fontWeight: 800, color: colors.text }}>
+          <Box component="span" sx={{ fontSize: font.xxxl, fontWeight: 800, color: colors.text }}>
             {formatGold(unitPrice * quantity)}
           </Box>
         </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.25 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1.5 }}>
           <ActionButton kind="primary" onClick={onList} disabled={busy || unitPrice < 1 || quantity < 1}>
             {locale.actionList}
           </ActionButton>
@@ -500,7 +501,7 @@ export function ItemDetailPanel({
     )
   } else if (!isEquipped) {
     actions = (
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.25 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.5 }}>
         {item.kind === 'equipment' ? (
           <ActionButton kind="primary" onClick={onEquip} disabled={busy || item.status === 'Broken'}>
             {locale.actionEquip}
@@ -522,7 +523,7 @@ export function ItemDetailPanel({
 
   return (
     <TagCard fill={fill}>
-      <Box sx={{ p: { xs: 2, sm: 2.75 }, display: 'flex', flexDirection: 'column', gap: 1.75 }}>
+      <Box sx={{ p: { xs: 2, sm: 3 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
             sx={{
@@ -531,7 +532,7 @@ export function ItemDetailPanel({
               flex: 'none',
               display: 'grid',
               placeItems: 'center',
-              backgroundColor: '#ffffff',
+              backgroundColor: palette.white,
               border: `3px solid ${colors.slotLine}`,
               borderRadius: '16px',
             }}
@@ -539,11 +540,11 @@ export function ItemDetailPanel({
             <ItemIcon item={item} size={64} />
           </Box>
           <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography component="h2" sx={{ m: 0, fontSize: '1.5rem', fontWeight: 800, color: colors.text }}>
+            <Typography component="h2" sx={{ m: 0, fontSize: font.xxl, fontWeight: 800, color: colors.text }}>
               {title}
             </Typography>
             {item.flavorText ? (
-              <Typography sx={{ fontSize: '0.9375rem', color: colors.label }}>{item.flavorText}</Typography>
+              <Typography sx={{ fontSize: font.md, color: colors.label }}>{item.flavorText}</Typography>
             ) : null}
           </Box>
         </Box>

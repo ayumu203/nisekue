@@ -12,6 +12,7 @@ import {
   formatExpProgress,
   formatStatusValue,
 } from '@/lib/playerStatus'
+import { font, palette } from '@/theme/tokens'
 
 type HomeStatusPanelProps = {
   player: GetPlayerResponse | undefined
@@ -26,11 +27,11 @@ function StatLine({ label, value, rank }: { label: string; value: ReactNode; ran
     <Stack
       direction="row"
       alignItems="center"
-      spacing={1.25}
+      spacing={1.5}
       sx={{ py: 1, borderBottom: `1px dotted ${homePanelColors.divider}` }}
     >
-      <Typography sx={{ flex: 1, fontSize: '0.875rem', color: homePanelColors.label }}>{label}</Typography>
-      <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: homePanelColors.text, whiteSpace: 'nowrap' }}>
+      <Typography sx={{ flex: 1, fontSize: font.sm, color: homePanelColors.label }}>{label}</Typography>
+      <Typography sx={{ fontSize: font.md, fontWeight: 700, color: homePanelColors.text, whiteSpace: 'nowrap' }}>
         {value}
       </Typography>
       {rank ? (
@@ -40,7 +41,7 @@ function StatLine({ label, value, rank }: { label: string; value: ReactNode; ran
             flex: 'none',
             minWidth: 34,
             textAlign: 'center',
-            fontSize: '0.8125rem',
+            fontSize: font.sm,
             fontWeight: 900,
             lineHeight: 1.5,
             border: '1.5px solid',
@@ -68,8 +69,8 @@ function ChevronIcon(props: SvgIconProps) {
 function SmallStat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <Stack direction="row" justifyContent="space-between" spacing={1}>
-      <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>{label}</Typography>
-      <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: homePanelColors.text, whiteSpace: 'nowrap' }}>
+      <Typography sx={{ fontSize: font.sm, color: homePanelColors.label }}>{label}</Typography>
+      <Typography sx={{ fontSize: font.md, fontWeight: 700, color: homePanelColors.text, whiteSpace: 'nowrap' }}>
         {value}
       </Typography>
     </Stack>
@@ -122,7 +123,7 @@ export default function HomeStatusPanel({ player, compact = false }: HomeStatusP
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" spacing={1.75} alignItems="stretch">
+      <Stack direction="row" spacing={2} alignItems="stretch">
         <Box
           sx={{
             width: compact ? 96 : 120,
@@ -154,19 +155,21 @@ export default function HomeStatusPanel({ player, compact = false }: HomeStatusP
           ) : null}
         </Box>
         <Stack sx={{ flex: 1, minWidth: 0 }} justifyContent="space-between" spacing={0.75}>
-          <Typography noWrap sx={{ fontSize: '1rem', fontWeight: 700, color: homePanelColors.text }}>
+          <Typography noWrap sx={{ fontSize: font.md, fontWeight: 700, color: homePanelColors.text }}>
             {jobLabel}
           </Typography>
           <Stack direction="row" alignItems="baseline" spacing={1}>
-            <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>{locale.labels.level}</Typography>
-            <Typography sx={{ fontSize: '1.25rem', fontWeight: 800, lineHeight: 1, color: homePanelColors.text }}>
+            <Typography sx={{ fontSize: font.sm, color: homePanelColors.label }}>{locale.labels.level}</Typography>
+            <Typography sx={{ fontSize: font.xl, fontWeight: 800, lineHeight: 1, color: homePanelColors.text }}>
               {player?.level ?? unknown}
             </Typography>
           </Stack>
           <Box>
             <Stack direction="row" justifyContent="space-between" spacing={1}>
-              <Typography sx={{ fontSize: '0.875rem', color: homePanelColors.label }}>{locale.labels.exp}</Typography>
-              <Typography sx={{ fontSize: '1rem', fontWeight: 700, color: homePanelColors.text, whiteSpace: 'nowrap' }}>
+              <Typography sx={{ fontSize: font.sm, color: homePanelColors.label }}>{locale.labels.exp}</Typography>
+              <Typography
+                sx={{ fontSize: font.md, fontWeight: 700, color: homePanelColors.text, whiteSpace: 'nowrap' }}
+              >
                 {formatExpProgress(player?.exp, player?.requiredExpForNextLevel, unknown)}
               </Typography>
             </Stack>
@@ -176,9 +179,11 @@ export default function HomeStatusPanel({ player, compact = false }: HomeStatusP
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(expPercent)}
-              sx={{ mt: 0.5, height: 8, borderRadius: 999, backgroundColor: '#efe4c8', overflow: 'hidden' }}
+              sx={{ mt: 0.5, height: 8, borderRadius: 999, backgroundColor: palette.cream, overflow: 'hidden' }}
             >
-              <Box sx={{ width: `${expPercent}%`, height: '100%', borderRadius: 999, backgroundColor: '#e6a800' }} />
+              <Box
+                sx={{ width: `${expPercent}%`, height: '100%', borderRadius: 999, backgroundColor: palette.yellow }}
+              />
             </Box>
           </Box>
           {compact ? null : hpMp}
@@ -217,11 +222,11 @@ export default function HomeStatusPanel({ player, compact = false }: HomeStatusP
             mx: -2,
             mb: -2,
             height: 40,
-            borderTop: '1px solid #f0e6cf',
+            borderTop: `1px solid ${palette.cream}`,
             color: homePanelColors.band,
           }}
         >
-          <ChevronIcon sx={{ fontSize: 24, transform: isDetailOpen ? 'rotate(180deg)' : 'none' }} />
+          <ChevronIcon sx={{ fontSize: font.xxl, transform: isDetailOpen ? 'rotate(180deg)' : 'none' }} />
         </ButtonBase>
       ) : null}
     </Stack>

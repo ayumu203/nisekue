@@ -1,4 +1,5 @@
 import tutorialLocale from '../../../locale/tutorial/Tutorial.json'
+import { palette } from '@/theme/tokens'
 
 export type TutorialGuideId =
   | 'receptionist'
@@ -28,7 +29,7 @@ export const TUTORIAL_GUIDES: Record<TutorialGuideId, TutorialGuide> = {
     faceX: 0.52,
     faceY: 0.4,
     zoom: 1.35,
-    nameColor: '#bfe6ff',
+    nameColor: palette.sky,
   },
   instructor: {
     name: tutorialLocale.guides.instructor,
@@ -36,7 +37,7 @@ export const TUTORIAL_GUIDES: Record<TutorialGuideId, TutorialGuide> = {
     faceX: 0.47,
     faceY: 0.38,
     zoom: 1.6,
-    nameColor: '#e2cfff',
+    nameColor: palette.blue300,
   },
   priest: {
     name: tutorialLocale.guides.priest,
@@ -44,7 +45,7 @@ export const TUTORIAL_GUIDES: Record<TutorialGuideId, TutorialGuide> = {
     faceX: 0.45,
     faceY: 0.33,
     zoom: 1.9,
-    nameColor: '#ffc9e4',
+    nameColor: palette.pink,
   },
   mage: {
     name: tutorialLocale.guides.mage,
@@ -52,7 +53,7 @@ export const TUTORIAL_GUIDES: Record<TutorialGuideId, TutorialGuide> = {
     faceX: 0.18,
     faceY: 0.37,
     zoom: 1.8,
-    nameColor: '#ffc2b3',
+    nameColor: palette.brown200,
   },
   adventurer: {
     name: tutorialLocale.guides.adventurer,
@@ -60,7 +61,7 @@ export const TUTORIAL_GUIDES: Record<TutorialGuideId, TutorialGuide> = {
     faceX: 0.48,
     faceY: 0.38,
     zoom: 1.45,
-    nameColor: '#cdeec0',
+    nameColor: palette.cream,
   },
   captain: {
     name: tutorialLocale.guides.captain,
@@ -68,7 +69,7 @@ export const TUTORIAL_GUIDES: Record<TutorialGuideId, TutorialGuide> = {
     faceX: 0.49,
     faceY: 0.33,
     zoom: 1.5,
-    nameColor: '#dfe3f5',
+    nameColor: palette.sky,
   },
   highPriest: {
     name: tutorialLocale.guides.highPriest,
@@ -76,7 +77,7 @@ export const TUTORIAL_GUIDES: Record<TutorialGuideId, TutorialGuide> = {
     faceX: 0.49,
     faceY: 0.48,
     zoom: 1.4,
-    nameColor: '#f3d6f0',
+    nameColor: palette.sky,
   },
 }
 

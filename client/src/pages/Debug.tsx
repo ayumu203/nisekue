@@ -96,7 +96,7 @@ export default function Debug() {
   const { canUseDebug, isLoading } = useDebugStatus()
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 8 } }}>
+    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 6 } }}>
       <Paper elevation={2} sx={outerPagePaperSx}>
         <Stack spacing={{ xs: 1.5, sm: 2.5 }}>
           <Stack direction="row" alignItems="center" spacing={1}>

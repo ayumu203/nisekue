@@ -26,7 +26,7 @@ export default function PetBattleTurnLog({ results }: PetBattleTurnLogProps) {
 
         <Stack spacing={0.75}>
           {results.actions.map((action, actionIndex) => (
-            <Stack key={`${action.actorParticipantId}-${actionIndex}`} spacing={0.2}>
+            <Stack key={`${action.actorParticipantId}-${actionIndex}`} spacing={0.25}>
               <Typography variant="body2" sx={{ color: cyberColors.text, fontWeight: 700 }}>
                 ▶ {action.actorDisplayName} の {getActionLabel(action.actionKind, action.moveName)}
                 {action.succeeded ? '' : locale.log.failedSuffix}

@@ -73,7 +73,7 @@ export default function QuestAllowedPlayersOverlay({
                       />
                     }
                     label={
-                      <Stack direction="row" spacing={1.25} alignItems="center">
+                      <Stack direction="row" spacing={1.5} alignItems="center">
                         <Avatar src={resolveCharacterAssetPath(candidate.imagePath) ?? undefined} alt={displayName}>
                           {displayName.slice(0, 1)}
                         </Avatar>

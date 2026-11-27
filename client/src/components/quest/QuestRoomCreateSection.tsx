@@ -6,6 +6,7 @@ import locale from '../../../locale/quest/QuestRoom.json'
 import type { CreateQuestRoomRequest, GetQuestStagesResponse } from '@/schema/quest'
 import QuestRestrictionsModal from './QuestRestrictionsModal'
 import QuestStageModeCard from './QuestStageModeCard'
+import { font, palette } from '@/theme/tokens'
 
 type QuestRoomCreateSectionProps = {
   activeStages: GetQuestStagesResponse
@@ -41,17 +42,17 @@ function PanelRow({ label, value }: { label: string; value: string }) {
         // 見出しと内容を離しすぎないよう、内容は見出しのすぐ右に置く
         alignItems: 'baseline',
         gap: 2,
-        py: 1.25,
-        borderBottom: '1px solid #eadfc6',
+        py: 1.5,
+        borderBottom: `1px solid ${palette.brown200}`,
       }}
     >
       <Typography
         variant="body2"
-        sx={{ color: '#5a4421', fontWeight: 700, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
+        sx={{ color: palette.brown900, fontWeight: 700, whiteSpace: 'nowrap', width: 144, flexShrink: 0 }}
       >
         {label}
       </Typography>
-      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: '1rem' }}>{value}</Typography>
+      <Typography sx={{ color: homePanelColors.text, fontWeight: 700, fontSize: font.md }}>{value}</Typography>
     </Box>
   )
 }
@@ -131,20 +132,17 @@ export default function QuestRoomCreateSection({
             count={stagePageCount}
             onChange={(_, nextPage) => setStagePage(nextPage)}
             sx={{
-              '& .MuiPaginationItem-root': {
-                color: '#5a3a10',
+              '& .MuiPaginationItem-root.MuiPaginationItem-root': {
+                color: palette.brown900,
                 fontWeight: 700,
                 transition: 'none',
               },
               '& .MuiTouchRipple-root': {
                 display: 'none',
               },
-              '& .MuiPaginationItem-root.Mui-selected': {
-                color: '#ffffff',
+              '& .MuiPaginationItem-root.MuiPaginationItem-root.Mui-selected': {
+                color: palette.white,
                 backgroundColor: homePanelColors.band,
-              },
-              '& .MuiPaginationItem-root.Mui-selected:hover': {
-                backgroundColor: homePanelColors.bandSelected,
               },
             }}
           />
@@ -183,7 +181,7 @@ export default function QuestRoomCreateSection({
           variant="contained"
           onClick={() => void onCreateRoom()}
           disabled={isCreateDisabled}
-          sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, minHeight: { xs: 48, md: 56 }, fontSize: { md: '1.15rem' } }}
+          sx={{ ...menuButtonSx, ...panelPrimaryButtonSx, minHeight: { xs: 48, md: 56 }, fontSize: { md: font.lg } }}
         >
           {isSubmitting ? locale.creatingRoom : locale.createRoom}
         </Button>

@@ -53,6 +53,7 @@ import {
 } from '@/lib/tutorial'
 import SpotlightTutorial from '@/components/common/SpotlightTutorial'
 import tutorialLocale from '../../locale/tutorial/Tutorial.json'
+import { font, palette } from '@/theme/tokens'
 
 // アンケートを案内するレベル
 const SURVEY_GUIDE_LEVEL = 10
@@ -381,9 +382,9 @@ function Home() {
         <IconButton
           aria-label={chatTab === 'personal' ? locale.chatSwitchToGlobal : locale.chatSwitchToPersonal}
           onClick={() => setChatTab(chatTab === 'personal' ? 'global' : 'personal')}
-          sx={{ width: 44, height: 44, borderRadius: 0, color: '#ffffff' }}
+          sx={{ width: 44, height: 44, borderRadius: 0, color: palette.white }}
         >
-          <SwapIcon sx={{ fontSize: 22 }} />
+          <SwapIcon sx={{ fontSize: font.xxl }} />
         </IconButton>
       }
     >
@@ -467,9 +468,9 @@ function Home() {
               to="/player-setting"
               aria-label="プレイヤー設定へ移動"
               onClick={handleGearClick}
-              sx={{ width: 44, height: 44, borderRadius: 0, color: '#ffffff' }}
+              sx={{ width: 44, height: 44, borderRadius: 0, color: palette.white }}
             >
-              <GearIcon sx={{ fontSize: 22 }} />
+              <GearIcon sx={{ fontSize: font.xxl }} />
             </IconButton>
           }
         >

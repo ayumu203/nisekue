@@ -4,6 +4,7 @@ import HomeNavIconButton from '@/components/common/HomeNavIconButton'
 import { gamePageBackground } from '@/constants/styles'
 import { useAuth } from '@/contexts/useAuth'
 import locale from '../../locale/thanks/Thanks.json'
+import { palette, withAlpha } from '@/theme/tokens'
 
 const creditEntries = [
   {
@@ -50,7 +51,7 @@ export default function Thanks() {
   const showHeader = isDesktop && session != null
 
   return (
-    <GamePageFrame currentKey="specialThanks" currentColor="#44644a" background={gamePageBackground}>
+    <GamePageFrame currentKey="specialThanks" currentColor={palette.green700} background={gamePageBackground}>
       <Stack spacing={{ xs: 1.5, sm: 2.5 }}>
         {showHeader ? null : (
           <Stack direction="row" justifyContent="flex-start">
@@ -63,19 +64,19 @@ export default function Thanks() {
           sx={{
             borderRadius: 3,
             p: { xs: 2, sm: 2.5 },
-            borderColor: '#b8ab7a',
-            backgroundColor: '#44644a',
+            borderColor: palette.brown200,
+            backgroundColor: palette.green700,
           }}
         >
           <Stack spacing={2}>
-            <Stack spacing={1.25}>
-              <Typography variant="overline" sx={{ letterSpacing: '0.18em', color: 'rgba(242, 235, 207, 0.8)' }}>
+            <Stack spacing={1.5}>
+              <Typography variant="overline" sx={{ letterSpacing: '0.18em', color: withAlpha(palette.cream, 0.75) }}>
                 CREDITS
               </Typography>
-              <Typography variant="h4" fontWeight={900} color="#fff8ea" lineHeight={1.1}>
+              <Typography variant="h4" fontWeight={900} color={palette.cream} lineHeight={1.1}>
                 スペシャルサンクス
               </Typography>
-              <Typography color="rgba(242, 235, 207, 0.92)">
+              <Typography color={withAlpha(palette.cream, 0.9)}>
                 画像素材の権利関係はすべて製作者様へ帰属します。製作者様の許可なく再配布・改変は行わないでください。
               </Typography>
             </Stack>
@@ -94,11 +95,11 @@ export default function Thanks() {
                   sx={{
                     borderRadius: 3,
                     p: { xs: 2, sm: 2.5 },
-                    borderColor: '#dcc793',
-                    backgroundColor: '#fff9ef',
+                    borderColor: palette.brown200,
+                    backgroundColor: palette.cream,
                   }}
                 >
-                  <Stack spacing={1.25}>
+                  <Stack spacing={1.5}>
                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
                       <Stack spacing={0.5}>
                         <Typography variant="h6" fontWeight={900} lineHeight={1.2}>
@@ -115,16 +116,16 @@ export default function Thanks() {
                       sx={{
                         borderRadius: 2,
                         px: 1.5,
-                        py: 1.25,
-                        borderColor: '#e7d9b6',
-                        backgroundColor: '#fffdf8',
+                        py: 1.5,
+                        borderColor: palette.brown200,
+                        backgroundColor: palette.white,
                       }}
                     >
                       <Stack spacing={0.5}>
                         <Typography variant="caption" color="text.secondary">
                           URL
                         </Typography>
-                        <MuiLink href={entry.url} target="_blank" rel="noopener noreferrer" underline="hover">
+                        <MuiLink href={entry.url} target="_blank" rel="noopener noreferrer" underline="always">
                           {entry.url}
                         </MuiLink>
                       </Stack>

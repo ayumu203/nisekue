@@ -6,6 +6,7 @@ import {
   trainingSelectCardSx,
   trainingSelectRadioSx,
 } from './trainingSelectStyles'
+import { font, palette } from '@/theme/tokens'
 
 type TrainingSelectCardProps = {
   id?: string
@@ -57,7 +58,7 @@ export default function TrainingSelectCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#e3e7ee',
+          backgroundColor: palette.sky,
           backgroundImage: `url(${getTrainingBackgroundPath(backgroundKey)})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -75,7 +76,7 @@ export default function TrainingSelectCard({
       <Stack
         spacing={compact ? 0.5 : 0.75}
         alignItems="center"
-        sx={{ px: 1, pt: compact ? 1 : 1.5, pb: compact ? 1.25 : 1.75 }}
+        sx={{ px: 1, pt: compact ? 1 : 1.5, pb: compact ? 1.5 : 2 }}
       >
         <Chip label={levelLabel} size="small" sx={trainingLevelChipSx} />
         <Typography
@@ -83,7 +84,7 @@ export default function TrainingSelectCard({
           textAlign="center"
           sx={{
             color: trainingPanelColors.text,
-            fontSize: compact ? '0.95rem' : '1.05rem',
+            fontSize: compact ? font.md : font.md,
             lineHeight: 1.3,
             overflowWrap: 'anywhere',
           }}

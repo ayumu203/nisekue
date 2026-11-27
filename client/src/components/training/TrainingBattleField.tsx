@@ -5,6 +5,7 @@ import { resolvePublicAssetPath } from '@/lib/assets'
 import type { ExecuteTrainingResponse } from '@/schema/training'
 import locale from '../../../locale/training/Training.json'
 import { getTrainingBackgroundPath } from './trainingSelectStyles'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 export type TrainingBattleFighter = {
   name: string
@@ -34,8 +35,8 @@ type TurnLog = {
 // 自分と相手の画像を置く枠の高さ（大きいほうの画像に合わせる）
 const fighterAreaHeight = { xs: 120, md: 230 }
 
-const logTextColor = '#2b2f38'
-const logDivider = '1px dotted rgba(40, 50, 70, 0.3)'
+const logTextColor = palette.blue900
+const logDivider = `1px dotted ${withAlpha(palette.blue900, 0.25)}`
 
 function normalizeHp(current: number, max: number): number {
   if (max <= 0) {
@@ -121,10 +122,10 @@ function FighterSprite({
       <Box
         sx={{
           minWidth: { xs: 120, sm: 170 },
-          px: 1.75,
+          px: 2,
           py: 0.75,
           borderRadius: '10px',
-          backgroundColor: 'rgba(255, 255, 255, 0.72)',
+          backgroundColor: withAlpha(palette.white, 0.75),
           textAlign: 'center',
         }}
       >
@@ -139,7 +140,7 @@ function FighterSprite({
         </Typography>
         {hp ? (
           <>
-            <Box sx={{ height: 8, borderRadius: 9, backgroundColor: '#dfe3ea', my: 0.6, overflow: 'hidden' }}>
+            <Box sx={{ height: 8, borderRadius: 9, backgroundColor: palette.sky, my: 0.5, overflow: 'hidden' }}>
               <Box sx={{ width: `${normalizeHp(hp.current, hp.max)}%`, height: '100%', backgroundColor: hpBarColor }} />
             </Box>
             <Typography variant="body2" sx={{ color: trainingPanelColors.label }}>
@@ -180,14 +181,14 @@ function EmptyFighter({ imageHeight }: { imageHeight: { xs: number; md: number }
         aspectRatio: '3 / 4',
         boxSizing: 'border-box',
         borderRadius: '12px',
-        border: '3px dashed rgba(255, 255, 255, 0.85)',
-        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        border: `3px dashed ${withAlpha(palette.white, 0.9)}`,
+        backgroundColor: withAlpha(palette.white, 0.25),
         display: 'grid',
         placeItems: 'center',
-        color: '#ffffff',
-        fontSize: { xs: '2rem', md: '3.5rem' },
+        color: palette.white,
+        fontSize: { xs: font.display, md: font.display },
         fontWeight: 900,
-        textShadow: '0 2px 0 rgba(0, 0, 0, 0.3)',
+        textShadow: `0 2px 0 ${withAlpha(palette.black, 0.25)}`,
       }}
     >
       ?
@@ -223,9 +224,9 @@ export default function TrainingBattleField({
         gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 1fr) auto minmax(0, 1fr) 440px' },
         alignItems: 'end',
         gap: { xs: 2, md: 3 },
-        px: { xs: 2, md: 8 },
+        px: { xs: 2, md: 6 },
         py: { xs: 2, md: 3 },
-        backgroundColor: '#e3e7ee',
+        backgroundColor: palette.sky,
         backgroundImage: `url(${getTrainingBackgroundPath(backgroundKey)})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -243,16 +244,16 @@ export default function TrainingBattleField({
         <FighterSprite
           fighter={player}
           hp={result ? { current: result.currentPlayerHp, max: result.maxPlayerHp } : null}
-          hpBarColor="#3f9f4a"
+          hpBarColor={palette.green400}
           imageHeight={{ xs: 120, md: 230 }}
         />
         <Typography
           sx={{
             alignSelf: 'center',
-            fontSize: { xs: '1.75rem', md: '2.5rem' },
+            fontSize: { xs: font.xxxl, md: font.display },
             fontWeight: 900,
-            color: '#ffffff',
-            textShadow: '0 2px 0 rgba(0, 0, 0, 0.4)',
+            color: palette.white,
+            textShadow: `0 2px 0 ${withAlpha(palette.black, 0.5)}`,
           }}
         >
           VS
@@ -261,7 +262,7 @@ export default function TrainingBattleField({
           <FighterSprite
             fighter={enemy}
             hp={result ? { current: result.currentEnemyHp, max: result.maxEnemyHp } : null}
-            hpBarColor="#b65f49"
+            hpBarColor={palette.red300}
             imageHeight={{ xs: 96, md: 184 }}
           />
         ) : (
@@ -275,16 +276,16 @@ export default function TrainingBattleField({
             maxHeight: '100%',
             overflowY: 'auto',
             boxSizing: 'border-box',
-            px: 2.75,
+            px: 3,
             py: 1.5,
             borderRadius: '12px',
-            backgroundColor: 'rgba(255, 255, 255, 0.72)',
+            backgroundColor: withAlpha(palette.white, 0.75),
             // スマホはキャラと同じく中央にそろえる
             textAlign: { xs: 'center', md: 'left' },
           }}
         >
           <Collapse in={isTurnLogOpen}>
-            <Stack sx={{ pb: 1, mb: 0.5, borderBottom: '1px solid rgba(40, 50, 70, 0.25)' }}>
+            <Stack sx={{ pb: 1, mb: 0.5, borderBottom: `1px solid ${withAlpha(palette.blue900, 0.25)}` }}>
               {turnLogs.map((log) => (
                 <Stack
                   key={log.turn}
@@ -321,7 +322,7 @@ export default function TrainingBattleField({
               <Typography
                 key={`${index}-${log}`}
                 sx={{
-                  py: 0.85,
+                  py: 0.75,
                   borderTop: index === 0 ? 'none' : logDivider,
                   color: logTextColor,
                   fontWeight: 400,
@@ -335,9 +336,9 @@ export default function TrainingBattleField({
           {hasExpProgress ? (
             <Stack
               direction="row"
-              spacing={1.25}
+              spacing={1.5}
               alignItems="center"
-              sx={{ pt: 1.25, mt: 0.5, borderTop: '1px solid rgba(40, 50, 70, 0.25)' }}
+              sx={{ pt: 1.5, mt: 0.5, borderTop: `1px solid ${withAlpha(palette.blue900, 0.25)}` }}
             >
               <Typography
                 variant="body2"
@@ -348,9 +349,9 @@ export default function TrainingBattleField({
               </Typography>
               <Box
                 aria-hidden="true"
-                sx={{ flex: 1, height: 8, borderRadius: 9, backgroundColor: '#e3e7ee', overflow: 'hidden' }}
+                sx={{ flex: 1, height: 8, borderRadius: 9, backgroundColor: palette.sky, overflow: 'hidden' }}
               >
-                <Box sx={{ width: `${expRatio * 100}%`, height: '100%', backgroundColor: '#7f8ea8' }} />
+                <Box sx={{ width: `${expRatio * 100}%`, height: '100%', backgroundColor: palette.blue300 }} />
               </Box>
               <Typography
                 variant="body2"
@@ -370,7 +371,7 @@ export default function TrainingBattleField({
               mt: 1,
               py: 0.5,
               fontFamily: 'inherit',
-              fontSize: '0.85rem',
+              fontSize: font.sm,
               fontWeight: 800,
               color: trainingPanelColors.label,
             }}

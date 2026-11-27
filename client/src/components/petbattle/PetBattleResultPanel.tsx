@@ -3,6 +3,7 @@ import { cyberButtonSx, cyberColors, cyberPanelSx } from '@/components/petbattle
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import locale from '../../../locale/pet/PetBattle.json'
 import type { PetBattleRun, PetBattleStats } from '@/schema/petBattle'
+import { palette, withAlpha } from '@/theme/tokens'
 
 type PetBattleResultPanelProps = {
   run: PetBattleRun
@@ -54,7 +55,7 @@ export default function PetBattleResultPanel({
           backgroundColor: cyberColors.panelLight,
         }}
       >
-        <Stack spacing={0.4} alignItems="center">
+        <Stack spacing={0.5} alignItems="center">
           {spriteSrc ? (
             <Box component="img" src={spriteSrc} alt={displayName} sx={{ height: 48, objectFit: 'contain' }} />
           ) : null}
@@ -76,13 +77,13 @@ export default function PetBattleResultPanel({
               fontWeight: 900,
               letterSpacing: '0.1em',
               color: isWin ? cyberColors.accent : cyberColors.danger,
-              textShadow: isWin ? `0 0 18px ${cyberColors.accentDim}` : '0 0 18px rgba(255, 56, 96, 0.5)',
+              textShadow: isWin ? `0 0 18px ${cyberColors.accentDim}` : `0 0 18px ${withAlpha(palette.red700, 0.5)}`,
             }}
           >
             {locale.resultTitle[run.status]}
           </Typography>
 
-          <Stack spacing={0.8} alignItems="center" sx={{ width: '100%' }}>
+          <Stack spacing={0.75} alignItems="center" sx={{ width: '100%' }}>
             {ownerImageSrc ? (
               <Box
                 component="img"
@@ -103,7 +104,7 @@ export default function PetBattleResultPanel({
             ) : null}
 
             <Stack direction="row" spacing={3} useFlexGap flexWrap="wrap" justifyContent="center" alignItems="baseline">
-              <Stack spacing={0.2} alignItems="center">
+              <Stack spacing={0.25} alignItems="center">
                 <Typography variant="caption" sx={{ color: cyberColors.textDim, letterSpacing: '0.08em' }}>
                   {locale.ratingChangeLabel}
                 </Typography>
@@ -120,7 +121,7 @@ export default function PetBattleResultPanel({
                 </Typography>
               </Stack>
 
-              <Stack spacing={0.2} alignItems="center">
+              <Stack spacing={0.25} alignItems="center">
                 <Typography variant="caption" sx={{ color: cyberColors.textDim, letterSpacing: '0.08em' }}>
                   {locale.resultRatingLabel}
                 </Typography>

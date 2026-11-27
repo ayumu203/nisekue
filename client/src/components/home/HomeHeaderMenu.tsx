@@ -5,6 +5,7 @@ import { GearIcon, SignOutIcon } from '@/components/home/StatusIcons'
 import { topNavigationIconButtonSx } from '@/constants/styles'
 import { useSignOut } from '@/hooks/useSignOut'
 import homeLocale from '../../../locale/home/Home.json'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type HomeHeaderMenuProps = {
   primary: HomeMenuItem[]
@@ -29,8 +30,8 @@ function ChevronDownIcon(props: SvgIconProps) {
   )
 }
 
-const BAR_TEXT_COLOR = '#5a3a10'
-const BAR_DIVIDER_COLOR = 'rgba(90, 58, 16, 0.22)'
+const BAR_TEXT_COLOR = palette.brown900
+const BAR_DIVIDER_COLOR = withAlpha(palette.brown900, 0.25)
 
 // 白いバーにくっつけて並べるメニューの項目。項目どうしは細い縦線で区切る
 const headerButtonSx = {
@@ -41,21 +42,21 @@ const headerButtonSx = {
   color: BAR_TEXT_COLOR,
   whiteSpace: 'nowrap',
   fontWeight: 700,
-  fontSize: '1rem',
+  fontSize: font.md,
   // ホバーや押したときの色の変化・波紋のアニメーションは付けない
   transition: 'none',
   '& .MuiTouchRipple-root': {
     display: 'none',
   },
-  '&:hover, &[aria-expanded="true"]': {
-    backgroundColor: 'rgba(90, 58, 16, 0.08)',
+  '&[aria-expanded="true"]': {
+    backgroundColor: withAlpha(palette.brown900, 0.1),
   },
   '& .MuiButton-startIcon': {
-    color: '#3f8f45',
+    color: palette.green400,
   },
   // 16px の文字に合わせてアイコンを 22px にする
   '& .MuiButton-startIcon > *:nth-of-type(1), & .MuiButton-endIcon > *:nth-of-type(1)': {
-    fontSize: 22,
+    fontSize: font.xxl,
   },
 } as const
 
@@ -63,13 +64,13 @@ const headerButtonSx = {
 function currentHeaderButtonSx(color: string) {
   return {
     ...headerButtonSx,
-    color: '#ffffff',
+    color: palette.white,
     backgroundColor: color,
-    '&:hover, &[aria-expanded="true"]': {
+    '&[aria-expanded="true"]': {
       backgroundColor: color,
     },
     '& .MuiButton-startIcon': {
-      color: '#ffffff',
+      color: palette.white,
     },
   } as const
 }
@@ -77,17 +78,14 @@ function currentHeaderButtonSx(color: string) {
 const dropdownItemSx = {
   justifyContent: 'flex-start',
   minHeight: 44,
-  px: 2.25,
+  px: 2.5,
   borderRadius: 0,
-  color: '#3a2f1e',
+  color: palette.brown900,
   fontWeight: 700,
   whiteSpace: 'nowrap',
   transition: 'none',
   '& .MuiTouchRipple-root': {
     display: 'none',
-  },
-  '&:hover': {
-    backgroundColor: '#fff4d6',
   },
 } as const
 
@@ -124,7 +122,7 @@ export default function HomeHeaderMenu({
       {/* 画面の上端と左右の端にくっつけた白いバー */}
       <Box
         sx={{
-          backgroundColor: '#ffffff',
+          backgroundColor: palette.white,
           borderBottom: `1px solid ${BAR_DIVIDER_COLOR}`,
           display: 'flex',
           alignItems: 'stretch',
@@ -194,9 +192,9 @@ export default function HomeHeaderMenu({
                         py: 0.5,
                         display: 'flex',
                         flexDirection: 'column',
-                        backgroundColor: '#ffffff',
+                        backgroundColor: palette.white,
                         borderRadius: '10px',
-                        boxShadow: '0 4px 14px rgba(60, 40, 0, 0.16)',
+                        boxShadow: `0 4px 14px ${withAlpha(palette.brown900, 0.1)}`,
                       }}
                     >
                       {group.items.map((item) => (
@@ -240,8 +238,8 @@ export default function HomeHeaderMenu({
             sx={{
               ...topNavigationIconButtonSx,
               '&.Mui-disabled': {
-                color: 'rgba(255,255,255,0.56)',
-                backgroundColor: 'rgba(122, 77, 25, 0.62)',
+                color: withAlpha(palette.white, 0.5),
+                backgroundColor: withAlpha(palette.brown500, 0.5),
               },
             }}
           >

@@ -29,6 +29,7 @@ import type {
   QuestPartyMemberView,
   QuestRunDetailResponse,
 } from '@/schema/quest'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 type AvailableMove = {
   slot: number
@@ -161,35 +162,35 @@ function AllyStatusCard({ member }: { member: QuestPartyMemberView }) {
     <Paper
       variant="outlined"
       sx={{
-        px: { xs: 0.45, sm: 0.8 },
-        py: { xs: 0.32, sm: 0.55 },
+        px: { xs: 0.5, sm: 0.75 },
+        py: { xs: 0.25, sm: 0.5 },
         borderRadius: 1.75,
-        borderColor: 'rgba(123, 92, 44, 0.28)',
-        backgroundColor: 'rgba(255, 248, 224, 0.88)',
+        borderColor: withAlpha(palette.brown500, 0.25),
+        backgroundColor: withAlpha(palette.cream, 0.9),
         boxShadow: 'none',
         opacity: member.isDead ? 0.62 : 1,
       }}
     >
-      <Stack spacing={0.05} sx={{ minWidth: 0 }}>
+      <Stack spacing={0} sx={{ minWidth: 0 }}>
         <Typography
           variant="caption"
           noWrap
           title={member.displayName}
-          sx={{ fontWeight: 800, color: '#503717', fontSize: { xs: '0.56rem', sm: '1rem' }, lineHeight: 1.2 }}
+          sx={{ fontWeight: 800, color: palette.brown900, fontSize: { xs: font.xxs, sm: font.md }, lineHeight: 1.2 }}
         >
           {member.displayName}
         </Typography>
         <Typography
           variant="caption"
           noWrap
-          sx={{ color: '#624927', fontSize: { xs: '0.5rem', sm: '0.875rem' }, lineHeight: 1.2 }}
+          sx={{ color: palette.brown900, fontSize: { xs: font.xxs, sm: font.sm }, lineHeight: 1.2 }}
         >
           HP {member.currentHp}/{member.maxHp ?? '-'}
         </Typography>
         <Typography
           variant="caption"
           noWrap
-          sx={{ color: '#30506e', fontSize: { xs: '0.5rem', sm: '0.875rem' }, lineHeight: 1.2 }}
+          sx={{ color: palette.blue900, fontSize: { xs: font.xxs, sm: font.sm }, lineHeight: 1.2 }}
         >
           MP {member.currentMp}/{member.maxMp ?? '-'}
         </Typography>
@@ -269,11 +270,11 @@ function BattleSprite({
             transform: 'translate(-50%, -10px)',
             width: { xs: 132, sm: 168 },
             px: 1,
-            py: 0.7,
+            py: 0.75,
             borderRadius: 2,
-            border: '1px solid rgba(112, 83, 31, 0.4)',
-            backgroundColor: 'rgba(255, 252, 241, 0.96)',
-            boxShadow: '0 10px 20px rgba(44, 31, 18, 0.18)',
+            border: `1px solid ${withAlpha(palette.brown500, 0.5)}`,
+            backgroundColor: palette.cream,
+            boxShadow: `0 10px 20px ${withAlpha(palette.brown900, 0.25)}`,
             zIndex: 4,
             pointerEvents: 'none',
             '&::after': {
@@ -283,9 +284,9 @@ function BattleSprite({
               bottom: -7,
               width: 12,
               height: 12,
-              backgroundColor: 'rgba(255, 252, 241, 0.96)',
-              borderRight: '1px solid rgba(112, 83, 31, 0.4)',
-              borderBottom: '1px solid rgba(112, 83, 31, 0.4)',
+              backgroundColor: palette.cream,
+              borderRight: `1px solid ${withAlpha(palette.brown500, 0.5)}`,
+              borderBottom: `1px solid ${withAlpha(palette.brown500, 0.5)}`,
               transform: 'translateX(-50%) rotate(45deg)',
             },
           }}
@@ -295,10 +296,10 @@ function BattleSprite({
             sx={{
               display: '-webkit-box',
               overflow: 'hidden',
-              color: '#503717',
+              color: palette.brown900,
               textAlign: 'center',
               lineHeight: 1.35,
-              fontSize: { xs: '0.72rem', sm: '0.875rem' },
+              fontSize: { xs: font.xs, sm: font.sm },
               wordBreak: 'break-word',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
@@ -310,13 +311,15 @@ function BattleSprite({
       ) : null}
 
       <Stack
-        spacing={0.35}
+        spacing={0.25}
         sx={{
-          mb: 0.4,
+          mb: 0.5,
           px: 0.25,
           width: isAlly
             ? { xs: 'calc(100% - 34px)', sm: 'calc(100% - 10px)' }
             : { xs: 'calc(100% + 22px)', sm: 'calc(100% + 10px)' },
+          // 余白ではなく、上の width（calc）と組になった位置合わせの値
+          // eslint-disable-next-line no-restricted-syntax
           ml: isAlly ? { xs: '17px', sm: '5px' } : { xs: '-11px', sm: '-5px' },
         }}
       >
@@ -327,9 +330,9 @@ function BattleSprite({
           title={name}
           textAlign="center"
           sx={{
-            fontSize: { xs: '0.62rem', sm: '1rem' },
-            color: isDead ? 'rgba(90,90,90,0.92)' : '#3f2f16',
-            textShadow: '0 1px 0 rgba(255,255,255,0.55)',
+            fontSize: { xs: font.xxs, sm: font.md },
+            color: isDead ? withAlpha(palette.teal700, 0.9) : palette.brown900,
+            textShadow: `0 1px 0 ${withAlpha(palette.white, 0.5)}`,
             lineHeight: isAlly ? 1.1 : { xs: 1.02, sm: 1.1 },
             wordBreak: isAlly ? 'normal' : 'keep-all',
             display: isAlly ? 'block' : '-webkit-box',
@@ -345,7 +348,7 @@ function BattleSprite({
           variant="caption"
           color="text.secondary"
           textAlign="center"
-          sx={{ fontSize: { xs: '0.58rem', sm: '0.875rem' }, textShadow: '0 1px 0 rgba(255,255,255,0.55)' }}
+          sx={{ fontSize: { xs: font.xxs, sm: font.sm }, textShadow: `0 1px 0 ${withAlpha(palette.white, 0.5)}` }}
         >
           HP {hp}/{maxHp ?? '-'}
         </Typography>
@@ -377,7 +380,7 @@ function BattleSprite({
               imageRendering: isAlly ? 'auto' : 'pixelated',
               filter: isDead ? 'grayscale(1)' : 'none',
               opacity: isDead ? 0.78 : 1,
-              outline: isSelected ? '3px solid #ffffff' : 'none',
+              outline: isSelected ? `3px solid ${palette.white}` : 'none',
               outlineOffset: isSelected ? '2px' : 0,
             }}
           />
@@ -387,8 +390,8 @@ function BattleSprite({
               width: '100%',
               height: '100%',
               borderRadius: 2,
-              backgroundColor: 'rgba(255,255,255,0.55)',
-              border: '1px dashed rgba(120, 88, 32, 0.45)',
+              backgroundColor: withAlpha(palette.white, 0.5),
+              border: `1px dashed ${withAlpha(palette.brown500, 0.5)}`,
             }}
           />
         )}
@@ -401,25 +404,25 @@ function BattleSprite({
               borderRadius: 2.5,
               border:
                 targetState === 'preview'
-                  ? '3px solid #6df075'
+                  ? `3px solid ${palette.green400}`
                   : targetState === 'affected'
-                    ? '2px solid rgba(109, 240, 117, 0.92)'
+                    ? `2px solid ${withAlpha(palette.green400, 0.9)}`
                     : targetState === 'reachable'
-                      ? '2px dashed rgba(109, 240, 117, 0.92)'
-                      : '2px dashed rgba(160, 160, 160, 0.88)',
+                      ? `2px dashed ${withAlpha(palette.green400, 0.9)}`
+                      : `2px dashed ${withAlpha(palette.gray600, 0.9)}`,
               boxShadow:
                 targetState === 'preview'
-                  ? '0 0 0 4px rgba(109, 240, 117, 0.22), 0 12px 20px rgba(16, 52, 18, 0.28)'
+                  ? `0 0 0 4px ${withAlpha(palette.green400, 0.25)}, 0 12px 20px ${withAlpha(palette.green700, 0.25)}`
                   : targetState === 'affected'
-                    ? '0 0 0 3px rgba(109, 240, 117, 0.14)'
+                    ? `0 0 0 3px ${withAlpha(palette.green400, 0.1)}`
                     : 'none',
               backgroundColor:
                 targetState === 'preview'
-                  ? 'rgba(109, 240, 117, 0.12)'
+                  ? withAlpha(palette.green400, 0.1)
                   : targetState === 'affected'
-                    ? 'rgba(109, 240, 117, 0.08)'
+                    ? withAlpha(palette.green400, 0.1)
                     : targetState === 'blocked'
-                      ? 'rgba(80, 80, 80, 0.18)'
+                      ? withAlpha(palette.brown900, 0.25)
                       : 'transparent',
               pointerEvents: 'none',
             }}
@@ -432,9 +435,9 @@ function BattleSprite({
               position: 'absolute',
               inset: -4,
               borderRadius: 2.5,
-              border: '2px solid rgba(183, 28, 28, 0.88)',
-              backgroundColor: 'rgba(183, 28, 28, 0.14)',
-              boxShadow: '0 0 0 3px rgba(183, 28, 28, 0.12)',
+              border: `2px solid ${withAlpha(palette.red700, 0.9)}`,
+              backgroundColor: withAlpha(palette.red700, 0.1),
+              boxShadow: `0 0 0 3px ${withAlpha(palette.red700, 0.1)}`,
               pointerEvents: 'none',
               '&::before, &::after': {
                 content: '""',
@@ -444,7 +447,7 @@ function BattleSprite({
                 width: '78%',
                 height: 3,
                 borderRadius: 999,
-                backgroundColor: 'rgba(183, 28, 28, 0.92)',
+                backgroundColor: withAlpha(palette.red700, 0.9),
                 transformOrigin: 'center',
               },
               '&::before': {
@@ -664,22 +667,18 @@ export default function QuestBattleStatusPanel({
             width: { xs: 38, sm: 'auto' },
             minHeight: { xs: 38, sm: 46 },
             borderRadius: 2.5,
-            px: { xs: 0.2, sm: 1.75 },
-            py: { xs: 0.15, sm: 0.75 },
+            px: { xs: 0.25, sm: 2 },
+            py: { xs: 0.25, sm: 0.75 },
             fontWeight: 700,
-            fontSize: { xs: '0.52rem', sm: '1rem' },
+            fontSize: { xs: font.xxs, sm: font.md },
             lineHeight: { xs: 1.02, sm: 1.3 },
             textAlign: 'center',
             whiteSpace: 'normal',
             letterSpacing: '0.02em',
-            color: selectedActionKind === option.value ? '#fffdf4' : '#6a4300',
-            backgroundColor: selectedActionKind === option.value ? '#8c4b16' : '#ffc83d',
+            color: selectedActionKind === option.value ? palette.cream : palette.gold700,
+            backgroundColor: selectedActionKind === option.value ? palette.brown500 : palette.yellow,
             border: 'none',
             boxShadow: 'none',
-            '&:hover': {
-              backgroundColor: selectedActionKind === option.value ? '#8c4b16' : '#ffc83d',
-              boxShadow: 'none',
-            },
           }}
         >
           {option.label}
@@ -693,7 +692,7 @@ export default function QuestBattleStatusPanel({
             value={selectedMoveId === '' ? '' : String(selectedMoveId)}
             onChange={handleMoveChange}
             size="small"
-            sx={{ backgroundColor: '#fff8e2' }}
+            sx={{ backgroundColor: palette.cream }}
           >
             <MenuItem value="">{locale.labels.none}</MenuItem>
             {availableMoves.map((move) => (
@@ -713,7 +712,7 @@ export default function QuestBattleStatusPanel({
           minWidth: { xs: 64, sm: 124 },
           minHeight: { xs: 38, sm: 46 },
           ml: selectedActionKind === 'UseMove' ? 0 : { sm: 'auto' },
-          fontSize: { xs: '0.56rem', sm: '1rem' },
+          fontSize: { xs: font.xxs, sm: font.md },
           ...softGreenButtonSx,
         }}
       >
@@ -732,16 +731,16 @@ export default function QuestBattleStatusPanel({
               sx={{
                 borderRadius: 2.5,
                 px: { xs: 1.5, sm: 2 },
-                py: { xs: 1, sm: 1.25 },
-                backgroundColor: '#fff4d2',
-                border: '1px solid #e6b53d',
-                color: '#6a4300',
+                py: { xs: 1, sm: 1.5 },
+                backgroundColor: palette.cream,
+                border: `1px solid ${palette.gold300}`,
+                color: palette.gold700,
               }}
             >
-              <Typography sx={{ fontWeight: 700, fontSize: { xs: '0.8rem', sm: '1rem' } }}>
+              <Typography sx={{ fontWeight: 700, fontSize: { xs: font.xs, sm: font.md } }}>
                 ★ {endlessCheckpointBannerTitle}
               </Typography>
-              <Typography sx={{ mt: 0.25, fontSize: { xs: '0.7rem', sm: '0.875rem' }, lineHeight: 1.5 }}>
+              <Typography sx={{ mt: 0.25, fontSize: { xs: font.xs, sm: font.sm }, lineHeight: 1.5 }}>
                 {locale.endlessCheckpoint.bannerBody}
               </Typography>
             </Box>
@@ -754,7 +753,7 @@ export default function QuestBattleStatusPanel({
             overflow: 'hidden',
             flex: 1,
             minHeight: { xs: 500, sm: 575, md: 620 },
-            backgroundColor: '#d9e6df',
+            backgroundColor: palette.gray300,
           }}
         >
           <Box
@@ -820,8 +819,7 @@ export default function QuestBattleStatusPanel({
             sx={{
               position: 'absolute',
               inset: 0,
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 24%, rgba(0,0,0,0.04) 100%)',
+              background: `linear-gradient(180deg, ${withAlpha(palette.white, 0.1)} 0%, transparent 24%, ${withAlpha(palette.navy, 0.1)} 100%)`,
             }}
           />
 
@@ -832,7 +830,7 @@ export default function QuestBattleStatusPanel({
               right: 0,
               bottom: { xs: '12.5%', sm: '12%', md: '11.5%' },
               height: 2,
-              backgroundColor: 'rgba(215, 174, 73, 0.7)',
+              backgroundColor: withAlpha(palette.gold300, 0.75),
               zIndex: 1,
             }}
           />
@@ -945,7 +943,7 @@ export default function QuestBattleStatusPanel({
               bottom: { xs: 6, sm: 10 },
               zIndex: 3,
               display: 'grid',
-              gap: { xs: 0.45, sm: 0.65 },
+              gap: { xs: 0.5, sm: 0.75 },
               gridTemplateColumns: {
                 xs: 'repeat(2, minmax(0, 1fr))',
                 sm: 'repeat(3, minmax(0, 1fr))',

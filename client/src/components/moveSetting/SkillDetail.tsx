@@ -13,6 +13,7 @@ import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
 import { getMoveAttackRangeLabel } from '@/lib/moveAttackRange'
 import type { PlayerMoveSlot } from '@/schema/player'
 import locale from '../../../locale/player-setting/PlayerSetting.json'
+import { font, palette, withAlpha } from '@/theme/tokens'
 
 // 範囲の図に並べる絵。陣形の [前・中・後列][左・右] の順。見た目のための固定の絵
 const BATTLEFIELD_IMAGE = 'image/quest/moonlit-castle-battlefield.svg'
@@ -55,7 +56,7 @@ function RangeFigure({ slot, playerImagePath, compact }: RangeFigureProps) {
         borderRadius: '4px',
         overflow: 'hidden',
         p: compact ? 1 : 2,
-        backgroundImage: `linear-gradient(rgba(12, 14, 34, 0.25), rgba(12, 14, 34, 0.25)), url(${resolvePublicAssetPath(BATTLEFIELD_IMAGE)})`,
+        backgroundImage: `linear-gradient(${withAlpha(palette.navy, 0.25)}, ${withAlpha(palette.navy, 0.25)}), url(${resolvePublicAssetPath(BATTLEFIELD_IMAGE)})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'grid',
@@ -82,7 +83,7 @@ function RangeFigure({ slot, playerImagePath, compact }: RangeFigureProps) {
                 display: 'flex',
                 alignItems: 'flex-end',
                 justifyContent: 'center',
-                pb: compact ? 0.75 : 1.25,
+                pb: compact ? 0.75 : 1.5,
                 minHeight: 0,
               }}
             >
@@ -135,7 +136,7 @@ function RangeFigure({ slot, playerImagePath, compact }: RangeFigureProps) {
                         height={compact ? 13 : 18}
                         viewBox="0 0 24 24"
                         fill="none"
-                        stroke="#ffffff"
+                        stroke={palette.white}
                         strokeWidth="2.6"
                         strokeLinecap="round"
                         aria-hidden="true"
@@ -159,17 +160,17 @@ function Tile({ label, value, compact }: { label: string; value: string; compact
   return (
     <Box
       sx={{
-        backgroundColor: '#3e2b1d',
+        backgroundColor: palette.brown900,
         borderRadius: '4px',
         px: compact ? 1.5 : 2,
-        py: compact ? 1 : 1.75,
+        py: compact ? 1 : 2,
         display: 'flex',
         flexDirection: 'column',
         gap: 0.25,
       }}
     >
-      <Typography sx={{ fontSize: compact ? 13 : 15, color: colors.sub }}>{label}</Typography>
-      <Typography sx={{ fontSize: compact ? 19 : 24, color: colors.ink }}>{value}</Typography>
+      <Typography sx={{ fontSize: compact ? font.sm : font.md, color: colors.sub }}>{label}</Typography>
+      <Typography sx={{ fontSize: compact ? font.xl : font.xxl, color: colors.ink }}>{value}</Typography>
     </Box>
   )
 }
@@ -199,18 +200,21 @@ export default function SkillDetail({ slot, playerImagePath, compact }: SkillDet
         minHeight: 0,
         border: `3px double ${colors.gold}`,
         backgroundColor: colors.paper,
-        px: compact ? 1.75 : 3.25,
+        px: compact ? 2 : 3,
         py: compact ? 2 : 3,
         display: 'flex',
         flexDirection: 'column',
-        gap: compact ? 1.5 : 2.75,
+        gap: compact ? 1.5 : 3,
         overflowY: 'auto',
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: compact ? 1.5 : 2.5 }}>
         <ElementEmblem element={element} size={compact ? 64 : 104} />
-        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: compact ? 0.75 : 1.25 }}>
-          <Typography component="h2" sx={{ fontSize: compact ? 24 : 36, lineHeight: 1.2, color: colors.ink }}>
+        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: compact ? 0.75 : 1.5 }}>
+          <Typography
+            component="h2"
+            sx={{ fontSize: compact ? font.xxl : font.display, lineHeight: 1.2, color: colors.ink }}
+          >
             {slot.moveName ?? locale.unknownMove}
           </Typography>
           <Box sx={{ display: 'flex', gap: 0.75 }}>
@@ -222,7 +226,7 @@ export default function SkillDetail({ slot, playerImagePath, compact }: SkillDet
           <MpCost mp={slot.mpCost} size={compact ? 28 : 44} fontSize={compact ? 30 : 48} />
         ) : null}
       </Box>
-      <Typography sx={{ fontSize: compact ? 16 : 21, lineHeight: 1.7, color: colors.ink }}>
+      <Typography sx={{ fontSize: compact ? font.md : font.xl, lineHeight: 1.7, color: colors.ink }}>
         {slot.description ?? locale.unknownMoveDescription}
       </Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: compact ? 1 : 1.5 }}>

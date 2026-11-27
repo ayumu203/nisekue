@@ -1,6 +1,7 @@
 import { Box, LinearProgress, Typography } from '@mui/material'
 import type { ReactNode } from 'react'
 import { jobChangePanelColors as colors } from '@/constants/styles'
+import { font, palette } from '@/theme/tokens'
 
 // 舞台の上の札（現在の職業・MASTER・未解放）
 export function PlateChip({ children }: { children: ReactNode }) {
@@ -8,7 +9,7 @@ export function PlateChip({ children }: { children: ReactNode }) {
     <Box
       component="span"
       sx={{
-        fontSize: '0.8125rem',
+        fontSize: font.sm,
         lineHeight: 1.5,
         color: colors.plateGold,
         backgroundColor: colors.plate,
@@ -34,14 +35,14 @@ export function InfoChip({
   const toneSx = {
     soft: { color: colors.bandDark, backgroundColor: colors.soft },
     gold: { color: colors.goldText, backgroundColor: colors.goldSoft, border: `1px solid ${colors.gold}` },
-    band: { color: '#ffffff', backgroundColor: colors.band },
+    band: { color: palette.white, backgroundColor: colors.band },
     mute: { color: colors.label, backgroundColor: colors.locked },
   }[tone]
 
   return (
     <Box
       component="span"
-      sx={{ fontSize: '0.8125rem', lineHeight: 1.6, borderRadius: 999, px: 1.25, whiteSpace: 'nowrap', ...toneSx }}
+      sx={{ fontSize: font.sm, lineHeight: 1.6, borderRadius: 999, px: 1.5, whiteSpace: 'nowrap', ...toneSx }}
     >
       {children}
     </Box>
@@ -52,12 +53,12 @@ export function InfoChip({
 export function InfoRow({ label, value, strong = false }: { label: ReactNode; value: ReactNode; strong?: boolean }) {
   return (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1 }}>
-      <Typography component="span" sx={{ fontSize: '0.9375rem', color: colors.label }}>
+      <Typography component="span" sx={{ fontSize: font.md, color: colors.label }}>
         {label}
       </Typography>
       <Typography
         component="span"
-        sx={{ fontSize: strong ? '1.25rem' : '1rem', color: colors.text, whiteSpace: 'nowrap', textAlign: 'right' }}
+        sx={{ fontSize: strong ? font.xl : font.md, color: colors.text, whiteSpace: 'nowrap', textAlign: 'right' }}
       >
         {value}
       </Typography>
@@ -72,12 +73,12 @@ export function InfoSection({ title, children }: { title: ReactNode; children: R
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 1.25,
+        gap: 1.5,
         borderTop: `1px dotted ${colors.divider}`,
-        pt: 1.75,
+        pt: 2,
       }}
     >
-      <Typography component="h3" sx={{ m: 0, fontSize: '0.9375rem', color: colors.label }}>
+      <Typography component="h3" sx={{ m: 0, fontSize: font.md, color: colors.label }}>
         {title}
       </Typography>
       {children}
@@ -94,7 +95,7 @@ export function ExpBar({ ratio, label }: { ratio: number; label: string }) {
       sx={{
         height: 10,
         borderRadius: 999,
-        backgroundColor: '#ece6da',
+        backgroundColor: palette.cream,
         '& .MuiLinearProgress-bar': { backgroundColor: colors.gold, borderRadius: 999 },
       }}
     />

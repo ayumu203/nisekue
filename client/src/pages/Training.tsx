@@ -42,6 +42,7 @@ import { INITIAL_PLAYER_NAME } from '@/lib/player'
 import locale from '../../locale/training/Training.json'
 import type { ExecuteTrainingResponse, TrainingEnemy } from '@/schema/training'
 import type { GetPlayerResponse, PlayerSummary } from '@/schema/player'
+import { palette } from '@/theme/tokens'
 
 type TrainingMode = 'npc' | 'player'
 
@@ -687,7 +688,7 @@ export default function Training() {
                 component={Link}
                 to="/"
                 aria-label={locale.backToHome}
-                sx={{ color: '#ffffff', width: 44, height: 44 }}
+                sx={{ color: palette.white, width: 44, height: 44 }}
               >
                 <HomeFilledIcon />
               </IconButton>
@@ -791,8 +792,8 @@ export default function Training() {
       >
         {isPlayerLoading ? (
           <Stack direction="row" spacing={1} alignItems="center">
-            <CircularProgress size={16} sx={{ color: '#ffffff' }} />
-            <Typography variant="body2" sx={{ color: '#ffffff' }}>
+            <CircularProgress size={16} sx={{ color: palette.white }} />
+            <Typography variant="body2" sx={{ color: palette.white }}>
               {locale.playerLoading}
             </Typography>
           </Stack>
@@ -819,6 +820,7 @@ export default function Training() {
         <SpotlightTutorial
           guide="instructor"
           targetId="tutorial-move-plan-form"
+          dimBackground={false}
           pointerTargetId="tutorial-next-move-select"
           message={tutorialLocale.steps.trainingMoveSelect.message}
           showDismiss
