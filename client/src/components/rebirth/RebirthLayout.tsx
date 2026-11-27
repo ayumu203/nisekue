@@ -1,13 +1,4 @@
 import { palette, withAlpha } from '@/theme/tokens'
-// 画面いっぱいに広げた外枠（GamePageFrame）の背景
-export const rebirthPageBackground = `linear-gradient(180deg, ${palette.white} 0%, ${palette.white} 38%, ${palette.cream} 100%)`
-
-export const rebirthSurfaceSx = {
-  background: `linear-gradient(180deg, ${palette.white} 0%, ${palette.white} 56%, ${palette.cream} 100%)`,
-  borderColor: palette.gold300,
-  boxShadow: `0 8px 24px ${withAlpha(palette.gold300, 0.1)}`,
-} as const
-
 export const rebirthPrimaryButtonSx = {
   '&&': {
     background: `linear-gradient(135deg, ${palette.blue300} 0%, ${palette.blue300} 46%, ${palette.gold300} 100%)`,

@@ -44,6 +44,22 @@ const combatRankApplicableTypes = new Set([
   'treasureMapUsageByCombatRank',
 ])
 
+// 青緑の地の上に置く絞り込みの欄：白い文字と白い枠
+const filterOnTealSx = {
+  '& .MuiInputLabel-root, & .MuiInputLabel-root.Mui-focused': { color: palette.white },
+  '& .MuiInputLabel-root.Mui-disabled': { color: withAlpha(palette.white, 0.5) },
+  '& .MuiOutlinedInput-root': {
+    '--input-outline-color': withAlpha(palette.white, 0.75),
+    color: palette.white,
+    '& .MuiOutlinedInput-notchedOutline': { borderColor: withAlpha(palette.white, 0.75) },
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: palette.gold300 },
+    '&.Mui-disabled .MuiOutlinedInput-notchedOutline': { borderColor: withAlpha(palette.white, 0.25) },
+  },
+  '& .MuiSelect-icon': { color: palette.white },
+  '& .MuiSelect-select.Mui-disabled': { WebkitTextFillColor: withAlpha(palette.white, 0.5) },
+  '& .Mui-disabled .MuiSelect-icon': { color: withAlpha(palette.white, 0.5) },
+} as const
+
 export default function Ranking() {
   const { session, isLoading } = useAuth()
   const rankingSWRKey = session?.access_token ? (['rankings'] as const) : null
@@ -148,165 +164,162 @@ export default function Ranking() {
                   p: { xs: 2, sm: 3 },
                 }}
               >
-                <Stack spacing={2}>
-                  <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
-                    <Stack spacing={1.5}>
-                      <Typography
-                        variant="overline"
-                        sx={{ letterSpacing: '0.25em', color: withAlpha(palette.brown900, 0.75) }}
-                      >
-                        {locale.overline}
-                      </Typography>
-                      <Typography variant="h4" fontWeight={900} sx={{ color: palette.gold300 }}>
-                        {locale.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {locale.snapshotAt}: {formattedSnapshot}
-                      </Typography>
-                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-                        <FormControl fullWidth>
-                          <InputLabel>{locale.title}</InputLabel>
-                          <Select
-                            value={activeType}
-                            label={locale.title}
-                            onChange={(e) => setSelectedType(e.target.value)}
-                          >
-                            {types.map((type) => (
-                              <MenuItem key={type} value={type}>
-                                {getRankingTypeLabel(type)}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                        <FormControl fullWidth>
-                          <InputLabel>{locale.period}</InputLabel>
-                          <Select value={period} label={locale.period} onChange={(e) => setPeriod(e.target.value)}>
-                            <MenuItem value="ALL">{locale.allPeriods}</MenuItem>
-                            <MenuItem value="Total">{locale.total}</MenuItem>
-                            <MenuItem value="Weekly">{locale.weekly}</MenuItem>
-                            <MenuItem value="Daily">{locale.daily}</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <FormControl fullWidth>
-                          <InputLabel>{locale.combatRank}</InputLabel>
-                          <Select
-                            value={activeCombatRank}
-                            label={locale.combatRank}
-                            disabled={!isCombatRankSelectorEnabled}
-                            onChange={(e) => setCombatRank(e.target.value)}
-                          >
-                            <MenuItem value="ALL">{locale.allCombatRanks}</MenuItem>
-                            {['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E', 'F', 'G'].map((r) => (
-                              <MenuItem key={r} value={r}>
-                                {r}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Stack>
+                <Stack spacing={2.5}>
+                  {/* 見出しと絞り込みは、ベージュの箱に入れず青緑の地に直接置く */}
+                  <Stack spacing={1.5}>
+                    <Typography
+                      variant="overline"
+                      sx={{ letterSpacing: '0.25em', color: withAlpha(palette.white, 0.75) }}
+                    >
+                      {locale.overline}
+                    </Typography>
+                    <Typography variant="h4" fontWeight={900} sx={{ color: palette.gold300 }}>
+                      {locale.title}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: withAlpha(palette.white, 0.9) }}>
+                      {locale.snapshotAt}: {formattedSnapshot}
+                    </Typography>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={filterOnTealSx}>
+                      <FormControl fullWidth>
+                        <InputLabel>{locale.title}</InputLabel>
+                        <Select
+                          value={activeType}
+                          label={locale.title}
+                          onChange={(e) => setSelectedType(e.target.value)}
+                        >
+                          {types.map((type) => (
+                            <MenuItem key={type} value={type}>
+                              {getRankingTypeLabel(type)}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <FormControl fullWidth>
+                        <InputLabel>{locale.period}</InputLabel>
+                        <Select value={period} label={locale.period} onChange={(e) => setPeriod(e.target.value)}>
+                          <MenuItem value="ALL">{locale.allPeriods}</MenuItem>
+                          <MenuItem value="Total">{locale.total}</MenuItem>
+                          <MenuItem value="Weekly">{locale.weekly}</MenuItem>
+                          <MenuItem value="Daily">{locale.daily}</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <FormControl fullWidth>
+                        <InputLabel>{locale.combatRank}</InputLabel>
+                        <Select
+                          value={activeCombatRank}
+                          label={locale.combatRank}
+                          disabled={!isCombatRankSelectorEnabled}
+                          onChange={(e) => setCombatRank(e.target.value)}
+                        >
+                          <MenuItem value="ALL">{locale.allCombatRanks}</MenuItem>
+                          {['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E', 'F', 'G'].map((r) => (
+                            <MenuItem key={r} value={r}>
+                              {r}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
                     </Stack>
-                  </Paper>
-                  <Paper variant="outlined" sx={{ ...innerSurfaceSx, borderRadius: 3, p: { xs: 1.5, sm: 2.5 } }}>
-                    <Stack spacing={1}>
-                      {filteredRows.map((row) => {
-                        const jobName = row.player.job.displayName ?? row.player.job.code
-                        const rankColor = resolveRankColor(row.player.combatIndexRank) ?? palette.teal400
-                        return (
-                          <Paper
-                            key={`${row.rankingType}-${row.periodKind}-${row.combatIndexRank}-${row.rankPosition}-${row.player.userId}`}
-                            variant="outlined"
-                            sx={{ p: 1.5 }}
-                          >
-                            <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-                              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+                  </Stack>
+                  <Stack spacing={1}>
+                    {filteredRows.map((row) => {
+                      const jobName = row.player.job.displayName ?? row.player.job.code
+                      const rankColor = resolveRankColor(row.player.combatIndexRank) ?? palette.teal400
+                      return (
+                        <Paper
+                          key={`${row.rankingType}-${row.periodKind}-${row.combatIndexRank}-${row.rankPosition}-${row.player.userId}`}
+                          variant="outlined"
+                          sx={{ p: 1.5, backgroundColor: palette.white, borderColor: palette.white }}
+                        >
+                          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+                              <Box
+                                component={Link}
+                                to={`/players/${row.player.userId}/visit`}
+                                aria-label={`${row.player.userName ?? row.player.userId} の部屋へ`}
+                                sx={{
+                                  width: 42,
+                                  height: 42,
+                                  borderRadius: 1.5,
+                                  overflow: 'hidden',
+                                  position: 'relative',
+                                  display: 'inline-flex',
+                                }}
+                              >
                                 <Box
-                                  component={Link}
-                                  to={`/players/${row.player.userId}/visit`}
-                                  aria-label={`${row.player.userName ?? row.player.userId} の部屋へ`}
+                                  component="img"
+                                  src={resolveCharacterAssetPath(row.player.imagePath) ?? undefined}
+                                  alt={row.player.userName ?? row.player.userId}
                                   sx={{
                                     width: 42,
                                     height: 42,
                                     borderRadius: 1.5,
-                                    overflow: 'hidden',
-                                    position: 'relative',
-                                    display: 'inline-flex',
+                                    objectFit: 'cover',
+                                    objectPosition: 'center top',
                                   }}
-                                >
+                                />
+                                {row.rankPosition === 1 ? (
                                   <Box
-                                    component="img"
-                                    src={resolveCharacterAssetPath(row.player.imagePath) ?? undefined}
-                                    alt={row.player.userName ?? row.player.userId}
+                                    component="span"
                                     sx={{
-                                      width: 42,
-                                      height: 42,
-                                      borderRadius: 1.5,
-                                      objectFit: 'cover',
-                                      objectPosition: 'center top',
+                                      position: 'absolute',
+                                      top: -4,
+                                      right: -6,
+                                      fontSize: font.sm,
                                     }}
-                                  />
-                                  {row.rankPosition === 1 ? (
-                                    <Box
-                                      component="span"
-                                      sx={{
-                                        position: 'absolute',
-                                        top: -4,
-                                        right: -6,
-                                        fontSize: font.sm,
-                                      }}
-                                    >
-                                      👑
-                                    </Box>
-                                  ) : null}
-                                </Box>
-                                <Stack spacing={0.5}>
-                                  <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-                                    <Typography variant="body1" fontWeight={800}>
-                                      {row.rankPosition}位 {row.player.userName ?? '-'}
-                                    </Typography>
-                                    <Box
-                                      component="span"
-                                      sx={{
-                                        minWidth: 52,
-                                        px: 1.5,
-                                        py: 0.75,
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        borderRadius: 999,
-                                        border: '1px solid',
-                                        borderColor: alpha(rankColor, 0.38),
-                                        backgroundColor: alpha(rankColor, 0.14),
-                                        color: rankColor,
-                                        fontSize: font.md,
-                                        fontWeight: 900,
-                                        lineHeight: 1,
-                                      }}
-                                    >
-                                      {row.player.combatIndexRank}
-                                    </Box>
-                                  </Stack>
-                                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                                    <Typography variant="caption" color="text.secondary">
-                                      {locale.jobLabel}: {jobName}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      {locale.levelLabel} {row.player.level}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      {locale.rebirthLabel} {row.player.rebirthCount}
-                                    </Typography>
-                                  </Stack>
+                                  >
+                                    👑
+                                  </Box>
+                                ) : null}
+                              </Box>
+                              <Stack spacing={0.5}>
+                                <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+                                  <Typography variant="body1" fontWeight={800}>
+                                    {row.rankPosition}位 {row.player.userName ?? '-'}
+                                  </Typography>
+                                  <Box
+                                    component="span"
+                                    sx={{
+                                      minWidth: 52,
+                                      px: 1.5,
+                                      py: 0.75,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      borderRadius: 999,
+                                      border: '1px solid',
+                                      borderColor: alpha(rankColor, 0.38),
+                                      backgroundColor: alpha(rankColor, 0.14),
+                                      color: rankColor,
+                                      fontSize: font.md,
+                                      fontWeight: 900,
+                                      lineHeight: 1,
+                                    }}
+                                  >
+                                    {row.player.combatIndexRank}
+                                  </Box>
+                                </Stack>
+                                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {locale.jobLabel}: {jobName}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {locale.levelLabel} {row.player.level}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {locale.rebirthLabel} {row.player.rebirthCount}
+                                  </Typography>
                                 </Stack>
                               </Stack>
-                              <Typography variant="body1" fontWeight={900}>
-                                {row.score.toLocaleString('ja-JP')}
-                              </Typography>
                             </Stack>
-                          </Paper>
-                        )
-                      })}
-                    </Stack>
-                  </Paper>
+                            <Typography variant="body1" fontWeight={900}>
+                              {row.score.toLocaleString('ja-JP')}
+                            </Typography>
+                          </Stack>
+                        </Paper>
+                      )
+                    })}
+                  </Stack>
                 </Stack>
               </Box>
             )}
