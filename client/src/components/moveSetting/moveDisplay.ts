@@ -15,7 +15,7 @@ export const elementStyles: Record<MoveElementKey, { color: string; label: strin
   Slash: { color: palette.purple, label: '斬属性' },
   Pierce: { color: palette.teal700, label: '突属性' },
   Fire: { color: palette.red700, label: '火属性' },
-  Water: { color: palette.purple, label: '水属性' },
+  Water: { color: palette.blue700, label: '水属性' },
   Earth: { color: palette.brown500, label: '土属性' },
   Wind: { color: palette.teal700, label: '風属性' },
   Holy: { color: palette.yellow, label: '聖属性' },

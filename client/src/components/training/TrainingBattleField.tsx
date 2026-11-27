@@ -35,8 +35,8 @@ type TurnLog = {
 // 自分と相手の画像を置く枠の高さ（大きいほうの画像に合わせる）
 const fighterAreaHeight = { xs: 120, md: 230 }
 
-const logTextColor = palette.black
-const logDivider = `1px dotted ${withAlpha(palette.navy, 0.25)}`
+const logTextColor = palette.blue900
+const logDivider = `1px dotted ${withAlpha(palette.blue900, 0.25)}`
 
 function normalizeHp(current: number, max: number): number {
   if (max <= 0) {
@@ -285,7 +285,7 @@ export default function TrainingBattleField({
           }}
         >
           <Collapse in={isTurnLogOpen}>
-            <Stack sx={{ pb: 1, mb: 0.5, borderBottom: `1px solid ${withAlpha(palette.navy, 0.25)}` }}>
+            <Stack sx={{ pb: 1, mb: 0.5, borderBottom: `1px solid ${withAlpha(palette.blue900, 0.25)}` }}>
               {turnLogs.map((log) => (
                 <Stack
                   key={log.turn}
@@ -338,7 +338,7 @@ export default function TrainingBattleField({
               direction="row"
               spacing={1.5}
               alignItems="center"
-              sx={{ pt: 1.5, mt: 0.5, borderTop: `1px solid ${withAlpha(palette.navy, 0.25)}` }}
+              sx={{ pt: 1.5, mt: 0.5, borderTop: `1px solid ${withAlpha(palette.blue900, 0.25)}` }}
             >
               <Typography
                 variant="body2"

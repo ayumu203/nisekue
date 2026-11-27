@@ -117,7 +117,7 @@ export default function QuestStageModeCard({
                 borderRadius: 999,
                 fontSize: font.sm,
                 fontWeight: 800,
-                color: isEndless ? palette.navy : palette.sky,
+                color: isEndless ? palette.blue900 : palette.sky,
                 backgroundColor: isEndless ? palette.gold300 : palette.purple,
               }}
             >
@@ -154,15 +154,15 @@ export default function QuestStageModeCard({
         borderRadius: 3,
         borderWidth: isSelected ? 3 : 1,
         color: palette.sky,
-        backgroundColor: palette.navy,
+        backgroundColor: palette.blue900,
         // 選んでいるステージは白の枠で示す
         borderColor: isSelected ? palette.white : withAlpha(palette.blue300, 0.25),
-        boxShadow: isSelected ? `0 10px 24px ${withAlpha(palette.navy, 0.25)}` : 'none',
+        boxShadow: isSelected ? `0 10px 24px ${withAlpha(palette.blue900, 0.25)}` : 'none',
         '&::before': {
           content: '""',
           position: 'absolute',
           inset: 0,
-          backgroundImage: `linear-gradient(135deg, ${withAlpha(palette.navy, 0.75)}, ${withAlpha(palette.navy, 0.75)}), url(${battlefieldImageSrc})`,
+          backgroundImage: `linear-gradient(135deg, ${withAlpha(palette.navy, 0.75)}, ${withAlpha(palette.blue900, 0.75)}), url(${battlefieldImageSrc})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           opacity: isSelected ? 1 : 0.95,
@@ -221,7 +221,7 @@ export default function QuestStageModeCard({
                     borderRadius: 999,
                     fontSize: font.sm,
                     fontWeight: 800,
-                    color: palette.navy,
+                    color: palette.blue900,
                     backgroundColor: palette.gold300,
                     letterSpacing: '0.04em',
                   }}

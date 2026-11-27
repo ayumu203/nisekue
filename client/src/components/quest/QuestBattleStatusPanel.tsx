@@ -190,7 +190,7 @@ function AllyStatusCard({ member }: { member: QuestPartyMemberView }) {
         <Typography
           variant="caption"
           noWrap
-          sx={{ color: palette.teal700, fontSize: { xs: font.xxs, sm: font.sm }, lineHeight: 1.2 }}
+          sx={{ color: palette.blue900, fontSize: { xs: font.xxs, sm: font.sm }, lineHeight: 1.2 }}
         >
           MP {member.currentMp}/{member.maxMp ?? '-'}
         </Typography>

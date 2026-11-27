@@ -224,15 +224,15 @@ export const questPanelColors = {
 export const trainingPanelColors = {
   topBand: palette.brown900,
   ground: palette.cream,
-  band: palette.navy,
+  band: palette.blue700,
   // 帯を「NPC｜PLAYER」のように分けたとき、選んでいる側の色
-  bandSelected: palette.navy,
+  bandSelected: palette.blue900,
   // 選んでいる相手カードの地
   selectedSurface: palette.sky,
   // 押せないボタンの色
   disabledButton: palette.blue300,
   // 白い箱の中の文字・区切り線（茶色やベージュを使わず、藍に合わせたグレー）
-  text: palette.black,
+  text: palette.blue900,
   label: palette.teal700,
   divider: palette.sky,
 } as const
@@ -241,10 +241,10 @@ export const trainingPanelColors = {
 export const treasureMapPanelColors = {
   topBand: palette.gold700,
   ground: palette.white,
-  band: palette.purple,
+  band: palette.blue700,
   // 探索中の地図の「探索中」の地と文字
   soft: palette.sky,
-  softText: palette.navy,
+  softText: palette.blue900,
   // 押せないボタンの色
   disabledButton: palette.gray300,
   disabledButtonText: palette.gray600,
@@ -388,18 +388,18 @@ export const skillPanelColors = {
 
 // 転職画面（聖堂の藍）。上部の帯・地・白い箱の見出しの帯・舞台の上の名札
 export const jobChangePanelColors = {
-  topBand: palette.teal700,
+  topBand: palette.blue900,
   ground: palette.cream,
-  band: palette.teal700,
-  bandDark: palette.teal700,
+  band: palette.blue700,
+  bandDark: palette.blue900,
   soft: palette.sky,
   gold: palette.gold700,
   goldText: palette.gold700,
   goldSoft: palette.cream,
   // 舞台の上の名札と札の金
-  plate: withAlpha(palette.navy, 0.9),
+  plate: withAlpha(palette.blue900, 0.9),
   plateGold: palette.gold300,
-  text: palette.black,
+  text: palette.blue900,
   label: palette.teal700,
   divider: palette.sky,
   // 未解放の札

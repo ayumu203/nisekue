@@ -33,7 +33,7 @@ function getLogToneColor(tone: 'Default' | 'Damage' | 'Ailment' | 'Buff' | 'Heal
     case 'Buff':
       return palette.red700
     case 'Heal':
-      return palette.blue300
+      return palette.blue700
     default:
       return palette.brown900
   }

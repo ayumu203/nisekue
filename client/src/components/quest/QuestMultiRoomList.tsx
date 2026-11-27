@@ -66,13 +66,13 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
         borderRadius: 3,
         p: 1.5,
         color: palette.sky,
-        backgroundColor: palette.navy,
+        backgroundColor: palette.blue900,
         borderColor: withAlpha(palette.blue300, 0.25),
         '&::before': {
           content: '""',
           position: 'absolute',
           inset: 0,
-          backgroundImage: `linear-gradient(135deg, ${withAlpha(palette.navy, 0.75)}, ${withAlpha(palette.navy, 0.75)}), url(${battlefieldImageSrc})`,
+          backgroundImage: `linear-gradient(135deg, ${withAlpha(palette.navy, 0.75)}, ${withAlpha(palette.blue900, 0.75)}), url(${battlefieldImageSrc})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           opacity: 0.95,
@@ -189,7 +189,7 @@ function QuestMultiRoomCard({ room, stages, isJoining, locale, onJoinRoom }: Que
             <Avatar
               src={ownerImageSrc ?? undefined}
               alt={room.ownerDisplayName ?? 'owner'}
-              sx={{ width: 56, height: 56, bgcolor: palette.sky, color: palette.teal700, fontWeight: 700 }}
+              sx={{ width: 56, height: 56, bgcolor: palette.sky, color: palette.blue900, fontWeight: 700 }}
             >
               {(room.ownerDisplayName ?? '?').slice(0, 1)}
             </Avatar>

@@ -33,7 +33,7 @@ export type FontSizeToken = (typeof font)[keyof typeof font]
  */
 export const spaceScale = [0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 6] as const
 
-/** 色（22 色）。色の直書きはせず、ここから選ぶ */
+/** 色（24 色）。色の直書きはせず、ここから選ぶ */
 export const palette = {
   /** 白 */
   white: '#ffffff',
@@ -71,6 +71,10 @@ export const palette = {
   navy: '#1a0f33',
   /** 空色 */
   blue300: '#9cbbe6',
+  /** 藍 */
+  blue700: '#2f5d8a',
+  /** 藍・濃 */
+  blue900: '#1f3f60',
   /** 赤 */
   red700: '#b3261e',
   /** 赤・淡 */

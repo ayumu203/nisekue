@@ -17,7 +17,7 @@ const toneColors = {
     bar: `linear-gradient(90deg, ${palette.blue300} 0%, ${palette.blue300} 100%)`,
     metBorder: palette.blue300,
     metBg: palette.sky,
-    metText: palette.teal700,
+    metText: palette.blue700,
     icon: palette.blue300,
   },
   gold: {

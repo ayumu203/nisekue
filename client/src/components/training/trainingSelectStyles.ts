@@ -71,7 +71,7 @@ export const trainingSelectRadioSx = {
 export const trainingLevelChipSx = {
   height: 24,
   fontWeight: 800,
-  color: palette.teal700,
+  color: palette.blue900,
   backgroundColor: palette.sky,
 } as const
 
