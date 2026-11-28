@@ -97,10 +97,7 @@ function RangeFigure({ slot, playerImagePath, actorRow, compact }: RangeFigurePr
   return (
     <Box
       role="img"
-      aria-label={ariaTemplate
-        .replace('{{row}}', actorRowLabels[actorRow])
-        .replace('{{side}}', isAllySide ? locale.targetAlly : locale.targetEnemy)
-        .replace('{{range}}', rangeLabel)}
+      aria-label={ariaTemplate.replace('{{row}}', actorRowLabels[actorRow]).replace('{{range}}', rangeLabel)}
       sx={{
         flex: 1,
         minHeight: compact ? 260 : 320,
