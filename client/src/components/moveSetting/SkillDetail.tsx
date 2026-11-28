@@ -43,40 +43,32 @@ type ActorRowSelectorProps = {
 // 技を使う人の位置の切り替え。位置によって届く敵の列が変わる
 function ActorRowSelector({ value, onChange, compact }: ActorRowSelectorProps) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: compact ? 1 : 2 }}>
-      <Typography
-        id="skill-detail-actor-row-label"
-        sx={{ fontSize: compact ? font.sm : font.md, color: colors.sub, whiteSpace: 'nowrap' }}
-      >
-        {locale.actorRowLabel}
-      </Typography>
-      <Box
-        role="group"
-        aria-labelledby="skill-detail-actor-row-label"
-        sx={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: compact ? 0.5 : 1 }}
-      >
-        {actorRows.map((row) => {
-          const selected = row === value
-          return (
-            <ButtonBase
-              key={row}
-              aria-pressed={selected}
-              onClick={() => onChange(row)}
-              sx={{
-                minHeight: 44,
-                borderRadius: '4px',
-                border: `2px solid ${colors.gold}`,
-                backgroundColor: selected ? colors.gold : 'transparent',
-                color: selected ? palette.brown900 : colors.ink,
-                fontFamily: 'inherit',
-                fontSize: compact ? font.sm : font.md,
-              }}
-            >
-              {actorRowLabels[row]}
-            </ButtonBase>
-          )
-        })}
-      </Box>
+    <Box
+      role="group"
+      aria-label={locale.actorRowLabel}
+      sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: compact ? 0.5 : 1 }}
+    >
+      {actorRows.map((row) => {
+        const selected = row === value
+        return (
+          <ButtonBase
+            key={row}
+            aria-pressed={selected}
+            onClick={() => onChange(row)}
+            sx={{
+              minHeight: 44,
+              borderRadius: '4px',
+              border: `2px solid ${colors.gold}`,
+              backgroundColor: selected ? colors.gold : 'transparent',
+              color: selected ? palette.brown900 : colors.ink,
+              fontFamily: 'inherit',
+              fontSize: compact ? font.sm : font.md,
+            }}
+          >
+            {actorRowLabels[row]}
+          </ButtonBase>
+        )
+      })}
     </Box>
   )
 }
