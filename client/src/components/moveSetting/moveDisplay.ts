@@ -185,3 +185,42 @@ export function resolveRangeCells(slot: PlayerMoveSlot): Array<[number, number]>
       return []
   }
 }
+
+// 技を使う人の位置。前衛ほど届く列が少ない
+export type ActorRow = 'Front' | 'Middle' | 'Back'
+
+export const actorRows: ActorRow[] = ['Front', 'Middle', 'Back']
+
+export const actorRowLabels: Record<ActorRow, string> = {
+  Front: locale.rowFront,
+  Middle: locale.rowMiddle,
+  Back: locale.rowBack,
+}
+
+// 位置から届く敵の列の数（前衛：前列、中衛：前列・中列、後衛：全列）。サーバーの BattleTargetingResolver と同じ
+export function resolveReachableRowCount(actorRow: ActorRow): number {
+  switch (actorRow) {
+    case 'Front':
+      return 1
+    case 'Middle':
+      return 2
+    case 'Back':
+      return 3
+  }
+}
+
+// 位置の制限があるのは敵が対象の技だけ
+export function isActorRowRelevant(slot: PlayerMoveSlot): boolean {
+  return slot.targetType === 'Enemy'
+}
+
+// 技の範囲のうち、その位置から届く列だけを残す（サーバーも届く列で絞ってから範囲を当てる）
+export function resolveReachableRangeCells(slot: PlayerMoveSlot, actorRow: ActorRow): Array<[number, number]> {
+  const cells = resolveRangeCells(slot)
+  if (!isActorRowRelevant(slot)) {
+    return cells
+  }
+
+  const reachable = resolveReachableRowCount(actorRow)
+  return cells.filter(([row]) => row < reachable)
+}

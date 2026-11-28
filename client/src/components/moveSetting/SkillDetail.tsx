@@ -1,12 +1,18 @@
-import { Box, Typography } from '@mui/material'
+import { useState } from 'react'
+import { Box, ButtonBase, Typography } from '@mui/material'
 import { skillPanelColors as colors } from '@/constants/styles'
 import {
+  actorRowLabels,
+  actorRows,
   buildEffectEntries,
   categoryStyles,
   elementStyles,
+  isActorRowRelevant,
   resolveElementKey,
-  resolveRangeCells,
+  resolveReachableRangeCells,
+  resolveReachableRowCount,
   resolveTargetLabel,
+  type ActorRow,
 } from '@/components/moveSetting/moveDisplay'
 import { ElementEmblem, MpCost, SkillChip } from '@/components/moveSetting/SkillParts'
 import { resolveCharacterAssetPath, resolvePublicAssetPath } from '@/lib/assets'
@@ -28,27 +34,70 @@ const ALLY_IMAGES = [
   ['image/character/ch022_in.png', 'image/character/ch015_in.png'],
 ]
 
+type ActorRowSelectorProps = {
+  value: ActorRow
+  onChange: (row: ActorRow) => void
+  compact: boolean
+}
+
+// 技を使う人の位置の切り替え。位置によって届く敵の列が変わる
+function ActorRowSelector({ value, onChange, compact }: ActorRowSelectorProps) {
+  return (
+    <Box
+      role="group"
+      aria-label={locale.actorRowLabel}
+      sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: compact ? 0.5 : 1 }}
+    >
+      {actorRows.map((row) => {
+        const selected = row === value
+        return (
+          <ButtonBase
+            key={row}
+            aria-pressed={selected}
+            onClick={() => onChange(row)}
+            sx={{
+              minHeight: 44,
+              borderRadius: '4px',
+              border: `2px solid ${colors.gold}`,
+              backgroundColor: selected ? colors.gold : 'transparent',
+              color: selected ? palette.brown900 : colors.ink,
+              fontFamily: 'inherit',
+              fontSize: compact ? font.sm : font.md,
+            }}
+          >
+            {actorRowLabels[row]}
+          </ButtonBase>
+        )
+      })}
+    </Box>
+  )
+}
+
 type RangeFigureProps = {
   slot: PlayerMoveSlot
   playerImagePath: string | null
+  actorRow: ActorRow
   compact: boolean
 }
 
 // 戦場の絵の上に陣形（3 列×左右 2）を並べ、技が当たる相手の足もとに属性の色の輪を敷く
-function RangeFigure({ slot, playerImagePath, compact }: RangeFigureProps) {
+// 敵が対象の技では、使う人の位置から届かない列を暗くして「射程外」と出す
+function RangeFigure({ slot, playerImagePath, actorRow, compact }: RangeFigureProps) {
   const isAllySide = slot.targetType === 'Ally' || slot.targetType === 'Self'
-  const hitCells = resolveRangeCells(slot)
+  const showsReach = isActorRowRelevant(slot)
+  const hitCells = resolveReachableRangeCells(slot, actorRow)
+  const reachableRowCount = showsReach ? resolveReachableRowCount(actorRow) : 3
+  const outOfReachRows = [0, 1, 2].filter((row) => row >= reachableRowCount)
   const color = elementStyles[resolveElementKey(slot)].color
   const rangeLabel = getMoveAttackRangeLabel(slot.attackRange) ?? ''
+  const ariaTemplate = showsReach ? locale.rangeAriaWithRow : locale.rangeAria
   // 手前（前列）ほど大きく描く
   const heights = isAllySide ? (compact ? [84, 72, 60] : [190, 165, 140]) : compact ? [62, 54, 46] : [130, 110, 92]
 
   return (
     <Box
       role="img"
-      aria-label={locale.rangeAria
-        .replace('{{side}}', isAllySide ? locale.targetAlly : locale.targetEnemy)
-        .replace('{{range}}', rangeLabel)}
+      aria-label={ariaTemplate.replace('{{row}}', actorRowLabels[actorRow]).replace('{{range}}', rangeLabel)}
       sx={{
         flex: 1,
         minHeight: compact ? 260 : 320,
@@ -79,6 +128,9 @@ function RangeFigure({ slot, playerImagePath, compact }: RangeFigureProps) {
             <Box
               key={`${row}-${column}`}
               sx={{
+                // 前列を下に描く。射程外の帯を重ねるため、置く位置を明示する
+                gridRow: 3 - row,
+                gridColumn: column + 1,
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'flex-end',
@@ -152,6 +204,38 @@ function RangeFigure({ slot, playerImagePath, compact }: RangeFigureProps) {
           )
         }),
       )}
+      {outOfReachRows.map((row) => (
+        <Box
+          key={`out-of-reach-${row}`}
+          sx={{
+            gridRow: 3 - row,
+            gridColumn: '1 / -1',
+            position: 'relative',
+            zIndex: 1,
+            borderRadius: '4px',
+            backgroundColor: withAlpha(palette.navy, 0.5),
+            display: 'flex',
+            alignItems: 'flex-start',
+            p: compact ? 0.5 : 1,
+          }}
+        >
+          <Typography
+            component="span"
+            sx={{
+              fontSize: compact ? font.xs : font.sm,
+              lineHeight: 1.4,
+              px: 1,
+              py: 0.25,
+              borderRadius: '3px',
+              backgroundColor: palette.brown900,
+              border: `1px solid ${colors.gold}`,
+              color: colors.ink,
+            }}
+          >
+            {locale.outOfReach}
+          </Typography>
+        </Box>
+      ))}
     </Box>
   )
 }
@@ -183,6 +267,9 @@ type SkillDetailProps = {
 
 // 選んだスキルの詳細：紋章・技名・種類と属性・消費MP、説明、対象と効果、範囲の図
 export default function SkillDetail({ slot, playerImagePath, compact }: SkillDetailProps) {
+  // 初期値は後衛（技の範囲がすべて届く）。スキルを切り替えても保持する
+  const [actorRow, setActorRow] = useState<ActorRow>('Back')
+
   if (!slot || slot.moveId === null) {
     return null
   }
@@ -235,7 +322,8 @@ export default function SkillDetail({ slot, playerImagePath, compact }: SkillDet
           <Tile key={`${effect.label}-${effect.value}`} label={effect.label} value={effect.value} compact={compact} />
         ))}
       </Box>
-      <RangeFigure slot={slot} playerImagePath={playerImagePath} compact={compact} />
+      {isActorRowRelevant(slot) ? <ActorRowSelector value={actorRow} onChange={setActorRow} compact={compact} /> : null}
+      <RangeFigure slot={slot} playerImagePath={playerImagePath} actorRow={actorRow} compact={compact} />
     </Box>
   )
 }
